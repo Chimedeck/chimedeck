@@ -63,6 +63,32 @@ else
   echo ">>> Clone complete."
 fi
 
+# ---------------------------------------------------------------------------
+# 4. Ensure VS Code MCP configuration exists
+# ---------------------------------------------------------------------------
+MCP_JSON="$HOME/Library/Application Support/Code/User/mcp.json"
+
+if [[ ! -f "$MCP_JSON" ]]; then
+  echo ">>> Creating VS Code MCP config at: ${MCP_JSON}"
+  mkdir -p "$(dirname "$MCP_JSON")"
+  cat > "$MCP_JSON" <<'EOF'
+{
+	"servers": {
+		"playwright": {
+			"command": "npx",
+			"args": [
+				"@playwright/mcp@latest"
+			]
+		}
+	},
+	"inputs": []
+}
+EOF
+  echo ">>> MCP config created."
+else
+  echo ">>> VS Code MCP config already exists – skipping."
+fi
+
 echo ""
 echo "============================================================"
 echo " Setup complete!"
