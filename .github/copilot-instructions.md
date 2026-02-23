@@ -393,6 +393,18 @@ Mark intentional shortcuts with `TODO` so the next developer knows what needs to
 
 Never access `process.env` directly outside of a dedicated `config` module. All environment variables must be centralised there so the full set of env vars used by the project is visible in one place.
 
+#### Runtime
+
+This project runs on **[Bun](https://bun.sh/)**.
+
+- Bun executes both `.js` and `.ts` files natively — no build step or transpilation is required.
+- **Always use Bun as the runtime** for all server-side scripts and entry points.
+- Script shebang lines must use `#!/usr/bin/env bun`, not `node`.
+- Module entry points should be `.ts` by preference; `.js` is acceptable when typing adds no value (e.g. trivial config files).
+- Use Bun's built-in APIs (`Bun.file`, `Bun.serve`, `Bun.env`, etc.) instead of Node.js equivalents where a Bun-native API exists.
+- `Bun.env` is the preferred way to access environment variables inside the `config` module — do not use `process.env` directly anywhere else.
+- Package management uses `bun install` / `bun add` — never `npm install` or `yarn add`.
+
 ---
 
 ### Security
