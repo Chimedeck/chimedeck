@@ -85,6 +85,43 @@ Example — Voucher / Discount feature (Voucherify integration):
 
 ---
 
+## Handling Complex Tasks
+
+**For large, multi-feature tasks or architectural changes:**
+
+Instead of trying to resolve immediately, trigger the agent-loop to handle systematically.
+
+**Steps:**
+1. **Assess complexity**: If task involves 3+ features, major refactoring, or spans multiple systems → use agent-loop
+2. **Create iteration plan**: Write to `.task` file with:
+   - Summary of overall goal
+   - Breakdown by iteration (max 1 feature per iteration, 2 if tightly coupled for testing)
+   - Each iteration: clear objective, files affected, acceptance criteria
+3. **Trigger agent-loop**: Inform user to run `bash start-agent-loop.sh "$(cat .task)"`
+
+**Iteration planning format (write to .task):**
+```
+Overall Goal: [Brief description]
+
+Iteration 1: [Feature name]
+- Objective: [What to build]
+- Files: [List expected files]
+- Tests: [What to verify]
+
+Iteration 2: [Next feature]
+- Objective: [What to build]
+- Files: [List expected files]
+- Tests: [What to verify]
+
+[Continue for remaining features...]
+```
+
+**When to use agent-loop vs direct implementation:**
+- **Direct**: Single feature, clear scope, < 5 files
+- **Agent-loop**: Multiple features, architectural changes, cross-system integration, > 5 files
+
+---
+
 ## Working Guidelines
 
 **Before coding:**

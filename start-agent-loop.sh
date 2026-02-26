@@ -63,6 +63,9 @@ MODEL_TEST_EVAL="gpt-4.1"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
+# Task file for storing prompts (added to .gitignore)
+TASK_FILE=".task"
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -80,10 +83,14 @@ run_copilot() {
   local prompt="$2"
   local out_file="$3"
 
+  # Write prompt to .task file
+  echo "$prompt" > "$TASK_FILE"
+
+  # Run copilot with prompt from file
   copilot \
     --model "$model" \
     --allow-all-tools \
-    -p "$prompt" \
+    -p "$(cat "$TASK_FILE")" \
     | tee "$out_file"
 }
 
@@ -253,6 +260,9 @@ Do NOT write any implementation code."
   echo "  bash start-agent-loop.sh \"${TASK_DESCRIPTION}\""
   echo ""
   echo "The loop will detect the architecture doc and proceed to implementation."
+  
+  # Clean up task file
+  rm -f "$TASK_FILE"
   exit 0
 fi
 
@@ -493,6 +503,9 @@ Write the result directly to the file '${CHANGELOG_FILE}'."
 
   sleep 1
 done
+
+# Clean up task file
+rm -f "$TASK_FILE"
 
 echo ""
 echo "Agent loop finished after ${i} iteration(s)."
