@@ -1,16 +1,14 @@
 # Copilot Workflow Instructions
 
-> **This file is read automatically by GitHub Copilot at the start of every
-> session. Always follow the workflow defined here before writing any code.**
+## Core Principles
 
----
+**Context sources (in order of priority):**
+1. `specs/` — single source of truth (architecture, requirements, changelogs)
+2. `./sample-project/` — read-only reference, never modify or run
+3. **For complex tasks**: read 3 latest `specs/changelog/*.md` files
 
-## Principals
-
-- Group components and parts by **feature**, not by type.
-- Each feature lives in its own subtree with its own sub-git and its own
-  remote repository.
-- Git repo naming convention: `sharetribe-horizon-extensions-<name-separated-by-dash>`
+**Group by feature, not type.** Each feature = own subtree + own git repo.
+Naming: `sharetribe-horizon-extensions-<name-separated-by-dash>`
 
 ---
 
@@ -45,11 +43,6 @@ Example — Voucher / Discount feature:
 │           ├── api.js
 │           └── README.md
 ```
-
-Client extensions live in the repository:
-`https://github.com/journeyhorizon/sharetribe-horizon-extensions-example-client`
-
----
 
 ### Server code
 
@@ -86,168 +79,40 @@ Example — Voucher / Discount feature (Voucherify integration):
                     └── instance.js
 ```
 
----
-
 ### Common code
 
-Code shared between two or more features goes in:
-- `src/common/` — client side
-- `server/common/` — server side
-
-**Rules:**
-- If you are unsure whether something should be common, place it in the
-  feature folder first; migrate later.
-- If you need to reuse code from another feature, migrate both usages to
-  `common/` and update all affected features, or log a Trello card for the
-  SharetribeHorizon team to handle.
+**Common:** `src/common/` (client) or `server/common/` (server) — shared between 2+ features. Start in feature folder, migrate to common when needed.
 
 ---
 
-## Reference Repository
+## Working Guidelines
 
-A cloned copy of the Sharetribe web template lives in `./sample-project/`.
+**Before coding:**
+1. **For complex tasks**: read 3 latest `specs/changelog/*.md` + `specs/architecture/*.md`
+2. **If uncertain**: consult `specs/` (single source of truth)
+3. Check `./sample-project/` for reference patterns (read-only, never modify)
 
-**Rules for the reference repo:**
-- Use it as a read-only reference when you need to understand how the
-  upstream template structures a feature, page, or component.
-- Consult it at the start of each Recap phase and whenever the plan requires
-  understanding a pattern that may already exist in the template.
-- **Never modify any file inside `sample-project/`.**
-- **Never run the dev server inside `sample-project/`** — only run it in the real project.
+**When implementing:**
+- Design before coding (outline steps first)
+- Keep scope small: 1-2 features max per iteration
+- Add `// [context]` comments explaining *why*
+- New user flows → create test in `specs/tests/`
+- Commits: `feat|fix|chore(<scope>): <summary>`
 
----
-
-## Mandatory Workflow: Recap → Planning → Execute → Retest → Changelog
-
-Every task — no matter how small — must pass through the five phases below in
-order. Never skip a phase. If a phase produces no meaningful output (e.g.
-Retest is skipped for trivial changes) you must explicitly state *why* it was
-skipped.
-
-**Mandatory outputs:**
-- **New flows require test scenarios** — Every new user-facing flow or API endpoint must have a corresponding test file in `specs/tests/`
-- **All edits require changelog entries** — Every iteration must produce a timestamped changelog in `specs/changelog/`
-
----
-
-### Phase 1 – Recap
-
-**Purpose:** Ground yourself in current reality before touching anything.
-
-1. Read all relevant files in **this project** that relate to the task.
-2. Cross-reference `./sample-project/` to understand how the upstream
-   template handles the same area (read-only — do not change it).
-3. Summarise the current state in 3-5 bullet points:
-   - What the feature/component does today in this project.
-   - How (or whether) the template reference handles it differently.
-   - Known issues or constraints.
-   - Any open TODOs or tech-debt that overlaps with this task.
-4. Confirm your understanding of the task goal.
-
-> Use a lightweight / free model for this phase (e.g. Claude Haiku 4.5).
-
----
-
-### Phase 2 – Planning
-
-**Purpose:** Design the approach *before* writing code.
-
-1. Break the task into concrete, numbered steps.
-2. Identify files in **this project** that will be created or modified.
-   Note any patterns borrowed from `./sample-project/` and where you will
-   diverge from them.
-3. Call out any risks, edge cases, or decisions that need a human call.
-4. State which tests will verify the changes.
-5. **Scope gate:** Each iteration must address at most **2 intertwined
-   features** or **1 standalone feature**. If the plan exceeds this, split
-   it and defer the remainder to the next iteration.
-
-> Use the most capable model for this phase (e.g. Claude Sonnet 4.6).
-
----
-
-### Phase 3 – Execute
-
-**Purpose:** Implement exactly what was planned — no scope creep.
-
-1. Follow the numbered plan from Phase 2 step-by-step.
-2. All code changes go into **this project** only.
-3. You may read `./sample-project/` for reference at any point, but write
-   nothing there.
-4. After each file change, leave a one-line comment `// [Execute] <reason>`.
-5. If you discover something that changes the plan, pause, update the plan,
-   and re-confirm before continuing.
-6. Commit message format: `feat|fix|chore(<scope>): <summary> [iter-N]`.
-7. **Mandatory:** For every new user-facing flow or API endpoint, create a
-   corresponding test scenario file in `specs/tests/<feature-name>.md` using
-   the format from `specs/tests/homepage-load.md` as a template.
-
-> Use a solid mid-tier model for this phase (e.g. Claude Sonnet 4.5).
-
----
-
-### Phase 4 – Retest with Playwright MCP
-
-**Purpose:** Verify the changes work end-to-end.
-
-**When to run full Playwright MCP testing:**
-- Any UI change visible to the user.
-- Any API route or server action change.
-- Any auth / permission logic change.
-- Any change that touches more than 3 files.
-- **Any new flow created in Phase 3** (mandatory).
-
-**When testing can be skipped (must state reason):**
-- Pure documentation or comment updates.
-- Trivial copy/string changes with no logic.
-- Config-only changes verified by a linter/type-check pass.
-
-**Steps when testing runs:**
-1. Start the development server **in this project** (not in `sample-project/`).
-2. Use Playwright MCP to navigate to all affected views.
-3. Assert the primary happy-path scenario.
-4. Assert at least one edge/error case if applicable.
-5. Report pass/fail with a screenshot reference.
-6. **Mandatory:** If a new test scenario was created in Phase 3, run it using
-   the test runner to verify it passes.
-
-> Use a free model + GPT-4.1 for this phase — GPT-4.1 is surprisingly strong
-> at evaluating test results and spotting subtle regressions.
-
----
-
-### Phase 5 – Changelog
-
-**Purpose:** Document all changes for institutional memory and project tracking.
-
-**Mandatory — never skip this phase.**
-
-1. Create a new file in `specs/changelog/` named `YYYYMMDD_HHMMSS.md` with the
-   current timestamp.
-2. The changelog must contain four sections:
-   - **Update** — Changes made to existing code, features, or files.
-   - **New** — Newly added features, files, endpoints, or capabilities.
-   - **Technical Debt** — Shortcuts taken, TODOs added, or issues deferred.
-   - **What Should Be Done Next** — Recommended follow-up tasks or blocked items.
-3. Every section must be populated. If a section has no entries, write "None".
-4. Be specific: reference file paths, function names, and line numbers where
-   applicable using proper markdown links.
-5. If a new test scenario was created, list it under **New**.
-6. If tests were skipped in Phase 4, document the reason under **Technical Debt**.
-
-> Use a free model for this phase (e.g. Claude Haiku 4.5).
+**After changes:**
+- Write changelog to `specs/changelog/YYYYMMDD_HHMMSS.md` with 4 sections (Update, New, Technical Debt, What Should Be Done Next) — skip for trivial edits
+- Test if UI/API/auth changed or 3+ files touched
+- State explicitly if testing/changelog skipped and why
 
 ---
 
 ## General Rules
 
-- **Never** start writing code before completing Phases 1 and 2.
-- **Never** mark a task done until Phase 5 (Changelog) is complete.
-- **Never** skip Phase 5 — every iteration must produce a changelog entry.
-- **Never** skip creating test scenarios for new flows — they are mandatory.
-- **Never** modify `./sample-project/` — it is a reference only.
-- Keep each iteration small. If in doubt, do less and iterate faster.
-- Write self-documenting code; comments should explain *why*, not *what*.
+- `./sample-project/` is read-only — never modify or run
+- Write changelog for meaningful changes (skip trivial edits)
+- Test scenarios mandatory for new flows
+- Keep iterations small
+- Comments explain *why*, not *what*
 
 ---
 

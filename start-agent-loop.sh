@@ -17,10 +17,10 @@
 #                    Execute runs.
 #
 # Model assignment
-#   Recap    – claude-haiku-4-5   (free / fast – just reading state)
+#   Recap    – gpt-4o   (fast – just reading state)
 #   Planning – claude-sonnet-4-6  (most capable – architecture decisions)
 #   Execute  – claude-sonnet-4-5  (premium – solid implementation)
-#   Retest   – claude-haiku-4-5 + gpt-4.1  (free scout + GPT-4.1 evaluator)
+#   Retest   – gpt-4.1  (GPT-4.1 evaluator)
 # =============================================================================
 
 set -euo pipefail
@@ -53,10 +53,10 @@ CHANGELOG_DIR="specs/changelog"       # one timestamped .md per iteration
 ARCH_DIR="specs/architecture"          # architecture decision records
 
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
-MODEL_RECAP="claude-haiku-4-5"
+MODEL_RECAP="gpt-4o"
 MODEL_PLAN="claude-sonnet-4-6"
 MODEL_EXECUTE="claude-sonnet-4-5"
-MODEL_TEST_FREE="claude-haiku-4-5"
+MODEL_TEST_FREE="gpt-4.1"
 MODEL_TEST_EVAL="gpt-4.1"
 
 # Temp directory for inter-phase context passing
