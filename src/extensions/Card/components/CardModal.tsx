@@ -1,161 +1,184 @@
-// CardModal — full detail overlay for viewing and editing a card.
-import { useState, useEffect } from 'react';
-import type { Card } from '../api';
+// CardModal — full detail Radix Dialog modal for viewing and editing a card.
+// URL-driven: ?card=:id opens the modal; closing clears the query param.
+import * as Dialog from '@radix-ui/react-dialog';
+import type { Card, Label, CardMember, ChecklistItem } from '../api';
+import CardTitle from './CardTitle';
+import CardDescription from './CardDescription';
+import CardChecklist from './CardChecklist';
+import CardLabels from './CardLabels';
+import CardMembers from './CardMembers';
+import CardDueDate from './CardDueDate';
+import CardActionMenu from './CardActionMenu';
+import CardSidebarSection from './CardSidebarSection';
+
+interface BoardMember {
+  id: string;
+  email: string;
+  display_name: string | null;
+}
 
 interface Props {
+  open: boolean;
   card: Card;
-  boardTitle: string;
   listTitle: string;
+  boardTitle: string;
+  labels: Label[];
+  allLabels: Label[];
+  members: CardMember[];
+  boardMembers: BoardMember[];
+  checklistItems: ChecklistItem[];
   onClose: () => void;
-  onUpdate: (cardId: string, fields: { title?: string; description?: string; due_date?: string | null }) => Promise<void>;
-  onArchive: (cardId: string) => Promise<void>;
-  onMove: (cardId: string) => void;
-  onDuplicate: (cardId: string) => Promise<void>;
+  onTitleSave: (title: string) => void;
+  onDescriptionSave: (description: string) => void;
+  onDueDateChange: (date: string | null) => void;
+  onArchive: () => Promise<void>;
+  onDelete: () => Promise<void>;
+  onCopyLink: () => void;
+  onChecklistAdd: (title: string) => Promise<void>;
+  onChecklistToggle: (itemId: string, checked: boolean) => Promise<void>;
+  onChecklistRename: (itemId: string, title: string) => Promise<void>;
+  onChecklistDelete: (itemId: string) => Promise<void>;
+  onLabelAttach: (labelId: string) => Promise<void>;
+  onLabelDetach: (labelId: string) => Promise<void>;
+  onLabelCreate: (name: string, color: string) => Promise<void>;
+  onMemberAssign: (userId: string) => Promise<void>;
+  onMemberRemove: (userId: string) => Promise<void>;
 }
 
 const CardModal = ({
+  open,
   card,
-  boardTitle,
   listTitle,
+  boardTitle,
+  labels,
+  allLabels,
+  members,
+  boardMembers,
+  checklistItems,
   onClose,
-  onUpdate,
+  onTitleSave,
+  onDescriptionSave,
+  onDueDateChange,
   onArchive,
-  onMove,
-  onDuplicate,
+  onDelete,
+  onCopyLink,
+  onChecklistAdd,
+  onChecklistToggle,
+  onChecklistRename,
+  onChecklistDelete,
+  onLabelAttach,
+  onLabelDetach,
+  onLabelCreate,
+  onMemberAssign,
+  onMemberRemove,
 }: Props) => {
-  const [title, setTitle] = useState(card.title);
-  const [description, setDescription] = useState(card.description ?? '');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Close on Escape key
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  const handleSave = async () => {
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      setError('Title is required');
-      return;
-    }
-    if (trimmedTitle.length > 512) {
-      setError('Title must be 512 characters or fewer');
-      return;
-    }
-    setError(null);
-    setSaving(true);
-    try {
-      await onUpdate(card.id, { title: trimmedTitle, description: description.trim() });
-    } catch {
-      setError('Failed to save changes');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const isReadOnly = card.archived;
 
   return (
-    // Backdrop
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-16"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Card: ${card.title}`}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="flex items-start gap-3 border-b p-4">
-          <div className="flex-1">
-            <input
-              className="w-full rounded border border-transparent px-1 py-0.5 text-lg font-semibold focus:border-blue-400 focus:outline-none"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              aria-label="Card title"
-              disabled={card.archived}
-            />
-            <p className="mt-0.5 text-xs text-gray-500">
-              in list <span className="font-medium">{listTitle}</span> on board{' '}
-              <span className="font-medium">{boardTitle}</span>
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
+    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <Dialog.Portal>
+        {/* Overlay */}
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
 
-        {/* Body */}
-        <div className="grid grid-cols-3 gap-4 p-4">
-          <div className="col-span-2 flex flex-col gap-4">
-            {card.archived && (
-              <div className="rounded bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
+        {/* Panel */}
+        <Dialog.Content
+          className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8 overflow-y-auto"
+          aria-label={`Card: ${card.title}`}
+        >
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col">
+            {/* Header */}
+            <div className="flex items-start gap-2 p-5 pb-2">
+              <div className="flex-1 min-w-0">
+                <CardTitle
+                  title={card.title}
+                  onSave={onTitleSave}
+                  disabled={isReadOnly}
+                />
+                <p className="mt-1 text-xs text-slate-500 px-2">
+                  in list <span className="text-slate-400 font-medium">{listTitle}</span>{' '}
+                  · {boardTitle}
+                </p>
+              </div>
+              <Dialog.Close
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors flex-shrink-0"
+                aria-label="Close"
+              >
+                ✕
+              </Dialog.Close>
+            </div>
+
+            {isReadOnly && (
+              <div className="mx-5 mb-2 rounded-lg bg-yellow-900/30 border border-yellow-700/50 px-3 py-2 text-sm text-yellow-400">
                 This card is archived.
               </div>
             )}
 
-            <div>
-              <h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">Description</h3>
-              <textarea
-                className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={5}
-                placeholder="Add a more detailed description…"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={card.archived}
-                aria-label="Card description"
-              />
-            </div>
+            {/* Body: main + sidebar */}
+            <div className="flex flex-col md:flex-row gap-4 p-5 pt-3">
+              {/* Main column */}
+              <div className="flex-1 min-w-0 space-y-6">
+                <CardDescription
+                  description={card.description ?? ''}
+                  onSave={onDescriptionSave}
+                  disabled={isReadOnly}
+                />
 
-            {error && <p className="text-xs text-red-600">{error}</p>}
-
-            {!card.archived && (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {saving ? 'Saving…' : 'Save'}
-                </button>
+                <CardChecklist
+                  items={checklistItems}
+                  onAdd={onChecklistAdd}
+                  onToggle={onChecklistToggle}
+                  onRename={onChecklistRename}
+                  onDelete={onChecklistDelete}
+                  disabled={isReadOnly}
+                />
               </div>
-            )}
-          </div>
 
-          {/* Sidebar actions */}
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase text-gray-500">Actions</p>
-            <button
-              onClick={() => onMove(card.id)}
-              className="w-full rounded bg-gray-100 px-3 py-1.5 text-left text-sm hover:bg-gray-200"
-              disabled={card.archived}
-            >
-              Move card
-            </button>
-            <button
-              onClick={() => onDuplicate(card.id)}
-              className="w-full rounded bg-gray-100 px-3 py-1.5 text-left text-sm hover:bg-gray-200"
-              disabled={card.archived}
-            >
-              Duplicate
-            </button>
-            <button
-              onClick={() => onArchive(card.id)}
-              className="w-full rounded bg-gray-100 px-3 py-1.5 text-left text-sm hover:bg-gray-200"
-            >
-              {card.archived ? 'Unarchive' : 'Archive'}
-            </button>
+              {/* Sidebar */}
+              <aside className="w-full md:w-52 flex-shrink-0 space-y-5">
+                <CardSidebarSection title="Members">
+                  <CardMembers
+                    members={members}
+                    boardMembers={boardMembers}
+                    onAssign={onMemberAssign}
+                    onRemove={onMemberRemove}
+                    disabled={isReadOnly}
+                  />
+                </CardSidebarSection>
+
+                <CardSidebarSection title="Labels">
+                  <CardLabels
+                    assignedLabels={labels}
+                    allLabels={allLabels}
+                    onAttach={onLabelAttach}
+                    onDetach={onLabelDetach}
+                    onCreateAndAttach={onLabelCreate}
+                    disabled={isReadOnly}
+                  />
+                </CardSidebarSection>
+
+                <CardSidebarSection title="Due Date">
+                  <CardDueDate
+                    dueDate={card.due_date}
+                    onChange={onDueDateChange}
+                    disabled={isReadOnly}
+                  />
+                </CardSidebarSection>
+
+                <CardSidebarSection title="Actions">
+                  <CardActionMenu
+                    cardId={card.id}
+                    archived={card.archived}
+                    onArchive={onArchive}
+                    onDelete={onDelete}
+                    onCopyLink={onCopyLink}
+                  />
+                </CardSidebarSection>
+              </aside>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };
 

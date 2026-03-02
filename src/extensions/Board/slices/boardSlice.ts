@@ -129,6 +129,24 @@ const boardSlice = createSlice({
       state.cardsByList[card.list_id] = listCards;
     },
 
+    /** Update a card in local board state (e.g. after modal edit) */
+    updateCard(state, action: PayloadAction<{ card: Card }>) {
+      const { card } = action.payload;
+      if (state.cards[card.id]) {
+        state.cards[card.id] = card;
+      }
+    },
+
+    /** Remove a card from local board state (e.g. after delete) */
+    removeCard(state, action: PayloadAction<{ cardId: string; listId: string }>) {
+      const { cardId, listId } = action.payload;
+      delete state.cards[cardId];
+      const listCards = state.cardsByList[listId];
+      if (listCards) {
+        state.cardsByList[listId] = listCards.filter((id) => id !== cardId);
+      }
+    },
+
     /** Add a newly created list to local state */
     addList(state, action: PayloadAction<{ list: List }>) {
       const { list } = action.payload;

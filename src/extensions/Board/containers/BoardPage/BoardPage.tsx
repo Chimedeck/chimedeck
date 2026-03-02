@@ -1,8 +1,9 @@
 // BoardPage — renders a single board with lists and cards as a kanban view.
 // Sprint 18: uses boardSlice (DndContext via BoardCanvas, optimistic card/list drag).
+// Sprint 19: ?card=:id URL param opens CardModal.
 // Realtime sync (sprint 20) is wired in via useWebSocket + useBoardSync.
 import { useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
@@ -17,6 +18,7 @@ import {
 } from '../../slices/boardSlice';
 import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
+import CardModalContainer from '../../../Card/containers/CardModal';
 import { updateBoard } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
 import { createCard } from '../../../Card/api';
@@ -33,6 +35,7 @@ declare const __api__: {
 const BoardPage = () => {
   const dispatch = useAppDispatch();
   const { boardId } = useParams<{ boardId: string }>();
+  const [, setSearchParams] = useSearchParams();
 
   const board = useAppSelector(selectBoard);
   const listOrder = useAppSelector(selectListOrder);
@@ -46,6 +49,18 @@ const BoardPage = () => {
   useEffect(() => {
     if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
   }, [dispatch, boardId]);
+
+  // Open card modal via URL param
+  const handleCardClick = useCallback(
+    (cardId: string) => {
+      setSearchParams((p) => {
+        const next = new URLSearchParams(p);
+        next.set('card', cardId);
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
 
   // ── Board title ─────────────────────────────────────────────────────────
   const handleTitleSave = useCallback(
@@ -217,8 +232,11 @@ const BoardPage = () => {
         onRenameList={handleRenameList}
         onArchiveList={handleArchiveList}
         onDeleteList={handleDeleteList}
+        onCardClick={handleCardClick}
         isReadOnly={board.state === 'ARCHIVED'}
       />
+      {/* Card detail modal — URL-driven (?card=:id) */}
+      <CardModalContainer />
     </div>
   );
 };

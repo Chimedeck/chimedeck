@@ -1,0 +1,367 @@
+// CardModal container — connects Redux cardDetailSlice to the CardModal component.
+// Handles data fetching, optimistic mutations, and URL sync.
+import { useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAppDispatch } from '~/hooks/useAppDispatch';
+import { useAppSelector } from '~/hooks/useAppSelector';
+import {
+  cardDetailSliceActions,
+  fetchCardDetailThunk,
+  selectCardDetail,
+  selectCardDetailLabels,
+  selectCardDetailMembers,
+  selectCardDetailChecklist,
+  selectCardDetailStatus,
+  selectCardDetailMeta,
+} from '../../slices/cardDetailSlice';
+import CardModal from '../../components/CardModal';
+import {
+  patchCard,
+  archiveCardToggle,
+  postChecklistItem,
+  patchChecklistItem,
+  deleteChecklistItemById,
+  postLabelAssign,
+  deleteLabelAssign,
+  postMemberAssign,
+  deleteMemberAssign,
+  createBoardLabel,
+  getBoardLabels,
+  getBoardMembers,
+} from '../../api/cardDetail';
+import type { Label } from '../../api';
+import { boardSliceActions } from '../../../Board/slices/boardSlice';
+
+// Injected by app bootstrap
+declare const __api__: {
+  get: <T>(url: string) => Promise<T>;
+  post: <T>(url: string, data: unknown) => Promise<T>;
+  patch: <T>(url: string, data?: unknown) => Promise<T>;
+  delete: <T>(url: string) => Promise<T>;
+};
+
+let _mutationCounter = 0;
+const nextMutationId = () => `m${++_mutationCounter}`;
+
+const CardModalContainer = () => {
+  const dispatch = useAppDispatch();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const cardId = searchParams.get('card');
+
+  const card = useAppSelector(selectCardDetail);
+  const labels = useAppSelector(selectCardDetailLabels);
+  const members = useAppSelector(selectCardDetailMembers);
+  const checklistItems = useAppSelector(selectCardDetailChecklist);
+  const status = useAppSelector(selectCardDetailStatus);
+  const meta = useAppSelector(selectCardDetailMeta);
+  const { boardId } = meta;
+
+  const allLabelsRef = useRef<Label[]>([]);
+  const boardMembersRef = useRef<Array<{ id: string; email: string; display_name: string | null }>>([]);
+
+  const api = (globalThis as unknown as { __api__: typeof __api__ }).__api__;
+
+  // Open modal on cardId change
+  useEffect(() => {
+    if (!cardId) {
+      dispatch(cardDetailSliceActions.closeModal());
+      return;
+    }
+    dispatch(cardDetailSliceActions.openModal({ cardId }));
+    dispatch(fetchCardDetailThunk({ cardId }));
+  }, [cardId, dispatch]);
+
+  // Load board labels and members when boardId is known
+  useEffect(() => {
+    if (!boardId) return;
+    getBoardLabels({ api, boardId })
+      .then((r) => { allLabelsRef.current = r.data; })
+      .catch(() => {});
+    getBoardMembers({ api, boardId })
+      .then((r) => { boardMembersRef.current = r.data; })
+      .catch(() => {});
+  }, [boardId, api]);
+
+  const handleClose = useCallback(() => {
+    setSearchParams((p) => {
+      const next = new URLSearchParams(p);
+      next.delete('card');
+      return next;
+    });
+  }, [setSearchParams]);
+
+  // ── Title / description / due date ─────────────────────────────────────
+  const handleTitleSave = useCallback(
+    (title: string) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { title } }));
+      patchCard({ api, cardId: card.id, fields: { title } })
+        .then((r) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: r.data }));
+          // Sync board view
+          dispatch(boardSliceActions.updateCard({ card: r.data }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
+  const handleDescriptionSave = useCallback(
+    (description: string) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { description } }));
+      patchCard({ api, cardId: card.id, fields: { description } })
+        .then((r) =>
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: r.data })),
+        )
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
+  const handleDueDateChange = useCallback(
+    (due_date: string | null) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { due_date } }));
+      patchCard({ api, cardId: card.id, fields: { due_date } })
+        .then((r) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: r.data }));
+          dispatch(boardSliceActions.updateCard({ card: r.data }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
+  // ── Archive / Delete ────────────────────────────────────────────────────
+  const handleArchive = useCallback(async () => {
+    if (!card) return;
+    await archiveCardToggle({ api, cardId: card.id });
+    dispatch(fetchCardDetailThunk({ cardId: card.id }));
+    // If archiving (not unarchiving) close modal
+    if (!card.archived) handleClose();
+  }, [api, card, dispatch, handleClose]);
+
+  const handleDelete = useCallback(async () => {
+    if (!card) return;
+    await api.delete(`/api/v1/cards/${card.id}`);
+    dispatch(boardSliceActions.removeCard({ cardId: card.id, listId: card.list_id }));
+    handleClose();
+  }, [api, card, dispatch, handleClose]);
+
+  const handleCopyLink = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href).catch(() => {});
+  }, []);
+
+  // ── Checklist ───────────────────────────────────────────────────────────
+  const handleChecklistAdd = useCallback(
+    async (title: string) => {
+      if (!card) return;
+      const tempId = `temp-${nextMutationId()}`;
+      const mutationId = tempId;
+      const tempItem = {
+        id: tempId,
+        card_id: card.id,
+        title,
+        checked: false,
+        position: String(Date.now()),
+      };
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistAdd({ mutationId, item: tempItem }));
+      try {
+        const r = await postChecklistItem({ api, cardId: card.id, title });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, item: r.data }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, card, dispatch],
+  );
+
+  const handleChecklistToggle = useCallback(
+    async (itemId: string, checked: boolean) => {
+      const mutationId = nextMutationId();
+      dispatch(
+        cardDetailSliceActions.applyOptimisticChecklistToggle({ mutationId, itemId, checked }),
+      );
+      try {
+        const r = await patchChecklistItem({ api, itemId, fields: { checked } });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, item: r.data }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  const handleChecklistRename = useCallback(
+    async (itemId: string, title: string) => {
+      const mutationId = nextMutationId();
+      // No optimistic rename — just fire and refetch on error
+      try {
+        const r = await patchChecklistItem({ api, itemId, fields: { title } });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, item: r.data }));
+      } catch {
+        // Revert by re-fetching
+        if (card) dispatch(fetchCardDetailThunk({ cardId: card.id }));
+      }
+    },
+    [api, card, dispatch],
+  );
+
+  const handleChecklistDelete = useCallback(
+    async (itemId: string) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistDelete({ mutationId, itemId }));
+      try {
+        await deleteChecklistItemById({ api, itemId });
+        dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  // ── Labels ──────────────────────────────────────────────────────────────
+  const handleLabelAttach = useCallback(
+    async (labelId: string) => {
+      if (!card) return;
+      const label = allLabelsRef.current.find((l) => l.id === labelId);
+      if (!label) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticLabelAssign({ mutationId, label }));
+      try {
+        await postLabelAssign({ api, cardId: card.id, labelId });
+        dispatch(cardDetailSliceActions.confirmLabel({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackLabel({ mutationId }));
+      }
+    },
+    [api, card, dispatch],
+  );
+
+  const handleLabelDetach = useCallback(
+    async (labelId: string) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticLabelDetach({ mutationId, labelId }));
+      try {
+        await deleteLabelAssign({ api, cardId: card.id, labelId });
+        dispatch(cardDetailSliceActions.confirmLabel({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackLabel({ mutationId }));
+      }
+    },
+    [api, card, dispatch],
+  );
+
+  const handleLabelCreate = useCallback(
+    async (name: string, color: string) => {
+      if (!card || !boardId) return;
+      const r = await createBoardLabel({ api, boardId, name, color });
+      const newLabel = r.data;
+      allLabelsRef.current = [...allLabelsRef.current, newLabel];
+      await handleLabelAttach(newLabel.id);
+    },
+    [api, card, boardId, handleLabelAttach],
+  );
+
+  // ── Member assign / remove ──────────────────────────────────────────────
+  const handleMemberAssign = useCallback(
+    async (userId: string) => {
+      if (!card) return;
+      const boardMember = boardMembersRef.current.find((m) => m.id === userId);
+      if (!boardMember) return;
+      const mutationId = nextMutationId();
+      dispatch(
+        cardDetailSliceActions.applyOptimisticMemberAssign({
+          mutationId,
+          member: boardMember,
+        }),
+      );
+      try {
+        await postMemberAssign({ api, cardId: card.id, userId });
+        dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackMember({ mutationId }));
+      }
+    },
+    [api, card, dispatch],
+  );
+
+  const handleMemberRemove = useCallback(
+    async (userId: string) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticMemberRemove({ mutationId, memberId: userId }));
+      try {
+        await deleteMemberAssign({ api, cardId: card.id, userId });
+        dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackMember({ mutationId }));
+      }
+    },
+    [api, card, dispatch],
+  );
+
+  // ── Render ─────────────────────────────────────────────────────────────
+  if (!cardId) return null;
+
+  if (status === 'loading' && !card) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="text-slate-400 animate-pulse">Loading card…</div>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="bg-slate-900 rounded-xl p-8 text-red-400">
+          Failed to load card.{' '}
+          <button className="underline" onClick={handleClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!card) return null;
+
+  return (
+    <CardModal
+      open={!!cardId}
+      card={card}
+      listTitle={meta.listTitle}
+      boardTitle={meta.boardTitle}
+      labels={labels}
+      allLabels={allLabelsRef.current}
+      members={members}
+      boardMembers={boardMembersRef.current}
+      checklistItems={checklistItems}
+      onClose={handleClose}
+      onTitleSave={handleTitleSave}
+      onDescriptionSave={handleDescriptionSave}
+      onDueDateChange={handleDueDateChange}
+      onArchive={handleArchive}
+      onDelete={handleDelete}
+      onCopyLink={handleCopyLink}
+      onChecklistAdd={handleChecklistAdd}
+      onChecklistToggle={handleChecklistToggle}
+      onChecklistRename={handleChecklistRename}
+      onChecklistDelete={handleChecklistDelete}
+      onLabelAttach={handleLabelAttach}
+      onLabelDetach={handleLabelDetach}
+      onLabelCreate={handleLabelCreate}
+      onMemberAssign={handleMemberAssign}
+      onMemberRemove={handleMemberRemove}
+    />
+  );
+};
+
+export default CardModalContainer;
