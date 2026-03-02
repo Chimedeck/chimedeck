@@ -1,6 +1,7 @@
 // PATCH /api/v1/cards/:id — update title, description, or due_date; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -63,7 +64,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   const updated = await db('cards').where({ id: cardId }).update(updates, ['*']);
 
-  console.log('[event] card_updated', { cardId });
+  await writeEvent({ type: 'card_edited', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: updates });
 
   return Response.json({ data: updated[0] });
 }

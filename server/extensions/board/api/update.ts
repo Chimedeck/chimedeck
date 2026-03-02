@@ -7,6 +7,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/requireBoardWritable';
+import { writeEvent } from '../../../mods/events/write';
 
 export async function handleUpdateBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -47,7 +48,7 @@ export async function handleUpdateBoard(req: Request, boardId: string): Promise<
     .update({ title: body.title.trim() }, ['*']);
 
   // Stub event emission.
-  console.log('[event] board_renamed', { boardId, title: body.title.trim() });
+  await writeEvent({ type: 'board_renamed', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: body.title.trim() } });
 
   return Response.json({ data: updated[0] });
 }

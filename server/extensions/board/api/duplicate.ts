@@ -1,6 +1,7 @@
 // POST /api/v1/boards/:id/duplicate — deep-copy a board; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -41,7 +42,7 @@ export async function handleDuplicateBoard(req: Request, boardId: string): Promi
   }
 
   // Stub event emission.
-  console.log('[event] board_duplicated', { originalBoardId: boardId, newBoardId: result.data?.id });
+  const newBoardId = result.data?.id as string; await writeEvent({ type: 'board_created', boardId: newBoardId, entityId: newBoardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { originalBoardId: boardId } });
 
   return Response.json({ data: result.data }, { status: 201 });
 }

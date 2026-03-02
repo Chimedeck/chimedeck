@@ -1,6 +1,7 @@
 // PATCH /api/v1/cards/:id/archive — toggle card archived state; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -49,7 +50,7 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
     .where({ id: cardId })
     .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*']);
 
-  console.log('[event] card_archived', { cardId, archived: newArchived });
+  await writeEvent({ type: 'card_archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { archived: newArchived } });
 
   return Response.json({ data: updated[0] });
 }

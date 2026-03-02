@@ -10,6 +10,8 @@ import { workspaceRouter } from './extensions/workspace/api/index';
 import { boardRouter } from './extensions/board/api/index';
 import { listRouter } from './extensions/list/api/index';
 import { cardRouter } from './extensions/card/api/index';
+import { labelRouter } from './extensions/label/api/index';
+import { handleWsUpgrade, wsHandlers } from './extensions/realtime/api/index';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -45,6 +47,9 @@ async function router(req: Request): Promise<Response> {
   const cardResponse = await cardRouter(req, path);
   if (cardResponse) return cardResponse;
 
+  const labelResponse = await labelRouter(req, path);
+  if (labelResponse) return labelResponse;
+
   return Response.json(
     { name: 'not-found', data: { message: `${req.method} ${path} not found` } },
     { status: 404 }
@@ -54,24 +59,24 @@ async function router(req: Request): Promise<Response> {
 Bun.serve({
   port: appConfig.port,
 
-  async fetch(req) {
+  async fetch(req, server) {
+    // Try WebSocket upgrade first
+    if (await handleWsUpgrade(req, server)) return;
+
     const start = Date.now();
-
-    // Parse body (side-effect free; body is consumed separately per route handler)
     await parseJsonBody(req.clone() as unknown as Request);
-
     const res = await router(req);
     const headers = new Headers(res.headers);
     applySecurityHeaders(headers);
-
     const response = new Response(res.body, {
       status: res.status,
       headers,
     });
-
     logRequest(req, response.status, Date.now() - start);
     return response;
   },
+
+  websocket: wsHandlers,
 });
 
 console.info(`[server] Listening on http://localhost:${appConfig.port}`);

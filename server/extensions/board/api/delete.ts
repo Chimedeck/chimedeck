@@ -1,6 +1,7 @@
 // DELETE /api/v1/boards/:id — hard-delete a board; min role: ADMIN.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -29,7 +30,7 @@ export async function handleDeleteBoard(req: Request, boardId: string): Promise<
   await db('boards').where({ id: boardId }).del();
 
   // Stub event emission.
-  console.log('[event] board_deleted', { boardId });
+  await writeEvent({ type: 'board_deleted', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: {} });
 
   return new Response(null, { status: 204 });
 }

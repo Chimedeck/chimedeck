@@ -2,6 +2,7 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -79,7 +80,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   const list = await db('lists').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  console.log('[event] list_created', { listId: id, boardId });
+  await writeEvent({ type: 'list_created', boardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: body.title.trim() } });
 
   return Response.json({ data: list }, { status: 201 });
 }

@@ -3,6 +3,7 @@
 // fresh lexicographic positions to every list in the supplied order.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -88,7 +89,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
     .orderBy('position', 'asc');
 
   // Stub WebSocket event — wired in sprint 09.
-  console.log('[event] list_reordered', { boardId, order: body.order });
+  await writeEvent({ type: 'list_reordered', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { order: body.order } });
 
   return Response.json({ data: updatedLists });
 }

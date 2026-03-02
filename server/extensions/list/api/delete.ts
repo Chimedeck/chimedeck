@@ -1,6 +1,7 @@
 // DELETE /api/v1/lists/:id — hard-delete a list (cascades cards); min role: ADMIN.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -36,7 +37,7 @@ export async function handleDeleteList(req: Request, listId: string): Promise<Re
   await db('lists').where({ id: listId }).del();
 
   // Stub event emission.
-  console.log('[event] list_deleted', { listId, boardId: list.board_id });
+  await writeEvent({ type: 'list_deleted', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: {} });
 
   return new Response(null, { status: 204 });
 }

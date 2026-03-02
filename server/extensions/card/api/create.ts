@@ -2,6 +2,7 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -80,7 +81,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const card = await db('cards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  console.log('[event] card_created', { cardId: id, listId, boardId: list.board_id });
+  await writeEvent({ type: 'card_created', boardId: list.board_id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId, title: body.title.trim() } });
 
   return Response.json({ data: card }, { status: 201 });
 }

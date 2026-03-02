@@ -2,6 +2,7 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -50,7 +51,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
 
   const duplicate = await db('cards').where({ id: newId }).first();
 
-  console.log('[event] card_duplicated', { sourceId: cardId, newId });
+  await writeEvent({ type: 'card_duplicated', boardId: board.id, entityId: newId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { sourceId: cardId } });
 
   return Response.json({ data: duplicate }, { status: 201 });
 }

@@ -6,6 +6,8 @@ import { handleUpdateBoard } from './update';
 import { handleArchiveBoard } from './archive';
 import { handleDeleteBoard } from './delete';
 import { handleDuplicateBoard } from './duplicate';
+import { handleGetBoardEvents } from '../../realtime/api/events';
+import { handleGetPresence } from '../../realtime/api/presence';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -38,6 +40,12 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // POST /api/v1/boards/:id/duplicate
     if (sub === '/duplicate' && req.method === 'POST') return handleDuplicateBoard(req, boardId);
+
+    // GET /api/v1/boards/:id/events?since=
+    if (sub.startsWith('/events') && req.method === 'GET') return handleGetBoardEvents(req, boardId);
+
+    // GET /api/v1/boards/:id/presence
+    if (sub === '/presence' && req.method === 'GET') return handleGetPresence(req, boardId);
   }
 
   return null;

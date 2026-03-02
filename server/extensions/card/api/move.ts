@@ -1,6 +1,7 @@
 // POST /api/v1/cards/:id/move — move card to another list (or reorder within same list); min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -97,7 +98,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     .where({ id: cardId })
     .update({ list_id: body.targetListId, position, updated_at: new Date().toISOString() }, ['*']);
 
-  console.log('[event] card_moved', { cardId, targetListId: body.targetListId });
+  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { targetListId: body.targetListId } });
 
   return Response.json({ data: updated[0] });
 }

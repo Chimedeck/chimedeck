@@ -1,6 +1,7 @@
 // DELETE /api/v1/cards/:id — hard-delete a card; min role: ADMIN.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -38,7 +39,7 @@ export async function handleDeleteCard(req: Request, cardId: string): Promise<Re
 
   await db('cards').where({ id: cardId }).del();
 
-  console.log('[event] card_deleted', { cardId, listId: card.list_id, boardId: list.board_id });
+  await writeEvent({ type: 'card_deleted', boardId: list.board_id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId: card.list_id } });
 
   return new Response(null, { status: 204 });
 }

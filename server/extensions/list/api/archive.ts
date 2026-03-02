@@ -1,6 +1,7 @@
 // PATCH /api/v1/lists/:id/archive — toggle list archived state; min role: ADMIN.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -40,7 +41,7 @@ export async function handleArchiveList(req: Request, listId: string): Promise<R
     .update({ archived: newArchived }, ['*']);
 
   // Stub event emission.
-  console.log('[event] list_archived', { listId, archived: newArchived });
+  await writeEvent({ type: 'list_archived', boardId: board.id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { archived: newArchived } });
 
   return Response.json({ data: updated[0] });
 }

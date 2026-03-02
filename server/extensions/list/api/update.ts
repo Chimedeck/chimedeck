@@ -1,6 +1,7 @@
 // PATCH /api/v1/lists/:id — rename a list; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -55,7 +56,8 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
     .update({ title: body.title.trim() }, ['*']);
 
   // Stub event emission.
-  console.log('[event] list_renamed', { listId, title: body.title.trim() });
+  // Stub event emission.
+  await writeEvent({ type: 'list_renamed', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: body.title.trim() } });
 
   return Response.json({ data: updated[0] });
 }

@@ -32,14 +32,29 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
+  // Populate extended fields (sprint 08)
+  const labelRows = await db('labels')
+    .join('card_labels', 'labels.id', 'card_labels.label_id')
+    .where('card_labels.card_id', cardId)
+    .select('labels.*');
+
+  const memberRows = await db('users')
+    .join('card_members', 'users.id', 'card_members.user_id')
+    .where('card_members.card_id', cardId)
+    .select('users.id', 'users.email', 'users.display_name');
+
+  const checklistItems = await db('checklist_items')
+    .where({ card_id: cardId })
+    .orderBy('position', 'asc');
+
   return Response.json({
     data: card,
     includes: {
       list,
       board: { id: board.id, title: board.title },
-      labels: [],
-      members: [],
-      checklistItems: [],
+      labels: labelRows,
+      members: memberRows,
+      checklistItems,
       comments: [],
       attachments: [],
       activities: [],

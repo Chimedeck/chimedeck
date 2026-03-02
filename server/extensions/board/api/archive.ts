@@ -1,6 +1,7 @@
 // PATCH /api/v1/boards/:id/archive — toggle ACTIVE ↔ ARCHIVED; min role: ADMIN.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -32,7 +33,7 @@ export async function handleArchiveBoard(req: Request, boardId: string): Promise
     .update({ state: newState }, ['*']);
 
   // Stub event emission.
-  console.log('[event] board_archived', { boardId, state: newState });
+  await writeEvent({ type: 'board_archived', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { state: newState } });
 
   return Response.json({ data: updated[0] });
 }

@@ -8,6 +8,8 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+import { writeEvent } from '../../../mods/events/write';
+
 export async function handleCreateBoard(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -47,7 +49,7 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const board = await db('boards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  console.log('[event] board_created', { boardId: id, workspaceId });
+  await writeEvent({ type: 'board_created', boardId: id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { workspaceId } });
 
   return Response.json({ data: board }, { status: 201 });
 }
