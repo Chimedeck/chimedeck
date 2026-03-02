@@ -12,7 +12,10 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": ".",
-    "types": ["bun-types"]
+    "types": ["bun-types"],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   },
   "include": ["server/**/*.ts"],
   "exclude": ["node_modules", "dist", "sample-project"]

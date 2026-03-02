@@ -5,6 +5,15 @@ import type { RouteConfig } from '~/config/routeTypes';
 
 export const routes: RouteConfig[] = [
   {
+    path: '/workspaces',
+    component: () =>
+      import('./containers/WorkspaceListPage/WorkspaceListPage').then(
+        (m) => m.default
+      ),
+    name: 'WorkspaceListPage',
+    auth: true,
+  },
+  {
     path: '/workspace',
     component: () =>
       import('./containers/WorkspacePage/WorkspacePage').then(

@@ -36,6 +36,15 @@
 | [12](./sprint-12.md) | Attachments | File upload (S3), external URL, virus scan | 🔵 Needs 11 |
 | [13](./sprint-13.md) | Search & Presence | Full-text search, presence indicators | 🔵 Needs 12 |
 | [14](./sprint-14.md) | Observability & Hardening | OTEL, rate limiting, security audit | ⬜ Future |
+| **— UI Layer —** | | | |
+| [15](./sprint-15.md) | UI Foundation | Vite + React + Tailwind, routing shell, Redux store, API client | 🔵 Needs 03 |
+| [16](./sprint-16.md) | Authentication UI | Login/Signup pages, OAuth buttons, token refresh on boot | 🔵 Needs 15 |
+| [17](./sprint-17.md) | Workspace Dashboard | App shell, sidebar, workspace switcher, boards grid | 🔵 Needs 16 |
+| [18](./sprint-18.md) | Board View (Kanban) | DnD columns + cards, inline edit, optimistic mutations | 🔵 Needs 17 |
+| [19](./sprint-19.md) | Card Detail Modal | Rich modal: Markdown, labels, members, due date, checklist | 🔵 Needs 18 |
+| [20](./sprint-20.md) | Real-Time UI | WebSocket wiring, live updates, reconnection indicator, conflict toasts | 🔵 Needs 19 + 10 |
+| [21](./sprint-21.md) | Comments, Activity & Attachments UI | Threaded comments, activity feed, file upload panel | 🔵 Needs 20 + 12 |
+| [22](./sprint-22.md) | Search, Presence & Polish | ⌘K palette, presence avatars, theme toggle, skeletons, a11y | 🔵 Needs 21 + 13 |
 
 ---
 
@@ -71,6 +80,15 @@ Sprint 11 ──────────── Comment, Activity
 Sprint 12 ──────────── Attachment
 Sprint 13 ──────────── Search index, Presence (Redis TTL)
 Sprint 14 ──────────── OTEL traces, rate-limit middleware, hardening
+──── UI Layer (Tailwind CSS + React) ────────────────────────────────
+Sprint 15 ──────────── Vite + React + Tailwind scaffold, routing, Redux, API client
+Sprint 16 ──────────── Login / Signup pages, OAuth buttons, token refresh
+Sprint 17 ──────────── App shell, sidebar, workspace switcher, boards dashboard
+Sprint 18 ──────────── Kanban board view, DnD cards + lists, inline editing
+Sprint 19 ──────────── Card detail modal (Markdown, labels, checklist, due date)
+Sprint 20 ──────────── Real-time UI (WebSocket, optimistic mutations, conflict toasts)
+Sprint 21 ──────────── Comments, activity feed, attachments panel
+Sprint 22 ──────────── ⌘K search palette, presence avatars, theme toggle, a11y polish
 ```
 
 ---
@@ -86,3 +104,13 @@ Taken directly from [requirements §14](../architecture/requirements.md):
 - [ ] No silent corruption possible
 - [ ] Activity log is complete and immutable
 - [ ] Concurrent edits produce deterministic outcome
+
+### UI Layer Additional Criteria (Sprints 15–22)
+
+- [ ] Full journey works end-to-end: sign-up → workspace → board → drag cards → real-time sync
+- [ ] All pages are mobile-responsive at 375 px viewport
+- [ ] Dark/light theme toggle persists across sessions
+- [ ] Command palette (`⌘K`) searches cards and boards in real time
+- [ ] Lighthouse Performance ≥ 80 and Accessibility ≥ 90 on board page
+- [ ] All modals are keyboard-accessible and closeable with `Escape`
+- [ ] No `console.error` during normal usage flows

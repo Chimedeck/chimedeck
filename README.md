@@ -19,8 +19,8 @@ bun install
 # 2. Copy environment config and edit as needed
 cp .env.example .env
 
-# 3. Start Postgres + MinIO (Redis is optional)
-docker compose up -d postgres minio
+# 3. Start Postgres + LocalStack S3 (Redis is optional)
+docker compose up -d postgres localstack
 
 # 4. Run database migrations
 bun run db:migrate
