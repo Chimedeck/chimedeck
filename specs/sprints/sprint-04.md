@@ -1,4 +1,4 @@
-# Sprint 03 — Workspace Lifecycle & RBAC
+# Sprint 04 — Workspace Lifecycle & RBAC
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §§4, 5.2](../architecture/requirements.md), [technical-decisions.md §§6, 9](../architecture/technical-decisions.md)

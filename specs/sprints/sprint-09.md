@@ -1,4 +1,4 @@
-# Sprint 08 — Real-Time Infrastructure
+# Sprint 09 — Real-Time Infrastructure
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.6](../architecture/requirements.md), [real_time_sync_protocol.md](../architecture/real_time_sync_protocol.md), [event_sourcing.md](../architecture/event_sourcing.md), [technical-decisions.md §§3-5, 17](../architecture/technical-decisions.md)
@@ -7,7 +7,7 @@
 
 ## Goal
 
-Build the server-side real-time infrastructure: event store, WebSocket server, pub/sub fan-out (Redis or in-memory depending on `USE_REDIS` flag), and the HTTP polling fallback. This sprint does **not** wire up the frontend sync loop — that is sprint 09.
+Build the server-side real-time infrastructure: event store, WebSocket server, pub/sub fan-out (Redis or in-memory depending on `USE_REDIS` flag), and the HTTP polling fallback. This sprint does **not** wire up the frontend sync loop — that is sprint 10.
 
 ---
 
@@ -56,7 +56,7 @@ server/mods/events/
     policy.ts   # snapshot every N=50 events
 ```
 
-Every server mutation from sprints 02–07 calls `events/write.ts` replacing the stub. This is the only sprint where back-filling previous stubs is in scope.
+Every server mutation from sprints 03–08 calls `events/write.ts` replacing the stub. This is the only sprint where back-filling previous stubs is in scope.
 
 ### 3. WebSocket Server
 
@@ -182,7 +182,7 @@ Per [requirements §9](../architecture/requirements.md):
 |----------|----------|
 | User removed mid-session | Membership check on each `subscribe`; forceful `session_expired` send + close |
 | Token expired during WS session | `ping` handler re-verifies token; on failure: `session_expired` + close |
-| Disconnect mid-drag | Client queues mutation, retries on reconnect (sprint 09 implements queue) |
+| Disconnect mid-drag | Client queues mutation, retries on reconnect (sprint 10 implements queue) |
 | Stale connection | 60 s without pong → server closes socket |
 
 ---
@@ -198,7 +198,7 @@ Per [requirements §9](../architecture/requirements.md):
 
 ## Acceptance Criteria
 
-- [ ] Every mutation in sprints 02–07 now writes ≥ 1 `Event` row with correct `type`
+- [ ] Every mutation in sprints 03–08 now writes ≥ 1 `Event` row with correct `type`
 - [ ] WS client subscribing to a board receives events — with **both** `FLAG_USE_REDIS=false` (node-cache) and `FLAG_USE_REDIS=true` (Redis)
 - [ ] WS client on a different board does **not** receive events (both adapter modes)
 - [ ] Redis pub/sub routes events across two parallel app nodes (Redis mode only)

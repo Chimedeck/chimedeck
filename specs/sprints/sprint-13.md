@@ -1,4 +1,4 @@
-# Sprint 12 — Search & Presence
+# Sprint 13 — Search & Presence
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §§6, 9](../architecture/requirements.md), [real_time_sync_protocol.md](../architecture/real_time_sync_protocol.md), [technical-decisions.md §§5, 9](../architecture/technical-decisions.md)
@@ -89,7 +89,7 @@ server/extensions/search/
 
 ### 2. Presence (Final Implementation)
 
-Sprint 08 implemented the Redis TTL keys; this sprint adds:
+Sprint 09 implemented the Redis TTL keys; this sprint adds:
 
 #### Presence WS Event
 
@@ -115,7 +115,7 @@ GET /api/v1/boards/:id/presence
 → { data: User[] }
 ```
 
-Already stubbed in sprint 08; this sprint adds full `User` includes (name, avatarUrl).
+Already stubbed in sprint 09; this sprint adds full `User` includes (name, avatarUrl).
 
 ### 3. Frontend Extension
 
@@ -131,9 +131,9 @@ src/extensions/Search/
   translations/
     en.json
 
-src/extensions/Realtime/   # extend sprint 09
+src/extensions/Realtime/   # extend sprint 10
   components/
-    PresenceAvatars.tsx     # already created sprint 09; wire to WS presence_update
+    PresenceAvatars.tsx     # already created sprint 10; wire to WS presence_update
 ```
 
 **Search UX:**

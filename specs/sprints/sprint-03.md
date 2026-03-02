@@ -1,4 +1,4 @@
-# Sprint 02 — Authentication
+# Sprint 03 — Authentication
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.1](../architecture/requirements.md), [technical-decisions.md §6](../architecture/technical-decisions.md)

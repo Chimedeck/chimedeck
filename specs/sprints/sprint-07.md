@@ -1,4 +1,4 @@
-# Sprint 06 — Card Core
+# Sprint 07 — Card Core
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.5](../architecture/requirements.md), [technical-decisions.md §§7, 9](../architecture/technical-decisions.md)
@@ -15,7 +15,7 @@ Members can create, read, update, archive, move, and delete cards within lists. 
 
 ### 1. Data Model
 
-New Prisma model — core fields only (extended fields in sprint 07):
+New Prisma model — core fields only (extended fields in sprint 08):
 
 ```prisma
 model Card {
@@ -39,7 +39,7 @@ model Card {
 }
 ```
 
-> Relation models (`CardLabel`, `CardMember`, `ChecklistItem`) are added in sprint 07.
+> Relation models (`CardLabel`, `CardMember`, `ChecklistItem`) are added in sprint 08.
 
 Migration: `0006_card`
 
@@ -68,7 +68,7 @@ Steps:
 1. Verify `targetListId` belongs to the same board as source list
 2. Compute new `position` using fractional index (same algorithm as lists)
 3. Update `listId` + `position` in a single transaction
-4. Emit `card_moved` event (stubbed until sprint 08)
+4. Emit `card_moved` event (stubbed until sprint 09)
 
 ### 4. Server Extension
 
@@ -143,7 +143,7 @@ src/extensions/Card/
     en.json
 ```
 
-Drag-and-drop between lists uses `@dnd-kit/sortable` (shared with sprint 05).
+Drag-and-drop between lists uses `@dnd-kit/sortable` (shared with sprint 06).
 
 ---
 

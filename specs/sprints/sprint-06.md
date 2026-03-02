@@ -1,4 +1,4 @@
-# Sprint 05 — List Management
+# Sprint 06 — List Management
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.4](../architecture/requirements.md), [technical-decisions.md §§7, 9](../architecture/technical-decisions.md)
@@ -66,7 +66,7 @@ Server:
 1. Validates all IDs belong to the board
 2. Assigns fresh lexicographic positions to the entire sequence
 3. Persists in a single `$transaction`
-4. Broadcasts `list_reordered` event (WebSocket — stubbed until sprint 08)
+4. Broadcasts `list_reordered` event (WebSocket — stubbed until sprint 09)
 
 **Acceptance (from requirements §5.4):** reordering never drops a list — server validates that `order.length === activeLists.length`.
 
@@ -100,7 +100,7 @@ Per [requirements §5.4](../architecture/requirements.md):
 
 - Server resolves all position collisions
 - Outcome is deterministic: lower `sequence` (event store order) wins on tie
-- Client receives the authoritative resolved order via `list_reordered` event (sprint 08)
+- Client receives the authoritative resolved order via `list_reordered` event (sprint 09)
 
 ### 7. Frontend Extension
 

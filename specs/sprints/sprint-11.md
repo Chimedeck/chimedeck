@@ -1,4 +1,4 @@
-# Sprint 10 — Comments & Activity Log
+# Sprint 11 — Comments & Activity Log
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §§5.7, 2.3](../architecture/requirements.md), [event_sourcing.md](../architecture/event_sourcing.md), [technical-decisions.md §§3, 9](../architecture/technical-decisions.md)
@@ -53,7 +53,7 @@ Migration: `0010_comments_activity`
 
 ### 2. Activity Backfill
 
-Replace all stub `events/write.ts` calls from sprints 02–09 with real `Activity` row inserts as well. Both `Event` (sprint 08, for real-time) and `Activity` (this sprint, for audit log) are written in the same transaction.
+Replace all stub `events/write.ts` calls from sprints 03–10 with real `Activity` row inserts as well. Both `Event` (sprint 09, for real-time) and `Activity` (this sprint, for audit log) are written in the same transaction.
 
 ### 3. Comment Versioning
 
@@ -115,7 +115,7 @@ New WS events after this sprint (per [event_sourcing.md](../architecture/event_s
 - `comment_edited`
 - `comment_deleted`
 
-Dispatched via sprint 08's `pubsub/publisher.ts`.
+Dispatched via sprint 09's `pubsub/publisher.ts`.
 
 ### 8. Frontend Extension
 
@@ -158,7 +158,7 @@ Activity items are human-readable descriptions generated on the client from `act
 
 ## Acceptance Criteria
 
-- [ ] Every mutation since sprint 02 creates an `Activity` row
+- [ ] Every mutation since sprint 03 creates an `Activity` row
 - [ ] `Activity` table rows can never be updated or deleted (application + DB enforced)
 - [ ] Comment edit increments `version`
 - [ ] Soft-deleted comment returns `deleted: true, content: "[deleted]"` — never `null` row

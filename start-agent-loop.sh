@@ -53,9 +53,9 @@ CHANGELOG_DIR="specs/changelog"       # one timestamped .md per iteration
 ARCH_DIR="specs/architecture"          # architecture decision records
 
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
-MODEL_RECAP="gpt-4o"
-MODEL_PLAN="gpt-4o"
-MODEL_EXECUTE="claude-sonnet-4-6"
+MODEL_RECAP="gpt-4.1"
+MODEL_PLAN="gpt-4.1"
+MODEL_EXECUTE="claude-sonnet-4.6"
 MODEL_TEST_FREE="gpt-4.1"
 MODEL_TEST_EVAL="gpt-4.1"
 

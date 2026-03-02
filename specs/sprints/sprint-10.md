@@ -1,4 +1,4 @@
-# Sprint 09 — Real-Time Collaboration (Client Sync)
+# Sprint 10 — Real-Time Collaboration (Client Sync)
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §§5.6, 6, 9, 10, 11](../architecture/requirements.md), [real_time_sync_protocol.md](../architecture/real_time_sync_protocol.md), [technical-decisions.md §10](../architecture/technical-decisions.md)
@@ -7,7 +7,7 @@
 
 ## Goal
 
-Wire the frontend to the WebSocket infrastructure from sprint 08. Deliver optimistic UI with deterministic rollback, a reconnection queue, and conflict-safe state reconciliation — satisfying the real-time collaboration guarantees from [requirements §§2, 5.6](../architecture/requirements.md).
+Wire the frontend to the WebSocket infrastructure from sprint 09. Deliver optimistic UI with deterministic rollback, a reconnection queue, and conflict-safe state reconciliation — satisfying the real-time collaboration guarantees from [requirements §§2, 5.6](../architecture/requirements.md).
 
 ---
 
@@ -29,7 +29,7 @@ src/extensions/Realtime/
 
 **Connection lifecycle:**
 1. Board page mounts → `socket.connect(boardId, accessToken)`
-2. Server authenticates token in WS handshake (sprint 08)
+2. Server authenticates token in WS handshake (sprint 09)
 3. Client sends `{ type: "subscribe", board_id }`
 4. Incoming events dispatched to Redux store via `wsMiddleware`
 

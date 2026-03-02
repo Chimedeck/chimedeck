@@ -1,4 +1,76 @@
-# Sharetribe Horizon – Agentic Boilerplate
+# Collaborative Kanban System
+
+A real-time collaborative Kanban board platform built with Bun, PostgreSQL, and WebSockets.  
+This repo also contains the agent loop that builds it sprint by sprint.
+
+## Application Setup
+
+### Prerequisites
+
+- [Bun](https://bun.sh/) ≥ 1.0
+- Docker + Docker Compose
+
+### Quick start (local dev — no Redis required)
+
+```bash
+# 1. Install dependencies
+bun install
+
+# 2. Copy environment config and edit as needed
+cp .env.example .env
+
+# 3. Start Postgres + MinIO (Redis is optional)
+docker compose up -d postgres minio
+
+# 4. Run database migrations
+bun run db:migrate
+
+# 5. Start the dev server (hot-reload)
+bun run dev
+```
+
+> `curl http://localhost:3000/health` → `{ "status": "ok" }`
+
+### With Redis (full stack)
+
+```bash
+docker compose --profile redis up -d
+```
+
+Set `FLAG_USE_REDIS=true` (or remove the flag) in `.env` to enable the Redis adapter.
+
+### Feature Flags
+
+Feature flags are resolved from multiple sources (lowest → highest priority):
+
+1. Hardcoded defaults (`server/mods/flags/defaults.ts`)
+2. JSON file (`FEATURE_FLAGS_JSON_PATH=/config/flags.json`)
+3. Environment variables (`FLAG_<KEY>=true|false`)
+4. Remote provider (Flagsmith / FeatBit — configured via `FEATURE_FLAGS_PROVIDER`)
+
+```bash
+# Run without Redis
+FLAG_USE_REDIS=false bun run dev
+
+# Run without virus scanning
+FLAG_VIRUS_SCAN_ENABLED=false bun run dev
+```
+
+### Available scripts
+
+| Command | Description |
+|---|---|
+| `bun run dev` | Start with hot-reload |
+| `bun run start` | Start production server |
+| `bun run lint` | Run ESLint |
+| `bun run typecheck` | Run TypeScript type checking |
+| `bun run db:migrate` | Run Prisma migrations |
+| `bun run db:studio` | Open Prisma Studio |
+| `bun test` | Run all tests |
+
+---
+
+## Agent Loop (Agentic Boilerplate)
 
 A GitHub Copilot agent loop for building Sharetribe Horizon extensions iteratively.
 Each run cycles through **Recap → Planning → Execute → Retest → Changelog** with mandatory test creation for new flows and changelog documentation for all edits.

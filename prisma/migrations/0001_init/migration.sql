@@ -1,0 +1,2 @@
+-- Sprint 01 baseline migration — establishes migration history with an empty schema.
+-- Tables will be added in subsequent sprints.

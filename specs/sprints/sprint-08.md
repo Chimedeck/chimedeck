@@ -1,4 +1,4 @@
-# Sprint 07 — Card Extended Fields
+# Sprint 08 — Card Extended Fields
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.5](../architecture/requirements.md), [technical-decisions.md §9](../architecture/technical-decisions.md)
@@ -131,7 +131,7 @@ src/extensions/Card/
     ChecklistItem.tsx
     ChecklistProgress.tsx    # "3 / 5" progress bar
   containers/
-    CardModal/               # extend sprint 06's CardModal
+    CardModal/               # extend sprint 07's CardModal
       sections/
         LabelsSection.tsx
         MembersSection.tsx

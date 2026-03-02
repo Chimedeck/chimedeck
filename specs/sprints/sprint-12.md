@@ -1,4 +1,4 @@
-# Sprint 11 — Attachments
+# Sprint 12 — Attachments
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.8](../architecture/requirements.md), [technical-decisions.md §§8, 9](../architecture/technical-decisions.md)

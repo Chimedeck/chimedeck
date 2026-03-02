@@ -1,4 +1,4 @@
-# Sprint 13 — Observability, Rate Limiting & Security Hardening
+# Sprint 14 — Observability, Rate Limiting & Security Hardening
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §§6, 12](../architecture/requirements.md), [technical-decisions.md §§14-16](../architecture/technical-decisions.md)
@@ -70,7 +70,7 @@ Per [requirements §6 Security](../architecture/requirements.md):
 - Markdown `description` / comment content sanitized with `dompurify` (server-side via `jsdom`) on read
 
 #### CSRF
-- `SameSite=Strict` on refresh token cookie (set in sprint 02; verify across all auth paths)
+- `SameSite=Strict` on refresh token cookie (set in sprint 03; verify across all auth paths)
 - `X-Requested-With: XMLHttpRequest` header required on all state-mutating API calls
 - Missing header → `HTTP 403`, error name `csrf-check-failed`
 
@@ -87,7 +87,7 @@ Strict-Transport-Security (HSTS)
 ```
 
 #### Audit Log
-- `Activity` table records every mutation (sprint 10) — already satisfies audit logging requirement
+- `Activity` table records every mutation (sprint 11) — already satisfies audit logging requirement
 - Add `ipAddress` and `userAgent` fields to `Activity` for security events
 
 #### Dependency Audit

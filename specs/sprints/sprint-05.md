@@ -1,4 +1,4 @@
-# Sprint 04 — Board Lifecycle
+# Sprint 05 — Board Lifecycle
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)  
 > **References:** [requirements §5.3](../architecture/requirements.md), [technical-decisions.md §§9, 3](../architecture/technical-decisions.md)
