@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 
 export const store = configureStore({
@@ -8,6 +8,7 @@ export const store = configureStore({
     auth: authReducer,
     ui: uiReducer,
     workspaceShell: workspaceShellReducer,
+    board: boardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

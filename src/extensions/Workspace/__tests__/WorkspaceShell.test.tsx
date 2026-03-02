@@ -9,6 +9,7 @@ import { describe, it, expect } from 'bun:test';
 import { configureStore } from '@reduxjs/toolkit';
 import { authDuckReducer } from '../../Auth/duck/authDuck';
 import { uiReducer } from '../../../slices/uiSlice';
+import boardReducer from '../../Board/slices/boardSlice';
 import {
   workspaceShellReducer,
   fetchWorkspacesThunk,
@@ -31,6 +32,7 @@ function makeStore() {
       auth: authDuckReducer,
       ui: uiReducer,
       workspaceShell: workspaceShellReducer,
+      board: boardReducer,
     },
   });
 }

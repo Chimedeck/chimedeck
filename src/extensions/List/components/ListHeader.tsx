@@ -1,21 +1,22 @@
 // ListHeader — displays the list title with rename, archive, and delete actions.
+// Styled for dark kanban board; supports inline editing with Enter/Escape/blur.
 import { useState } from 'react';
 import type { List } from '../api';
 
 interface Props {
   list: List;
+  cardCount?: number;
   onRename: (title: string) => void;
   onArchive: () => void;
   onDelete: () => void;
 }
 
-const ListHeader = ({ list, onRename, onArchive, onDelete }: Props) => {
+const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(list.title);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleRename = (e: React.FormEvent) => {
-    e.preventDefault();
+  const commitRename = () => {
     const trimmed = title.trim();
     if (!trimmed || trimmed === list.title) {
       setEditing(false);
@@ -26,32 +27,40 @@ const ListHeader = ({ list, onRename, onArchive, onDelete }: Props) => {
     setEditing(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') commitRename();
+    if (e.key === 'Escape') { setTitle(list.title); setEditing(false); }
+  };
+
   return (
-    <div className="flex items-center justify-between px-3 pt-3 pb-1">
+    <div className="px-3 pt-3 pb-2 flex items-center justify-between">
       {editing ? (
-        <form onSubmit={handleRename} className="flex-1">
-          <input
-            autoFocus
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleRename}
-            className="w-full rounded border border-blue-400 px-2 py-1 text-sm font-semibold focus:outline-none"
-          />
-        </form>
+        <input
+          autoFocus
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={handleKeyDown}
+          className="bg-transparent text-slate-100 font-semibold text-sm focus:outline-none focus:bg-slate-800 rounded px-1 py-0.5 w-full"
+          aria-label={`Rename list ${list.title}`}
+        />
       ) : (
         <button
-          className="flex-1 text-left text-sm font-semibold text-gray-900 hover:text-blue-600"
+          className="flex-1 text-left text-sm font-semibold text-slate-100 hover:text-white"
           onClick={() => { setEditing(true); setTitle(list.title); }}
           aria-label={`Rename list ${list.title}`}
         >
           {list.title}
+          {cardCount !== undefined && (
+            <span className="ml-1.5 text-xs font-normal text-slate-400">({cardCount})</span>
+          )}
         </button>
       )}
 
       <div className="relative ml-2">
         <button
-          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="List options"
           aria-haspopup="true"
@@ -60,21 +69,21 @@ const ListHeader = ({ list, onRename, onArchive, onDelete }: Props) => {
           ···
         </button>
         {menuOpen && (
-          <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+          <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl">
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+              className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
               onClick={() => { setMenuOpen(false); setEditing(true); setTitle(list.title); }}
             >
               Rename
             </button>
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-yellow-700 hover:bg-yellow-50"
+              className="block w-full px-4 py-2 text-left text-sm text-yellow-400 hover:bg-slate-700"
               onClick={() => { setMenuOpen(false); onArchive(); }}
             >
               {list.archived ? 'Unarchive' : 'Archive'}
             </button>
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              className="block w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-slate-700"
               onClick={() => { setMenuOpen(false); onDelete(); }}
             >
               Delete
