@@ -25,6 +25,10 @@ export const env = {
   // Optional — omit to run without Redis
   REDIS_URL: Bun.env['REDIS_URL'] ?? undefined,
 
+  // Feature gates
+  VIRUS_SCAN_ENABLED: Bun.env['VIRUS_SCAN_ENABLED'] === 'true',
+  VIRUS_SCAN_API_KEY: Bun.env['VIRUS_SCAN_API_KEY'] ?? '',
+
   // Feature flag provider configuration
   FEATURE_FLAGS_PROVIDER: Bun.env['FEATURE_FLAGS_PROVIDER'] as
     | 'flagsmith'

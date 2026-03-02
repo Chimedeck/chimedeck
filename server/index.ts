@@ -14,6 +14,9 @@ import { labelRouter } from './extensions/label/api/index';
 import { handleWsUpgrade, wsHandlers } from './extensions/realtime/api/index';
 import { commentRouter } from './extensions/comment/api/index';
 import { activityRouter } from './extensions/activity/api/index';
+import { attachmentRouter } from './extensions/attachment/api/index';
+// Start orphan cleanup scheduler on server boot
+import './extensions/attachment/mods/orphanCleanup';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -57,6 +60,9 @@ async function router(req: Request): Promise<Response> {
 
   const activityResponse = await activityRouter(req, path);
   if (activityResponse) return activityResponse;
+
+  const attachmentResponse = await attachmentRouter(req, path);
+  if (attachmentResponse) return attachmentResponse;
 
   return Response.json(
     { name: 'not-found', data: { message: `${req.method} ${path} not found` } },
