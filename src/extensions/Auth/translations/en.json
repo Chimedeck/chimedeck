@@ -1,0 +1,47 @@
+{
+  "fields": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "name": "Full name"
+  },
+  "actions": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "createAccount": "Create account",
+    "creatingAccount": "Creating account…"
+  },
+  "oauth": {
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGitHub": "Continue with GitHub"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordNeedsNumber": "Password must contain at least one number",
+    "confirmRequired": "Please confirm your password",
+    "passwordMismatch": "Passwords do not match",
+    "nameRequired": "Full name is required",
+    "nameLength": "Name must be between 2 and 80 characters"
+  },
+  "errors": {
+    "invalidCredentials": "Invalid email or password",
+    "loginFailed": "Sign in failed. Please try again.",
+    "emailAlreadyTaken": "An account with this email already exists",
+    "signupFailed": "Could not create account. Please try again."
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your account",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up"
+  },
+  "signup": {
+    "title": "Create an account",
+    "subtitle": "Join your team on Kanban",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  }
+}
