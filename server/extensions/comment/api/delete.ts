@@ -1,0 +1,84 @@
+// DELETE /api/v1/comments/:id — soft-delete comment; owner or ADMIN only.
+import { db } from '../../../common/db';
+import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import {
+  requireWorkspaceMembership,
+  hasRole,
+  type WorkspaceScopedRequest,
+} from '../../../middlewares/permissionManager';
+import { writeEvent } from '../../../mods/events/write';
+import { writeActivity } from '../../activity/mods/write';
+
+export async function handleDeleteComment(req: Request, commentId: string): Promise<Response> {
+  const authError = await authenticate(req as AuthenticatedRequest);
+  if (authError) return authError;
+
+  const comment = await db('comments').where({ id: commentId }).first();
+  if (!comment) {
+    return Response.json(
+      { name: 'comment-not-found', data: { message: 'Comment not found' } },
+      { status: 404 },
+    );
+  }
+
+  if (comment.deleted) {
+    return Response.json(
+      { name: 'comment-deleted', data: { message: 'Comment is already deleted' } },
+      { status: 409 },
+    );
+  }
+
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+
+  const card = await db('cards').where({ id: comment.card_id }).first();
+  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  if (!board) {
+    return Response.json(
+      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
+
+  const scopedReq = req as WorkspaceScopedRequest;
+  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+  if (membershipError) return membershipError;
+
+  // Only owner or ADMIN+ can soft-delete
+  const isOwner = comment.user_id === actorId;
+  const isAdmin = scopedReq.callerRole ? hasRole(scopedReq.callerRole, 'ADMIN') : false;
+  if (!isOwner && !isAdmin) {
+    return Response.json(
+      { name: 'comment-not-owner', data: { message: 'You can only delete your own comments (or be an ADMIN)' } },
+      { status: 403 },
+    );
+  }
+
+  await db('comments').where({ id: commentId }).update({
+    deleted: true,
+    content: '[deleted]',
+    updated_at: new Date().toISOString(),
+  });
+
+  const deleted = await db('comments').where({ id: commentId }).first();
+
+  await Promise.all([
+    writeEvent({
+      type: 'comment_deleted',
+      boardId: board.id,
+      entityId: comment.card_id,
+      actorId,
+      payload: { commentId },
+    }),
+    writeActivity({
+      entityType: 'card',
+      entityId: comment.card_id,
+      boardId: board.id,
+      action: 'comment_deleted',
+      actorId,
+      payload: { commentId },
+    }),
+  ]);
+
+  return Response.json({ data: deleted });
+}

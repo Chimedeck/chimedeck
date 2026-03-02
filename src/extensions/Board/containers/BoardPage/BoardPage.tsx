@@ -1,6 +1,7 @@
 // BoardPage — renders a single board with lists and cards.
 // Lists are wired to drag-and-drop reorder via useListReorder (sprint 06).
-import { useEffect, useRef, useCallback } from 'react';
+// Sprint 10: real-time sync via useWebSocket + useBoardSync + PresenceAvatars.
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Page from '~/components/Page';
 import TopbarContainer from '~/containers/TopbarContainer/TopbarContainer';
@@ -25,6 +26,11 @@ import {
   archiveList,
   deleteList,
 } from '../../../List/api';
+import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
+import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
+import PresenceAvatars from '../../../Realtime/components/PresenceAvatars';
+import type { RealtimeEvent } from '../../../Realtime/client/socket';
+import type { PresenceUser } from '../../../Realtime/components/PresenceAvatars';
 
 // Injected via the app-level API singleton (same pattern as other containers)
 declare const __api__: {
@@ -47,12 +53,64 @@ const BoardPage = () => {
   // For now we declare an inline stub that mirrors how other containers consume it.
   const api = (globalThis as unknown as { __api__: typeof __api__ }).__api__;
 
+  // ── Real-time sync (sprint 10) ─────────────────────────────────────────
+  const { handleEvent, lastSequence } = useBoardSync({ boardId: boardId ?? '' });
+  const [lastWsEvent, setLastWsEvent] = useState<RealtimeEvent | null>(null);
+
+  // Wrap handleEvent to also track latest event for PresenceAvatars
+  const handleEventWithPresence = useCallback(
+    (event: RealtimeEvent) => {
+      handleEvent(event);
+      setLastWsEvent(event);
+    },
+    [handleEvent],
+  );
+
+  // Resolve access token — injected by app bootstrap (same as auth cookies)
+  const token: string =
+    (globalThis as unknown as { __accessToken__?: string }).__accessToken__ ?? '';
+
+  const fetchMissedEvents = useCallback(
+    async (bid: string, since: number): Promise<RealtimeEvent[]> => {
+      const result = await api.get<{ data: RealtimeEvent[] }>(
+        `/api/v1/boards/${bid}/events?since=${since}`,
+      );
+      return result.data;
+    },
+    [api],
+  );
+
+  const fetchPresenceUsers = useCallback(
+    async (bid: string): Promise<PresenceUser[]> => {
+      const result = await api.get<{ data: PresenceUser[] }>(
+        `/api/v1/boards/${bid}/presence`,
+      );
+      return result.data;
+    },
+    [api],
+  );
+
+  const { connected } = useWebSocket({
+    boardId: boardId ?? '',
+    token,
+    lastSequence,
+    onEvent: handleEventWithPresence,
+    onQueueOverflow: (bid) => {
+      // Queue exceeded 100 — reload board state
+      dispatch(fetchBoardThunk({ boardId: bid }));
+    },
+    fetchMissedEvents,
+  });
+
+  // ── Drag & drop with disconnect protection ─────────────────────────────
   const { lists, setInitialLists, move, error: reorderError } = useListReorder({
     api,
     boardId: boardId ?? '',
   });
 
   const dragSourceIndex = useRef<number | null>(null);
+  // Snapshot positions at drag-start so we can restore on disconnect mid-drag
+  const dragSnapshotRef = useRef<typeof lists | null>(null);
 
   useEffect(() => {
     if (boardId) dispatch(fetchBoardThunk({ boardId }));
@@ -123,6 +181,18 @@ const BoardPage = () => {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900">{board.title}</h1>
           <BoardStateChip state={board.state} />
+          {/* Real-time connection indicator */}
+          <span
+            className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`}
+            title={connected ? 'Live' : 'Offline'}
+            aria-label={connected ? 'Connected' : 'Disconnected'}
+          />
+          {/* Presence avatars — live active users */}
+          <PresenceAvatars
+            boardId={board.id}
+            lastEvent={lastWsEvent}
+            fetchPresence={fetchPresenceUsers}
+          />
         </div>
         {board.state === 'ARCHIVED' && (
           <p className="rounded border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
@@ -145,11 +215,21 @@ const BoardPage = () => {
               key={list.id}
               list={list}
               index={index}
-              onDragStart={(i) => { dragSourceIndex.current = i; }}
+              onDragStart={(i) => {
+                dragSourceIndex.current = i;
+                // Snapshot positions at drag-start; restored if WS disconnects mid-drag
+                dragSnapshotRef.current = lists.slice();
+              }}
               onDrop={(toIndex) => {
                 if (dragSourceIndex.current !== null) {
-                  move(dragSourceIndex.current, toIndex);
+                  if (!connected && dragSnapshotRef.current) {
+                    // Disconnect mid-drag: abort and restore snapshot
+                    setInitialLists(dragSnapshotRef.current);
+                  } else {
+                    move(dragSourceIndex.current, toIndex);
+                  }
                   dragSourceIndex.current = null;
+                  dragSnapshotRef.current = null;
                 }
               }}
               onRename={handleRename}
