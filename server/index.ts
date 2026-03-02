@@ -15,11 +15,18 @@ import { handleWsUpgrade, wsHandlers } from './extensions/realtime/api/index';
 import { commentRouter } from './extensions/comment/api/index';
 import { activityRouter } from './extensions/activity/api/index';
 import { attachmentRouter } from './extensions/attachment/api/index';
+import { searchRouter } from './extensions/search/api/index';
+import { presenceRouter } from './extensions/presence/api/index';
+import { startExpiryJob } from './extensions/presence/mods/expiryJob';
+import { rooms } from './extensions/realtime/mods/rooms/index';
 // Start orphan cleanup scheduler on server boot
 import './extensions/attachment/mods/orphanCleanup';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
+
+// Start presence expiry background job — fires every 10 s
+startExpiryJob(() => new Set(rooms.keys()));
 
 async function router(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -63,6 +70,12 @@ async function router(req: Request): Promise<Response> {
 
   const attachmentResponse = await attachmentRouter(req, path);
   if (attachmentResponse) return attachmentResponse;
+
+  const searchResponse = await searchRouter(req, path);
+  if (searchResponse) return searchResponse;
+
+  const presenceResponse = await presenceRouter(req, path);
+  if (presenceResponse) return presenceResponse;
 
   return Response.json(
     { name: 'not-found', data: { message: `${req.method} ${path} not found` } },

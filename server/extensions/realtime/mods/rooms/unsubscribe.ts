@@ -3,6 +3,7 @@
 import type { ServerWebSocket } from 'bun';
 import { rooms, type WsData } from './index';
 import { cache } from '../../../../mods/cache/index';
+import { broadcastPresenceUpdate } from '../../../presence/api/presenceUpdate';
 
 export async function unsubscribeFromBoard({
   ws,
@@ -22,4 +23,7 @@ export async function unsubscribeFromBoard({
 
   const key = `presence:${boardId}:${ws.data.userId}`;
   await cache.del(key);
+
+  // Broadcast leave event to remaining board subscribers (sprint 13)
+  broadcastPresenceUpdate({ boardId, action: 'leave', userId: ws.data.userId }).catch(() => {});
 }

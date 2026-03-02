@@ -4,6 +4,7 @@ import type { ServerWebSocket } from 'bun';
 import { rooms, type WsData } from './index';
 import { subscriber } from '../../../../mods/pubsub/subscriber';
 import { cache } from '../../../../mods/cache/index';
+import { broadcastPresenceUpdate } from '../../../presence/api/presenceUpdate';
 
 export async function subscribeToBoard({
   ws,
@@ -21,4 +22,7 @@ export async function subscribeToBoard({
 
   const key = `presence:${boardId}:${ws.data.userId}`;
   await cache.set(key, ws.data.userId, 35);
+
+  // Broadcast join event to all board subscribers (sprint 13)
+  broadcastPresenceUpdate({ boardId, action: 'join', userId: ws.data.userId }).catch(() => {});
 }

@@ -1,0 +1,9 @@
+{
+  "search.modal.title": "Search",
+  "search.input.placeholder": "Search boards and cards…",
+  "search.results.boards": "Boards",
+  "search.results.cards": "Cards",
+  "search.results.empty": "No results found",
+  "search.results.tooShort": "Type at least 2 characters to search",
+  "search.shortcut": "Cmd+K"
+}

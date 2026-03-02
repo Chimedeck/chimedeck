@@ -29,6 +29,9 @@ export const env = {
   VIRUS_SCAN_ENABLED: Bun.env['VIRUS_SCAN_ENABLED'] === 'true',
   VIRUS_SCAN_API_KEY: Bun.env['VIRUS_SCAN_API_KEY'] ?? '',
 
+  // Search feature gate — when false, GET /search returns 501
+  SEARCH_ENABLED: Bun.env['SEARCH_ENABLED'] === 'true',
+
   // Feature flag provider configuration
   FEATURE_FLAGS_PROVIDER: Bun.env['FEATURE_FLAGS_PROVIDER'] as
     | 'flagsmith'
