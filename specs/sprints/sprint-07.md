@@ -15,33 +15,35 @@ Members can create, read, update, archive, move, and delete cards within lists. 
 
 ### 1. Data Model
 
-New Prisma model — core fields only (extended fields in sprint 08):
+New Knex migration — core fields only (extended fields in sprint 08):
 
-```prisma
-model Card {
-  id          String   @id @default(cuid())
-  listId      String
-  title       String   @db.VarChar(512)  // requirements §5.5 ≤ 512 chars
-  description String?  @db.Text           // markdown
-  position    String                      // fractional index (same as List)
-  archived    Boolean  @default(false)
-  dueDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+```typescript
+// db/migrations/0006_card.ts
+import type { Knex } from 'knex';
 
-  list        List     @relation(fields: [listId], references: [id], onDelete: Cascade)
-  comments    Comment[]
-  attachments Attachment[]
-  activities  Activity[]
-  labels      CardLabel[]
-  members     CardMember[]
-  checklistItems ChecklistItem[]
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('cards', (table) => {
+    table.string('id').primary();
+    table.string('list_id').notNullable()
+      .references('id').inTable('lists').onDelete('CASCADE');
+    table.string('title', 512).notNullable();    // requirements §5.5 ≤ 512 chars
+    table.text('description');                   // markdown
+    table.string('position').notNullable();      // fractional index (same as List)
+    table.boolean('archived').notNullable().defaultTo(false);
+    table.timestamp('due_date');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+    table.timestamp('updated_at').defaultTo(knex.fn.now());
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('cards');
 }
 ```
 
-> Relation models (`CardLabel`, `CardMember`, `ChecklistItem`) are added in sprint 08.
+> Relation tables (`card_labels`, `card_members`, `checklist_items`) are added in sprint 08.
 
-Migration: `0006_card`
+Migration file: `db/migrations/0006_card.ts`
 
 ### 2. Card Invariants
 

@@ -12,11 +12,11 @@ services:
       REDIS_URL: ${REDIS_URL:-}
       JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://localstack:4566}
       S3_BUCKET: ${S3_BUCKET:-kanban}
       S3_REGION: ${S3_REGION:-us-east-1}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-test}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-test}
       APP_PORT: ${APP_PORT:-3000}
       FLAG_USE_REDIS: ${FLAG_USE_REDIS:-false}
       FLAG_VIRUS_SCAN_ENABLED: ${FLAG_VIRUS_SCAN_ENABLED:-false}
@@ -43,19 +43,17 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
+  localstack:
+    image: localstack/localstack:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+    volumes:
+      - localstack_data:/var/lib/localstack
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -73,4 +71,4 @@ services:
 
 volumes:
   postgres_data:
-  minio_data:
+  localstack_data:

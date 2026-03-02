@@ -12,7 +12,7 @@
 - Each sprint delivers **1–2 tightly coupled features** that can be tested end-to-end
 - No sprint begins without the previous sprint's acceptance criteria being met
 - Architecture follows `copilot-instructions.md`: group by feature, Bun runtime, REST conventions
-- Every sprint includes: server routes, client UI, Prisma migration, unit + integration tests
+- Every sprint includes: server routes, client UI, Knex migration, unit + integration tests
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Sprint | Feature(s) | Key Deliverables | Status |
 |--------|-----------|-----------------|--------|
-| [01](./sprint-01.md) | Project Setup | Docker (Redis optional), Prisma baseline, **feature flags infra**, CI skeleton | 🟢 Ready |
+| [01](./sprint-01.md) | Project Setup | Docker (Redis optional), Knex baseline, **feature flags infra**, CI skeleton | 🟢 Ready |
 | [02](./sprint-02.md) | Build Tooling & Docker | `package.json` scripts, multi-stage Dockerfile, docker-compose dev/prod | 🟢 Ready after 01 |
 | [03](./sprint-03.md) | Authentication | Email/password login, JWT, refresh token, OAuth | 🔵 Needs 02 |
 | [04](./sprint-04.md) | Workspace Lifecycle | Create workspace, invite, accept, RBAC | 🔵 Needs 03 |

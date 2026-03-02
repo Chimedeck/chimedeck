@@ -15,22 +15,29 @@ Members can create, rename, reorder, and archive lists within a board. Ordering 
 
 ### 1. Data Model
 
-New Prisma model (per [requirements §7](../architecture/requirements.md)):
+New Knex migration (per [requirements §7](../architecture/requirements.md)):
 
-```prisma
-model List {
-  id       String  @id @default(cuid())
-  boardId  String
-  title    String
-  position String  // lexicographic fractional index (technical-decisions.md §7)
-  archived Boolean @default(false)
+```typescript
+// db/migrations/0005_list.ts
+import type { Knex } from 'knex';
 
-  board    Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  cards    Card[]
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('lists', (table) => {
+    table.string('id').primary();
+    table.string('board_id').notNullable()
+      .references('id').inTable('boards').onDelete('CASCADE');
+    table.string('title').notNullable();
+    table.string('position').notNullable();  // lexicographic fractional index (technical-decisions.md §7)
+    table.boolean('archived').notNullable().defaultTo(false);
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('lists');
 }
 ```
 
-Migration: `0005_list`
+Migration file: `db/migrations/0005_list.ts`
 
 ### 2. Fractional Indexing
 

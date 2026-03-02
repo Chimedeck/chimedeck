@@ -15,34 +15,40 @@ Deliver a complete, secure authentication system supporting email/password and O
 
 ### 1. Data Model
 
-New Prisma models (per [requirements §7](../architecture/requirements.md) + [technical-decisions.md §6](../architecture/technical-decisions.md)):
+New Knex migration (per [requirements §7](../architecture/requirements.md) + [technical-decisions.md §6](../architecture/technical-decisions.md)):
 
-```prisma
-model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  name       String
-  avatarUrl  String?
-  passwordHash String?       // null for OAuth-only users
-  createdAt  DateTime @default(now())
+```typescript
+// db/migrations/0002_auth.ts
+import type { Knex } from 'knex';
 
-  refreshTokens RefreshToken[]
-  memberships   Membership[]
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('users', (table) => {
+    table.string('id').primary();
+    table.string('email').notNullable().unique();
+    table.string('name').notNullable();
+    table.string('avatar_url');
+    table.string('password_hash');           // null for OAuth-only users
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+  });
+
+  await knex.schema.createTable('refresh_tokens', (table) => {
+    table.string('id').primary();
+    table.string('user_id').notNullable()
+      .references('id').inTable('users').onDelete('CASCADE');
+    table.string('token').notNullable().unique();  // opaque random bytes
+    table.timestamp('revoked_at');
+    table.timestamp('expires_at').notNullable();
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+  });
 }
 
-model RefreshToken {
-  id        String    @id @default(cuid())
-  userId    String
-  token     String    @unique  // opaque random bytes
-  revokedAt DateTime?
-  expiresAt DateTime
-  createdAt DateTime  @default(now())
-
-  user      User      @relation(fields: [userId], references: [id])
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('refresh_tokens');
+  await knex.schema.dropTable('users');
 }
 ```
 
-Migration: `0002_auth`
+Migration file: `db/migrations/0002_auth.ts`
 
 ### 2. Server Extension Structure
 

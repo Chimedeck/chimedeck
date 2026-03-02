@@ -19,39 +19,48 @@ Users can search for boards and cards within a workspace (full-text). Presence i
 
 Per [technical-decisions.md §2](../architecture/technical-decisions.md) — stays within PostgreSQL.
 
-#### Schema additions
+#### Schema additions (Knex migration)
 
-```prisma
-// Add to Board
-searchVector   Unsupported("tsvector")?  @default(dbgenerated("to_tsvector('english', title)"))
+```typescript
+// db/migrations/0012_search_vectors.ts
+import type { Knex } from 'knex';
 
-// Add to Card
-searchVector   Unsupported("tsvector")?  @default(dbgenerated("to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,''))"))
-```
+export async function up(knex: Knex): Promise<void> {
+  // Add tsvector generated columns
+  await knex.schema.alterTable('boards', (table) => {
+    table.specificType('search_vector', 'tsvector');
+  });
+  await knex.schema.alterTable('cards', (table) => {
+    table.specificType('search_vector', 'tsvector');
+  });
 
-Two stored generated columns, kept in sync by Postgres triggers:
+  // Triggers keep vectors in sync on INSERT / UPDATE
+  await knex.raw(`
+    CREATE TRIGGER boards_search_vector_update
+    BEFORE INSERT OR UPDATE ON boards
+    FOR EACH ROW EXECUTE FUNCTION
+      tsvector_update_trigger(search_vector, 'pg_catalog.english', title);
+  `);
+  await knex.raw(`
+    CREATE TRIGGER cards_search_vector_update
+    BEFORE INSERT OR UPDATE ON cards
+    FOR EACH ROW EXECUTE FUNCTION
+      tsvector_update_trigger(search_vector, 'pg_catalog.english', title, description);
+  `);
 
-```sql
--- Trigger on Board
-CREATE TRIGGER board_search_vector_update
-BEFORE INSERT OR UPDATE ON "Board"
-FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
-  "searchVector", 'pg_catalog.english', "title"
-);
+  // GIN indexes for fast full-text search
+  await knex.raw(`CREATE INDEX boards_search_idx ON boards USING GIN (search_vector)`);
+  await knex.raw(`CREATE INDEX cards_search_idx  ON cards  USING GIN (search_vector)`);
+}
 
--- Trigger on Card
-CREATE TRIGGER card_search_vector_update
-BEFORE INSERT OR UPDATE ON "Card"
-FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger(
-  "searchVector", 'pg_catalog.english', "title", "description"
-);
-```
-
-GIN indexes on both columns:
-
-```sql
-CREATE INDEX board_search_idx ON "Board" USING GIN ("searchVector");
-CREATE INDEX card_search_idx  ON "Card"  USING GIN ("searchVector");
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw(`DROP INDEX IF EXISTS cards_search_idx`);
+  await knex.raw(`DROP INDEX IF EXISTS boards_search_idx`);
+  await knex.raw(`DROP TRIGGER IF EXISTS cards_search_vector_update ON cards`);
+  await knex.raw(`DROP TRIGGER IF EXISTS boards_search_vector_update ON boards`);
+  await knex.schema.alterTable('cards', (table) => { table.dropColumn('search_vector'); });
+  await knex.schema.alterTable('boards', (table) => { table.dropColumn('search_vector'); });
+}
 ```
 
 Migration: `0012_search`

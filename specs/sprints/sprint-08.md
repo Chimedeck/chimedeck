@@ -15,53 +15,58 @@ Enrich cards with labels, member assignments, and checklist items. These are the
 
 ### 1. Data Model
 
-New Prisma models:
+New Knex migration:
 
-```prisma
-model Label {
-  id          String      @id @default(cuid())
-  workspaceId String
-  name        String
-  color       String      // hex color string e.g. "#FF5733"
+```typescript
+// db/migrations/0007_card_extended.ts
+import type { Knex } from 'knex';
 
-  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
-  cards       CardLabel[]
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('labels', (table) => {
+    table.string('id').primary();
+    table.string('workspace_id').notNullable()
+      .references('id').inTable('workspaces').onDelete('CASCADE');
+    table.string('name').notNullable();
+    table.string('color').notNullable();  // hex e.g. "#FF5733"
+  });
+
+  await knex.schema.createTable('card_labels', (table) => {
+    table.string('card_id').notNullable()
+      .references('id').inTable('cards').onDelete('CASCADE');
+    table.string('label_id').notNullable()
+      .references('id').inTable('labels').onDelete('CASCADE');
+    table.primary(['card_id', 'label_id']);
+  });
+
+  await knex.schema.createTable('card_members', (table) => {
+    table.string('card_id').notNullable()
+      .references('id').inTable('cards').onDelete('CASCADE');
+    table.string('user_id').notNullable()
+      .references('id').inTable('users').onDelete('CASCADE');
+    table.primary(['card_id', 'user_id']);
+  });
+
+  await knex.schema.createTable('checklist_items', (table) => {
+    table.string('id').primary();
+    table.string('card_id').notNullable()
+      .references('id').inTable('cards').onDelete('CASCADE');
+    table.string('title').notNullable();
+    table.boolean('checked').notNullable().defaultTo(false);
+    table.string('position').notNullable();  // fractional index for reordering
+  });
 }
 
-model CardLabel {
-  cardId    String
-  labelId   String
-
-  card      Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  label     Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
-
-  @@id([cardId, labelId])
-}
-
-model CardMember {
-  cardId  String
-  userId  String
-
-  card    Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([cardId, userId])
-}
-
-model ChecklistItem {
-  id        String  @id @default(cuid())
-  cardId    String
-  title     String
-  checked   Boolean @default(false)
-  position  String  // fractional index for reordering
-
-  card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('checklist_items');
+  await knex.schema.dropTable('card_members');
+  await knex.schema.dropTable('card_labels');
+  await knex.schema.dropTable('labels');
 }
 ```
 
 Invariant: a card can have max 20 labels ([requirements §5.5](../architecture/requirements.md)). Enforced server-side.
 
-Migration: `0007_card_extended`
+Migration file: `db/migrations/0007_card_extended.ts`
 
 ### 2. Label Management
 

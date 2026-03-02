@@ -32,21 +32,18 @@ All scripts use `bun` as the runtime per [technical-decisions.md §1](../archite
     "dev:client":     "vite",
     "dev:full":       "concurrently \"bun run dev\" \"bun run dev:client\"",
 
-    // ── Production build ─────────────────────────
+    // ── Build (production) ───────────────────────────────
     "build":          "bun run build:client && bun run build:server",
     "build:client":   "vite build",
-    "build:server":   "bun run db:generate",   // Bun runs TS directly — no transpile
+    "build:server":   "bun run typecheck",        // Bun runs TS directly — no transpile
 
     // ── Start (production) ───────────────────────
     "start":          "NODE_ENV=production bun run server/index.ts",
 
-    // ── Database ─────────────────────────────────
-    "db:generate":    "prisma generate",
-    "db:migrate":     "prisma migrate dev",
-    "db:migrate:prod":"prisma migrate deploy",
-    "db:studio":      "prisma studio",
-    "db:reset":       "prisma migrate reset --force",
-    "db:seed":        "bun run prisma/seed.ts",
+    // ── Database —————————————————————————————
+    "db:migrate":     "knex migrate:latest",
+    "db:rollback":    "knex migrate:rollback",
+    "db:seed":        "bun run db/seeds/run.ts",
 
     // ── Quality ──────────────────────────────────
     "lint":           "eslint . --ext .ts,.tsx",
@@ -82,9 +79,9 @@ All scripts use `bun` as the runtime per [technical-decisions.md §1](../archite
 ### 2. Production Dockerfile (Multi-Stage)
 
 Extends the pattern from `sample-project/Dockerfile` (read-only reference) to add:
-- Explicit Prisma client generation
 - Non-root runtime user
 - Layer caching optimised for `bun.lockb` + `package.json` before source copy
+- No generate step needed (Knex has no code generation)
 
 ```dockerfile
 # ── Stage 1: Install all dependencies ──────────────────────────
@@ -192,17 +189,15 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+  localstack:
+    image: localstack/localstack:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
     volumes:
-      - minio_data:/data
+      - localstack_data:/var/lib/localstack
 
   redis:
     image: redis:7-alpine
@@ -212,7 +207,7 @@ services:
 
 volumes:
   postgres_data:
-  minio_data:
+  localstack_data:
 ```
 
 ### 5. Docker Compose — Production
@@ -369,7 +364,7 @@ Makefile                    # optional convenience wrappers
 - [ ] `bun run lint` passes
 - [ ] `docker build -f Dockerfile -t kanban-app:test .` succeeds
 - [ ] `docker run --env-file .env kanban-app:test` starts and `/health` responds
-- [ ] `bun run docker:dev` starts postgres + minio + app without Redis (no error)
+- [ ] `bun run docker:dev` starts postgres + localstack + app without Redis (no error)
 - [ ] `bun run docker:dev:redis` starts the Redis service in addition
 - [ ] CI workflow runs `quality` + `docker-build` jobs on every push
 - [ ] `docker-compose.prod.yml` references no hardcoded secrets (all from `env_file`)

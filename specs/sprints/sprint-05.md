@@ -15,31 +15,32 @@ Members can create, view, archive, delete, and duplicate boards within a workspa
 
 ### 1. Data Model
 
-New Prisma model (per [requirements §7](../architecture/requirements.md)):
+New Knex migration (per [requirements §7](../architecture/requirements.md)):
 
-```prisma
-model Board {
-  id          String      @id @default(cuid())
-  workspaceId String
-  title       String
-  state       BoardState  @default(ACTIVE)
-  createdAt   DateTime    @default(now())
+```typescript
+// db/migrations/0004_board.ts
+import type { Knex } from 'knex';
 
-  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
-  lists       List[]
-  activities  Activity[]
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('boards', (table) => {
+    table.string('id').primary();
+    table.string('workspace_id').notNullable()
+      .references('id').inTable('workspaces').onDelete('CASCADE');
+    table.string('title').notNullable();
+    table.enu('state', ['ACTIVE', 'ARCHIVED']).notNullable().defaultTo('ACTIVE');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+  });
 }
 
-enum BoardState {
-  ACTIVE
-  ARCHIVED
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('boards');
 }
 ```
 
 > Hard delete is tracked by the absence of the DB row — no soft-delete flag needed.  
 > `ARCHIVED` boards are read-only (enforced by `requireBoardWritable` middleware).
 
-Migration: `0004_board`
+Migration file: `db/migrations/0004_board.ts`
 
 ### 2. Server Extension
 

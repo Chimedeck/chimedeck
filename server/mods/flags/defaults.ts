@@ -2,6 +2,7 @@
 // Higher-priority sources (env, json, remote) override these.
 export const defaults: Record<string, boolean> = {
   USE_REDIS: true,
+  USE_LOCAL_STORAGE: true,          // true = LocalStack in dev, false = AWS S3 in prod
   VIRUS_SCAN_ENABLED: true,
   OAUTH_GOOGLE_ENABLED: true,
   OAUTH_GITHUB_ENABLED: true,

@@ -15,54 +15,51 @@ Users can create workspaces, invite members, accept invitations, and have their 
 
 ### 1. Data Model
 
-New Prisma models (per [requirements §7](../architecture/requirements.md)):
+New Knex migration (per [requirements §7](../architecture/requirements.md)):
 
-```prisma
-model Workspace {
-  id        String   @id @default(cuid())
-  name      String
-  ownerId   String
-  createdAt DateTime @default(now())
+```typescript
+// db/migrations/0003_workspace.ts
+import type { Knex } from 'knex';
 
-  owner       User         @relation(fields: [ownerId], references: [id])
-  memberships Membership[]
-  boards      Board[]
-  invites     Invite[]
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('workspaces', (table) => {
+    table.string('id').primary();
+    table.string('name').notNullable();
+    table.string('owner_id').notNullable()
+      .references('id').inTable('users').onDelete('RESTRICT');
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+  });
+
+  await knex.schema.createTable('memberships', (table) => {
+    table.string('user_id').notNullable()
+      .references('id').inTable('users').onDelete('CASCADE');
+    table.string('workspace_id').notNullable()
+      .references('id').inTable('workspaces').onDelete('CASCADE');
+    table.enu('role', ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).notNullable();
+    table.primary(['user_id', 'workspace_id']);
+  });
+
+  await knex.schema.createTable('invites', (table) => {
+    table.string('id').primary();
+    table.string('workspace_id').notNullable()
+      .references('id').inTable('workspaces').onDelete('CASCADE');
+    table.string('invited_email').notNullable();
+    table.string('token').notNullable().unique();  // stored also in cache with TTL
+    table.enu('role', ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).notNullable().defaultTo('MEMBER');
+    table.timestamp('accepted_at');
+    table.timestamp('expires_at').notNullable();
+    table.timestamp('created_at').defaultTo(knex.fn.now());
+  });
 }
 
-model Membership {
-  userId      String
-  workspaceId String
-  role        Role
-
-  user      User      @relation(fields: [userId], references: [id])
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-
-  @@id([userId, workspaceId])
-}
-
-enum Role {
-  OWNER
-  ADMIN
-  MEMBER
-  VIEWER
-}
-
-model Invite {
-  id          String    @id @default(cuid())
-  workspaceId String
-  invitedEmail String
-  token       String    @unique  // stored also in Redis with TTL
-  role        Role      @default(MEMBER)
-  acceptedAt  DateTime?
-  expiresAt   DateTime
-  createdAt   DateTime  @default(now())
-
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('invites');
+  await knex.schema.dropTable('memberships');
+  await knex.schema.dropTable('workspaces');
 }
 ```
 
-Migration: `0003_workspace`
+Migration file: `db/migrations/0003_workspace.ts`
 
 ### 2. RBAC Middleware
 

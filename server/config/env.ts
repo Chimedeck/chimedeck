@@ -5,11 +5,13 @@ export const env = {
   JWT_PRIVATE_KEY: Bun.env['JWT_PRIVATE_KEY'] ?? '',
   JWT_PUBLIC_KEY: Bun.env['JWT_PUBLIC_KEY'] ?? '',
 
-  S3_ENDPOINT: Bun.env['S3_ENDPOINT'] ?? 'http://localhost:9000',
+  // S3 / file storage
+  // When FLAG_USE_LOCAL_STORAGE=true, the storage module overrides endpoint/credentials with LocalStack defaults.
+  S3_ENDPOINT: Bun.env['S3_ENDPOINT'] ?? '',
   S3_BUCKET: Bun.env['S3_BUCKET'] ?? 'kanban',
   S3_REGION: Bun.env['S3_REGION'] ?? 'us-east-1',
-  S3_ACCESS_KEY: Bun.env['S3_ACCESS_KEY'] ?? '',
-  S3_SECRET_KEY: Bun.env['S3_SECRET_KEY'] ?? '',
+  AWS_ACCESS_KEY_ID: Bun.env['AWS_ACCESS_KEY_ID'] ?? '',
+  AWS_SECRET_ACCESS_KEY: Bun.env['AWS_SECRET_ACCESS_KEY'] ?? '',
 
   APP_PORT: parseInt(Bun.env['APP_PORT'] ?? '3000', 10),
 

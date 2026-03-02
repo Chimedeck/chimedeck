@@ -53,10 +53,10 @@ All entity IDs: CUID2 (sortable). Positions: lexicographic base-62 fractional in
 |-------|-----------|
 | Runtime | Bun 1.2 — native TS, hot-reload via `--hot` |
 | HTTP / WS | `Bun.serve` — built-in WebSocket, no extra deps |
-| Database | PostgreSQL 16 + Prisma ORM |
-| Migrations | Prisma `prisma migrate dev` — named `000N_<description>` |
+| Database | PostgreSQL 16 + Knex query builder + `pg` driver |
+| Migrations | Knex `knex migrate:latest` — files in `db/migrations/` named `000N_<description>.ts` |
 | Cache / Pub-Sub | Redis 7 (prod) **or** `node-cache` + `EventEmitter` (local dev) |
-| File storage | S3-compatible (MinIO locally, any S3 in prod) |
+| File storage | AWS S3 (prod) / LocalStack (local dev) via `@aws-sdk/client-s3`; `USE_LOCAL_STORAGE` flag switches endpoint |
 | Frontend build | Vite (SSR-compatible) |
 | State management | Redux Toolkit + RTK Query |
 | Feature flags | Composite: defaults → JSON file → ENV vars → Remote (Flagsmith/FeatBit) |
@@ -113,9 +113,10 @@ server/
     auth.ts                  # JWT verification
     permissions.ts           # RBAC role check
     dataValidator.ts         # Zod body/query validation
-  prisma/
-    schema.prisma
-    migrations/
+  db/
+    knexfile.ts            # Knex config (reads DATABASE_URL from env)
+    migrations/            # 000N_<description>.ts files
+    seeds/                 # optional seed scripts
 ```
 
 ---

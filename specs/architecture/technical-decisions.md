@@ -32,12 +32,15 @@
 - `pg_notify` provides lightweight pub/sub for single-node deployments (replaced by Redis at scale)
 - Mature, battle-tested for concurrent writes
 
-**ORM:** Prisma
-- Schema-first migrations
-- Type-safe query builder
-- Works natively with Bun via `prisma generate`
+**Query builder & migrations:** Knex + `pg` driver
+- SQL-first: migrations are plain TypeScript files in `db/migrations/`
+- `knex migrate:latest` / `knex migrate:rollback` for migration management
+- `knex.schema` builder for table creation; raw SQL available when needed
+- No generate step — works natively with Bun
+- Full type safety via TypeScript generics
 
 **Rejected:**
+- Prisma — requires `prisma generate` step, adds runtime weight; less composable with Bun's module system
 - MongoDB — lacks true transactions across collections
 - SQLite — not horizontally scalable
 - raw `pg` driver only — loses type safety
@@ -206,19 +209,40 @@ const pubsub: PubSubProvider = flags.USE_REDIS
 
 ## 8. File Storage
 
-**Decision:** S3-compatible object store (AWS S3 in production, MinIO locally)
+**Decision:** AWS S3 in production; LocalStack for local dev — both via `@aws-sdk/client-s3`
 
 **Rationale:**
 - Requirements §5.8: signed URL access, transactional upload, virus scanning
 - Pre-signed PUT URL flow: client uploads directly to S3 (avoids proxying large files through API)
 - On upload complete: client calls `POST /cards/:id/attachments` with S3 key; server records metadata
+- LocalStack replaces MinIO — same `@aws-sdk/client-s3` on both sides, only the endpoint URL differs
+- LocalStack emulates the S3 API fully including pre-signed URLs, bucket creation, and ACLs
+
+**Storage provider flag:**
+
+| Flag | Value | Effect |
+|------|-------|--------|
+| `USE_LOCAL_STORAGE` | `true` (default in dev) | S3 endpoint → `http://localstack:4566`, credentials `test`/`test` |
+| `USE_LOCAL_STORAGE` | `false` | S3 endpoint from `S3_ENDPOINT` env (blank = native AWS), credentials from `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` |
 
 **Virus scanning:**
 - Post-upload Lambda / Bun worker invokes ClamAV (self-hosted) or VirusTotal API
 - Card attachment marked `status: "pending"` until scan completes
 - On fail: attachment marked `status: "rejected"`, client notified via WebSocket event
 
-**Local dev:** MinIO container in `docker-compose.yml`
+**Local dev:** LocalStack container in `docker-compose.yml`
+
+```yaml
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+    volumes:
+      - localstack_data:/var/lib/localstack
+```
 
 ---
 
