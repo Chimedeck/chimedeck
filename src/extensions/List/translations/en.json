@@ -1,0 +1,17 @@
+{
+  "List": {
+    "addList": "Add list",
+    "addListPlaceholder": "Enter list title…",
+    "cancel": "Cancel",
+    "save": "Save",
+    "rename": "Rename",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this list? All cards will be removed.",
+    "listArchivedNotice": "This list is archived.",
+    "loadingLists": "Loading lists…",
+    "errorLoadingLists": "Failed to load lists.",
+    "noLists": "No lists yet. Add your first list."
+  }
+}

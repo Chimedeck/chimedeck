@@ -1,4 +1,4 @@
-// GET /api/v1/boards/:id — get a single board with shallow lists and cards; min role: VIEWER.
+// GET /api/v1/boards/:boardId/lists — list all active lists for a board; min role: VIEWER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
@@ -7,7 +7,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
-export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
+export async function handleListLists(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -26,14 +26,9 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   const roleError = requireRole(scopedReq, 'VIEWER');
   if (roleError) return roleError;
 
-  // Load active lists now that the lists table exists (sprint 06)
   const lists = await db('lists')
     .where({ board_id: boardId, archived: false })
     .orderBy('position', 'asc');
-  const cards: unknown[] = [];
 
-  return Response.json({
-    data: board,
-    includes: { lists, cards },
-  });
+  return Response.json({ data: lists });
 }

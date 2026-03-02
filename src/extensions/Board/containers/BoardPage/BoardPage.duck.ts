@@ -8,12 +8,13 @@ import {
 import type { RootState } from '~/store';
 import { createAppAsyncThunk } from '~/utils/redux';
 import { getBoard, type Board } from '../../api';
+import type { List } from '../../../List/api';
 
 // ---------- State ----------
 
 interface BoardPageState {
   board: Board | null;
-  includes: { lists: unknown[]; cards: unknown[] };
+  includes: { lists: List[]; cards: unknown[] };
   fetchInProgress: boolean;
   fetchError: SerializedError | null;
 }
@@ -50,7 +51,7 @@ const boardPageSlice = createSlice({
         fetchBoardThunk.fulfilled,
         (
           state,
-          action: PayloadAction<{ data: Board; includes: { lists: unknown[]; cards: unknown[] } }>,
+          action: PayloadAction<{ data: Board; includes: { lists: List[]; cards: unknown[] } }>,
         ) => {
           state.fetchInProgress = false;
           state.board = action.payload.data;

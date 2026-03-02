@@ -8,6 +8,7 @@ import { authRouter } from './extensions/auth/api/index';
 import { usersRouter } from './extensions/users/api/index';
 import { workspaceRouter } from './extensions/workspace/api/index';
 import { boardRouter } from './extensions/board/api/index';
+import { listRouter } from './extensions/list/api/index';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -36,6 +37,9 @@ async function router(req: Request): Promise<Response> {
 
   const boardResponse = await boardRouter(req, path);
   if (boardResponse) return boardResponse;
+
+  const listResponse = await listRouter(req, path);
+  if (listResponse) return listResponse;
 
   return Response.json(
     { name: 'not-found', data: { message: `${req.method} ${path} not found` } },
