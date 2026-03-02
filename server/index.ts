@@ -9,6 +9,7 @@ import { usersRouter } from './extensions/users/api/index';
 import { workspaceRouter } from './extensions/workspace/api/index';
 import { boardRouter } from './extensions/board/api/index';
 import { listRouter } from './extensions/list/api/index';
+import { cardRouter } from './extensions/card/api/index';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -40,6 +41,9 @@ async function router(req: Request): Promise<Response> {
 
   const listResponse = await listRouter(req, path);
   if (listResponse) return listResponse;
+
+  const cardResponse = await cardRouter(req, path);
+  if (cardResponse) return cardResponse;
 
   return Response.json(
     { name: 'not-found', data: { message: `${req.method} ${path} not found` } },
