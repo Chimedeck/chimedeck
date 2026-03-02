@@ -266,6 +266,15 @@ Do NOT write any implementation code."
   exit 0
 fi
 
+# Count explicit "Iteration N:" markers in the task so models know when they
+# are on the final iteration and may emit DONE_ALL_TASKS.
+# Falls back to 1 if the task has no explicit iteration markers.
+TOTAL_TASK_ITERS=$(printf '%s' "$TASK_DESCRIPTION" | grep -cE '^Iteration [0-9]+:' 2>/dev/null || true)
+if [[ -z "$TOTAL_TASK_ITERS" || "$TOTAL_TASK_ITERS" -eq 0 ]]; then
+  TOTAL_TASK_ITERS=1
+fi
+echo "Task iterations detected: ${TOTAL_TASK_ITERS}"
+
 for i in $(seq 1 "$MAX_ITERATIONS"); do
   CURRENT_ITER=$i
 
@@ -380,7 +389,13 @@ REFERENCE REPO (read-only): '${SAMPLE_PROJECT_DIR}/'
 Implement ONLY what is listed in the plan above – no scope creep.
 Follow each numbered step in order.
 After finishing all steps, write a short summary of what was changed.
-End your response with the token DONE_ALL_TASKS if the entire task is complete."
+
+ITERATION TRACKING (critical – read carefully):
+  This is loop iteration ${i} of a task that has ${TOTAL_TASK_ITERS} explicit iteration(s).
+  - If ${i} < ${TOTAL_TASK_ITERS}: DO NOT output DONE_ALL_TASKS. More iterations follow.
+  - If ${i} = ${TOTAL_TASK_ITERS}: output DONE_ALL_TASKS only when ALL acceptance criteria
+    across the entire task description are fully met.
+  Never output DONE_ALL_TASKS early — it terminates the agent loop immediately."
 
   run_copilot "$MODEL_EXECUTE" "$EXEC_PROMPT" "$EXEC_OUT"
 

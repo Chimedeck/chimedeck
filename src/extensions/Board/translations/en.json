@@ -1,0 +1,19 @@
+{
+  "Board": {
+    "createBoard": "Create Board",
+    "boardTitle": "Board title",
+    "cancel": "Cancel",
+    "create": "Create",
+    "duplicate": "Duplicate",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "delete": "Delete",
+    "noBoards": "No boards yet. Create your first board to get started.",
+    "loadingBoards": "Loading boards…",
+    "errorLoadingBoards": "Failed to load boards.",
+    "confirmDelete": "Are you sure you want to delete this board? This cannot be undone.",
+    "stateActive": "Active",
+    "stateArchived": "Archived",
+    "boardArchivedNotice": "This board is archived and read-only."
+  }
+}

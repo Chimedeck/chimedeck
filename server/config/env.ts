@@ -14,6 +14,13 @@ export const env = {
   AWS_SECRET_ACCESS_KEY: Bun.env['AWS_SECRET_ACCESS_KEY'] ?? '',
 
   APP_PORT: parseInt(Bun.env['APP_PORT'] ?? '3000', 10),
+  APP_URL: Bun.env['APP_URL'] ?? 'http://localhost:3000',
+
+  // OAuth providers
+  OAUTH_GOOGLE_CLIENT_ID: Bun.env['OAUTH_GOOGLE_CLIENT_ID'] ?? '',
+  OAUTH_GOOGLE_CLIENT_SECRET: Bun.env['OAUTH_GOOGLE_CLIENT_SECRET'] ?? '',
+  OAUTH_GITHUB_CLIENT_ID: Bun.env['OAUTH_GITHUB_CLIENT_ID'] ?? '',
+  OAUTH_GITHUB_CLIENT_SECRET: Bun.env['OAUTH_GITHUB_CLIENT_SECRET'] ?? '',
 
   // Optional — omit to run without Redis
   REDIS_URL: Bun.env['REDIS_URL'] ?? undefined,
