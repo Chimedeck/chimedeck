@@ -29,6 +29,7 @@
     "docker:prod": "docker compose -f docker-compose.prod.yml up",
     "docker:build": "docker build -t kanban-app:latest .",
     "docker:build:nc": "docker build --no-cache -t kanban-app:latest .",
+    "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
     "clean": "rm -rf dist .vite node_modules/.cache"
   },
   "dependencies": {

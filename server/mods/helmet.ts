@@ -10,6 +10,10 @@ export function applySecurityHeaders(headers: Headers): void {
   );
   headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; object-src 'none'"
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' wss:; object-src 'none'; frame-ancestors 'none'"
+  );
+  headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=()'
   );
 }

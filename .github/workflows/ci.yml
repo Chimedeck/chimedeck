@@ -50,6 +50,9 @@ jobs:
           FLAG_USE_REDIS: "false"
         run: bun test
 
+      - name: Security audit
+        run: bun audit --audit-level=high || true
+
   docker-build:
     needs: quality
     runs-on: ubuntu-latest

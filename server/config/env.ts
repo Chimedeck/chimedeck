@@ -32,6 +32,13 @@ export const env = {
   // Search feature gate — when false, GET /search returns 501
   SEARCH_ENABLED: Bun.env['SEARCH_ENABLED'] === 'true',
 
+  // OpenTelemetry — when false, no SDK is initialised and spans are no-ops
+  OTEL_ENABLED: Bun.env['OTEL_ENABLED'] === 'true',
+  OTEL_EXPORTER_URL: Bun.env['OTEL_EXPORTER_URL'] ?? 'http://localhost:4318/v1/traces',
+
+  // Rate-limiting — when false, all limits are bypassed
+  RATE_LIMIT_ENABLED: Bun.env['RATE_LIMIT_ENABLED'] === 'true',
+
   // Feature flag provider configuration
   FEATURE_FLAGS_PROVIDER: Bun.env['FEATURE_FLAGS_PROVIDER'] as
     | 'flagsmith'

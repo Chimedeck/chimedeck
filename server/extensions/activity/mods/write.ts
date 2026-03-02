@@ -10,6 +10,8 @@ export interface WriteActivityInput {
   action: string;
   actorId: string;
   payload: Record<string, unknown>;
+  ipAddress?: string | null;
+  userAgent?: string | null;
 }
 
 export interface WrittenActivity {
@@ -20,6 +22,8 @@ export interface WrittenActivity {
   action: string;
   actor_id: string;
   payload: Record<string, unknown>;
+  ip_address: string | null;
+  user_agent: string | null;
   created_at: Date;
 }
 
@@ -33,6 +37,8 @@ export async function writeActivity(input: WriteActivityInput): Promise<WrittenA
     action: input.action,
     actor_id: input.actorId,
     payload: JSON.stringify(input.payload),
+    ip_address: input.ipAddress ?? null,
+    user_agent: input.userAgent ?? null,
     created_at: new Date().toISOString(),
   }, ['*']);
 
