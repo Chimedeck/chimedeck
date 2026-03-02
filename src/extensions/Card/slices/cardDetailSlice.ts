@@ -104,6 +104,14 @@ const cardDetailSlice = createSlice({
       rollback(state, action.payload.mutationId);
     },
 
+    /** Apply a remote (WS) update to the open card — skipped if card ID doesn't match */
+    remoteUpdate(state, action: PayloadAction<{ card: Card }>) {
+      const { card } = action.payload;
+      if (state.card && state.card.id === card.id) {
+        state.card = { ...state.card, ...card };
+      }
+    },
+
     // ── Optimistic checklist ────────────────────────────────────────────────
     applyOptimisticChecklistToggle(
       state,

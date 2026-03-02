@@ -8,6 +8,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { socket } from '../client/socket';
 import { messageQueue } from '../client/messageQueue';
 import type { RealtimeEvent } from '../client/socket';
+import type { ConnectionState } from '~/common/components/ConnectionBadge';
 
 export interface UseWebSocketOptions {
   boardId: string;
@@ -25,6 +26,8 @@ export interface UseWebSocketOptions {
 
 export interface UseWebSocketResult {
   connected: boolean;
+  /** Three-state indicator: connected / reconnecting (backoff in progress) / offline */
+  connectionState: ConnectionState;
 }
 
 export function useWebSocket({
@@ -36,7 +39,7 @@ export function useWebSocket({
   onQueueOverflow,
   fetchMissedEvents,
 }: UseWebSocketOptions): UseWebSocketResult {
-  const [connected, setConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('reconnecting');
   const lastSeqRef = useRef(lastSequence);
   const isReplayingRef = useRef(false);
 
@@ -83,7 +86,7 @@ export function useWebSocket({
   }, [token, onMutationConflict]);
 
   const handleOpen = useCallback(async () => {
-    setConnected(true);
+    setConnectionState('connected');
 
     // Re-sync missed events from server
     if (fetchMissedEvents) {
@@ -102,7 +105,7 @@ export function useWebSocket({
   }, [boardId, fetchMissedEvents, onEvent, replayQueue]);
 
   const handleClose = useCallback(() => {
-    setConnected(false);
+    setConnectionState('reconnecting');
   }, []);
 
   useEffect(() => {
@@ -127,5 +130,5 @@ export function useWebSocket({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId, token]);
 
-  return { connected };
+  return { connected: connectionState === 'connected', connectionState };
 }

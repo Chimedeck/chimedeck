@@ -1,8 +1,8 @@
 // BoardPage — renders a single board with lists and cards as a kanban view.
 // Sprint 18: uses boardSlice (DndContext via BoardCanvas, optimistic card/list drag).
 // Sprint 19: ?card=:id URL param opens CardModal.
-// Realtime sync (sprint 20) is wired in via useWebSocket + useBoardSync.
-import { useEffect, useCallback } from 'react';
+// Sprint 20: real-time sync via useWebSocket + useBoardSync; ConnectionBadge in header.
+import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
@@ -19,10 +19,15 @@ import {
 import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
 import CardModalContainer from '../../../Card/containers/CardModal';
+import ToastRegion from '~/common/components/ToastRegion';
+import type { ToastItem } from '~/common/components/ToastRegion';
 import { updateBoard } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
 import { createCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
+import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
+import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
+import { selectAuthToken } from '../../../Auth/duck/authDuck';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -43,8 +48,34 @@ const BoardPage = () => {
   const cardsByList = useAppSelector(selectCardsByList);
   const cards = useAppSelector(selectCards);
   const status = useAppSelector(selectBoardStatus);
+  const accessToken = useAppSelector(selectAuthToken);
 
   const api = (globalThis as unknown as { __api__: typeof __api__ }).__api__;
+
+  // ── Toast notifications ───────────────────────────────────────────────────
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const addToast = useCallback((message: string, variant: ToastItem['variant'] = 'error') => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, message, variant }]);
+  }, []);
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // ── Real-time sync (sprint-20) ────────────────────────────────────────────
+  const { handleEvent, lastSequence } = useBoardSync({ boardId: boardId ?? '' });
+  const { connectionState } = useWebSocket({
+    boardId: boardId ?? '',
+    token: accessToken ?? '',
+    lastSequence,
+    onEvent: handleEvent,
+    onMutationConflict: () =>
+      addToast('A mutation conflicted with a remote change and was discarded.', 'conflict'),
+    onQueueOverflow: () => {
+      // Full reload on overflow so state is not stale
+      if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
+    },
+  });
 
   useEffect(() => {
     if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
@@ -210,6 +241,7 @@ const BoardPage = () => {
     <div className="flex flex-col bg-slate-950 text-slate-100 min-h-full">
       <BoardHeader
         board={board}
+        connectionState={connectionState}
         onTitleSave={handleTitleSave}
       />
       {board.state === 'ARCHIVED' && (
@@ -237,6 +269,8 @@ const BoardPage = () => {
       />
       {/* Card detail modal — URL-driven (?card=:id) */}
       <CardModalContainer />
+      {/* Toast notifications (rollback errors, conflicts) */}
+      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };

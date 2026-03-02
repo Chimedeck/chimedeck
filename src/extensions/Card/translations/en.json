@@ -41,5 +41,11 @@
   "label.name": "Name",
   "label.color": "Color",
   "label.error.notFound": "Label not found",
-  "label.error.limitReached": "Card already has 20 labels"
+  "label.error.limitReached": "Card already has 20 labels",
+  "realtime.conflict": "{{name}} updated this card",
+  "realtime.error.rollback": "Change could not be saved and was reverted",
+  "realtime.error.conflict": "Your change conflicted with a remote update and was discarded",
+  "realtime.status.live": "Live",
+  "realtime.status.reconnecting": "Reconnecting…",
+  "realtime.status.offline": "Offline"
 }

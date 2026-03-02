@@ -156,6 +156,38 @@ const boardSlice = createSlice({
       }
       state.cardsByList[list.id] = [];
     },
+
+    /** Update a list's fields (e.g. title rename from WS event) */
+    updateList(state, action: PayloadAction<{ list: List }>) {
+      const { list } = action.payload;
+      if (state.lists[list.id]) {
+        state.lists[list.id] = list;
+      }
+    },
+
+    /** Move a card between lists without saving an undo snapshot (WS events) */
+    remoteCardMove(
+      state,
+      action: PayloadAction<{ card: { id: string; list_id: string }; fromListId: string }>,
+    ) {
+      const { card, fromListId } = action.payload;
+
+      // Remove from source list
+      const fromCards = state.cardsByList[fromListId] ?? [];
+      state.cardsByList[fromListId] = fromCards.filter((id) => id !== card.id);
+
+      // Append to target list (server is authoritative on order)
+      const toCards = state.cardsByList[card.list_id] ?? [];
+      if (!toCards.includes(card.id)) {
+        toCards.push(card.id);
+        state.cardsByList[card.list_id] = toCards;
+      }
+
+      // Update card record if present
+      if (state.cards[card.id]) {
+        state.cards[card.id] = { ...state.cards[card.id], ...card };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder

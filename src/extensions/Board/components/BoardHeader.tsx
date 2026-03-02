@@ -2,6 +2,8 @@
 import { useState, useRef } from 'react';
 import type { Board } from '../api';
 import BoardMemberAvatars from './BoardMemberAvatars';
+import ConnectionBadge from '~/common/components/ConnectionBadge';
+import type { ConnectionState } from '~/common/components/ConnectionBadge';
 
 interface Member {
   id: string;
@@ -12,6 +14,9 @@ interface Member {
 interface Props {
   board: Board;
   members?: Member[];
+  /** Three-state connection indicator; defaults to 'connected' for backward compat */
+  connectionState?: ConnectionState;
+  /** @deprecated use connectionState instead */
   connected?: boolean;
   onTitleSave: (title: string) => Promise<void>;
   onArchive?: () => void;
@@ -21,11 +26,15 @@ interface Props {
 const BoardHeader = ({
   board,
   members = [],
+  connectionState,
   connected = true,
   onTitleSave,
   onArchive,
   onDelete,
 }: Props) => {
+  // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
+  const resolvedState: ConnectionState =
+    connectionState ?? (connected ? 'connected' : 'reconnecting');
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(board.title);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -85,12 +94,8 @@ const BoardHeader = ({
         </button>
       )}
 
-      {/* Connection indicator */}
-      <span
-        className={`h-2 w-2 rounded-full shrink-0 ${connected ? 'bg-green-500' : 'bg-slate-500'}`}
-        title={connected ? 'Live' : 'Offline'}
-        aria-label={connected ? 'Connected' : 'Disconnected'}
-      />
+      {/* Connection badge (sprint-20) */}
+      <ConnectionBadge state={resolvedState} />
 
       <div className="ml-auto flex items-center gap-2">
         {/* Member avatars */}

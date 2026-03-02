@@ -8,6 +8,10 @@ import { useAppDispatch } from '~/hooks/useAppDispatch';
 import type { RealtimeEvent } from '../client/socket';
 import { listSliceActions } from '../../List/listSlice';
 import { cardSliceActions } from '../../Card/cardSlice';
+import { boardSliceActions } from '../../Board/slices/boardSlice';
+import { cardDetailSliceActions } from '../../Card/slices/cardDetailSlice';
+import type { List } from '../../List/api';
+import type { Card } from '../../Card/api';
 
 export interface UseBoardSyncOptions {
   boardId: string;
@@ -43,33 +47,59 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
 
       switch (type) {
         // ── List events ──────────────────────────────────────────────────
-        case 'list_created':
+        case 'list_created': {
+          const list = (payload as { list: List }).list;
           dispatch(listSliceActions.remoteCreate(payload as Parameters<typeof listSliceActions.remoteCreate>[0]));
+          dispatch(boardSliceActions.addList({ list }));
           break;
-        case 'list_updated':
+        }
+        case 'list_updated': {
+          const list = (payload as { list: List }).list;
           dispatch(listSliceActions.remoteUpdate(payload as Parameters<typeof listSliceActions.remoteUpdate>[0]));
+          dispatch(boardSliceActions.updateList({ list }));
           break;
+        }
         case 'list_archived':
           dispatch(listSliceActions.remoteArchive(payload as Parameters<typeof listSliceActions.remoteArchive>[0]));
           break;
-        case 'list_reordered':
-          // Server sends authoritative positions array; replace entirely
+        case 'list_reordered': {
+          const p = payload as { boardId: string; lists: List[] };
           dispatch(listSliceActions.remoteReorder(payload as Parameters<typeof listSliceActions.remoteReorder>[0]));
+          // Derive new order from authoritative positions list
+          const newOrder = [...p.lists]
+            .sort((a, b) => (String(a.position) < String(b.position) ? -1 : 1))
+            .map((l) => l.id);
+          dispatch(boardSliceActions.applyOptimisticListReorder({ newOrder }));
           break;
+        }
 
         // ── Card events ──────────────────────────────────────────────────
-        case 'card_created':
+        case 'card_created': {
+          const card = (payload as { card: Card }).card;
           dispatch(cardSliceActions.remoteCreate(payload as Parameters<typeof cardSliceActions.remoteCreate>[0]));
+          dispatch(boardSliceActions.addCard({ card }));
           break;
-        case 'card_updated':
+        }
+        case 'card_updated': {
+          const card = (payload as { card: Card }).card;
           dispatch(cardSliceActions.remoteUpdate(payload as Parameters<typeof cardSliceActions.remoteUpdate>[0]));
+          dispatch(boardSliceActions.updateCard({ card }));
+          // Also update the card detail modal if it's open for this card
+          dispatch(cardDetailSliceActions.remoteUpdate({ card }));
           break;
-        case 'card_moved':
-          dispatch(cardSliceActions.remoteMove(payload as Parameters<typeof cardSliceActions.remoteMove>[0]));
+        }
+        case 'card_moved': {
+          const { card, fromListId } = payload as { card: Card; fromListId: string };
+          dispatch(cardSliceActions.remoteMove({ card, fromListId }));
+          dispatch(boardSliceActions.remoteCardMove({ card, fromListId }));
           break;
-        case 'card_archived':
-          dispatch(cardSliceActions.remoteArchive(payload as Parameters<typeof cardSliceActions.remoteArchive>[0]));
+        }
+        case 'card_archived': {
+          const { cardId, listId } = payload as { cardId: string; listId: string };
+          dispatch(cardSliceActions.remoteArchive({ cardId }));
+          dispatch(boardSliceActions.removeCard({ cardId, listId }));
           break;
+        }
 
         // ── Presence events ───────────────────────────────────────────────
         case 'presence_update':
