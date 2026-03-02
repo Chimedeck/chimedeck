@@ -1,0 +1,39 @@
+name: kanban-prod
+
+services:
+  app:
+    image: "${DOCKER_IMAGE:-kanban-app}:${IMAGE_TAG:-latest}"
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env.production
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:

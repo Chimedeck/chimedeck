@@ -1,0 +1,15 @@
+# Dockerfile.dev — used only by docker-compose.yml for local development
+FROM oven/bun:1.2-alpine
+WORKDIR /app
+
+COPY package.json bun.lock* ./
+RUN bun install
+
+# Mount source as a volume — no COPY of src
+# Hot-reload via bun --hot
+
+ARG PORT=3000
+ENV PORT=$PORT
+EXPOSE $PORT
+
+CMD ["bun", "run", "--hot", "server/index.ts"]

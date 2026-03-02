@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  ci:
+  quality:
     runs-on: ubuntu-latest
 
     services:
@@ -33,13 +33,16 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install
-
-      - name: Typecheck
-        run: bun run typecheck
+        run: bun install --frozen-lockfile
 
       - name: Lint
         run: bun run lint
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Typecheck
+        run: bun run typecheck
 
       - name: Test
         env:
@@ -47,5 +50,21 @@ jobs:
           FLAG_USE_REDIS: "false"
         run: bun test
 
-      - name: Build Docker image
-        run: docker compose build app
+  docker-build:
+    needs: quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build production image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: kanban-app:ci

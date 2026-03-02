@@ -1,27 +1,16 @@
-version: "3.9"
+name: kanban-dev
 
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "${APP_PORT:-3000}:3000"
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://kanban:kanban@postgres:5432/kanban}
-      REDIS_URL: ${REDIS_URL:-}
-      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
-      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://localstack:4566}
-      S3_BUCKET: ${S3_BUCKET:-kanban}
-      S3_REGION: ${S3_REGION:-us-east-1}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-test}
-      S3_SECRET_KEY: ${S3_SECRET_KEY:-test}
-      APP_PORT: ${APP_PORT:-3000}
-      FLAG_USE_REDIS: ${FLAG_USE_REDIS:-false}
-      FLAG_VIRUS_SCAN_ENABLED: ${FLAG_VIRUS_SCAN_ENABLED:-false}
-      FEATURE_FLAGS_PROVIDER: ${FEATURE_FLAGS_PROVIDER:-}
-      FEATURE_FLAGS_JSON_PATH: ${FEATURE_FLAGS_JSON_PATH:-}
+    env_file: .env
+    volumes:
+      - .:/app
+      - /app/node_modules         # preserve container node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,13 +21,13 @@ services:
     environment:
       POSTGRES_USER: kanban
       POSTGRES_PASSWORD: kanban
-      POSTGRES_DB: kanban
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_DB: kanban_dev
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kanban -d kanban"]
+      test: ["CMD-SHELL", "pg_isready -U kanban"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -52,22 +41,12 @@ services:
       DEFAULT_REGION: us-east-1
     volumes:
       - localstack_data:/var/lib/localstack
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
-    profiles: [redis]
+    profiles: [redis]         # optional — only started with --profile redis
     ports:
       - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
 volumes:
   postgres_data:
