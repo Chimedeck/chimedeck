@@ -147,7 +147,7 @@ const CardModalContainer = () => {
 
   const handleDelete = useCallback(async () => {
     if (!card) return;
-    await api.delete(`/api/v1/cards/${card.id}`);
+    await api.delete(`/cards/${card.id}`);
     dispatch(boardSliceActions.removeCard({ cardId: card.id, listId: card.list_id }));
     handleClose();
   }, [api, card, dispatch, handleClose]);

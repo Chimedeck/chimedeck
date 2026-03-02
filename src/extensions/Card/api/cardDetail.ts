@@ -20,7 +20,7 @@ export async function patchCard({
   cardId: string;
   fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'archived'>>;
 }): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/api/v1/cards/${cardId}`, fields);
+  return api.patch<{ data: Card }>(`/cards/${cardId}`, fields);
 }
 
 export async function archiveCardToggle({
@@ -30,7 +30,7 @@ export async function archiveCardToggle({
   api: ApiClient;
   cardId: string;
 }): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/api/v1/cards/${cardId}/archive`);
+  return api.patch<{ data: Card }>(`/cards/${cardId}/archive`);
 }
 
 export async function postChecklistItem({
@@ -42,7 +42,7 @@ export async function postChecklistItem({
   cardId: string;
   title: string;
 }): Promise<{ data: ChecklistItem }> {
-  return api.post<{ data: ChecklistItem }>(`/api/v1/cards/${cardId}/checklist`, { title });
+  return api.post<{ data: ChecklistItem }>(`/cards/${cardId}/checklist`, { title });
 }
 
 export async function patchChecklistItem({
@@ -54,7 +54,7 @@ export async function patchChecklistItem({
   itemId: string;
   fields: Partial<Pick<ChecklistItem, 'title' | 'checked'>>;
 }): Promise<{ data: ChecklistItem }> {
-  return api.patch<{ data: ChecklistItem }>(`/api/v1/checklist-items/${itemId}`, fields);
+  return api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, fields);
 }
 
 export async function deleteChecklistItemById({
@@ -64,7 +64,7 @@ export async function deleteChecklistItemById({
   api: ApiClient;
   itemId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/checklist-items/${itemId}`);
+  return api.delete(`/checklist-items/${itemId}`);
 }
 
 export async function postLabelAssign({
@@ -76,7 +76,7 @@ export async function postLabelAssign({
   cardId: string;
   labelId: string;
 }): Promise<void> {
-  await api.post(`/api/v1/cards/${cardId}/labels`, { labelId });
+  await api.post(`/cards/${cardId}/labels`, { labelId });
 }
 
 export async function deleteLabelAssign({
@@ -88,7 +88,7 @@ export async function deleteLabelAssign({
   cardId: string;
   labelId: string;
 }): Promise<void> {
-  await api.delete(`/api/v1/cards/${cardId}/labels/${labelId}`);
+  await api.delete(`/cards/${cardId}/labels/${labelId}`);
 }
 
 export async function postMemberAssign({
@@ -100,7 +100,7 @@ export async function postMemberAssign({
   cardId: string;
   userId: string;
 }): Promise<void> {
-  await api.post(`/api/v1/cards/${cardId}/members`, { userId });
+  await api.post(`/cards/${cardId}/members`, { userId });
 }
 
 export async function deleteMemberAssign({
@@ -112,7 +112,7 @@ export async function deleteMemberAssign({
   cardId: string;
   userId: string;
 }): Promise<void> {
-  await api.delete(`/api/v1/cards/${cardId}/members/${userId}`);
+  await api.delete(`/cards/${cardId}/members/${userId}`);
 }
 
 export async function createBoardLabel({
@@ -126,7 +126,7 @@ export async function createBoardLabel({
   name: string;
   color: string;
 }): Promise<{ data: Label }> {
-  return api.post<{ data: Label }>(`/api/v1/boards/${boardId}/labels`, { name, color });
+  return api.post<{ data: Label }>(`/boards/${boardId}/labels`, { name, color });
 }
 
 export async function getBoardLabels({
@@ -136,7 +136,7 @@ export async function getBoardLabels({
   api: ApiClient;
   boardId: string;
 }): Promise<{ data: Label[] }> {
-  return api.get<{ data: Label[] }>(`/api/v1/boards/${boardId}/labels`);
+  return api.get<{ data: Label[] }>(`/boards/${boardId}/labels`);
 }
 
 export async function getBoardMembers({
@@ -146,5 +146,5 @@ export async function getBoardMembers({
   api: ApiClient;
   boardId: string;
 }): Promise<{ data: Array<{ id: string; email: string; display_name: string | null }> }> {
-  return api.get(`/api/v1/boards/${boardId}/members`);
+  return api.get(`/boards/${boardId}/members`);
 }

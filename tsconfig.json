@@ -3,7 +3,9 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ESNext"],
+    // DOM libs are needed for src/ — harmless for server files with skipLibCheck
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -12,11 +14,13 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": ".",
-    "types": ["bun-types"],
+    // bun-types covers server; vite/client covers src — skipLibCheck prevents conflicts
+    "types": ["bun-types", "vite/client"],
     "paths": {
       "~/*": ["./src/*"]
     }
   },
-  "include": ["server/**/*.ts"],
+  // Include both src/ and server/ so VS Code resolves ~ aliases in all files
+  "include": ["src/**/*", "server/**/*.ts", "vite.config.ts", "tailwind.config.ts"],
   "exclude": ["node_modules", "dist", "sample-project"]
 }

@@ -24,4 +24,9 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-unwrap axios response so callers receive the HTTP response body directly.
+// This matches the declared API function signatures: Promise<T> not Promise<AxiosResponse<T>>.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+apiClient.interceptors.response.use((response) => response.data as any);
+
 export default apiClient;

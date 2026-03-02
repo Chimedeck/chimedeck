@@ -32,7 +32,7 @@ export async function listWorkspaces({
 }: {
   api: { get: <T>(url: string) => Promise<T> };
 }): Promise<{ data: Workspace[] }> {
-  return api.get<{ data: Workspace[] }>('/api/v1/workspaces');
+  return api.get<{ data: Workspace[] }>('/workspaces');
 }
 
 export async function getWorkspace({
@@ -42,7 +42,7 @@ export async function getWorkspace({
   api: { get: <T>(url: string) => Promise<T> };
   workspaceId: string;
 }): Promise<{ data: Workspace }> {
-  return api.get<{ data: Workspace }>(`/api/v1/workspaces/${workspaceId}`);
+  return api.get<{ data: Workspace }>(`/workspaces/${workspaceId}`);
 }
 
 export async function createWorkspace({
@@ -52,7 +52,7 @@ export async function createWorkspace({
   api: { post: <B, T>(url: string, body: B) => Promise<T> };
   name: string;
 }): Promise<{ data: Workspace }> {
-  return api.post<{ name: string }, { data: Workspace }>('/api/v1/workspaces', { name });
+  return api.post<{ name: string }, { data: Workspace }>('/workspaces', { name });
 }
 
 export async function updateWorkspace({
@@ -65,7 +65,7 @@ export async function updateWorkspace({
   name: string;
 }): Promise<{ data: Workspace }> {
   return api.patch<{ name: string }, { data: Workspace }>(
-    `/api/v1/workspaces/${workspaceId}`,
+    `/workspaces/${workspaceId}`,
     { name }
   );
 }
@@ -78,7 +78,7 @@ export async function deleteWorkspace({
   workspaceId: string;
 }): Promise<{ data: Workspace }> {
   return api.delete<unknown, { data: Workspace }>(
-    `/api/v1/workspaces/${workspaceId}`,
+    `/workspaces/${workspaceId}`,
     {}
   );
 }
@@ -97,7 +97,7 @@ export async function createInvite({
   role: Role;
 }): Promise<{ data: Invite }> {
   return api.post<{ email: string; role: Role }, { data: Invite }>(
-    `/api/v1/workspaces/${workspaceId}/invite`,
+    `/workspaces/${workspaceId}/invite`,
     { email, role }
   );
 }
@@ -109,7 +109,7 @@ export async function inspectInvite({
   api: { get: <T>(url: string) => Promise<T> };
   token: string;
 }): Promise<{ data: Invite }> {
-  return api.get<{ data: Invite }>(`/api/v1/invites/${token}`);
+  return api.get<{ data: Invite }>(`/invites/${token}`);
 }
 
 export async function acceptInvite({
@@ -120,7 +120,7 @@ export async function acceptInvite({
   token: string;
 }): Promise<{ data: WorkspaceMember }> {
   return api.post<unknown, { data: WorkspaceMember }>(
-    `/api/v1/invites/${token}/accept`,
+    `/invites/${token}/accept`,
     {}
   );
 }
@@ -135,7 +135,7 @@ export async function listMembers({
   workspaceId: string;
 }): Promise<{ data: WorkspaceMember[] }> {
   return api.get<{ data: WorkspaceMember[] }>(
-    `/api/v1/workspaces/${workspaceId}/members`
+    `/workspaces/${workspaceId}/members`
   );
 }
 
@@ -151,7 +151,7 @@ export async function updateMemberRole({
   role: Role;
 }): Promise<{ data: WorkspaceMember }> {
   return api.patch<{ role: Role }, { data: WorkspaceMember }>(
-    `/api/v1/workspaces/${workspaceId}/members/${userId}`,
+    `/workspaces/${workspaceId}/members/${userId}`,
     { role }
   );
 }
@@ -166,7 +166,7 @@ export async function removeMember({
   userId: string;
 }): Promise<{ data: WorkspaceMember }> {
   return api.delete<unknown, { data: WorkspaceMember }>(
-    `/api/v1/workspaces/${workspaceId}/members/${userId}`,
+    `/workspaces/${workspaceId}/members/${userId}`,
     {}
   );
 }

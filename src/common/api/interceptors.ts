@@ -21,7 +21,10 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    if (status === 401 && !originalRequest._retry && !isRefreshing) {
+    // Never retry or redirect for the refresh endpoint itself — would cause an infinite loop
+    const isRefreshEndpoint = originalRequest.url?.includes('/auth/refresh');
+
+    if (status === 401 && !originalRequest._retry && !isRefreshing && !isRefreshEndpoint) {
       originalRequest._retry = true;
       isRefreshing = true;
       try {
@@ -31,7 +34,6 @@ apiClient.interceptors.response.use(
       } catch {
         isRefreshing = false;
         clearAuthCallback?.();
-        if (typeof window !== 'undefined') window.location.href = '/login';
         return Promise.reject(error);
       }
     }

@@ -28,6 +28,13 @@ await flags.load();
 // Start presence expiry background job — fires every 10 s
 startExpiryJob(() => new Set(rooms.keys()));
 
+// Serve a static file from the dist/ folder (production SPA assets)
+async function serveStatic(filePath: string): Promise<Response | null> {
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) return null;
+  return new Response(file);
+}
+
 async function router(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
@@ -76,6 +83,16 @@ async function router(req: Request): Promise<Response> {
 
   const presenceResponse = await presenceRouter(req, path);
   if (presenceResponse) return presenceResponse;
+
+  // In production serve the built React SPA so client-side routing works.
+  // Try the exact asset path first (JS/CSS chunks), then fall back to index.html.
+  if (appConfig.isDev === false) {
+    const distRoot = `${import.meta.dir}/../dist`;
+    const assetFile = await serveStatic(`${distRoot}${path}`);
+    if (assetFile) return assetFile;
+    const indexFile = await serveStatic(`${distRoot}/index.html`);
+    if (indexFile) return indexFile;
+  }
 
   return Response.json(
     { name: 'not-found', data: { message: `${req.method} ${path} not found` } },

@@ -24,8 +24,9 @@ interface AuthDuckState {
 const initialState: AuthDuckState = {
   user: null,
   accessToken: null,
-  // Deny-first: start as unauthenticated until proven otherwise
-  status: 'unauthenticated',
+  // Start as 'idle' so route guards can distinguish "not yet checked" from
+  // "checked and found unauthenticated", preventing premature redirects on boot.
+  status: 'idle',
   error: null,
 };
 
@@ -39,7 +40,7 @@ export const loginThunk = createAppAsyncThunk(
   ) => {
     try {
       const response = await authApi.login({ email, password });
-      return response.data.data;
+      return response.data;
     } catch (err: unknown) {
       const msg = isApiError(err) ? err.response.data.name : 'login-failed';
       return rejectWithValue(msg);
@@ -55,7 +56,7 @@ export const signupThunk = createAppAsyncThunk(
   ) => {
     try {
       const response = await authApi.signup({ name, email, password });
-      return response.data.data;
+      return response.data;
     } catch (err: unknown) {
       const msg = isApiError(err) ? err.response.data.name : 'signup-failed';
       return rejectWithValue(msg);
@@ -68,7 +69,7 @@ export const refreshTokenThunk = createAppAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await authApi.refreshToken();
-      return response.data.data;
+      return response.data;
     } catch {
       // Failure is expected when not authenticated — PrivateRoute handles redirect
       return rejectWithValue('unauthenticated');

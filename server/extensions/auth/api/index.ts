@@ -1,5 +1,6 @@
 // Mounts all auth routes under /api/v1/auth.
 import { handleLogin } from './login';
+import { handleRegister } from './register';
 import { handleRefresh } from './refresh';
 import { handleLogout } from './logout';
 import { handleOAuthRedirect } from './oauth/index';
@@ -12,6 +13,10 @@ const OAUTH_PROVIDERS: OAuthProvider[] = ['google', 'github'];
 export async function authRouter(req: Request, pathname: string): Promise<Response | null> {
   if (pathname === '/api/v1/auth/token' && req.method === 'POST') {
     return handleLogin(req);
+  }
+
+  if (pathname === '/api/v1/auth/register' && req.method === 'POST') {
+    return handleRegister(req);
   }
 
   if (pathname === '/api/v1/auth/refresh' && req.method === 'POST') {

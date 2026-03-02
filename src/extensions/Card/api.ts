@@ -55,7 +55,7 @@ export async function listCards({
   api: { get: <T>(url: string) => Promise<T> };
   listId: string;
 }): Promise<{ data: Card[] }> {
-  return api.get<{ data: Card[] }>(`/api/v1/lists/${listId}/cards`);
+  return api.get<{ data: Card[] }>(`/lists/${listId}/cards`);
 }
 
 export async function createCard({
@@ -69,7 +69,7 @@ export async function createCard({
   title: string;
   description?: string;
 }): Promise<{ data: Card }> {
-  return api.post<{ data: Card }>(`/api/v1/lists/${listId}/cards`, { title, description });
+  return api.post<{ data: Card }>(`/lists/${listId}/cards`, { title, description });
 }
 
 export async function getCard({
@@ -79,7 +79,7 @@ export async function getCard({
   api: { get: <T>(url: string) => Promise<T> };
   cardId: string;
 }): Promise<{ data: Card; includes: CardDetail['includes'] }> {
-  return api.get<{ data: Card; includes: CardDetail['includes'] }>(`/api/v1/cards/${cardId}`);
+  return api.get<{ data: Card; includes: CardDetail['includes'] }>(`/cards/${cardId}`);
 }
 
 export async function updateCard({
@@ -95,7 +95,7 @@ export async function updateCard({
   description?: string;
   due_date?: string | null;
 }): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/api/v1/cards/${cardId}`, { title, description, due_date });
+  return api.patch<{ data: Card }>(`/cards/${cardId}`, { title, description, due_date });
 }
 
 export async function archiveCard({
@@ -105,7 +105,7 @@ export async function archiveCard({
   api: { patch: <T>(url: string) => Promise<T> };
   cardId: string;
 }): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/api/v1/cards/${cardId}/archive`);
+  return api.patch<{ data: Card }>(`/cards/${cardId}/archive`);
 }
 
 export async function moveCard({
@@ -119,7 +119,7 @@ export async function moveCard({
   targetListId: string;
   afterCardId?: string | null;
 }): Promise<{ data: Card }> {
-  return api.post<{ data: Card }>(`/api/v1/cards/${cardId}/move`, { targetListId, afterCardId });
+  return api.post<{ data: Card }>(`/cards/${cardId}/move`, { targetListId, afterCardId });
 }
 
 export async function duplicateCard({
@@ -129,7 +129,7 @@ export async function duplicateCard({
   api: { post: <T>(url: string, data: unknown) => Promise<T> };
   cardId: string;
 }): Promise<{ data: Card }> {
-  return api.post<{ data: Card }>(`/api/v1/cards/${cardId}/duplicate`, {});
+  return api.post<{ data: Card }>(`/cards/${cardId}/duplicate`, {});
 }
 
 export async function deleteCard({
@@ -139,7 +139,7 @@ export async function deleteCard({
   api: { delete: <T>(url: string) => Promise<T> };
   cardId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/cards/${cardId}`);
+  return api.delete(`/cards/${cardId}`);
 }
 
 // ---------- Labels ----------
@@ -151,7 +151,7 @@ export async function listLabels({
   api: { get: <T>(url: string) => Promise<T> };
   workspaceId: string;
 }): Promise<{ data: Label[] }> {
-  return api.get<{ data: Label[] }>(`/api/v1/workspaces/${workspaceId}/labels`);
+  return api.get<{ data: Label[] }>(`/workspaces/${workspaceId}/labels`);
 }
 
 export async function createLabel({
@@ -165,7 +165,7 @@ export async function createLabel({
   name: string;
   color: string;
 }): Promise<{ data: Label }> {
-  return api.post<{ data: Label }>(`/api/v1/workspaces/${workspaceId}/labels`, { name, color });
+  return api.post<{ data: Label }>(`/workspaces/${workspaceId}/labels`, { name, color });
 }
 
 export async function updateLabel({
@@ -179,7 +179,7 @@ export async function updateLabel({
   name?: string;
   color?: string;
 }): Promise<{ data: Label }> {
-  return api.patch<{ data: Label }>(`/api/v1/labels/${labelId}`, { name, color });
+  return api.patch<{ data: Label }>(`/labels/${labelId}`, { name, color });
 }
 
 export async function deleteLabel({
@@ -189,7 +189,7 @@ export async function deleteLabel({
   api: { delete: <T>(url: string) => Promise<T> };
   labelId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/labels/${labelId}`);
+  return api.delete(`/labels/${labelId}`);
 }
 
 export async function attachLabel({
@@ -201,7 +201,7 @@ export async function attachLabel({
   cardId: string;
   labelId: string;
 }): Promise<{ data: { card_id: string; label_id: string } }> {
-  return api.post<{ data: { card_id: string; label_id: string } }>(`/api/v1/cards/${cardId}/labels`, { labelId });
+  return api.post<{ data: { card_id: string; label_id: string } }>(`/cards/${cardId}/labels`, { labelId });
 }
 
 export async function detachLabel({
@@ -213,7 +213,7 @@ export async function detachLabel({
   cardId: string;
   labelId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/cards/${cardId}/labels/${labelId}`);
+  return api.delete(`/cards/${cardId}/labels/${labelId}`);
 }
 
 // ---------- Members ----------
@@ -227,7 +227,7 @@ export async function assignMember({
   cardId: string;
   userId: string;
 }): Promise<{ data: { card_id: string; user_id: string } }> {
-  return api.post<{ data: { card_id: string; user_id: string } }>(`/api/v1/cards/${cardId}/members`, { userId });
+  return api.post<{ data: { card_id: string; user_id: string } }>(`/cards/${cardId}/members`, { userId });
 }
 
 export async function removeMember({
@@ -239,7 +239,7 @@ export async function removeMember({
   cardId: string;
   userId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/cards/${cardId}/members/${userId}`);
+  return api.delete(`/cards/${cardId}/members/${userId}`);
 }
 
 // ---------- Checklist ----------
@@ -253,7 +253,7 @@ export async function createChecklistItem({
   cardId: string;
   title: string;
 }): Promise<{ data: ChecklistItem }> {
-  return api.post<{ data: ChecklistItem }>(`/api/v1/cards/${cardId}/checklist`, { title });
+  return api.post<{ data: ChecklistItem }>(`/cards/${cardId}/checklist`, { title });
 }
 
 export async function updateChecklistItem({
@@ -269,7 +269,7 @@ export async function updateChecklistItem({
   checked?: boolean;
   position?: string;
 }): Promise<{ data: ChecklistItem }> {
-  return api.patch<{ data: ChecklistItem }>(`/api/v1/checklist-items/${itemId}`, { title, checked, position });
+  return api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, { title, checked, position });
 }
 
 export async function deleteChecklistItem({
@@ -279,7 +279,7 @@ export async function deleteChecklistItem({
   api: { delete: <T>(url: string) => Promise<T> };
   itemId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/checklist-items/${itemId}`);
+  return api.delete(`/checklist-items/${itemId}`);
 }
 
 // ---------- Due date query ----------
@@ -293,5 +293,5 @@ export async function listDueCards({
   workspaceId: string;
   before: string; // ISO 8601
 }): Promise<{ data: Card[] }> {
-  return api.get<{ data: Card[] }>(`/api/v1/workspaces/${workspaceId}/cards/due?before=${encodeURIComponent(before)}`);
+  return api.get<{ data: Card[] }>(`/workspaces/${workspaceId}/cards/due?before=${encodeURIComponent(before)}`);
 }

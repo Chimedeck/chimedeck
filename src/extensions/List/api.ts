@@ -17,7 +17,7 @@ export async function listLists({
   api: { get: <T>(url: string) => Promise<T> };
   boardId: string;
 }): Promise<{ data: List[] }> {
-  return api.get<{ data: List[] }>(`/api/v1/boards/${boardId}/lists`);
+  return api.get<{ data: List[] }>(`/boards/${boardId}/lists`);
 }
 
 export async function createList({
@@ -31,7 +31,7 @@ export async function createList({
   title: string;
   afterId?: string | null;
 }): Promise<{ data: List }> {
-  return api.post<{ data: List }>(`/api/v1/boards/${boardId}/lists`, { title, afterId });
+  return api.post<{ data: List }>(`/boards/${boardId}/lists`, { title, afterId });
 }
 
 export async function updateList({
@@ -43,7 +43,7 @@ export async function updateList({
   listId: string;
   title: string;
 }): Promise<{ data: List }> {
-  return api.patch<{ data: List }>(`/api/v1/lists/${listId}`, { title });
+  return api.patch<{ data: List }>(`/lists/${listId}`, { title });
 }
 
 export async function archiveList({
@@ -53,7 +53,7 @@ export async function archiveList({
   api: { patch: <T>(url: string) => Promise<T> };
   listId: string;
 }): Promise<{ data: List }> {
-  return api.patch<{ data: List }>(`/api/v1/lists/${listId}/archive`);
+  return api.patch<{ data: List }>(`/lists/${listId}/archive`);
 }
 
 export async function deleteList({
@@ -63,7 +63,7 @@ export async function deleteList({
   api: { delete: <T>(url: string) => Promise<T> };
   listId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/lists/${listId}`);
+  return api.delete(`/lists/${listId}`);
 }
 
 export async function reorderLists({
@@ -75,5 +75,5 @@ export async function reorderLists({
   boardId: string;
   order: string[];
 }): Promise<{ data: List[] }> {
-  return api.post<{ data: List[] }>(`/api/v1/boards/${boardId}/lists/reorder`, { order });
+  return api.post<{ data: List[] }>(`/boards/${boardId}/lists/reorder`, { order });
 }

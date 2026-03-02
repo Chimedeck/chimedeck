@@ -20,7 +20,7 @@ export async function listBoards({
   api: { get: <T>(url: string) => Promise<T> };
   workspaceId: string;
 }): Promise<{ data: Board[] }> {
-  return api.get<{ data: Board[] }>(`/api/v1/workspaces/${workspaceId}/boards`);
+  return api.get<{ data: Board[] }>(`/workspaces/${workspaceId}/boards`);
 }
 
 export async function getBoard({
@@ -30,7 +30,7 @@ export async function getBoard({
   api: { get: <T>(url: string) => Promise<T> };
   boardId: string;
 }): Promise<{ data: Board; includes: { lists: unknown[]; cards: unknown[] } }> {
-  return api.get(`/api/v1/boards/${boardId}`);
+  return api.get(`/boards/${boardId}`);
 }
 
 export async function createBoard({
@@ -42,7 +42,7 @@ export async function createBoard({
   workspaceId: string;
   title: string;
 }): Promise<{ data: Board }> {
-  return api.post<{ data: Board }>(`/api/v1/workspaces/${workspaceId}/boards`, { title });
+  return api.post<{ data: Board }>(`/workspaces/${workspaceId}/boards`, { title });
 }
 
 export async function updateBoard({
@@ -54,7 +54,7 @@ export async function updateBoard({
   boardId: string;
   title: string;
 }): Promise<{ data: Board }> {
-  return api.patch<{ data: Board }>(`/api/v1/boards/${boardId}`, { title });
+  return api.patch<{ data: Board }>(`/boards/${boardId}`, { title });
 }
 
 export async function archiveBoard({
@@ -64,7 +64,7 @@ export async function archiveBoard({
   api: { patch: <T>(url: string) => Promise<T> };
   boardId: string;
 }): Promise<{ data: Board }> {
-  return api.patch<{ data: Board }>(`/api/v1/boards/${boardId}/archive`);
+  return api.patch<{ data: Board }>(`/boards/${boardId}/archive`);
 }
 
 export async function deleteBoard({
@@ -74,7 +74,7 @@ export async function deleteBoard({
   api: { delete: <T>(url: string) => Promise<T> };
   boardId: string;
 }): Promise<void> {
-  return api.delete(`/api/v1/boards/${boardId}`);
+  return api.delete(`/boards/${boardId}`);
 }
 
 export async function duplicateBoard({
@@ -84,5 +84,5 @@ export async function duplicateBoard({
   api: { post: <T>(url: string) => Promise<T> };
   boardId: string;
 }): Promise<{ data: Board }> {
-  return api.post<{ data: Board }>(`/api/v1/boards/${boardId}/duplicate`);
+  return api.post<{ data: Board }>(`/boards/${boardId}/duplicate`);
 }

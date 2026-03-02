@@ -1,9 +1,19 @@
 // Single source of truth for all environment variable access.
 // Never use Bun.env or process.env directly outside this module.
+
+// JWT keys are stored as base64 in .env to avoid multiline quoting issues.
+// If the value looks like raw PEM already (starts with -----), use it as-is.
+function decodeKey(raw: string): string {
+  if (!raw) return '';
+  if (raw.startsWith('-----')) return raw;
+  // base64-encoded PEM
+  return Buffer.from(raw, 'base64').toString('utf-8');
+}
+
 export const env = {
   DATABASE_URL: Bun.env['DATABASE_URL'] ?? '',
-  JWT_PRIVATE_KEY: Bun.env['JWT_PRIVATE_KEY'] ?? '',
-  JWT_PUBLIC_KEY: Bun.env['JWT_PUBLIC_KEY'] ?? '',
+  JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? ''),
+  JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? ''),
 
   // S3 / file storage
   // When FLAG_USE_LOCAL_STORAGE=true, the storage module overrides endpoint/credentials with LocalStack defaults.

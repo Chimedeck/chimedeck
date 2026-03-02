@@ -48,7 +48,7 @@ export const fetchCardDetailThunk = createAppAsyncThunk(
   async ({ cardId }: { cardId: string }, { extra }) => {
     const api = (extra as { api: { get: <T>(url: string) => Promise<T> } }).api;
     const result = await api.get<{ data: Card; includes: CardDetail['includes'] }>(
-      `/api/v1/cards/${cardId}`,
+      `/cards/${cardId}`,
     );
     return result;
   },

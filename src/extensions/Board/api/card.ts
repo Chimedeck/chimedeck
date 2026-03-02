@@ -24,7 +24,7 @@ export async function moveCard({
   afterCardId?: string | null;
 }): Promise<{ data: import('../../Card/api').Card }> {
   return api.patch<{ data: import('../../Card/api').Card }>(
-    `/api/v1/cards/${cardId}/move`,
+    `/cards/${cardId}/move`,
     { targetListId, afterCardId },
   );
 }

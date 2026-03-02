@@ -86,8 +86,8 @@ export async function handleLogin(req: Request): Promise<Response> {
   return new Response(
     JSON.stringify({
       data: {
-        access_token: accessToken,
-        user: { id: user.id, email: user.email, name: user.name, avatar_url: user.avatar_url },
+        accessToken,
+        user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url ?? null },
       },
     }),
     { status: 200, headers: responseHeaders },
