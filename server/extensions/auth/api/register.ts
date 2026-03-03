@@ -5,6 +5,10 @@ import { db } from '../../../common/db';
 import { hashPassword } from '../mods/password/hash';
 import { issueAccessToken } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
+import { flags } from '../../../mods/flags';
+import { send } from '../../email';
+import { buildVerificationEmail } from '../../email/templates/verificationEmail';
+import { env } from '../../../config/env';
 
 export async function handleRegister(req: Request): Promise<Response> {
   let body: { name?: string; email?: string; password?: string };
@@ -46,13 +50,35 @@ export async function handleRegister(req: Request): Promise<Response> {
   const userId = uuidv4();
   const now = new Date();
 
+  const verificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
+
+  let verificationToken: string | null = null;
+  let verificationTokenExpiresAt: Date | null = null;
+
+  if (verificationEnabled) {
+    verificationToken = randomBytes(32).toString('hex');
+    verificationTokenExpiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  }
+
   await db('users').insert({
     id: userId,
     name,
     email,
     password_hash: passwordHash,
+    email_verified: !verificationEnabled,
+    verification_token: verificationToken,
+    verification_token_expires_at: verificationTokenExpiresAt,
     created_at: now,
   });
+
+  // When verification is enabled: send email and return 201 without a JWT
+  if (verificationEnabled) {
+    const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken}`;
+    const emailContent = buildVerificationEmail({ verificationUrl });
+    await send({ to: email, ...emailContent });
+
+    return Response.json({ data: { requiresVerification: true } }, { status: 201 });
+  }
 
   const user = await db('users').where({ id: userId }).first();
 

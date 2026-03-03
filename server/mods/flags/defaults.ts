@@ -10,4 +10,6 @@ export const defaults: Record<string, boolean> = {
   RATE_LIMIT_ENABLED: true,
   OTEL_ENABLED: true,
   BOARD_SNAPSHOT_ENABLED: true,
+  EMAIL_VERIFICATION_ENABLED: false,
+  SES_ENABLED: false,
 };

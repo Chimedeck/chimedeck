@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import { signupThunk, selectAuthStatus, selectAuthError } from '../../duck/authDuck';
+import { signupThunk, selectAuthStatus, selectAuthError, selectPendingEmail } from '../../duck/authDuck';
 import SignupForm from '../../components/SignupForm';
+import VerificationPending from '../../components/VerificationPending';
 import translations from '../../translations/en.json';
 
 export default function SignupPage() {
@@ -11,6 +12,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const status = useAppSelector(selectAuthStatus);
   const apiError = useAppSelector(selectAuthError);
+  const pendingEmail = useAppSelector(selectPendingEmail);
 
   // Auto-redirect after successful signup (signupThunk logs the user in)
   useEffect(() => {
@@ -22,6 +24,22 @@ export default function SignupPage() {
   const handleSubmit = async (name: string, email: string, password: string) => {
     await dispatch(signupThunk({ name, email, password }));
   };
+
+  // Show verification pending screen after signup when email verification is required
+  if (status === 'pending-verification' && pendingEmail) {
+    return (
+      <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+          <div className="flex items-center gap-2 mb-8">
+            <span className="text-2xl" aria-hidden="true">🟦</span>
+            <span className="text-xl font-bold text-white">Kanban</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">{translations.verifyEmail.title}</h1>
+          <VerificationPending email={pendingEmail} />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">

@@ -43,5 +43,13 @@
     "subtitle": "Join your team on Kanban",
     "haveAccount": "Already have an account?",
     "signIn": "Sign in"
+  },
+  "verifyEmail": {
+    "title": "Verify your email",
+    "success": "Email verified! You can now log in.",
+    "invalidToken": "This link is invalid or has expired.",
+    "pending": "Check your inbox — we sent a link to {email}",
+    "resend": "Resend verification email",
+    "resendSuccess": "A new verification email has been sent."
   }
 }

@@ -6,6 +6,7 @@ import { verifyPassword } from '../mods/password/verify';
 import { issueAccessToken } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
 import { memCache } from '../../../mods/cache';
+import { flags } from '../../../mods/flags';
 
 // Rate limit: 10 login attempts per IP per minute.
 const RATE_LIMIT_MAX = 10;
@@ -58,6 +59,15 @@ export async function handleLogin(req: Request): Promise<Response> {
     return Response.json(
       { name: 'credentials-invalid', data: { message: 'Invalid email or password' } },
       { status: 401 },
+    );
+  }
+
+  // Block login for unverified users when the feature flag is enabled
+  const verificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
+  if (verificationEnabled && !user.email_verified) {
+    return Response.json(
+      { name: 'email-not-verified', data: { message: 'Please verify your email before logging in.' } },
+      { status: 403 },
     );
   }
 

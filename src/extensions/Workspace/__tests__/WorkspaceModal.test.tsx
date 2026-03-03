@@ -10,6 +10,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { authDuckReducer } from '../../Auth/duck/authDuck';
 import { uiReducer } from '../../../slices/uiSlice';
 import boardReducer from '../../Board/slices/boardSlice';
+import { verifyEmailDuckReducer } from '../../Auth/containers/VerifyEmailPage/VerifyEmailPage.duck';
 import {
   workspaceShellReducer,
   createWorkspaceThunk,
@@ -34,6 +35,7 @@ function makeStore() {
       ui: uiReducer,
       workspaceShell: workspaceShellReducer,
       board: boardReducer,
+      verifyEmail: verifyEmailDuckReducer,
     },
   });
 }

@@ -1,0 +1,30 @@
+// server/extensions/email/templates/verificationEmail.ts
+// Builds the plain-text and HTML bodies for verification emails.
+
+interface VerificationEmailInput {
+  verificationUrl: string;
+}
+
+export function buildVerificationEmail({ verificationUrl }: VerificationEmailInput): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const subject = 'Verify your email — Kanban';
+
+  const text = `Welcome to Kanban!\n\nPlease verify your email address by visiting the link below:\n\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create an account, you can safely ignore this email.`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" /></head>
+<body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1e293b">
+  <h1 style="font-size:24px;font-weight:700;margin-bottom:8px">Verify your email</h1>
+  <p style="color:#475569;margin-bottom:24px">Click the button below to verify your email address. The link expires in 24 hours.</p>
+  <a href="${verificationUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">Verify email</a>
+  <p style="color:#94a3b8;font-size:13px;margin-top:24px">If you did not create an account, you can safely ignore this email.</p>
+</body>
+</html>`.trim();
+
+  return { subject, html, text };
+}

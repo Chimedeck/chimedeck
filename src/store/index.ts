@@ -3,6 +3,7 @@ import { apiClient } from '../common/api/client';
 import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
+import { verifyEmailDuckReducer } from '../extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage.duck';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     cardDetail: cardDetailReducer,
     lists: listReducer,
     cards: cardsReducer,
+    verifyEmail: verifyEmailDuckReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

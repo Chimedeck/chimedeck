@@ -19,17 +19,29 @@ export interface AuthResponse {
   accessToken: string;
 }
 
+export interface SignupResponse {
+  requiresVerification?: boolean;
+  user?: AuthUser;
+  accessToken?: string;
+}
+
 export const authApi = {
   login({ email, password }: LoginPayload) {
     return apiClient.post<{ data: AuthResponse }>('/auth/token', { email, password });
   },
   signup({ name, email, password }: SignupPayload) {
-    return apiClient.post<{ data: AuthResponse }>('/auth/register', { name, email, password });
+    return apiClient.post<{ data: SignupResponse }>('/auth/register', { name, email, password });
   },
   refreshToken() {
     return apiClient.post<{ data: AuthResponse }>('/auth/refresh');
   },
   logout() {
     return apiClient.delete('/auth/session');
+  },
+  verifyEmail({ token }: { token: string }) {
+    return apiClient.get<{ data: AuthResponse }>(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+  },
+  resendVerification() {
+    return apiClient.post<{ data: { sent: boolean } }>('/auth/resend-verification');
   },
 };

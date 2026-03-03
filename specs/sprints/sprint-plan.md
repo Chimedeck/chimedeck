@@ -45,6 +45,11 @@
 | [20](./sprint-20.md) | Real-Time UI | WebSocket wiring, live updates, reconnection indicator, conflict toasts | 🔵 Needs 19 + 10 |
 | [21](./sprint-21.md) | Comments, Activity & Attachments UI | Threaded comments, activity feed, file upload panel | 🔵 Needs 20 + 12 |
 | [22](./sprint-22.md) | Search, Presence & Polish | ⌘K palette, presence avatars, theme toggle, skeletons, a11y | 🔵 Needs 21 + 13 |
+| **— Extensions —** | | | |
+| [23](./sprint-23.md) | Email Verification (SES) | `EMAIL_VERIFICATION_ENABLED` flag, AWS SES module, verify-email flow | 🔵 Needs 03 |
+| [24](./sprint-24.md) | Profile Settings | Avatar upload (S3), nickname field, `/settings/profile` page | 🔵 Needs 12 + 17 |
+| [25](./sprint-25.md) | @Mentions | Autocomplete dropdown, mention parsing, chips in card + comments | 🔵 Needs 11 + 19 + 24 |
+| [26](./sprint-26.md) | Mention Notifications | In-app bell, notification panel, real-time WS delivery | 🔵 Needs 25 + 20 |
 
 ---
 
@@ -60,6 +65,8 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `RATE_LIMIT_ENABLED` | Sprint 14 | Bypass rate limiting (dev only) |
 | `OTEL_ENABLED` | Sprint 14 | Skip telemetry initialisation |
 | `SEARCH_ENABLED` | Sprint 13 | Return 501 on search endpoint |
+| `EMAIL_VERIFICATION_ENABLED` | Sprint 23 | Skip email verification on register/login |
+| `SES_ENABLED` | Sprint 23 | Log emails to console instead of sending via AWS SES |
 
 ---
 
@@ -89,6 +96,11 @@ Sprint 19 ──────────── Card detail modal (Markdown, labe
 Sprint 20 ──────────── Real-time UI (WebSocket, optimistic mutations, conflict toasts)
 Sprint 21 ──────────── Comments, activity feed, attachments panel
 Sprint 22 ──────────── ⌘K search palette, presence avatars, theme toggle, a11y polish
+──── Extensions ─────────────────────────────────────────────────────────────────────
+Sprint 23 ──────────── Email verification flow (AWS SES), feature flags
+Sprint 24 ──────────── User profile: avatar upload (S3), nickname
+Sprint 25 ──────────── @Mentions in cards & comments (autocomplete + chips)
+Sprint 26 ──────────── In-app notification bell + panel (mention alerts, real-time WS)
 ```
 
 ---

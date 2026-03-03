@@ -49,6 +49,10 @@ export const env = {
   // Rate-limiting — when false, all limits are bypassed
   RATE_LIMIT_ENABLED: Bun.env['RATE_LIMIT_ENABLED'] === 'true',
 
+  // Email / SES
+  SES_REGION: Bun.env['SES_REGION'] ?? 'us-east-1',
+  SES_FROM_ADDRESS: Bun.env['SES_FROM_ADDRESS'] ?? 'noreply@example.com',
+
   // Feature flag provider configuration
   FEATURE_FLAGS_PROVIDER: Bun.env['FEATURE_FLAGS_PROVIDER'] as
     | 'flagsmith'

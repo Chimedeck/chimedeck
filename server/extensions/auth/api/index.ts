@@ -5,6 +5,8 @@ import { handleRefresh } from './refresh';
 import { handleLogout } from './logout';
 import { handleOAuthRedirect } from './oauth/index';
 import { handleOAuthCallback } from './oauth/callback';
+import { handleVerifyEmail } from './verifyEmail';
+import { handleResendVerification } from './resendVerification';
 import type { OAuthProvider } from '../common/config/oauth';
 
 const OAUTH_PROVIDERS: OAuthProvider[] = ['google', 'github'];
@@ -25,6 +27,14 @@ export async function authRouter(req: Request, pathname: string): Promise<Respon
 
   if (pathname === '/api/v1/auth/session' && req.method === 'DELETE') {
     return handleLogout(req);
+  }
+
+  if (pathname === '/api/v1/auth/verify-email' && req.method === 'GET') {
+    return handleVerifyEmail(req);
+  }
+
+  if (pathname === '/api/v1/auth/resend-verification' && req.method === 'POST') {
+    return handleResendVerification(req);
   }
 
   // OAuth redirect: GET /api/v1/auth/oauth/:provider

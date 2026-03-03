@@ -39,6 +39,11 @@ const BoardPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('~/pages/NotFoundPage').then((m) => ({ default: m.default }))
 );
+const VerifyEmailPage = lazy(() =>
+  import('~/extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage').then((m) => ({
+    default: m.default,
+  }))
+);
 
 const LoadingFallback = () => (
   <div className="flex h-screen items-center justify-center bg-gray-900">
@@ -56,6 +61,9 @@ export default function AppRouter() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
           </Route>
+
+          {/* Public route for email verification — accessible without auth */}
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Private routes wrapped in AppShell (sidebar + content) */}
           <Route element={<PrivateRoute />}>

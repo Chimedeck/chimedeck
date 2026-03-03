@@ -15,8 +15,9 @@ export interface AuthUser {
 interface AuthDuckState {
   user: AuthUser | null;
   accessToken: string | null;
-  status: 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
+  status: 'idle' | 'loading' | 'authenticated' | 'unauthenticated' | 'pending-verification';
   error: string | null;
+  pendingEmail: string | null;
 }
 
 // ---------- Initial state ----------
@@ -28,6 +29,7 @@ const initialState: AuthDuckState = {
   // "checked and found unauthenticated", preventing premature redirects on boot.
   status: 'idle',
   error: null,
+  pendingEmail: null,
 };
 
 // ---------- Thunks ----------
@@ -56,6 +58,12 @@ export const signupThunk = createAppAsyncThunk(
   ) => {
     try {
       const response = await authApi.signup({ name, email, password });
+      // When email verification is enabled, server returns { requiresVerification: true }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const body = response as unknown as { data: { requiresVerification?: boolean } };
+      if (body.data?.requiresVerification) {
+        return { requiresVerification: true, email };
+      }
       return response.data;
     } catch (err: unknown) {
       const msg = isApiError(err) ? err.response.data.name : 'signup-failed';
@@ -133,9 +141,16 @@ const authDuck = createSlice({
         state.error = null;
       })
       .addCase(signupThunk.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.accessToken = action.payload.accessToken;
-        state.status = 'authenticated';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const payload = action.payload as any;
+        if (payload.requiresVerification) {
+          state.status = 'pending-verification';
+          state.pendingEmail = payload.email;
+        } else {
+          state.user = payload.user;
+          state.accessToken = payload.accessToken;
+          state.status = 'authenticated';
+        }
       })
       .addCase(signupThunk.rejected, (state, action) => {
         state.status = 'unauthenticated';
@@ -172,6 +187,7 @@ export const selectIsAuthenticated = (state: RootState) =>
   state.auth.status === 'authenticated';
 export const selectAuthStatus = (state: RootState) => state.auth.status;
 export const selectAuthError = (state: RootState) => state.auth.error;
+export const selectPendingEmail = (state: RootState) => state.auth.pendingEmail;
 
 // ---------- Helpers ----------
 
