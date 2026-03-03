@@ -44,7 +44,11 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Trello import — avatar files downloaded temporarily during seed (uploaded to S3, not committed)
+# Trello import — raw export, generated ID maps, and avatar files (not committed)
+db/all_trello_cards.json
+db/trello-import-member-ids.json
+db/trello-import-workspace-ids.json
+db/trello-import-*.json
 public/avatars/
 
 .task
