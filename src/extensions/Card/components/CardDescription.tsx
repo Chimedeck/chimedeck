@@ -1,9 +1,12 @@
 // CardDescription — Markdown textarea editor with live preview toggle.
-// Edit mode: <textarea> with auto-resize. Preview mode: rendered HTML via marked.
+// Edit mode: <MentionInput> with auto-resize. Preview mode: rendered HTML via marked.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { marked } from 'marked';
+import MentionInput from '~/common/components/MentionInput/MentionInput';
+import renderMentions from '~/common/components/MentionInput/renderMentions';
 
 interface Props {
+  boardId: string;
   description: string;
   onSave: (description: string) => void; // debounced by caller
   disabled?: boolean;
@@ -11,35 +14,19 @@ interface Props {
 
 const DEBOUNCE_MS = 800;
 
-const CardDescription = ({ description, onSave, disabled }: Props) => {
+const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [draft, setDraft] = useState(description);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sync external changes
   useEffect(() => {
     setDraft(description);
   }, [description]);
 
-  // Auto-resize textarea
-  const resize = () => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    if (mode === 'edit') resize();
-  }, [mode, draft]);
-
   const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const val = e.target.value;
+    (val: string) => {
       setDraft(val);
-      resize();
       // Debounced auto-save
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => onSave(val), DEBOUNCE_MS);
@@ -74,12 +61,12 @@ const CardDescription = ({ description, onSave, disabled }: Props) => {
       </div>
 
       {mode === 'edit' && !disabled ? (
-        <textarea
-          ref={textareaRef}
-          className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] font-mono"
-          placeholder="Add a more detailed description…"
+        <MentionInput
+          boardId={boardId}
           value={draft}
           onChange={handleChange}
+          placeholder="Add a more detailed description…"
+          className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] font-mono"
           aria-label="Card description"
         />
       ) : (

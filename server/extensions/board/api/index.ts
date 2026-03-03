@@ -10,6 +10,7 @@ import { handleGetBoardEvents } from '../../realtime/api/events';
 import { handleGetPresence } from '../../realtime/api/presence';
 import { handleGetBoardLabels, handleCreateBoardLabel } from './labels';
 import { handleGetBoardMembers } from './members';
+import { handleGetMemberSuggestions } from './members/suggestions';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -57,6 +58,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/members — list workspace members
     if (sub === '/members' && req.method === 'GET') return handleGetBoardMembers(req, boardId);
+
+    // GET /api/v1/boards/:id/members/suggestions?q=
+    if (sub === '/members/suggestions' && req.method === 'GET') return handleGetMemberSuggestions(req, boardId);
   }
 
   return null;

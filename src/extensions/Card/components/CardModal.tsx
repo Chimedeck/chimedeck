@@ -20,6 +20,7 @@ interface BoardMember {
 }
 
 interface Props {
+  boardId: string;
   open: boolean;
   card: Card;
   listTitle: string;
@@ -53,6 +54,7 @@ interface Props {
 }
 
 const CardModal = ({
+  boardId,
   open,
   card,
   listTitle,
@@ -132,6 +134,7 @@ const CardModal = ({
               {/* Main column */}
               <div className="flex-1 min-w-0 space-y-6">
                 <CardDescription
+                  boardId={boardId}
                   description={card.description ?? ''}
                   onSave={onDescriptionSave}
                   disabled={isReadOnly}
@@ -147,6 +150,7 @@ const CardModal = ({
                 />
 
                 <CommentThread
+                  boardId={boardId}
                   comments={comments}
                   currentUserId={currentUserId}
                   onAddComment={onAddComment}

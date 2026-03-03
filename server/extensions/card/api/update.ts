@@ -2,6 +2,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { writeEvent } from '../../../mods/events/write';
+import { syncMentions } from '../../../common/mentions/sync';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -62,10 +63,29 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     updates.due_date = body.due_date;
   }
 
-  const updated = await db('cards').where({ id: cardId }).update(updates, ['*']);
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+
+  // Wrap card update + mention sync in a single transaction
+  const updated = await db.transaction(async (trx) => {
+    const rows = await trx('cards').where({ id: cardId }).update(updates, ['*']);
+
+    // Sync @mentions when description is being saved
+    if (body.description !== undefined && rows[0]) {
+      await syncMentions({
+        trx,
+        sourceType: 'card_description',
+        sourceId: cardId,
+        text: rows[0].description ?? '',
+        boardId: board.id,
+        mentionedByUserId: actorId,
+      });
+    }
+
+    return rows;
+  });
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
-  await writeEvent({ type: 'card_updated', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0] } });
+  await writeEvent({ type: 'card_updated', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0] } });
 
   return Response.json({ data: updated[0] });
 }

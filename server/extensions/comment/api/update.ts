@@ -8,6 +8,7 @@ import {
 import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
+import { syncMentions } from '../../../common/mentions/sync';
 
 export async function handleUpdateComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -69,10 +70,23 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   }
 
   const newVersion = comment.version + 1;
-  await db('comments').where({ id: commentId }).update({
-    content: body.content.trim(),
-    version: newVersion,
-    updated_at: new Date().toISOString(),
+  const trimmedContent = body.content.trim();
+
+  await db.transaction(async (trx) => {
+    await trx('comments').where({ id: commentId }).update({
+      content: trimmedContent,
+      version: newVersion,
+      updated_at: new Date().toISOString(),
+    });
+
+    await syncMentions({
+      trx,
+      sourceType: 'comment',
+      sourceId: commentId,
+      text: trimmedContent,
+      boardId: board.id,
+      mentionedByUserId: actorId,
+    });
   });
 
   const updated = await db('comments').where({ id: commentId }).first();
@@ -91,7 +105,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       boardId: board.id,
       action: 'comment_edited',
       actorId,
-      payload: { commentId, version: newVersion, before: comment.content, after: body.content.trim() },
+      payload: { commentId, version: newVersion, before: comment.content, after: trimmedContent },
     }),
   ]);
 

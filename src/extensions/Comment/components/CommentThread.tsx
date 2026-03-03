@@ -3,6 +3,7 @@ import CommentItem, { type Comment } from './CommentItem';
 import CommentEditor from './CommentEditor';
 
 interface Props {
+  boardId?: string;
   comments: Comment[];
   currentUserId: string;
   isAdmin?: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const CommentThread = ({
+  boardId,
   comments,
   currentUserId,
   isAdmin = false,
@@ -31,6 +33,7 @@ const CommentThread = ({
           <CommentItem
             key={comment.id}
             comment={comment}
+            {...(boardId !== undefined ? { boardId } : {})}
             currentUserId={currentUserId}
             isAdmin={isAdmin}
             onEdit={onEditComment}
@@ -40,6 +43,7 @@ const CommentThread = ({
       </div>
 
       <CommentEditor
+        {...(boardId !== undefined ? { boardId } : {})}
         placeholder="Add a comment…"
         onSubmit={onAddComment}
         submitLabel="Comment"

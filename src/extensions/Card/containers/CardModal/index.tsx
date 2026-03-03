@@ -366,6 +366,7 @@ const CardModalContainer = () => {
   return (
     <CardModal
       open={!!cardId}
+      boardId={boardId ?? ''}
       card={card}
       listTitle={meta.listTitle}
       boardTitle={meta.boardTitle}

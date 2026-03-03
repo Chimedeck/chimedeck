@@ -10,6 +10,7 @@ import {
 import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
+import { syncMentions } from '../../../common/mentions/sync';
 
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -59,15 +60,28 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   }
 
   const id = randomUUID();
-  await db('comments').insert({
-    id,
-    card_id: cardId,
-    user_id: actorId,
-    content: body.content.trim(),
-    version: 1,
-    deleted: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+  const trimmedContent = body.content.trim();
+
+  await db.transaction(async (trx) => {
+    await trx('comments').insert({
+      id,
+      card_id: cardId,
+      user_id: actorId,
+      content: trimmedContent,
+      version: 1,
+      deleted: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    await syncMentions({
+      trx,
+      sourceType: 'comment',
+      sourceId: id,
+      text: trimmedContent,
+      boardId: board.id,
+      mentionedByUserId: actorId,
+    });
   });
 
   const comment = await db('comments')

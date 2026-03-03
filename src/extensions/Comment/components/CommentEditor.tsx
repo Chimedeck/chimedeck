@@ -1,7 +1,10 @@
 // Markdown textarea for composing or editing a comment.
+// Supports @mention autocomplete when boardId is provided.
 import { useState } from 'react';
+import MentionInput from '~/common/components/MentionInput/MentionInput';
 
 interface Props {
+  boardId?: string;
   initialValue?: string;
   placeholder?: string;
   onSubmit: (content: string) => Promise<void>;
@@ -10,6 +13,7 @@ interface Props {
 }
 
 const CommentEditor = ({
+  boardId,
   initialValue = '',
   placeholder = 'Write a comment…',
   onSubmit,
@@ -38,17 +42,33 @@ const CommentEditor = ({
     }
   };
 
+  const textareaClass =
+    'w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400';
+
   return (
     <div className="flex flex-col gap-2">
-      <textarea
-        className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        rows={3}
-        placeholder={placeholder}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        disabled={submitting}
-        aria-label="Comment text"
-      />
+      {boardId ? (
+        <MentionInput
+          boardId={boardId}
+          value={content}
+          onChange={setContent}
+          placeholder={placeholder}
+          className={textareaClass}
+          rows={3}
+          disabled={submitting}
+          aria-label="Comment text"
+        />
+      ) : (
+        <textarea
+          className={textareaClass}
+          rows={3}
+          placeholder={placeholder}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          disabled={submitting}
+          aria-label="Comment text"
+        />
+      )}
       {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button

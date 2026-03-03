@@ -19,6 +19,7 @@ export interface Comment {
 
 interface Props {
   comment: Comment;
+  boardId?: string;
   currentUserId: string;
   isAdmin?: boolean;
   onEdit: (commentId: string, content: string) => Promise<void>;
@@ -68,7 +69,7 @@ function renderContent(text: string) {
   );
 }
 
-const CommentItem = ({ comment, currentUserId, isAdmin = false, onEdit, onDelete }: Props) => {
+const CommentItem = ({ comment, boardId, currentUserId, isAdmin = false, onEdit, onDelete }: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -123,6 +124,7 @@ const CommentItem = ({ comment, currentUserId, isAdmin = false, onEdit, onDelete
         {/* Comment text or editor */}
         {editing ? (
           <CommentEditor
+            {...(boardId !== undefined ? { boardId } : {})}
             initialValue={comment.content}
             onSubmit={handleEdit}
             onCancel={() => setEditing(false)}
