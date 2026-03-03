@@ -11,6 +11,7 @@ import {
   selectCardDetailLabels,
   selectCardDetailMembers,
   selectCardDetailChecklist,
+  selectCardDetailComments,
   selectCardDetailStatus,
   selectCardDetailMeta,
 } from '../../slices/cardDetailSlice';
@@ -28,9 +29,14 @@ import {
   createBoardLabel,
   getBoardLabels,
   getBoardMembers,
+  getCardComments,
+  postCardComment,
+  patchComment,
+  deleteComment,
 } from '../../api/cardDetail';
 import type { Label } from '../../api';
 import { boardSliceActions } from '../../../Board/slices/boardSlice';
+import { selectCurrentUser } from '~/slices/authSlice';
 import apiClient from '~/common/api/client';
 
 let _mutationCounter = 0;
@@ -45,9 +51,11 @@ const CardModalContainer = () => {
   const labels = useAppSelector(selectCardDetailLabels);
   const members = useAppSelector(selectCardDetailMembers);
   const checklistItems = useAppSelector(selectCardDetailChecklist);
+  const comments = useAppSelector(selectCardDetailComments);
   const status = useAppSelector(selectCardDetailStatus);
   const meta = useAppSelector(selectCardDetailMeta);
   const { boardId } = meta;
+  const currentUser = useAppSelector(selectCurrentUser);
 
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
@@ -62,7 +70,11 @@ const CardModalContainer = () => {
     }
     dispatch(cardDetailSliceActions.openModal({ cardId }));
     dispatch(fetchCardDetailThunk({ cardId }));
-  }, [cardId, dispatch]);
+    // Fetch comments separately
+    getCardComments({ api, cardId })
+      .then((comments) => dispatch(cardDetailSliceActions.setComments(comments)))
+      .catch(() => {});
+  }, [cardId, dispatch, api]);
 
   // Load board labels and members when boardId is known
   useEffect(() => {
@@ -299,6 +311,32 @@ const CardModalContainer = () => {
     [api, card, dispatch],
   );
 
+  // ── Comments ───────────────────────────────────────────────────────────
+  const handleAddComment = useCallback(
+    async (content: string) => {
+      if (!card) return;
+      const comment = await postCardComment({ api, cardId: card.id, content });
+      dispatch(cardDetailSliceActions.addComment(comment));
+    },
+    [api, card, dispatch],
+  );
+
+  const handleEditComment = useCallback(
+    async (commentId: string, content: string) => {
+      const comment = await patchComment({ api, commentId, content });
+      dispatch(cardDetailSliceActions.updateComment(comment));
+    },
+    [api, dispatch],
+  );
+
+  const handleDeleteComment = useCallback(
+    async (commentId: string) => {
+      await deleteComment({ api, commentId });
+      dispatch(cardDetailSliceActions.removeComment({ commentId }));
+    },
+    [api, dispatch],
+  );
+
   // ── Render ─────────────────────────────────────────────────────────────
   if (!cardId) return null;
 
@@ -336,6 +374,8 @@ const CardModalContainer = () => {
       members={members}
       boardMembers={boardMembersRef.current}
       checklistItems={checklistItems}
+      comments={comments}
+      currentUserId={currentUser?.id ?? ''}
       onClose={handleClose}
       onTitleSave={handleTitleSave}
       onDescriptionSave={handleDescriptionSave}
@@ -352,6 +392,9 @@ const CardModalContainer = () => {
       onLabelCreate={handleLabelCreate}
       onMemberAssign={handleMemberAssign}
       onMemberRemove={handleMemberRemove}
+      onAddComment={handleAddComment}
+      onEditComment={handleEditComment}
+      onDeleteComment={handleDeleteComment}
     />
   );
 };

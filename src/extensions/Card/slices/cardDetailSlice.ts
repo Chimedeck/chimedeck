@@ -1,8 +1,9 @@
-// cardDetailSlice — modal state, card detail, checklist, labels, members.
+// cardDetailSlice — modal state, card detail, checklist, labels, members, comments.
 // Sprint 19: optimistic updates with rollback per architecture spec.
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
 import type { Card, Label, CardMember, ChecklistItem, CardDetail } from '../api';
+import type { CommentData } from '../api/cardDetail';
 
 // ---------- State ----------
 
@@ -15,6 +16,7 @@ export interface CardDetailState {
   labels: Label[];
   members: CardMember[];
   checklistItems: ChecklistItem[];
+  comments: CommentData[];
   status: 'idle' | 'loading' | 'error';
   /** Optimistic snapshots by mutationId for rollback */
   snapshots: Record<
@@ -37,6 +39,7 @@ const initialState: CardDetailState = {
   labels: [],
   members: [],
   checklistItems: [],
+  comments: [],
   status: 'idle',
   snapshots: {},
 };
@@ -74,9 +77,31 @@ const cardDetailSlice = createSlice({
       state.labels = [];
       state.members = [];
       state.checklistItems = [];
+      state.comments = [];
       state.status = 'idle';
       state.snapshots = {};
     },
+
+    // ── Comments ────────────────────────────────────────────────────────────────
+    setComments(state, action: PayloadAction<CommentData[]>) {
+      state.comments = action.payload;
+    },
+
+    addComment(state, action: PayloadAction<CommentData>) {
+      state.comments.push(action.payload);
+    },
+
+    updateComment(state, action: PayloadAction<CommentData>) {
+      const idx = state.comments.findIndex((c) => c.id === action.payload.id);
+      if (idx !== -1) state.comments[idx] = action.payload;
+    },
+
+    removeComment(state, action: PayloadAction<{ commentId: string }>) {
+      // Mark as deleted (soft delete per schema) rather than removing
+      const comment = state.comments.find((c) => c.id === action.payload.commentId);
+      if (comment) comment.deleted = true;
+    },
+
 
     // ── Optimistic card field update ────────────────────────────────────────
     applyOptimisticCardUpdate(
@@ -282,6 +307,7 @@ export const selectCardDetailLabels = (s: { cardDetail: CardDetailState }) => s.
 export const selectCardDetailMembers = (s: { cardDetail: CardDetailState }) => s.cardDetail.members;
 export const selectCardDetailChecklist = (s: { cardDetail: CardDetailState }) =>
   s.cardDetail.checklistItems;
+export const selectCardDetailComments = (s: { cardDetail: CardDetailState }) => s.cardDetail.comments;
 export const selectCardDetailStatus = (s: { cardDetail: CardDetailState }) => s.cardDetail.status;
 export const selectCardDetailMeta = (s: { cardDetail: CardDetailState }) => ({
   listTitle: s.cardDetail.listTitle,

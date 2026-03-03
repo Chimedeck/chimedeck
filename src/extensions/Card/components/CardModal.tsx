@@ -10,6 +10,8 @@ import CardMembers from './CardMembers';
 import CardDueDate from './CardDueDate';
 import CardActionMenu from './CardActionMenu';
 import CardSidebarSection from './CardSidebarSection';
+import CommentThread from '~/extensions/Comment/components/CommentThread';
+import type { Comment } from '~/extensions/Comment/components/CommentItem';
 
 interface BoardMember {
   id: string;
@@ -27,6 +29,8 @@ interface Props {
   members: CardMember[];
   boardMembers: BoardMember[];
   checklistItems: ChecklistItem[];
+  comments: Comment[];
+  currentUserId: string;
   onClose: () => void;
   onTitleSave: (title: string) => void;
   onDescriptionSave: (description: string) => void;
@@ -43,6 +47,9 @@ interface Props {
   onLabelCreate: (name: string, color: string) => Promise<void>;
   onMemberAssign: (userId: string) => Promise<void>;
   onMemberRemove: (userId: string) => Promise<void>;
+  onAddComment: (content: string) => Promise<void>;
+  onEditComment: (commentId: string, content: string) => Promise<void>;
+  onDeleteComment: (commentId: string) => Promise<void>;
 }
 
 const CardModal = ({
@@ -55,6 +62,8 @@ const CardModal = ({
   members,
   boardMembers,
   checklistItems,
+  comments,
+  currentUserId,
   onClose,
   onTitleSave,
   onDescriptionSave,
@@ -71,6 +80,9 @@ const CardModal = ({
   onLabelCreate,
   onMemberAssign,
   onMemberRemove,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
 }: Props) => {
   const isReadOnly = card.archived;
 
@@ -132,6 +144,14 @@ const CardModal = ({
                   onRename={onChecklistRename}
                   onDelete={onChecklistDelete}
                   disabled={isReadOnly}
+                />
+
+                <CommentThread
+                  comments={comments}
+                  currentUserId={currentUserId}
+                  onAddComment={onAddComment}
+                  onEditComment={onEditComment}
+                  onDeleteComment={onDeleteComment}
                 />
               </div>
 

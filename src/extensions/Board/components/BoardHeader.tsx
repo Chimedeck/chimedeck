@@ -1,5 +1,5 @@
 // BoardHeader — sticky top bar with editable title, member avatars, share button and ⋯ menu.
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Board } from '../api';
 import BoardMemberAvatars from './BoardMemberAvatars';
 import ConnectionBadge from '~/common/components/ConnectionBadge';
@@ -39,6 +39,19 @@ const BoardHeader = ({
   const [title, setTitle] = useState(board.title);
   const [menuOpen, setMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close the settings menu when user clicks outside it
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [menuOpen]);
 
   const handleTitleClick = () => {
     setTitle(board.title);
@@ -102,7 +115,7 @@ const BoardHeader = ({
         {members.length > 0 && <BoardMemberAvatars members={members} />}
 
         {/* Settings menu */}
-        <div className="relative">
+        <div className="relative" ref={menuContainerRef}>
           <button
             className="rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
             onClick={() => setMenuOpen((v) => !v)}
@@ -113,15 +126,7 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <>
-              {/* Invisible backdrop to close the menu on outside click */}
-              <div
-                className="fixed inset-0 z-10"
-                role="presentation"
-                onClick={() => setMenuOpen(false)}
-                onKeyDown={(e) => e.key === 'Escape' && setMenuOpen(false)}
-              />
-              <div className="absolute right-0 mt-1 w-40 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
+            <div className="absolute right-0 mt-1 w-40 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
               {onArchive && (
                 <button
                   className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
@@ -138,8 +143,7 @@ const BoardHeader = ({
                   Delete board
                 </button>
               )}
-              </div>
-            </>
+            </div>
           )}
         </div>
       </div>

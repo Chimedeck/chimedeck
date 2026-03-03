@@ -159,3 +159,63 @@ export async function getBoardMembers({
   const res = await api.get<{ data: Array<{ id: string; email: string; name: string | null }> }>(`/boards/${boardId}/members`);
   return (res as unknown as { data: Array<{ id: string; email: string; name: string | null }> }).data;
 }
+
+// ── Comment API ────────────────────────────────────────────────────────────────
+
+export interface CommentData {
+  id: string;
+  card_id: string;
+  user_id: string;
+  content: string;
+  version: number;
+  deleted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getCardComments({
+  api,
+  cardId,
+}: {
+  api: ApiClient;
+  cardId: string;
+}): Promise<CommentData[]> {
+  const res = await api.get<{ data: CommentData[] }>(`/cards/${cardId}/comments`);
+  return (res as unknown as { data: CommentData[] }).data;
+}
+
+export async function postCardComment({
+  api,
+  cardId,
+  content,
+}: {
+  api: ApiClient;
+  cardId: string;
+  content: string;
+}): Promise<CommentData> {
+  const res = await api.post<{ data: CommentData }>(`/cards/${cardId}/comments`, { content });
+  return (res as unknown as { data: CommentData }).data;
+}
+
+export async function patchComment({
+  api,
+  commentId,
+  content,
+}: {
+  api: ApiClient;
+  commentId: string;
+  content: string;
+}): Promise<CommentData> {
+  const res = await api.patch<{ data: CommentData }>(`/comments/${commentId}`, { content });
+  return (res as unknown as { data: CommentData }).data;
+}
+
+export async function deleteComment({
+  api,
+  commentId,
+}: {
+  api: ApiClient;
+  commentId: string;
+}): Promise<void> {
+  await api.delete(`/comments/${commentId}`);
+}
