@@ -7,6 +7,7 @@ export interface SearchResult {
   type: 'board' | 'card';
   workspaceId?: string;
   listId?: string;
+  boardId?: string;
   archived?: boolean;
   rank?: number;
 }

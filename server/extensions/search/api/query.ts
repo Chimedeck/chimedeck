@@ -69,13 +69,13 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   if (!type || type === 'board') {
     let boardQ = db('boards')
       .select(
-        db.raw(`id, title, workspace_id, archived, 'board' as type,
+        db.raw(`id, title, workspace_id, state, 'board' as type,
           ts_rank_cd(search_vector, to_tsquery('english', ?)) AS rank`, [tsquery]),
       )
       .where('workspace_id', workspaceId)
       .whereRaw(`search_vector @@ to_tsquery('english', ?)`, [tsquery]);
 
-    if (!includeArchived) boardQ = boardQ.where('archived', false);
+    if (!includeArchived) boardQ = boardQ.where('state', 'ACTIVE');
     if (cursor) boardQ = boardQ.where('id', '>', cursor);
 
     const boards = await boardQ.orderBy('rank', 'desc').limit(limit);
@@ -90,7 +90,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
       .join('boards', 'lists.board_id', 'boards.id')
       .select(
         db.raw(
-          `cards.id, cards.title, cards.list_id, boards.workspace_id, cards.archived, 'card' as type,
+          `cards.id, cards.title, cards.list_id, boards.id as board_id, boards.workspace_id, cards.archived, 'card' as type,
           ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
           [tsquery],
         ),

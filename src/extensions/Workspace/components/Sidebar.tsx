@@ -102,6 +102,20 @@ export default function Sidebar() {
 
         {/* Nav links */}
         <div className="flex-1 overflow-y-auto px-3 py-3">
+          {/* Search button — triggers Cmd+K listener in AppShell */}
+          <button
+            className="mb-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            onClick={() =>
+              document.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }),
+              )
+            }
+            aria-label="Search (⌘K)"
+          >
+            <span aria-hidden="true">🔍</span>
+            <span>Search</span>
+            <kbd className="ml-auto rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-400">⌘K</kbd>
+          </button>
           {activeWorkspace ? (
             <ul className="space-y-0.5">
               <li>

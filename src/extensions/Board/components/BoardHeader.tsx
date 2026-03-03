@@ -113,7 +113,15 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-40 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
+            <>
+              {/* Invisible backdrop to close the menu on outside click */}
+              <div
+                className="fixed inset-0 z-10"
+                role="presentation"
+                onClick={() => setMenuOpen(false)}
+                onKeyDown={(e) => e.key === 'Escape' && setMenuOpen(false)}
+              />
+              <div className="absolute right-0 mt-1 w-40 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
               {onArchive && (
                 <button
                   className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
@@ -130,7 +138,8 @@ const BoardHeader = ({
                   Delete board
                 </button>
               )}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -3,7 +3,7 @@
 // Sprint 19: ?card=:id URL param opens CardModal.
 // Sprint 20: real-time sync via useWebSocket + useBoardSync; ConnectionBadge in header.
 import { useEffect, useCallback, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
@@ -21,7 +21,7 @@ import BoardCanvas from '../../components/BoardCanvas';
 import CardModalContainer from '../../../Card/containers/CardModal';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
-import { updateBoard } from '../../api';
+import { updateBoard, archiveBoard, deleteBoard } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
 import { createCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
@@ -41,6 +41,7 @@ declare const __api__: {
 const BoardPage = () => {
   const dispatch = useAppDispatch();
   const { boardId } = useParams<{ boardId: string }>();
+  const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
 
   const board = useAppSelector(selectBoard);
@@ -219,6 +220,28 @@ const BoardPage = () => {
     [api, boardId, dispatch],
   );
 
+  // ── Board archive / delete ─────────────────────────────────────────────
+  const handleBoardArchive = useCallback(async () => {
+    if (!boardId || !board) return;
+    try {
+      await archiveBoard({ api, boardId });
+      dispatch(fetchBoardDataThunk({ boardId }));
+    } catch {
+      addToast('Failed to archive board.', 'error');
+    }
+  }, [api, board, boardId, dispatch, addToast]);
+
+  const handleBoardDelete = useCallback(async () => {
+    if (!boardId) return;
+    if (!confirm('Delete this board? All lists and cards will be permanently removed.')) return;
+    try {
+      await deleteBoard({ api, boardId });
+      navigate('/workspaces');
+    } catch {
+      addToast('Failed to delete board.', 'error');
+    }
+  }, [api, boardId, navigate, addToast]);
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   if (status === 'loading' && !board) {
@@ -245,6 +268,8 @@ const BoardPage = () => {
         board={board}
         connectionState={connectionState}
         onTitleSave={handleTitleSave}
+        onArchive={handleBoardArchive}
+        onDelete={handleBoardDelete}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">

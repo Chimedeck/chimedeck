@@ -1,18 +1,52 @@
 // AppShell — sidebar + main content area wrapper used by all private pages.
-import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
-import { fetchWorkspacesThunk } from '~/extensions/Workspace/duck/workspaceDuck';
+import { useAppSelector } from '~/hooks/useAppSelector';
+import { fetchWorkspacesThunk, selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import Sidebar from '~/extensions/Workspace/components/Sidebar';
+import SearchModal from '~/extensions/Search/components/SearchModal';
+import type { SearchResult } from '~/extensions/Search/api';
 
 export default function AppShell() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const workspaceId = useAppSelector(selectActiveWorkspaceId) ?? '';
+  const token = useAppSelector(selectAuthToken) ?? '';
 
   // Load workspace list once when the shell mounts
   useEffect(() => {
     dispatch(fetchWorkspacesThunk());
   }, [dispatch]);
+
+  // Open search modal on Cmd+K / Ctrl+K
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      setSearchOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  // Navigate when a search result is selected
+  const handleSearchSelect = useCallback((result: SearchResult) => {
+    if (result.type === 'board') {
+      navigate(`/boards/${result.id}`);
+    } else {
+      // Card: navigate to its board with card modal open
+      const boardId = result.boardId;
+      if (boardId) {
+        navigate(`/boards/${boardId}?card=${result.id}`);
+      }
+    }
+  }, [navigate]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
@@ -53,6 +87,17 @@ export default function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global search modal — triggered by Cmd+K or Ctrl+K */}
+      {workspaceId && (
+        <SearchModal
+          workspaceId={workspaceId}
+          token={token}
+          isOpen={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          onSelect={handleSearchSelect}
+        />
+      )}
     </div>
   );
 }
