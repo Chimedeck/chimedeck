@@ -101,6 +101,8 @@ Sprint 23 ──────────── Email verification flow (AWS SES)
 Sprint 24 ──────────── User profile: avatar upload (S3), nickname
 Sprint 25 ──────────── @Mentions in cards & comments (autocomplete + chips)
 Sprint 26 ──────────── In-app notification bell + panel (mention alerts, real-time WS)
+Sprint 27 ──────────── Collapsible label chips on card tiles (board view)
+Sprint 28 ──────────── Member avatar popover on card tiles (profile + remove)
 ```
 
 ---

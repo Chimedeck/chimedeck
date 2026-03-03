@@ -538,6 +538,14 @@ async function main() {
 
   console.log('💬  Collecting comments from card actions…');
 
+  // Build a lookup of every user ID we actually inserted so we can guard
+  // against FK violations. memberId(trelloId) === trelloId — Trello member IDs
+  // are used as-is as our user PKs, so this set is keyed by the Trello ID.
+  const insertedUserIds = new Set<string>([
+    SYSTEM_USER_ID,
+    ...memberRows.map((r: any) => r.id as string),
+  ]);
+
   const commentRows: object[] = [];
   const commentSeen = new Set<string>();
 
@@ -546,19 +554,29 @@ async function main() {
     if (!listSet.has(card.idList)) continue;
 
     for (const action of card.actions ?? []) {
-      // Only process actions that carry a comment text
-      if (!action.data?.text) continue;
       if (commentSeen.has(action.id)) continue;
       commentSeen.add(action.id);
 
       const authorTrelloId = action.memberCreator?.id;
       if (!authorTrelloId) continue;
 
+      // memberId(trelloId) returns the trelloId unchanged — our users table
+      // stores Trello member IDs directly as PKs for a stable 1-to-1 mapping.
+      const userId = memberId(authorTrelloId);
+      if (!insertedUserIds.has(userId)) {
+        // Guard: skip if the author was never seeded as a user (avoids FK error)
+        console.warn(`    ⚠️  skipping comment ${action.id} — author ${authorTrelloId} not in users table`);
+        continue;
+      }
+
+      const text = action.data?.text;
+      if (!text) continue;
+
       commentRows.push({
         id: action.id,
         card_id: card.id,
-        user_id: memberId(authorTrelloId),
-        content: action.data.text,
+        user_id: userId,
+        content: text,
         created_at: new Date(action.date),
         updated_at: new Date(action.date),
       });

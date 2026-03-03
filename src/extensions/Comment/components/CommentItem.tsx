@@ -1,7 +1,11 @@
 // Single comment with inline edit/delete controls — styled to match the Trello-like mockup.
 import { useState } from 'react';
+import { marked } from 'marked';
 import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
+
+// Configure marked: soft line breaks become <br>, no mangling
+marked.setOptions({ breaks: true, gfm: true });
 
 export interface Comment {
   id: string;
@@ -55,17 +59,14 @@ function relativeTime(iso: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-/** Highlight @mention chips inside comment text. */
-function renderContent(text: string) {
-  const parts = text.split(/(@\w[\w.+-]*)/g);
-  return parts.map((part, i) =>
-    part.startsWith('@') ? (
-      <span key={i} className="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">
-        {part}
-      </span>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
+/** Parse markdown and highlight @mention chips inside comment text. Returns safe HTML string. */
+function renderContent(text: string): string {
+  // Convert markdown → HTML
+  const html = marked.parse(text) as string;
+  // Wrap @mentions in a styled chip
+  return html.replace(
+    /(@\w[\w.+-]*)/g,
+    '<span class="rounded bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-300">$1</span>',
   );
 }
 
@@ -131,9 +132,25 @@ const CommentItem = ({ comment, boardId, currentUserId, isAdmin = false, onEdit,
             submitLabel="Update"
           />
         ) : (
-          <p className="whitespace-pre-wrap text-sm text-gray-100 leading-relaxed">
-            {renderContent(comment.content)}
-          </p>
+          <div
+            className="comment-markdown text-sm text-gray-100 leading-relaxed
+              [&_p]:mb-2 [&_p:last-child]:mb-0
+              [&_a]:text-blue-400 [&_a]:underline [&_a:hover]:text-blue-300
+              [&_strong]:font-semibold [&_em]:italic
+              [&_code]:bg-slate-700 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_code]:text-green-300
+              [&_pre]:bg-slate-700 [&_pre]:rounded [&_pre]:p-3 [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:font-mono [&_pre]:text-green-300 [&_pre]:mb-2
+              [&_pre_code]:bg-transparent [&_pre_code]:p-0
+              [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mb-2
+              [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:mb-2
+              [&_li]:mb-0.5
+              [&_blockquote]:border-l-2 [&_blockquote]:border-slate-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-gray-400 [&_blockquote]:mb-2
+              [&_h1]:text-base [&_h1]:font-bold [&_h1]:mb-1
+              [&_h2]:text-sm [&_h2]:font-bold [&_h2]:mb-1
+              [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1"
+            // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
+            // Input is from authenticated users only (internal tool), so XSS risk is accepted.
+            dangerouslySetInnerHTML={{ __html: renderContent(comment.content) }}
+          />
         )}
 
         {/* Inline action links */}

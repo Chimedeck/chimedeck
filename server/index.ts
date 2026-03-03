@@ -22,9 +22,13 @@ import { startExpiryJob } from './extensions/presence/mods/expiryJob';
 import { rooms } from './extensions/realtime/mods/rooms/index';
 // Start orphan cleanup scheduler on server boot
 import './extensions/attachment/mods/orphanCleanup';
+import { ensureBucketExists } from './extensions/attachment/common/config/s3';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
+
+// Ensure the S3 bucket exists (auto-creates when using LocalStack / custom endpoint)
+await ensureBucketExists();
 
 // Start presence expiry background job — fires every 10 s
 startExpiryJob(() => new Set(rooms.keys()));

@@ -39,8 +39,10 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-kanban}
     volumes:
       - localstack_data:/var/lib/localstack
+      - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro
 
   redis:
     image: redis:7-alpine
