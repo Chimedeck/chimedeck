@@ -4,11 +4,11 @@ import type { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('mentions', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.text('source_type').notNullable(); // 'card_description' | 'comment'
-    table.uuid('source_id').notNullable();
-    table.uuid('mentioned_user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
-    table.uuid('mentioned_by_user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+    table.string('source_id').notNullable();
+    table.string('mentioned_user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+    table.string('mentioned_by_user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
 
     table.unique(['source_type', 'source_id', 'mentioned_user_id']);
