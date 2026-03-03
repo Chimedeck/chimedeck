@@ -4,6 +4,8 @@ import type { CardMember } from '../api';
 interface Props {
   members: CardMember[];
   maxVisible?: number;
+  /** Sprint 28: used for member popover logic; ignored for now */
+  currentUserId?: string;
 }
 
 export const CardMemberAvatars = ({ members, maxVisible = 4 }: Props) => {

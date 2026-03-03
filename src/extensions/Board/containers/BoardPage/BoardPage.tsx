@@ -277,6 +277,7 @@ const BoardPage = () => {
         </div>
       )}
       <BoardCanvas
+        boardId={boardId ?? ''}
         listOrder={listOrder}
         lists={lists}
         cardsByList={cardsByList}

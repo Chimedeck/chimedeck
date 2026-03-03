@@ -185,7 +185,7 @@ const boardSlice = createSlice({
 
       // Update card record if present
       if (state.cards[card.id]) {
-        state.cards[card.id] = { ...state.cards[card.id], ...card };
+        state.cards[card.id] = { ...state.cards[card.id], ...card } as Card;
       }
     },
   },

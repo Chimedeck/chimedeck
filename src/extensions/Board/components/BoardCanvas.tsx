@@ -22,8 +22,10 @@ import type { Card } from '../../Card/api';
 import SortableListColumn from '../../List/containers/BoardPage/ListColumn';
 import CardItem from '../../Card/components/CardItem';
 import AddListForm from '../../List/components/AddListForm';
+import { useCardLabelExpanded } from '../../Card/hooks/useCardLabelExpanded';
 
 interface Props {
+  boardId: string;
   listOrder: string[];
   lists: Record<string, List>;
   cardsByList: Record<string, string[]>;
@@ -63,6 +65,7 @@ function findListForCard(cardId: string, cardsByList: Record<string, string[]>):
 }
 
 const BoardCanvas = ({
+  boardId,
   listOrder,
   lists,
   cardsByList,
@@ -80,6 +83,7 @@ const BoardCanvas = ({
   onCardClick,
   isReadOnly = false,
 }: Props) => {
+  const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   // WHY: capture the source list at drag-start; by drag-end the optimistic move
   // has already updated cardsByList so re-deriving fromListId returns toListId.
@@ -236,6 +240,8 @@ const BoardCanvas = ({
                 onArchive={onArchiveList}
                 onDelete={onDeleteList}
                 onAddCard={onAddCard}
+                labelsExpanded={labelsExpanded}
+                onToggleLabels={onToggleLabels}
                 {...(onCardClick ? { onCardClick } : {})}
               />
             );
@@ -246,7 +252,14 @@ const BoardCanvas = ({
 
       {/* DragOverlay renders the dragged card at its drag position */}
       <DragOverlay>
-        {activeCard && <CardItem card={activeCard} isOverlay />}
+        {activeCard && (
+          <CardItem
+            card={activeCard}
+            isOverlay
+            labelsExpanded={labelsExpanded}
+            onToggleLabels={onToggleLabels}
+          />
+        )}
       </DragOverlay>
     </DndContext>
   );

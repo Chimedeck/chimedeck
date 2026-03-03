@@ -3,14 +3,18 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Card } from '../api';
+import CardLabelChips from './CardLabelChips';
+import { CardMemberAvatars } from './CardMemberAvatars';
 
-interface Props {
+export interface CardItemProps {
   card: Card;
   isOverlay?: boolean;
   onClick?: (cardId: string) => void;
+  labelsExpanded?: boolean;
+  onToggleLabels?: () => void;
 }
 
-const CardItem = ({ card, isOverlay = false, onClick }: Props) => {
+const CardItem = ({ card, isOverlay = false, onClick, labelsExpanded = false, onToggleLabels }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
@@ -20,6 +24,9 @@ const CardItem = ({ card, isOverlay = false, onClick }: Props) => {
     // Hide the original item while it is being dragged (overlay shows instead)
     opacity: isDragging && !isOverlay ? 0 : 1,
   };
+
+  const labels = card.labels ?? [];
+  const members = (card as unknown as { members?: { id: string; email: string; name: string | null }[] }).members ?? [];
 
   return (
     <div
@@ -38,14 +45,27 @@ const CardItem = ({ card, isOverlay = false, onClick }: Props) => {
         if (e.key === 'Enter' || e.key === ' ') onClick?.(card.id);
       }}
     >
+      {labels.length > 0 && (
+        <CardLabelChips
+          labels={labels}
+          expanded={labelsExpanded}
+          onToggle={onToggleLabels ?? (() => {})}
+        />
+      )}
       <p className="text-slate-200 text-sm leading-snug break-words">{card.title}</p>
       {card.due_date && (
         <p className="mt-1 text-xs text-slate-500">
           📅 {new Date(card.due_date).toLocaleDateString()}
         </p>
       )}
+      {members.length > 0 && (
+        <div className="mt-1.5">
+          <CardMemberAvatars members={members} currentUserId="" />
+        </div>
+      )}
     </div>
   );
 };
 
 export default CardItem;
+

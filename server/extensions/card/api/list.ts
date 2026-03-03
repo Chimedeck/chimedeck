@@ -30,9 +30,34 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const cards = await db('cards')
-    .where({ list_id: listId, archived: false })
-    .orderBy('position', 'asc');
+  const rows = await db('cards as c')
+    .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
+    .leftJoin('labels as l', 'l.id', 'cl.label_id')
+    .where({ 'c.list_id': listId, 'c.archived': false })
+    .orderBy('c.position', 'asc')
+    .select(
+      'c.*',
+      db.raw(
+        `json_group_array(
+          CASE WHEN l.id IS NOT NULL THEN
+            json_object('id', l.id, 'name', l.name, 'color', l.color)
+          ELSE NULL END
+        ) as labels_json`,
+      ),
+    )
+    .groupBy('c.id');
+
+  const cards = rows.map((row) => {
+    const rawLabels: Array<{ id: string; name: string; color: string } | null> = (() => {
+      try {
+        return JSON.parse(row.labels_json ?? '[]');
+      } catch {
+        return [];
+      }
+    })();
+    const { labels_json: _l, ...card } = row;
+    return { ...card, labels: rawLabels.filter(Boolean) };
+  });
 
   return Response.json({ data: cards });
 }

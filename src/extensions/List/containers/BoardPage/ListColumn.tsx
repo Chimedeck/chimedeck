@@ -19,6 +19,8 @@ interface Props {
   onDelete: (listId: string) => void;
   onAddCard: (listId: string, title: string) => Promise<void>;
   onCardClick?: (cardId: string) => void;
+  labelsExpanded?: boolean;
+  onToggleLabels?: () => void;
 }
 
 const SortableListColumn = ({
@@ -30,6 +32,8 @@ const SortableListColumn = ({
   onDelete,
   onAddCard,
   onCardClick,
+  labelsExpanded,
+  onToggleLabels,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
 
@@ -79,6 +83,8 @@ const SortableListColumn = ({
             <CardItem
               key={card.id}
               card={card}
+              labelsExpanded={labelsExpanded ?? false}
+              onToggleLabels={onToggleLabels ?? (() => {})}
               {...(onCardClick ? { onClick: onCardClick } : {})}
             />
           ))}
