@@ -30,7 +30,6 @@ const MentionInput = ({
     suggestions,
     showSuggestions,
     highlightedIndex,
-    suggestionPos,
     handleKeyDown,
     handleChange,
     selectSuggestion,
@@ -59,7 +58,6 @@ const MentionInput = ({
         <MentionSuggestions
           suggestions={suggestions}
           highlightedIndex={highlightedIndex}
-          position={suggestionPos}
           onSelect={selectSuggestion}
           onHighlight={setLocalHighlight}
         />

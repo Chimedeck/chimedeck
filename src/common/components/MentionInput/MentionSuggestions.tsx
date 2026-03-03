@@ -11,7 +11,6 @@ interface Suggestion {
 interface Props {
   suggestions: Suggestion[];
   highlightedIndex: number;
-  position: { top: number; left: number } | null;
   onSelect: (suggestion: Suggestion) => void;
   onHighlight: (index: number) => void;
 }
@@ -19,18 +18,16 @@ interface Props {
 const MentionSuggestions = ({
   suggestions,
   highlightedIndex,
-  position,
   onSelect,
   onHighlight,
 }: Props) => {
-  if (!suggestions.length || !position) return null;
+  if (!suggestions.length) return null;
 
   return (
     <ul
       role="listbox"
       aria-label="Mention suggestions"
-      className="absolute z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
-      style={{ top: position.top, left: position.left }}
+      className="absolute z-50 top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
     >
       {suggestions.map((s, i) => (
         <li key={s.id} role="presentation">
