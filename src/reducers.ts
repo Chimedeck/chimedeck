@@ -10,3 +10,4 @@ export { default as cardDetailReducer } from './extensions/Card/slices/cardDetai
 // Entity slices synced via WebSocket (sprint-20)
 export { default as listReducer } from './extensions/List/listSlice';
 export { default as cardsReducer } from './extensions/Card/cardSlice';
+export { profileDuckReducer } from './extensions/User/containers/ProfilePage/ProfilePage.duck';

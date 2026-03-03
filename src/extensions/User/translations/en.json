@@ -1,0 +1,14 @@
+{
+  "ProfilePage.title": "Profile Settings",
+  "ProfilePage.avatar": "Avatar",
+  "ProfilePage.changePhoto": "Change photo",
+  "ProfilePage.removePhoto": "Remove photo",
+  "ProfilePage.displayName": "Display Name",
+  "ProfilePage.nickname": "Nickname",
+  "ProfilePage.nicknamePlaceholder": "@your_nickname",
+  "ProfilePage.nicknameHint": "Used for @mentions in cards and comments",
+  "ProfilePage.saveChanges": "Save Changes",
+  "ProfilePage.saved": "Profile updated.",
+  "ProfilePage.nicknameTaken": "This nickname is already taken.",
+  "ProfilePage.invalidFile": "Please upload a JPEG, PNG, WebP or GIF under 5 MB."
+}

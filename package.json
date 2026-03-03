@@ -59,6 +59,7 @@
     "react-dom": "^18",
     "react-redux": "^9",
     "react-router-dom": "^6",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^2",
     "uuid": "^13.0.0"
   },
@@ -67,6 +68,7 @@
     "@types/pg": "^8.11.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/sharp": "^0.32.0",
     "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",

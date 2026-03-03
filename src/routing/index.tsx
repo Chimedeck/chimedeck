@@ -44,6 +44,11 @@ const VerifyEmailPage = lazy(() =>
     default: m.default,
   }))
 );
+const ProfilePage = lazy(() =>
+  import('~/extensions/User/containers/ProfilePage/ProfilePage').then((m) => ({
+    default: m.default,
+  }))
+);
 
 const LoadingFallback = () => (
   <div className="flex h-screen items-center justify-center bg-gray-900">
@@ -78,6 +83,7 @@ export default function AppRouter() {
                 element={<BoardsPage />}
               />
               <Route path="/boards/:boardId" element={<BoardPage />} />
+              <Route path="/settings/profile" element={<ProfilePage />} />
             </Route>
           </Route>
 

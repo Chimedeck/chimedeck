@@ -12,6 +12,7 @@ import {
 } from '../duck/workspaceDuck';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { logoutThunk } from '~/extensions/Auth/duck/authDuck';
+import { selectProfile } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
 import translations from '../translations/en.json';
 
@@ -23,6 +24,7 @@ export default function Sidebar() {
   const activeWorkspace = useAppSelector(selectActiveWorkspace);
   const status = useAppSelector(selectWorkspacesStatus);
   const user = useAppSelector(selectAuthUser);
+  const profile = useAppSelector(selectProfile);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -184,14 +186,27 @@ export default function Sidebar() {
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"
             >
-              {/* Avatar */}
-              <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white"
-                aria-hidden="true"
-              >
-                {user?.name?.charAt(0).toUpperCase() ?? '?'}
+              {/* Avatar — use profile avatar_url if available, else initials */}
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Avatar"
+                  className="h-7 w-7 shrink-0 rounded-full object-cover"
+                  aria-hidden="true"
+                />
+              ) : (
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white"
+                  aria-hidden="true"
+                >
+                  {(profile?.name ?? user?.name)?.charAt(0).toUpperCase() ?? '?'}
+                </span>
+              )}
+              <span className="flex-1 truncate text-left">
+                {profile?.nickname
+                  ? `@${profile.nickname}`
+                  : (profile?.name ?? user?.name ?? translations['Sidebar.unknownUser'])}
               </span>
-              <span className="flex-1 truncate text-left">{user?.name ?? translations['Sidebar.unknownUser']}</span>
               <span className="text-slate-500" aria-hidden="true">▾</span>
             </button>
 
@@ -200,6 +215,17 @@ export default function Sidebar() {
                 role="menu"
                 className="absolute bottom-full left-0 mb-1 w-full rounded-lg border border-slate-700 bg-slate-800 py-1 shadow-xl"
               >
+                <li role="none">
+                  <NavLink
+                    to="/settings/profile"
+                    role="menuitem"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="block w-full px-3 py-1.5 text-left text-sm text-slate-200 hover:bg-slate-700 transition-colors"
+                  >
+                    {translations['Sidebar.settings']}
+                  </NavLink>
+                </li>
+                <li role="separator" className="my-1 border-t border-slate-700" />
                 <li role="none">
                   <button
                     role="menuitem"
