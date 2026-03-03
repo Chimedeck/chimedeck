@@ -98,7 +98,8 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     .where({ id: cardId })
     .update({ list_id: body.targetListId, position, updated_at: new Date().toISOString() }, ['*']);
 
-  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { targetListId: body.targetListId } });
+  // Client expects { card, fromListId } to update both card slice and board slice
+  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId: card.list_id } });
 
   return Response.json({ data: updated[0] });
 }

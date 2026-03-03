@@ -88,8 +88,8 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
     .where({ board_id: boardId, archived: false })
     .orderBy('position', 'asc');
 
-  // Stub WebSocket event — wired in sprint 09.
-  await writeEvent({ type: 'list_reordered', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { order: body.order } });
+  // Send full lists array so client can reorder from authoritative positions
+  await writeEvent({ type: 'list_reordered', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { boardId, lists: updatedLists } });
 
   return Response.json({ data: updatedLists });
 }

@@ -79,8 +79,8 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
 
   const list = await db('lists').where({ id }).first();
 
-  // Stub event emission — replaced by activity log in sprint 10.
-  await writeEvent({ type: 'list_created', boardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: body.title.trim() } });
+  // Broadcast full list object so clients can update their local state
+  await writeEvent({ type: 'list_created', boardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list } });
 
   return Response.json({ data: list }, { status: 201 });
 }

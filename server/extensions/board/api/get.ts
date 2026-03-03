@@ -30,7 +30,11 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   const lists = await db('lists')
     .where({ board_id: boardId, archived: false })
     .orderBy('position', 'asc');
-  const cards: unknown[] = [];
+
+  const listIds = lists.map((l: { id: string }) => l.id);
+  const cards = listIds.length > 0
+    ? await db('cards').whereIn('list_id', listIds).where({ archived: false }).orderBy('position', 'asc')
+    : [];
 
   return Response.json({
     data: board,

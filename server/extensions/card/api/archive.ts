@@ -50,7 +50,8 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
     .where({ id: cardId })
     .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*']);
 
-  await writeEvent({ type: 'card_archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { archived: newArchived } });
+  // Client expects { cardId, listId } to remove card from board state
+  await writeEvent({ type: 'card_archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { cardId, listId: card.list_id } });
 
   return Response.json({ data: updated[0] });
 }

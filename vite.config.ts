@@ -13,10 +13,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Forward all /api requests to the Bun server in dev — avoids CORS
+      // Forward all /api requests to the Bun server in dev — avoids CORS.
+      // ws: true enables WebSocket upgrade proxying for the realtime endpoint.
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        ws: true,
       },
     },
   },

@@ -4,7 +4,7 @@ import type { CardMember } from '../api';
 interface WorkspaceMember {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
 }
 
 interface Props {
@@ -42,7 +42,7 @@ export const MemberAssignModal = ({
             const assigned = assignedIds.has(member.id);
             return (
               <li key={member.id} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50">
-                <span className="flex-1 text-sm">{member.display_name ?? member.email}</span>
+                <span className="flex-1 text-sm">{member.name ?? member.email}</span>
                 <button
                   type="button"
                   className={`rounded px-2 py-0.5 text-xs ${assigned ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}

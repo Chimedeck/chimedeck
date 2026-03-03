@@ -64,7 +64,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   const updated = await db('cards').where({ id: cardId }).update(updates, ['*']);
 
-  await writeEvent({ type: 'card_edited', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: updates });
+  // Use 'card_updated' to match client useBoardSync handler; send full card object
+  await writeEvent({ type: 'card_updated', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0] } });
 
   return Response.json({ data: updated[0] });
 }

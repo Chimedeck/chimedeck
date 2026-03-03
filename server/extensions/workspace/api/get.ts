@@ -18,7 +18,16 @@ export async function handleListWorkspaces(req: Request): Promise<Response> {
     .where('memberships.user_id', currentUser!.id)
     .select('workspaces.*', 'memberships.role as caller_role');
 
-  return Response.json({ data: rows });
+  // Map DB snake_case to camelCase expected by frontend
+  const data = rows.map((r: Record<string, unknown>) => ({
+    id: r.id,
+    name: r.name,
+    ownerId: r.owner_id,
+    callerRole: r.caller_role,
+    createdAt: r.created_at,
+  }));
+
+  return Response.json({ data });
 }
 
 export async function handleGetWorkspace(req: Request, workspaceId: string): Promise<Response> {
@@ -39,5 +48,12 @@ export async function handleGetWorkspace(req: Request, workspaceId: string): Pro
     );
   }
 
-  return Response.json({ data: workspace });
+  return Response.json({
+    data: {
+      id: workspace.id,
+      name: workspace.name,
+      ownerId: workspace.owner_id,
+      createdAt: workspace.created_at,
+    },
+  });
 }

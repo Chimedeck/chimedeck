@@ -6,7 +6,7 @@ import { CardMemberAvatars } from './CardMemberAvatars';
 interface BoardMember {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
 }
 
 interface Props {
@@ -62,7 +62,7 @@ const CardMembers = ({ members, boardMembers, onAssign, onRemove, disabled }: Pr
                 )}
                 {boardMembers.map((member) => {
                   const assigned = assignedIds.has(member.id);
-                  const name = member.display_name ?? member.email;
+                  const name = member.name ?? member.email;
                   return (
                     <button
                       key={member.id}

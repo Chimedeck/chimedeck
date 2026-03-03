@@ -46,5 +46,12 @@ export async function handleCreateWorkspace(req: Request): Promise<Response> {
 
   const workspace = await db('workspaces').where({ id }).first();
 
-  return Response.json({ data: workspace }, { status: 201 });
+  return Response.json({
+    data: {
+      id: workspace.id,
+      name: workspace.name,
+      ownerId: workspace.owner_id,
+      createdAt: workspace.created_at,
+    },
+  }, { status: 201 });
 }

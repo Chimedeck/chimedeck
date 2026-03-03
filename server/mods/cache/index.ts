@@ -11,7 +11,8 @@ export { memCache } from './adapters/nodeCache';
 export type { CacheProvider } from './types';
 
 async function resolveCache(): Promise<CacheProvider> {
-  const useRedis = await flags.isEnabled('USE_REDIS');
+  // Read directly from Bun.env — flags.load() hasn't been called yet at module-load time.
+  const useRedis = Bun.env['FLAG_USE_REDIS'] === 'true';
   if (useRedis && env.REDIS_URL) {
     return new RedisCacheAdapter(env.REDIS_URL);
   }

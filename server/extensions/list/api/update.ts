@@ -55,9 +55,8 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
     .where({ id: listId })
     .update({ title: body.title.trim() }, ['*']);
 
-  // Stub event emission.
-  // Stub event emission.
-  await writeEvent({ type: 'list_renamed', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: body.title.trim() } });
+  // Use 'list_updated' to match client useBoardSync handler; send the full list object
+  await writeEvent({ type: 'list_updated', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list: updated[0] } });
 
   return Response.json({ data: updated[0] });
 }

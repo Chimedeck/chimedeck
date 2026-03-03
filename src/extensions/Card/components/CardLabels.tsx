@@ -54,6 +54,8 @@ const CardLabels = ({
     try {
       await onCreateAndAttach(name, selectedColor);
       setNewLabelName('');
+      // Close the picker after successfully creating + attaching the label
+      setPickerOpen(false);
     } finally {
       setCreating(false);
     }

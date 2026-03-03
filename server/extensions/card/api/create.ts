@@ -80,8 +80,8 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
 
   const card = await db('cards').where({ id }).first();
 
-  // Stub event emission — replaced by activity log in sprint 10.
-  await writeEvent({ type: 'card_created', boardId: list.board_id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId, title: body.title.trim() } });
+  // Broadcast the full card object so clients can update their local state immediately
+  await writeEvent({ type: 'card_created', boardId: list.board_id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card } });
 
   return Response.json({ data: card }, { status: 201 });
 }

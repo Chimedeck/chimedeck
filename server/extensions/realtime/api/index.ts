@@ -16,10 +16,13 @@ startHeartbeatLoop(() => allSockets);
 
 export async function handleWsUpgrade(req: Request, server: Server): Promise<boolean> {
   const url = new URL(req.url);
-  if (url.pathname !== '/ws') return false;
+  if (url.pathname !== '/api/v1/ws') return false;
 
+  // Accept token from Authorization header OR ?token= query param (used by browser WS)
   const authHeader = req.headers.get('Authorization') ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : (url.searchParams.get('token') ?? null);
 
   if (!token) return false;
 
@@ -73,7 +76,7 @@ export const wsHandlers = {
         ws.send(JSON.stringify({ type: 'error', name: 'board-not-found' }));
         return;
       }
-      const member = await db('workspace_members')
+      const member = await db('memberships')
         .where({ workspace_id: board.workspace_id, user_id: ws.data.userId })
         .first();
       if (!member) {

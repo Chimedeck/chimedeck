@@ -28,6 +28,7 @@ import { moveCard } from '../../api/card';
 import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
 import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
 import { selectAuthToken } from '../../../Auth/duck/authDuck';
+import { apiClient } from '~/common/api/client';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -50,7 +51,8 @@ const BoardPage = () => {
   const status = useAppSelector(selectBoardStatus);
   const accessToken = useAppSelector(selectAuthToken);
 
-  const api = (globalThis as unknown as { __api__: typeof __api__ }).__api__;
+  // Use the shared axios client instead of a globalThis reference
+  const api = apiClient;
 
   // ── Toast notifications ───────────────────────────────────────────────────
   const [toasts, setToasts] = useState<ToastItem[]>([]);

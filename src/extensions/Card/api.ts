@@ -22,7 +22,7 @@ export interface Label {
 export interface CardMember {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
 }
 
 export interface ChecklistItem {

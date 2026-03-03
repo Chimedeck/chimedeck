@@ -40,8 +40,8 @@ export async function handleArchiveList(req: Request, listId: string): Promise<R
     .where({ id: listId })
     .update({ archived: newArchived }, ['*']);
 
-  // Stub event emission.
-  await writeEvent({ type: 'list_archived', boardId: board.id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { archived: newArchived } });
+  // Client expects { listId } to remove list from state
+  await writeEvent({ type: 'list_archived', boardId: board.id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId } });
 
   return Response.json({ data: updated[0] });
 }

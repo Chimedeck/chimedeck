@@ -14,7 +14,7 @@ import CardSidebarSection from './CardSidebarSection';
 interface BoardMember {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
 }
 
 interface Props {
@@ -85,6 +85,8 @@ const CardModal = ({
           className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8 overflow-y-auto"
           aria-label={`Card: ${card.title}`}
         >
+          {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
+          <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
           <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col">
             {/* Header */}
             <div className="flex items-start gap-2 p-5 pb-2">

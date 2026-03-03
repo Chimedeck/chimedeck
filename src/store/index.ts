@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer, boardReducer, cardDetailReducer, listReducer, cardsReducer } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
 
@@ -9,6 +9,9 @@ export const store = configureStore({
     auth: authReducer,
     ui: uiReducer,
     workspaceShell: workspaceShellReducer,
+    boardListPage: boardListPageReducer,
+    boardPage: boardPageReducer,
+    WorkspacePage: workspacePageReducer,
     board: boardReducer,
     cardDetail: cardDetailReducer,
     lists: listReducer,

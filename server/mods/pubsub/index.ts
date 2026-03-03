@@ -9,7 +9,8 @@ import type { PubSubProvider } from './types';
 export type { PubSubProvider } from './types';
 
 async function resolvePubSub(): Promise<PubSubProvider> {
-  const useRedis = await flags.isEnabled('USE_REDIS');
+  // Read directly from Bun.env — flags.load() hasn't been called yet at module-load time.
+  const useRedis = Bun.env['FLAG_USE_REDIS'] === 'true';
   if (useRedis && env.REDIS_URL) {
     return new RedisPubSubAdapter(env.REDIS_URL);
   }

@@ -11,6 +11,9 @@ export type ApiClient = {
 
 import type { Card, ChecklistItem, Label } from '../api';
 
+// NOTE: The apiClient interceptor auto-unwraps response.data, so all API calls
+// return the inner payload directly (e.g. Card, not { data: Card }).
+
 export async function patchCard({
   api,
   cardId,
@@ -19,8 +22,10 @@ export async function patchCard({
   api: ApiClient;
   cardId: string;
   fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'archived'>>;
-}): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/cards/${cardId}`, fields);
+}): Promise<Card> {
+  const res = await api.patch<{ data: Card }>(`/cards/${cardId}`, fields);
+  // interceptor returns { data: Card } as the resolved value
+  return (res as unknown as { data: Card }).data;
 }
 
 export async function archiveCardToggle({
@@ -29,8 +34,9 @@ export async function archiveCardToggle({
 }: {
   api: ApiClient;
   cardId: string;
-}): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/cards/${cardId}/archive`);
+}): Promise<Card> {
+  const res = await api.patch<{ data: Card }>(`/cards/${cardId}/archive`);
+  return (res as unknown as { data: Card }).data;
 }
 
 export async function postChecklistItem({
@@ -41,8 +47,9 @@ export async function postChecklistItem({
   api: ApiClient;
   cardId: string;
   title: string;
-}): Promise<{ data: ChecklistItem }> {
-  return api.post<{ data: ChecklistItem }>(`/cards/${cardId}/checklist`, { title });
+}): Promise<ChecklistItem> {
+  const res = await api.post<{ data: ChecklistItem }>(`/cards/${cardId}/checklist`, { title });
+  return (res as unknown as { data: ChecklistItem }).data;
 }
 
 export async function patchChecklistItem({
@@ -53,8 +60,9 @@ export async function patchChecklistItem({
   api: ApiClient;
   itemId: string;
   fields: Partial<Pick<ChecklistItem, 'title' | 'checked'>>;
-}): Promise<{ data: ChecklistItem }> {
-  return api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, fields);
+}): Promise<ChecklistItem> {
+  const res = await api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, fields);
+  return (res as unknown as { data: ChecklistItem }).data;
 }
 
 export async function deleteChecklistItemById({
@@ -125,8 +133,9 @@ export async function createBoardLabel({
   boardId: string;
   name: string;
   color: string;
-}): Promise<{ data: Label }> {
-  return api.post<{ data: Label }>(`/boards/${boardId}/labels`, { name, color });
+}): Promise<Label> {
+  const res = await api.post<{ data: Label }>(`/boards/${boardId}/labels`, { name, color });
+  return (res as unknown as { data: Label }).data;
 }
 
 export async function getBoardLabels({
@@ -135,8 +144,9 @@ export async function getBoardLabels({
 }: {
   api: ApiClient;
   boardId: string;
-}): Promise<{ data: Label[] }> {
-  return api.get<{ data: Label[] }>(`/boards/${boardId}/labels`);
+}): Promise<Label[]> {
+  const res = await api.get<{ data: Label[] }>(`/boards/${boardId}/labels`);
+  return (res as unknown as { data: Label[] }).data;
 }
 
 export async function getBoardMembers({
@@ -145,6 +155,7 @@ export async function getBoardMembers({
 }: {
   api: ApiClient;
   boardId: string;
-}): Promise<{ data: Array<{ id: string; email: string; display_name: string | null }> }> {
-  return api.get(`/boards/${boardId}/members`);
+}): Promise<Array<{ id: string; email: string; name: string | null }>> {
+  const res = await api.get<{ data: Array<{ id: string; email: string; name: string | null }> }>(`/boards/${boardId}/members`);
+  return (res as unknown as { data: Array<{ id: string; email: string; name: string | null }> }).data;
 }

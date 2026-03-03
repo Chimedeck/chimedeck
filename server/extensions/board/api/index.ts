@@ -8,6 +8,8 @@ import { handleDeleteBoard } from './delete';
 import { handleDuplicateBoard } from './duplicate';
 import { handleGetBoardEvents } from '../../realtime/api/events';
 import { handleGetPresence } from '../../realtime/api/presence';
+import { handleGetBoardLabels, handleCreateBoardLabel } from './labels';
+import { handleGetBoardMembers } from './members';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -46,6 +48,15 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/presence
     if (sub === '/presence' && req.method === 'GET') return handleGetPresence(req, boardId);
+
+    // GET /api/v1/boards/:id/labels — list workspace labels accessible from board
+    if (sub === '/labels' && req.method === 'GET') return handleGetBoardLabels(req, boardId);
+
+    // POST /api/v1/boards/:id/labels — create a label in the board's workspace
+    if (sub === '/labels' && req.method === 'POST') return handleCreateBoardLabel(req, boardId);
+
+    // GET /api/v1/boards/:id/members — list workspace members
+    if (sub === '/members' && req.method === 'GET') return handleGetBoardMembers(req, boardId);
   }
 
   return null;
