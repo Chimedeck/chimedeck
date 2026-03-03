@@ -12,6 +12,7 @@ import { boardSliceActions } from '../../Board/slices/boardSlice';
 import { cardDetailSliceActions } from '../../Card/slices/cardDetailSlice';
 import type { List } from '../../List/api';
 import type { Card } from '../../Card/api';
+import type { CommentData } from '../../Card/api/cardDetail';
 
 export interface UseBoardSyncOptions {
   boardId: string;
@@ -98,6 +99,23 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           const { cardId, listId } = payload as { cardId: string; listId: string };
           dispatch(cardSliceActions.remoteArchive({ cardId }));
           dispatch(boardSliceActions.removeCard({ cardId, listId }));
+          break;
+        }
+
+        // ── Comment events ────────────────────────────────────────────────
+        case 'comment_added': {
+          const { comment } = payload as { comment: CommentData };
+          dispatch(cardDetailSliceActions.addComment(comment));
+          break;
+        }
+        case 'comment_updated': {
+          const { comment } = payload as { comment: CommentData };
+          dispatch(cardDetailSliceActions.updateComment(comment));
+          break;
+        }
+        case 'comment_deleted': {
+          const { commentId } = payload as { commentId: string };
+          dispatch(cardDetailSliceActions.removeComment({ commentId }));
           break;
         }
 

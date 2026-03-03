@@ -1,6 +1,6 @@
 // BoardCanvas — DndContext wrapper and horizontally scrollable kanban canvas.
 // Handles card and list drag-and-drop with optimistic updates and rollback on failure.
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -81,6 +81,14 @@ const BoardCanvas = ({
   isReadOnly = false,
 }: Props) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  // WHY: capture the source list at drag-start; by drag-end the optimistic move
+  // has already updated cardsByList so re-deriving fromListId returns toListId.
+  const fromListIdRef = useRef<string | null>(null);
+  // WHY: keep a stable ref to cardsByList so handleDragStart can read it
+  // without being listed as a dependency (which would give DndContext a new
+  // onDragStart every optimistic update and cause a re-render loop).
+  const cardsByListRef = useRef(cardsByList);
+  cardsByListRef.current = cardsByList;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -93,6 +101,9 @@ const BoardCanvas = ({
       // Only set active card if the dragged item is a card (not a list)
       if (cards[id]) {
         setActiveCardId(id);
+        // Read via ref so this callback doesn't depend on cardsByList and
+        // won't give DndContext a new onDragStart on every optimistic update.
+        fromListIdRef.current = findListForCard(id, cardsByListRef.current);
       }
       onDragStart();
     },
@@ -139,6 +150,7 @@ const BoardCanvas = ({
       setActiveCardId(null);
 
       if (!over) {
+        fromListIdRef.current = null;
         onDragRollback();
         return;
       }
@@ -169,7 +181,10 @@ const BoardCanvas = ({
       // Card move commit
       if (cards[activeId]) {
         const toListId = findListForCard(activeId, cardsByList);
-        const fromListId = findListForCard(activeId, cardsByList);
+        // Use the ref captured at drag-start; by this point cardsByList already
+        // reflects the optimistic move so re-deriving would give the wrong list.
+        const fromListId = fromListIdRef.current ?? toListId;
+        fromListIdRef.current = null;
         if (!toListId || !fromListId) {
           onDragRollback();
           return;

@@ -8,6 +8,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
+import { publisher } from '../../../mods/pubsub/publisher';
 
 export async function handleDeleteComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -79,6 +80,12 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
       payload: { commentId },
     }),
   ]);
+
+  // Broadcast so open card modals in other browser sessions remove the comment in real time
+  publisher.publish(
+    board.id,
+    JSON.stringify({ type: 'comment_deleted', payload: { commentId, cardId: comment.card_id } }),
+  ).catch(() => {});
 
   return Response.json({ data: deleted });
 }

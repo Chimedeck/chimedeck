@@ -108,7 +108,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   // Broadcast WS event to board subscribers
   publisher.publish(
     board.id,
-    JSON.stringify({ type: 'comment_added', entity_id: cardId, actor_id: actorId, payload: { commentId: id } }),
+    JSON.stringify({ type: 'comment_added', payload: { comment } }),
   ).catch(() => {});
 
   return Response.json({ data: comment }, { status: 201 });

@@ -54,8 +54,8 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     // PATCH /api/v1/cards/:id/archive
     if (sub === '/archive' && req.method === 'PATCH') return handleArchiveCard(req, cardId);
 
-    // POST /api/v1/cards/:id/move
-    if (sub === '/move' && req.method === 'POST') return handleMoveCard(req, cardId);
+    // PATCH /api/v1/cards/:id/move
+    if (sub === '/move' && req.method === 'PATCH') return handleMoveCard(req, cardId);
 
     // POST /api/v1/cards/:id/duplicate
     if (sub === '/duplicate' && req.method === 'POST') return handleDuplicateCard(req, cardId);

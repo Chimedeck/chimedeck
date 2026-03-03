@@ -1,7 +1,8 @@
-// POST /api/v1/cards/:id/move — move card to another list (or reorder within same list); min role: MEMBER.
+// PATCH /api/v1/cards/:id/move — move card to another list (or reorder within same list); min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { writeEvent } from '../../../mods/events/write';
+import { publisher } from '../../../mods/pubsub/publisher';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -99,7 +100,14 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     .update({ list_id: body.targetListId, position, updated_at: new Date().toISOString() }, ['*']);
 
   // Client expects { card, fromListId } to update both card slice and board slice
-  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId: card.list_id } });
+  const fromListId = card.list_id;
+  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId } });
+
+  // Broadcast to all other board subscribers so their kanban updates in real time
+  publisher.publish(
+    board.id,
+    JSON.stringify({ type: 'card_moved', payload: { card: updated[0], fromListId } }),
+  ).catch(() => {});
 
   return Response.json({ data: updated[0] });
 }

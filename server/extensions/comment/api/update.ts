@@ -7,6 +7,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
+import { publisher } from '../../../mods/pubsub/publisher';
 
 export async function handleUpdateComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -93,6 +94,12 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       payload: { commentId, version: newVersion, before: comment.content, after: body.content.trim() },
     }),
   ]);
+
+  // Broadcast so open card modals in other browser sessions reflect the edit in real time
+  publisher.publish(
+    board.id,
+    JSON.stringify({ type: 'comment_updated', payload: { comment: updated } }),
+  ).catch(() => {});
 
   return Response.json({ data: updated });
 }
