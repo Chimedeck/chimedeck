@@ -28,7 +28,7 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
     .join('users', 'memberships.user_id', 'users.id')
     .where('memberships.workspace_id', board.workspace_id)
     .select(
-      db.raw('users.id as "userId"'),
+      db.raw('users.id as id'),
       'users.email',
       db.raw('COALESCE(users.name, users.email) as name'),
       'memberships.role',

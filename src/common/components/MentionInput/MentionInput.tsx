@@ -1,6 +1,7 @@
 // Textarea with @mention autocomplete support.
 // Drop-in replacement for a bare <textarea>; accepts boardId to scope suggestions.
-import { useState } from 'react';
+// Auto-resizes to fit content so the full text is always visible without inner scrolling.
+import { useState, useEffect } from 'react';
 import { useMentionInput } from './useMentionInput';
 import MentionSuggestions from './MentionSuggestions';
 
@@ -38,12 +39,19 @@ const MentionInput = ({
 
   const [localHighlight, setLocalHighlight] = useState(0);
 
+  // Auto-resize: expand the textarea to show all content without internal scrolling
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
   return (
     <div className="relative">
       <textarea
         ref={textareaRef}
         className={className}
-        rows={rows}
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
@@ -53,6 +61,7 @@ const MentionInput = ({
         aria-label={ariaLabel}
         aria-autocomplete="list"
         aria-expanded={showSuggestions}
+        style={{ overflow: 'hidden' }}
       />
       {showSuggestions && (
         <MentionSuggestions

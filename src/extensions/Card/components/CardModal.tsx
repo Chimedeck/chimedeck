@@ -96,12 +96,12 @@ const CardModal = ({
 
         {/* Panel */}
         <Dialog.Content
-          className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8"
           aria-label={`Card: ${card.title}`}
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
             {/* Header */}
             <div className="flex items-start gap-2 p-5 pb-2">
               <div className="flex-1 min-w-0">
@@ -130,9 +130,9 @@ const CardModal = ({
             )}
 
             {/* Body: main + sidebar */}
-            <div className="flex flex-col md:flex-row gap-4 p-5 pt-3">
-              {/* Main column */}
-              <div className="flex-1 min-w-0 space-y-6">
+            <div className="flex flex-col md:flex-row gap-4 p-5 pt-3 min-h-0 flex-1">
+              {/* Main column — scrolls independently */}
+              <div className="flex-1 min-w-0 min-h-0 space-y-6 overflow-y-auto pr-1">
                 <CardDescription
                   boardId={boardId}
                   description={card.description ?? ''}
@@ -159,8 +159,8 @@ const CardModal = ({
                 />
               </div>
 
-              {/* Sidebar */}
-              <aside className="w-full md:w-52 flex-shrink-0 space-y-5">
+              {/* Sidebar — scrolls independently */}
+              <aside className="w-full md:w-52 flex-shrink-0 space-y-5 overflow-y-auto min-h-0">
                 <CardSidebarSection title="Members">
                   <CardMembers
                     members={members}

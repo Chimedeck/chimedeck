@@ -1,5 +1,6 @@
 // CardDescription — Markdown textarea editor with live preview toggle.
 // Edit mode: <MentionInput> with auto-resize. Preview mode: rendered HTML via marked.
+// Preview mode supports a "Show more" toggle when the description is long.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { marked } from 'marked';
 import MentionInput from '~/common/components/MentionInput/MentionInput';
@@ -13,16 +14,24 @@ interface Props {
 }
 
 const DEBOUNCE_MS = 800;
+// Characters threshold above which we render the "Show more" toggle in preview mode
+const SHOW_MORE_THRESHOLD = 400;
 
 const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [draft, setDraft] = useState(description);
+  const [expanded, setExpanded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync external changes
   useEffect(() => {
     setDraft(description);
   }, [description]);
+
+  // Collapse back when switching modes
+  useEffect(() => {
+    setExpanded(false);
+  }, [mode]);
 
   const handleChange = useCallback(
     (val: string) => {
@@ -42,6 +51,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   }, []);
 
   const previewHtml = marked.parse(draft || '_No description yet._') as string;
+  const isLong = draft.length > SHOW_MORE_THRESHOLD;
 
   return (
     <section aria-label="Description">
@@ -70,11 +80,32 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
           aria-label="Card description"
         />
       ) : (
-        <div
-          className="prose prose-invert prose-sm max-w-none text-slate-300 bg-slate-800/50 rounded-lg p-3 min-h-[80px]"
-          // Safe: marked output is trusted content from the user's own input
-          dangerouslySetInnerHTML={{ __html: previewHtml }}
-        />
+        <div>
+          <div className="relative">
+            <div
+              className={[
+                'prose prose-invert prose-sm max-w-none text-slate-300 bg-slate-800/50 rounded-lg p-3 min-h-[80px]',
+                isLong && !expanded ? 'overflow-hidden' : '',
+              ].join(' ')}
+              style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
+              // Safe: marked output is trusted content from the user's own input
+              dangerouslySetInnerHTML={{ __html: previewHtml }}
+            />
+            {/* Gradient overlay when truncated */}
+            {isLong && !expanded && (
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-900/80 to-transparent rounded-b-lg pointer-events-none" />
+            )}
+          </div>
+          {isLong && (
+            <button
+              type="button"
+              className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              onClick={() => setExpanded((e) => !e)}
+            >
+              {expanded ? 'Show less ↑' : 'Show more ↓'}
+            </button>
+          )}
+        </div>
       )}
     </section>
   );
