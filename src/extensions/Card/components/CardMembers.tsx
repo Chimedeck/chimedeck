@@ -12,12 +12,14 @@ interface BoardMember {
 interface Props {
   members: CardMember[];
   boardMembers: BoardMember[];
+  cardId: string;
+  currentUserId: string;
   onAssign: (userId: string) => Promise<void>;
   onRemove: (userId: string) => Promise<void>;
   disabled?: boolean;
 }
 
-const CardMembers = ({ members, boardMembers, onAssign, onRemove, disabled }: Props) => {
+const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, onRemove, disabled }: Props) => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const assignedIds = new Set(members.map((m) => m.id));
 
@@ -33,7 +35,13 @@ const CardMembers = ({ members, boardMembers, onAssign, onRemove, disabled }: Pr
     <div>
       {members.length > 0 && (
         <div className="mb-2">
-          <CardMemberAvatars members={members} maxVisible={5} />
+          <CardMemberAvatars
+            members={members}
+            maxVisible={5}
+            cardId={cardId}
+            currentUserId={currentUserId}
+            onRemoveMember={async (_, memberId) => onRemove(memberId)}
+          />
         </div>
       )}
 

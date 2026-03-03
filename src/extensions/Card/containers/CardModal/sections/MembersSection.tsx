@@ -1,16 +1,19 @@
 // MembersSection — displays assigned member avatars and triggers the assign modal.
 import { useState } from 'react';
-import type { CardMember } from '../../api';
-import { CardMemberAvatars } from '../../components/CardMemberAvatars';
-import { MemberAssignModal } from '../../components/MemberAssignModal';
+import { useSelector } from 'react-redux';
+import type { CardMember } from '../../../api';
+import { CardMemberAvatars } from '../../../components/CardMemberAvatars';
+import { MemberAssignModal } from '../../../components/MemberAssignModal';
+import { selectCurrentUser } from '~/slices/authSlice';
 
 interface WorkspaceMember {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
 }
 
 interface Props {
+  cardId: string;
   workspaceMembers: WorkspaceMember[];
   assignedMembers: CardMember[];
   onAssign: (userId: string) => Promise<void>;
@@ -19,6 +22,7 @@ interface Props {
 }
 
 export const MembersSection = ({
+  cardId,
   workspaceMembers,
   assignedMembers,
   onAssign,
@@ -26,6 +30,11 @@ export const MembersSection = ({
   disabled,
 }: Props) => {
   const [showModal, setShowModal] = useState(false);
+  const currentUser = useSelector(selectCurrentUser);
+
+  const handleRemoveMember = async (_cId: string, memberId: string) => {
+    await onRemove(memberId);
+  };
 
   return (
     <section aria-label="Members">
@@ -34,7 +43,12 @@ export const MembersSection = ({
         {assignedMembers.length === 0 ? (
           <span className="text-xs text-gray-400">No members assigned</span>
         ) : (
-          <CardMemberAvatars members={assignedMembers} />
+          <CardMemberAvatars
+            members={assignedMembers}
+            cardId={cardId}
+            currentUserId={currentUser?.id ?? ''}
+            onRemoveMember={handleRemoveMember}
+          />
         )}
         {!disabled && (
           <button

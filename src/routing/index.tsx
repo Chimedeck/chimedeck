@@ -49,6 +49,11 @@ const ProfilePage = lazy(() =>
     default: m.default,
   }))
 );
+const EditProfilePage = lazy(() =>
+  import('~/extensions/UserProfile/containers/EditProfilePage/EditProfilePage').then((m) => ({
+    default: m.default,
+  }))
+);
 
 const LoadingFallback = () => (
   <div className="flex h-screen items-center justify-center bg-gray-900">
@@ -84,6 +89,7 @@ export default function AppRouter() {
               />
               <Route path="/boards/:boardId" element={<BoardPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />
+              <Route path="/profile/edit" element={<EditProfilePage />} />
             </Route>
           </Route>
 

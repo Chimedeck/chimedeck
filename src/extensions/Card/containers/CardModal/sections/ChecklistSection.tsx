@@ -1,6 +1,6 @@
 // ChecklistSection (modal section wrapper) — wraps ChecklistSection component.
-import type { ChecklistItem } from '../../api';
-import { ChecklistSection as ChecklistWidget } from '../../components/ChecklistSection';
+import type { ChecklistItem } from '../../../api';
+import { ChecklistSection as ChecklistWidget } from '../../../components/ChecklistSection';
 
 interface Props {
   items: ChecklistItem[];

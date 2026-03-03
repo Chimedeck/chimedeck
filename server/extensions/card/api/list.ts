@@ -30,34 +30,41 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
+  // WHY: aggregate labels and members in a single query so card tiles have
+  // all data needed for Sprint 27 (label chips) and Sprint 28 (member avatars).
   const rows = await db('cards as c')
-    .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
-    .leftJoin('labels as l', 'l.id', 'cl.label_id')
     .where({ 'c.list_id': listId, 'c.archived': false })
     .orderBy('c.position', 'asc')
     .select(
-      'c.*',
-      db.raw(
-        `json_group_array(
-          CASE WHEN l.id IS NOT NULL THEN
-            json_object('id', l.id, 'name', l.name, 'color', l.color)
-          ELSE NULL END
-        ) as labels_json`,
-      ),
+      'c.id',
+      'c.list_id',
+      'c.title',
+      'c.description',
+      'c.position',
+      'c.archived',
+      'c.due_date',
+      'c.created_at',
+      'c.updated_at',
+      db.raw(`
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color))
+          FILTER (WHERE l.id IS NOT NULL),
+          '[]'::json
+        ) as labels
+      `),
+      db.raw(`
+        COALESCE(
+          json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name))
+          FILTER (WHERE u.id IS NOT NULL),
+          '[]'::json
+        ) as members
+      `),
     )
+    .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
+    .leftJoin('labels as l', 'l.id', 'cl.label_id')
+    .leftJoin('card_members as cm', 'cm.card_id', 'c.id')
+    .leftJoin('users as u', 'u.id', 'cm.user_id')
     .groupBy('c.id');
 
-  const cards = rows.map((row) => {
-    const rawLabels: Array<{ id: string; name: string; color: string } | null> = (() => {
-      try {
-        return JSON.parse(row.labels_json ?? '[]');
-      } catch {
-        return [];
-      }
-    })();
-    const { labels_json: _l, ...card } = row;
-    return { ...card, labels: rawLabels.filter(Boolean) };
-  });
-
-  return Response.json({ data: cards });
+  return Response.json({ data: rows });
 }

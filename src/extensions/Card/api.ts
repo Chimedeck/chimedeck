@@ -10,7 +10,8 @@ export interface Card {
   due_date: string | null;
   created_at: string;
   updated_at: string;
-  labels?: Array<{ id: string; name: string; color: string }>;
+  labels: Array<{ id: string; name: string; color: string }>;
+  members: Array<{ id: string; email: string; name: string | null }>;
 }
 
 export interface Label {

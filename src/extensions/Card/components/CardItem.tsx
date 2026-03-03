@@ -1,8 +1,13 @@
 // CardItem — draggable card chip using @dnd-kit/sortable useSortable.
 // Styled per sprint-18 spec §4.
+import { useCallback } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useSelector } from 'react-redux';
 import type { Card } from '../api';
+import { removeMember } from '../api';
+import { selectCurrentUser } from '~/slices/authSlice';
+import apiClient from '~/common/api/client';
 import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 
@@ -14,9 +19,25 @@ export interface CardItemProps {
   onToggleLabels?: () => void;
 }
 
-const CardItem = ({ card, isOverlay = false, onClick, labelsExpanded = false, onToggleLabels }: CardItemProps) => {
+const CardItem = ({
+  card,
+  isOverlay = false,
+  onClick,
+  labelsExpanded = false,
+  onToggleLabels,
+}: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
+
+  const currentUser = useSelector(selectCurrentUser);
+  const api = apiClient;
+
+  const handleRemoveMember = useCallback(
+    async (cardId: string, memberId: string) => {
+      await removeMember({ api, cardId, userId: memberId });
+    },
+    [api],
+  );
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -26,7 +47,7 @@ const CardItem = ({ card, isOverlay = false, onClick, labelsExpanded = false, on
   };
 
   const labels = card.labels ?? [];
-  const members = (card as unknown as { members?: { id: string; email: string; name: string | null }[] }).members ?? [];
+  const members = card.members ?? [];
 
   return (
     <div
@@ -60,7 +81,12 @@ const CardItem = ({ card, isOverlay = false, onClick, labelsExpanded = false, on
       )}
       {members.length > 0 && (
         <div className="mt-1.5">
-          <CardMemberAvatars members={members} currentUserId="" />
+          <CardMemberAvatars
+            members={members}
+            cardId={card.id}
+            currentUserId={currentUser?.id ?? ''}
+            onRemoveMember={handleRemoveMember}
+          />
         </div>
       )}
     </div>
@@ -68,4 +94,3 @@ const CardItem = ({ card, isOverlay = false, onClick, labelsExpanded = false, on
 };
 
 export default CardItem;
-

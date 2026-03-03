@@ -1,7 +1,7 @@
 // LabelsSection — displays assigned labels and a picker for attaching/detaching.
-import type { Label } from '../../api';
-import { LabelChip } from '../../components/LabelChip';
-import { LabelPicker } from '../../components/LabelPicker';
+import type { Label } from '../../../api';
+import { LabelChip } from '../../../components/LabelChip';
+import { LabelPicker } from '../../../components/LabelPicker';
 
 interface Props {
   allLabels: Label[];
@@ -19,7 +19,7 @@ export const LabelsSection = ({ allLabels, assignedLabels, onAttach, onDetach, d
         <LabelChip
           key={label.id}
           label={label}
-          onRemove={disabled ? undefined : () => onDetach(label.id)}
+          {...(!disabled && { onRemove: () => onDetach(label.id) })}
         />
       ))}
       {!disabled && (

@@ -166,6 +166,8 @@ const CardModal = ({
                   <CardMembers
                     members={members}
                     boardMembers={boardMembers}
+                    cardId={card.id}
+                    currentUserId={currentUserId}
                     onAssign={onMemberAssign}
                     onRemove={onMemberRemove}
                     disabled={isReadOnly}
