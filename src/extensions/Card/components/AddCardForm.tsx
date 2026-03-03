@@ -1,6 +1,7 @@
 // AddCardForm — inline card creation form shown at the bottom of a list column.
-// Pressing Enter or clicking [Add card] submits; Escape or [✕] dismisses.
+// Pressing Enter or clicking [Add card] submits; Escape or [X] dismisses.
 import { useState, useRef, useEffect } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Props {
   listId: string;
@@ -69,7 +70,7 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
           className="rounded-md px-2 py-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors"
           aria-label="Cancel"
         >
-          ✕
+          <XMarkIcon className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </form>

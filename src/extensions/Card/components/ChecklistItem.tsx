@@ -1,5 +1,6 @@
 // ChecklistItem — single checklist row with toggle, rename, and delete.
 import { useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { ChecklistItem as ChecklistItemType } from '../api';
 
 interface Props {
@@ -62,7 +63,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
           onClick={() => onDelete(item.id)}
           aria-label={`Delete checklist item: ${item.title}`}
         >
-          ✕
+          <XMarkIcon className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
     </div>

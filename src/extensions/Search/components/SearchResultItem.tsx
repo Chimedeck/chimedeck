@@ -1,6 +1,7 @@
 // src/extensions/Search/components/SearchResultItem.tsx
 // Renders a single search result — board tile or card row.
 import React from 'react';
+import { RectangleStackIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import type { SearchResult } from '../api';
 
 interface SearchResultItemProps {
@@ -17,12 +18,14 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({ result, onSelect })
       onClick={() => onSelect(result)}
     >
       <span
-        className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-xs font-bold text-white ${
+        className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${
           isBoard ? 'bg-indigo-500' : 'bg-emerald-500'
         }`}
         aria-hidden="true"
       >
-        {isBoard ? 'B' : 'C'}
+        {isBoard
+          ? <RectangleStackIcon className="h-4 w-4" />
+          : <DocumentTextIcon className="h-4 w-4" />}
       </span>
       <span className="truncate font-medium text-gray-800">{result.title}</span>
       <span className="ml-auto text-xs text-gray-400">{isBoard ? 'Board' : 'Card'}</span>

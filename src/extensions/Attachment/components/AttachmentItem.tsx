@@ -1,5 +1,6 @@
 // AttachmentItem — renders a single attachment row with name, status, and actions.
 import React from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { AttachmentStatusBadge } from './AttachmentStatusBadge';
 
 interface Attachment {
@@ -39,7 +40,7 @@ export function AttachmentItem({ attachment, onDelete, onDownload }: Props): Rea
         style={{ fontSize: 12, color: '#ef4444', cursor: 'pointer', background: 'none', border: 'none' }}
         aria-label="Delete attachment"
       >
-        ✕
+        <XMarkIcon className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
   );

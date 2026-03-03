@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -44,7 +45,7 @@ export default function VerifyEmailPage() {
     <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <span className="text-2xl" aria-hidden="true">🟦</span>
+          <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
           <span className="text-xl font-bold text-white">Kanban</span>
         </div>
 

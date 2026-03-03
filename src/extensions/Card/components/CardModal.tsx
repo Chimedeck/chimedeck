@@ -1,6 +1,7 @@
 // CardModal — full detail Radix Dialog modal for viewing and editing a card.
 // URL-driven: ?card=:id opens the modal; closing clears the query param.
 import * as Dialog from '@radix-ui/react-dialog';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { Card, Label, CardMember, ChecklistItem } from '../api';
 import CardTitle from './CardTitle';
 import CardDescription from './CardDescription';
@@ -119,7 +120,7 @@ const CardModal = ({
                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors flex-shrink-0"
                 aria-label="Close"
               >
-                ✕
+                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
               </Dialog.Close>
             </div>
 

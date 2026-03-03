@@ -1,4 +1,5 @@
 // MemberAssignModal — modal for assigning/removing workspace members from a card.
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { CardMember } from '../api';
 
 interface WorkspaceMember {
@@ -35,7 +36,7 @@ export const MemberAssignModal = ({
       <div className="w-80 rounded-lg bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="font-semibold">Assign Members</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">✕</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600"><XMarkIcon className="h-4 w-4" aria-hidden="true" /></button>
         </div>
         <ul className="max-h-64 overflow-y-auto py-2">
           {workspaceMembers.map((member) => {

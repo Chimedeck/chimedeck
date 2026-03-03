@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { resendVerificationThunk, selectResendStatus } from '../containers/VerifyEmailPage/VerifyEmailPage.duck';
@@ -33,7 +34,7 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
         aria-label="Dismiss"
         className="absolute top-3 right-3 text-indigo-400 hover:text-white"
       >
-        ✕
+        <XMarkIcon className="h-4 w-4" aria-hidden="true" />
       </button>
 
       <p className="mb-3">

@@ -2,6 +2,15 @@
 // Renders workspace switcher, nav links, and user menu.
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  Squares2X2Icon,
+  ChevronDownIcon,
+  PlusIcon,
+  MagnifyingGlassIcon,
+  RectangleStackIcon,
+  UsersIcon,
+  BuildingOfficeIcon,
+} from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import {
@@ -49,7 +58,7 @@ export default function Sidebar() {
       >
         {/* Logo */}
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-800 px-4">
-          <span className="text-xl" aria-hidden="true">🟦</span>
+          <Squares2X2Icon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
           <span className="text-base font-bold text-white">Kanban</span>
         </div>
 
@@ -68,7 +77,7 @@ export default function Sidebar() {
                   ? translations['WorkspaceSwitcher.loading']
                   : (activeWorkspace?.name ?? translations['WorkspaceSwitcher.noWorkspaces'])}
               </span>
-              <span className="ml-1 text-slate-400" aria-hidden="true">▾</span>
+              <ChevronDownIcon className="ml-1 h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
             </button>
 
             {switcherOpen && (
@@ -93,7 +102,7 @@ export default function Sidebar() {
                     onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
                     className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-slate-700 transition-colors"
                   >
-                    <span aria-hidden="true">+</span>
+                    <PlusIcon className="h-4 w-4" aria-hidden="true" />
                     {translations['Sidebar.newWorkspace']}
                   </button>
                 </li>
@@ -114,7 +123,7 @@ export default function Sidebar() {
             }
             aria-label="Search (⌘K)"
           >
-            <span aria-hidden="true">🔍</span>
+            <MagnifyingGlassIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
             <span>Search</span>
             <kbd className="ml-auto rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-400">⌘K</kbd>
           </button>
@@ -131,7 +140,7 @@ export default function Sidebar() {
                     }`
                   }
                 >
-                  <span aria-hidden="true">📋</span>
+                  <RectangleStackIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {translations['Sidebar.boards']}
                 </NavLink>
               </li>
@@ -146,7 +155,7 @@ export default function Sidebar() {
                     }`
                   }
                 >
-                  <span aria-hidden="true">👥</span>
+                  <UsersIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {translations['Sidebar.members']}
                 </NavLink>
               </li>
@@ -162,7 +171,7 @@ export default function Sidebar() {
                     }`
                   }
                 >
-                  <span aria-hidden="true">🏢</span>
+                  <BuildingOfficeIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {translations['Sidebar.allWorkspaces']}
                 </NavLink>
               </li>
@@ -207,7 +216,7 @@ export default function Sidebar() {
                   ? `@${profile.nickname}`
                   : (profile?.name ?? user?.name ?? translations['Sidebar.unknownUser'])}
               </span>
-              <span className="text-slate-500" aria-hidden="true">▾</span>
+              <ChevronDownIcon className="h-4 w-4 text-slate-500 shrink-0" aria-hidden="true" />
             </button>
 
             {userMenuOpen && (

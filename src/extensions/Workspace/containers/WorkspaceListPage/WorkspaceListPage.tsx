@@ -1,5 +1,6 @@
 // WorkspaceListPage — shows all workspaces the current user belongs to.
 import { useState } from 'react';
+import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -49,7 +50,7 @@ export default function WorkspaceListPage() {
       {workspaces.length === 0 ? (
         /* Empty state */
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <span className="mb-4 text-6xl" aria-hidden="true">🏢</span>
+          <BuildingOfficeIcon className="mb-4 h-16 w-16 text-slate-600" aria-hidden="true" />
           <h2 className="mb-2 text-lg font-semibold text-slate-200">
             {translations['WorkspaceListPage.emptyTitle']}
           </h2>
@@ -71,7 +72,7 @@ export default function WorkspaceListPage() {
               onClick={() => handleOpen(ws.id)}
               className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-5 transition-colors hover:border-slate-600"
             >
-              <span className="mb-3 block text-3xl" aria-hidden="true">🏢</span>
+              <BuildingOfficeIcon className="mb-3 h-8 w-8 text-slate-500" aria-hidden="true" />
               <h2 className="mb-1 text-base font-semibold text-slate-100">{ws.name}</h2>
               <p className="text-xs text-slate-500">
                 {translations['WorkspaceListPage.createdAt']}{' '}

@@ -18,7 +18,7 @@ const DEBOUNCE_MS = 800;
 const SHOW_MORE_THRESHOLD = 400;
 
 const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [mode, setMode] = useState<'edit' | 'preview'>('preview');
   const [draft, setDraft] = useState(description);
   const [expanded, setExpanded] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

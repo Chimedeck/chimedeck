@@ -44,4 +44,7 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# Trello import — avatar files downloaded temporarily during seed (uploaded to S3, not committed)
+public/avatars/
+
 .task

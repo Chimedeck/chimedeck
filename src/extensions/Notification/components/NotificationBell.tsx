@@ -1,6 +1,7 @@
 // NotificationBell — bell icon with unread count badge.
 // Shown in the AppShell top bar (md+) or mobile topbar.
 import type { FC } from 'react';
+import { BellIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectUnreadCount } from '../slices/notificationSlice';
 
@@ -19,7 +20,7 @@ const NotificationBell: FC<Props> = ({ onClick }) => {
       className="relative p-2 rounded-full hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
       aria-label={hasUnread ? `Notifications — ${label} unread` : 'Notifications'}
     >
-      🔔
+      <BellIcon className="h-5 w-5" aria-hidden="true" />
       {hasUnread && (
         <span
           className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1"

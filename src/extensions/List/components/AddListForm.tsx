@@ -1,6 +1,7 @@
 // AddListForm — inline form shown after the last column to create a new list.
 // Styled per sprint-18 spec §4 (dashed border add-list column).
 import { useState, useRef, useEffect } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Props {
   onSubmit: (title: string) => Promise<void>;
@@ -81,7 +82,7 @@ const AddListForm = ({ onSubmit }: Props) => {
           className="rounded-md px-2 py-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors"
           aria-label="Cancel"
         >
-          ✕
+          <XMarkIcon className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </form>

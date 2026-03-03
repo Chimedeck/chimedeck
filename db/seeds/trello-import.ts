@@ -21,6 +21,9 @@
 
 import Knex from 'knex';
 import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { unlink } from 'node:fs/promises';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -45,6 +48,30 @@ if (await envFile.exists()) {
 
 const DATABASE_URL =
   Bun.env['DATABASE_URL'] ?? 'postgresql://kanban:kanban@localhost:5432/kanban_dev';
+
+const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'kanban';
+const S3_REGION    = Bun.env['S3_REGION'] ?? 'us-east-1';
+const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || undefined;
+const S3_BASE_URL  = S3_ENDPOINT
+  ? `${S3_ENDPOINT}/${S3_BUCKET}`
+  : `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com`;
+
+// When using LocalStack (S3_ENDPOINT is set), any non-empty credentials are
+// accepted — fall back to 'test'/'test' so the SDK doesn't reject empty strings.
+// For real AWS both vars must be explicitly set.
+const AWS_ACCESS_KEY_ID     = Bun.env['AWS_ACCESS_KEY_ID']     || (S3_ENDPOINT ? 'test' : '');
+const AWS_SECRET_ACCESS_KEY = Bun.env['AWS_SECRET_ACCESS_KEY'] || (S3_ENDPOINT ? 'test' : '');
+
+const s3 = new S3Client({
+  region: S3_REGION,
+  endpoint: S3_ENDPOINT,
+  credentials: {
+    accessKeyId:     AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  },
+  // Required for LocalStack and other path-style S3-compatible endpoints
+  forcePathStyle: !!S3_ENDPOINT,
+});
 
 const BATCH_SIZE = 500; // rows per INSERT batch
 
@@ -147,6 +174,33 @@ interface TrelloList {
   idBoard: string;
 }
 
+interface TrelloMember {
+  id: string;
+  fullName: string;
+  username: string;
+  avatarUrl: string | null;
+  avatarHash: string | null;
+  initials: string;
+  confirmed?: boolean;
+}
+
+interface TrelloAction {
+  id: string;
+  date: string;
+  data: {
+    text?: string;
+    idCard?: string;
+    card?: { id: string };
+  };
+  memberCreator: TrelloMember;
+}
+
+interface TrelloBoard {
+  id: string;
+  name: string;
+  manager?: string;
+}
+
 interface TrelloCard {
   id: string;
   name: string;
@@ -163,6 +217,10 @@ interface TrelloCard {
   shortLink: string;
   shortUrl: string;
   dateLastActivity: string;
+  // Enriched fields present in updated export
+  members?: TrelloMember[];
+  actions?: TrelloAction[];
+  board?: TrelloBoard;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,15 +253,18 @@ async function main() {
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
   const memberSet = new Map<string, string>(); // trelloId → email
+  // Rich member data (fullName, username, avatarUrl) when available
+  const memberDataMap = new Map<string, TrelloMember>();
 
   for (const card of cards) {
-    // Board / workspace
+    // Board / workspace — prefer the name from card.board if present
     if (!workspaceSet.has(card.idBoard)) {
-      workspaceSet.set(card.idBoard, { id: card.idBoard, name: card.idBoard });
+      const boardName = card.board?.name ?? card.idBoard;
+      workspaceSet.set(card.idBoard, { id: card.idBoard, name: boardName });
       boardSet.set(card.idBoard, {
         id: card.idBoard,
         workspace_id: card.idBoard,
-        title: card.idBoard,
+        title: boardName,
         state: 'ACTIVE',
       });
     }
@@ -231,10 +292,33 @@ async function main() {
       }
     }
 
-    // Members
+    // Members — prefer rich data from card.members array
+    for (const member of card.members ?? []) {
+      if (!memberDataMap.has(member.id)) {
+        memberDataMap.set(member.id, member);
+      }
+      if (!memberSet.has(member.id)) {
+        memberSet.set(member.id, memberEmail(member.id));
+      }
+    }
+
+    // Fallback: collect from idMembers (for cards without a members array)
     for (const mid of card.idMembers ?? []) {
       if (!memberSet.has(mid)) {
         memberSet.set(mid, memberEmail(mid));
+      }
+    }
+
+    // Collect member creators from actions (comments)
+    for (const action of card.actions ?? []) {
+      if (action.memberCreator) {
+        const mc = action.memberCreator;
+        if (!memberDataMap.has(mc.id)) {
+          memberDataMap.set(mc.id, mc);
+        }
+        if (!memberSet.has(mc.id)) {
+          memberSet.set(mc.id, memberEmail(mc.id));
+        }
       }
     }
   }
@@ -278,6 +362,42 @@ async function main() {
 
   console.log(`👥  Creating ${memberSet.size} member users…`);
 
+  // ---------------------------------------------------------------------------
+  // 3a. Download avatars and upload to S3
+  // Avatars are downloaded to a temp directory, uploaded to S3, then deleted.
+  // The temp files are never committed to git.
+  // ---------------------------------------------------------------------------
+
+  // S3 is available when either:
+  //   - S3_ENDPOINT is set → LocalStack or custom S3-compatible endpoint (credentials default to 'test')
+  //   - Both AWS credential vars are set → real AWS S3
+  const s3Configured = !!(S3_ENDPOINT || (AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY));
+  if (!s3Configured) {
+    console.log('⚠️   No S3_ENDPOINT and no AWS credentials — skipping avatar upload');
+  }
+
+  console.log(`🖼️   Downloading & uploading avatars for up to ${memberDataMap.size} members…`);
+  const avatarUrlMap = new Map<string, string>(); // trelloId → S3 URL
+
+  const AVATAR_CONCURRENCY = 10;
+  const memberDataEntries = [...memberDataMap.entries()];
+  if (s3Configured) {
+    for (let i = 0; i < memberDataEntries.length; i += AVATAR_CONCURRENCY) {
+      const slice = memberDataEntries.slice(i, i + AVATAR_CONCURRENCY);
+      await Promise.all(
+        slice.map(async ([trelloId, member]) => {
+          if (!member.avatarUrl) return;
+          const s3Url = await downloadAndUploadAvatar(member);
+          if (s3Url) avatarUrlMap.set(trelloId, s3Url);
+        }),
+      );
+      if (i % (AVATAR_CONCURRENCY * 5) === 0) {
+        process.stdout.write(`    avatars ${Math.min(i + AVATAR_CONCURRENCY, memberDataEntries.length)} / ${memberDataEntries.length}\r`);
+      }
+    }
+  }
+  console.log(`\n    uploaded ${avatarUrlMap.size} avatars to S3`);
+
   // Hash all passwords in parallel (Bun.password.hash is async but CPU-bound;
   // keep parallelism reasonable to avoid overloading the event loop).
   const memberEntries = [...memberSet.entries()];
@@ -287,16 +407,21 @@ async function main() {
   for (let i = 0; i < memberEntries.length; i += HASH_CONCURRENCY) {
     const slice = memberEntries.slice(i, i + HASH_CONCURRENCY);
     const hashes = await Promise.all(
-      slice.map(([, email]) =>
+      slice.map(() =>
         Bun.password.hash(DEFAULT_PASSWORD, { algorithm: 'bcrypt', cost: 12 }),
       ),
     );
     for (let j = 0; j < slice.length; j++) {
       const [trelloId] = slice[j];
+      const richData = memberDataMap.get(trelloId);
       memberRows.push({
         id: memberId(trelloId),
         email: memberEmail(trelloId),
-        name: trelloId, // no real name available from card data alone
+        // Use fullName when available, fall back to trello ID
+        name: richData?.fullName || trelloId,
+        // Use Trello username as our nickname; must be unique — use id as fallback
+        nickname: richData?.username || trelloId,
+        avatar_url: avatarUrlMap.get(trelloId) ?? null,
         password_hash: hashes[j],
       });
     }
@@ -408,6 +533,42 @@ async function main() {
   await flushCards(cardRows, cardLabelRows, cardMemberRows);
 
   // -------------------------------------------------------------------------
+  // 8b. Comments from Trello actions
+  // -------------------------------------------------------------------------
+
+  console.log('💬  Collecting comments from card actions…');
+
+  const commentRows: object[] = [];
+  const commentSeen = new Set<string>();
+
+  for (const card of cards) {
+    // Skip cards whose list was not collected
+    if (!listSet.has(card.idList)) continue;
+
+    for (const action of card.actions ?? []) {
+      // Only process actions that carry a comment text
+      if (!action.data?.text) continue;
+      if (commentSeen.has(action.id)) continue;
+      commentSeen.add(action.id);
+
+      const authorTrelloId = action.memberCreator?.id;
+      if (!authorTrelloId) continue;
+
+      commentRows.push({
+        id: action.id,
+        card_id: card.id,
+        user_id: memberId(authorTrelloId),
+        content: action.data.text,
+        created_at: new Date(action.date),
+        updated_at: new Date(action.date),
+      });
+    }
+  }
+
+  console.log(`💬  Inserting ${commentRows.length.toLocaleString()} comments…`);
+  await batchInsert('comments', commentRows, 'id');
+
+  // -------------------------------------------------------------------------
   // 9. Workspace memberships for member users
   //    Add every member user as MEMBER of every workspace (board).
   //    This is a cross-product; we do it after cards so we know who's who.
@@ -485,6 +646,46 @@ async function flushCards(
   await batchInsert('cards', cardRows, 'id');
   await batchInsert('card_labels', cardLabelRows, ['card_id', 'label_id']);
   await batchInsert('card_members', cardMemberRows, ['card_id', 'user_id']);
+}
+
+/**
+ * Download a Trello member avatar to a temp file, upload it to S3, then
+ * delete the temp file. Returns the S3 URL or null on failure.
+ *
+ * The temp file is written to os.tmpdir() and is never committed to git.
+ */
+async function downloadAndUploadAvatar(member: TrelloMember): Promise<string | null> {
+  if (!member.avatarUrl) return null;
+  // Trello avatar URLs support size suffixes: /170.png gives a 170×170 image
+  const fetchUrl = `${member.avatarUrl}/170.png`;
+  const tmpPath = resolve(tmpdir(), `trello-avatar-${member.id}.png`);
+  try {
+    const response = await fetch(fetchUrl, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) return null;
+    const buffer = await response.arrayBuffer();
+
+    // Write to temp file
+    await Bun.write(tmpPath, buffer);
+
+    // Upload to S3 — use the same key pattern as the avatar upload handler
+    const s3Key = `avatars/${member.id}.png`;
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: S3_BUCKET,
+        Key: s3Key,
+        Body: new Uint8Array(buffer),
+        ContentType: 'image/png',
+      }),
+    );
+
+    return `${S3_BASE_URL}/${s3Key}`;
+  } catch {
+    // Non-fatal: avatar failures should not block the import
+    return null;
+  } finally {
+    // Always clean up the temp file
+    try { await unlink(tmpPath); } catch { /* ignore — file may not exist */ }
+  }
 }
 
 main().catch((err) => {

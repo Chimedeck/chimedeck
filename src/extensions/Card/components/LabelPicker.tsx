@@ -1,5 +1,6 @@
 // LabelPicker — multi-select dropdown for workspace labels.
 import { useState } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import type { Label } from '../api';
 import { LabelChip } from './LabelChip';
 
@@ -33,7 +34,7 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        Labels ▾
+        Labels <ChevronDownIcon className="inline-block h-3 w-3 align-middle" aria-hidden="true" />
       </button>
       {open && (
         <div

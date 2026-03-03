@@ -1,5 +1,6 @@
 // AppShell — sidebar + main content area wrapper used by all private pages.
 import { useEffect, useState, useCallback } from 'react';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -79,7 +80,7 @@ export default function AppShell() {
             className="mr-3 rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
             aria-label="Open sidebar"
           >
-            ☰
+            <Bars3Icon className="h-5 w-5" aria-hidden="true" />
           </button>
           <span className="text-base font-bold text-white">Kanban</span>
           <div className="ml-auto">
