@@ -17,6 +17,7 @@ import { activityRouter } from './extensions/activity/api/index';
 import { attachmentRouter } from './extensions/attachment/api/index';
 import { searchRouter } from './extensions/search/api/index';
 import { presenceRouter } from './extensions/presence/api/index';
+import { notificationsRouter } from './extensions/notifications/api/index';
 import { startExpiryJob } from './extensions/presence/mods/expiryJob';
 import { rooms } from './extensions/realtime/mods/rooms/index';
 // Start orphan cleanup scheduler on server boot
@@ -83,6 +84,9 @@ async function router(req: Request): Promise<Response> {
 
   const presenceResponse = await presenceRouter(req, path);
   if (presenceResponse) return presenceResponse;
+
+  const notificationsResponse = await notificationsRouter(req, path);
+  if (notificationsResponse) return notificationsResponse;
 
   // In production serve the built React SPA so client-side routing works.
   // Try the exact asset path first (JS/CSS chunks), then fall back to index.html.

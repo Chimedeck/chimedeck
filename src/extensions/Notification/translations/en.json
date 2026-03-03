@@ -1,0 +1,8 @@
+{
+  "Notifications.title": "Notifications",
+  "Notifications.markAllRead": "Mark all read",
+  "Notifications.empty": "You have no notifications.",
+  "Notifications.mention": "{actor} mentioned you in \"{cardTitle}\"",
+  "Notifications.loadMore": "Load more",
+  "Notifications.deleteAriaLabel": "Dismiss notification"
+}

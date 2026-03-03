@@ -3,6 +3,7 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { writeEvent } from '../../../mods/events/write';
 import { syncMentions } from '../../../common/mentions/sync';
+import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -71,13 +72,23 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
     // Sync @mentions when description is being saved
     if (body.description !== undefined && rows[0]) {
-      await syncMentions({
+      const { addedUserIds } = await syncMentions({
         trx,
         sourceType: 'card_description',
         sourceId: cardId,
         text: rows[0].description ?? '',
         boardId: board.id,
         mentionedByUserId: actorId,
+      });
+
+      await createNotificationsForMentions({
+        trx,
+        addedUserIds,
+        actorId,
+        sourceType: 'card_description',
+        sourceId: cardId,
+        cardId,
+        boardId: board.id,
       });
     }
 

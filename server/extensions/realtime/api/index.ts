@@ -9,6 +9,7 @@ import { unsubscribeFromBoard } from '../mods/rooms/unsubscribe';
 import { recordPong, initHeartbeat, startHeartbeatLoop } from '../mods/heartbeat';
 import { cache } from '../../../mods/cache/index';
 import { db } from '../../../common/db';
+import { registerUserSocket, deregisterUserSocket } from '../userChannel';
 
 const allSockets = new Set<ServerWebSocket<WsData>>();
 
@@ -44,6 +45,7 @@ export const wsHandlers = {
   open(ws: ServerWebSocket<WsData>): void {
     allSockets.add(ws);
     initHeartbeat(ws);
+    registerUserSocket(ws);
   },
 
   async message(ws: ServerWebSocket<WsData>, raw: string | Buffer): Promise<void> {
@@ -97,6 +99,7 @@ export const wsHandlers = {
 
   async close(ws: ServerWebSocket<WsData>): Promise<void> {
     allSockets.delete(ws);
+    deregisterUserSocket(ws);
     for (const boardId of ws.data.subscribedBoards) {
       await unsubscribeFromBoard({ ws, boardId });
     }

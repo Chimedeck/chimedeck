@@ -7,6 +7,7 @@ import { fetchWorkspacesThunk, selectActiveWorkspaceId } from '~/extensions/Work
 import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import Sidebar from '~/extensions/Workspace/components/Sidebar';
 import SearchModal from '~/extensions/Search/components/SearchModal';
+import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
 import type { SearchResult } from '~/extensions/Search/api';
 
 export default function AppShell() {
@@ -81,6 +82,14 @@ export default function AppShell() {
             ☰
           </button>
           <span className="text-base font-bold text-white">Kanban</span>
+          <div className="ml-auto">
+            <NotificationContainer />
+          </div>
+        </div>
+
+        {/* Desktop topbar — notification bell */}
+        <div className="hidden md:flex h-12 shrink-0 items-center justify-end border-b border-slate-800 bg-slate-900 px-4">
+          <NotificationContainer />
         </div>
 
         <main className="flex-1 overflow-auto">

@@ -9,6 +9,7 @@ import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { syncMentions } from '../../../common/mentions/sync';
+import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 
 export async function handleUpdateComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -79,13 +80,23 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       updated_at: new Date().toISOString(),
     });
 
-    await syncMentions({
+    const { addedUserIds } = await syncMentions({
       trx,
       sourceType: 'comment',
       sourceId: commentId,
       text: trimmedContent,
       boardId: board.id,
       mentionedByUserId: actorId,
+    });
+
+    await createNotificationsForMentions({
+      trx,
+      addedUserIds,
+      actorId,
+      sourceType: 'comment',
+      sourceId: commentId,
+      cardId: comment.card_id,
+      boardId: board.id,
     });
   });
 
