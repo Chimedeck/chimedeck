@@ -70,7 +70,22 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     updated_at: new Date().toISOString(),
   });
 
-  const comment = await db('comments').where({ id }).first();
+  const comment = await db('comments')
+    .leftJoin('users', 'comments.user_id', 'users.id')
+    .where('comments.id', id)
+    .select(
+      'comments.id',
+      'comments.card_id',
+      'comments.user_id',
+      'comments.content',
+      'comments.version',
+      'comments.deleted',
+      'comments.created_at',
+      'comments.updated_at',
+      db.raw("COALESCE(users.name, users.email) as author_name"),
+      'users.email as author_email',
+    )
+    .first();
 
   await Promise.all([
     writeEvent({

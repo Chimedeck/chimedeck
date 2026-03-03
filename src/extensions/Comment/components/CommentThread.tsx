@@ -23,7 +23,7 @@ const CommentThread = ({
     <div className="flex flex-col gap-3">
       <h3 className="text-xs font-semibold uppercase text-gray-500">Comments</h3>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         {comments.length === 0 && (
           <p className="text-sm text-gray-400 italic">No comments yet.</p>
         )}

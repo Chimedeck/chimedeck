@@ -102,6 +102,23 @@ export async function createInvite({
   );
 }
 
+export async function addMember({
+  api,
+  workspaceId,
+  email,
+  role,
+}: {
+  api: { post: <B, T>(url: string, body: B) => Promise<T> };
+  workspaceId: string;
+  email: string;
+  role: Role;
+}): Promise<{ data: WorkspaceMember }> {
+  return api.post<{ email: string; role: Role }, { data: WorkspaceMember }>(
+    `/workspaces/${workspaceId}/members`,
+    { email, role }
+  );
+}
+
 export async function inspectInvite({
   api,
   token,

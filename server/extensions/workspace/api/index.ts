@@ -7,6 +7,7 @@ import { handleCreateInvite } from './invite/create';
 import { handleInspectInvite } from './invite/inspect';
 import { handleAcceptInvite } from './invite/accept';
 import { handleListMembers } from './members/list';
+import { handleAddMember } from './members/add';
 import { handleUpdateMemberRole } from './members/updateRole';
 import { handleRemoveMember } from './members/remove';
 
@@ -51,6 +52,11 @@ export async function workspaceRouter(req: Request, pathname: string): Promise<R
     // GET /api/v1/workspaces/:id/members
     if (sub === '/members' && req.method === 'GET') {
       return handleListMembers(req, workspaceId);
+    }
+
+    // POST /api/v1/workspaces/:id/members — directly add existing user by email
+    if (sub === '/members' && req.method === 'POST') {
+      return handleAddMember(req, workspaceId);
     }
 
     // Member sub-routes with userId.

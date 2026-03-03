@@ -20,9 +20,9 @@ export async function handleListMembers(req: Request, workspaceId: string): Prom
     .join('users', 'memberships.user_id', 'users.id')
     .where('memberships.workspace_id', workspaceId)
     .select(
-      'users.id',
+      db.raw('users.id as "userId"'),
       'users.email',
-      'users.name',
+      db.raw('COALESCE(users.name, users.email) as name'),
       'memberships.role',
     );
 

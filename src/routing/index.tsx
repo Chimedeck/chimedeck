@@ -21,6 +21,11 @@ const WorkspacesPage = lazy(() =>
     '~/extensions/Workspace/containers/WorkspaceListPage/WorkspaceListPage'
   ).then((m) => ({ default: m.default }))
 );
+const WorkspacePage = lazy(() =>
+  import(
+    '~/extensions/Workspace/containers/WorkspacePage/WorkspacePage'
+  ).then((m) => ({ default: m.default }))
+);
 const BoardsPage = lazy(() =>
   import(
     '~/extensions/Board/containers/BoardListPage/BoardListPage'
@@ -56,6 +61,10 @@ export default function AppRouter() {
           <Route element={<PrivateRoute />}>
             <Route element={<AppShell />}>
               <Route path="/workspaces" element={<WorkspacesPage />} />
+              <Route
+                path="/workspace/:workspaceId"
+                element={<WorkspacePage />}
+              />
               <Route
                 path="/workspaces/:workspaceId/boards"
                 element={<BoardsPage />}

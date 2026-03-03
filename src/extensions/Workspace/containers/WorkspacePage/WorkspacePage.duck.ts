@@ -14,6 +14,7 @@ import {
   updateWorkspace,
   deleteWorkspace,
   createInvite,
+  addMember,
   listMembers,
   updateMemberRole,
   removeMember,
@@ -155,6 +156,21 @@ export const sendInvite = createAppAsyncThunk(
   }
 );
 
+export const addMemberThunk = createAppAsyncThunk(
+  'WorkspacePage/addMember',
+  async (
+    {
+      workspaceId,
+      email,
+      role,
+    }: { workspaceId: string; email: string; role: Role },
+    { extra: { api } }
+  ) => {
+    const response = await addMember({ api, workspaceId, email, role });
+    return response.data;
+  }
+);
+
 export const updateMemberRoleThunk = createAppAsyncThunk(
   'WorkspacePage/updateMemberRole',
   async (
@@ -238,8 +254,7 @@ const WorkspacePageSlice = createSlice({
       .addCase(fetchWorkspace.pending, (state) => {
         state.fetchWorkspaceInProgress = true;
         state.fetchWorkspaceError = null;
-        state.currentWorkspace = null;
-        state.members = [];
+        // Keep existing workspace/members visible during refetch so the page stays stable
       })
       .addCase(fetchWorkspace.fulfilled, (state, action) => {
         state.fetchWorkspaceInProgress = false;
@@ -366,7 +381,7 @@ const WorkspacePageSlice = createSlice({
 
 export const { clearInviteState, clearErrors } = WorkspacePageSlice.actions;
 
-export default WorkspacePageSlice;
+export default WorkspacePageSlice.reducer;
 
 // ---------- Selectors ----------
 

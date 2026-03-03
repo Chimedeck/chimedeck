@@ -27,7 +27,12 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
   const members = await db('memberships')
     .join('users', 'memberships.user_id', 'users.id')
     .where('memberships.workspace_id', board.workspace_id)
-    .select('users.id', 'users.email', 'users.name', 'memberships.role');
+    .select(
+      db.raw('users.id as "userId"'),
+      'users.email',
+      db.raw('COALESCE(users.name, users.email) as name'),
+      'memberships.role',
+    );
 
   return Response.json({ data: members });
 }

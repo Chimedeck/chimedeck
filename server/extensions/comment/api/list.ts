@@ -35,8 +35,21 @@ export async function handleListComments(req: Request, cardId: string): Promise<
   if (membershipError) return membershipError;
 
   const comments = await db('comments')
-    .where({ card_id: cardId })
-    .orderBy('created_at', 'asc');
+    .leftJoin('users', 'comments.user_id', 'users.id')
+    .where('comments.card_id', cardId)
+    .orderBy('comments.created_at', 'asc')
+    .select(
+      'comments.id',
+      'comments.card_id',
+      'comments.user_id',
+      'comments.content',
+      'comments.version',
+      'comments.deleted',
+      'comments.created_at',
+      'comments.updated_at',
+      db.raw("COALESCE(users.name, users.email) as author_name"),
+      'users.email as author_email',
+    );
 
   return Response.json({ data: comments });
 }

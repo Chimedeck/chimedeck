@@ -1,13 +1,9 @@
-// Modal for inviting a new member to a workspace.
+// Modal for adding a member directly to a workspace (by email, user must already have an account).
 import { useState } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
-import { useAppSelector } from '~/hooks/useAppSelector';
 import {
-  sendInvite,
-  inviteInProgressSelector,
-  inviteErrorSelector,
-  inviteSuccessSelector,
-  clearInviteState,
+  addMemberThunk,
+  fetchWorkspace,
 } from '../containers/WorkspacePage/WorkspacePage.duck';
 import type { Role } from '../api';
 
@@ -20,30 +16,39 @@ interface InviteMemberModalProps {
 
 const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => {
   const dispatch = useAppDispatch();
-  const inProgress = useAppSelector(inviteInProgressSelector);
-  const error = useAppSelector(inviteErrorSelector);
-  const success = useAppSelector(inviteSuccessSelector);
 
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('MEMBER');
+  const [inProgress, setInProgress] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [addedEmail, setAddedEmail] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await dispatch(sendInvite({ workspaceId, email, role })).unwrap();
-  };
-
-  const handleClose = () => {
-    dispatch(clearInviteState());
-    onClose();
-  };
-
-  const errorMessage = (() => {
-    if (!error) return null;
-    if (error.message?.includes('insufficient-role')) {
-      return "You don't have permission to invite members.";
+    setErrorMessage(null);
+    setInProgress(true);
+    try {
+      await dispatch(addMemberThunk({ workspaceId, email: email.trim(), role })).unwrap();
+      setAddedEmail(email.trim());
+      setSuccess(true);
+      // Refresh members list
+      dispatch(fetchWorkspace({ workspaceId }));
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? '';
+      if (msg.includes('user-not-found')) {
+        setErrorMessage(`No account found for ${email}. Ask them to sign up first.`);
+      } else if (msg.includes('already-a-member')) {
+        setErrorMessage(`${email} is already a member of this workspace.`);
+      } else if (msg.includes('insufficient-role')) {
+        setErrorMessage("You don't have permission to add members.");
+      } else {
+        setErrorMessage('Failed to add member. Please try again.');
+      }
+    } finally {
+      setInProgress(false);
     }
-    return 'Failed to send invite. Please try again.';
-  })();
+  };
 
   return (
     <div
@@ -54,14 +59,16 @@ const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => 
     >
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
         <h2 id="invite-modal-title" className="mb-4 text-lg font-semibold">
-          Invite Member
+          Add Member
         </h2>
 
         {success ? (
           <div className="space-y-4">
-            <p className="text-green-700">Invite sent successfully.</p>
+            <p className="text-green-700">
+              ✓ <strong>{addedEmail}</strong> has been added to the workspace.
+            </p>
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
             >
               Close
@@ -85,6 +92,9 @@ const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => 
                 placeholder="member@example.com"
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                The user must already have an account.
+              </p>
             </div>
 
             <div>
@@ -117,7 +127,7 @@ const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => 
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={onClose}
                 className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
               >
                 Cancel
@@ -127,7 +137,7 @@ const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => 
                 disabled={inProgress}
                 className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
               >
-                {inProgress ? 'Sending…' : 'Send Invite'}
+                {inProgress ? 'Adding…' : 'Add Member'}
               </button>
             </div>
           </form>
@@ -138,3 +148,4 @@ const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => 
 };
 
 export default InviteMemberModal;
+
