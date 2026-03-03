@@ -41,7 +41,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
           'c.id', 'c.list_id', 'c.title', 'c.description', 'c.position',
           'c.archived', 'c.due_date', 'c.created_at', 'c.updated_at',
           db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color)) FILTER (WHERE l.id IS NOT NULL), '[]'::json) as labels`),
-          db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`),
+          db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`),
         )
         .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
         .leftJoin('labels as l', 'l.id', 'cl.label_id')

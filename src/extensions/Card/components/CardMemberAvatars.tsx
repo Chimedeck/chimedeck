@@ -49,13 +49,17 @@ export const CardMemberAvatars = ({
             }}
             type="button"
             title={member.name ?? member.email}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white ring-2 ring-slate-800 hover:ring-indigo-400 transition-all cursor-pointer"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white ring-2 ring-slate-800 hover:ring-indigo-400 transition-all cursor-pointer overflow-hidden"
             onClick={(e) => {
               e.stopPropagation();
               handleAvatarClick(member, e.currentTarget);
             }}
           >
-            {initials}
+            {member.avatar_url ? (
+              <img src={member.avatar_url} alt={member.name ?? member.email} className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
           </button>
         );
       })}

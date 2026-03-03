@@ -54,7 +54,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
       `),
       db.raw(`
         COALESCE(
-          json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name))
+          json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url))
           FILTER (WHERE u.id IS NOT NULL),
           '[]'::json
         ) as members

@@ -11,7 +11,7 @@ export interface Card {
   created_at: string;
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;
-  members: Array<{ id: string; email: string; name: string | null }>;
+  members: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
 }
 
 export interface Label {
@@ -25,6 +25,7 @@ export interface CardMember {
   id: string;
   email: string;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 export interface ChecklistItem {

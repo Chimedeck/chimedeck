@@ -41,7 +41,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   const memberRows = await db('users')
     .join('card_members', 'users.id', 'card_members.user_id')
     .where('card_members.card_id', cardId)
-    .select('users.id', 'users.email', 'users.name');
+    .select('users.id', 'users.email', 'users.name', 'users.avatar_url');
 
   const checklistItems = await db('checklist_items')
     .where({ card_id: cardId })
