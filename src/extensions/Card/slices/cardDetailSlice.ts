@@ -88,7 +88,10 @@ const cardDetailSlice = createSlice({
     },
 
     addComment(state, action: PayloadAction<CommentData>) {
-      state.comments.push(action.payload);
+      // Guard against duplicate dispatches (API response + realtime event both fire addComment)
+      if (!action.payload?.id) return;
+      const alreadyExists = state.comments.some((c) => c.id === action.payload.id);
+      if (!alreadyExists) state.comments.push(action.payload);
     },
 
     updateComment(state, action: PayloadAction<CommentData>) {

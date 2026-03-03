@@ -27,7 +27,7 @@ const CommentThread = ({
         {comments.length === 0 && (
           <p className="text-sm text-gray-400 italic">No comments yet.</p>
         )}
-        {comments.map((comment) => (
+        {comments.filter(Boolean).map((comment) => (
           <CommentItem
             key={comment.id}
             comment={comment}

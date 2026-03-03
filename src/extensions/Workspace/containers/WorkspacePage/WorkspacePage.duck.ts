@@ -192,8 +192,9 @@ export const removeMemberThunk = createAppAsyncThunk(
     { workspaceId, userId }: { workspaceId: string; userId: string },
     { extra: { api } }
   ) => {
-    const response = await removeMember({ api, workspaceId, userId });
-    return response.data;
+    await removeMember({ api, workspaceId, userId });
+    // Server returns 204 No Content — return the userId so the reducer can filter by it
+    return userId;
   }
 );
 
@@ -365,10 +366,10 @@ const WorkspacePageSlice = createSlice({
       })
       .addCase(
         removeMemberThunk.fulfilled,
-        (state, action: PayloadAction<WorkspaceMember>) => {
+        (state, action: PayloadAction<string>) => {
           state.removeInProgress = false;
           state.members = state.members.filter(
-            (m) => m.userId !== action.payload.userId
+            (m) => m.userId !== action.payload
           );
         }
       )
