@@ -76,20 +76,20 @@ const MemberList = ({
         </p>
       )}
 
-      <table className="min-w-full divide-y divide-gray-200 text-sm">
+      <table className="min-w-full divide-y divide-gray-700 text-sm">
         <thead>
           <tr>
-            <th className="px-4 py-2 text-left font-medium text-gray-600">Email</th>
-            <th className="px-4 py-2 text-left font-medium text-gray-600">Role</th>
+            <th className="px-4 py-2 text-left font-medium text-gray-300">Email</th>
+            <th className="px-4 py-2 text-left font-medium text-gray-300">Role</th>
             {canManageMembers && (
-              <th className="px-4 py-2 text-left font-medium text-gray-600">Actions</th>
+              <th className="px-4 py-2 text-left font-medium text-gray-300">Actions</th>
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-700">
           {members.map((member) => (
             <tr key={member.userId}>
-              <td className="px-4 py-2 text-gray-800">{member.email}</td>
+              <td className="px-4 py-2 text-gray-100">{member.email}</td>
               <td className="px-4 py-2">
                 {canManageMembers && member.userId !== currentUserId ? (
                   <select
@@ -98,7 +98,7 @@ const MemberList = ({
                       handleRoleChange(member.userId, e.target.value as Role)
                     }
                     aria-label={`Change role for ${member.email}`}
-                    className="rounded border border-gray-300 px-2 py-0.5 text-xs"
+                    className="rounded border border-gray-600 bg-gray-700 text-gray-100 px-2 py-0.5 text-xs"
                   >
                     {ASSIGNABLE_ROLES.map((r) => (
                       <option key={r} value={r}>

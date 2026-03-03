@@ -113,7 +113,7 @@ const CommentItem = ({ comment, currentUserId, isAdmin = false, onEdit, onDelete
       <div className="flex-1 min-w-0">
         {/* Header: name + timestamp */}
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-sm font-semibold text-gray-900">{displayName}</span>
+          <span className="text-sm font-semibold text-white">{displayName}</span>
           <span className="text-xs text-gray-400">{relativeTime(comment.created_at)}</span>
           {comment.version > 1 && (
             <span className="text-xs italic text-gray-400">(edited)</span>
@@ -129,7 +129,7 @@ const CommentItem = ({ comment, currentUserId, isAdmin = false, onEdit, onDelete
             submitLabel="Update"
           />
         ) : (
-          <p className="whitespace-pre-wrap text-sm text-gray-800 leading-relaxed">
+          <p className="whitespace-pre-wrap text-sm text-gray-100 leading-relaxed">
             {renderContent(comment.content)}
           </p>
         )}
@@ -141,7 +141,7 @@ const CommentItem = ({ comment, currentUserId, isAdmin = false, onEdit, onDelete
               <>
                 <button
                   onClick={() => setEditing(true)}
-                  className="hover:text-gray-600 hover:underline"
+                  className="hover:text-gray-200 hover:underline"
                 >
                   Edit
                 </button>
