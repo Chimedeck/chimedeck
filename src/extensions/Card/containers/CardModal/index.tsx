@@ -58,7 +58,6 @@ const CardModalContainer = () => {
   const meta = useAppSelector(selectCardDetailMeta);
   const { boardId } = meta;
   const currentUser = useAppSelector(selectCurrentUser);
-
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
 
@@ -317,8 +316,10 @@ const CardModalContainer = () => {
     async (amount: string | null, currency: string) => {
       if (!card) return;
       const mutationId = nextMutationId();
+      // Convert string amount to number before sending — server enforces numeric type
+      const numericAmount = amount !== null ? parseFloat(amount) : null;
       dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { amount: amount ?? null, currency } }));
-      patchCard({ api, cardId: card.id, fields: { amount: amount ?? null, currency } })
+      patchCard({ api, cardId: card.id, fields: { amount: numericAmount, currency } })
         .then((updatedCard) => {
           dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
           dispatch(boardSliceActions.updateCard({ card: updatedCard }));

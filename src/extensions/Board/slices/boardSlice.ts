@@ -115,14 +115,6 @@ const boardSlice = createSlice({
       if (state.board) state.board.title = action.payload.title;
     },
 
-    /** Update board monetization type in-place (optimistic setting change) */
-    optimisticUpdateBoardMonetization(
-      state,
-      action: PayloadAction<{ monetization_type: import('../api').MonetizationType | null }>,
-    ) {
-      if (state.board) state.board.monetization_type = action.payload.monetization_type;
-    },
-
     /** Add a newly created card to the local state */
     addCard(
       state,

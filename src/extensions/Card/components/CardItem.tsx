@@ -12,10 +12,6 @@ import apiClient from '~/common/api/client';
 import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 import CardMoneyBadge from './CardMoneyBadge';
-import CardPaymentButtons from '../../Payment/components/CardPaymentButtons';
-import { shouldShowPaymentButtons } from '../../Board/config/payToPaidConfig';
-
-import type { MonetizationType } from '../../Board/api';
 
 export interface CardItemProps {
   card: Card;
@@ -23,10 +19,6 @@ export interface CardItemProps {
   onClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
   onToggleLabels?: () => void;
-  /** Passed from the parent board context for future payment button rendering (Sprint 33) */
-  monetizationType?: MonetizationType | null | undefined;
-  /** Name of the list this card belongs to; used by payToPaidConfig predicate */
-  listName?: string | undefined;
 }
 
 const CardItem = ({
@@ -35,8 +27,6 @@ const CardItem = ({
   onClick,
   labelsExpanded = false,
   onToggleLabels,
-  monetizationType,
-  listName,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -104,16 +94,6 @@ const CardItem = ({
           <CardMoneyBadge amount={card.amount} currency={card.currency} />
         </div>
       )}
-      {monetizationType === 'pay-to-paid' &&
-        card.amount &&
-        listName &&
-        shouldShowPaymentButtons(listName) && (
-          <CardPaymentButtons
-            amountCents={Math.round(parseFloat(card.amount) * 100)}
-            currency={card.currency ?? 'usd'}
-            cardId={card.id}
-          />
-        )}
       {members.length > 0 && (
         <div className="mt-1.5">
           <CardMemberAvatars

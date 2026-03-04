@@ -13,6 +13,7 @@ import CardActionMenu from './CardActionMenu';
 import CardSidebarSection from './CardSidebarSection';
 import CardValue from './CardValue';
 import ActivityFeed from '../containers/CardModal/ActivityFeed';
+
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
 

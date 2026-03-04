@@ -21,8 +21,7 @@ import CardModalContainer from '../../../Card/containers/CardModal';
 import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
-import { updateBoard, archiveBoard, deleteBoard, patchBoardMonetizationType } from '../../api';
-import type { MonetizationType } from '../../api';
+import { updateBoard, archiveBoard, deleteBoard } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
 import { createCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
@@ -112,22 +111,6 @@ const BoardPage = () => {
       }
     },
     [api, board, boardId, dispatch],
-  );
-
-  // ── Monetization type ────────────────────────────────────────────────────
-  const handleSaveMonetizationType = useCallback(
-    async (monetization_type: MonetizationType | null) => {
-      if (!boardId) return;
-      dispatch(boardSliceActions.optimisticUpdateBoardMonetization({ monetization_type }));
-      try {
-        await patchBoardMonetizationType({ api, boardId, monetization_type });
-      } catch (err) {
-        // Rollback optimistic update
-        dispatch(fetchBoardDataThunk({ boardId }));
-        throw err;
-      }
-    },
-    [api, boardId, dispatch],
   );
 
   // ── Drag snapshot / rollback ─────────────────────────────────────────────
@@ -302,7 +285,6 @@ const BoardPage = () => {
         lists={lists}
         cardsByList={cardsByList}
         cards={cards}
-        monetizationType={board.monetization_type}
         onCardMove={handleCardMove}
         onListReorder={handleListReorder}
         onDragStart={handleDragStart}
@@ -321,9 +303,6 @@ const BoardPage = () => {
       {/* Board settings panel */}
       {settingsOpen && (
         <BoardSettings
-          monetizationType={board.monetization_type}
-          isAdmin={true}
-          onSave={handleSaveMonetizationType}
           onClose={() => setSettingsOpen(false)}
         />
       )}

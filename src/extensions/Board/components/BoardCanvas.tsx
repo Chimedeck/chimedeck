@@ -19,7 +19,6 @@ import {
 } from '@dnd-kit/sortable';
 import type { List } from '../../List/api';
 import type { Card } from '../../Card/api';
-import type { MonetizationType } from '../api';
 import SortableListColumn from '../../List/containers/BoardPage/ListColumn';
 import CardItem from '../../Card/components/CardItem';
 import AddListForm from '../../List/components/AddListForm';
@@ -31,7 +30,6 @@ interface Props {
   lists: Record<string, List>;
   cardsByList: Record<string, string[]>;
   cards: Record<string, Card>;
-  monetizationType?: MonetizationType | null | undefined;
   onCardMove: (args: {
     cardId: string;
     fromListId: string;
@@ -72,7 +70,6 @@ const BoardCanvas = ({
   lists,
   cardsByList,
   cards,
-  monetizationType,
   onCardMove,
   onListReorder,
   onDragStart,
@@ -255,7 +252,6 @@ const BoardCanvas = ({
                 list={list}
                 cardIds={cardsByList[listId] ?? []}
                 cards={cards}
-                monetizationType={monetizationType}
                 onRename={onRenameList}
                 onArchive={onArchiveList}
                 onDelete={onDeleteList}
