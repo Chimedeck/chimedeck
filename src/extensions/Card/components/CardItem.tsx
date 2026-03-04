@@ -1,6 +1,6 @@
 // CardItem — draggable card chip using @dnd-kit/sortable useSortable.
 // Styled per sprint-18 spec §4.
-import { useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSelector } from 'react-redux';
@@ -39,12 +39,19 @@ const CardItem = ({
     [api],
   );
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    // Hide the original item while it is being dragged (overlay shows instead)
-    opacity: isDragging && !isOverlay ? 0 : 1,
-  };
+  // WHY: memoize the style object so its reference only changes when the values
+  // actually change. A new object reference on every render causes DnDKit to
+  // re-measure the element in a useEffect, which triggers setState, which
+  // re-renders, which re-measures — infinite loop during rapid drags.
+  const style = useMemo<React.CSSProperties>(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging && !isOverlay ? 0 : 1,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, isOverlay],
+  );
 
   const labels = card.labels ?? [];
   const members = card.members ?? [];
@@ -93,4 +100,7 @@ const CardItem = ({
   );
 };
 
-export default CardItem;
+// WHY: memo prevents re-renders when parent re-renders with the same props.
+// Without this every optimistic card-move update causes every CardItem to
+// re-render, DnDKit re-measures all of them, and we spin into an update loop.
+export default memo(CardItem);

@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { List } from '../../api';
 import type { Card } from '../../../Card/api';
 import ListHeader from '../../components/ListHeader';
@@ -36,6 +36,14 @@ const SortableListColumn = ({
   onToggleLabels,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
+  // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
+  // is not provided. An inline `() => {}` creates a new reference every render.
+  const noopRef = useRef(() => {});
+  const stableToggleLabels = useCallback(
+    onToggleLabels ?? noopRef.current,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onToggleLabels],
+  );
 
   // Sortable hook for the list column itself (horizontal reorder)
   const {
@@ -84,7 +92,7 @@ const SortableListColumn = ({
               key={card.id}
               card={card}
               labelsExpanded={labelsExpanded ?? false}
-              onToggleLabels={onToggleLabels ?? (() => {})}
+              onToggleLabels={stableToggleLabels}
               {...(onCardClick ? { onClick: onCardClick } : {})}
             />
           ))}

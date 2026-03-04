@@ -93,6 +93,10 @@ const BoardCanvas = ({
   // onDragStart every optimistic update and cause a re-render loop).
   const cardsByListRef = useRef(cardsByList);
   cardsByListRef.current = cardsByList;
+  // WHY: deduplicate onDragOver dispatches — each onCardMove triggers a Redux
+  // state update which re-renders the tree, causing DnDKit to fire onDragOver
+  // again for the same position, creating an infinite update loop.
+  const lastMoveRef = useRef<{ cardId: string; toListId: string; newIndex: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -109,6 +113,7 @@ const BoardCanvas = ({
         // won't give DndContext a new onDragStart on every optimistic update.
         fromListIdRef.current = findListForCard(id, cardsByListRef.current);
       }
+      lastMoveRef.current = null;
       onDragStart();
     },
     [cards, onDragStart],
@@ -143,6 +148,15 @@ const BoardCanvas = ({
         newIndex = idx >= 0 ? idx : toCards.length;
       }
 
+      // Skip if this is the same move we already dispatched — prevents the
+      // optimistic-update → re-render → onDragOver → dispatch cycle that
+      // exceeds React's maximum update depth.
+      const last = lastMoveRef.current;
+      if (last && last.cardId === activeId && last.toListId === toListId && last.newIndex === newIndex) {
+        return;
+      }
+      lastMoveRef.current = { cardId: activeId, toListId, newIndex };
+
       onCardMove({ cardId: activeId, fromListId, toListId, newIndex });
     },
     [cards, cardsByList, lists, onCardMove],
@@ -161,6 +175,8 @@ const BoardCanvas = ({
 
       const activeId = String(active.id);
       const overId = String(over.id);
+
+      lastMoveRef.current = null;
 
       // List reorder
       if (lists[activeId]) {
