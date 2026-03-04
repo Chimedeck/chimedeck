@@ -12,6 +12,8 @@ import apiClient from '~/common/api/client';
 import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 import CardMoneyBadge from './CardMoneyBadge';
+import CardPaymentButtons from '../../Payment/components/CardPaymentButtons';
+import { shouldShowPaymentButtons } from '../../Board/config/payToPaidConfig';
 
 import type { MonetizationType } from '../../Board/api';
 
@@ -33,11 +35,8 @@ const CardItem = ({
   onClick,
   labelsExpanded = false,
   onToggleLabels,
-  // monetizationType and listName are pass-through props for Sprint 33 use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  monetizationType: _monetizationType,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  listName: _listName,
+  monetizationType,
+  listName,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -105,6 +104,16 @@ const CardItem = ({
           <CardMoneyBadge amount={card.amount} currency={card.currency} />
         </div>
       )}
+      {monetizationType === 'pay-to-paid' &&
+        card.amount &&
+        listName &&
+        shouldShowPaymentButtons(listName) && (
+          <CardPaymentButtons
+            amountCents={Math.round(parseFloat(card.amount) * 100)}
+            currency={card.currency ?? 'usd'}
+            cardId={card.id}
+          />
+        )}
       {members.length > 0 && (
         <div className="mt-1.5">
           <CardMemberAvatars
