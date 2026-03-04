@@ -11,6 +11,7 @@ import { selectCurrentUser } from '~/slices/authSlice';
 import apiClient from '~/common/api/client';
 import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
+import CardMoneyBadge from './CardMoneyBadge';
 
 export interface CardItemProps {
   card: Card;
@@ -87,6 +88,11 @@ const CardItem = ({
           <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
           {new Date(card.due_date).toLocaleDateString()}
         </p>
+      )}
+      {card.amount && (
+        <div className="mt-1">
+          <CardMoneyBadge amount={card.amount} currency={card.currency} />
+        </div>
       )}
       {members.length > 0 && (
         <div className="mt-1.5">

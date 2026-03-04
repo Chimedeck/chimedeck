@@ -1,9 +1,21 @@
-// cardDetailSlice — modal state, card detail, checklist, labels, members, comments.
+// cardDetailSlice — modal state, card detail, checklist, labels, members, comments, activities.
 // Sprint 19: optimistic updates with rollback per architecture spec.
+// Sprint 29: activities sideloaded via ?include=activities.
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
 import type { Card, Label, CardMember, ChecklistItem, CardDetail } from '../api';
 import type { CommentData } from '../api/cardDetail';
+
+export interface ActivityData {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  board_id: string | null;
+  action: string;
+  actor_id: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
 
 // ---------- State ----------
 
@@ -17,6 +29,7 @@ export interface CardDetailState {
   members: CardMember[];
   checklistItems: ChecklistItem[];
   comments: CommentData[];
+  activities: ActivityData[];
   status: 'idle' | 'loading' | 'error';
   /** Optimistic snapshots by mutationId for rollback */
   snapshots: Record<
@@ -40,6 +53,7 @@ const initialState: CardDetailState = {
   members: [],
   checklistItems: [],
   comments: [],
+  activities: [],
   status: 'idle',
   snapshots: {},
 };
@@ -51,7 +65,7 @@ export const fetchCardDetailThunk = createAppAsyncThunk(
   async ({ cardId }: { cardId: string }, { extra }) => {
     const api = (extra as { api: { get: <T>(url: string) => Promise<T> } }).api;
     const result = await api.get<{ data: Card; includes: CardDetail['includes'] }>(
-      `/cards/${cardId}`,
+      `/cards/${cardId}?include=activities`,
     );
     return result;
   },
@@ -78,6 +92,7 @@ const cardDetailSlice = createSlice({
       state.members = [];
       state.checklistItems = [];
       state.comments = [];
+      state.activities = [];
       state.status = 'idle';
       state.snapshots = {};
     },
@@ -111,7 +126,7 @@ const cardDetailSlice = createSlice({
       state,
       action: PayloadAction<{
         mutationId: string;
-        fields: Partial<Pick<Card, 'title' | 'description' | 'due_date'>>;
+        fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'amount' | 'currency'>>;
       }>,
     ) {
       const { mutationId, fields } = action.payload;
@@ -272,6 +287,7 @@ const cardDetailSlice = createSlice({
         state.labels = includes.labels;
         state.members = includes.members;
         state.checklistItems = includes.checklistItems;
+        state.activities = (includes.activities ?? []) as ActivityData[];
         state.status = 'idle';
       })
       .addCase(fetchCardDetailThunk.rejected, (state) => {
@@ -311,6 +327,7 @@ export const selectCardDetailMembers = (s: { cardDetail: CardDetailState }) => s
 export const selectCardDetailChecklist = (s: { cardDetail: CardDetailState }) =>
   s.cardDetail.checklistItems;
 export const selectCardDetailComments = (s: { cardDetail: CardDetailState }) => s.cardDetail.comments;
+export const selectCardDetailActivities = (s: { cardDetail: CardDetailState }) => s.cardDetail.activities;
 export const selectCardDetailStatus = (s: { cardDetail: CardDetailState }) => s.cardDetail.status;
 export const selectCardDetailMeta = (s: { cardDetail: CardDetailState }) => ({
   listTitle: s.cardDetail.listTitle,

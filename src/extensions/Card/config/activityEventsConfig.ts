@@ -1,0 +1,10 @@
+// Client-side allowlist of system event types shown in the activity feed.
+// Must stay in sync with server/extensions/activity/config/visibleEventTypes.ts.
+// Comment events (comment_added etc.) are handled by the comment system, not listed here.
+export const VISIBLE_ACTIVITY_EVENT_TYPES: string[] = [
+  'card.member.added',
+  'card.member.removed',
+  'card.due_date.set',
+  'card.due_date.cleared',
+  'card.money.updated',
+];

@@ -11,8 +11,10 @@ import CardMembers from './CardMembers';
 import CardDueDate from './CardDueDate';
 import CardActionMenu from './CardActionMenu';
 import CardSidebarSection from './CardSidebarSection';
-import CommentThread from '~/extensions/Comment/components/CommentThread';
-import type { Comment } from '~/extensions/Comment/components/CommentItem';
+import CardValue from './CardValue';
+import ActivityFeed from '../containers/CardModal/ActivityFeed';
+import type { ActivityData } from '../slices/cardDetailSlice';
+import type { CommentData } from '../api/cardDetail';
 
 interface BoardMember {
   id: string;
@@ -31,7 +33,8 @@ interface Props {
   members: CardMember[];
   boardMembers: BoardMember[];
   checklistItems: ChecklistItem[];
-  comments: Comment[];
+  comments: CommentData[];
+  activities: ActivityData[];
   currentUserId: string;
   onClose: () => void;
   onTitleSave: (title: string) => void;
@@ -52,6 +55,7 @@ interface Props {
   onAddComment: (content: string) => Promise<void>;
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  onMoneySave: (amount: string | null, currency: string) => Promise<void>;
 }
 
 const CardModal = ({
@@ -66,6 +70,7 @@ const CardModal = ({
   boardMembers,
   checklistItems,
   comments,
+  activities,
   currentUserId,
   onClose,
   onTitleSave,
@@ -86,6 +91,7 @@ const CardModal = ({
   onAddComment,
   onEditComment,
   onDeleteComment,
+  onMoneySave,
 }: Props) => {
   const isReadOnly = card.archived;
 
@@ -150,9 +156,10 @@ const CardModal = ({
                   disabled={isReadOnly}
                 />
 
-                <CommentThread
+                <ActivityFeed
                   boardId={boardId}
                   comments={comments}
+                  activities={activities}
                   currentUserId={currentUserId}
                   onAddComment={onAddComment}
                   onEditComment={onEditComment}
@@ -189,6 +196,15 @@ const CardModal = ({
                   <CardDueDate
                     dueDate={card.due_date}
                     onChange={onDueDateChange}
+                    disabled={isReadOnly}
+                  />
+                </CardSidebarSection>
+
+                <CardSidebarSection title="Value">
+                  <CardValue
+                    amount={card.amount ?? null}
+                    currency={card.currency ?? null}
+                    onSave={onMoneySave}
                     disabled={isReadOnly}
                   />
                 </CardSidebarSection>

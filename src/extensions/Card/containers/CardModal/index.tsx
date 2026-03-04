@@ -12,6 +12,7 @@ import {
   selectCardDetailMembers,
   selectCardDetailChecklist,
   selectCardDetailComments,
+  selectCardDetailActivities,
   selectCardDetailStatus,
   selectCardDetailMeta,
 } from '../../slices/cardDetailSlice';
@@ -52,6 +53,7 @@ const CardModalContainer = () => {
   const members = useAppSelector(selectCardDetailMembers);
   const checklistItems = useAppSelector(selectCardDetailChecklist);
   const comments = useAppSelector(selectCardDetailComments);
+  const activities = useAppSelector(selectCardDetailActivities);
   const status = useAppSelector(selectCardDetailStatus);
   const meta = useAppSelector(selectCardDetailMeta);
   const { boardId } = meta;
@@ -311,6 +313,21 @@ const CardModalContainer = () => {
     [api, card, dispatch],
   );
 
+  const handleMoneySave = useCallback(
+    async (amount: string | null, currency: string) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { amount: amount ?? null, currency } }));
+      patchCard({ api, cardId: card.id, fields: { amount: amount ?? null, currency } })
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
   // ── Comments ───────────────────────────────────────────────────────────
   const handleAddComment = useCallback(
     async (content: string) => {
@@ -376,6 +393,7 @@ const CardModalContainer = () => {
       boardMembers={boardMembersRef.current}
       checklistItems={checklistItems}
       comments={comments}
+      activities={activities}
       currentUserId={currentUser?.id ?? ''}
       onClose={handleClose}
       onTitleSave={handleTitleSave}
@@ -396,6 +414,7 @@ const CardModalContainer = () => {
       onAddComment={handleAddComment}
       onEditComment={handleEditComment}
       onDeleteComment={handleDeleteComment}
+      onMoneySave={handleMoneySave}
     />
   );
 };

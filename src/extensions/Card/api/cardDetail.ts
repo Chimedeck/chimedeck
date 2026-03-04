@@ -21,7 +21,7 @@ export async function patchCard({
 }: {
   api: ApiClient;
   cardId: string;
-  fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'archived'>>;
+  fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'archived' | 'amount' | 'currency'>>;
 }): Promise<Card> {
   const res = await api.patch<{ data: Card }>(`/cards/${cardId}`, fields);
   // interceptor returns { data: Card } as the resolved value

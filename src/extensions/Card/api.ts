@@ -8,6 +8,8 @@ export interface Card {
   position: string;
   archived: boolean;
   due_date: string | null;
+  amount: string | null;
+  currency: string | null;
   created_at: string;
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;
