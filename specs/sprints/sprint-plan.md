@@ -50,6 +50,14 @@
 | [24](./sprint-24.md) | Profile Settings | Avatar upload (S3), nickname field, `/settings/profile` page | 🔵 Needs 12 + 17 |
 | [25](./sprint-25.md) | @Mentions | Autocomplete dropdown, mention parsing, chips in card + comments | 🔵 Needs 11 + 19 + 24 |
 | [26](./sprint-26.md) | Mention Notifications | In-app bell, notification panel, real-time WS delivery | 🔵 Needs 25 + 20 |
+| [27](./sprint-27.md) | Collapsible Label Chips | Label pills on card tiles, collapsed/expanded toggle, localStorage persist | 🔵 Needs 18 + 06 |
+| [28](./sprint-28.md) | Member Avatar Popover | Profile popover on card tile avatars, context-aware remove/edit actions | 🔵 Needs 07 + 15 |
+| **— Monetization & Events —** | | | |
+| [29](./sprint-29.md) | Configurable Events in Activity Feed | System events (member, due date, move) shown inline with comments; configurable filter file | 🔵 Needs 11 + 21 |
+| [30](./sprint-30.md) | Card Money & Currency (DB + API) | `amount` + `currency` columns on cards, PATCH validation, activity event | 🔵 Needs 07 |
+| [31](./sprint-31.md) | Card Money Badge UI | `CardMoneyBadge` on tile, editable Value section in card modal, Heroicons for calendar | 🔵 Needs 30 + 18 + 19 |
+| [32](./sprint-32.md) | Board Monetization Type | `monetization_type` DB column, board settings radio UI, `payToPaidConfig` predicate | 🔵 Needs 30 |
+| [33](./sprint-33.md) | Stripe Embedded Payments | `stripePaymentButtonsConfig`, Stripe PaymentIntent endpoint, embedded checkout modal | 🔵 Needs 32 |
 
 ---
 
@@ -103,6 +111,12 @@ Sprint 25 ──────────── @Mentions in cards & comments (au
 Sprint 26 ──────────── In-app notification bell + panel (mention alerts, real-time WS)
 Sprint 27 ──────────── Collapsible label chips on card tiles (board view)
 Sprint 28 ──────────── Member avatar popover on card tiles (profile + remove)
+──── Monetization & Events ──────────────────────────────────────────────────────────
+Sprint 29 ──────────── Configurable activity events in comment feed (member, due date, move)
+Sprint 30 ──────────── Card money & currency fields (DB migration, API validation)
+Sprint 31 ──────────── Card money badge UI (tile badge, modal editor, Heroicons)
+Sprint 32 ──────────── Board monetization type (pre-paid / pay-to-paid, column predicate config)
+Sprint 33 ──────────── Stripe embedded payment flows (PaymentIntent API, configurable buttons)
 ```
 
 ---

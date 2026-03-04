@@ -1,6 +1,7 @@
 // CardItem — draggable card chip using @dnd-kit/sortable useSortable.
 // Styled per sprint-18 spec §4.
 import { memo, useCallback, useMemo } from 'react';
+import { CalendarIcon } from '@heroicons/react/24/outline';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSelector } from 'react-redux';
@@ -82,8 +83,9 @@ const CardItem = ({
       )}
       <p className="text-slate-200 text-sm leading-snug break-words">{card.title}</p>
       {card.due_date && (
-        <p className="mt-1 text-xs text-slate-500">
-          📅 {new Date(card.due_date).toLocaleDateString()}
+        <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
+          <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+          {new Date(card.due_date).toLocaleDateString()}
         </p>
       )}
       {members.length > 0 && (
