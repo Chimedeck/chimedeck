@@ -6,6 +6,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { VISIBLE_EVENT_TYPES } from '../config/visibleEventTypes';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
@@ -36,6 +37,7 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
 
   let query = db('activities')
     .where({ board_id: boardId })
+    .whereIn('action', VISIBLE_EVENT_TYPES)
     .orderBy('created_at', 'desc')
     .orderBy('id', 'desc')
     .limit(limit + 1); // fetch one extra to determine hasMore

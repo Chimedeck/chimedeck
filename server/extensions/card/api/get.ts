@@ -5,6 +5,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
 
 export async function handleGetCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -47,6 +48,17 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     .where({ card_id: cardId })
     .orderBy('position', 'asc');
 
+  const url = new URL(req.url);
+  const includes = url.searchParams.get('include')?.split(',') ?? [];
+
+  let activities: unknown[] = [];
+  if (includes.includes('activities')) {
+    activities = await db('activities')
+      .where({ entity_id: cardId })
+      .whereIn('action', VISIBLE_EVENT_TYPES)
+      .orderBy('created_at', 'asc');
+  }
+
   return Response.json({
     data: card,
     includes: {
@@ -57,7 +69,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
       checklistItems,
       comments: [],
       attachments: [],
-      activities: [],
+      activities,
     },
   });
 }

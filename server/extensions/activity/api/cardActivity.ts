@@ -6,6 +6,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { VISIBLE_EVENT_TYPES } from '../config/visibleEventTypes';
 
 export async function handleCardActivity(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -37,6 +38,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
 
   const activities = await db('activities')
     .where({ entity_id: cardId })
+    .whereIn('action', VISIBLE_EVENT_TYPES)
     .orderBy('created_at', 'desc');
 
   return Response.json({ data: activities });

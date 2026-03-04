@@ -6,6 +6,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -50,8 +51,22 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
         .groupBy('c.id')
     : [];
 
+  const url = new URL(req.url);
+  const includes = url.searchParams.get('include')?.split(',') ?? [];
+
+  let activities: unknown[] = [];
+  if (includes.includes('activities') && listIds.length > 0) {
+    const cardIds = cards.map((c: { id: string }) => c.id);
+    if (cardIds.length > 0) {
+      activities = await db('activities')
+        .whereIn('entity_id', cardIds)
+        .whereIn('action', VISIBLE_EVENT_TYPES)
+        .orderBy('created_at', 'asc');
+    }
+  }
+
   return Response.json({
     data: board,
-    includes: { lists, cards },
+    includes: { lists, cards, activities },
   });
 }
