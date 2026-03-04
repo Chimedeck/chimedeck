@@ -40,7 +40,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
         .orderBy('c.position', 'asc')
         .select(
           'c.id', 'c.list_id', 'c.title', 'c.description', 'c.position',
-          'c.archived', 'c.due_date', 'c.created_at', 'c.updated_at',
+          'c.archived', 'c.due_date', 'c.amount', 'c.currency', 'c.created_at', 'c.updated_at',
           db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color)) FILTER (WHERE l.id IS NOT NULL), '[]'::json) as labels`),
           db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`),
         )

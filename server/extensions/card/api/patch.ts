@@ -1,21 +1,20 @@
-// PATCH /api/v1/cards/:id — update title, description, due_date, amount, or currency; min role: MEMBER.
+// PATCH /api/v1/cards/:id — update amount and/or currency; min role: MEMBER.
+// Also validates ISO 4217 currency codes and emits card.money.updated activity + WS event.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
-import { writeActivity } from '../../activity/mods/write';
-import { syncMentions } from '../../../common/mentions/sync';
-import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import {
   requireWorkspaceMembership,
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
+import { writeActivity } from '../../activity/mods/write';
+import { writeEvent } from '../../../mods/events/write';
 
 // ISO 4217 3-letter currency code regex
 const CURRENCY_RE = /^[A-Z]{3}$/;
 
-export async function handleUpdateCard(req: Request, cardId: string): Promise<Response> {
+export async function handlePatchCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -32,7 +31,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { title?: string; description?: string; due_date?: string | null; amount?: number | null; currency?: string | null };
+  let body: { amount?: number | null; currency?: string | null };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -43,30 +42,6 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   }
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-
-  if (body.title !== undefined) {
-    if (typeof body.title !== 'string' || body.title.trim() === '') {
-      return Response.json(
-        { name: 'bad-request', data: { message: 'title must be a non-empty string' } },
-        { status: 400 },
-      );
-    }
-    if (body.title.trim().length > 512) {
-      return Response.json(
-        { name: 'card-title-too-long', data: { message: 'title must be ≤ 512 characters' } },
-        { status: 400 },
-      );
-    }
-    updates.title = body.title.trim();
-  }
-
-  if (body.description !== undefined) {
-    updates.description = body.description?.trim() ?? null;
-  }
-
-  if (body.due_date !== undefined) {
-    updates.due_date = body.due_date;
-  }
 
   if (body.amount !== undefined) {
     if (body.amount === null) {
@@ -103,7 +78,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     }
   }
 
-  // Default currency to USD when amount is set but no currency provided or stored
+  // Default currency to USD when amount is set but no currency provided
   if (updates.amount != null && updates.currency === undefined) {
     const existing = await db('cards').where({ id: cardId }).first();
     if (!existing?.currency) {
@@ -111,51 +86,29 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     }
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+  const [updated] = await db('cards').where({ id: cardId }).update(updates, ['*']);
 
-  // Wrap card update + mention sync in a single transaction
-  const updated = await db.transaction(async (trx) => {
-    const rows = await trx('cards').where({ id: cardId }).update(updates, ['*']);
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
-    // Sync @mentions when description is being saved
-    if (body.description !== undefined && rows[0]) {
-      const { addedUserIds } = await syncMentions({
-        trx,
-        sourceType: 'card_description',
-        sourceId: cardId,
-        text: rows[0].description ?? '',
-        boardId: board.id,
-        mentionedByUserId: actorId,
-      });
-
-      await createNotificationsForMentions({
-        trx,
-        addedUserIds,
-        actorId,
-        sourceType: 'card_description',
-        sourceId: cardId,
-        cardId,
-        boardId: board.id,
-      });
-    }
-
-    return rows;
-  });
-
-  // Use 'card_updated' to match client useBoardSync handler; send full card object
-  await writeEvent({ type: 'card_updated', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0] } });
-
-  // Emit activity event when money fields change
-  if (body.amount !== undefined || (body.currency !== undefined && body.amount !== null)) {
+  const moneyChanged = body.amount !== undefined || (body.currency !== undefined && body.amount !== null);
+  if (moneyChanged) {
     await writeActivity({
       entityType: 'card',
       entityId: cardId,
       boardId: board.id,
       action: 'card.money.updated',
       actorId,
-      payload: { amount: updated[0].amount, currency: updated[0].currency },
+      payload: { amount: updated.amount, currency: updated.currency },
+    });
+
+    await writeEvent({
+      type: 'card_updated',
+      boardId: board.id,
+      entityId: cardId,
+      actorId,
+      payload: { card: updated },
     });
   }
 
-  return Response.json({ data: updated[0] });
+  return Response.json({ data: updated });
 }
