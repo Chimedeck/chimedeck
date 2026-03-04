@@ -2,6 +2,7 @@
 // Callers must inject an axios-compatible `api` instance.
 
 export type BoardState = 'ACTIVE' | 'ARCHIVED';
+export type MonetizationType = 'pre-paid' | 'pay-to-paid';
 
 export interface Board {
   id: string;
@@ -9,6 +10,7 @@ export interface Board {
   title: string;
   state: BoardState;
   createdAt: string;
+  monetization_type: MonetizationType | null;
 }
 
 // ---------- Board CRUD ----------
@@ -55,6 +57,18 @@ export async function updateBoard({
   title: string;
 }): Promise<{ data: Board }> {
   return api.patch<{ data: Board }>(`/boards/${boardId}`, { title });
+}
+
+export async function patchBoardMonetizationType({
+  api,
+  boardId,
+  monetization_type,
+}: {
+  api: { patch: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  monetization_type: MonetizationType | null;
+}): Promise<{ data: Board }> {
+  return api.patch<{ data: Board }>(`/boards/${boardId}`, { monetization_type });
 }
 
 export async function archiveBoard({

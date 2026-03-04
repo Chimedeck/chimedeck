@@ -21,6 +21,7 @@ interface Props {
   onTitleSave: (title: string) => Promise<void>;
   onArchive?: () => void;
   onDelete?: () => void;
+  onOpenSettings?: () => void;
 }
 
 const BoardHeader = ({
@@ -31,6 +32,7 @@ const BoardHeader = ({
   onTitleSave,
   onArchive,
   onDelete,
+  onOpenSettings,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -126,7 +128,15 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-40 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
+            <div className="absolute right-0 mt-1 w-48 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
+              {onOpenSettings && (
+                <button
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
+                  onClick={() => { setMenuOpen(false); onOpenSettings(); }}
+                >
+                  Board settings
+                </button>
+              )}
               {onArchive && (
                 <button
                   className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"

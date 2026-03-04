@@ -13,12 +13,18 @@ import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 import CardMoneyBadge from './CardMoneyBadge';
 
+import type { MonetizationType } from '../../Board/api';
+
 export interface CardItemProps {
   card: Card;
   isOverlay?: boolean;
   onClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
   onToggleLabels?: () => void;
+  /** Passed from the parent board context for future payment button rendering (Sprint 33) */
+  monetizationType?: MonetizationType | null | undefined;
+  /** Name of the list this card belongs to; used by payToPaidConfig predicate */
+  listName?: string | undefined;
 }
 
 const CardItem = ({
@@ -27,6 +33,11 @@ const CardItem = ({
   onClick,
   labelsExpanded = false,
   onToggleLabels,
+  // monetizationType and listName are pass-through props for Sprint 33 use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  monetizationType: _monetizationType,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  listName: _listName,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });

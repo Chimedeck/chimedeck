@@ -15,13 +15,14 @@ import {
   selectCardsByList,
   selectCards,
   selectBoardStatus,
-} from '../../slices/boardSlice';
-import BoardHeader from '../../components/BoardHeader';
+} from '../../slices/boardSlice';import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
 import CardModalContainer from '../../../Card/containers/CardModal';
+import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
-import { updateBoard, archiveBoard, deleteBoard } from '../../api';
+import { updateBoard, archiveBoard, deleteBoard, patchBoardMonetizationType } from '../../api';
+import type { MonetizationType } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
 import { createCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
@@ -65,6 +66,9 @@ const BoardPage = () => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // ── Board settings panel ─────────────────────────────────────────────────
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   // ── Real-time sync (sprint-20) ────────────────────────────────────────────
   const { handleEvent, lastSequence } = useBoardSync({ boardId: boardId ?? '' });
   const { connectionState } = useWebSocket({
@@ -97,8 +101,7 @@ const BoardPage = () => {
   );
 
   // ── Board title ─────────────────────────────────────────────────────────
-  const handleTitleSave = useCallback(
-    async (title: string) => {
+  const handleTitleSave = useCallback(async (title: string) => {
       if (!board || !boardId) return;
       dispatch(boardSliceActions.optimisticUpdateBoardTitle({ title }));
       try {
@@ -109,6 +112,22 @@ const BoardPage = () => {
       }
     },
     [api, board, boardId, dispatch],
+  );
+
+  // ── Monetization type ────────────────────────────────────────────────────
+  const handleSaveMonetizationType = useCallback(
+    async (monetization_type: MonetizationType | null) => {
+      if (!boardId) return;
+      dispatch(boardSliceActions.optimisticUpdateBoardMonetization({ monetization_type }));
+      try {
+        await patchBoardMonetizationType({ api, boardId, monetization_type });
+      } catch (err) {
+        // Rollback optimistic update
+        dispatch(fetchBoardDataThunk({ boardId }));
+        throw err;
+      }
+    },
+    [api, boardId, dispatch],
   );
 
   // ── Drag snapshot / rollback ─────────────────────────────────────────────
@@ -270,6 +289,7 @@ const BoardPage = () => {
         onTitleSave={handleTitleSave}
         onArchive={handleBoardArchive}
         onDelete={handleBoardDelete}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
@@ -282,6 +302,7 @@ const BoardPage = () => {
         lists={lists}
         cardsByList={cardsByList}
         cards={cards}
+        monetizationType={board.monetization_type}
         onCardMove={handleCardMove}
         onListReorder={handleListReorder}
         onDragStart={handleDragStart}
@@ -297,6 +318,15 @@ const BoardPage = () => {
       />
       {/* Card detail modal — URL-driven (?card=:id) */}
       <CardModalContainer />
+      {/* Board settings panel */}
+      {settingsOpen && (
+        <BoardSettings
+          monetizationType={board.monetization_type}
+          isAdmin={true}
+          onSave={handleSaveMonetizationType}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
       {/* Toast notifications (rollback errors, conflicts) */}
       <ToastRegion toasts={toasts} onDismiss={dismissToast} />
     </div>

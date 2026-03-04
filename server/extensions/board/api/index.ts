@@ -3,6 +3,7 @@ import { handleCreateBoard } from './create';
 import { handleListBoards } from './list';
 import { handleGetBoard } from './get';
 import { handleUpdateBoard } from './update';
+import { handlePatchBoard } from './patch';
 import { handleArchiveBoard } from './archive';
 import { handleDeleteBoard } from './delete';
 import { handleDuplicateBoard } from './duplicate';
@@ -32,8 +33,8 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     // GET /api/v1/boards/:id
     if (sub === '' && req.method === 'GET') return handleGetBoard(req, boardId);
 
-    // PATCH /api/v1/boards/:id
-    if (sub === '' && req.method === 'PATCH') return handleUpdateBoard(req, boardId);
+    // PATCH /api/v1/boards/:id — supports title and monetization_type
+    if (sub === '' && req.method === 'PATCH') return handlePatchBoard(req, boardId);
 
     // DELETE /api/v1/boards/:id
     if (sub === '' && req.method === 'DELETE') return handleDeleteBoard(req, boardId);

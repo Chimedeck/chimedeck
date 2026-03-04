@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useCallback, useRef, useState } from 'react';
 import type { List } from '../../api';
 import type { Card } from '../../../Card/api';
+import type { MonetizationType } from '../../../Board/api';
 import ListHeader from '../../components/ListHeader';
 import CardItem from '../../../Card/components/CardItem';
 import AddCardForm from '../../../Card/components/AddCardForm';
@@ -14,6 +15,7 @@ interface Props {
   list: List;
   cardIds: string[];
   cards: Record<string, Card>;
+  monetizationType?: MonetizationType | null | undefined;
   onRename: (listId: string, title: string) => void;
   onArchive: (listId: string) => void;
   onDelete: (listId: string) => void;
@@ -27,6 +29,7 @@ const SortableListColumn = ({
   list,
   cardIds,
   cards,
+  monetizationType,
   onRename,
   onArchive,
   onDelete,
@@ -93,6 +96,8 @@ const SortableListColumn = ({
               card={card}
               labelsExpanded={labelsExpanded ?? false}
               onToggleLabels={stableToggleLabels}
+              monetizationType={monetizationType}
+              listName={list.title}
               {...(onCardClick ? { onClick: onCardClick } : {})}
             />
           ))}
