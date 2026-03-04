@@ -58,6 +58,9 @@
 | [31](./sprint-31.md) | Card Money Badge UI | `CardMoneyBadge` on tile, editable Value section in card modal, Heroicons for calendar | 🔵 Needs 30 + 18 + 19 |
 | [32](./sprint-32.md) | Board Monetization Type | `monetization_type` DB column, board settings radio UI, `payToPaidConfig` predicate | 🔵 Needs 30 |
 | [33](./sprint-33.md) | Stripe Embedded Payments | `stripePaymentButtonsConfig`, Stripe PaymentIntent endpoint, embedded checkout modal | 🔵 Needs 32 |
+| **— Plugin System —** | | | |
+| [34](./sprint-34.md) | Plugin System: Server, SDK & DB | DB migrations (plugins, board_plugins, plugin_data), board-plugin API, plugin registry API, `jhInstance` SDK bundle served at `/sdk/jh-instance.js` | 🔵 Needs 05 + 03 |
+| [35](./sprint-35.md) | Plugin Dashboard UI & Board Integration | Plugin admin dashboard, hidden iframe injection, postMessage bridge, card-badges/card-buttons/section UI injections, plugin popups & modals | 🔵 Needs 34 + 18 + 19 |
 
 ---
 
@@ -75,6 +78,7 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `SEARCH_ENABLED` | Sprint 13 | Return 501 on search endpoint |
 | `EMAIL_VERIFICATION_ENABLED` | Sprint 23 | Skip email verification on register/login |
 | `SES_ENABLED` | Sprint 23 | Log emails to console instead of sending via AWS SES |
+| `PLUGINS_ENABLED` | Sprint 34 | Disable plugin routes and SDK endpoint entirely (off by default in dev until Sprint 34) |
 
 ---
 
@@ -117,6 +121,9 @@ Sprint 30 ──────────── Card money & currency fields (DB 
 Sprint 31 ──────────── Card money badge UI (tile badge, modal editor, Heroicons)
 Sprint 32 ──────────── Board monetization type (pre-paid / pay-to-paid, column predicate config)
 Sprint 33 ──────────── Stripe embedded payment flows (PaymentIntent API, configurable buttons)
+──── Plugin System ──────────────────────────────────────────────────────────────────
+Sprint 34 ──────────── Plugin, BoardPlugin, PluginData, PluginAuthToken (schema + API + SDK)
+Sprint 35 ──────────── Plugin UI: dashboard, iframe injection, postMessage bridge, capability injections
 ```
 
 ---
