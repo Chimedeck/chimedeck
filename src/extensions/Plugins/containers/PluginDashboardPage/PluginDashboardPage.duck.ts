@@ -7,8 +7,10 @@ import {
   fetchAvailablePlugins,
   enablePlugin as enablePluginApi,
   disablePlugin as disablePluginApi,
+  registerPlugin as registerPluginApi,
   type Plugin,
   type BoardPlugin,
+  type RegisterPluginBody,
 } from '../../api';
 
 // ---------- State ----------
@@ -18,6 +20,9 @@ export interface PluginsState {
   availablePlugins: Plugin[];
   status: 'idle' | 'loading' | 'error';
   error: string | null;
+  registerStatus: 'idle' | 'loading' | 'error' | 'success';
+  registerError: string | null;
+  newApiKey: string | null;
 }
 
 const initialState: PluginsState = {
@@ -25,6 +30,9 @@ const initialState: PluginsState = {
   availablePlugins: [],
   status: 'idle',
   error: null,
+  registerStatus: 'idle',
+  registerError: null,
+  newApiKey: null,
 };
 
 // ---------- Thunks ----------
@@ -55,6 +63,19 @@ export const disablePluginThunk = createAppAsyncThunk(
   'plugins/disable',
   async ({ boardId, pluginId }: { boardId: string; pluginId: string }) => {
     return disablePluginApi({ boardId, pluginId });
+  },
+);
+
+export const registerPluginThunk = createAppAsyncThunk(
+  'plugins/register',
+  async (body: RegisterPluginBody, { rejectWithValue }) => {
+    try {
+      return await registerPluginApi(body);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { name?: string } } };
+      const name = e?.response?.data?.name ?? 'register-plugin-failed';
+      return rejectWithValue(name);
+    }
   },
 );
 
@@ -101,6 +122,12 @@ const pluginDashboardSlice = createSlice({
         (p) => p.id !== action.payload.boardPlugin.plugin.id,
       );
       state.boardPlugins.push(action.payload.boardPlugin);
+    },
+    // Clear registration state (after ApiKeyRevealModal is dismissed)
+    clearRegisterState(state) {
+      state.registerStatus = 'idle';
+      state.registerError = null;
+      state.newApiKey = null;
     },
   },
   extraReducers: (builder) => {
@@ -156,7 +183,24 @@ const pluginDashboardSlice = createSlice({
         (_state, _action) => {
           // Optimistic update already handled; nothing extra needed
         },
-      );
+      )
+      .addCase(registerPluginThunk.pending, (state) => {
+        state.registerStatus = 'loading';
+        state.registerError = null;
+        state.newApiKey = null;
+      })
+      .addCase(
+        registerPluginThunk.fulfilled,
+        (state, action: PayloadAction<{ data: Plugin & { apiKey: string } }>) => {
+          state.registerStatus = 'success';
+          state.newApiKey = action.payload.data.apiKey;
+          // The new plugin will be loaded via a re-fetch of available plugins
+        },
+      )
+      .addCase(registerPluginThunk.rejected, (state, action) => {
+        state.registerStatus = 'error';
+        state.registerError = (action.payload as string) ?? action.error.message ?? 'register-plugin-failed';
+      });
   },
 });
 
@@ -165,6 +209,7 @@ export const {
   optimisticDisable,
   rollbackEnable,
   rollbackDisable,
+  clearRegisterState,
 } = pluginDashboardSlice.actions;
 
 export default pluginDashboardSlice.reducer;
@@ -181,3 +226,9 @@ export const selectPluginsStatus = (state: unknown) =>
   (state as StateWithPlugins).pluginDashboard.status;
 export const selectPluginsError = (state: unknown) =>
   (state as StateWithPlugins).pluginDashboard.error;
+export const selectRegisterStatus = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.registerStatus;
+export const selectRegisterError = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.registerError;
+export const selectNewApiKey = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.newApiKey;

@@ -55,3 +55,22 @@ export async function disablePlugin({
 }): Promise<{ data: BoardPlugin }> {
   return apiClient.delete(`${pluginsConfig.boardPluginsPath(boardId)}/${pluginId}`);
 }
+
+export interface RegisterPluginBody {
+  name: string;
+  slug: string;
+  description: string;
+  connectorUrl: string;
+  manifestUrl?: string;
+  iconUrl?: string;
+  author: string;
+  authorEmail?: string;
+  supportEmail?: string;
+  categories?: string[];
+  isPublic?: boolean;
+}
+
+/** POST /api/v1/plugins — register a new plugin (platform admin only). Returns api_key once. */
+export async function registerPlugin(body: RegisterPluginBody): Promise<{ data: Plugin & { apiKey: string } }> {
+  return apiClient.post(pluginsConfig.registryPath, body);
+}

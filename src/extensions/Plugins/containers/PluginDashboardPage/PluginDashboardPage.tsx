@@ -2,10 +2,24 @@
 // Route: /boards/:boardId/settings/plugins
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAppSelector } from '~/hooks/useAppSelector';
+import { useAppDispatch } from '~/hooks/useAppDispatch';
+import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
+import { isPlatformAdmin } from '~/extensions/Auth/utils/isPlatformAdmin';
 import { useBoardPlugins } from '../../hooks/useBoardPlugins';
 import PluginList from '../../components/PluginList';
 import PluginModal, { type PluginModalState } from '../../modals/PluginModal';
-import type { BoardPlugin } from '../../api';
+import RegisterPluginModal from '../../modals/RegisterPluginModal';
+import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
+import {
+  registerPluginThunk,
+  clearRegisterState,
+  fetchAvailablePluginsThunk,
+  selectRegisterStatus,
+  selectRegisterError,
+  selectNewApiKey,
+} from './PluginDashboardPage.duck';
+import type { BoardPlugin, RegisterPluginBody } from '../../api';
 
 const defaultSettingsModal: PluginModalState = {
   open: false,
@@ -18,10 +32,19 @@ const defaultSettingsModal: PluginModalState = {
 const PluginDashboardPage = () => {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectAuthUser);
+  const isAdmin = isPlatformAdmin(currentUser?.email);
+
   const { boardPlugins, availablePlugins, status, error, loadPlugins, enablePlugin, disablePlugin } =
     useBoardPlugins({ boardId: boardId ?? '' });
 
   const [settingsModal, setSettingsModal] = useState<PluginModalState>(defaultSettingsModal);
+  const [registerOpen, setRegisterOpen] = useState(false);
+
+  const registerStatus = useAppSelector(selectRegisterStatus);
+  const registerError = useAppSelector(selectRegisterError);
+  const newApiKey = useAppSelector(selectNewApiKey);
 
   useEffect(() => {
     if (boardId) loadPlugins();
@@ -34,8 +57,13 @@ const PluginDashboardPage = () => {
     }
   }, [error, boardId, navigate]);
 
-  // Open a PluginModal loaded with the plugin's connectorUrl + ?context=show-settings.
-  // The plugin iframe detects this context and renders its settings UI via jhInstance.iframe().
+  // When registration succeeds, close the register modal
+  useEffect(() => {
+    if (registerStatus === 'success') {
+      setRegisterOpen(false);
+    }
+  }, [registerStatus]);
+
   const handleSettings = useCallback((bp: BoardPlugin) => {
     let settingsUrl = bp.plugin.connectorUrl;
     try {
@@ -60,6 +88,21 @@ const PluginDashboardPage = () => {
     setSettingsModal((m) => ({ ...m, open: false }));
   }, []);
 
+  const handleRegisterSubmit = useCallback((body: RegisterPluginBody) => {
+    dispatch(registerPluginThunk(body));
+  }, [dispatch]);
+
+  const handleRegisterClose = useCallback(() => {
+    setRegisterOpen(false);
+    dispatch(clearRegisterState());
+  }, [dispatch]);
+
+  const handleApiKeyDismiss = useCallback(() => {
+    dispatch(clearRegisterState());
+    // Refresh available plugins after new plugin is registered
+    if (boardId) dispatch(fetchAvailablePluginsThunk({ boardId }));
+  }, [dispatch, boardId]);
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
       {/* Header */}
@@ -73,19 +116,27 @@ const PluginDashboardPage = () => {
           </button>
           <h1 className="text-xl font-semibold">Plugins</h1>
         </div>
-        {/* Add a Plugin — coming soon */}
-        <div className="relative group">
+        {isAdmin ? (
           <button
-            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2 opacity-50 cursor-not-allowed"
-            disabled
-            title="Coming soon"
+            onClick={() => setRegisterOpen(true)}
+            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2"
           >
             + Add a Plugin
           </button>
-          <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-slate-300 whitespace-nowrap z-10">
-            Marketplace coming soon
+        ) : (
+          <div className="relative group">
+            <button
+              className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2 opacity-50 cursor-not-allowed"
+              disabled
+              title="Coming soon"
+            >
+              + Add a Plugin
+            </button>
+            <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-slate-300 whitespace-nowrap z-10">
+              Marketplace coming soon
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Content */}
@@ -111,6 +162,20 @@ const PluginDashboardPage = () => {
 
       {/* Settings modal — opened by gear icon on active plugin cards */}
       <PluginModal modal={settingsModal} onClose={handleCloseSettings} />
+
+      {/* Register Plugin modal — platform admins only */}
+      <RegisterPluginModal
+        open={registerOpen}
+        isSubmitting={registerStatus === 'loading'}
+        serverError={registerStatus === 'error' ? registerError : null}
+        onClose={handleRegisterClose}
+        onSubmit={handleRegisterSubmit}
+      />
+
+      {/* API Key reveal — shown once after successful registration */}
+      {newApiKey && (
+        <ApiKeyRevealModal apiKey={newApiKey} onClose={handleApiKeyDismiss} />
+      )}
     </div>
   );
 };
