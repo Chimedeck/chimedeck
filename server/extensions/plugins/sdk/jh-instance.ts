@@ -1,0 +1,284 @@
+/**
+ * jhInstance SDK — browser-side plugin SDK served at /sdk/jh-instance.js.
+ *
+ * Plugin connector pages load this script and call jhInstance.initialize(capabilities, config)
+ * to register capability handlers. Communication with the host board UI is brokered
+ * via postMessage over the iframe boundary.
+ *
+ * API surface is intentionally compatible with the Trello Power-Up TrelloPowerUp API
+ * so existing Power-Up client.js files can alias: window.TrelloPowerUp = window.jhInstance
+ */
+
+// ────────────────────────────────────────────────────────────────────
+// Message types exchanged between the SDK (iframe) and the host (board UI)
+// ────────────────────────────────────────────────────────────────────
+
+type Scope = 'card' | 'list' | 'board' | 'member';
+type Visibility = 'private' | 'shared';
+
+interface PostMessageRequest {
+  jhSdk: true;
+  id: string;
+  type: string;
+  payload?: unknown;
+}
+
+interface PostMessageResponse {
+  jhSdk: true;
+  id: string;
+  result?: unknown;
+  error?: string;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Pending promise registry — maps request IDs to resolve/reject pairs
+// ────────────────────────────────────────────────────────────────────
+
+const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+
+let msgCounter = 0;
+function nextId(): string {
+  return `jh-${Date.now()}-${++msgCounter}`;
+}
+
+function sendToHost(type: string, payload?: unknown): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const id = nextId();
+    pending.set(id, { resolve, reject });
+    const msg: PostMessageRequest = { jhSdk: true, id, type, payload };
+    window.parent.postMessage(msg, '*');
+  });
+}
+
+// Listen for responses from the host
+window.addEventListener('message', (event: MessageEvent) => {
+  const data = event.data as PostMessageResponse;
+  if (!data || !data.jhSdk || !data.id) return;
+
+  const entry = pending.get(data.id);
+  if (!entry) return;
+  pending.delete(data.id);
+
+  if (data.error) {
+    entry.reject(new Error(data.error));
+  } else {
+    entry.resolve(data.result);
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────
+// FrameContext — the `t` object passed into every capability handler
+// ────────────────────────────────────────────────────────────────────
+
+class FrameContext {
+  /** Extra args injected by the host when opening modals / sections */
+  readonly args: Record<string, unknown>;
+
+  constructor(args: Record<string, unknown> = {}) {
+    this.args = args;
+  }
+
+  arg(key: string): unknown {
+    return this.args[key];
+  }
+
+  // ── Data storage ──────────────────────────────────────────────────
+
+  get(scope: Scope, visibility: Visibility, key: string): Promise<unknown> {
+    return sendToHost('DATA_GET', { scope, visibility, key });
+  }
+
+  set(scope: Scope, visibility: Visibility, key: string, value: unknown): Promise<void> {
+    return sendToHost('DATA_SET', { scope, visibility, key, value }) as Promise<void>;
+  }
+
+  // ── Context reads ─────────────────────────────────────────────────
+
+  card(...fields: string[]): Promise<Record<string, unknown>> {
+    return sendToHost('CTX_CARD', { fields }) as Promise<Record<string, unknown>>;
+  }
+
+  list(...fields: string[]): Promise<Record<string, unknown>> {
+    return sendToHost('CTX_LIST', { fields }) as Promise<Record<string, unknown>>;
+  }
+
+  board(...fields: string[]): Promise<Record<string, unknown>> {
+    return sendToHost('CTX_BOARD', { fields }) as Promise<Record<string, unknown>>;
+  }
+
+  member(...fields: string[]): Promise<Record<string, unknown>> {
+    return sendToHost('CTX_MEMBER', { fields }) as Promise<Record<string, unknown>>;
+  }
+
+  // ── UI actions ────────────────────────────────────────────────────
+
+  popup(options: { title: string; url: string; args?: Record<string, unknown>; mouseEvent?: MouseEvent }): void {
+    sendToHost('UI_POPUP', options);
+  }
+
+  modal(options: { title?: string; url: string; fullscreen?: boolean; accentColor?: string }): void {
+    sendToHost('UI_MODAL', options);
+  }
+
+  updateModal(options: Partial<{ title: string; fullscreen: boolean; accentColor: string }>): void {
+    sendToHost('UI_UPDATE_MODAL', options);
+  }
+
+  closePopup(): void {
+    sendToHost('UI_CLOSE_POPUP', {});
+  }
+
+  closeModal(): void {
+    sendToHost('UI_CLOSE_MODAL', {});
+  }
+
+  sizeTo(element: HTMLElement | string): void {
+    const selector = typeof element === 'string' ? element : null;
+    const height = typeof element === 'string'
+      ? document.querySelector(element)?.scrollHeight ?? document.body.scrollHeight
+      : element.scrollHeight;
+    sendToHost('UI_SIZE_TO', { height, selector });
+  }
+
+  render(fn: () => void): void {
+    fn();
+  }
+
+  // ── REST API client (stubbed — authorisation flows added in later iterations) ──
+
+  getRestApi(): RestApiClient {
+    return new RestApiClient();
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// RestApiClient — placeholder for future authorisation / token flows
+// ────────────────────────────────────────────────────────────────────
+
+class RestApiClient {
+  isAuthorized(): Promise<boolean> {
+    return sendToHost('API_IS_AUTHORIZED', {}) as Promise<boolean>;
+  }
+
+  authorize(options: { scope?: string } = {}): Promise<void> {
+    return sendToHost('API_AUTHORIZE', options) as Promise<void>;
+  }
+
+  getToken(): Promise<string | null> {
+    return sendToHost('API_GET_TOKEN', {}) as Promise<string | null>;
+  }
+
+  request(path: string, options?: RequestInit): Promise<Response> {
+    return sendToHost('API_REQUEST', { path, options }) as Promise<Response>;
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Capability dispatch — host sends CAPABILITY_INVOKE; SDK routes to handler
+// ────────────────────────────────────────────────────────────────────
+
+type CapabilityHandler = (t: FrameContext, options?: unknown) => unknown | Promise<unknown>;
+
+const capabilityHandlers = new Map<string, CapabilityHandler>();
+
+window.addEventListener('message', async (event: MessageEvent) => {
+  const data = event.data as PostMessageRequest & { capability?: string; options?: unknown };
+  if (!data || !data.jhSdk || data.type !== 'CAPABILITY_INVOKE') return;
+
+  const { id, payload } = data as { jhSdk: true; id: string; type: string; payload: { capability: string; args?: Record<string, unknown>; options?: unknown } };
+  const { capability, args = {}, options } = payload;
+
+  const handler = capabilityHandlers.get(capability);
+  const t = new FrameContext(args);
+
+  const response: PostMessageResponse = { jhSdk: true, id };
+
+  try {
+    const result = handler ? await handler(t, options) : undefined;
+    response.result = result;
+  } catch (err) {
+    response.error = err instanceof Error ? err.message : String(err);
+  }
+
+  // Reply to the host (could be a cross-origin frame; we use targetOrigin '*' on
+  // the SDK side — the host validates the origin before trusting SDK messages)
+  window.parent.postMessage(response, '*');
+});
+
+// ────────────────────────────────────────────────────────────────────
+// Public API
+// ────────────────────────────────────────────────────────────────────
+
+interface JhInstanceConfig {
+  appKey: string;
+  appName: string;
+}
+
+const jhInstance = {
+  /**
+   * Register capability handlers and signal readiness to the host.
+   * Call once in connector.html / client.js.
+   */
+  initialize(
+    capabilities: Record<string, CapabilityHandler>,
+    config: JhInstanceConfig
+  ): void {
+    for (const [name, handler] of Object.entries(capabilities)) {
+      capabilityHandlers.set(name, handler);
+    }
+
+    // Notify the host that the plugin iframe is ready
+    const msg: PostMessageRequest = {
+      jhSdk: true,
+      id: nextId(),
+      type: 'PLUGIN_READY',
+      payload: {
+        capabilities: Object.keys(capabilities),
+        appKey: config.appKey,
+        appName: config.appName,
+      },
+    };
+    window.parent.postMessage(msg, '*');
+  },
+
+  /**
+   * Used in non-connector pages (modals, sections) to obtain the FrameContext
+   * with args injected by the host in the iframe URL query string.
+   */
+  iframe(): FrameContext {
+    const params = new URLSearchParams(window.location.search);
+    const args: Record<string, unknown> = {};
+    params.forEach((value, key) => {
+      try {
+        args[key] = JSON.parse(value);
+      } catch {
+        args[key] = value;
+      }
+    });
+    return new FrameContext(args);
+  },
+
+  /**
+   * Expose FrameContext constructor for advanced use cases.
+   * Compatible with TrelloPowerUp.iframe() pattern.
+   */
+  FrameContext,
+};
+
+// ────────────────────────────────────────────────────────────────────
+// Attach to global scope — must run in browser context
+// ────────────────────────────────────────────────────────────────────
+
+declare global {
+  interface Window {
+    jhInstance: typeof jhInstance;
+    TrelloPowerUp: typeof jhInstance;
+  }
+}
+
+window.jhInstance = jhInstance;
+
+// Compatibility shim: alias so existing TrelloPowerUp client.js files work unchanged
+window.TrelloPowerUp = jhInstance;
+
+export default jhInstance;
