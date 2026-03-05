@@ -1,9 +1,19 @@
 // BoardSettings — slide-in panel for board-level settings.
+import { useNavigate, useParams } from 'react-router-dom';
+
 interface Props {
   onClose: () => void;
 }
 
 const BoardSettings = ({ onClose }: Props) => {
+  const navigate = useNavigate();
+  const { boardId } = useParams<{ boardId: string }>();
+
+  const handlePluginsClick = () => {
+    onClose();
+    navigate(`/boards/${boardId}/settings/plugins`);
+  };
+
   return (
     // Backdrop
     <div
@@ -31,8 +41,14 @@ const BoardSettings = ({ onClose }: Props) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          <p className="text-xs text-slate-500">No settings available.</p>
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+          <button
+            onClick={handlePluginsClick}
+            className="w-full text-left px-3 py-2 rounded text-sm text-slate-200 hover:bg-slate-800 flex items-center gap-2 transition-colors"
+          >
+            <span>🧩</span>
+            <span>Plugins</span>
+          </button>
         </div>
       </div>
     </div>

@@ -4,9 +4,11 @@
 import authRoutes from './extensions/Auth/routes';
 import boardRoutes from './extensions/Board/routes';
 import workspaceRoutes from './extensions/Workspace/routes';
+import pluginRoutes from './extensions/Plugins/routes';
 
 export const allExtensionRoutes = [
   ...authRoutes,
   ...workspaceRoutes,
   ...boardRoutes,
+  ...pluginRoutes,
 ];

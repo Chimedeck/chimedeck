@@ -52,3 +52,5 @@ db/trello-import-*.json
 public/avatars/
 
 .task
+
+/plugins/
