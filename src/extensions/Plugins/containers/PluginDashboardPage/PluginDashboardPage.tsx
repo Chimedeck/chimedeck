@@ -1,15 +1,27 @@
 // PluginDashboardPage — board admin-only page for managing plugins.
 // Route: /boards/:boardId/settings/plugins
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBoardPlugins } from '../../hooks/useBoardPlugins';
 import PluginList from '../../components/PluginList';
+import PluginModal, { type PluginModalState } from '../../modals/PluginModal';
+import type { BoardPlugin } from '../../api';
+
+const defaultSettingsModal: PluginModalState = {
+  open: false,
+  url: '',
+  title: '',
+  fullscreen: false,
+  pluginId: '',
+};
 
 const PluginDashboardPage = () => {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const { boardPlugins, availablePlugins, status, error, loadPlugins, enablePlugin, disablePlugin } =
     useBoardPlugins({ boardId: boardId ?? '' });
+
+  const [settingsModal, setSettingsModal] = useState<PluginModalState>(defaultSettingsModal);
 
   useEffect(() => {
     if (boardId) loadPlugins();
@@ -21,6 +33,32 @@ const PluginDashboardPage = () => {
       navigate(`/boards/${boardId}`);
     }
   }, [error, boardId, navigate]);
+
+  // Open a PluginModal loaded with the plugin's connectorUrl + ?context=show-settings.
+  // The plugin iframe detects this context and renders its settings UI via jhInstance.iframe().
+  const handleSettings = useCallback((bp: BoardPlugin) => {
+    let settingsUrl = bp.plugin.connectorUrl;
+    try {
+      const u = new URL(bp.plugin.connectorUrl);
+      u.searchParams.set('context', 'show-settings');
+      u.searchParams.set('boardId', boardId ?? '');
+      u.searchParams.set('pluginId', bp.plugin.id);
+      settingsUrl = u.toString();
+    } catch {
+      // fallback: use connectorUrl as-is
+    }
+    setSettingsModal({
+      open: true,
+      url: settingsUrl,
+      title: `${bp.plugin.name} Settings`,
+      fullscreen: false,
+      pluginId: bp.plugin.id,
+    });
+  }, [boardId]);
+
+  const handleCloseSettings = useCallback(() => {
+    setSettingsModal((m) => ({ ...m, open: false }));
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -66,11 +104,16 @@ const PluginDashboardPage = () => {
             availablePlugins={availablePlugins}
             onEnable={enablePlugin}
             onDisable={disablePlugin}
+            onSettings={handleSettings}
           />
         )}
       </div>
+
+      {/* Settings modal — opened by gear icon on active plugin cards */}
+      <PluginModal modal={settingsModal} onClose={handleCloseSettings} />
     </div>
   );
 };
 
 export default PluginDashboardPage;
+

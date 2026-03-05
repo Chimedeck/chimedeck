@@ -29,6 +29,7 @@ import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
 import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
 import { selectAuthToken } from '../../../Auth/duck/authDuck';
 import { apiClient } from '~/common/api/client';
+import PluginIframeContainer from '../../../Plugins/iframeHost/PluginIframeContainer';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -308,6 +309,8 @@ const BoardPage = () => {
       )}
       {/* Toast notifications (rollback errors, conflicts) */}
       <ToastRegion toasts={toasts} onDismiss={dismissToast} />
+      {/* Hidden plugin iframes — provides postMessage bridge to the board */}
+      <PluginIframeContainer boardId={boardId ?? ''} />
     </div>
   );
 };

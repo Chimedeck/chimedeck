@@ -7,9 +7,10 @@ interface Props {
   availablePlugins: Plugin[];
   onEnable: (plugin: Plugin) => void;
   onDisable: (boardPlugin: BoardPlugin) => void;
+  onSettings?: (boardPlugin: BoardPlugin) => void;
 }
 
-const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable }: Props) => {
+const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSettings }: Props) => {
   return (
     <div className="space-y-6">
       {/* Active section */}
@@ -27,6 +28,7 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable }: Pro
                 mode="disable"
                 boardPlugin={bp}
                 onDisable={onDisable}
+                {...(onSettings ? { onSettings } : {})}
               />
             ))}
           </div>
@@ -58,3 +60,4 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable }: Pro
 };
 
 export default PluginList;
+

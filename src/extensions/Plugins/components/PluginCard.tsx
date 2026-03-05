@@ -1,4 +1,6 @@
 // PluginCard — single plugin row: icon, name, description, capabilities, enable/disable button.
+// For active plugins (mode='disable') with 'show-settings' capability, also shows a gear icon
+// that triggers the plugin's settings modal.
 import PluginCapabilityChips from './PluginCapabilityChips';
 import type { Plugin, BoardPlugin } from '../api';
 
@@ -13,6 +15,7 @@ interface DisableCardProps {
   boardPlugin: BoardPlugin;
   mode: 'disable';
   onDisable: (boardPlugin: BoardPlugin) => void;
+  onSettings?: (boardPlugin: BoardPlugin) => void;
   loading?: boolean;
 }
 
@@ -29,6 +32,9 @@ const PluginCard = (props: Props) => {
       props.onDisable(props.boardPlugin);
     }
   };
+
+  const hasSettings =
+    props.mode === 'disable' && plugin.capabilities?.includes('show-settings');
 
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-600 transition-colors">
@@ -64,8 +70,20 @@ const PluginCard = (props: Props) => {
         )}
       </div>
 
-      {/* Action button */}
-      <div className="flex-shrink-0">
+      {/* Actions */}
+      <div className="flex-shrink-0 flex items-center gap-2">
+        {/* Settings gear — only for active plugins with show-settings capability */}
+        {hasSettings && props.mode === 'disable' && props.onSettings && (
+          <button
+            onClick={() => (props as DisableCardProps).onSettings?.((props as DisableCardProps).boardPlugin)}
+            title="Plugin settings"
+            className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
+            aria-label="Open plugin settings"
+          >
+            ⚙️
+          </button>
+        )}
+
         {props.mode === 'enable' ? (
           <button
             onClick={handleAction}
@@ -89,3 +107,4 @@ const PluginCard = (props: Props) => {
 };
 
 export default PluginCard;
+

@@ -12,6 +12,8 @@ import apiClient from '~/common/api/client';
 import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 import CardMoneyBadge from './CardMoneyBadge';
+import CardPluginBadges from '../../Plugins/uiInjections/CardPluginBadges';
+import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
 
 export interface CardItemProps {
   card: Card;
@@ -104,6 +106,8 @@ const CardItem = ({
           />
         </div>
       )}
+      <CardPluginBadges cardId={card.id} listId={card.list_id} />
+      <CardPluginButtons cardId={card.id} listId={card.list_id} />
     </div>
   );
 };

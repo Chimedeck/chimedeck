@@ -1,0 +1,371 @@
+// usePluginBridge — manages the two-way postMessage protocol between the board
+// host and all active plugin iframes.
+//
+// Security: all incoming messages are validated against the plugin's registered
+// connector_url origin. Messages from unknown origins are silently ignored.
+//
+// Provided via PluginBridgeContext so any component can call bridge.resolve()
+// without prop-drilling.
+
+import { createContext, useContext, useEffect, useRef, useCallback } from 'react';
+import type { BoardPlugin } from '../api';
+import { apiClient } from '~/common/api/client';
+import type { PluginModalState } from '../modals/PluginModal';
+import type { PluginPopupState } from '../modals/PluginPopup';
+
+// ─── Message shapes (mirrored from jh-instance.ts) ────────────────────────
+
+interface SdkMessage {
+  jhSdk: true;
+  id: string;
+  type: string;
+  payload?: unknown;
+}
+
+interface SdkResponse {
+  jhSdk: true;
+  id: string;
+  result?: unknown;
+  error?: string;
+}
+
+export interface CapabilityContext {
+  card?: Record<string, unknown>;
+  list?: Record<string, unknown>;
+  board?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+// ─── Pending capability requests ─────────────────────────────────────────
+
+interface PendingCapabilityRequest {
+  resolve: (results: unknown[]) => void;
+  results: unknown[];
+  remaining: number;
+}
+
+// ─── Bridge public API ────────────────────────────────────────────────────
+
+export interface PluginBridge {
+  /**
+   * Ask all active plugins for their capability results.
+   * Returns an array of values, one per responding plugin.
+   */
+  resolve(capability: string, context: CapabilityContext): Promise<unknown[]>;
+  /**
+   * Send a raw SDK message to a specific plugin iframe.
+   */
+  sendToPlugin(pluginId: string, message: SdkMessage): void;
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────
+
+export const PluginBridgeContext = createContext<PluginBridge | null>(null);
+
+export function usePluginBridgeContext(): PluginBridge | null {
+  return useContext(PluginBridgeContext);
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────
+
+interface UsePluginBridgeOptions {
+  boardId: string;
+  plugins: BoardPlugin[];
+  onOpenModal?: (state: Omit<PluginModalState, 'open'>) => void;
+  onCloseModal?: () => void;
+  onUpdateModal?: (update: Partial<Pick<PluginModalState, 'title' | 'fullscreen' | 'accentColor'>>) => void;
+  onOpenPopup?: (state: Omit<PluginPopupState, 'open'>) => void;
+  onClosePopup?: () => void;
+  onSizeTo?: (height: number) => void;
+}
+
+interface PluginState {
+  capabilities: string[];
+  origin: string;
+  iframeId: string;
+}
+
+export function usePluginBridge({
+  boardId,
+  plugins,
+  onOpenModal,
+  onCloseModal,
+  onUpdateModal,
+  onOpenPopup,
+  onClosePopup,
+  onSizeTo,
+}: UsePluginBridgeOptions): PluginBridge {
+  // Map of pluginId → registered state (capabilities, allowed origin)
+  const pluginStateRef = useRef<Map<string, PluginState>>(new Map());
+  // Pending DATA_GET / DATA_SET request replies keyed by message id
+  const pendingDataRef = useRef<Map<string, (response: SdkResponse) => void>>(new Map());
+  // Pending capability resolution requests keyed by capability request id
+  const pendingCapabilityRef = useRef<Map<string, PendingCapabilityRequest>>(new Map());
+
+  // Derive allowed origins from active plugins
+  const getAllowedOrigins = useCallback((): Map<string, string> => {
+    const map = new Map<string, string>();
+    for (const bp of plugins) {
+      try {
+        const url = new URL(bp.plugin.connectorUrl);
+        map.set(bp.plugin.id, url.origin);
+      } catch {
+        // Skip malformed URLs
+      }
+    }
+    return map;
+  }, [plugins]);
+
+  // Find plugin by origin
+  const findPluginByOrigin = useCallback(
+    (origin: string): BoardPlugin | undefined => {
+      return plugins.find((bp) => {
+        try {
+          return new URL(bp.plugin.connectorUrl).origin === origin;
+        } catch {
+          return false;
+        }
+      });
+    },
+    [plugins],
+  );
+
+  // Send a message to a specific plugin iframe
+  const sendToPlugin = useCallback((pluginId: string, message: SdkMessage) => {
+    const iframeId = `plugin-iframe-${pluginId}`;
+    const iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
+    if (!iframe?.contentWindow) return;
+
+    const allowedOrigins = getAllowedOrigins();
+    const targetOrigin = allowedOrigins.get(pluginId) ?? '*';
+    iframe.contentWindow.postMessage(message, targetOrigin);
+  }, [getAllowedOrigins]);
+
+  // Handle DATA_GET — proxy request to server plugin-data API
+  const handleDataGet = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & { payload: { scope: string; visibility: string; key: string; resourceId?: string } },
+    ) => {
+      const { scope, visibility, key, resourceId } = msg.payload;
+      let result: unknown = null;
+      try {
+        const params = new URLSearchParams({
+          scope,
+          key,
+          visibility,
+          pluginId: bp.plugin.id,
+          boardId,
+        });
+        if (resourceId) params.set('resourceId', resourceId);
+        const resp = await apiClient.get<{ data: { value: unknown } }>(
+          `/api/v1/plugins/data?${params.toString()}`,
+        );
+        result = (resp as unknown as { data: { value: unknown } }).data?.value ?? null;
+      } catch {
+        result = null;
+      }
+      const response: SdkResponse = { jhSdk: true, id: msg.id, result };
+      sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [boardId, sendToPlugin],
+  );
+
+  // Handle DATA_SET — proxy request to server plugin-data API
+  const handleDataSet = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
+    ) => {
+      const { scope, visibility, key, value, resourceId } = msg.payload;
+      try {
+        await apiClient.put('/api/v1/plugins/data', {
+          scope,
+          key,
+          value,
+          visibility,
+          pluginId: bp.plugin.id,
+          boardId,
+          resourceId,
+        });
+        const response: SdkResponse = { jhSdk: true, id: msg.id, result: null };
+        sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+      } catch (err) {
+        const response: SdkResponse = {
+          jhSdk: true,
+          id: msg.id,
+          error: err instanceof Error ? err.message : 'data-set-failed',
+        };
+        sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+      }
+    },
+    [boardId, sendToPlugin],
+  );
+
+  // Handle RESOLVE_CAPABILITY_RESPONSE — plugin answered a capability request
+  const handleCapabilityResponse = useCallback(
+    (msg: SdkMessage & { payload: { requestId: string; result: unknown } }) => {
+      const { requestId, result } = msg.payload;
+      const pending = pendingCapabilityRef.current.get(requestId);
+      if (!pending) return;
+      pending.results.push(result);
+      pending.remaining -= 1;
+      if (pending.remaining <= 0) {
+        pending.resolve(pending.results);
+        pendingCapabilityRef.current.delete(requestId);
+      }
+    },
+    [],
+  );
+
+  // Global message listener
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      const data = event.data as SdkMessage;
+      // Only process messages tagged by our SDK
+      if (!data || !data.jhSdk) return;
+
+      // Validate origin against whitelisted plugin origins
+      const bp = findPluginByOrigin(event.origin);
+      if (!bp) {
+        // Silently ignore messages from unknown origins
+        return;
+      }
+
+      switch (data.type) {
+        case 'PLUGIN_READY': {
+          const payload = data.payload as { capabilities: string[] };
+          pluginStateRef.current.set(bp.plugin.id, {
+            capabilities: payload?.capabilities ?? [],
+            origin: event.origin,
+            iframeId: `plugin-iframe-${bp.plugin.id}`,
+          });
+          break;
+        }
+        case 'DATA_GET':
+          void handleDataGet(
+            bp,
+            data as SdkMessage & { payload: { scope: string; visibility: string; key: string; resourceId?: string } },
+          );
+          break;
+        case 'DATA_SET':
+          void handleDataSet(
+            bp,
+            data as SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
+          );
+          break;
+        case 'RESOLVE_CAPABILITY_RESPONSE':
+          handleCapabilityResponse(
+            data as SdkMessage & { payload: { requestId: string; result: unknown } },
+          );
+          break;
+        case 'UI_MODAL': {
+          const payload = data.payload as {
+            url: string;
+            title?: string;
+            fullscreen?: boolean;
+            accentColor?: string;
+          };
+          const modalState: Omit<PluginModalState, 'open'> = {
+            url: payload.url,
+            title: payload.title ?? '',
+            fullscreen: payload.fullscreen ?? false,
+            pluginId: bp.plugin.id,
+          };
+          if (payload.accentColor !== undefined) {
+            modalState.accentColor = payload.accentColor;
+          }
+          onOpenModal?.(modalState);
+          break;
+        }
+        case 'UI_CLOSE_MODAL':
+          onCloseModal?.();
+          break;
+        case 'UI_UPDATE_MODAL': {
+          const payload = data.payload as Partial<{
+            title: string;
+            fullscreen: boolean;
+            accentColor: string;
+          }>;
+          onUpdateModal?.(payload);
+          break;
+        }
+        case 'UI_POPUP': {
+          const payload = data.payload as {
+            url: string;
+            title?: string;
+            args?: Record<string, unknown>;
+            mouseEvent?: { clientX?: number; clientY?: number };
+          };
+          const popupState: Omit<PluginPopupState, 'open'> = {
+            url: payload.url,
+            title: payload.title ?? '',
+            pluginId: bp.plugin.id,
+            x: payload.mouseEvent?.clientX ?? 100,
+            y: payload.mouseEvent?.clientY ?? 100,
+          };
+          if (payload.args !== undefined) {
+            popupState.args = payload.args;
+          }
+          onOpenPopup?.(popupState);
+          break;
+        }
+        case 'UI_CLOSE_POPUP':
+          onClosePopup?.();
+          break;
+        case 'UI_SIZE_TO': {
+          const payload = data.payload as { height: number };
+          onSizeTo?.(payload.height);
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+
+  // Resolve a capability across all active plugins that have registered it
+  const resolve = useCallback(
+    (capability: string, context: CapabilityContext): Promise<unknown[]> => {
+      const eligible = plugins.filter((bp) => {
+        const state = pluginStateRef.current.get(bp.plugin.id);
+        return state?.capabilities.includes(capability);
+      });
+
+      if (eligible.length === 0) return Promise.resolve([]);
+
+      return new Promise<unknown[]>((resolvePromise) => {
+        const requestId = `cap-${Date.now()}-${Math.random()}`;
+        pendingCapabilityRef.current.set(requestId, {
+          resolve: resolvePromise,
+          results: [],
+          remaining: eligible.length,
+        });
+
+        for (const bp of eligible) {
+          sendToPlugin(bp.plugin.id, {
+            jhSdk: true,
+            id: requestId,
+            type: 'CAPABILITY_INVOKE',
+            payload: { capability, args: context, requestId },
+          });
+        }
+
+        // Timeout: resolve with partial results after 3 s to avoid stale UI
+        setTimeout(() => {
+          const pending = pendingCapabilityRef.current.get(requestId);
+          if (pending) {
+            pending.resolve(pending.results);
+            pendingCapabilityRef.current.delete(requestId);
+          }
+        }, 3000);
+      });
+    },
+    [plugins, sendToPlugin],
+  );
+
+  return { resolve, sendToPlugin };
+}

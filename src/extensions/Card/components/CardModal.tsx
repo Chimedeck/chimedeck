@@ -13,6 +13,8 @@ import CardActionMenu from './CardActionMenu';
 import CardSidebarSection from './CardSidebarSection';
 import CardValue from './CardValue';
 import ActivityFeed from '../containers/CardModal/ActivityFeed';
+import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginBadges';
+import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -157,6 +159,12 @@ const CardModal = ({
                   disabled={isReadOnly}
                 />
 
+                <CardPluginSection
+                  cardId={card.id}
+                  listId={card.list_id}
+                  boardId={boardId}
+                />
+
                 <ActivityFeed
                   boardId={boardId}
                   comments={comments}
@@ -181,6 +189,13 @@ const CardModal = ({
                     disabled={isReadOnly}
                   />
                 </CardSidebarSection>
+
+                {/* Plugin detail badges — only renders when active plugins return badges */}
+                <CardDetailPluginBadges
+                  cardId={card.id}
+                  listId={card.list_id}
+                  boardId={boardId}
+                />
 
                 <CardSidebarSection title="Labels">
                   <CardLabels

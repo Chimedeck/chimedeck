@@ -23,6 +23,8 @@ import { rooms } from './extensions/realtime/mods/rooms/index';
 // Start orphan cleanup scheduler on server boot
 import './extensions/attachment/mods/orphanCleanup';
 import { ensureBucketExists } from './extensions/attachment/common/config/s3';
+import { pluginsRouter } from './extensions/plugins/api/index';
+import { pluginsConfig } from './extensions/plugins/config/index';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -91,6 +93,19 @@ async function router(req: Request): Promise<Response> {
 
   const notificationsResponse = await notificationsRouter(req, path);
   if (notificationsResponse) return notificationsResponse;
+
+  const pluginsResponse = await pluginsRouter(req, path);
+  if (pluginsResponse) return pluginsResponse;
+
+  // Serve the SDK static bundle at /sdk/jh-instance.js
+  if (path === pluginsConfig.sdkServePath && req.method === 'GET') {
+    const sdkFile = Bun.file(pluginsConfig.sdkBundlePath);
+    if (await sdkFile.exists()) {
+      return new Response(sdkFile, {
+        headers: { 'Content-Type': 'application/javascript' },
+      });
+    }
+  }
 
   // In production serve the built React SPA so client-side routing works.
   // Try the exact asset path first (JS/CSS chunks), then fall back to index.html.
