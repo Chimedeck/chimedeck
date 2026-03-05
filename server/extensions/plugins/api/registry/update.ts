@@ -36,7 +36,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
   if (body.author !== undefined) updates.author = body.author;
   if (body.authorEmail !== undefined) updates.author_email = body.authorEmail;
   if (body.supportEmail !== undefined) updates.support_email = body.supportEmail;
-  if (body.categories !== undefined) updates.categories = JSON.stringify(body.categories);
+  if (body.categories !== undefined) updates.categories = Array.isArray(body.categories) ? body.categories : [];
   if (body.isPublic !== undefined) updates.is_public = body.isPublic;
   if (body.capabilities !== undefined) updates.capabilities = JSON.stringify(body.capabilities);
 
@@ -64,5 +64,9 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
     )
     .first();
 
-  return Response.json({ data: updated });
+  const normalisedUpdated = updated
+    ? { ...updated, capabilities: Array.isArray(updated.capabilities) ? updated.capabilities : [] }
+    : updated;
+
+  return Response.json({ data: normalisedUpdated });
 }

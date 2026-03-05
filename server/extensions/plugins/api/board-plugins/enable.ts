@@ -47,14 +47,18 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
 
   const currentUserId = (req as BoardAdminRequest).currentUser!.id;
 
+  let boardPluginId: string;
+
   if (existing && existing.disabled_at) {
     // Re-enable: clear disabled_at and update enabled_by/enabled_at.
     await db('board_plugins')
       .where({ id: existing.id })
       .update({ disabled_at: null, enabled_by: currentUserId, enabled_at: db.fn.now() });
+    boardPluginId = existing.id;
   } else {
+    boardPluginId = randomUUID();
     await db('board_plugins').insert({
-      id: randomUUID(),
+      id: boardPluginId,
       board_id: boardId,
       plugin_id: body.pluginId,
       enabled_by: currentUserId,
@@ -62,17 +66,27 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
     });
   }
 
+  // Fetch the freshly persisted row to return accurate timestamps.
+  const bp = await db('board_plugins').where({ id: boardPluginId }).first();
+
+  // Return BoardPlugin shape matching what the client expects.
   return Response.json({
     data: {
-      id: plugin.id,
-      name: plugin.name,
-      slug: plugin.slug,
-      description: plugin.description,
-      icon_url: plugin.icon_url,
-      connector_url: plugin.connector_url,
-      author: plugin.author,
-      categories: plugin.categories,
-      capabilities: plugin.capabilities,
+      id: boardPluginId,
+      boardId: boardId,
+      plugin: {
+        id: plugin.id,
+        name: plugin.name,
+        slug: plugin.slug,
+        description: plugin.description,
+        iconUrl: plugin.icon_url,
+        connectorUrl: plugin.connector_url,
+        author: plugin.author,
+        categories: plugin.categories ?? [],
+        capabilities: Array.isArray(plugin.capabilities) ? plugin.capabilities : [],
+      },
+      enabledAt: bp.enabled_at,
+      disabledAt: null,
     },
   }, { status: 201 });
 }

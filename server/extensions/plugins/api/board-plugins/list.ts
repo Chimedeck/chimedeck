@@ -43,5 +43,25 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
       'bp.config',
     );
 
-  return Response.json({ data: rows });
+  // Reshape flat join rows into the BoardPlugin shape the client expects:
+  // { id, boardId, plugin: Plugin, enabledAt, disabledAt }
+  const boardPlugins = rows.map((r: any) => ({
+    id: r.board_plugin_id,
+    boardId: boardId,
+    plugin: {
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      description: r.description,
+      iconUrl: r.icon_url,
+      connectorUrl: r.connector_url,
+      author: r.author,
+      categories: r.categories ?? [],
+      capabilities: Array.isArray(r.capabilities) ? r.capabilities : [],
+    },
+    enabledAt: r.enabled_at,
+    disabledAt: null,
+  }));
+
+  return Response.json({ data: boardPlugins });
 }

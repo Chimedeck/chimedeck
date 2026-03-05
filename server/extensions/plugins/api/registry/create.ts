@@ -8,12 +8,13 @@ import { platformAdminGuard } from '../../../../middlewares/platformAdminGuard';
 
 async function fetchManifestCapabilities(
   manifestUrl: string,
-): Promise<Record<string, unknown> | null> {
+): Promise<string[] | null> {
   try {
     const res = await fetch(manifestUrl, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const json = (await res.json()) as { capabilities?: unknown };
-    return (json.capabilities as Record<string, unknown>) ?? null;
+    const caps = json.capabilities;
+    return Array.isArray(caps) ? (caps as string[]) : null;
   } catch {
     // On failure (timeout, network error, invalid JSON), return null — allow registration with empty capabilities.
     return null;
@@ -108,8 +109,8 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
       body.authorEmail && typeof body.authorEmail === 'string' ? body.authorEmail : null,
     support_email:
       body.supportEmail && typeof body.supportEmail === 'string' ? body.supportEmail : null,
-    categories: body.categories ? JSON.stringify(body.categories) : JSON.stringify([]),
-    capabilities: capabilities ? JSON.stringify(capabilities) : JSON.stringify({}),
+    categories: Array.isArray(body.categories) ? body.categories : [],
+    capabilities: JSON.stringify(capabilities ?? []),
     is_public: body.isPublic === true,
     is_active: true,
     api_key: apiKey,
@@ -134,7 +135,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
         author_email: plugin.author_email,
         support_email: plugin.support_email,
         categories: plugin.categories,
-        capabilities: plugin.capabilities,
+        capabilities: Array.isArray(plugin.capabilities) ? plugin.capabilities : [],
         is_public: plugin.is_public,
         is_active: plugin.is_active,
         api_key: apiKey,

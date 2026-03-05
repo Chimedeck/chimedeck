@@ -101,6 +101,8 @@ export function usePluginBridge({
   const pendingDataRef = useRef<Map<string, (response: SdkResponse) => void>>(new Map());
   // Pending capability resolution requests keyed by capability request id
   const pendingCapabilityRef = useRef<Map<string, PendingCapabilityRequest>>(new Map());
+  // Last context sent to each plugin via CAPABILITY_INVOKE, used to answer CTX_* queries
+  const pluginContextRef = useRef<Map<string, CapabilityContext>>(new Map());
 
   // Derive allowed origins from active plugins
   const getAllowedOrigins = useCallback((): Map<string, string> => {
@@ -202,6 +204,30 @@ export function usePluginBridge({
     [boardId, sendToPlugin],
   );
 
+  // Extract only the requested fields from a context object.
+  // If fields is empty/undefined, return the entire object.
+  const extractContextFields = useCallback(
+    (obj: Record<string, unknown> | null | undefined, fields?: string[]): Record<string, unknown> | null => {
+      if (!obj) return null;
+      if (!fields || fields.length === 0) return obj;
+      return Object.fromEntries(fields.filter((f) => f in obj).map((f) => [f, obj[f]]));
+    },
+    [],
+  );
+
+  // Handle CTX_* queries — return the relevant portion of the last CAPABILITY_INVOKE context
+  const handleCtxQuery = useCallback(
+    (bp: BoardPlugin, msg: SdkMessage, contextKey: keyof CapabilityContext) => {
+      const payload = msg.payload as { fields?: string[] } | undefined;
+      const ctx = pluginContextRef.current.get(bp.plugin.id);
+      const raw = ctx?.[contextKey] as Record<string, unknown> | undefined;
+      const result = extractContextFields(raw, payload?.fields);
+      const response: SdkResponse = { jhSdk: true, id: msg.id, result };
+      sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [extractContextFields, sendToPlugin],
+  );
+
   // Handle RESOLVE_CAPABILITY_RESPONSE — plugin answered a capability request
   const handleCapabilityResponse = useCallback(
     (msg: SdkMessage & { payload: { requestId: string; result: unknown } }) => {
@@ -258,6 +284,18 @@ export function usePluginBridge({
           handleCapabilityResponse(
             data as SdkMessage & { payload: { requestId: string; result: unknown } },
           );
+          break;
+        case 'CTX_CARD':
+          handleCtxQuery(bp, data, 'card');
+          break;
+        case 'CTX_LIST':
+          handleCtxQuery(bp, data, 'list');
+          break;
+        case 'CTX_BOARD':
+          handleCtxQuery(bp, data, 'board');
+          break;
+        case 'CTX_MEMBER':
+          handleCtxQuery(bp, data, 'member');
           break;
         case 'UI_MODAL': {
           const payload = data.payload as {
@@ -325,7 +363,7 @@ export function usePluginBridge({
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
 
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(
@@ -346,6 +384,8 @@ export function usePluginBridge({
         });
 
         for (const bp of eligible) {
+          // Store context so CTX_* queries from this plugin can resolve it
+          pluginContextRef.current.set(bp.plugin.id, context);
           sendToPlugin(bp.plugin.id, {
             jhSdk: true,
             id: requestId,

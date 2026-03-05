@@ -80,8 +80,13 @@ export async function handleListPlugins(req: Request): Promise<Response> {
       // api_key is never returned in list responses
     );
 
+  const normalised = plugins.map((p: any) => ({
+    ...p,
+    capabilities: Array.isArray(p.capabilities) ? p.capabilities : [],
+  }));
+
   return Response.json({
-    data: plugins,
+    data: normalised,
     metadata: { total, totalPage, page, perPage },
   });
 }

@@ -1,7 +1,11 @@
 // GET /api/v1/plugins/data — reads a plugin-scoped key/value entry.
 // Auth: Authorization: ApiKey <key>  (identifies the calling plugin)
-// Query params: scope, resourceId, key, visibility, userId (required for private)
+// Query params: boardId, scope, resourceId, key, visibility, userId (required for private)
 import { db } from '../../../../common/db';
+import {
+  validateResourceBelongsToBoard,
+  ResourceBoardMismatchError,
+} from '../../common/validateResourceBelongsToBoard';
 
 const VALID_SCOPES = ['card', 'list', 'board', 'member'] as const;
 const VALID_VISIBILITY = ['private', 'shared'] as const;
@@ -35,12 +39,19 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
   const { plugin } = result;
 
   const url = new URL(req.url);
+  const boardId = url.searchParams.get('boardId');
   const scope = url.searchParams.get('scope') as Scope | null;
   const resourceId = url.searchParams.get('resourceId');
   const key = url.searchParams.get('key');
   const visibility = (url.searchParams.get('visibility') ?? 'shared') as Visibility;
   const userId = url.searchParams.get('userId');
 
+  if (!boardId) {
+    return Response.json(
+      { name: 'missing-param', data: { message: 'boardId is required' } },
+      { status: 400 },
+    );
+  }
   if (!scope || !VALID_SCOPES.includes(scope)) {
     return Response.json(
       { name: 'missing-param', data: { message: 'scope must be one of: card, list, board, member' } },
@@ -72,10 +83,23 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
     );
   }
 
+  try {
+    await validateResourceBelongsToBoard(scope, resourceId, boardId);
+  } catch (err) {
+    if (err instanceof ResourceBoardMismatchError) {
+      return Response.json(
+        { name: 'resource-board-mismatch', data: { message: err.message } },
+        { status: 403 },
+      );
+    }
+    throw err;
+  }
+
   const query = db('plugin_data').where({
     plugin_id: plugin.id,
     scope,
     resource_id: resourceId,
+    board_id: boardId,
     key,
   });
 

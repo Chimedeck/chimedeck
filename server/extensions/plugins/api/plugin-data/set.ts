@@ -1,8 +1,12 @@
 // PUT /api/v1/plugins/data — upserts a plugin-scoped key/value entry.
 // Auth: Authorization: ApiKey <key>  (identifies the calling plugin)
-// Body: { scope, resourceId, key, visibility, value, userId? (required for private) }
+// Body: { boardId, scope, resourceId, key, visibility, value, userId? (required for private) }
 import { db } from '../../../../common/db';
 import { randomUUID } from 'crypto';
+import {
+  validateResourceBelongsToBoard,
+  ResourceBoardMismatchError,
+} from '../../common/validateResourceBelongsToBoard';
 
 const VALID_SCOPES = ['card', 'list', 'board', 'member'] as const;
 const VALID_VISIBILITY = ['private', 'shared'] as const;
@@ -36,6 +40,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   const { plugin } = result;
 
   let body: {
+    boardId?: unknown;
     scope?: unknown;
     resourceId?: unknown;
     key?: unknown;
@@ -52,8 +57,14 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
     );
   }
 
-  const { scope, resourceId, key, visibility = 'shared', value, userId } = body;
+  const { boardId, scope, resourceId, key, visibility = 'shared', value, userId } = body;
 
+  if (!boardId || typeof boardId !== 'string') {
+    return Response.json(
+      { name: 'missing-param', data: { message: 'boardId is required' } },
+      { status: 400 },
+    );
+  }
   if (!scope || !VALID_SCOPES.includes(scope as Scope)) {
     return Response.json(
       { name: 'missing-param', data: { message: 'scope must be one of: card, list, board, member' } },
@@ -87,12 +98,25 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
 
   const resolvedUserId = visibility === 'private' ? (userId as string) : null;
 
-  // Check for existing row; PostgreSQL UNIQUE constraint with nullable user_id
+  try {
+    await validateResourceBelongsToBoard(scope as 'card' | 'list' | 'board' | 'member', resourceId, boardId);
+  } catch (err) {
+    if (err instanceof ResourceBoardMismatchError) {
+      return Response.json(
+        { name: 'resource-board-mismatch', data: { message: err.message } },
+        { status: 403 },
+      );
+    }
+    throw err;
+  }
+
+  // Check for existing row; PostgreSQL UNIQUE constraint with nullable user_id/board_id
   // requires a manual select-then-insert/update approach.
   const existingQuery = db('plugin_data').where({
     plugin_id: plugin.id,
     scope: scope as string,
     resource_id: resourceId,
+    board_id: boardId,
     key,
   });
 
@@ -114,6 +138,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
       plugin_id: plugin.id,
       scope: scope as string,
       resource_id: resourceId,
+      board_id: boardId,
       user_id: resolvedUserId,
       key,
       value: JSON.stringify(value),

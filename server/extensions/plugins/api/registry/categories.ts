@@ -7,7 +7,7 @@ export async function handleListCategories(req: Request): Promise<Response> {
   if (authError) return authError;
 
   const result = await db.raw<{ rows: Array<{ category: string }> }>(
-    `SELECT DISTINCT jsonb_array_elements_text(categories) AS category
+    `SELECT DISTINCT unnest(categories) AS category
      FROM plugins
      WHERE is_active = true
      ORDER BY category`,
