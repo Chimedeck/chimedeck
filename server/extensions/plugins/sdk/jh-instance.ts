@@ -36,6 +36,37 @@ interface PostMessageResponse {
 
 const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
+// ────────────────────────────────────────────────────────────────────
+// Callback registry — stores functions replaced by opaque IDs so they
+// can survive the postMessage serialization boundary
+// ────────────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const callbackRegistry = new Map<string, (...args: any[]) => unknown>();
+
+/**
+ * Walk `value` recursively; replace every function with { __callbackId }
+ * and store the original function in callbackRegistry keyed by that ID.
+ */
+function serializeResult(value: unknown): unknown {
+  if (typeof value === 'function') {
+    const id = nextId();
+    callbackRegistry.set(id, value as (...args: unknown[]) => unknown);
+    return { __callbackId: id };
+  }
+  if (Array.isArray(value)) {
+    return value.map(serializeResult);
+  }
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = serializeResult(v);
+    }
+    return out;
+  }
+  return value;
+}
+
 let msgCounter = 0;
 function nextId(): string {
   return `jh-${Date.now()}-${++msgCounter}`;
@@ -199,18 +230,41 @@ window.addEventListener('message', async (event: MessageEvent) => {
   const handler = capabilityHandlers.get(capability);
   const t = new FrameContext(args);
 
-  const response: PostMessageResponse = { jhSdk: true, id };
-
   try {
-    const result = handler ? await handler(t, options) : undefined;
-    response.result = result;
+    const raw = handler ? await handler(t, options) : undefined;
+    // Serialize callbacks so they survive the postMessage boundary
+    const result = serializeResult(raw);
+    window.parent.postMessage(
+      { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result } },
+      '*',
+    );
   } catch (err) {
-    response.error = err instanceof Error ? err.message : String(err);
+    window.parent.postMessage(
+      { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result: null } },
+      '*',
+    );
   }
+});
 
-  // Reply to the host (could be a cross-origin frame; we use targetOrigin '*' on
-  // the SDK side — the host validates the origin before trusting SDK messages)
-  window.parent.postMessage(response, '*');
+// Handle BUTTON_CLICKED — host dispatches this when a button registered by a plugin is clicked.
+// Look up the callback by its opaque ID and invoke it with a fresh FrameContext.
+window.addEventListener('message', async (event: MessageEvent) => {
+  const data = event.data as PostMessageRequest & { payload?: { callbackId?: string; args?: Record<string, unknown> } };
+  if (!data || !data.jhSdk || data.type !== 'BUTTON_CLICKED') return;
+
+  const { callbackId, args = {} } = (data.payload ?? {}) as { callbackId?: string; args?: Record<string, unknown> };
+  if (!callbackId) return;
+
+  const cb = callbackRegistry.get(callbackId);
+  if (!cb) return; // Not our callback — this BUTTON_CLICKED belongs to a different plugin iframe
+
+  const t = new FrameContext(args);
+  try {
+    await cb(t);
+  } catch (err) {
+    // Swallow errors so a broken plugin callback can't crash the SDK
+    console.error('[jhInstance] BUTTON_CLICKED callback error:', err);
+  }
 });
 
 // ────────────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ interface PluginButton {
   text: string;
   icon?: string;
   condition?: string;
+  callback?: { __callbackId: string };
 }
 
 interface Props {
@@ -58,18 +59,19 @@ const CardPluginButtons = ({ cardId, listId }: Props) => {
     (button: PluginButton, e: React.MouseEvent) => {
       // WHY: stop propagation so clicking a plugin button doesn't also open the card modal
       e.stopPropagation();
-      if (!bridge) return;
+      if (!bridge || !button.callback?.__callbackId) return;
 
-      // Broadcast BUTTON_CLICKED to all active plugins — each plugin handles its own
+      // Broadcast BUTTON_CLICKED to all active plugin iframes — only the plugin whose
+      // callbackRegistry contains the matching __callbackId will invoke the callback;
+      // all others will silently ignore it.
       for (const bp of boardPlugins) {
         bridge.sendToPlugin(bp.plugin.id, {
           jhSdk: true,
           id: `btn-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           type: 'BUTTON_CLICKED',
           payload: {
-            capability: 'card-buttons',
-            buttonText: button.text,
-            context: {
+            callbackId: button.callback.__callbackId,
+            args: {
               card: { id: cardId },
               list: { id: listId },
               board: { id: boardId },
