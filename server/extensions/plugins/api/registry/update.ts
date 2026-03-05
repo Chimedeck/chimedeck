@@ -3,6 +3,10 @@
 import { db } from '../../../../common/db';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import { platformAdminGuard } from '../../../../middlewares/platformAdminGuard';
+import { isValidHttpsOrigin } from '../../common/isValidHttpsOrigin';
+import { normalizePlugin } from '../../common/normalizePlugin';
+
+const MAX_WHITELISTED_DOMAINS = 20;
 
 export async function handleUpdatePlugin(req: Request, pluginId: string): Promise<Response> {
   const guardError = await platformAdminGuard(req as AuthenticatedRequest);
@@ -40,6 +44,33 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
   if (body.isPublic !== undefined) updates.is_public = body.isPublic;
   if (body.capabilities !== undefined) updates.capabilities = JSON.stringify(body.capabilities);
 
+  if (body.whitelistedDomains !== undefined) {
+    const rawDomains = body.whitelistedDomains;
+    if (!Array.isArray(rawDomains)) {
+      return Response.json(
+        { name: 'invalid-whitelisted-domains', data: { message: 'whitelistedDomains must be an array' } },
+        { status: 422 },
+      );
+    }
+    if (rawDomains.length > MAX_WHITELISTED_DOMAINS) {
+      return Response.json(
+        { name: 'too-many-whitelisted-domains', data: { message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
+        { status: 422 },
+      );
+    }
+    for (const domain of rawDomains) {
+      if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
+        return Response.json(
+          { name: 'invalid-whitelisted-domain', data: { message: `'${domain}' is not a valid HTTPS origin` } },
+          { status: 422 },
+        );
+      }
+    }
+    // [why] whitelisted_domains is a native text[] column — pass the array
+    // directly so the pg driver serialises it as a PG array, not a JSON string.
+    updates.whitelisted_domains = rawDomains;
+  }
+
   await db('plugins').where({ id: pluginId }).update(updates);
 
   const updated = await db('plugins')
@@ -57,6 +88,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
       'support_email',
       'categories',
       'capabilities',
+      'whitelisted_domains',
       'is_public',
       'is_active',
       'created_at',
@@ -64,9 +96,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
     )
     .first();
 
-  const normalisedUpdated = updated
-    ? { ...updated, capabilities: Array.isArray(updated.capabilities) ? updated.capabilities : [] }
-    : updated;
+  const normalisedUpdated = updated ? normalizePlugin(updated) : updated;
 
   return Response.json({ data: normalisedUpdated });
 }

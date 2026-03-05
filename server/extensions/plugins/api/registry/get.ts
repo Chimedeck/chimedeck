@@ -3,6 +3,7 @@
 // Workspace OWNER/ADMIN in any workspace: see any plugin.
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { normalizePlugin } from '../../common/normalizePlugin';
 
 async function isRegistryAdmin(userId: string): Promise<boolean> {
   const row = await db('memberships')
@@ -55,5 +56,5 @@ export async function handleGetPlugin(req: Request, pluginId: string): Promise<R
     );
   }
 
-  return Response.json({ data: plugin });
+  return Response.json({ data: normalizePlugin(plugin) });
 }

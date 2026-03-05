@@ -3,6 +3,7 @@ import { appConfig } from './config/app';
 import { flags } from './mods/flags';
 import { logRequest } from './mods/logger';
 import { applySecurityHeaders } from './mods/helmet';
+import { getPluginCspOrigins, type PluginCspOrigins } from './extensions/plugins/mods/getPluginCspOrigins';
 import { parseJsonBody } from './middlewares/parser';
 import { authRouter } from './extensions/auth/api/index';
 import { usersRouter } from './extensions/users/api/index';
@@ -123,6 +124,27 @@ async function router(req: Request): Promise<Response> {
   );
 }
 
+// ── Plugin CSP origin cache ────────────────────────────────────────────────
+// [why] Plugin connector_url and whitelisted_domains must appear in the CSP
+// frame-src / connect-src directives so the browser permits loading plugin
+// iframes and their outbound API calls. We cache for 60 s to avoid a DB hit
+// on every request while still reflecting new plugin registrations promptly.
+let _pluginOriginCache: PluginCspOrigins = { frameSrc: [], connectSrc: [] };
+let _pluginOriginCacheExpiry = 0;
+const PLUGIN_ORIGIN_TTL_MS = 60_000;
+
+async function getCachedPluginOrigins(): Promise<PluginCspOrigins> {
+  const now = Date.now();
+  if (now < _pluginOriginCacheExpiry) return _pluginOriginCache;
+  try {
+    _pluginOriginCache = await getPluginCspOrigins();
+    _pluginOriginCacheExpiry = now + PLUGIN_ORIGIN_TTL_MS;
+  } catch {
+    // On DB error keep using the stale cache rather than crashing.
+  }
+  return _pluginOriginCache;
+}
+
 Bun.serve({
   port: appConfig.port,
 
@@ -134,7 +156,11 @@ Bun.serve({
     await parseJsonBody(req.clone() as unknown as Request);
     const res = await router(req);
     const headers = new Headers(res.headers);
-    applySecurityHeaders(headers);
+    const pluginOrigins = await getCachedPluginOrigins();
+    applySecurityHeaders(headers, {
+      extraFrameSrc: pluginOrigins.frameSrc,
+      extraConnectSrc: pluginOrigins.connectSrc,
+    });
     const response = new Response(res.body, {
       status: res.status,
       headers,

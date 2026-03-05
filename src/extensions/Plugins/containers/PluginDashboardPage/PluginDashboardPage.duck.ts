@@ -9,10 +9,12 @@ import {
   enablePlugin as enablePluginApi,
   disablePlugin as disablePluginApi,
   registerPlugin as registerPluginApi,
+  updatePlugin as updatePluginApi,
   type FetchAvailablePluginsParams,
   type Plugin,
   type BoardPlugin,
   type RegisterPluginBody,
+  type UpdatePluginBody,
 } from '../../api';
 
 // ---------- State ----------
@@ -28,6 +30,8 @@ export interface PluginsState {
   searchQuery: string;
   selectedCategory: string | null;
   categories: string[];
+  updateStatus: 'idle' | 'loading' | 'error' | 'success';
+  updateError: string | null;
 }
 
 const initialState: PluginsState = {
@@ -41,6 +45,8 @@ const initialState: PluginsState = {
   searchQuery: '',
   selectedCategory: null,
   categories: [],
+  updateStatus: 'idle',
+  updateError: null,
 };
 
 // ---------- Thunks ----------
@@ -111,6 +117,19 @@ export const registerPluginThunk = createAppAsyncThunk(
   },
 );
 
+export const updatePluginThunk = createAppAsyncThunk(
+  'plugins/update',
+  async ({ pluginId, body }: { pluginId: string; body: UpdatePluginBody }, { rejectWithValue }) => {
+    try {
+      return await updatePluginApi({ pluginId, body });
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { name?: string } } };
+      const name = e?.response?.data?.name ?? 'update-plugin-failed';
+      return rejectWithValue(name);
+    }
+  },
+);
+
 // ---------- Slice ----------
 
 const pluginDashboardSlice = createSlice({
@@ -160,6 +179,11 @@ const pluginDashboardSlice = createSlice({
       state.registerStatus = 'idle';
       state.registerError = null;
       state.newApiKey = null;
+    },
+    // Clear update state (after EditPluginModal is closed)
+    clearUpdateState(state) {
+      state.updateStatus = 'idle';
+      state.updateError = null;
     },
     setSearchQuery(state, action: PayloadAction<string>) {
       state.searchQuery = action.payload;
@@ -248,7 +272,29 @@ const pluginDashboardSlice = createSlice({
         (state, action: PayloadAction<{ data: string[] }>) => {
           state.categories = action.payload.data;
         },
-      );
+      )
+      .addCase(updatePluginThunk.pending, (state) => {
+        state.updateStatus = 'loading';
+        state.updateError = null;
+      })
+      .addCase(
+        updatePluginThunk.fulfilled,
+        (state, action: PayloadAction<{ data: Plugin }>) => {
+          state.updateStatus = 'success';
+          const updated = action.payload.data;
+          // Update in availablePlugins list
+          const avIdx = state.availablePlugins.findIndex((p) => p.id === updated.id);
+          if (avIdx !== -1) state.availablePlugins[avIdx] = updated;
+          // Update in boardPlugins list
+          state.boardPlugins = state.boardPlugins.map((bp) =>
+            bp.plugin.id === updated.id ? { ...bp, plugin: updated } : bp,
+          );
+        },
+      )
+      .addCase(updatePluginThunk.rejected, (state, action) => {
+        state.updateStatus = 'error';
+        state.updateError = (action.payload as string) ?? action.error.message ?? 'update-plugin-failed';
+      });
   },
 });
 
@@ -258,6 +304,7 @@ export const {
   rollbackEnable,
   rollbackDisable,
   clearRegisterState,
+  clearUpdateState,
   setSearchQuery,
   setSelectedCategory,
   clearSearch,
@@ -289,3 +336,7 @@ export const selectSelectedCategory = (state: unknown) =>
   (state as StateWithPlugins).pluginDashboard.selectedCategory;
 export const selectCategories = (state: unknown) =>
   (state as StateWithPlugins).pluginDashboard.categories;
+export const selectUpdateStatus = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.updateStatus;
+export const selectUpdateError = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.updateError;

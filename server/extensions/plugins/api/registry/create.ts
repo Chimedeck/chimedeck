@@ -5,6 +5,10 @@ import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import { platformAdminGuard } from '../../../../middlewares/platformAdminGuard';
+import { isValidHttpsOrigin } from '../../common/isValidHttpsOrigin';
+import { normalizePlugin } from '../../common/normalizePlugin';
+
+const MAX_WHITELISTED_DOMAINS = 20;
 
 async function fetchManifestCapabilities(
   manifestUrl: string,
@@ -39,6 +43,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
     supportEmail?: unknown;
     categories?: unknown;
     isPublic?: unknown;
+    whitelistedDomains?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -75,6 +80,33 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
       { name: 'invalid-connector-url', data: { message: 'connectorUrl must start with https://' } },
       { status: 422 },
     );
+  }
+
+  // Validate whitelistedDomains if provided.
+  const rawDomains = body.whitelistedDomains;
+  let whitelistedDomains: string[] = [];
+  if (rawDomains !== undefined && rawDomains !== null) {
+    if (!Array.isArray(rawDomains)) {
+      return Response.json(
+        { name: 'invalid-whitelisted-domains', data: { message: 'whitelistedDomains must be an array' } },
+        { status: 422 },
+      );
+    }
+    if (rawDomains.length > MAX_WHITELISTED_DOMAINS) {
+      return Response.json(
+        { name: 'too-many-whitelisted-domains', data: { message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
+        { status: 422 },
+      );
+    }
+    for (const domain of rawDomains) {
+      if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
+        return Response.json(
+          { name: 'invalid-whitelisted-domain', data: { message: `'${domain}' is not a valid HTTPS origin` } },
+          { status: 422 },
+        );
+      }
+    }
+    whitelistedDomains = rawDomains as string[];
   }
 
   // Ensure slug is unique.
@@ -114,35 +146,19 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
     is_public: body.isPublic === true,
     is_active: true,
     api_key: apiKey,
+    // [why] whitelisted_domains is a native text[] column — pass the array
+    // directly so the pg driver serialises it as a PG array, not a JSON string.
+    whitelisted_domains: whitelistedDomains,
     created_at: now,
     updated_at: now,
   });
 
   const plugin = await db('plugins').where({ id }).first();
 
-  // api_key is only returned on creation.
+  // api_key is only returned on creation — merge into normalised shape.
   return Response.json(
-    {
-      data: {
-        id: plugin.id,
-        name: plugin.name,
-        slug: plugin.slug,
-        description: plugin.description,
-        icon_url: plugin.icon_url,
-        connector_url: plugin.connector_url,
-        manifest_url: plugin.manifest_url,
-        author: plugin.author,
-        author_email: plugin.author_email,
-        support_email: plugin.support_email,
-        categories: plugin.categories,
-        capabilities: Array.isArray(plugin.capabilities) ? plugin.capabilities : [],
-        is_public: plugin.is_public,
-        is_active: plugin.is_active,
-        api_key: apiKey,
-        created_at: plugin.created_at,
-        updated_at: plugin.updated_at,
-      },
-    },
+    { data: { ...normalizePlugin(plugin), apiKey } },
     { status: 201 },
   );
+}
 }

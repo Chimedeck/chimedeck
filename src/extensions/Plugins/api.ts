@@ -1,19 +1,28 @@
 // Fetch wrappers for board-plugins + plugin registry endpoints.
 import { apiClient } from '~/common/api/client';
 import { pluginsConfig } from './config/pluginsConfig';
+import type { BoardPluginConfig } from './types';
+
+export type { BoardPluginConfig };
 
 export interface Plugin {
   id: string;
   name: string;
+  slug?: string;
   description: string;
   iconUrl?: string;
   connectorUrl: string;
-  authorName?: string;
+  manifestUrl?: string;
+  author?: string;
+  authorEmail?: string;
+  supportEmail?: string;
   capabilities: string[];
   categories: string[];
   isActive: boolean;
   isPublic: boolean;
   createdAt: string;
+  updatedAt?: string;
+  whitelistedDomains?: string[];
 }
 
 export interface BoardPlugin {
@@ -22,6 +31,7 @@ export interface BoardPlugin {
   plugin: Plugin;
   enabledAt: string;
   disabledAt: string | null;
+  config?: BoardPluginConfig;
 }
 
 /** GET /api/v1/boards/:boardId/plugins — active plugins for the board */
@@ -88,9 +98,35 @@ export interface RegisterPluginBody {
   supportEmail?: string;
   categories?: string[];
   isPublic?: boolean;
+  whitelistedDomains?: string[];
 }
 
 /** POST /api/v1/plugins — register a new plugin (platform admin only). Returns api_key once. */
 export async function registerPlugin(body: RegisterPluginBody): Promise<{ data: Plugin & { apiKey: string } }> {
   return apiClient.post(pluginsConfig.registryPath, body);
+}
+
+export interface UpdatePluginBody {
+  name?: string;
+  description?: string;
+  connectorUrl?: string;
+  manifestUrl?: string;
+  iconUrl?: string;
+  author?: string;
+  authorEmail?: string;
+  supportEmail?: string;
+  categories?: string[];
+  isPublic?: boolean;
+  whitelistedDomains?: string[];
+}
+
+/** PATCH /api/v1/plugins/:pluginId — update plugin fields (platform admin only). */
+export async function updatePlugin({
+  pluginId,
+  body,
+}: {
+  pluginId: string;
+  body: UpdatePluginBody;
+}): Promise<{ data: Plugin }> {
+  return apiClient.patch(`${pluginsConfig.registryPath}/${pluginId}`, body);
 }

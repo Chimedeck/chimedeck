@@ -1,6 +1,7 @@
 // PluginCard — single plugin row: icon, name, description, capabilities, enable/disable button.
 // For active plugins (mode='disable') with 'show-settings' capability, also shows a gear icon
 // that triggers the plugin's settings modal.
+// When onEdit is provided (platform admins only), shows a pencil edit button.
 import PluginCapabilityChips from './PluginCapabilityChips';
 import type { Plugin, BoardPlugin } from '../api';
 
@@ -8,6 +9,7 @@ interface EnableCardProps {
   plugin: Plugin;
   mode: 'enable';
   onEnable: (plugin: Plugin) => void;
+  onEdit?: (plugin: Plugin) => void;
   loading?: boolean;
 }
 
@@ -16,6 +18,7 @@ interface DisableCardProps {
   mode: 'disable';
   onDisable: (boardPlugin: BoardPlugin) => void;
   onSettings?: (boardPlugin: BoardPlugin) => void;
+  onEdit?: (plugin: Plugin) => void;
   loading?: boolean;
 }
 
@@ -51,8 +54,8 @@ const PluginCard = (props: Props) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-slate-100 font-medium text-sm truncate">{plugin.name}</span>
-          {plugin.authorName && (
-            <span className="text-slate-500 text-xs">by {plugin.authorName}</span>
+          {plugin.author && (
+            <span className="text-slate-500 text-xs">by {plugin.author}</span>
           )}
         </div>
         {plugin.description && (
@@ -72,6 +75,18 @@ const PluginCard = (props: Props) => {
 
       {/* Actions */}
       <div className="flex-shrink-0 flex items-center gap-2">
+        {/* Edit pencil — platform admins only, always visible when onEdit provided */}
+        {props.onEdit && (
+          <button
+            onClick={() => props.onEdit!(plugin)}
+            title="Edit plugin"
+            className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
+            aria-label="Edit plugin"
+          >
+            ✏️
+          </button>
+        )}
+
         {/* Settings gear — only for active plugins with show-settings capability */}
         {hasSettings && props.mode === 'disable' && props.onSettings && (
           <button

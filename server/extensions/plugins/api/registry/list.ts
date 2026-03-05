@@ -4,6 +4,7 @@
 // Supports: q (ILIKE search), category (JSONB contains), isPublic (boolean), page, perPage (max 50).
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { normalizePlugin } from '../../common/normalizePlugin';
 
 async function isRegistryAdmin(userId: string): Promise<boolean> {
   const row = await db('memberships')
@@ -73,6 +74,7 @@ export async function handleListPlugins(req: Request): Promise<Response> {
       'support_email',
       'categories',
       'capabilities',
+      'whitelisted_domains',
       'is_public',
       'is_active',
       'created_at',
@@ -80,10 +82,7 @@ export async function handleListPlugins(req: Request): Promise<Response> {
       // api_key is never returned in list responses
     );
 
-  const normalised = plugins.map((p: any) => ({
-    ...p,
-    capabilities: Array.isArray(p.capabilities) ? p.capabilities : [],
-  }));
+  const normalised = plugins.map((p: any) => normalizePlugin(p));
 
   return Response.json({
     data: normalised,

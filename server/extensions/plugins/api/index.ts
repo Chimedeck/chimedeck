@@ -2,6 +2,7 @@
 import { handleListBoardPlugins } from './board-plugins/list';
 import { handleEnableBoardPlugin } from './board-plugins/enable';
 import { handleDisableBoardPlugin } from './board-plugins/disable';
+import { handleSetBoardPluginAllowedDomains } from './board-plugins/allowed-domains';
 import { handleGetPluginData } from './plugin-data/get';
 import { handleSetPluginData } from './plugin-data/set';
 import { handleListPlugins } from './registry/list';
@@ -13,11 +14,18 @@ import { handleDeletePlugin } from './registry/delete';
 
 // Returns a Response if the path matches a plugin route, otherwise null.
 export async function pluginsRouter(req: Request, pathname: string): Promise<Response | null> {
-  // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId]
-  const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?$/);
+  // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId[/allowed-domains]]
+  const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?(\/allowed-domains)?$/);
   if (boardPluginsMatch) {
     const boardId = boardPluginsMatch[1] as string;
     const pluginSegment = boardPluginsMatch[2] ?? '';
+    const subResource = boardPluginsMatch[3] ?? '';
+
+    // PATCH /api/v1/boards/:boardId/plugins/:pluginId/allowed-domains
+    if (pluginSegment !== '' && subResource === '/allowed-domains' && req.method === 'PATCH') {
+      const pluginId = pluginSegment.slice(1);
+      return handleSetBoardPluginAllowedDomains(req, boardId, pluginId);
+    }
 
     // GET /api/v1/boards/:boardId/plugins — list active plugins
     if (pluginSegment === '' && req.method === 'GET') return handleListBoardPlugins(req, boardId);
@@ -26,7 +34,7 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
     if (pluginSegment === '' && req.method === 'POST') return handleEnableBoardPlugin(req, boardId);
 
     // DELETE /api/v1/boards/:boardId/plugins/:pluginId — soft-disable a plugin
-    if (pluginSegment !== '' && req.method === 'DELETE') {
+    if (pluginSegment !== '' && subResource === '' && req.method === 'DELETE') {
       const pluginId = pluginSegment.slice(1); // strip leading "/"
       return handleDisableBoardPlugin(req, boardId, pluginId);
     }

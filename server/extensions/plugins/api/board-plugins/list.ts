@@ -36,15 +36,24 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
       'p.icon_url',
       'p.connector_url',
       'p.author',
+      'p.author_email',
+      'p.support_email',
+      'p.manifest_url',
+      'p.icon_url',
       'p.categories',
       'p.capabilities',
+      'p.whitelisted_domains',
+      'p.is_public',
+      'p.is_active',
+      'p.created_at',
+      'p.updated_at',
       'bp.id as board_plugin_id',
       'bp.enabled_at',
       'bp.config',
     );
 
   // Reshape flat join rows into the BoardPlugin shape the client expects:
-  // { id, boardId, plugin: Plugin, enabledAt, disabledAt }
+  // { id, boardId, plugin: Plugin, enabledAt, disabledAt, config }
   const boardPlugins = rows.map((r: any) => ({
     id: r.board_plugin_id,
     boardId: boardId,
@@ -53,14 +62,23 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
       name: r.name,
       slug: r.slug,
       description: r.description,
-      iconUrl: r.icon_url,
+      iconUrl: r.icon_url ?? null,
       connectorUrl: r.connector_url,
-      author: r.author,
+      manifestUrl: r.manifest_url ?? null,
+      author: r.author ?? null,
+      authorEmail: r.author_email ?? null,
+      supportEmail: r.support_email ?? null,
       categories: r.categories ?? [],
       capabilities: Array.isArray(r.capabilities) ? r.capabilities : [],
+      whitelistedDomains: Array.isArray(r.whitelisted_domains) ? r.whitelisted_domains : [],
+      isPublic: r.is_public,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
     },
     enabledAt: r.enabled_at,
     disabledAt: null,
+    config: r.config ?? {},
   }));
 
   return Response.json({ data: boardPlugins });
