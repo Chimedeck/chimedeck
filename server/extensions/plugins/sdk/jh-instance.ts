@@ -85,11 +85,19 @@ class FrameContext {
   // ── Data storage ──────────────────────────────────────────────────
 
   get(scope: Scope, visibility: Visibility, key: string): Promise<unknown> {
-    return sendToHost('DATA_GET', { scope, visibility, key });
+    // Auto-resolve resourceId and boardId from args injected by the host so the
+    // plugin never has to pass them explicitly — they always match the current context.
+    const resourceId = (this.args[scope] as Record<string, unknown> | undefined)?.id as string | undefined;
+    const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as string | undefined;
+    return sendToHost('DATA_GET', { scope, visibility, key, resourceId, boardId });
   }
 
   set(scope: Scope, visibility: Visibility, key: string, value: unknown): Promise<void> {
-    return sendToHost('DATA_SET', { scope, visibility, key, value }) as Promise<void>;
+    // Auto-resolve resourceId and boardId from args injected by the host so the
+    // plugin never has to pass them explicitly — they always match the current context.
+    const resourceId = (this.args[scope] as Record<string, unknown> | undefined)?.id as string | undefined;
+    const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as string | undefined;
+    return sendToHost('DATA_SET', { scope, visibility, key, value, resourceId, boardId }) as Promise<void>;
   }
 
   // ── Context reads ─────────────────────────────────────────────────
