@@ -39,6 +39,11 @@ const BoardPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('~/pages/NotFoundPage').then((m) => ({ default: m.default }))
 );
+const PluginDocsPage = lazy(() =>
+  import('~/extensions/DeveloperDocs/containers/PluginDocsPage/PluginDocsPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const VerifyEmailPage = lazy(() =>
   import('~/extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage').then((m) => ({
     default: m.default,
@@ -90,6 +95,7 @@ export default function AppRouter() {
               <Route path="/boards/:boardId" element={<BoardPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />
               <Route path="/profile/edit" element={<EditProfilePage />} />
+              <Route path="/developer/plugins" element={<PluginDocsPage />} />
             </Route>
           </Route>
 

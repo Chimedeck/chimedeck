@@ -10,6 +10,7 @@ import {
   RectangleStackIcon,
   UsersIcon,
   BuildingOfficeIcon,
+  PuzzlePieceIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -173,6 +174,21 @@ export default function Sidebar() {
                 >
                   <BuildingOfficeIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {translations['Sidebar.allWorkspaces']}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/developer/plugins"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-slate-800 text-white font-medium'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    }`
+                  }
+                >
+                  <PuzzlePieceIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  Plugin Docs
                 </NavLink>
               </li>
             </ul>
