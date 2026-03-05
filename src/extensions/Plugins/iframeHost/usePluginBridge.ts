@@ -244,6 +244,52 @@ export function usePluginBridge({
     [],
   );
 
+  // Compute effective allowed domains for a plugin.
+  // Returns null if there is no domain restriction (all origins allowed),
+  // or a string[] if only those origins are permitted.
+  const getEffectiveDomains = useCallback(
+    (bp: BoardPlugin): string[] | null => {
+      const whitelisted = bp.plugin.whitelistedDomains ?? [];
+      // If the plugin declares no domains, no domain restriction applies.
+      if (whitelisted.length === 0) return null;
+      const allowed = bp.config?.allowedDomains;
+      // null / undefined → no restriction set by board admin → all whitelisted are permitted
+      if (allowed == null) return null;
+      // array → restrict to this subset
+      return allowed;
+    },
+    [plugins],
+  );
+
+  // Check whether a URL is permitted by the plugin's effective domain list.
+  // Returns true if permitted, false if blocked.
+  const isDomainAllowed = useCallback(
+    (bp: BoardPlugin, url: string): boolean => {
+      const effectiveDomains = getEffectiveDomains(bp);
+      if (effectiveDomains === null) return true; // no restriction
+      try {
+        const origin = new URL(url).origin;
+        return effectiveDomains.includes(origin);
+      } catch {
+        return false; // malformed URL → block
+      }
+    },
+    [getEffectiveDomains],
+  );
+
+  // Send a domain-not-allowed error response back to the plugin
+  const sendDomainError = useCallback(
+    (bp: BoardPlugin, msgId: string) => {
+      const response: SdkResponse = {
+        jhSdk: true,
+        id: msgId,
+        error: 'domain-not-allowed',
+      };
+      sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [sendToPlugin],
+  );
+
   // Global message listener
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -304,6 +350,10 @@ export function usePluginBridge({
             fullscreen?: boolean;
             accentColor?: string;
           };
+          if (!isDomainAllowed(bp, payload.url)) {
+            sendDomainError(bp, data.id);
+            break;
+          }
           const modalState: Omit<PluginModalState, 'open'> = {
             url: payload.url,
             title: payload.title ?? '',
@@ -335,6 +385,10 @@ export function usePluginBridge({
             args?: Record<string, unknown>;
             mouseEvent?: { clientX?: number; clientY?: number };
           };
+          if (!isDomainAllowed(bp, payload.url)) {
+            sendDomainError(bp, data.id);
+            break;
+          }
           const popupState: Omit<PluginPopupState, 'open'> = {
             url: payload.url,
             title: payload.title ?? '',
@@ -363,7 +417,7 @@ export function usePluginBridge({
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
 
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(

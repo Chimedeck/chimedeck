@@ -12,9 +12,14 @@ import PluginSearchBar from '../../components/PluginSearchBar';
 import PluginModal, { type PluginModalState } from '../../modals/PluginModal';
 import RegisterPluginModal from '../../modals/RegisterPluginModal';
 import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
+import EditPluginModal from '../../modals/EditPluginModal';
+import ToastRegion from '~/common/components/ToastRegion';
+import type { ToastItem } from '~/common/components/Toast';
 import {
   registerPluginThunk,
   clearRegisterState,
+  updatePluginThunk,
+  clearUpdateState,
   fetchAvailablePluginsThunk,
   fetchCategoriesThunk,
   setSearchQuery,
@@ -26,8 +31,10 @@ import {
   selectSearchQuery,
   selectSelectedCategory,
   selectCategories,
+  selectUpdateStatus,
+  selectUpdateError,
 } from './PluginDashboardPage.duck';
-import type { BoardPlugin, RegisterPluginBody } from '../../api';
+import type { BoardPlugin, Plugin, RegisterPluginBody, UpdatePluginBody } from '../../api';
 
 const defaultSettingsModal: PluginModalState = {
   open: false,
@@ -49,6 +56,17 @@ const PluginDashboardPage = () => {
 
   const [settingsModal, setSettingsModal] = useState<PluginModalState>(defaultSettingsModal);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [editPlugin, setEditPlugin] = useState<Plugin | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = useCallback((message: string, variant: ToastItem['variant'] = 'info') => {
+    const id = `toast-${Date.now()}`;
+    setToasts((prev) => [...prev, { id, message, variant }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const registerStatus = useAppSelector(selectRegisterStatus);
   const registerError = useAppSelector(selectRegisterError);
@@ -56,6 +74,8 @@ const PluginDashboardPage = () => {
   const searchQuery = useAppSelector(selectSearchQuery);
   const selectedCategory = useAppSelector(selectSelectedCategory);
   const categories = useAppSelector(selectCategories);
+  const updateStatus = useAppSelector(selectUpdateStatus);
+  const updateError = useAppSelector(selectUpdateError);
 
   useEffect(() => {
     if (boardId) loadPlugins();
@@ -80,6 +100,15 @@ const PluginDashboardPage = () => {
     }
   }, [registerStatus]);
 
+  // When update succeeds, close edit modal and show toast
+  useEffect(() => {
+    if (updateStatus === 'success') {
+      setEditPlugin(null);
+      addToast('Plugin updated.', 'info');
+      dispatch(clearUpdateState());
+    }
+  }, [updateStatus, addToast, dispatch]);
+
   const handleSettings = useCallback((bp: BoardPlugin) => {
     let settingsUrl = bp.plugin.connectorUrl;
     try {
@@ -97,6 +126,8 @@ const PluginDashboardPage = () => {
       title: `${bp.plugin.name} Settings`,
       fullscreen: false,
       pluginId: bp.plugin.id,
+      boardPlugin: bp,
+      boardId: boardId ?? '',
     });
   }, [boardId]);
 
@@ -122,6 +153,20 @@ const PluginDashboardPage = () => {
       dispatch(fetchAvailablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery, selectedCategory]);
+
+  const handleEditOpen = useCallback((plugin: Plugin) => {
+    dispatch(clearUpdateState());
+    setEditPlugin(plugin);
+  }, [dispatch]);
+
+  const handleEditClose = useCallback(() => {
+    setEditPlugin(null);
+    dispatch(clearUpdateState());
+  }, [dispatch]);
+
+  const handleEditSubmit = useCallback((pluginId: string, body: UpdatePluginBody) => {
+    dispatch(updatePluginThunk({ pluginId, body }));
+  }, [dispatch]);
 
   const handleSearchChange = useCallback((q: string) => {
     dispatch(setSearchQuery(q));
@@ -220,6 +265,7 @@ const PluginDashboardPage = () => {
               onEnable={enablePlugin}
               onDisable={disablePlugin}
               onSettings={handleSettings}
+              {...(isAdmin ? { onEdit: handleEditOpen } : {})}
             />
           </>
         )}
@@ -241,6 +287,19 @@ const PluginDashboardPage = () => {
       {newApiKey && (
         <ApiKeyRevealModal apiKey={newApiKey} onClose={handleApiKeyDismiss} />
       )}
+
+      {/* Edit Plugin modal — platform admins only */}
+      <EditPluginModal
+        open={editPlugin !== null}
+        plugin={editPlugin}
+        isSubmitting={updateStatus === 'loading'}
+        serverError={updateStatus === 'error' ? updateError : null}
+        onClose={handleEditClose}
+        onSubmit={handleEditSubmit}
+      />
+
+      {/* Toast notifications */}
+      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };

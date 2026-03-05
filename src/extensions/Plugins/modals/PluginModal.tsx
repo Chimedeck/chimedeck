@@ -1,9 +1,13 @@
 // PluginModal — fullscreen/standard overlay with an iframe for plugin UI.
 // Opened when the plugin calls t.modal() and closed on t.closeModal() or backdrop click.
 // Supports updateModal({ title, fullscreen, accentColor }) and sizeTo (auto-resize).
+// When boardPlugin and boardId are provided and the plugin has whitelistedDomains,
+// the PluginAllowedDomainsPanel is rendered below the iframe for board admins.
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import type { BoardPlugin } from '../api';
+import PluginAllowedDomainsPanel from '../components/PluginAllowedDomainsPanel';
 
 export interface PluginModalState {
   open: boolean;
@@ -12,6 +16,9 @@ export interface PluginModalState {
   fullscreen: boolean;
   accentColor?: string;
   pluginId: string;
+  /** Present when modal is opened via the settings gear (board admin context). */
+  boardPlugin?: BoardPlugin;
+  boardId?: string;
 }
 
 interface Props {
@@ -79,10 +86,18 @@ const PluginModal = ({ modal, onClose }: Props) => {
           id={`plugin-modal-iframe-${modal.pluginId}`}
           src={modal.url}
           title={modal.title || 'Plugin modal'}
-          className="flex-1 w-full border-0 rounded-b-lg bg-white"
+          className="flex-1 w-full border-0 bg-white"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
           referrerPolicy="no-referrer-when-downgrade"
         />
+
+        {/* Allowed Domains panel — only for settings modals where boardPlugin has whitelistedDomains */}
+        {modal.boardPlugin && modal.boardId && (modal.boardPlugin.plugin.whitelistedDomains?.length ?? 0) > 0 && (
+          <PluginAllowedDomainsPanel
+            boardPlugin={modal.boardPlugin}
+            boardId={modal.boardId}
+          />
+        )}
       </div>
     </div>,
     document.body,
