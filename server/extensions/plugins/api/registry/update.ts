@@ -1,29 +1,12 @@
-// PATCH /api/v1/plugins/:pluginId — partially update plugin metadata (admin only).
+// PATCH /api/v1/plugins/:pluginId — partially update plugin metadata (platform admin only).
 // All fields are optional; only provided fields are updated.
 import { db } from '../../../../common/db';
-import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-
-async function isRegistryAdmin(userId: string): Promise<boolean> {
-  const row = await db('memberships')
-    .where({ user_id: userId })
-    .whereIn('role', ['OWNER', 'ADMIN'])
-    .first();
-  return !!row;
-}
+import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { platformAdminGuard } from '../../../../middlewares/platformAdminGuard';
 
 export async function handleUpdatePlugin(req: Request, pluginId: string): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
-
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
-  const admin = await isRegistryAdmin(currentUser.id);
-
-  if (!admin) {
-    return Response.json(
-      { name: 'not-platform-admin', data: { message: 'Platform admin access required' } },
-      { status: 403 },
-    );
-  }
+  const guardError = await platformAdminGuard(req as AuthenticatedRequest);
+  if (guardError) return guardError;
 
   const plugin = await db('plugins').where({ id: pluginId }).first();
   if (!plugin) {

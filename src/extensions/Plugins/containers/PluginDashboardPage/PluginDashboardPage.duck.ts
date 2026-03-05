@@ -5,9 +5,11 @@ import { createAppAsyncThunk } from '~/utils/redux';
 import {
   fetchBoardPlugins,
   fetchAvailablePlugins,
+  fetchCategories,
   enablePlugin as enablePluginApi,
   disablePlugin as disablePluginApi,
   registerPlugin as registerPluginApi,
+  type FetchAvailablePluginsParams,
   type Plugin,
   type BoardPlugin,
   type RegisterPluginBody,
@@ -23,6 +25,9 @@ export interface PluginsState {
   registerStatus: 'idle' | 'loading' | 'error' | 'success';
   registerError: string | null;
   newApiKey: string | null;
+  searchQuery: string;
+  selectedCategory: string | null;
+  categories: string[];
 }
 
 const initialState: PluginsState = {
@@ -33,6 +38,9 @@ const initialState: PluginsState = {
   registerStatus: 'idle',
   registerError: null,
   newApiKey: null,
+  searchQuery: '',
+  selectedCategory: null,
+  categories: [],
 };
 
 // ---------- Thunks ----------
@@ -46,9 +54,33 @@ export const fetchBoardPluginsThunk = createAppAsyncThunk(
 
 export const fetchAvailablePluginsThunk = createAppAsyncThunk(
   'plugins/fetchAvailablePlugins',
-  async ({ boardId }: { boardId: string }) => {
-    const result = await fetchAvailablePlugins();
+  async ({
+    boardId,
+    q,
+    category,
+    page,
+    perPage,
+  }: {
+    boardId: string;
+    q?: string;
+    category?: string | null;
+    page?: number;
+    perPage?: number;
+  }) => {
+    const params: FetchAvailablePluginsParams = {};
+    if (q) params.q = q;
+    if (category) params.category = category;
+    if (page != null) params.page = page;
+    if (perPage != null) params.perPage = perPage;
+    const result = await fetchAvailablePlugins(params);
     return { ...result, boardId };
+  },
+);
+
+export const fetchCategoriesThunk = createAppAsyncThunk(
+  'plugins/fetchCategories',
+  async () => {
+    return fetchCategories();
   },
 );
 
@@ -129,6 +161,16 @@ const pluginDashboardSlice = createSlice({
       state.registerError = null;
       state.newApiKey = null;
     },
+    setSearchQuery(state, action: PayloadAction<string>) {
+      state.searchQuery = action.payload;
+    },
+    setSelectedCategory(state, action: PayloadAction<string | null>) {
+      state.selectedCategory = action.payload;
+    },
+    clearSearch(state) {
+      state.searchQuery = '';
+      state.selectedCategory = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -200,7 +242,13 @@ const pluginDashboardSlice = createSlice({
       .addCase(registerPluginThunk.rejected, (state, action) => {
         state.registerStatus = 'error';
         state.registerError = (action.payload as string) ?? action.error.message ?? 'register-plugin-failed';
-      });
+      })
+      .addCase(
+        fetchCategoriesThunk.fulfilled,
+        (state, action: PayloadAction<{ data: string[] }>) => {
+          state.categories = action.payload.data;
+        },
+      );
   },
 });
 
@@ -210,6 +258,9 @@ export const {
   rollbackEnable,
   rollbackDisable,
   clearRegisterState,
+  setSearchQuery,
+  setSelectedCategory,
+  clearSearch,
 } = pluginDashboardSlice.actions;
 
 export default pluginDashboardSlice.reducer;
@@ -232,3 +283,9 @@ export const selectRegisterError = (state: unknown) =>
   (state as StateWithPlugins).pluginDashboard.registerError;
 export const selectNewApiKey = (state: unknown) =>
   (state as StateWithPlugins).pluginDashboard.newApiKey;
+export const selectSearchQuery = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.searchQuery;
+export const selectSelectedCategory = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.selectedCategory;
+export const selectCategories = (state: unknown) =>
+  (state as StateWithPlugins).pluginDashboard.categories;

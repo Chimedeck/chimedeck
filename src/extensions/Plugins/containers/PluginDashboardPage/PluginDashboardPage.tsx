@@ -8,6 +8,7 @@ import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { isPlatformAdmin } from '~/extensions/Auth/utils/isPlatformAdmin';
 import { useBoardPlugins } from '../../hooks/useBoardPlugins';
 import PluginList from '../../components/PluginList';
+import PluginSearchBar from '../../components/PluginSearchBar';
 import PluginModal, { type PluginModalState } from '../../modals/PluginModal';
 import RegisterPluginModal from '../../modals/RegisterPluginModal';
 import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
@@ -15,9 +16,16 @@ import {
   registerPluginThunk,
   clearRegisterState,
   fetchAvailablePluginsThunk,
+  fetchCategoriesThunk,
+  setSearchQuery,
+  setSelectedCategory,
+  clearSearch,
   selectRegisterStatus,
   selectRegisterError,
   selectNewApiKey,
+  selectSearchQuery,
+  selectSelectedCategory,
+  selectCategories,
 } from './PluginDashboardPage.duck';
 import type { BoardPlugin, RegisterPluginBody } from '../../api';
 
@@ -45,10 +53,18 @@ const PluginDashboardPage = () => {
   const registerStatus = useAppSelector(selectRegisterStatus);
   const registerError = useAppSelector(selectRegisterError);
   const newApiKey = useAppSelector(selectNewApiKey);
+  const searchQuery = useAppSelector(selectSearchQuery);
+  const selectedCategory = useAppSelector(selectSelectedCategory);
+  const categories = useAppSelector(selectCategories);
 
   useEffect(() => {
     if (boardId) loadPlugins();
   }, [boardId, loadPlugins]);
+
+  // Fetch categories once on mount
+  useEffect(() => {
+    dispatch(fetchCategoriesThunk());
+  }, [dispatch]);
 
   // If the API returns a 403-style error, redirect back to board
   useEffect(() => {
@@ -99,7 +115,36 @@ const PluginDashboardPage = () => {
 
   const handleApiKeyDismiss = useCallback(() => {
     dispatch(clearRegisterState());
-    // Refresh available plugins after new plugin is registered
+    if (boardId) {
+      const params: { boardId: string; q?: string; category?: string | null } = { boardId };
+      if (searchQuery) params.q = searchQuery;
+      if (selectedCategory) params.category = selectedCategory;
+      dispatch(fetchAvailablePluginsThunk(params));
+    }
+  }, [dispatch, boardId, searchQuery, selectedCategory]);
+
+  const handleSearchChange = useCallback((q: string) => {
+    dispatch(setSearchQuery(q));
+    if (boardId) {
+      const params: { boardId: string; q?: string; category?: string | null } = { boardId };
+      if (q) params.q = q;
+      if (selectedCategory) params.category = selectedCategory;
+      dispatch(fetchAvailablePluginsThunk(params));
+    }
+  }, [dispatch, boardId, selectedCategory]);
+
+  const handleCategoryChange = useCallback((category: string | null) => {
+    dispatch(setSelectedCategory(category));
+    if (boardId) {
+      const params: { boardId: string; q?: string; category?: string | null } = { boardId };
+      if (searchQuery) params.q = searchQuery;
+      if (category) params.category = category;
+      dispatch(fetchAvailablePluginsThunk(params));
+    }
+  }, [dispatch, boardId, searchQuery]);
+
+  const handleClearSearch = useCallback(() => {
+    dispatch(clearSearch());
     if (boardId) dispatch(fetchAvailablePluginsThunk({ boardId }));
   }, [dispatch, boardId]);
 
@@ -150,13 +195,33 @@ const PluginDashboardPage = () => {
           </div>
         )}
         {status !== 'loading' && (
-          <PluginList
-            boardPlugins={boardPlugins}
-            availablePlugins={availablePlugins}
-            onEnable={enablePlugin}
-            onDisable={disablePlugin}
-            onSettings={handleSettings}
-          />
+          <>
+            <PluginSearchBar
+              categories={categories}
+              onSearchChange={handleSearchChange}
+              onCategoryChange={handleCategoryChange}
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
+            />
+            {availablePlugins.length === 0 && (searchQuery || selectedCategory) ? (
+              <div className="mb-4">
+                <p className="text-slate-400 text-sm mb-2">No plugins match your search.</p>
+                <button
+                  onClick={handleClearSearch}
+                  className="text-xs text-blue-400 hover:text-blue-300 underline"
+                >
+                  Clear search
+                </button>
+              </div>
+            ) : null}
+            <PluginList
+              boardPlugins={boardPlugins}
+              availablePlugins={availablePlugins}
+              onEnable={enablePlugin}
+              onDisable={disablePlugin}
+              onSettings={handleSettings}
+            />
+          </>
         )}
       </div>
 

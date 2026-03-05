@@ -5,6 +5,7 @@ import { handleDisableBoardPlugin } from './board-plugins/disable';
 import { handleGetPluginData } from './plugin-data/get';
 import { handleSetPluginData } from './plugin-data/set';
 import { handleListPlugins } from './registry/list';
+import { handleListCategories } from './registry/categories';
 import { handleGetPlugin } from './registry/get';
 import { handleCreatePlugin } from './registry/create';
 import { handleUpdatePlugin } from './registry/update';
@@ -47,6 +48,9 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
 
     // POST /api/v1/plugins — register a new plugin
     if (pluginSegment === '' && req.method === 'POST') return handleCreatePlugin(req);
+
+    // GET /api/v1/plugins/categories — must be matched before /:pluginId
+    if (pluginSegment === '/categories' && req.method === 'GET') return handleListCategories(req);
 
     if (pluginSegment !== '') {
       const pluginId = pluginSegment.slice(1);

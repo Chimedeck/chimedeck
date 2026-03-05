@@ -1,17 +1,10 @@
-// POST /api/v1/plugins — register a new plugin in the registry (admin only).
+// POST /api/v1/plugins — register a new plugin in the registry (platform admin only).
 // Generates an api_key (randomUUID), fetches and caches capabilities from manifestUrl.
 // Returns the full plugin record including api_key (only returned on creation).
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
-import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-
-async function isRegistryAdmin(userId: string): Promise<boolean> {
-  const row = await db('memberships')
-    .where({ user_id: userId })
-    .whereIn('role', ['OWNER', 'ADMIN'])
-    .first();
-  return !!row;
-}
+import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { platformAdminGuard } from '../../../../middlewares/platformAdminGuard';
 
 async function fetchManifestCapabilities(
   manifestUrl: string,
@@ -28,18 +21,10 @@ async function fetchManifestCapabilities(
 }
 
 export async function handleCreatePlugin(req: Request): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
+  const guardError = await platformAdminGuard(req as AuthenticatedRequest);
+  if (guardError) return guardError;
 
   const currentUser = (req as AuthenticatedRequest).currentUser!;
-  const admin = await isRegistryAdmin(currentUser.id);
-
-  if (!admin) {
-    return Response.json(
-      { name: 'not-platform-admin', data: { message: 'Platform admin access required' } },
-      { status: 403 },
-    );
-  }
 
   let body: {
     name?: unknown;
@@ -84,11 +69,18 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
     );
   }
 
+  if (!connectorUrl.startsWith('https://')) {
+    return Response.json(
+      { name: 'invalid-connector-url', data: { message: 'connectorUrl must start with https://' } },
+      { status: 422 },
+    );
+  }
+
   // Ensure slug is unique.
   const existing = await db('plugins').where({ slug }).first();
   if (existing) {
     return Response.json(
-      { name: 'duplicate-slug', data: { message: `A plugin with slug '${slug}' already exists` } },
+      { name: 'plugin-slug-taken', data: { message: `A plugin with slug '${slug}' already exists` } },
       { status: 409 },
     );
   }

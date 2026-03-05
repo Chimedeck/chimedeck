@@ -63,4 +63,8 @@ export const env = {
   FEATBIT_SDK_KEY: Bun.env['FEATBIT_SDK_KEY'] ?? undefined,
   FEATBIT_URL: Bun.env['FEATBIT_URL'] ?? undefined,
   FEATURE_FLAGS_JSON_PATH: Bun.env['FEATURE_FLAGS_JSON_PATH'] ?? undefined,
+
+  // Platform admin emails — comma-separated list of emails allowed to manage the plugin registry.
+  // Fail safe: deny all if not set.
+  PLATFORM_ADMIN_EMAILS: Bun.env['PLATFORM_ADMIN_EMAILS'] ?? '',
 } as const;
