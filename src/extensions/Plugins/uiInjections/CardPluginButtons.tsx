@@ -18,9 +18,12 @@ interface PluginButton {
 interface Props {
   cardId: string;
   listId: string;
+  cardTitle?: string;
+  listTitle?: string;
+  boardTitle?: string;
 }
 
-const CardPluginButtons = ({ cardId, listId }: Props) => {
+const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle }: Props) => {
   const { boardId } = useParams<{ boardId: string }>();
   const bridge = usePluginBridgeContext();
   const boardPlugins = useAppSelector(selectBoardPlugins);
@@ -32,9 +35,9 @@ const CardPluginButtons = ({ cardId, listId }: Props) => {
 
     bridge
       .resolve('card-buttons', {
-        card: { id: cardId },
-        list: { id: listId },
-        board: { id: boardId },
+        card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
+        list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
+        board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
       })
       .then((results) => {
         if (cancelled) return;
@@ -53,13 +56,13 @@ const CardPluginButtons = ({ cardId, listId }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [bridge, boardId, cardId, listId]);
+  }, [bridge, boardId, cardId, listId, cardTitle, listTitle, boardTitle]);
 
   const handleButtonClick = useCallback(
     (button: PluginButton, e: React.MouseEvent) => {
       // WHY: stop propagation so clicking a plugin button doesn't also open the card modal
       e.stopPropagation();
-      if (!bridge || !button.callback?.__callbackId) return;
+      if (!bridge || !boardId || !button.callback?.__callbackId) return;
 
       // Broadcast BUTTON_CLICKED to all active plugin iframes — only the plugin whose
       // callbackRegistry contains the matching __callbackId will invoke the callback;
@@ -72,15 +75,15 @@ const CardPluginButtons = ({ cardId, listId }: Props) => {
           payload: {
             callbackId: button.callback.__callbackId,
             args: {
-              card: { id: cardId },
-              list: { id: listId },
-              board: { id: boardId },
+              card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
+              list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
+              board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
             },
           },
         });
       }
     },
-    [bridge, boardPlugins, cardId, listId, boardId],
+    [bridge, boardPlugins, cardId, listId, boardId, cardTitle, listTitle, boardTitle],
   );
 
   if (buttons.length === 0) return null;

@@ -3,6 +3,7 @@
 // so the plugin can call jhInstance.initialize() and start communicating.
 
 import type { BoardPlugin } from '../api';
+import { useRef } from 'react';
 
 interface Props {
   boardPlugin: BoardPlugin;
@@ -11,6 +12,7 @@ interface Props {
 
 const PluginIframeHost = ({ boardPlugin, boardId }: Props) => {
   const { plugin } = boardPlugin;
+  const cacheBustRef = useRef<string>(`${Date.now()}`);
 
   // Build the iframe src with required context params
   let src: string;
@@ -19,7 +21,8 @@ const PluginIframeHost = ({ boardPlugin, boardId }: Props) => {
     url.searchParams.set('boardId', boardId);
     url.searchParams.set('pluginId', plugin.id);
     // Pass the host origin so the plugin can validate back-messages
-    url.searchParams.set('origin', window.location.origin);
+    url.searchParams.set('origin', globalThis.location.origin);
+    url.searchParams.set('cb', cacheBustRef.current);
     src = url.toString();
   } catch {
     // Malformed connectorUrl — skip rendering

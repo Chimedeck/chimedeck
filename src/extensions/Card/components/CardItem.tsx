@@ -13,7 +13,6 @@ import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 import CardMoneyBadge from './CardMoneyBadge';
 import CardPluginBadges from '../../Plugins/uiInjections/CardPluginBadges';
-import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
 
 export interface CardItemProps {
   card: Card;
@@ -21,6 +20,8 @@ export interface CardItemProps {
   onClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
   onToggleLabels?: () => void;
+  listTitle?: string;
+  boardTitle?: string;
 }
 
 const CardItem = ({
@@ -29,6 +30,8 @@ const CardItem = ({
   onClick,
   labelsExpanded = false,
   onToggleLabels,
+  listTitle,
+  boardTitle,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -106,8 +109,13 @@ const CardItem = ({
           />
         </div>
       )}
-      <CardPluginBadges cardId={card.id} listId={card.list_id} />
-      <CardPluginButtons cardId={card.id} listId={card.list_id} />
+      <CardPluginBadges
+        cardId={card.id}
+        listId={card.list_id}
+        cardTitle={card.title}
+        listTitle={listTitle}
+        boardTitle={boardTitle}
+      />
     </div>
   );
 };

@@ -342,5 +342,3 @@ window.jhInstance = jhInstance;
 
 // Compatibility shim: alias so existing TrelloPowerUp client.js files work unchanged
 window.TrelloPowerUp = jhInstance;
-
-export default jhInstance;

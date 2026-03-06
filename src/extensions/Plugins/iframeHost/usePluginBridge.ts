@@ -71,6 +71,7 @@ export function usePluginBridgeContext(): PluginBridge | null {
 interface UsePluginBridgeOptions {
   boardId: string;
   plugins: BoardPlugin[];
+  currentUserId?: string | null;
   onOpenModal?: (state: Omit<PluginModalState, 'open'>) => void;
   onCloseModal?: () => void;
   onUpdateModal?: (update: Partial<Pick<PluginModalState, 'title' | 'fullscreen' | 'accentColor'>>) => void;
@@ -88,6 +89,7 @@ interface PluginState {
 export function usePluginBridge({
   boardId,
   plugins,
+  currentUserId,
   onOpenModal,
   onCloseModal,
   onUpdateModal,
@@ -152,6 +154,9 @@ export function usePluginBridge({
       const { scope, visibility, key, resourceId } = msg.payload;
       let result: unknown = null;
       try {
+        const apiKey = bp.plugin.apiKey;
+        if (!apiKey) throw new Error('missing-plugin-api-key');
+
         const params = new URLSearchParams({
           scope,
           key,
@@ -160,8 +165,16 @@ export function usePluginBridge({
           boardId,
         });
         if (resourceId) params.set('resourceId', resourceId);
+        if (visibility === 'private' && currentUserId) {
+          params.set('userId', currentUserId);
+        }
         const resp = await apiClient.get<{ data: { value: unknown } }>(
-          `/api/v1/plugins/data?${params.toString()}`,
+          `/plugins/data?${params.toString()}`,
+          {
+            headers: {
+              Authorization: `ApiKey ${apiKey}`,
+            },
+          },
         );
         result = (resp as unknown as { data: { value: unknown } }).data?.value ?? null;
       } catch {
@@ -170,7 +183,7 @@ export function usePluginBridge({
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
       sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
     },
-    [boardId, sendToPlugin],
+    [boardId, currentUserId, sendToPlugin],
   );
 
   // Handle DATA_SET — proxy request to server plugin-data API
@@ -181,7 +194,10 @@ export function usePluginBridge({
     ) => {
       const { scope, visibility, key, value, resourceId } = msg.payload;
       try {
-        await apiClient.put('/api/v1/plugins/data', {
+        const apiKey = bp.plugin.apiKey;
+        if (!apiKey) throw new Error('missing-plugin-api-key');
+
+        await apiClient.put('/plugins/data', {
           scope,
           key,
           value,
@@ -189,6 +205,11 @@ export function usePluginBridge({
           pluginId: bp.plugin.id,
           boardId,
           resourceId,
+          ...(visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
+        }, {
+          headers: {
+            Authorization: `ApiKey ${apiKey}`,
+          },
         });
         const response: SdkResponse = { jhSdk: true, id: msg.id, result: null };
         sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
@@ -201,7 +222,7 @@ export function usePluginBridge({
         sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [boardId, sendToPlugin],
+    [boardId, currentUserId, sendToPlugin],
   );
 
   // Extract only the requested fields from a context object.
@@ -422,40 +443,75 @@ export function usePluginBridge({
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(
     (capability: string, context: CapabilityContext): Promise<unknown[]> => {
-      const eligible = plugins.filter((bp) => {
-        const state = pluginStateRef.current.get(bp.plugin.id);
-        return state?.capabilities.includes(capability);
-      });
-
-      if (eligible.length === 0) return Promise.resolve([]);
-
-      return new Promise<unknown[]>((resolvePromise) => {
-        const requestId = `cap-${Date.now()}-${Math.random()}`;
-        pendingCapabilityRef.current.set(requestId, {
-          resolve: resolvePromise,
-          results: [],
-          remaining: eligible.length,
+      const getEligible = (): BoardPlugin[] =>
+        plugins.filter((bp) => {
+          const state = pluginStateRef.current.get(bp.plugin.id);
+          return state?.capabilities.includes(capability);
         });
 
-        for (const bp of eligible) {
-          // Store context so CTX_* queries from this plugin can resolve it
-          pluginContextRef.current.set(bp.plugin.id, context);
-          sendToPlugin(bp.plugin.id, {
-            jhSdk: true,
-            id: requestId,
-            type: 'CAPABILITY_INVOKE',
-            payload: { capability, args: context, requestId },
-          });
-        }
+      const getReadyCount = (): number =>
+        plugins.filter((bp) => pluginStateRef.current.has(bp.plugin.id)).length;
 
-        // Timeout: resolve with partial results after 3 s to avoid stale UI
-        setTimeout(() => {
-          const pending = pendingCapabilityRef.current.get(requestId);
-          if (pending) {
-            pending.resolve(pending.results);
-            pendingCapabilityRef.current.delete(requestId);
+      const invokeEligible = (eligible: BoardPlugin[]): Promise<unknown[]> => {
+        return new Promise<unknown[]>((resolvePromise) => {
+          const requestId = `cap-${Date.now()}-${Math.random()}`;
+          pendingCapabilityRef.current.set(requestId, {
+            resolve: resolvePromise,
+            results: [],
+            remaining: eligible.length,
+          });
+
+          for (const bp of eligible) {
+            // Store context so CTX_* queries from this plugin can resolve it
+            pluginContextRef.current.set(bp.plugin.id, context);
+            sendToPlugin(bp.plugin.id, {
+              jhSdk: true,
+              id: requestId,
+              type: 'CAPABILITY_INVOKE',
+              payload: { capability, args: context, requestId },
+            });
           }
-        }, 3000);
+
+          // Timeout: resolve with partial results after 3 s to avoid stale UI
+          setTimeout(() => {
+            const pending = pendingCapabilityRef.current.get(requestId);
+            if (pending) {
+              pending.resolve(pending.results);
+              pendingCapabilityRef.current.delete(requestId);
+            }
+          }, 3000);
+        });
+      };
+
+      const eligible = getEligible();
+      if (eligible.length > 0) {
+        return invokeEligible(eligible);
+      }
+
+      // WHY: on first render, card UI can resolve capabilities before hidden plugin
+      // iframes send PLUGIN_READY; wait briefly so badges/buttons appear reliably.
+      if (plugins.length === 0 || getReadyCount() === plugins.length) {
+        return Promise.resolve([]);
+      }
+
+      return new Promise<unknown[]>((resolvePromise) => {
+        const deadline = Date.now() + 1200;
+        const retry = () => {
+          const nextEligible = getEligible();
+          if (nextEligible.length > 0) {
+            void invokeEligible(nextEligible).then(resolvePromise);
+            return;
+          }
+
+          if (getReadyCount() === plugins.length || Date.now() >= deadline) {
+            resolvePromise([]);
+            return;
+          }
+
+          globalThis.setTimeout(retry, 100);
+        };
+
+        retry();
       });
     },
     [plugins, sendToPlugin],

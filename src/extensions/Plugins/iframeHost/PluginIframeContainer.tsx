@@ -7,9 +7,10 @@
 //
 // Mounted once at the root of BoardPage alongside the Kanban columns.
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
+import { selectCurrentUser } from '~/slices/authSlice';
 import {
   fetchBoardPluginsThunk,
   selectBoardPlugins,
@@ -21,6 +22,7 @@ import PluginPopup, { type PluginPopupState } from '../modals/PluginPopup';
 
 interface Props {
   boardId: string;
+  children?: ReactNode;
 }
 
 const defaultModal: PluginModalState = {
@@ -40,8 +42,9 @@ const defaultPopup: PluginPopupState = {
   y: 100,
 };
 
-const PluginIframeContainerInner = ({ boardId }: Props) => {
+const PluginIframeContainerInner = ({ boardId, children }: Props) => {
   const boardPlugins = useAppSelector(selectBoardPlugins);
+  const currentUser = useAppSelector(selectCurrentUser);
   const [modal, setModal] = useState<PluginModalState>(defaultModal);
   const [popup, setPopup] = useState<PluginPopupState>(defaultPopup);
 
@@ -71,6 +74,7 @@ const PluginIframeContainerInner = ({ boardId }: Props) => {
   const bridge = usePluginBridge({
     boardId,
     plugins: boardPlugins,
+    currentUserId: currentUser?.id ?? null,
     onOpenModal: handleOpenModal,
     onCloseModal: handleCloseModal,
     onUpdateModal: handleUpdateModal,
@@ -80,6 +84,7 @@ const PluginIframeContainerInner = ({ boardId }: Props) => {
 
   return (
     <PluginBridgeContext.Provider value={bridge}>
+      {children}
       {/* Hidden iframes — one per active plugin */}
       {boardPlugins.map((bp) => (
         <PluginIframeHost key={bp.plugin.id} boardPlugin={bp} boardId={boardId} />
@@ -91,7 +96,7 @@ const PluginIframeContainerInner = ({ boardId }: Props) => {
   );
 };
 
-const PluginIframeContainer = ({ boardId }: Props) => {
+const PluginIframeContainer = ({ boardId, children }: Props) => {
   const dispatch = useAppDispatch();
 
   // Load active plugins when the board opens; refresh whenever boardId changes.
@@ -101,7 +106,7 @@ const PluginIframeContainer = ({ boardId }: Props) => {
     }
   }, [dispatch, boardId]);
 
-  return <PluginIframeContainerInner boardId={boardId} />;
+  return <PluginIframeContainerInner boardId={boardId}>{children}</PluginIframeContainerInner>;
 };
 
 export default PluginIframeContainer;

@@ -15,6 +15,9 @@ interface Props {
   cardId: string;
   listId: string;
   boardId: string;
+  cardTitle?: string;
+  listTitle?: string;
+  boardTitle?: string;
 }
 
 // Maps Trello-style color names to Tailwind classes (includes border for detail context)
@@ -27,7 +30,7 @@ const COLOR_MAP: Record<string, string> = {
   purple: 'bg-purple-600/20 text-purple-400 border-purple-700/40',
 };
 
-const CardDetailPluginBadges = ({ cardId, listId, boardId }: Props) => {
+const CardDetailPluginBadges = ({ cardId, listId, boardId, cardTitle, listTitle, boardTitle }: Props) => {
   const bridge = usePluginBridgeContext();
   const [badges, setBadges] = useState<PluginBadge[]>([]);
 
@@ -37,9 +40,9 @@ const CardDetailPluginBadges = ({ cardId, listId, boardId }: Props) => {
 
     bridge
       .resolve('card-detail-badges', {
-        card: { id: cardId },
-        list: { id: listId },
-        board: { id: boardId },
+        card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
+        list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
+        board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
       })
       .then((results) => {
         if (cancelled) return;
@@ -58,7 +61,7 @@ const CardDetailPluginBadges = ({ cardId, listId, boardId }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [bridge, boardId, cardId, listId]);
+  }, [bridge, boardId, cardId, listId, cardTitle, listTitle, boardTitle]);
 
   if (badges.length === 0) return null;
 

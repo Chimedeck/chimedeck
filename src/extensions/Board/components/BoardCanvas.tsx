@@ -26,6 +26,7 @@ import { useCardLabelExpanded } from '../../Card/hooks/useCardLabelExpanded';
 
 interface Props {
   boardId: string;
+  boardTitle?: string;
   listOrder: string[];
   lists: Record<string, List>;
   cardsByList: Record<string, string[]>;
@@ -66,6 +67,7 @@ function findListForCard(cardId: string, cardsByList: Record<string, string[]>):
 
 const BoardCanvas = ({
   boardId,
+  boardTitle,
   listOrder,
   lists,
   cardsByList,
@@ -252,6 +254,7 @@ const BoardCanvas = ({
                 list={list}
                 cardIds={cardsByList[listId] ?? []}
                 cards={cards}
+                boardTitle={boardTitle}
                 onRename={onRenameList}
                 onArchive={onArchiveList}
                 onDelete={onDeleteList}
@@ -272,6 +275,8 @@ const BoardCanvas = ({
           <CardItem
             card={activeCard}
             isOverlay
+            listTitle={lists[activeCard.list_id]?.title}
+            boardTitle={boardTitle}
             labelsExpanded={labelsExpanded}
             onToggleLabels={onToggleLabels}
           />

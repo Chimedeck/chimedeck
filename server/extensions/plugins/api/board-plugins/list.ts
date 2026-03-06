@@ -30,6 +30,7 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
     .whereNull('bp.disabled_at')
     .select(
       'p.id',
+      'p.api_key',
       'p.name',
       'p.slug',
       'p.description',
@@ -59,6 +60,7 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
     boardId: boardId,
     plugin: {
       id: r.id,
+      apiKey: r.api_key,
       name: r.name,
       slug: r.slug,
       description: r.description,

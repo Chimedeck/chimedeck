@@ -15,6 +15,7 @@ import CardValue from './CardValue';
 import ActivityFeed from '../containers/CardModal/ActivityFeed';
 import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginBadges';
 import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
+import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -195,6 +196,9 @@ const CardModal = ({
                   cardId={card.id}
                   listId={card.list_id}
                   boardId={boardId}
+                  cardTitle={card.title}
+                  listTitle={listTitle}
+                  boardTitle={boardTitle}
                 />
 
                 <CardSidebarSection title="Labels">
@@ -232,6 +236,13 @@ const CardModal = ({
                     onArchive={onArchive}
                     onDelete={onDelete}
                     onCopyLink={onCopyLink}
+                  />
+                  <CardPluginButtons
+                    cardId={card.id}
+                    listId={card.list_id}
+                    cardTitle={card.title}
+                    listTitle={listTitle}
+                    boardTitle={boardTitle}
                   />
                 </CardSidebarSection>
               </aside>

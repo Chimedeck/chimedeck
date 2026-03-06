@@ -7,6 +7,7 @@ export type { BoardPluginConfig };
 
 export interface Plugin {
   id: string;
+  apiKey?: string;
   name: string;
   slug?: string;
   description: string;

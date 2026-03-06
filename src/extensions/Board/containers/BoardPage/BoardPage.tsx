@@ -280,37 +280,39 @@ const BoardPage = () => {
           This board is archived and read-only.
         </div>
       )}
-      <BoardCanvas
-        boardId={boardId ?? ''}
-        listOrder={listOrder}
-        lists={lists}
-        cardsByList={cardsByList}
-        cards={cards}
-        onCardMove={handleCardMove}
-        onListReorder={handleListReorder}
-        onDragStart={handleDragStart}
-        onDragCommit={handleDragCommit}
-        onDragRollback={handleDragRollback}
-        onAddCard={handleAddCard}
-        onAddList={handleAddList}
-        onRenameList={handleRenameList}
-        onArchiveList={handleArchiveList}
-        onDeleteList={handleDeleteList}
-        onCardClick={handleCardClick}
-        isReadOnly={board.state === 'ARCHIVED'}
-      />
-      {/* Card detail modal — URL-driven (?card=:id) */}
-      <CardModalContainer />
-      {/* Board settings panel */}
-      {settingsOpen && (
-        <BoardSettings
-          onClose={() => setSettingsOpen(false)}
+      {/* Hidden plugin iframes + bridge provider for card plugin UI injections */}
+      <PluginIframeContainer boardId={boardId ?? ''}>
+        <BoardCanvas
+          boardId={boardId ?? ''}
+          boardTitle={board.title}
+          listOrder={listOrder}
+          lists={lists}
+          cardsByList={cardsByList}
+          cards={cards}
+          onCardMove={handleCardMove}
+          onListReorder={handleListReorder}
+          onDragStart={handleDragStart}
+          onDragCommit={handleDragCommit}
+          onDragRollback={handleDragRollback}
+          onAddCard={handleAddCard}
+          onAddList={handleAddList}
+          onRenameList={handleRenameList}
+          onArchiveList={handleArchiveList}
+          onDeleteList={handleDeleteList}
+          onCardClick={handleCardClick}
+          isReadOnly={board.state === 'ARCHIVED'}
         />
-      )}
-      {/* Toast notifications (rollback errors, conflicts) */}
-      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
-      {/* Hidden plugin iframes — provides postMessage bridge to the board */}
-      <PluginIframeContainer boardId={boardId ?? ''} />
+        {/* Card detail modal — URL-driven (?card=:id) */}
+        <CardModalContainer />
+        {/* Board settings panel */}
+        {settingsOpen && (
+          <BoardSettings
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
+        {/* Toast notifications (rollback errors, conflicts) */}
+        <ToastRegion toasts={toasts} onDismiss={dismissToast} />
+      </PluginIframeContainer>
     </div>
   );
 };
