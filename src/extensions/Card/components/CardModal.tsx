@@ -230,19 +230,20 @@ const CardModal = ({
                 </CardSidebarSection>
 
                 <CardSidebarSection title="Actions">
-                  <CardActionMenu
-                    cardId={card.id}
-                    archived={card.archived}
-                    onArchive={onArchive}
-                    onDelete={onDelete}
-                    onCopyLink={onCopyLink}
-                  />
                   <CardPluginButtons
                     cardId={card.id}
                     listId={card.list_id}
                     cardTitle={card.title}
                     listTitle={listTitle}
                     boardTitle={boardTitle}
+                    variant="sidebar"
+                  />
+                  <CardActionMenu
+                    cardId={card.id}
+                    archived={card.archived}
+                    onArchive={onArchive}
+                    onDelete={onDelete}
+                    onCopyLink={onCopyLink}
                   />
                 </CardSidebarSection>
               </aside>

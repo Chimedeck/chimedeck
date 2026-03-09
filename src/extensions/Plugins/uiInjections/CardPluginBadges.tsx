@@ -70,17 +70,22 @@ const CardPluginBadges = ({ cardId, listId, cardTitle, listTitle, boardTitle }: 
 
   return (
     <div className="mt-1 flex flex-wrap gap-1">
-      {badges.map((badge, i) => {
+      {badges.map((badge) => {
         const cls =
           (badge.color && COLOR_MAP[badge.color]) ?? 'bg-slate-600/30 text-slate-400';
+        const badgeKey = `${badge.title ?? ''}-${badge.text ?? ''}-${badge.icon ?? ''}-${badge.color ?? ''}`;
         return (
           <span
-            key={i}
-            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium ${cls}`}
+            key={badgeKey}
+            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${cls}`}
             title={badge.title}
           >
             {badge.icon && (
-              <img src={badge.icon} alt="" className="h-3 w-3 object-contain" />
+              <img
+                src={badge.icon}
+                alt=""
+                className="mr-0.5 h-3 w-3 shrink-0 object-contain"
+              />
             )}
             {badge.text}
           </span>

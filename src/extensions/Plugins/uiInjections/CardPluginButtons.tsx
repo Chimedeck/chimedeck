@@ -21,9 +21,12 @@ interface Props {
   cardTitle?: string;
   listTitle?: string;
   boardTitle?: string;
+  /** 'chip' (default) renders compact inline chips for card tiles.
+   *  'sidebar' renders full-width action-menu-style buttons for the card detail sidebar. */
+  variant?: 'chip' | 'sidebar';
 }
 
-const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle }: Props) => {
+const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, variant = 'chip' }: Props) => {
   const { boardId } = useParams<{ boardId: string }>();
   const bridge = usePluginBridgeContext();
   const boardPlugins = useAppSelector(selectBoardPlugins);
@@ -88,22 +91,48 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle }:
 
   if (buttons.length === 0) return null;
 
+  if (variant === 'sidebar') {
+    return (
+      <div className="space-y-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        {buttons.map((btn) => {
+          const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
+          return (
+            <button
+              key={btnKey}
+              type="button"
+              onClick={(e) => handleButtonClick(btn, e)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              {btn.icon && (
+                <img src={btn.icon} alt="" className="w-4 h-4 shrink-0 object-contain" />
+              )}
+              {btn.text}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     // WHY: stopPropagation on the wrapper prevents card-click when clicking
     // on any part of the buttons row that isn't a button itself
-    <div className="mt-1.5 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
-      {buttons.map((btn, i) => (
-        <button
-          key={i}
-          onClick={(e) => handleButtonClick(btn, e)}
-          className="inline-flex items-center gap-1 rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-200 hover:bg-slate-600 transition-colors"
-        >
-          {btn.icon && (
-            <img src={btn.icon} alt="" className="h-3 w-3 object-contain" />
-          )}
-          {btn.text}
-        </button>
-      ))}
+    <div className="mt-1.5 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      {buttons.map((btn) => {
+        const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
+        return (
+          <button
+            key={btnKey}
+            onClick={(e) => handleButtonClick(btn, e)}
+            className="inline-flex items-center gap-1 rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-200 hover:bg-slate-600 transition-colors"
+          >
+            {btn.icon && (
+              <img src={btn.icon} alt="" className="h-3 w-3 object-contain" />
+            )}
+            {btn.text}
+          </button>
+        );
+      })}
     </div>
   );
 };
