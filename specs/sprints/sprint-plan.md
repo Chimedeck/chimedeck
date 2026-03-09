@@ -69,6 +69,10 @@
 | [40](./sprint-40.md) | Change Email | Authenticated email-change request, confirmation link to new address, token invalidation on commit | 🔵 Needs 23 + 24 |
 | [41](./sprint-41.md) | Forgot Password / Password Reset | `POST /auth/forgot-password`, reset email via SES, `/reset-password?token=` page, session invalidation | 🔵 Needs 23 + 16 |
 | [42](./sprint-42.md) | Split AWS Credentials (LocalStack vs SES) | `S3_AWS_ACCESS_KEY_ID`/`S3_AWS_SECRET_ACCESS_KEY` for S3/LocalStack; global `AWS_*` for SES; fallback chain | 🔵 Needs 12 + 23 |
+| **— Admin & Access Control —** | | | |
+| [43](./sprint-43.md) | Email Domain Restriction | Configurable `ALLOWED_EMAIL_DOMAINS` list; guard registration + change-email; `EMAIL_DOMAIN_RESTRICTION_ENABLED` flag | 🔵 Needs 03 + 40 |
+| [44](./sprint-44.md) | Admin: Create External User API | `POST /api/v1/admin/users`; `ADMIN_EMAIL_DOMAINS` (separate from `ALLOWED_EMAIL_DOMAINS`); auto/manual password; invitation email via SES; `ADMIN_INVITE_EMAIL_ENABLED` flag; `credentials` in response | 🔵 Needs 23 + 43 |
+| [45](./sprint-45.md) | Admin: Invite External Users UI | Sidebar entry (admin-domain only); invite modal with password-mode radio + send-email toggle; copyable credential sheet | 🔵 Needs 17 + 44 |
 
 ---
 
@@ -87,6 +91,8 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `EMAIL_VERIFICATION_ENABLED` | Sprint 23 | Skip email verification on register/login |
 | `SES_ENABLED` | Sprint 23 | Log emails to console instead of sending via AWS SES |
 | `PLUGINS_ENABLED` | Sprint 34 | Disable plugin routes and SDK endpoint entirely (off by default in dev until Sprint 34) |
+| `EMAIL_DOMAIN_RESTRICTION_ENABLED` | Sprint 43 | Reject registration / email-change for domains not in `ALLOWED_EMAIL_DOMAINS` (default: `true`) |
+| `ADMIN_INVITE_EMAIL_ENABLED` | Sprint 44 | Send invitation email to externally created users via SES (requires `SES_ENABLED` also `true`) |
 
 ---
 
@@ -139,6 +145,10 @@ Sprint 38 ──────────── Plugin data board isolation: boar
 Sprint 40 ──────────── Change email: pending_email + token, confirmation flow, session invalidation
 Sprint 41 ──────────── Forgot password: reset token + email, /forgot-password + /reset-password UI
 Sprint 42 ──────────── Split AWS credentials: S3_AWS_* for LocalStack, AWS_* for SES; fallback chain
+──── Admin & Access Control ─────────────────────────────────────────────────────────
+Sprint 43 ──────────── Email domain restriction: ALLOWED_EMAIL_DOMAINS config, registration + change-email guards
+Sprint 44 ──────────── Admin create external user API: auto/manual password, optional SES invite email
+Sprint 45 ──────────── Admin invite UI: sidebar entry, invite modal, credential sheet with copy-to-clipboard
 ```
 
 ---
