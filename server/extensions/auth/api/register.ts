@@ -9,6 +9,7 @@ import { flags } from '../../../mods/flags';
 import { send } from '../../email';
 import { buildVerificationEmail } from '../../email/templates/verificationEmail';
 import { env } from '../../../config/env';
+import { isEmailDomainAllowed } from '../common/emailDomain';
 
 export async function handleRegister(req: Request): Promise<Response> {
   let body: { name?: string; email?: string; password?: string };
@@ -35,6 +36,10 @@ export async function handleRegister(req: Request): Promise<Response> {
       { name: 'validation-error', data: { message: 'Password must be at least 8 characters' } },
       { status: 400 },
     );
+  }
+
+  if (!isEmailDomainAllowed(email)) {
+    return Response.json({ name: 'email-domain-not-allowed' }, { status: 422 });
   }
 
   // Deny duplicate email — constant-time check to avoid email enumeration via timing

@@ -61,6 +61,8 @@ export default function ChangeEmailForm({ currentEmail, onSuccess }: ChangeEmail
         setError(translations.changeEmail.unchanged);
       } else if (apiError === 'credentials-invalid') {
         setError('Current password is incorrect.');
+      } else if (apiError === 'email-domain-not-allowed') {
+        setError(translations.changeEmail.emailDomainNotAllowed);
       } else {
         setError('Something went wrong. Please try again.');
       }

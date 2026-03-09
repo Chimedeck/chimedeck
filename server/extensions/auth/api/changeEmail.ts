@@ -12,6 +12,7 @@ import { memCache } from '../../../mods/cache';
 import { send } from '../../email';
 import { buildEmailChangeConfirmation } from '../../email/templates/emailChangeConfirmation';
 import { env } from '../../../config/env';
+import { isEmailDomainAllowed } from '../common/emailDomain';
 
 const RATE_LIMIT_MAX = 3;
 const RATE_LIMIT_WINDOW_SECONDS = 3600; // 1 hour
@@ -74,6 +75,10 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
       { name: 'email-unchanged', data: { message: 'New email must be different from current email' } },
       { status: 422 },
     );
+  }
+
+  if (!isEmailDomainAllowed(newEmail)) {
+    return Response.json({ name: 'email-domain-not-allowed' }, { status: 422 });
   }
 
   // Check whether the new email is already taken

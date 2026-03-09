@@ -30,7 +30,8 @@
     "invalidCredentials": "Invalid email or password",
     "loginFailed": "Sign in failed. Please try again.",
     "emailAlreadyTaken": "An account with this email already exists",
-    "signupFailed": "Could not create account. Please try again."
+    "signupFailed": "Could not create account. Please try again.",
+    "emailDomainNotAllowed": "Only approved organisation email addresses may be used to register."
   },
   "login": {
     "title": "Welcome back",
@@ -62,7 +63,8 @@
     "confirmed": "Email updated! Please log in with your new address.",
     "invalidToken": "This confirmation link is invalid or has expired.",
     "emailInUse": "That email address is already in use.",
-    "unchanged": "New email must be different from current email."
+    "unchanged": "New email must be different from current email.",
+    "emailDomainNotAllowed": "Your new email address must use an approved organisation domain."
   },
   "forgotPassword": {
     "title": "Forgot your password?",

@@ -5,6 +5,8 @@ import translations from '../translations/en.json';
 // API error codes → user-friendly messages
 const API_ERROR_MAP: Record<string, string> = {
   'email-already-taken': translations.errors.emailAlreadyTaken,
+  'email-already-registered': translations.errors.emailAlreadyTaken,
+  'email-domain-not-allowed': translations.errors.emailDomainNotAllowed,
   'signup-failed': translations.errors.signupFailed,
 };
 

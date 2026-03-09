@@ -73,4 +73,12 @@ export const env = {
   // Platform admin emails — comma-separated list of emails allowed to manage the plugin registry.
   // Fail safe: deny all if not set.
   PLATFORM_ADMIN_EMAILS: Bun.env['PLATFORM_ADMIN_EMAILS'] ?? '',
+
+  // Email domain restriction — controls which email domains may register or change their email.
+  // Comma-separated list of allowed domains. Defaults to "journeyh.io" when not set.
+  // Example: "journeyh.io,partner.com"
+  ALLOWED_EMAIL_DOMAINS: Bun.env['ALLOWED_EMAIL_DOMAINS'] ?? 'journeyh.io',
+  // When true, registration and email-change are restricted to ALLOWED_EMAIL_DOMAINS.
+  // Set to "false" to disable the restriction entirely.
+  EMAIL_DOMAIN_RESTRICTION_ENABLED: Bun.env['EMAIL_DOMAIN_RESTRICTION_ENABLED'] !== 'false',
 } as const;
