@@ -105,6 +105,9 @@ export function usePluginBridge({
   const pendingCapabilityRef = useRef<Map<string, PendingCapabilityRequest>>(new Map());
   // Last context sent to each plugin via CAPABILITY_INVOKE, used to answer CTX_* queries
   const pluginContextRef = useRef<Map<string, CapabilityContext>>(new Map());
+  // [why] JWT token cache keyed by pluginId — avoids a token round-trip on every DATA_GET/SET.
+  // Tokens are valid for 1 h; we evict 5 min early to avoid clock-skew rejections.
+  const pluginTokenCacheRef = useRef<Map<string, { token: string; expiresAt: number }>>(new Map());
 
   // Derive allowed origins from active plugins
   const getAllowedOrigins = useCallback((): Map<string, string> => {
@@ -145,6 +148,29 @@ export function usePluginBridge({
     iframe.contentWindow.postMessage(message, targetOrigin);
   }, [getAllowedOrigins]);
 
+  // Fetch (or return cached) a short-lived JWT for a plugin → used as Bearer token
+  // when proxying DATA_GET / DATA_SET to the server plugin-data API.
+  // [why] api_key is intentionally never returned in the board-plugins list response;
+  // the JWT endpoint is the only sanctioned way for the host app to authenticate.
+  const getPluginToken = useCallback(
+    async (pluginId: string): Promise<string> => {
+      const cached = pluginTokenCacheRef.current.get(pluginId);
+      if (cached && cached.expiresAt > Date.now()) return cached.token;
+
+      const resp = await apiClient.get<{ data: { token: string; expiresIn: number } }>(
+        `/boards/${boardId}/plugins/${pluginId}/token`,
+      );
+      const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
+      // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
+      pluginTokenCacheRef.current.set(pluginId, {
+        token,
+        expiresAt: Date.now() + (expiresIn - 300) * 1000,
+      });
+      return token;
+    },
+    [boardId],
+  );
+
   // Reply directly to the window that sent the SDK message (e.g. a modal iframe)
   // rather than always routing through the named connector iframe. This is required
   // because modal/popup iframes share the plugin's origin but are different windows.
@@ -172,8 +198,7 @@ export function usePluginBridge({
       const { scope, visibility, key, resourceId } = msg.payload;
       let result: unknown = null;
       try {
-        const apiKey = bp.plugin.apiKey;
-        if (!apiKey) throw new Error('missing-plugin-api-key');
+        const token = await getPluginToken(bp.plugin.id);
 
         const params = new URLSearchParams({
           scope,
@@ -190,7 +215,7 @@ export function usePluginBridge({
           `/plugins/data?${params.toString()}`,
           {
             headers: {
-              Authorization: `ApiKey ${apiKey}`,
+              Authorization: `Bearer ${token}`,
             },
           },
         );
@@ -201,7 +226,7 @@ export function usePluginBridge({
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [boardId, currentUserId, replyToSource],
+    [boardId, currentUserId, getPluginToken, replyToSource],
   );
 
   // Handle DATA_SET — proxy request to server plugin-data API
@@ -213,8 +238,7 @@ export function usePluginBridge({
     ) => {
       const { scope, visibility, key, value, resourceId } = msg.payload;
       try {
-        const apiKey = bp.plugin.apiKey;
-        if (!apiKey) throw new Error('missing-plugin-api-key');
+        const token = await getPluginToken(bp.plugin.id);
 
         await apiClient.put('/plugins/data', {
           scope,
@@ -227,7 +251,7 @@ export function usePluginBridge({
           ...(visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
         }, {
           headers: {
-            Authorization: `ApiKey ${apiKey}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         const response: SdkResponse = { jhSdk: true, id: msg.id, result: null };
@@ -241,7 +265,7 @@ export function usePluginBridge({
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [boardId, currentUserId, replyToSource],
+    [boardId, currentUserId, getPluginToken, replyToSource],
   );
 
   // Extract only the requested fields from a context object.

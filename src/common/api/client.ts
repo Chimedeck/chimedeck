@@ -15,10 +15,12 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach Bearer token from Redux on every request
+// Attach Bearer token from Redux on every request.
+// [why] If a caller already sets Authorization (e.g. plugin JWT for plugin-data endpoints)
+// we must not overwrite it — their explicitly-passed token takes precedence.
 apiClient.interceptors.request.use((config) => {
   const token = tokenGetter?.() ?? null;
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

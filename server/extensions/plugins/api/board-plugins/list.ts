@@ -60,7 +60,7 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
     boardId: boardId,
     plugin: {
       id: r.id,
-      apiKey: r.api_key,
+      // api_key is the server-side HMAC secret used to sign plugin tokens — never expose it.
       name: r.name,
       slug: r.slug,
       description: r.description,

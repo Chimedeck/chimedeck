@@ -3,6 +3,7 @@ import { handleListBoardPlugins } from './board-plugins/list';
 import { handleEnableBoardPlugin } from './board-plugins/enable';
 import { handleDisableBoardPlugin } from './board-plugins/disable';
 import { handleSetBoardPluginAllowedDomains } from './board-plugins/allowed-domains';
+import { handleGetPluginToken } from './board-plugins/token';
 import { handleGetPluginData } from './plugin-data/get';
 import { handleSetPluginData } from './plugin-data/set';
 import { handleListPlugins } from './registry/list';
@@ -14,8 +15,8 @@ import { handleDeletePlugin } from './registry/delete';
 
 // Returns a Response if the path matches a plugin route, otherwise null.
 export async function pluginsRouter(req: Request, pathname: string): Promise<Response | null> {
-  // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId[/allowed-domains]]
-  const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?(\/allowed-domains)?$/);
+  // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId[/allowed-domains|/token]]
+  const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?(\/allowed-domains|\/token)?$/);
   if (boardPluginsMatch) {
     const boardId = boardPluginsMatch[1] as string;
     const pluginSegment = boardPluginsMatch[2] ?? '';
@@ -25,6 +26,12 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
     if (pluginSegment !== '' && subResource === '/allowed-domains' && req.method === 'PATCH') {
       const pluginId = pluginSegment.slice(1);
       return handleSetBoardPluginAllowedDomains(req, boardId, pluginId);
+    }
+
+    // GET /api/v1/boards/:boardId/plugins/:pluginId/token — issue short-lived plugin JWT
+    if (pluginSegment !== '' && subResource === '/token' && req.method === 'GET') {
+      const pluginId = pluginSegment.slice(1);
+      return handleGetPluginToken(req, boardId, pluginId);
     }
 
     // GET /api/v1/boards/:boardId/plugins — list active plugins

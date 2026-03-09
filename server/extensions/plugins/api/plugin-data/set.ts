@@ -1,8 +1,9 @@
 // PUT /api/v1/plugins/data — upserts a plugin-scoped key/value entry.
-// Auth: Authorization: ApiKey <key>  (identifies the calling plugin)
+// Auth: Authorization: Bearer <plugin-token>  (short-lived JWT issued by /token endpoint)
 // Body: { boardId, scope, resourceId, key, visibility, value, userId? (required for private) }
 import { db } from '../../../../common/db';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import { resolvePluginToken } from '../../common/resolvePluginToken';
 import {
   validateResourceBelongsToBoard,
   ResourceBoardMismatchError,
@@ -14,30 +15,10 @@ const VALID_VISIBILITY = ['private', 'shared'] as const;
 type Scope = (typeof VALID_SCOPES)[number];
 type Visibility = (typeof VALID_VISIBILITY)[number];
 
-async function resolvePlugin(req: Request): Promise<{ plugin: Record<string, unknown> } | Response> {
-  const authHeader = req.headers.get('Authorization') ?? '';
-  const match = authHeader.match(/^ApiKey\s+(.+)$/i);
-  if (!match) {
-    return Response.json(
-      { name: 'invalid-api-key', data: { message: 'Authorization: ApiKey <key> header required' } },
-      { status: 401 },
-    );
-  }
-  const apiKey = (match[1] ?? '').trim();
-  const plugin = await db('plugins').where({ api_key: apiKey }).first();
-  if (!plugin || !plugin.is_active) {
-    return Response.json(
-      { name: 'invalid-api-key', data: { message: 'Invalid or inactive plugin API key' } },
-      { status: 401 },
-    );
-  }
-  return { plugin };
-}
-
 export async function handleSetPluginData(req: Request): Promise<Response> {
-  const result = await resolvePlugin(req);
+  const result = await resolvePluginToken(req);
   if (result instanceof Response) return result;
-  const { plugin } = result;
+  const { plugin, claims } = result;
 
   let body: {
     boardId?: unknown;
@@ -57,9 +38,19 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
     );
   }
 
-  const { boardId, scope, resourceId, key, visibility = 'shared', value, userId } = body;
+  const { boardId: boardIdBody, scope, resourceId, key, visibility = 'shared', value, userId } = body;
 
-  if (!boardId || typeof boardId !== 'string') {
+  // boardId is sourced from the token claims — the body param must match if provided.
+  const boardId = claims.boardId;
+
+  if (boardIdBody && typeof boardIdBody === 'string' && boardIdBody !== boardId) {
+    return Response.json(
+      { name: 'forbidden', data: { message: 'boardId does not match token scope' } },
+      { status: 403 },
+    );
+  }
+
+  if (!boardId) {
     return Response.json(
       { name: 'missing-param', data: { message: 'boardId is required' } },
       { status: 400 },
@@ -120,10 +111,10 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
     key,
   });
 
-  if (resolvedUserId !== null) {
-    existingQuery.where('user_id', resolvedUserId);
-  } else {
+  if (resolvedUserId === null) {
     existingQuery.whereNull('user_id');
+  } else {
+    existingQuery.where('user_id', resolvedUserId);
   }
 
   const existing = await existingQuery.first();
