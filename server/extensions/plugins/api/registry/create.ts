@@ -10,9 +10,7 @@ import { normalizePlugin } from '../../common/normalizePlugin';
 
 const MAX_WHITELISTED_DOMAINS = 20;
 
-async function fetchManifestCapabilities(
-  manifestUrl: string,
-): Promise<string[] | null> {
+async function fetchManifestCapabilities(manifestUrl: string): Promise<string[] | null> {
   try {
     const res = await fetch(manifestUrl, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
@@ -50,7 +48,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -59,26 +57,26 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   if (!name || typeof name !== 'string') {
     return Response.json(
       { name: 'missing-param', data: { message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!slug || typeof slug !== 'string') {
     return Response.json(
       { name: 'missing-param', data: { message: 'slug is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!connectorUrl || typeof connectorUrl !== 'string') {
     return Response.json(
       { name: 'missing-param', data: { message: 'connectorUrl is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!connectorUrl.startsWith('https://')) {
     return Response.json(
       { name: 'invalid-connector-url', data: { message: 'connectorUrl must start with https://' } },
-      { status: 422 },
+      { status: 422 }
     );
   }
 
@@ -88,21 +86,32 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   if (rawDomains !== undefined && rawDomains !== null) {
     if (!Array.isArray(rawDomains)) {
       return Response.json(
-        { name: 'invalid-whitelisted-domains', data: { message: 'whitelistedDomains must be an array' } },
-        { status: 422 },
+        {
+          name: 'invalid-whitelisted-domains',
+          data: { message: 'whitelistedDomains must be an array' },
+        },
+        { status: 422 }
       );
     }
     if (rawDomains.length > MAX_WHITELISTED_DOMAINS) {
       return Response.json(
-        { name: 'too-many-whitelisted-domains', data: { message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
-        { status: 422 },
+        {
+          name: 'too-many-whitelisted-domains',
+          data: {
+            message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries`,
+          },
+        },
+        { status: 422 }
       );
     }
     for (const domain of rawDomains) {
       if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
         return Response.json(
-          { name: 'invalid-whitelisted-domain', data: { message: `'${domain}' is not a valid HTTPS origin` } },
-          { status: 422 },
+          {
+            name: 'invalid-whitelisted-domain',
+            data: { message: `'${domain}' is not a valid HTTPS origin` },
+          },
+          { status: 422 }
         );
       }
     }
@@ -113,8 +122,11 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   const existing = await db('plugins').where({ slug }).first();
   if (existing) {
     return Response.json(
-      { name: 'plugin-slug-taken', data: { message: `A plugin with slug '${slug}' already exists` } },
-      { status: 409 },
+      {
+        name: 'plugin-slug-taken',
+        data: { message: `A plugin with slug '${slug}' already exists` },
+      },
+      { status: 409 }
     );
   }
 
@@ -156,9 +168,5 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   const plugin = await db('plugins').where({ id }).first();
 
   // api_key is only returned on creation — merge into normalised shape.
-  return Response.json(
-    { data: { ...normalizePlugin(plugin), apiKey } },
-    { status: 201 },
-  );
-}
+  return Response.json({ data: { ...normalizePlugin(plugin), apiKey } }, { status: 201 });
 }

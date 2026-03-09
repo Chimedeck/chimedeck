@@ -70,12 +70,16 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
   const bp = await db('board_plugins').where({ id: boardPluginId }).first();
 
   // Return BoardPlugin shape matching what the client expects.
+  // [why] apiKey must be included here so Redux state has it available immediately
+  // after enable — without it the plugin bridge throws missing-plugin-api-key on
+  // any DATA_GET / DATA_SET call made in the same session before a page reload.
   return Response.json({
     data: {
       id: boardPluginId,
       boardId: boardId,
       plugin: {
         id: plugin.id,
+        apiKey: plugin.api_key ?? null,
         name: plugin.name,
         slug: plugin.slug,
         description: plugin.description,
