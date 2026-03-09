@@ -236,6 +236,8 @@ const CardModal = ({
                     cardTitle={card.title}
                     listTitle={listTitle}
                     boardTitle={boardTitle}
+                    cardAmount={card.amount ?? null}
+                    cardCurrency={card.currency ?? null}
                     variant="sidebar"
                   />
                   <CardActionMenu

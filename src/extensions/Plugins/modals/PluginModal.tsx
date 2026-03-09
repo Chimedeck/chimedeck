@@ -47,13 +47,28 @@ const PluginModal = ({ modal, onClose }: Props) => {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center"
+      // [why] Radix UI sets pointer-events:none on <body> as part of its scroll-lock
+      // mechanism when the card detail dialog is open. Without an explicit override
+      // here the entire plugin modal becomes non-interactive even though it sits above
+      // the card dialog in z-index.
+      // [why] stopPropagation on pointer/mouse events prevents Radix from treating
+      // clicks inside this overlay as "outside" clicks on the card dialog, which would
+      // close the card detail view and break the two-modal separation.
+      style={{ zIndex: 9999, pointerEvents: 'auto' }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
       aria-label={modal.title || 'Plugin'}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      {/* [why] stopPropagation prevents the click from bubbling to the card detail
+          dialog (Radix) behind this overlay, keeping the two modals independent. */}
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+      />
 
       {/* Panel */}
       <div
@@ -87,6 +102,11 @@ const PluginModal = ({ modal, onClose }: Props) => {
           src={modal.url}
           title={modal.title || 'Plugin modal'}
           className="flex-1 w-full border-0 bg-white"
+          // [why] allow="payment" is required for the Payment Request API (Google Pay,
+          // Apple Pay) to work inside the sandboxed iframe. Without it the browser fires
+          // "Permissions policy violation: payment is not allowed in this document",
+          // which prevents Stripe from rendering wallet buttons.
+          allow="payment"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
           referrerPolicy="no-referrer-when-downgrade"
         />

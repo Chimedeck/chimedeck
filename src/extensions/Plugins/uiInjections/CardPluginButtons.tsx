@@ -21,12 +21,16 @@ interface Props {
   cardTitle?: string;
   listTitle?: string;
   boardTitle?: string;
+  /** Card amount as stored on the card (decimal string, e.g. '150.0000'), or null. */
+  cardAmount?: string | null;
+  /** ISO 4217 currency code stored on the card, or null. */
+  cardCurrency?: string | null;
   /** 'chip' (default) renders compact inline chips for card tiles.
    *  'sidebar' renders full-width action-menu-style buttons for the card detail sidebar. */
   variant?: 'chip' | 'sidebar';
 }
 
-const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, variant = 'chip' }: Props) => {
+const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, cardAmount, cardCurrency, variant = 'chip' }: Props) => {
   const { boardId } = useParams<{ boardId: string }>();
   const bridge = usePluginBridgeContext();
   const boardPlugins = useAppSelector(selectBoardPlugins);
@@ -38,7 +42,14 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, v
 
     bridge
       .resolve('card-buttons', {
-        card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
+        card: {
+          id: cardId,
+          ...(cardTitle ? { name: cardTitle } : {}),
+          // WHY: amount/currency live on the card row — plugins read them via t.card()
+          // rather than plugin-data, so they must be in the capability context.
+          ...(cardAmount == null ? {} : { amount: cardAmount }),
+          ...(cardCurrency == null ? {} : { currency: cardCurrency }),
+        },
         list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
         board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
       })

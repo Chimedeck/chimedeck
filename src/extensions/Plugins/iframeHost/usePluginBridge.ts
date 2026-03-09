@@ -145,11 +145,29 @@ export function usePluginBridge({
     iframe.contentWindow.postMessage(message, targetOrigin);
   }, [getAllowedOrigins]);
 
+  // Reply directly to the window that sent the SDK message (e.g. a modal iframe)
+  // rather than always routing through the named connector iframe. This is required
+  // because modal/popup iframes share the plugin's origin but are different windows.
+  const replyToSource = useCallback(
+    (source: MessageEventSource | null, pluginId: string, message: SdkMessage) => {
+      const allowedOrigins = getAllowedOrigins();
+      const targetOrigin = allowedOrigins.get(pluginId) ?? '*';
+      if (source && 'postMessage' in source) {
+        (source as Window).postMessage(message, targetOrigin);
+      } else {
+        // Fallback: send to the connector's main iframe
+        sendToPlugin(pluginId, message);
+      }
+    },
+    [getAllowedOrigins, sendToPlugin],
+  );
+
   // Handle DATA_GET — proxy request to server plugin-data API
   const handleDataGet = useCallback(
     async (
       bp: BoardPlugin,
       msg: SdkMessage & { payload: { scope: string; visibility: string; key: string; resourceId?: string } },
+      source: MessageEventSource | null,
     ) => {
       const { scope, visibility, key, resourceId } = msg.payload;
       let result: unknown = null;
@@ -181,9 +199,9 @@ export function usePluginBridge({
         result = null;
       }
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
-      sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [boardId, currentUserId, sendToPlugin],
+    [boardId, currentUserId, replyToSource],
   );
 
   // Handle DATA_SET — proxy request to server plugin-data API
@@ -191,6 +209,7 @@ export function usePluginBridge({
     async (
       bp: BoardPlugin,
       msg: SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
+      source: MessageEventSource | null,
     ) => {
       const { scope, visibility, key, value, resourceId } = msg.payload;
       try {
@@ -212,17 +231,17 @@ export function usePluginBridge({
           },
         });
         const response: SdkResponse = { jhSdk: true, id: msg.id, result: null };
-        sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+        replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       } catch (err) {
         const response: SdkResponse = {
           jhSdk: true,
           id: msg.id,
           error: err instanceof Error ? err.message : 'data-set-failed',
         };
-        sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+        replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [boardId, currentUserId, sendToPlugin],
+    [boardId, currentUserId, replyToSource],
   );
 
   // Extract only the requested fields from a context object.
@@ -236,17 +255,19 @@ export function usePluginBridge({
     [],
   );
 
-  // Handle CTX_* queries — return the relevant portion of the last CAPABILITY_INVOKE context
+  // Handle CTX_* queries — return the relevant portion of the last CAPABILITY_INVOKE context.
+  // WHY: reply to `source` (the actual sender window) rather than the named connector iframe
+  // because modal/popup iframes share the plugin origin but are separate windows.
   const handleCtxQuery = useCallback(
-    (bp: BoardPlugin, msg: SdkMessage, contextKey: keyof CapabilityContext) => {
+    (bp: BoardPlugin, msg: SdkMessage, contextKey: keyof CapabilityContext, source: MessageEventSource | null) => {
       const payload = msg.payload as { fields?: string[] } | undefined;
       const ctx = pluginContextRef.current.get(bp.plugin.id);
       const raw = ctx?.[contextKey] as Record<string, unknown> | undefined;
       const result = extractContextFields(raw, payload?.fields);
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
-      sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [extractContextFields, sendToPlugin],
+    [extractContextFields, replyToSource],
   );
 
   // Handle RESOLVE_CAPABILITY_RESPONSE — plugin answered a capability request
@@ -300,15 +321,15 @@ export function usePluginBridge({
 
   // Send a domain-not-allowed error response back to the plugin
   const sendDomainError = useCallback(
-    (bp: BoardPlugin, msgId: string) => {
+    (bp: BoardPlugin, msgId: string, source: MessageEventSource | null) => {
       const response: SdkResponse = {
         jhSdk: true,
         id: msgId,
         error: 'domain-not-allowed',
       };
-      sendToPlugin(bp.plugin.id, response as unknown as SdkMessage);
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [sendToPlugin],
+    [replyToSource],
   );
 
   // Global message listener
@@ -339,12 +360,14 @@ export function usePluginBridge({
           void handleDataGet(
             bp,
             data as SdkMessage & { payload: { scope: string; visibility: string; key: string; resourceId?: string } },
+            event.source,
           );
           break;
         case 'DATA_SET':
           void handleDataSet(
             bp,
             data as SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
+            event.source,
           );
           break;
         case 'RESOLVE_CAPABILITY_RESPONSE':
@@ -353,16 +376,16 @@ export function usePluginBridge({
           );
           break;
         case 'CTX_CARD':
-          handleCtxQuery(bp, data, 'card');
+          handleCtxQuery(bp, data, 'card', event.source);
           break;
         case 'CTX_LIST':
-          handleCtxQuery(bp, data, 'list');
+          handleCtxQuery(bp, data, 'list', event.source);
           break;
         case 'CTX_BOARD':
-          handleCtxQuery(bp, data, 'board');
+          handleCtxQuery(bp, data, 'board', event.source);
           break;
         case 'CTX_MEMBER':
-          handleCtxQuery(bp, data, 'member');
+          handleCtxQuery(bp, data, 'member', event.source);
           break;
         case 'UI_MODAL': {
           const payload = data.payload as {
@@ -371,12 +394,21 @@ export function usePluginBridge({
             fullscreen?: boolean;
             accentColor?: string;
           };
-          if (!isDomainAllowed(bp, payload.url)) {
-            sendDomainError(bp, data.id);
+          // WHY: plugins may pass relative URLs (e.g. '/api-client-authorize.html').
+          // The iframe src is evaluated in the host app's browser context, so we must
+          // resolve against the plugin's own origin before storing or checking the URL.
+          let resolvedModalUrl: string;
+          try {
+            resolvedModalUrl = new URL(payload.url, event.origin).href;
+          } catch {
+            resolvedModalUrl = payload.url;
+          }
+          if (!isDomainAllowed(bp, resolvedModalUrl)) {
+            sendDomainError(bp, data.id, event.source);
             break;
           }
           const modalState: Omit<PluginModalState, 'open'> = {
-            url: payload.url,
+            url: resolvedModalUrl,
             title: payload.title ?? '',
             fullscreen: payload.fullscreen ?? false,
             pluginId: bp.plugin.id,
@@ -406,12 +438,20 @@ export function usePluginBridge({
             args?: Record<string, unknown>;
             mouseEvent?: { clientX?: number; clientY?: number };
           };
-          if (!isDomainAllowed(bp, payload.url)) {
-            sendDomainError(bp, data.id);
+          // WHY: resolve relative URLs before the domain check — new URL(relative) throws,
+          // causing isDomainAllowed to return false and silently block the popup.
+          let resolvedPopupUrl: string;
+          try {
+            resolvedPopupUrl = new URL(payload.url, event.origin).href;
+          } catch {
+            resolvedPopupUrl = payload.url;
+          }
+          if (!isDomainAllowed(bp, resolvedPopupUrl)) {
+            sendDomainError(bp, data.id, event.source);
             break;
           }
           const popupState: Omit<PluginPopupState, 'open'> = {
-            url: payload.url,
+            url: resolvedPopupUrl,
             title: payload.title ?? '',
             pluginId: bp.plugin.id,
             x: payload.mouseEvent?.clientX ?? 100,
