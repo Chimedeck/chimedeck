@@ -1,7 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, adminInviteReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
+import { featureFlagsReducer } from '../slices/featureFlagsSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
 import { verifyEmailDuckReducer } from '../extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage.duck';
 import { confirmEmailChangeDuckReducer } from '../extensions/Auth/containers/ConfirmEmailChangePage/ConfirmEmailChangePage.duck';
@@ -27,6 +28,8 @@ export const store = configureStore({
     profile: profileDuckReducer,
     notifications: notificationReducer,
     pluginDashboard: pluginDashboardReducer,
+    adminInvite: adminInviteReducer,
+    featureFlags: featureFlagsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

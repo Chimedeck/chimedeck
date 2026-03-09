@@ -11,6 +11,7 @@ import {
   UsersIcon,
   BuildingOfficeIcon,
   PuzzlePieceIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -23,6 +24,8 @@ import {
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { logoutThunk } from '~/extensions/Auth/duck/authDuck';
 import { selectProfile } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
+import { selectAdminEmailDomains } from '~/slices/featureFlagsSlice';
+import { openInviteModal } from '~/extensions/AdminInvite/adminInvite.slice';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
 import translations from '../translations/en.json';
 
@@ -35,6 +38,18 @@ export default function Sidebar() {
   const status = useAppSelector(selectWorkspacesStatus);
   const user = useAppSelector(selectAuthUser);
   const profile = useAppSelector(selectProfile);
+  const adminEmailDomains = useAppSelector(selectAdminEmailDomains);
+
+  // Check if the current user's email domain is in ADMIN_EMAIL_DOMAINS (client-side evaluation).
+  const userEmail = user?.email ?? '';
+  const userDomain = userEmail.split('@')[1]?.toLowerCase() ?? '';
+  const isAdminUser =
+    userDomain.length > 0 &&
+    adminEmailDomains
+      .split(',')
+      .map((d) => d.trim().toLowerCase())
+      .filter(Boolean)
+      .includes(userDomain);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -191,6 +206,19 @@ export default function Sidebar() {
                   Plugin Docs
                 </NavLink>
               </li>
+              {/* Invite External User — visible only to admin-domain users */}
+              {isAdminUser && (
+                <li>
+                  <button
+                    onClick={() => dispatch(openInviteModal())}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                    aria-label="Invite External User"
+                  >
+                    <UserPlusIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    Invite External User
+                  </button>
+                </li>
+              )}
             </ul>
           ) : (
             <button

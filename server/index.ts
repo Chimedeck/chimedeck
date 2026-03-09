@@ -26,6 +26,7 @@ import './extensions/attachment/mods/orphanCleanup';
 import { ensureBucketExists } from './extensions/attachment/common/config/s3';
 import { pluginsRouter } from './extensions/plugins/api/index';
 import { pluginsConfig } from './extensions/plugins/config/index';
+import { env } from './config/env';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -52,8 +53,14 @@ async function router(req: Request): Promise<Response> {
   }
 
   if (path === '/api/v1/flags' && req.method === 'GET') {
-    // Stub — allow-listed client flags will be populated in later sprints
-    return Response.json({ data: {} });
+    const sesEnabled = await flags.isEnabled('SES_ENABLED');
+    return Response.json({
+      data: {
+        sesEnabled,
+        adminInviteEmailEnabled: env.ADMIN_INVITE_EMAIL_ENABLED,
+        adminEmailDomains: env.ADMIN_EMAIL_DOMAINS,
+      },
+    });
   }
 
   const authResponse = await authRouter(req, path);

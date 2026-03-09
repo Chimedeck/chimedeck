@@ -81,4 +81,15 @@ export const env = {
   // When true, registration and email-change are restricted to ALLOWED_EMAIL_DOMAINS.
   // Set to "false" to disable the restriction entirely.
   EMAIL_DOMAIN_RESTRICTION_ENABLED: Bun.env['EMAIL_DOMAIN_RESTRICTION_ENABLED'] !== 'false',
+
+  // Comma-separated list of email domains whose users may create accounts on behalf of others.
+  // Intentionally separate from ALLOWED_EMAIL_DOMAINS (self-registration allowlist).
+  // Falls back to "journeyh.io" when not set.
+  ADMIN_EMAIL_DOMAINS: Bun.env['ADMIN_EMAIL_DOMAINS'] ?? 'journeyh.io',
+
+  // Controls invitation emails for admin-created accounts specifically.
+  // SES_ENABLED must ALSO be true — this flag exists so operators can run SES
+  // for other flows (e.g. email verification, password reset) without
+  // automatically enabling admin invite emails.
+  ADMIN_INVITE_EMAIL_ENABLED: Bun.env['ADMIN_INVITE_EMAIL_ENABLED'] === 'true',
 } as const;

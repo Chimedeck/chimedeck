@@ -1,4 +1,4 @@
-// Mounts all auth routes under /api/v1/auth.
+// Mounts all auth routes under /api/v1/auth and admin user routes under /api/v1/admin.
 import { handleLogin } from './login';
 import { handleRegister } from './register';
 import { handleRefresh } from './refresh';
@@ -11,6 +11,7 @@ import { handleChangeEmail } from './changeEmail';
 import { handleConfirmEmailChange } from './confirmEmailChange';
 import { handleForgotPassword } from './forgotPassword';
 import { handleResetPassword } from './resetPassword';
+import { handleAdminCreateUser } from './adminCreateUser';
 import type { OAuthProvider } from '../common/config/oauth';
 
 const OAUTH_PROVIDERS: OAuthProvider[] = ['google', 'github'];
@@ -55,6 +56,11 @@ export async function authRouter(req: Request, pathname: string): Promise<Respon
 
   if (pathname === '/api/v1/auth/reset-password' && req.method === 'POST') {
     return handleResetPassword(req);
+  }
+
+  // Admin: create external user (admin-domain callers only)
+  if (pathname === '/api/v1/admin/users' && req.method === 'POST') {
+    return handleAdminCreateUser(req);
   }
 
   // OAuth redirect: GET /api/v1/auth/oauth/:provider

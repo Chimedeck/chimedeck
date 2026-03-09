@@ -7,9 +7,11 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import { fetchWorkspacesThunk, selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import { fetchProfileThunk } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
+import { fetchFeatureFlagsThunk } from '~/slices/featureFlagsSlice';
 import Sidebar from '~/extensions/Workspace/components/Sidebar';
 import SearchModal from '~/extensions/Search/components/SearchModal';
 import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
+import InviteExternalUserModal from '~/extensions/AdminInvite/InviteExternalUserModal';
 import type { SearchResult } from '~/extensions/Search/api';
 
 export default function AppShell() {
@@ -20,10 +22,11 @@ export default function AppShell() {
   const workspaceId = useAppSelector(selectActiveWorkspaceId) ?? '';
   const token = useAppSelector(selectAuthToken) ?? '';
 
-  // Load workspace list and user profile once when the shell mounts
+  // Load workspace list, user profile, and client feature flags once when the shell mounts
   useEffect(() => {
     dispatch(fetchWorkspacesThunk());
     dispatch(fetchProfileThunk());
+    dispatch(fetchFeatureFlagsThunk());
   }, [dispatch]);
 
   // Open search modal on Cmd+K / Ctrl+K
@@ -110,6 +113,9 @@ export default function AppShell() {
           onSelect={handleSearchSelect}
         />
       )}
+
+      {/* Admin invite modal — rendered globally so it's accessible from anywhere */}
+      <InviteExternalUserModal />
     </div>
   );
 }
