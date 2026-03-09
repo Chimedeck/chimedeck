@@ -211,7 +211,7 @@ export function usePluginBridge({
         if (visibility === 'private' && currentUserId) {
           params.set('userId', currentUserId);
         }
-        const resp = await apiClient.get<{ data: { value: unknown } }>(
+        const resp = await apiClient.get<{ data: unknown }>(
           `/plugins/data?${params.toString()}`,
           {
             headers: {
@@ -219,7 +219,8 @@ export function usePluginBridge({
             },
           },
         );
-        result = (resp as unknown as { data: { value: unknown } }).data?.value ?? null;
+        // [why] Server returns { data: <value> } — read .data directly (not .data.value).
+        result = (resp as unknown as { data: unknown }).data ?? null;
       } catch {
         result = null;
       }
