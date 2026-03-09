@@ -6,6 +6,9 @@ import { env } from '../../../config/env';
 
 const sesClient = new SESClient({
   region: emailConfig.sesRegion,
+  // Intentionally uses global AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (not the
+  // S3_AWS_* variants). SES must authenticate against real AWS even when S3 is
+  // pointed at LocalStack via S3_AWS_ACCESS_KEY_ID.
   credentials: {
     accessKeyId: env.AWS_ACCESS_KEY_ID,
     secretAccessKey: env.AWS_SECRET_ACCESS_KEY,

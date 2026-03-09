@@ -9,13 +9,18 @@ export const s3Config = {
   endpoint: env.S3_ENDPOINT || undefined,
 } as const;
 
+// Resolve S3 credentials: S3_AWS_ACCESS_KEY_ID takes priority so LocalStack and real
+// AWS SES can coexist in the same environment. Falls back to the global AWS credentials.
+const s3AccessKeyId = env.S3_AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID;
+const s3SecretAccessKey = env.S3_AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY;
+
 // Singleton S3 client — re-used across all S3 operations.
 export const s3Client = new S3Client({
   region: s3Config.region,
   endpoint: s3Config.endpoint,
   credentials: {
-    accessKeyId: env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: s3AccessKeyId,
+    secretAccessKey: s3SecretAccessKey,
   },
   // Required when using path-style URLs with LocalStack or custom S3 endpoints
   forcePathStyle: !!s3Config.endpoint,

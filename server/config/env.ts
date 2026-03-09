@@ -20,6 +20,12 @@ export const env = {
   S3_ENDPOINT: Bun.env['S3_ENDPOINT'] ?? '',
   S3_BUCKET: Bun.env['S3_BUCKET'] ?? 'kanban',
   S3_REGION: Bun.env['S3_REGION'] ?? 'us-east-1',
+  // S3-specific credentials — use these to point S3/LocalStack at a different IAM identity
+  // than the global AWS credentials (e.g. real SES + LocalStack S3 in the same environment).
+  // When unset, fall back to the global AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
+  S3_AWS_ACCESS_KEY_ID: Bun.env['S3_AWS_ACCESS_KEY_ID'] ?? '',
+  S3_AWS_SECRET_ACCESS_KEY: Bun.env['S3_AWS_SECRET_ACCESS_KEY'] ?? '',
+  // Global AWS credentials — used by SES and as fallback for S3.
   AWS_ACCESS_KEY_ID: Bun.env['AWS_ACCESS_KEY_ID'] ?? '',
   AWS_SECRET_ACCESS_KEY: Bun.env['AWS_SECRET_ACCESS_KEY'] ?? '',
 
