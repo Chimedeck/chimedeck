@@ -1,5 +1,6 @@
 // BoardSettings — slide-in panel for board-level settings.
 import { useNavigate, useParams } from 'react-router-dom';
+import { PuzzlePieceIcon } from '@heroicons/react/24/outline';
 
 interface Props {
   onClose: () => void;
@@ -46,7 +47,7 @@ const BoardSettings = ({ onClose }: Props) => {
             onClick={handlePluginsClick}
             className="w-full text-left px-3 py-2 rounded text-sm text-slate-200 hover:bg-slate-800 flex items-center gap-2 transition-colors"
           >
-            <span>🧩</span>
+            <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>Plugins</span>
           </button>
         </div>

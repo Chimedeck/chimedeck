@@ -51,7 +51,7 @@ const PluginDashboardPage = () => {
   const currentUser = useAppSelector(selectAuthUser);
   const isAdmin = isPlatformAdmin(currentUser?.email);
 
-  const { boardPlugins, availablePlugins, status, error, loadPlugins, enablePlugin, disablePlugin } =
+  const { boardPlugins, availablePlugins, status, error, loadPlugins, enablePlugin: enablePluginRaw, disablePlugin } =
     useBoardPlugins({ boardId: boardId ?? '' });
 
   const [settingsModal, setSettingsModal] = useState<PluginModalState>(defaultSettingsModal);
@@ -63,6 +63,21 @@ const PluginDashboardPage = () => {
     const id = `toast-${Date.now()}`;
     setToasts((prev) => [...prev, { id, message, variant }]);
   }, []);
+
+  // Wrap enablePlugin to surface 403/permission errors as toasts
+  const enablePlugin = useCallback(
+    async (plugin: Parameters<typeof enablePluginRaw>[0]) => {
+      const result = await enablePluginRaw(plugin);
+      if (result?.error) {
+        if (result.error === 'not-board-admin' || result.error.includes('403')) {
+          addToast('You do not have permission to enable plugins on this board.', 'error');
+        } else {
+          addToast('Failed to enable plugin. Please try again.', 'error');
+        }
+      }
+    },
+    [enablePluginRaw, addToast],
+  );
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

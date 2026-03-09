@@ -92,8 +92,14 @@ export const fetchCategoriesThunk = createAppAsyncThunk(
 
 export const enablePluginThunk = createAppAsyncThunk(
   'plugins/enable',
-  async ({ boardId, pluginId }: { boardId: string; pluginId: string }) => {
-    return enablePluginApi({ boardId, pluginId });
+  async ({ boardId, pluginId }: { boardId: string; pluginId: string }, { rejectWithValue }) => {
+    try {
+      return await enablePluginApi({ boardId, pluginId });
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { name?: string } } };
+      const name = e?.response?.data?.name ?? (e?.response?.status === 403 ? 'not-board-admin' : 'enable-plugin-failed');
+      return rejectWithValue(name);
+    }
   },
 );
 
@@ -227,20 +233,15 @@ const pluginDashboardSlice = createSlice({
       .addCase(
         enablePluginThunk.fulfilled,
         (state, action: PayloadAction<{ data: BoardPlugin }>) => {
-          // Replace optimistic entry with real one from server
-          state.boardPlugins = state.boardPlugins.filter(
-            (b) =>
-              b.plugin.id !== action.payload.data.plugin.id ||
-              !b.id.startsWith('optimistic-'),
-          );
-          if (!state.boardPlugins.some((b) => b.plugin.id === action.payload.data.plugin.id)) {
-            state.boardPlugins.push(action.payload.data);
+          const pluginId = action.payload.data.plugin.id;
+          // Remove from available list now that it's active
+          state.availablePlugins = state.availablePlugins.filter((p) => p.id !== pluginId);
+          // Add or replace in boardPlugins with the authoritative server entry
+          const existingIdx = state.boardPlugins.findIndex((b) => b.plugin.id === pluginId);
+          if (existingIdx !== -1) {
+            state.boardPlugins[existingIdx] = action.payload.data;
           } else {
-            // Update existing entry
-            const idx = state.boardPlugins.findIndex(
-              (b) => b.plugin.id === action.payload.data.plugin.id,
-            );
-            if (idx !== -1) state.boardPlugins[idx] = action.payload.data;
+            state.boardPlugins.push(action.payload.data);
           }
         },
       )

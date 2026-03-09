@@ -500,7 +500,7 @@ await t.set('card', 'shared', 'escrow_amount', 5000);`}</Pre>
                   rowId: 'ctx-card',
                   cells: [
                     { key: 'method', content: <Code>{`t.card(...fields)`}</Code> },
-                    { key: 'fields', content: 'id, name, desc, dueDate, labels, members, …' },
+                    { key: 'fields', content: 'id, name, desc, amount, currency, dueDate, labels, members, …' },
                   ],
                 },
                 {
@@ -526,8 +526,10 @@ await t.set('card', 'shared', 'escrow_amount', 5000);`}</Pre>
                 },
               ]}
             />
-            <Pre>{`const card = await t.card('id', 'name', 'desc');
-console.log(card.name); // "Fix login bug"`}</Pre>
+            <Pre>{`const card = await t.card('id', 'name', 'amount', 'currency');
+// card.amount is in major currency units (e.g. 150.00 for $150)
+// card.currency is a lowercase ISO code (e.g. 'usd')
+console.log(card.name, card.amount, card.currency); // "Fix login bug" 150 "usd"`}</Pre>
           </Section>
 
           <Divider />
@@ -691,7 +693,15 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   cells: [
                     { key: 'file', content: <Code>api-client-authorize.html</Code> },
                     { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
-                    { key: 'purpose', content: 'OAuth / authorization handshake page.' },
+                    { key: 'purpose', content: 'Embedded Stripe Checkout page. Reads card amount/currency via t.card(), creates a checkout session, and mounts the Stripe embedded checkout UI.' },
+                  ],
+                },
+                {
+                  rowId: 'page-payment-success',
+                  cells: [
+                    { key: 'file', content: <Code>payment-success.html</Code> },
+                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
+                    { key: 'purpose', content: 'Stripe return_url page. Verifies the checkout session, writes paymentStatus via t.set(), then calls t.closeModal().' },
                   ],
                 },
               ]}
@@ -700,6 +710,31 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
               Every non-connector page should call <Code>const t = window.jhInstance.iframe()</Code>{' '}
               at startup to receive the context args passed by the host.
             </P>
+            <P>
+              <strong>Stripe redirect pages</strong> (e.g. <Code>payment-success.html</Code>) are
+              opened directly by Stripe as a <Code>return_url</Code> — not via the plugin bridge —
+              so no postMessage args are delivered. Construct <Code>FrameContext</Code> manually
+              using the card ID baked into the return URL at session-creation time:
+            </P>
+            <Pre>{`// payment-success.html — Stripe lands here after checkout
+const params = new URLSearchParams(window.location.search);
+
+// Host bakes cardId as ?card={"id":"<cardId>"} in the Stripe return_url.
+// Fallback: legacy ?cardId=<cardId> flat string.
+let cardId = null;
+const cardParam = params.get('card');
+if (cardParam) {
+  try { cardId = JSON.parse(cardParam)?.id ?? null; } catch {}
+}
+if (!cardId) cardId = params.get('cardId') ?? null;
+
+const t = cardId
+  ? new window.jhInstance.FrameContext({ card: { id: cardId } })
+  : window.jhInstance.iframe();
+
+// t.set() / t.closeModal() now resolve against the correct card
+await t.set('card', 'private', 'paymentStatus', 'success');
+setTimeout(() => t.closeModal(), 5000);`}</Pre>
           </Section>
 
           <Divider />

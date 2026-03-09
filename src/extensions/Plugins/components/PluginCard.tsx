@@ -2,6 +2,7 @@
 // For active plugins (mode='disable') with 'show-settings' capability, also shows a gear icon
 // that triggers the plugin's settings modal.
 // When onEdit is provided (platform admins only), shows a pencil edit button.
+import { PuzzlePieceIcon, PencilIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import PluginCapabilityChips from './PluginCapabilityChips';
 import type { Plugin, BoardPlugin } from '../api';
 
@@ -46,7 +47,7 @@ const PluginCard = (props: Props) => {
         {plugin.iconUrl ? (
           <img src={plugin.iconUrl} alt={plugin.name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-slate-400 text-lg">🧩</span>
+          <PuzzlePieceIcon className="h-5 w-5 text-slate-400" aria-hidden="true" />
         )}
       </div>
 
@@ -83,7 +84,7 @@ const PluginCard = (props: Props) => {
             className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
             aria-label="Edit plugin"
           >
-            ✏️
+            <PencilIcon className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
 
@@ -95,7 +96,7 @@ const PluginCard = (props: Props) => {
             className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
             aria-label="Open plugin settings"
           >
-            ⚙️
+            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
 

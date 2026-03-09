@@ -7,9 +7,7 @@ import {
   fetchAvailablePluginsThunk,
   enablePluginThunk,
   disablePluginThunk,
-  optimisticEnable,
   optimisticDisable,
-  rollbackEnable,
   rollbackDisable,
   selectBoardPlugins,
   selectAvailablePlugins,
@@ -32,13 +30,13 @@ export function useBoardPlugins({ boardId }: { boardId: string }) {
   }, [dispatch, boardId]);
 
   const enablePlugin = useCallback(
-    async (plugin: Plugin) => {
-      // Optimistic update before API call
-      dispatch(optimisticEnable({ plugin, boardId }));
+    async (plugin: Plugin): Promise<{ error?: string } | void> => {
+      // No optimistic update — enables can fail silently (e.g. 403) and the
+      // snap of adding then rolling back is more jarring than a slight delay.
       const result = await dispatch(enablePluginThunk({ boardId, pluginId: plugin.id }));
       if (enablePluginThunk.rejected.match(result)) {
-        // Rollback on failure
-        dispatch(rollbackEnable({ plugin }));
+        // Return the error name so callers can surface it (e.g. 403 permission errors)
+        return { error: (result.payload as string) ?? 'enable-plugin-failed' };
       }
     },
     [dispatch, boardId],
