@@ -49,6 +49,21 @@ const VerifyEmailPage = lazy(() =>
     default: m.default,
   }))
 );
+const ConfirmEmailChangePage = lazy(() =>
+  import('~/extensions/Auth/containers/ConfirmEmailChangePage/ConfirmEmailChangePage').then((m) => ({
+    default: m.default,
+  }))
+);
+const ForgotPasswordPage = lazy(() =>
+  import('~/extensions/Auth/containers/ForgotPasswordPage/ForgotPasswordPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const ResetPasswordPage = lazy(() =>
+  import('~/extensions/Auth/containers/ResetPasswordPage/ResetPasswordPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const ProfilePage = lazy(() =>
   import('~/extensions/User/containers/ProfilePage/ProfilePage').then((m) => ({
     default: m.default,
@@ -84,6 +99,13 @@ export default function AppRouter() {
 
           {/* Public route for email verification — accessible without auth */}
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+          {/* Public route for email change confirmation — accessible without auth */}
+          <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
+
+          {/* Public routes for password reset — accessible without auth */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Private routes wrapped in AppShell (sidebar + content) */}
           <Route element={<PrivateRoute />}>

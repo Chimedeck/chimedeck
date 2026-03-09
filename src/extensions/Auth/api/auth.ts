@@ -44,4 +44,21 @@ export const authApi = {
   resendVerification() {
     return apiClient.post<{ data: { sent: boolean } }>('/auth/resend-verification');
   },
+  changeEmail({ email, currentPassword }: { email: string; currentPassword: string }) {
+    return apiClient.post<{ data: { requiresConfirmation?: boolean; pendingEmail?: string; email?: string } }>(
+      '/auth/change-email',
+      { email, currentPassword },
+    );
+  },
+  confirmEmailChange({ token }: { token: string }) {
+    return apiClient.get<{ data: { confirmed: boolean } }>(
+      `/auth/confirm-email-change?token=${encodeURIComponent(token)}`,
+    );
+  },
+  forgotPassword({ email }: { email: string }) {
+    return apiClient.post<{ data: { sent: boolean } }>('/auth/forgot-password', { email });
+  },
+  resetPassword({ token, password }: { token: string; password: string }) {
+    return apiClient.post<{ data: { reset: boolean } }>('/auth/reset-password', { token, password });
+  },
 };

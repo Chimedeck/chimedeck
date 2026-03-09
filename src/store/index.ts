@@ -4,6 +4,9 @@ import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer,
 import { uiReducer } from '../slices/uiSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
 import { verifyEmailDuckReducer } from '../extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage.duck';
+import { confirmEmailChangeDuckReducer } from '../extensions/Auth/containers/ConfirmEmailChangePage/ConfirmEmailChangePage.duck';
+import { forgotPasswordDuckReducer } from '../extensions/Auth/containers/ForgotPasswordPage/ForgotPasswordPage.duck';
+import { resetPasswordDuckReducer } from '../extensions/Auth/containers/ResetPasswordPage/ResetPasswordPage.duck';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +21,9 @@ export const store = configureStore({
     lists: listReducer,
     cards: cardsReducer,
     verifyEmail: verifyEmailDuckReducer,
+    confirmEmailChange: confirmEmailChangeDuckReducer,
+    forgotPassword: forgotPasswordDuckReducer,
+    resetPassword: resetPasswordDuckReducer,
     profile: profileDuckReducer,
     notifications: notificationReducer,
     pluginDashboard: pluginDashboardReducer,

@@ -42,7 +42,13 @@ export default function LoginPage() {
           apiError={apiError}
         />
 
-        <p className="text-slate-500 text-sm text-center mt-6">
+        <p className="text-slate-500 text-sm text-center mt-4">
+          <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 font-medium">
+            {translations.loginPage.forgotPassword}
+          </Link>
+        </p>
+
+        <p className="text-slate-500 text-sm text-center mt-4">
           {translations.login.noAccount}{' '}
           <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium">
             {translations.login.signUp}

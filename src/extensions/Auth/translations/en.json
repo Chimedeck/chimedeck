@@ -51,5 +51,39 @@
     "pending": "Check your inbox — we sent a link to {email}",
     "resend": "Resend verification email",
     "resendSuccess": "A new verification email has been sent."
+  },
+  "changeEmail": {
+    "title": "Change email address",
+    "newEmail": "New email address",
+    "currentPassword": "Current password",
+    "submit": "Request email change",
+    "pending": "Confirmation email sent to {email}",
+    "pendingDetail": "Click the link in the email to complete the change.",
+    "confirmed": "Email updated! Please log in with your new address.",
+    "invalidToken": "This confirmation link is invalid or has expired.",
+    "emailInUse": "That email address is already in use.",
+    "unchanged": "New email must be different from current email."
+  },
+  "forgotPassword": {
+    "title": "Forgot your password?",
+    "description": "Enter your email address and we'll send you a reset link.",
+    "email": "Email address",
+    "submit": "Send reset link",
+    "sent": "If an account exists for {email}, we've sent a reset link.",
+    "backToLogin": "Back to log in"
+  },
+  "resetPassword": {
+    "title": "Reset your password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "submit": "Reset password",
+    "mismatch": "Passwords do not match.",
+    "tooWeak": "Password must be at least 8 characters and contain a letter and a number.",
+    "success": "Password reset! Please log in.",
+    "invalidToken": "This reset link is invalid or has expired.",
+    "requestNew": "Request a new reset link"
+  },
+  "loginPage": {
+    "forgotPassword": "Forgot password?"
   }
 }

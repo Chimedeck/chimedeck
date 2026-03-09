@@ -1,0 +1,63 @@
+// POST /api/v1/auth/reset-password
+// Public endpoint — validates the reset token, sets a new password, and invalidates all sessions.
+import { db } from '../../../common/db';
+import { hashPassword } from '../mods/password/hash';
+
+export async function handleResetPassword(req: Request): Promise<Response> {
+  let body: { token?: string; password?: string };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 },
+    );
+  }
+
+  if (!body.token || !body.password) {
+    return Response.json(
+      { name: 'bad-request', data: { message: 'token and password are required' } },
+      { status: 400 },
+    );
+  }
+
+  const user = await db('users').where({ password_reset_token: body.token }).first();
+
+  if (!user) {
+    return Response.json(
+      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { status: 400 },
+    );
+  }
+
+  const now = new Date();
+  if (!user.password_reset_token_expires_at || new Date(user.password_reset_token_expires_at) < now) {
+    return Response.json(
+      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { status: 400 },
+    );
+  }
+
+  // Validate password strength: min 8 chars, at least one letter and one number
+  const { password } = body;
+  if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    return Response.json(
+      { name: 'password-too-weak', data: { message: 'Password must be at least 8 characters and contain a letter and a number' } },
+      { status: 422 },
+    );
+  }
+
+  const passwordHash = await hashPassword({ password });
+
+  // Update password and clear reset token fields
+  await db('users').where({ id: user.id }).update({
+    password_hash: passwordHash,
+    password_reset_token: null,
+    password_reset_token_expires_at: null,
+  });
+
+  // Invalidate all refresh tokens — password changed means re-login required
+  await db('refresh_tokens').where({ user_id: user.id }).delete();
+
+  return Response.json({ data: { reset: true } }, { status: 200 });
+}
