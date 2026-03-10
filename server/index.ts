@@ -28,6 +28,7 @@ import { pluginsRouter } from './extensions/plugins/api/index';
 import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
 import { boardViewRouter } from './extensions/boardView/api/index';
+import { customFieldsRouter } from './extensions/customFields/index';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -78,6 +79,9 @@ async function router(req: Request): Promise<Response> {
 
   const boardViewResponse = await boardViewRouter(req, path);
   if (boardViewResponse) return boardViewResponse;
+
+  const customFieldsResponse = await customFieldsRouter(req, path);
+  if (customFieldsResponse) return customFieldsResponse;
 
   const listResponse = await listRouter(req, path);
   if (listResponse) return listResponse;
