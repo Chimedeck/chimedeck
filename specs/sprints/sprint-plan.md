@@ -73,6 +73,20 @@
 | [43](./sprint-43.md) | Email Domain Restriction | Configurable `ALLOWED_EMAIL_DOMAINS` list; guard registration + change-email; `EMAIL_DOMAIN_RESTRICTION_ENABLED` flag | 🔵 Needs 03 + 40 |
 | [44](./sprint-44.md) | Admin: Create External User API | `POST /api/v1/admin/users`; `ADMIN_EMAIL_DOMAINS` (separate from `ALLOWED_EMAIL_DOMAINS`); auto/manual password; invitation email via SES; `ADMIN_INVITE_EMAIL_ENABLED` flag; `credentials` in response | 🔵 Needs 23 + 43 |
 | [45](./sprint-45.md) | Admin: Invite External Users UI | Sidebar entry (admin-domain only); invite modal with password-mode radio + send-email toggle; copyable credential sheet | 🔵 Needs 17 + 44 |
+| **— Requirements Gap Fixes —** | | | |
+| [46](./sprint-46.md) | DB Schema: Board & Card Extensions | `boards`: `visibility`, `description`, `background` columns; `cards`: `start_date` column; expose in API | ⬜ Future |
+| [47](./sprint-47.md) | UUID v7 Migration | Replace `uuidv4()` with `uuidv7()` across all entity primary keys; centralise in `server/common/uuid.ts` | ⬜ Future |
+| [48](./sprint-48.md) | Board Stars, Followers & Board-Level Views | `board_stars` + `board_followers` tables; star/favourite API + UI; board activity log, comments, archived cards panels | ⬜ Future |
+| [49](./sprint-49.md) | Guest Role + Board Visibility Access Control | `GUEST` membership role; `board_guest_access` table; Private/Workspace/Public visibility enforcement middleware | ⬜ Needs 46 |
+| [50](./sprint-50.md) | API & Event Envelope Fixes | Standardise error envelope to `{ error: { code, message } }`; emit `member_joined` event; add `version` field to all real-time events | ⬜ Future |
+| [51](./sprint-51.md) | Auth Hardening & WS Polling Fallback | Access token TTL → 24h; WS close on token revocation; client-side forced logout on 401; HTTP polling fallback | ⬜ Future |
+| [52](./sprint-52.md) | View Persistence + Table View | `user_board_view_prefs` table; GET/PUT view-preference API; Board view switcher UI; Table view component | ⬜ Future |
+| [53](./sprint-53.md) | Calendar View | Monthly + weekly calendar grid; cards by due date; drag-to-reschedule (U-CAL-01/02/03) | ⬜ Needs 52 |
+| [54](./sprint-54.md) | Timeline / Gantt View | Swimlanes by list; bars from `start_date` to `due_date`; zoom levels; drag to resize/move (U-GNT-01/02/03) | ⬜ Needs 46 + 52 |
+| [55](./sprint-55.md) | Custom Fields | `custom_fields` + `card_custom_field_values` tables; field definition API; card value API; card modal + tile badge UI | ⬜ Future |
+| [56](./sprint-56.md) | Business Logic Invariants | Archived board read-only guard; workspace ≥1 Owner invariant; delete-with-nested-content confirmation flag | ⬜ Future |
+| [57](./sprint-57.md) | Security Hardening | CSRF `Origin` header guard on all mutations; server-side input sanitization (`sanitize-html`) on all text fields | ⬜ Future |
+| [58](./sprint-58.md) | Observability & Reliability | Install `@opentelemetry/*` packages; IndexedDB offline mutation queue; conflict counter + propagation delay histogram | ⬜ Future |
 
 ---
 
@@ -149,6 +163,20 @@ Sprint 42 ──────────── Split AWS credentials: S3_AWS_* f
 Sprint 43 ──────────── Email domain restriction: ALLOWED_EMAIL_DOMAINS config, registration + change-email guards
 Sprint 44 ──────────── Admin create external user API: auto/manual password, optional SES invite email
 Sprint 45 ──────────── Admin invite UI: sidebar entry, invite modal, credential sheet with copy-to-clipboard
+──── Requirements Gap Fixes ─────────────────────────────────────────────────────────
+Sprint 46 ──────────── Board extensions (visibility, description, background); Card start_date column
+Sprint 47 ──────────── UUID v7 migration: replace uuidv4() across all entity primary keys
+Sprint 48 ──────────── Board stars + followers tables; board activity/comments/archived-cards panels
+Sprint 49 ──────────── Guest role; board_guest_access table; Private/Workspace/Public visibility enforcement
+Sprint 50 ──────────── Error envelope standardisation; member_joined event; event version field
+Sprint 51 ──────────── Access token TTL → 24h; WS close on revocation; client forced logout; HTTP polling fallback
+Sprint 52 ──────────── User view preference (DB + API); Board view switcher; Table view
+Sprint 53 ──────────── Calendar view: month/week grid, drag-to-reschedule (U-CAL-01/02/03)
+Sprint 54 ──────────── Timeline/Gantt view: swimlanes, start+due bars, zoom, resize/move (U-GNT-01/02/03)
+Sprint 55 ──────────── Custom fields: definitions per board, values per card, modal + tile badge UI
+Sprint 56 ──────────── Business logic invariants: archived read-only, ≥1 owner, delete confirmation
+Sprint 57 ──────────── Security hardening: CSRF Origin guard, server-side input sanitization
+Sprint 58 ──────────── Observability: install OTel packages, IndexedDB offline queue, conflict + lag metrics
 ```
 
 ---

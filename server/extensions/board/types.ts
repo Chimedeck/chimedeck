@@ -14,3 +14,19 @@ export interface Board {
   background: string | null;
   created_at: string;
 }
+
+export interface BoardStar {
+  user_id: string;
+  board_id: string;
+  created_at: string;
+}
+
+export interface BoardFollower {
+  user_id: string;
+  board_id: string;
+  created_at: string;
+}
+
+export interface BoardWithIsStarred extends Board {
+  isStarred: boolean;
+}

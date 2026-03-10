@@ -12,9 +12,17 @@ import { handleGetPresence } from '../../realtime/api/presence';
 import { handleGetBoardLabels, handleCreateBoardLabel } from './labels';
 import { handleGetBoardMembers } from './members';
 import { handleGetMemberSuggestions } from './members/suggestions';
+import { handleStarBoard, handleUnstarBoard } from './star';
+import { handleFollowBoard, handleUnfollowBoard } from './follow';
+import { handleGetMeStarredBoards } from './me-starred-boards';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
+  // GET /api/v1/me/starred-boards — starred boards for the current user
+  if (pathname === '/api/v1/me/starred-boards' && req.method === 'GET') {
+    return handleGetMeStarredBoards(req);
+  }
+
   // Workspace-scoped board routes: POST /api/v1/workspaces/:id/boards, GET /api/v1/workspaces/:id/boards
   const workspaceBoardsMatch = pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/boards$/);
   if (workspaceBoardsMatch) {
@@ -62,6 +70,18 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/members/suggestions?q=
     if (sub === '/members/suggestions' && req.method === 'GET') return handleGetMemberSuggestions(req, boardId);
+
+    // POST /api/v1/boards/:id/star — star a board (idempotent)
+    if (sub === '/star' && req.method === 'POST') return handleStarBoard(req, boardId);
+
+    // DELETE /api/v1/boards/:id/star — unstar a board (idempotent)
+    if (sub === '/star' && req.method === 'DELETE') return handleUnstarBoard(req, boardId);
+
+    // POST /api/v1/boards/:id/follow — follow a board (idempotent)
+    if (sub === '/follow' && req.method === 'POST') return handleFollowBoard(req, boardId);
+
+    // DELETE /api/v1/boards/:id/follow — unfollow a board (idempotent)
+    if (sub === '/follow' && req.method === 'DELETE') return handleUnfollowBoard(req, boardId);
   }
 
   return null;
