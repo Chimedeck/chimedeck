@@ -32,7 +32,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { title?: string; description?: string; due_date?: string | null; amount?: number | null; currency?: string | null };
+  let body: { title?: string; description?: string; due_date?: string | null; start_date?: string | null; amount?: number | null; currency?: string | null };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -66,6 +66,19 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   if (body.due_date !== undefined) {
     updates.due_date = body.due_date;
+  }
+
+  if (body.start_date !== undefined) {
+    if (body.start_date !== null) {
+      const parsed = new Date(body.start_date);
+      if (isNaN(parsed.getTime())) {
+        return Response.json(
+          { name: 'bad-request', data: { message: 'start_date must be a valid ISO 8601 date string or null' } },
+          { status: 400 },
+        );
+      }
+    }
+    updates.start_date = body.start_date;
   }
 
   if (body.amount !== undefined) {

@@ -36,7 +36,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { title?: string; description?: string };
+  let body: { title?: string; description?: string; start_date?: string | null };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -60,6 +60,16 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     );
   }
 
+  if (body.start_date !== undefined && body.start_date !== null) {
+    const parsed = new Date(body.start_date);
+    if (isNaN(parsed.getTime())) {
+      return Response.json(
+        { name: 'bad-request', data: { message: 'start_date must be a valid ISO 8601 date string or null' } },
+        { status: 400 },
+      );
+    }
+  }
+
   // Append to end of list
   const lastCard = await db('cards')
     .where({ list_id: listId, archived: false })
@@ -76,6 +86,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     description: body.description?.trim() ?? null,
     position,
     archived: false,
+    start_date: body.start_date ?? null,
   });
 
   const card = await db('cards').where({ id }).first();

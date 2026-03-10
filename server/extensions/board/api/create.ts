@@ -1,4 +1,3 @@
-// POST /api/v1/workspaces/:workspaceId/boards — create a new board; min role: MEMBER.
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
@@ -9,6 +8,9 @@ import {
 } from '../../../middlewares/permissionManager';
 
 import { writeEvent } from '../../../mods/events/write';
+import type { BoardVisibility } from '../types';
+
+const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
 export async function handleCreateBoard(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -21,7 +23,7 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { title?: string };
+  let body: { title?: string; visibility?: BoardVisibility; description?: string; background?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -38,12 +40,22 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
     );
   }
 
+  if (body.visibility !== undefined && !VALID_VISIBILITY.includes(body.visibility)) {
+    return Response.json(
+      { name: 'bad-request', data: { message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
+      { status: 400 },
+    );
+  }
+
   const id = randomUUID();
   await db('boards').insert({
     id,
     workspace_id: workspaceId,
     title: body.title.trim(),
     state: 'ACTIVE',
+    visibility: body.visibility ?? 'PRIVATE',
+    description: body.description?.trim() ?? null,
+    background: body.background?.trim() ?? null,
   });
 
   const board = await db('boards').where({ id }).first();

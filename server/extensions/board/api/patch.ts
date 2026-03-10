@@ -8,9 +8,10 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/requireBoardWritable';
 import { writeEvent } from '../../../mods/events/write';
-import type { MonetizationType } from '../types';
+import type { MonetizationType, BoardVisibility } from '../types';
 
 const VALID_MONETIZATION_TYPES: Array<MonetizationType | null> = [null, 'pre-paid', 'pay-to-paid'];
+const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
 export async function handlePatchBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -29,7 +30,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  let body: { title?: string; monetization_type?: MonetizationType | null };
+  let body: { title?: string; monetization_type?: MonetizationType | null; visibility?: BoardVisibility; description?: string | null; background?: string | null };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -62,6 +63,24 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
       );
     }
     updates.monetization_type = body.monetization_type ?? null;
+  }
+
+  if (body.visibility !== undefined) {
+    if (!VALID_VISIBILITY.includes(body.visibility)) {
+      return Response.json(
+        { name: 'bad-request', data: { message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
+        { status: 400 },
+      );
+    }
+    updates.visibility = body.visibility;
+  }
+
+  if ('description' in body) {
+    updates.description = body.description?.trim() ?? null;
+  }
+
+  if ('background' in body) {
+    updates.background = body.background?.trim() ?? null;
   }
 
   if (Object.keys(updates).length === 0) {
