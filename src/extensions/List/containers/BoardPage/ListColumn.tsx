@@ -14,6 +14,7 @@ interface Props {
   list: List;
   cardIds: string[];
   cards: Record<string, Card>;
+  boardId?: string;
   boardTitle?: string;
   onRename: (listId: string, title: string) => void;
   onArchive: (listId: string) => void;
@@ -28,6 +29,7 @@ const SortableListColumn = ({
   list,
   cardIds,
   cards,
+  boardId,
   boardTitle,
   onRename,
   onArchive,
@@ -95,6 +97,7 @@ const SortableListColumn = ({
               card={card}
               listTitle={list.title}
               boardTitle={boardTitle}
+              {...(boardId ? { boardId } : {})}
               labelsExpanded={labelsExpanded ?? false}
               onToggleLabels={stableToggleLabels}
               {...(onCardClick ? { onClick: onCardClick } : {})}

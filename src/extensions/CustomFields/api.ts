@@ -12,6 +12,9 @@ import type {
   UpsertCardFieldValuePayload,
 } from './types';
 
+// Re-export types so consumers can import from the single entry point.
+export type { CustomField, CustomFieldValue };
+
 // ─── Field Definition API ────────────────────────────────────────────────────
 
 type Api = typeof apiClient;
@@ -129,4 +132,47 @@ export function useCustomFields(boardId: string | undefined): UseCustomFieldsRes
   }, [boardId, tick]);
 
   return { fields, loading, error, refetch };
+}
+
+// ─── Card Custom Field Values Hook ───────────────────────────────────────────
+
+interface UseCardCustomFieldValuesResult {
+  values: CustomFieldValue[];
+  loading: boolean;
+  refetch: () => void;
+  setValues: (values: CustomFieldValue[]) => void;
+}
+
+/**
+ * Fetch all custom field values for a single card.
+ * Values are fetched from GET /cards/:id/custom-field-values (all at once).
+ * The setValues helper lets callers update local state after upsert without
+ * triggering a full refetch.
+ */
+export function useCardCustomFieldValues(cardId: string | undefined): UseCardCustomFieldValuesResult {
+  const [values, setValues] = useState<CustomFieldValue[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
+
+  useEffect(() => {
+    if (!cardId) return;
+    let cancelled = false;
+    setLoading(true);
+    apiClient
+      .get<{ data: CustomFieldValue[] }>(`/cards/${cardId}/custom-field-values`)
+      .then((res) => {
+        if (!cancelled) setValues((res as unknown as { data: CustomFieldValue[] }).data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setValues([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [cardId, tick]);
+
+  return { values, loading, refetch, setValues };
 }

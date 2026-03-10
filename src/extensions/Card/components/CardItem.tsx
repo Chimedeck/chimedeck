@@ -13,6 +13,7 @@ import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
 import CardMoneyBadge from './CardMoneyBadge';
 import CardPluginBadges from '../../Plugins/uiInjections/CardPluginBadges';
+import CardCustomFieldBadges from './CardCustomFieldBadges';
 
 export interface CardItemProps {
   card: Card;
@@ -22,6 +23,7 @@ export interface CardItemProps {
   onToggleLabels?: () => void;
   listTitle?: string;
   boardTitle?: string;
+  boardId?: string;
 }
 
 const CardItem = ({
@@ -32,6 +34,7 @@ const CardItem = ({
   onToggleLabels,
   listTitle,
   boardTitle,
+  boardId,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -116,6 +119,9 @@ const CardItem = ({
         listTitle={listTitle}
         boardTitle={boardTitle}
       />
+      {boardId && (
+        <CardCustomFieldBadges cardId={card.id} boardId={boardId} />
+      )}
     </div>
   );
 };

@@ -16,6 +16,7 @@ import ActivityFeed from '../containers/CardModal/ActivityFeed';
 import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginBadges';
 import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
 import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
+import CustomFieldsSection from '../../CustomFields/CustomFieldsSection';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -148,6 +149,12 @@ const CardModal = ({
                   boardId={boardId}
                   description={card.description ?? ''}
                   onSave={onDescriptionSave}
+                  disabled={isReadOnly}
+                />
+
+                <CustomFieldsSection
+                  boardId={boardId}
+                  cardId={card.id}
                   disabled={isReadOnly}
                 />
 

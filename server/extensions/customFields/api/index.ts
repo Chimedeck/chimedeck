@@ -9,6 +9,7 @@ import {
   handleDeleteCustomField,
 } from './fieldDefinitions';
 import {
+  handleListCardFieldValues,
   handleGetCardFieldValue,
   handleUpsertCardFieldValue,
   handleDeleteCardFieldValue,
@@ -30,6 +31,13 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
       if (req.method === 'PATCH') return handleUpdateCustomField(req, boardId, fieldId);
       if (req.method === 'DELETE') return handleDeleteCustomField(req, boardId, fieldId);
     }
+  }
+
+  // /api/v1/cards/:cardId/custom-field-values (list all)
+  const cardAllValuesMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/custom-field-values$/);
+  if (cardAllValuesMatch) {
+    const cardId = cardAllValuesMatch[1] as string;
+    if (req.method === 'GET') return handleListCardFieldValues(req, cardId);
   }
 
   // /api/v1/cards/:cardId/custom-field-values/:fieldId

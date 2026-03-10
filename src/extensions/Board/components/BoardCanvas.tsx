@@ -254,7 +254,8 @@ const BoardCanvas = ({
                 list={list}
                 cardIds={cardsByList[listId] ?? []}
                 cards={cards}
-                boardTitle={boardTitle}
+                boardId={boardId}
+                {...(boardTitle ? { boardTitle } : {})}
                 onRename={onRenameList}
                 onArchive={onArchiveList}
                 onDelete={onDeleteList}

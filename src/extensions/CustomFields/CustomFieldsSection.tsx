@@ -1,0 +1,74 @@
+// CustomFieldsSection — renders all board-level custom fields for a card,
+// with inline value editing. Placed inside the card modal main column.
+// [why] Self-contained so no changes are needed to the parent Redux container;
+//       the section manages its own field + value state via hooks.
+import { useCallback } from 'react';
+import { useCustomFields, useCardCustomFieldValues } from './api';
+import { upsertCardFieldValue, deleteCardFieldValue } from './api';
+import { apiClient } from '~/common/api/client';
+import CustomFieldValueEditor from './CustomFieldValueEditor';
+import type { CustomFieldValue } from './types';
+
+interface Props {
+  boardId: string;
+  cardId: string;
+  disabled?: boolean;
+}
+
+const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
+  const { fields, loading: fieldsLoading } = useCustomFields(boardId);
+  const { values, loading: valuesLoading, setValues } = useCardCustomFieldValues(cardId);
+
+  const handleValueChange = useCallback(
+    (fieldId: string, updated: CustomFieldValue | null) => {
+      setValues(
+        updated
+          ? // Replace existing entry or add new one
+            values.some((v) => v.custom_field_id === fieldId)
+            ? values.map((v) => (v.custom_field_id === fieldId ? updated : v))
+            : [...values, updated]
+          : values.filter((v) => v.custom_field_id !== fieldId),
+      );
+    },
+    [values, setValues],
+  );
+
+  if (fieldsLoading || valuesLoading) {
+    return (
+      <div className="text-xs text-slate-500 animate-pulse py-2">
+        Loading custom fields…
+      </div>
+    );
+  }
+
+  if (fields.length === 0) return null;
+
+  return (
+    <section aria-label="Custom fields">
+      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+        Custom Fields
+      </h3>
+      <div className="space-y-3">
+        {fields.map((field) => {
+          const value = values.find((v) => v.custom_field_id === field.id) ?? null;
+          return (
+            <div key={field.id} className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400">{field.name}</label>
+              <CustomFieldValueEditor
+                cardId={cardId}
+                field={field}
+                value={value}
+                disabled={disabled}
+                onValueChange={(updated) => handleValueChange(field.id, updated)}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+// Re-export so consumers can also access badge values for tile rendering.
+export { useCustomFields, useCardCustomFieldValues, upsertCardFieldValue, deleteCardFieldValue, apiClient };
+export default CustomFieldsSection;

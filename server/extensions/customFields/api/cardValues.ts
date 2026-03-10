@@ -1,6 +1,12 @@
 // server/extensions/customFields/api/cardValues.ts
 // GET/PUT/DELETE handlers for card-scoped custom field values.
-// Routes: /api/v1/cards/:cardId/custom-field-values/:fieldId
+// Routes:
+//   GET  /api/v1/cards/:cardId/custom-field-values          — list all values for card
+//   GET  /api/v1/cards/:cardId/custom-field-values/:fieldId — get single value
+//   PUT  /api/v1/cards/:cardId/custom-field-values/:fieldId — upsert value
+//   DELETE /api/v1/cards/:cardId/custom-field-values/:fieldId — delete value
+// Payload format mirrors client UpsertCardFieldValuePayload:
+//   { value_text?, value_number?, value_date?, value_checkbox?, value_option_id? }
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
@@ -21,6 +27,30 @@ async function resolveCardContext(
   const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) return null;
   return { card, board };
+}
+
+// GET /api/v1/cards/:cardId/custom-field-values — list all values for a card
+export async function handleListCardFieldValues(req: Request, cardId: string): Promise<Response> {
+  const authError = await authenticate(req as AuthenticatedRequest);
+  if (authError) return authError;
+
+  const ctx = await resolveCardContext(cardId);
+  if (!ctx) {
+    return Response.json(
+      { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
+      { status: 404 },
+    );
+  }
+
+  const scopedReq = req as WorkspaceScopedRequest;
+  const membershipError = await requireWorkspaceMembership(
+    scopedReq,
+    ctx.board.workspace_id as string,
+  );
+  if (membershipError) return membershipError;
+
+  const values = await db('card_custom_field_values').where({ card_id: cardId });
+  return Response.json({ data: values });
 }
 
 // GET /api/v1/cards/:cardId/custom-field-values/:fieldId
@@ -196,12 +226,14 @@ export async function handleDeleteCardFieldValue(
   return new Response(null, { status: 204 });
 }
 
-// Build the DB value columns for a given field type; returns { data } or { error }.
+// Build the DB value columns from the client payload (value_text, value_number, etc.).
+// [why] The client sends field-specific keys; we validate and write only the relevant
+//       column, nulling out all others to prevent stale data from previous type upserts.
 function buildValuePayload(
   fieldType: FieldType,
   body: Record<string, unknown>,
 ): { data: Record<string, unknown> } | { error: { name: string; data: { message: string } } } {
-  // All columns start null so previous values are cleared on upsert.
+  // All columns start null — clears any previous value of a different type.
   const base: Record<string, unknown> = {
     value_text: null,
     value_number: null,
@@ -212,55 +244,61 @@ function buildValuePayload(
 
   switch (fieldType) {
     case 'TEXT': {
-      if (body.value === undefined || body.value === null) {
-        return { error: { name: 'bad-request', data: { message: 'value is required for TEXT fields' } } };
+      // Accept either value_text (client format) or value (legacy)
+      const raw = body.value_text !== undefined ? body.value_text : body.value;
+      if (raw === undefined || raw === null) {
+        return { data: base }; // explicit clear
       }
-      if (typeof body.value !== 'string') {
-        return { error: { name: 'bad-request', data: { message: 'value must be a string for TEXT fields' } } };
+      if (typeof raw !== 'string') {
+        return { error: { name: 'bad-request', data: { message: 'value_text must be a string' } } };
       }
-      return { data: { ...base, value_text: body.value } };
+      return { data: { ...base, value_text: raw } };
     }
 
     case 'NUMBER': {
-      if (body.value === undefined || body.value === null) {
-        return { error: { name: 'bad-request', data: { message: 'value is required for NUMBER fields' } } };
+      const raw = body.value_number !== undefined ? body.value_number : body.value;
+      if (raw === undefined || raw === null) {
+        return { data: base }; // explicit clear
       }
-      const num = Number(body.value);
+      const num = Number(raw);
       if (isNaN(num)) {
-        return { error: { name: 'bad-request', data: { message: 'value must be a number for NUMBER fields' } } };
+        return { error: { name: 'bad-request', data: { message: 'value_number must be a number' } } };
       }
       return { data: { ...base, value_number: num } };
     }
 
     case 'DATE': {
-      if (body.value === undefined || body.value === null) {
-        return { error: { name: 'bad-request', data: { message: 'value is required for DATE fields' } } };
+      const raw = body.value_date !== undefined ? body.value_date : body.value;
+      if (raw === undefined || raw === null) {
+        return { data: base }; // explicit clear
       }
-      const d = new Date(body.value as string);
+      const d = new Date(raw as string);
       if (isNaN(d.getTime())) {
-        return { error: { name: 'bad-request', data: { message: 'value must be a valid ISO date string for DATE fields' } } };
+        return { error: { name: 'bad-request', data: { message: 'value_date must be a valid ISO date string' } } };
       }
       return { data: { ...base, value_date: d.toISOString() } };
     }
 
     case 'CHECKBOX': {
-      if (body.value === undefined || body.value === null) {
-        return { error: { name: 'bad-request', data: { message: 'value is required for CHECKBOX fields' } } };
+      const raw = body.value_checkbox !== undefined ? body.value_checkbox : body.value;
+      if (raw === undefined || raw === null) {
+        return { data: base }; // explicit clear
       }
-      if (typeof body.value !== 'boolean') {
-        return { error: { name: 'bad-request', data: { message: 'value must be a boolean for CHECKBOX fields' } } };
+      if (typeof raw !== 'boolean') {
+        return { error: { name: 'bad-request', data: { message: 'value_checkbox must be a boolean' } } };
       }
-      return { data: { ...base, value_checkbox: body.value } };
+      return { data: { ...base, value_checkbox: raw } };
     }
 
     case 'DROPDOWN': {
-      if (body.value === undefined || body.value === null) {
-        return { error: { name: 'bad-request', data: { message: 'value is required for DROPDOWN fields' } } };
+      const raw = body.value_option_id !== undefined ? body.value_option_id : body.value;
+      if (raw === undefined || raw === null) {
+        return { data: base }; // explicit clear
       }
-      if (typeof body.value !== 'string') {
-        return { error: { name: 'bad-request', data: { message: 'value must be an option id string for DROPDOWN fields' } } };
+      if (typeof raw !== 'string') {
+        return { error: { name: 'bad-request', data: { message: 'value_option_id must be a string' } } };
       }
-      return { data: { ...base, value_option_id: body.value } };
+      return { data: { ...base, value_option_id: raw } };
     }
 
     default:
