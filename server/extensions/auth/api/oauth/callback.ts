@@ -91,7 +91,7 @@ export async function handleOAuthCallback(
   const responseHeaders = new Headers();
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
   // Redirect to frontend with access token in fragment (never in query string).
   responseHeaders.set('Location', `${env.APP_URL}/#access_token=${accessToken}`);

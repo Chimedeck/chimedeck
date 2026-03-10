@@ -31,6 +31,9 @@ export const env = {
 
   APP_PORT: parseInt(Bun.env['APP_PORT'] ?? '3000', 10),
   APP_URL: Bun.env['APP_URL'] ?? 'http://localhost:3000',
+  // Base URL used by the CSRF origin guard to validate incoming Origin/Referer headers.
+  // Falls back to APP_URL so existing deployments work without extra config.
+  APP_BASE_URL: Bun.env['APP_BASE_URL'] ?? Bun.env['APP_URL'] ?? 'http://localhost:3000',
 
   // OAuth providers
   OAUTH_GOOGLE_CLIENT_ID: Bun.env['OAUTH_GOOGLE_CLIENT_ID'] ?? '',

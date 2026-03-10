@@ -43,7 +43,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
 
   return new Response(

@@ -90,7 +90,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   // httpOnly Secure cookie for refresh token.
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
 
   return new Response(

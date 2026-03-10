@@ -5,6 +5,7 @@ import { logRequest } from './mods/logger';
 import { applySecurityHeaders } from './mods/helmet';
 import { getPluginCspOrigins, type PluginCspOrigins } from './extensions/plugins/mods/getPluginCspOrigins';
 import { parseJsonBody } from './middlewares/parser';
+import { csrfGuard } from './middlewares/csrfGuard';
 import { authRouter } from './extensions/auth/api/index';
 import { usersRouter } from './extensions/users/api/index';
 import { workspaceRouter } from './extensions/workspace/api/index';
@@ -169,6 +170,14 @@ Bun.serve({
 
     const start = Date.now();
     await parseJsonBody(req.clone() as unknown as Request);
+
+    // CSRF origin guard — reject mutating requests from foreign origins.
+    const csrfError = csrfGuard(req);
+    if (csrfError) {
+      logRequest(req, 403, Date.now() - start);
+      return csrfError;
+    }
+
     const res = await router(req);
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();

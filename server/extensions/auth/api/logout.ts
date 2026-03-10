@@ -38,7 +38,7 @@ export async function handleLogout(req: Request): Promise<Response> {
   // Clear the cookie by setting Max-Age=0.
   responseHeaders.append(
     'Set-Cookie',
-    'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=0',
+    'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=0',
   );
 
   return new Response(JSON.stringify({ data: {} }), { status: 200, headers: responseHeaders });
