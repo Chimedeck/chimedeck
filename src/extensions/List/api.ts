@@ -59,11 +59,13 @@ export async function archiveList({
 export async function deleteList({
   api,
   listId,
+  confirm,
 }: {
-  api: { delete: <T>(url: string) => Promise<T> };
+  api: { delete: <T>(url: string, config?: { data?: unknown }) => Promise<T> };
   listId: string;
+  confirm?: boolean;
 }): Promise<void> {
-  return api.delete(`/lists/${listId}`);
+  return api.delete(`/lists/${listId}`, confirm ? { data: { confirm: true } } : undefined);
 }
 
 export async function reorderLists({

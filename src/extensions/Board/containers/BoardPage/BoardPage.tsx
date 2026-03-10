@@ -4,6 +4,7 @@
 // Sprint 20: real-time sync via useWebSocket + useBoardSync; ConnectionBadge in header.
 // Sprint 48: tabbed view adds Activity, Comments, and Archived Cards panels.
 // Sprint 52: BoardViewSwitcher mounted above canvas for Kanban/Table/Calendar/Timeline.
+// Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -41,6 +42,8 @@ import { selectActiveView } from '../../../BoardViewSwitcher/viewPreference.slic
 import TableView from '../../../TableView/TableView';
 import CalendarView from '../../../CalendarView/CalendarView';
 import TimelineView from '../../../TimelineView/TimelineView';
+import BoardDeleteDialog from '../../components/BoardDeleteDialog';
+import ListDeleteDialog from '../../../List/components/ListDeleteDialog';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -85,6 +88,20 @@ const BoardPage = () => {
 
   // ── Board settings panel ─────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // ── Delete confirmation dialogs (Sprint 56) ───────────────────────────────
+  // Board delete: open when server returns 409 delete-requires-confirmation.
+  const [boardDeleteDialog, setBoardDeleteDialog] = useState<{
+    listCount: number;
+    cardCount: number;
+  } | null>(null);
+
+  // List delete: open when server returns 409 for a list with cards.
+  const [listDeleteDialog, setListDeleteDialog] = useState<{
+    listId: string;
+    listTitle: string;
+    cardCount: number;
+  } | null>(null);
 
   // ── Real-time sync (sprint-20) ────────────────────────────────────────────
   const { handleEvent, lastSequence } = useBoardSync({ boardId: boardId ?? '' });
@@ -237,15 +254,25 @@ const BoardPage = () => {
 
   const handleDeleteList = useCallback(
     async (listId: string) => {
-      if (!confirm('Delete this list? All cards will be removed.')) return;
       try {
         await deleteList({ api, listId });
         if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
-      } catch {
-        // TODO: surface error to user
+      } catch (err: unknown) {
+        // 409 means the list has cards — open confirmation dialog.
+        const resp = (err as { response?: { status?: number; data?: { name?: string; data?: { cardCount?: number } } } }).response;
+        if (resp?.status === 409 && resp.data?.name === 'delete-requires-confirmation') {
+          const listTitle = lists[listId]?.title ?? 'this list';
+          setListDeleteDialog({
+            listId,
+            listTitle,
+            cardCount: resp.data.data?.cardCount ?? 0,
+          });
+        } else {
+          addToast('Failed to delete list.', 'error');
+        }
       }
     },
-    [api, boardId, dispatch],
+    [api, boardId, dispatch, lists, addToast],
   );
 
   // ── Board archive / delete ─────────────────────────────────────────────
@@ -261,12 +288,20 @@ const BoardPage = () => {
 
   const handleBoardDelete = useCallback(async () => {
     if (!boardId) return;
-    if (!confirm('Delete this board? All lists and cards will be permanently removed.')) return;
     try {
       await deleteBoard({ api, boardId });
       navigate('/workspaces');
-    } catch {
-      addToast('Failed to delete board.', 'error');
+    } catch (err: unknown) {
+      // 409 means the board has lists/cards — open confirmation dialog.
+      const resp = (err as { response?: { status?: number; data?: { name?: string; data?: { listCount?: number; cardCount?: number } } } }).response;
+      if (resp?.status === 409 && resp.data?.name === 'delete-requires-confirmation') {
+        setBoardDeleteDialog({
+          listCount: resp.data.data?.listCount ?? 0,
+          cardCount: resp.data.data?.cardCount ?? 0,
+        });
+      } else {
+        addToast('Failed to delete board.', 'error');
+      }
     }
   }, [api, boardId, navigate, addToast]);
 
@@ -410,6 +445,36 @@ const BoardPage = () => {
             }}
           />
         </div>
+      )}
+
+      {/* Board delete confirmation dialog — shown when server returns 409 with nested content counts */}
+      {boardDeleteDialog && (
+        <BoardDeleteDialog
+          boardTitle={board.title}
+          listCount={boardDeleteDialog.listCount}
+          cardCount={boardDeleteDialog.cardCount}
+          onConfirm={async () => {
+            setBoardDeleteDialog(null);
+            await deleteBoard({ api, boardId: boardId!, confirm: true });
+            navigate('/workspaces');
+          }}
+          onCancel={() => setBoardDeleteDialog(null)}
+        />
+      )}
+
+      {/* List delete confirmation dialog — shown when server returns 409 for a list with cards */}
+      {listDeleteDialog && (
+        <ListDeleteDialog
+          listTitle={listDeleteDialog.listTitle}
+          cardCount={listDeleteDialog.cardCount}
+          onConfirm={async () => {
+            const { listId } = listDeleteDialog;
+            setListDeleteDialog(null);
+            await deleteList({ api, listId, confirm: true });
+            if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
+          }}
+          onCancel={() => setListDeleteDialog(null)}
+        />
       )}
     </div>
   );

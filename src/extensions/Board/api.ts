@@ -73,11 +73,13 @@ export async function archiveBoard({
 export async function deleteBoard({
   api,
   boardId,
+  confirm,
 }: {
-  api: { delete: <T>(url: string) => Promise<T> };
+  api: { delete: <T>(url: string, config?: { data?: unknown }) => Promise<T> };
   boardId: string;
+  confirm?: boolean;
 }): Promise<void> {
-  return api.delete(`/boards/${boardId}`);
+  return api.delete(`/boards/${boardId}`, confirm ? { data: { confirm: true } } : undefined);
 }
 
 export async function duplicateBoard({
