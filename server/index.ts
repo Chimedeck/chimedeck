@@ -27,6 +27,7 @@ import { ensureBucketExists } from './extensions/attachment/common/config/s3';
 import { pluginsRouter } from './extensions/plugins/api/index';
 import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
+import { boardViewRouter } from './extensions/boardView/api/index';
 
 // Load all feature flag sources before handling any requests
 await flags.load();
@@ -74,6 +75,9 @@ async function router(req: Request): Promise<Response> {
 
   const boardResponse = await boardRouter(req, path);
   if (boardResponse) return boardResponse;
+
+  const boardViewResponse = await boardViewRouter(req, path);
+  if (boardViewResponse) return boardViewResponse;
 
   const listResponse = await listRouter(req, path);
   if (listResponse) return listResponse;
