@@ -225,4 +225,148 @@ test.describe('Calendar View', () => {
     await overflowChip.click();
     await expect(overflowChip).not.toBeVisible();
   });
+
+  // ── Weekly view ────────────────────────────────────────────────────────────
+
+  test('Toggling to weekly view renders the 7-column week grid', async ({ page, request }) => {
+    const creds = await registerAndLogin(request, 'cal-week-toggle');
+    const wsId = await createWorkspace(request, creds.token);
+    const board = await createBoard(request, creds.token, wsId);
+
+    await goToBoard(page, BASE_URL, board.id, creds);
+    await page.getByTestId('board-view-tab-CALENDAR').click();
+    await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
+
+    // Switch to week view
+    await page.getByTestId('calendar-mode-week').click();
+    await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
+    await expect(page.getByTestId('calendar-month-grid')).not.toBeVisible();
+
+    // Week title should be visible
+    await expect(page.getByTestId('calendar-week-title')).toBeVisible();
+  });
+
+  test('Prev/next week navigation changes the week title', async ({ page, request }) => {
+    const creds = await registerAndLogin(request, 'cal-week-nav');
+    const wsId = await createWorkspace(request, creds.token);
+    const board = await createBoard(request, creds.token, wsId);
+
+    await goToBoard(page, BASE_URL, board.id, creds);
+    await page.getByTestId('board-view-tab-CALENDAR').click();
+    await page.getByTestId('calendar-mode-week').click();
+    await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
+
+    const initialTitle = await page.getByTestId('calendar-week-title').textContent();
+
+    // Navigate forward one week
+    await page.getByTestId('calendar-week-next').click();
+    const nextTitle = await page.getByTestId('calendar-week-title').textContent();
+    expect(nextTitle).not.toBe(initialTitle);
+
+    // Navigate back twice to reach the previous week
+    await page.getByTestId('calendar-week-prev').click();
+    await page.getByTestId('calendar-week-prev').click();
+    const prevTitle = await page.getByTestId('calendar-week-title').textContent();
+    expect(prevTitle).not.toBe(initialTitle);
+  });
+
+  test('Cards with due_date appear in the weekly view on correct day', async ({ page, request }) => {
+    const creds = await registerAndLogin(request, 'cal-week-cards');
+    const wsId = await createWorkspace(request, creds.token);
+    const board = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, board.id, 'Todo');
+
+    // Pick today's date so it falls in the current week
+    const now = new Date();
+    const due = isoDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const cardId = await createCard(request, creds.token, listId, 'WeekCard');
+    await patchCard(request, creds.token, cardId, { due_date: due });
+
+    await goToBoard(page, BASE_URL, board.id, creds);
+    await page.getByTestId('board-view-tab-CALENDAR').click();
+    await page.getByTestId('calendar-mode-week').click();
+    await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
+
+    const dayCell = page.getByTestId(`calendar-day-${due}`);
+    await expect(dayCell).toBeVisible();
+    await expect(dayCell.getByTestId(`calendar-chip-${cardId}`)).toBeVisible();
+  });
+
+  test('Drag card to another day updates due_date via PATCH (monthly view)', async ({ page, request }) => {
+    const creds = await registerAndLogin(request, 'cal-drag-month');
+    const wsId = await createWorkspace(request, creds.token);
+    const board = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, board.id, 'Todo');
+
+    const now = new Date();
+    const sourceDay = 10;
+    const targetDay = 15;
+    const sourceDue = isoDate(now.getFullYear(), now.getMonth() + 1, sourceDay);
+    const targetDue = isoDate(now.getFullYear(), now.getMonth() + 1, targetDay);
+
+    const cardId = await createCard(request, creds.token, listId, 'DragCard');
+    await patchCard(request, creds.token, cardId, { due_date: sourceDue });
+
+    await goToBoard(page, BASE_URL, board.id, creds);
+    await page.getByTestId('board-view-tab-CALENDAR').click();
+    await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
+
+    const chip = page.getByTestId(`calendar-chip-${cardId}`);
+    const targetCell = page.getByTestId(`calendar-day-${targetDue}`);
+    await expect(chip).toBeVisible();
+    await expect(targetCell).toBeVisible();
+
+    // Intercept PATCH to verify it fires
+    const [patchRequest] = await Promise.all([
+      page.waitForRequest((req) =>
+        req.url().includes(`/api/v1/cards/${cardId}`) && req.method() === 'PATCH',
+        { timeout: 10000 },
+      ),
+      chip.dragTo(targetCell),
+    ]);
+    expect(patchRequest).toBeTruthy();
+
+    // Card chip should now appear on target day
+    await expect(targetCell.getByTestId(`calendar-chip-${cardId}`)).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Failed PATCH on drag reverts card and shows error toast', async ({ page, request }) => {
+    const creds = await registerAndLogin(request, 'cal-drag-revert');
+    const wsId = await createWorkspace(request, creds.token);
+    const board = await createBoard(request, creds.token, wsId);
+    const listId = await createList(request, creds.token, board.id, 'Todo');
+
+    const now = new Date();
+    const sourceDay = 8;
+    const targetDay = 20;
+    const sourceDue = isoDate(now.getFullYear(), now.getMonth() + 1, sourceDay);
+    const targetDue = isoDate(now.getFullYear(), now.getMonth() + 1, targetDay);
+
+    const cardId = await createCard(request, creds.token, listId, 'RevertCard');
+    await patchCard(request, creds.token, cardId, { due_date: sourceDue });
+
+    await goToBoard(page, BASE_URL, board.id, creds);
+    await page.getByTestId('board-view-tab-CALENDAR').click();
+    await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
+
+    // Intercept the PATCH and return a 500 error
+    await page.route(`**/api/v1/cards/${cardId}`, (route) => {
+      if (route.request().method() === 'PATCH') {
+        route.fulfill({ status: 500, body: JSON.stringify({ name: 'internal-error' }) });
+      } else {
+        route.continue();
+      }
+    });
+
+    const chip = page.getByTestId(`calendar-chip-${cardId}`);
+    const targetCell = page.getByTestId(`calendar-day-${targetDue}`);
+    await chip.dragTo(targetCell);
+
+    // Card should revert back to original day
+    const sourceCell = page.getByTestId(`calendar-day-${sourceDue}`);
+    await expect(sourceCell.getByTestId(`calendar-chip-${cardId}`)).toBeVisible({ timeout: 5000 });
+
+    // Error toast should appear
+    await expect(page.getByText('Failed to update due date')).toBeVisible({ timeout: 5000 });
+  });
 });

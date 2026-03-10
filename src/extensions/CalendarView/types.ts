@@ -19,6 +19,16 @@ export interface CalendarMonthGridProps {
   onCardClick: (cardId: string) => void;
 }
 
+export interface CalendarWeekGridProps {
+  /** The Sunday that starts the displayed week (Date object, local midnight). */
+  weekStart: Date;
+  cardsByDay: Map<string, Card[]>; // key: "YYYY-MM-DD"
+  onPrev: () => void;
+  onNext: () => void;
+  onCardClick: (cardId: string) => void;
+  onCardDrop?: (cardId: string, newDate: string) => void;
+}
+
 export interface CalendarDayCellProps {
   date: Date;
   cards: Card[];
