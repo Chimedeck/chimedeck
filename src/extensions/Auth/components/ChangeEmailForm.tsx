@@ -1,15 +1,9 @@
 // ChangeEmailForm — embedded in the profile settings page.
 // Submits POST /api/v1/auth/change-email and renders the pending banner on confirmation flow.
 import { useState } from 'react';
-import { useAppDispatch } from '~/hooks/useAppDispatch';
-import { createAppAsyncThunk } from '~/utils/redux';
 import { authApi } from '../api/auth';
 import EmailChangePending from './EmailChangePending';
 import translations from '../translations/en.json';
-
-// ---------- Inline mini-thunk (no dedicated duck needed for this small form) ----------
-
-let _dispatch: ReturnType<typeof useAppDispatch> | null = null;
 
 async function submitChangeEmail({
   email,
@@ -25,11 +19,12 @@ async function submitChangeEmail({
 // ---------- Component ----------
 
 interface ChangeEmailFormProps {
-  currentEmail: string;
-  onSuccess?: (newEmail: string) => void;
+  readonly currentEmail: string;
+  readonly onSuccess?: (newEmail: string) => void;
+  readonly onPending?: (pendingEmail: string) => void;
 }
 
-export default function ChangeEmailForm({ currentEmail, onSuccess }: ChangeEmailFormProps) {
+export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: ChangeEmailFormProps) {
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -50,8 +45,13 @@ export default function ChangeEmailForm({ currentEmail, onSuccess }: ChangeEmail
 
       if (result.requiresConfirmation && result.pendingEmail) {
         setPendingEmail(result.pendingEmail);
+        onPending?.(result.pendingEmail);
+        setNewEmail('');
+        setPassword('');
       } else if (result.email) {
         onSuccess?.(result.email);
+        setNewEmail('');
+        setPassword('');
       }
     } catch (err: unknown) {
       const apiError = isApiError(err) ? err.response.data.name : null;
@@ -109,9 +109,15 @@ export default function ChangeEmailForm({ currentEmail, onSuccess }: ChangeEmail
       <button
         type="submit"
         disabled={submitting}
-        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
       >
-        {submitting ? 'Submitting…' : translations.changeEmail.submit}
+        {submitting && (
+          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+        )}
+        {submitting ? 'Saving…' : translations.changeEmail.submit}
       </button>
     </form>
   );

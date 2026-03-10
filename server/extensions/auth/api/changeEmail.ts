@@ -70,7 +70,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
     );
   }
 
-  if (newEmail === user.email) {
+  if (newEmail === user.email.toLowerCase().trim()) {
     return Response.json(
       { name: 'email-unchanged', data: { message: 'New email must be different from current email' } },
       { status: 422 },
