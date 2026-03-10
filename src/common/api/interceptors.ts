@@ -34,6 +34,10 @@ apiClient.interceptors.response.use(
       } catch {
         isRefreshing = false;
         clearAuthCallback?.();
+        // Redirect to login with reason so the login page can show a message
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login?reason=session_expired';
+        }
         return Promise.reject(error);
       }
     }

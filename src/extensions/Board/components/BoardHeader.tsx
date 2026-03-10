@@ -4,6 +4,7 @@ import type { Board } from '../api';
 import BoardMemberAvatars from './BoardMemberAvatars';
 import ConnectionBadge from '~/common/components/ConnectionBadge';
 import type { ConnectionState } from '~/common/components/ConnectionBadge';
+import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
 
 interface Member {
   id: string;
@@ -16,6 +17,8 @@ interface Props {
   members?: Member[];
   /** Three-state connection indicator; defaults to 'connected' for backward compat */
   connectionState?: ConnectionState;
+  /** When true, show HTTP polling fallback indicator next to connection badge */
+  pollingActive?: boolean;
   /** @deprecated use connectionState instead */
   connected?: boolean;
   onTitleSave: (title: string) => Promise<void>;
@@ -28,6 +31,7 @@ const BoardHeader = ({
   board,
   members = [],
   connectionState,
+  pollingActive = false,
   connected = true,
   onTitleSave,
   onArchive,
@@ -111,6 +115,7 @@ const BoardHeader = ({
 
       {/* Connection badge (sprint-20) */}
       <ConnectionBadge state={resolvedState} />
+      <PollingIndicator active={pollingActive} />
 
       <div className="ml-auto flex items-center gap-2">
         {/* Member avatars */}

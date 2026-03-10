@@ -28,6 +28,7 @@ import { createCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
 import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
 import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
+import { usePollingFallback } from '../../../Realtime/PollingFallback';
 import { selectAuthToken } from '../../../Auth/duck/authDuck';
 import { apiClient } from '~/common/api/client';
 import PluginIframeContainer from '../../../Plugins/iframeHost/PluginIframeContainer';
@@ -79,7 +80,7 @@ const BoardPage = () => {
 
   // ── Real-time sync (sprint-20) ────────────────────────────────────────────
   const { handleEvent, lastSequence } = useBoardSync({ boardId: boardId ?? '' });
-  const { connectionState } = useWebSocket({
+  const { connectionState, pollingActive } = useWebSocket({
     boardId: boardId ?? '',
     token: accessToken ?? '',
     lastSequence,
@@ -90,6 +91,14 @@ const BoardPage = () => {
       // Full reload on overflow so state is not stale
       if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
     },
+  });
+
+  // HTTP polling fallback: activates when WS has failed 3+ times
+  usePollingFallback({
+    boardId: boardId ?? '',
+    active: pollingActive,
+    lastSequence,
+    onEvents: (events) => { events.forEach(handleEvent); },
   });
 
   useEffect(() => {
@@ -285,6 +294,7 @@ const BoardPage = () => {
       <BoardHeader
         board={board}
         connectionState={connectionState}
+        pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
         onArchive={handleBoardArchive}
         onDelete={handleBoardDelete}

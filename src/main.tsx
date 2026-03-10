@@ -5,6 +5,7 @@ import { store } from './store';
 import { setTokenGetter } from './common/api/client';
 import { setClearAuthCallback } from './common/api/interceptors';
 import { clearAuth } from './extensions/Auth/duck/authDuck';
+import { socket } from './extensions/Realtime/client/socket';
 import App from './App';
 import './index.css';
 
@@ -14,6 +15,13 @@ setTokenGetter(
   () => (store.getState() as { auth: { accessToken: string | null } }).auth.accessToken
 );
 setClearAuthCallback(() => store.dispatch(clearAuth()));
+
+// WS close code 4001 = server revoked this session.
+// Clear Redux auth state and redirect to login so the user is informed.
+socket.setForcedLogoutCallback(() => {
+  store.dispatch(clearAuth());
+  window.location.href = '/login?reason=session_expired';
+});
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');

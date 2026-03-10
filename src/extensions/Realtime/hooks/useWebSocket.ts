@@ -28,6 +28,8 @@ export interface UseWebSocketResult {
   connected: boolean;
   /** Three-state indicator: connected / reconnecting (backoff in progress) / offline */
   connectionState: ConnectionState;
+  /** True when WS has failed 3+ times and HTTP polling fallback is active */
+  pollingActive: boolean;
 }
 
 export function useWebSocket({
@@ -40,6 +42,7 @@ export function useWebSocket({
   fetchMissedEvents,
 }: UseWebSocketOptions): UseWebSocketResult {
   const [connectionState, setConnectionState] = useState<ConnectionState>('reconnecting');
+  const [pollingActive, setPollingActive] = useState(false);
   const lastSeqRef = useRef(lastSequence);
   const isReplayingRef = useRef(false);
 
@@ -118,6 +121,8 @@ export function useWebSocket({
       onEvent,
       onOpen: handleOpen,
       onClose: handleClose,
+      onPollingActive: () => setPollingActive(true),
+      onPollingInactive: () => setPollingActive(false),
     });
 
     socket.connect({ boardId, token });
@@ -130,5 +135,5 @@ export function useWebSocket({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId, token]);
 
-  return { connected: connectionState === 'connected', connectionState };
+  return { connected: connectionState === 'connected', connectionState, pollingActive };
 }
