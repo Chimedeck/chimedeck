@@ -107,6 +107,7 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
             labelWidth={LABEL_WIDTH}
             today={today}
             onCardClick={onCardClick}
+            {...(_addToast !== undefined ? { addToast: _addToast } : {})}
           />
         ))}
       </div>

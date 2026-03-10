@@ -1,19 +1,29 @@
 // TimelineRow — renders one horizontal swimlane for a single list.
-// Scheduled cards (with both start_date and due_date) occupy the bar area;
-// bar rendering itself is implemented in Sprint 54 Iteration 7 (TimelineBar).
-// Unscheduled cards (missing start_date or due_date) are shown as clickable chips
-// below the bar area.
+// Scheduled cards (with both start_date and due_date) are rendered as
+// draggable/resizable TimelineBar components. Unscheduled cards appear as
+// clickable chips below the bar area.
+import TimelineBar from './TimelineBar';
+import { useTimelineDrag } from './useTimelineDrag';
 import type { TimelineRowProps } from './types';
 
 const TimelineRow = ({
   swimlane,
+  originDate,
   totalDays,
   dayWidth,
   labelWidth,
   onCardClick,
+  addToast,
 }: TimelineRowProps) => {
   const totalWidth = totalDays * dayWidth;
   const hasUnscheduled = swimlane.unscheduledCards.length > 0;
+
+  const { dragOverrides, handleMoveStart, handleResizeLeftStart, handleResizeRightStart } =
+    useTimelineDrag({
+      cards: swimlane.scheduledCards,
+      dayWidth,
+      ...(addToast !== undefined ? { addToast } : {}),
+    });
 
   return (
     <div
@@ -38,13 +48,25 @@ const TimelineRow = ({
           )}
         </div>
 
-        {/* Bar area — TimelineBar components rendered here in Iteration 7 */}
+        {/* Bar area — one TimelineBar per scheduled card */}
         <div
           className="relative"
           style={{ width: totalWidth, minHeight: 44 }}
           data-testid={`timeline-bar-area-${swimlane.listId}`}
         >
-          {/* TODO: render TimelineBar components here (Sprint 54 Iteration 7) */}
+          {swimlane.scheduledCards.map((card) => (
+            <TimelineBar
+              key={card.id}
+              card={card}
+              originDate={originDate}
+              dayWidth={dayWidth}
+              {...(dragOverrides[card.id] !== undefined ? { dragOverride: dragOverrides[card.id] } : {})}
+              onCardClick={onCardClick}
+              onMoveStart={handleMoveStart}
+              onResizeLeftStart={handleResizeLeftStart}
+              onResizeRightStart={handleResizeRightStart}
+            />
+          ))}
         </div>
       </div>
 
