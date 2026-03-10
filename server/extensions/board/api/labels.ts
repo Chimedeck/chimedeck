@@ -9,23 +9,23 @@ import {
 } from '../../../middlewares/permissionManager';
 import { guestGuard } from '../../../middlewares/guestGuard';
 import { requireBoardAccess, type BoardScopedRequest } from '../middlewares/requireBoardAccess';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../middlewares/boardVisibility';
 import { randomUUID } from 'crypto';
 
 export async function handleGetBoardLabels(req: Request, boardId: string): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
+  const visibilityError = await applyBoardVisibility(req, boardId);
+  if (visibilityError) return visibilityError;
 
-  const boardReq = req as BoardScopedRequest;
-  const accessError = await requireBoardAccess(boardReq, boardId);
-  if (accessError) return accessError;
+  const scopedReq = req as BoardVisibilityScopedRequest;
+  const board = scopedReq.board!;
 
-  const board = boardReq.board!;
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
-  if (membershipError) return membershipError;
-
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
+  if (board.visibility !== 'PUBLIC') {
+    const roleError = requireRole(scopedReq, 'VIEWER');
+    if (roleError) return roleError;
+  }
 
   const labels = await db('labels')
     .where({ workspace_id: board.workspace_id })

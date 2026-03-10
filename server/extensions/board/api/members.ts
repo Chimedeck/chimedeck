@@ -1,28 +1,25 @@
 // GET /api/v1/boards/:id/members — list workspace members accessible to board.
+// PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
-  requireWorkspaceMembership,
   requireRole,
-  type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardAccess, type BoardScopedRequest } from '../middlewares/requireBoardAccess';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../middlewares/boardVisibility';
 
 export async function handleGetBoardMembers(req: Request, boardId: string): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
+  const visibilityError = await applyBoardVisibility(req, boardId);
+  if (visibilityError) return visibilityError;
 
-  const boardReq = req as BoardScopedRequest;
-  const accessError = await requireBoardAccess(boardReq, boardId);
-  if (accessError) return accessError;
+  const scopedReq = req as BoardVisibilityScopedRequest;
+  const board = scopedReq.board!;
 
-  const board = boardReq.board!;
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
-  if (membershipError) return membershipError;
-
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
+  if (board.visibility !== 'PUBLIC') {
+    const roleError = requireRole(scopedReq, 'VIEWER');
+    if (roleError) return roleError;
+  }
 
   const members = await db('memberships')
     .join('users', 'memberships.user_id', 'users.id')

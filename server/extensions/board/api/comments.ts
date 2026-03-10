@@ -1,33 +1,28 @@
-// GET /api/v1/boards/:id/comments — paginated comments across all cards in a board; min role: VIEWER.
+// GET /api/v1/boards/:id/comments — paginated comments across all cards in a board.
+// PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
-  requireWorkspaceMembership,
   requireRole,
-  type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../middlewares/boardVisibility';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 
 export async function handleGetBoardComments(req: Request, boardId: string): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
+  const visibilityError = await applyBoardVisibility(req, boardId);
+  if (visibilityError) return visibilityError;
 
-  const board = await db('boards').where({ id: boardId }).first();
-  if (!board) {
-    return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
-      { status: 404 },
-    );
+  const scopedReq = req as BoardVisibilityScopedRequest;
+  const board = scopedReq.board!;
+
+  if (board.visibility !== 'PUBLIC') {
+    const roleError = requireRole(scopedReq, 'VIEWER');
+    if (roleError) return roleError;
   }
-
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
-  if (membershipError) return membershipError;
-
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
 
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;

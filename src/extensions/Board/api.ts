@@ -2,12 +2,14 @@
 // Callers must inject an axios-compatible `api` instance.
 
 export type BoardState = 'ACTIVE' | 'ARCHIVED';
+export type BoardVisibility = 'PUBLIC' | 'PRIVATE' | 'WORKSPACE';
 
 export interface Board {
   id: string;
   workspaceId: string;
   title: string;
   state: BoardState;
+  visibility: BoardVisibility;
   createdAt: string;
   isStarred?: boolean;
 }
@@ -106,4 +108,17 @@ export async function unstarBoard({
   boardId: string;
 }): Promise<void> {
   await api.delete(`/boards/${boardId}/star`);
+}
+
+// PATCH /api/v1/boards/:id — update board visibility field; min role: ADMIN.
+export async function patchBoardVisibility({
+  api,
+  boardId,
+  visibility,
+}: {
+  api: { patch: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  visibility: BoardVisibility;
+}): Promise<{ data: Board }> {
+  return api.patch<{ data: Board }>(`/boards/${boardId}`, { visibility });
 }
