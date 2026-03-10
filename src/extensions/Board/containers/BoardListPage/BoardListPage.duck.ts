@@ -13,6 +13,8 @@ import {
   archiveBoard,
   deleteBoard,
   duplicateBoard,
+  starBoard,
+  unstarBoard,
   type Board,
 } from '../../api';
 
@@ -30,6 +32,8 @@ interface BoardListPageState {
   deleteError: SerializedError | null;
   duplicateInProgress: boolean;
   duplicateError: SerializedError | null;
+  // Starred filter: when true, only starred boards are shown
+  showStarredOnly: boolean;
 }
 
 const initialState: BoardListPageState = {
@@ -44,6 +48,7 @@ const initialState: BoardListPageState = {
   deleteError: null,
   duplicateInProgress: false,
   duplicateError: null,
+  showStarredOnly: false,
 };
 
 // ---------- Thunks ----------
@@ -88,12 +93,32 @@ export const duplicateBoardThunk = createAppAsyncThunk(
   },
 );
 
+export const starBoardThunk = createAppAsyncThunk(
+  'boardList/star',
+  async ({ boardId }: { boardId: string }, { extra }) => {
+    await starBoard({ api: extra.api, boardId });
+    return boardId;
+  },
+);
+
+export const unstarBoardThunk = createAppAsyncThunk(
+  'boardList/unstar',
+  async ({ boardId }: { boardId: string }, { extra }) => {
+    await unstarBoard({ api: extra.api, boardId });
+    return boardId;
+  },
+);
+
 // ---------- Slice ----------
 
 const boardListPageSlice = createSlice({
   name: 'boardListPage',
   initialState,
-  reducers: {},
+  reducers: {
+    toggleStarredFilter(state) {
+      state.showStarredOnly = !state.showStarredOnly;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchBoardsThunk.pending, (state) => {
@@ -130,11 +155,22 @@ const boardListPageSlice = createSlice({
       .addCase(duplicateBoardThunk.fulfilled, (state, action: PayloadAction<Board>) => {
         state.duplicateInProgress = false;
         state.boards.push(action.payload);
+      })
+      // Optimistic star toggle: flip isStarred immediately on success
+      .addCase(starBoardThunk.fulfilled, (state, action: PayloadAction<string>) => {
+        const board = state.boards.find((b) => b.id === action.payload);
+        if (board) board.isStarred = true;
+      })
+      .addCase(unstarBoardThunk.fulfilled, (state, action: PayloadAction<string>) => {
+        const board = state.boards.find((b) => b.id === action.payload);
+        if (board) board.isStarred = false;
       });
   },
 });
 
 export default boardListPageSlice.reducer;
+
+export const { toggleStarredFilter } = boardListPageSlice.actions;
 
 // ---------- Selectors ----------
 
@@ -142,6 +178,14 @@ const selectBoardListPage = (state: RootState) =>
   (state as unknown as { boardListPage: BoardListPageState }).boardListPage;
 
 export const boardsSelector = createSelector(selectBoardListPage, (s) => s.boards);
+export const showStarredOnlySelector = createSelector(
+  selectBoardListPage,
+  (s) => s.showStarredOnly,
+);
+export const visibleBoardsSelector = createSelector(
+  selectBoardListPage,
+  (s) => (s.showStarredOnly ? s.boards.filter((b) => b.isStarred) : s.boards),
+);
 export const fetchBoardsInProgressSelector = createSelector(
   selectBoardListPage,
   (s) => s.fetchInProgress,

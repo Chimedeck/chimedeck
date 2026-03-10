@@ -9,6 +9,7 @@ export interface Board {
   title: string;
   state: BoardState;
   createdAt: string;
+  isStarred?: boolean;
 }
 
 // ---------- Board CRUD ----------
@@ -85,4 +86,24 @@ export async function duplicateBoard({
   boardId: string;
 }): Promise<{ data: Board }> {
   return api.post<{ data: Board }>(`/boards/${boardId}/duplicate`);
+}
+
+export async function starBoard({
+  api,
+  boardId,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+}): Promise<void> {
+  await api.post(`/boards/${boardId}/star`, {});
+}
+
+export async function unstarBoard({
+  api,
+  boardId,
+}: {
+  api: { delete: <T>(url: string) => Promise<T> };
+  boardId: string;
+}): Promise<void> {
+  await api.delete(`/boards/${boardId}/star`);
 }

@@ -2,6 +2,7 @@
 // Sprint 18: uses boardSlice (DndContext via BoardCanvas, optimistic card/list drag).
 // Sprint 19: ?card=:id URL param opens CardModal.
 // Sprint 20: real-time sync via useWebSocket + useBoardSync; ConnectionBadge in header.
+// Sprint 48: tabbed view adds Activity, Comments, and Archived Cards panels.
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -30,6 +31,9 @@ import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
 import { selectAuthToken } from '../../../Auth/duck/authDuck';
 import { apiClient } from '~/common/api/client';
 import PluginIframeContainer from '../../../Plugins/iframeHost/PluginIframeContainer';
+import BoardActivityPanel from '../../../BoardViews/BoardActivityPanel';
+import BoardCommentsPanel from '../../../BoardViews/BoardCommentsPanel';
+import BoardArchivedCardsPanel from '../../../BoardViews/BoardArchivedCardsPanel';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -65,6 +69,10 @@ const BoardPage = () => {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // ── Active tab ────────────────────────────────────────────────────────────
+  type BoardTab = 'board' | 'activity' | 'comments' | 'archived-cards';
+  const [activeTab, setActiveTab] = useState<BoardTab>('board');
 
   // ── Board settings panel ─────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -265,6 +273,13 @@ const BoardPage = () => {
 
   if (!board) return null;
 
+  const tabs = [
+    { id: 'board' as const, label: 'Board' },
+    { id: 'activity' as const, label: 'Activity' },
+    { id: 'comments' as const, label: 'Comments' },
+    { id: 'archived-cards' as const, label: 'Archived Cards' },
+  ];
+
   return (
     <div className="flex flex-col bg-slate-950 text-slate-100 min-h-full">
       <BoardHeader
@@ -280,39 +295,78 @@ const BoardPage = () => {
           This board is archived and read-only.
         </div>
       )}
-      {/* Hidden plugin iframes + bridge provider for card plugin UI injections */}
-      <PluginIframeContainer boardId={boardId ?? ''}>
-        <BoardCanvas
-          boardId={boardId ?? ''}
-          boardTitle={board.title}
-          listOrder={listOrder}
-          lists={lists}
-          cardsByList={cardsByList}
-          cards={cards}
-          onCardMove={handleCardMove}
-          onListReorder={handleListReorder}
-          onDragStart={handleDragStart}
-          onDragCommit={handleDragCommit}
-          onDragRollback={handleDragRollback}
-          onAddCard={handleAddCard}
-          onAddList={handleAddList}
-          onRenameList={handleRenameList}
-          onArchiveList={handleArchiveList}
-          onDeleteList={handleDeleteList}
-          onCardClick={handleCardClick}
-          isReadOnly={board.state === 'ARCHIVED'}
-        />
-        {/* Card detail modal — URL-driven (?card=:id) */}
-        <CardModalContainer />
-        {/* Board settings panel */}
-        {settingsOpen && (
-          <BoardSettings
-            onClose={() => setSettingsOpen(false)}
+
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-slate-700 px-4 pt-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded-t px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'border-b-2 border-blue-500 text-blue-400'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'board' ? (
+        /* Hidden plugin iframes + bridge provider for card plugin UI injections */
+        <PluginIframeContainer boardId={boardId ?? ''}>
+          <BoardCanvas
+            boardId={boardId ?? ''}
+            boardTitle={board.title}
+            listOrder={listOrder}
+            lists={lists}
+            cardsByList={cardsByList}
+            cards={cards}
+            onCardMove={handleCardMove}
+            onListReorder={handleListReorder}
+            onDragStart={handleDragStart}
+            onDragCommit={handleDragCommit}
+            onDragRollback={handleDragRollback}
+            onAddCard={handleAddCard}
+            onAddList={handleAddList}
+            onRenameList={handleRenameList}
+            onArchiveList={handleArchiveList}
+            onDeleteList={handleDeleteList}
+            onCardClick={handleCardClick}
+            isReadOnly={board.state === 'ARCHIVED'}
           />
-        )}
-        {/* Toast notifications (rollback errors, conflicts) */}
-        <ToastRegion toasts={toasts} onDismiss={dismissToast} />
-      </PluginIframeContainer>
+          {/* Card detail modal — URL-driven (?card=:id) */}
+          <CardModalContainer />
+          {/* Board settings panel */}
+          {settingsOpen && (
+            <BoardSettings
+              onClose={() => setSettingsOpen(false)}
+            />
+          )}
+          {/* Toast notifications (rollback errors, conflicts) */}
+          <ToastRegion toasts={toasts} onDismiss={dismissToast} />
+        </PluginIframeContainer>
+      ) : activeTab === 'activity' ? (
+        <div className="flex-1 overflow-y-auto">
+          <BoardActivityPanel boardId={boardId ?? ''} />
+        </div>
+      ) : activeTab === 'comments' ? (
+        <div className="flex-1 overflow-y-auto">
+          <BoardCommentsPanel boardId={boardId ?? ''} />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          <BoardArchivedCardsPanel
+            boardId={boardId ?? ''}
+            onCardUnarchived={() => {
+              if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
+              setActiveTab('board');
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
