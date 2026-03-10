@@ -15,6 +15,9 @@ import { handleGetMemberSuggestions } from './members/suggestions';
 import { handleStarBoard, handleUnstarBoard } from './star';
 import { handleFollowBoard, handleUnfollowBoard } from './follow';
 import { handleGetMeStarredBoards } from './me-starred-boards';
+import { handleGetBoardActivity } from './activity';
+import { handleGetBoardComments } from './comments';
+import { handleGetArchivedCards } from './archived-cards';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -82,6 +85,15 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // DELETE /api/v1/boards/:id/follow — unfollow a board (idempotent)
     if (sub === '/follow' && req.method === 'DELETE') return handleUnfollowBoard(req, boardId);
+
+    // GET /api/v1/boards/:id/activity — paginated activity feed for the board
+    if (sub === '/activity' && req.method === 'GET') return handleGetBoardActivity(req, boardId);
+
+    // GET /api/v1/boards/:id/comments — paginated comments across all cards in the board
+    if (sub === '/comments' && req.method === 'GET') return handleGetBoardComments(req, boardId);
+
+    // GET /api/v1/boards/:id/archived-cards — all archived cards in the board
+    if (sub === '/archived-cards' && req.method === 'GET') return handleGetArchivedCards(req, boardId);
   }
 
   return null;
