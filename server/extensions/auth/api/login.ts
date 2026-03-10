@@ -1,6 +1,6 @@
 // POST /api/v1/auth/token — email/password login.
 import { randomBytes } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { verifyPassword } from '../mods/password/verify';
 import { issueAccessToken } from '../mods/token/issue';
@@ -79,7 +79,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   const expiresAt = new Date(now.getTime() + jwtConfig.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
 
   await db('refresh_tokens').insert({
-    id: uuidv4(),
+    id: generateId(),
     user_id: user.id,
     token: refreshToken,
     expires_at: expiresAt,

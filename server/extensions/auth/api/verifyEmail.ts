@@ -1,7 +1,7 @@
 // GET /api/v1/auth/verify-email?token=<token>
 // Looks up user by verification token, validates expiry, marks user as verified, issues JWT.
 import { randomBytes } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { issueAccessToken } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
@@ -47,7 +47,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
   const expiresAt = new Date(now.getTime() + jwtConfig.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
 
   await db('refresh_tokens').insert({
-    id: uuidv4(),
+    id: generateId(),
     user_id: user.id,
     token: refreshToken,
     expires_at: expiresAt,

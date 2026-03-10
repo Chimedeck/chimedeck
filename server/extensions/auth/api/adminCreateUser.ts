@@ -1,6 +1,6 @@
 // POST /api/v1/admin/users — provision an external user account.
 // Only accessible to authenticated users whose email domain is in ADMIN_EMAIL_DOMAINS.
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { hashPassword } from '../mods/password/hash';
 import { authenticate } from '../middlewares/authentication';
@@ -68,7 +68,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
 
   const plainPassword = providedPassword ?? generatePassword(16);
   const passwordHash = await hashPassword({ password: plainPassword });
-  const userId = uuidv4();
+  const userId = generateId();
   const now = new Date();
 
   await db('users').insert({

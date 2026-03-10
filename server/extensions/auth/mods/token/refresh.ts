@@ -1,6 +1,6 @@
 // Rotates a refresh token: marks old token revoked, inserts a new one.
 import { randomBytes } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../../../../common/uuid';
 import { db } from '../../../../common/db';
 import { jwtConfig } from '../../common/config/jwt';
 
@@ -33,7 +33,7 @@ export async function rotateRefreshToken({ token }: { token: string }): Promise<
   const expiresAt = new Date(now.getTime() + jwtConfig.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
 
   await db('refresh_tokens').insert({
-    id: uuidv4(),
+    id: generateId(),
     user_id: row.user_id,
     token: newToken,
     expires_at: expiresAt,

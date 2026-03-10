@@ -1,6 +1,6 @@
 // GET /api/v1/auth/oauth/:provider/callback — exchange code, upsert user, issue tokens.
 import { randomBytes } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../../../../common/uuid';
 import { db } from '../../../../common/db';
 import { memCache } from '../../../../mods/cache';
 import { exchangeGoogleCode } from '../../mods/oauth/google';
@@ -64,7 +64,7 @@ export async function handleOAuthCallback(
   let user = await db('users').where({ email: profile.email }).first();
   if (!user) {
     const newUser = {
-      id: uuidv4(),
+      id: generateId(),
       email: profile.email,
       name: profile.name,
       avatar_url: profile.picture ?? null,
@@ -81,7 +81,7 @@ export async function handleOAuthCallback(
   const expiresAt = new Date(now.getTime() + jwtConfig.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
 
   await db('refresh_tokens').insert({
-    id: uuidv4(),
+    id: generateId(),
     user_id: user.id,
     token: refreshToken,
     expires_at: expiresAt,

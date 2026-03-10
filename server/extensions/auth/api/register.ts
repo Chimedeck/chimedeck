@@ -1,6 +1,6 @@
 // POST /api/v1/auth/register — create a new account and return an auth session.
 import { randomBytes } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { hashPassword } from '../mods/password/hash';
 import { issueAccessToken } from '../mods/token/issue';
@@ -52,7 +52,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   }
 
   const passwordHash = await hashPassword({ password });
-  const userId = uuidv4();
+  const userId = generateId();
   const now = new Date();
 
   const verificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
@@ -93,7 +93,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   const expiresAt = new Date(now.getTime() + jwtConfig.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
 
   await db('refresh_tokens').insert({
-    id: uuidv4(),
+    id: generateId(),
     user_id: userId,
     token: refreshToken,
     expires_at: expiresAt,
