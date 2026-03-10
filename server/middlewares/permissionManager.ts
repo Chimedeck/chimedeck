@@ -3,14 +3,16 @@
 import type { AuthenticatedRequest } from '../extensions/auth/middlewares/authentication';
 import { db } from '../common/db';
 
-export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST';
 
 // Numeric rank — higher value = more privileged.
+// GUEST has rank 0 — below all workspace roles; read-only, board-scoped only.
 const ROLE_RANK: Record<Role, number> = {
   OWNER: 4,
   ADMIN: 3,
   MEMBER: 2,
   VIEWER: 1,
+  GUEST: 0,
 };
 
 export function roleRank(role: Role): number {

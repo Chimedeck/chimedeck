@@ -7,6 +7,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { guestGuard } from '../../../middlewares/guestGuard';
 import { requireBoardAccess, type BoardScopedRequest } from '../middlewares/requireBoardAccess';
 import { randomUUID } from 'crypto';
 
@@ -45,6 +46,9 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
+
+  const guestError = guestGuard(scopedReq);
+  if (guestError) return guestError;
 
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;

@@ -7,6 +7,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { guestGuard } from '../../../middlewares/guestGuard';
 import { duplicateBoard } from '../mods/duplicate/index';
 
 export async function handleDuplicateBoard(req: Request, boardId: string): Promise<Response> {
@@ -24,6 +25,9 @@ export async function handleDuplicateBoard(req: Request, boardId: string): Promi
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
+
+  const guestError = guestGuard(scopedReq);
+  if (guestError) return guestError;
 
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;

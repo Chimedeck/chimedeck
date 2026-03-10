@@ -18,6 +18,7 @@ import { handleGetMeStarredBoards } from './me-starred-boards';
 import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
 import { handleGetArchivedCards } from './archived-cards';
+import { handleInviteGuest, handleRevokeGuest, handleListGuests } from './guests/index';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -94,6 +95,18 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/archived-cards — all archived cards in the board
     if (sub === '/archived-cards' && req.method === 'GET') return handleGetArchivedCards(req, boardId);
+
+    // POST /api/v1/boards/:id/guests — invite a user as a guest (ADMIN+ only)
+    if (sub === '/guests' && req.method === 'POST') return handleInviteGuest(req, boardId);
+
+    // GET /api/v1/boards/:id/guests — list current board guests
+    if (sub === '/guests' && req.method === 'GET') return handleListGuests(req, boardId);
+
+    // DELETE /api/v1/boards/:id/guests/:userId — revoke guest access
+    const guestRevokeMatch = sub.match(/^\/guests\/([^/]+)$/);
+    if (guestRevokeMatch && req.method === 'DELETE') {
+      return handleRevokeGuest(req, boardId, guestRevokeMatch[1] as string);
+    }
   }
 
   return null;

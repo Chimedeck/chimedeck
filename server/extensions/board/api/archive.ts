@@ -7,6 +7,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { guestGuard } from '../../../middlewares/guestGuard';
 
 export async function handleArchiveBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -23,6 +24,9 @@ export async function handleArchiveBoard(req: Request, boardId: string): Promise
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
+
+  const guestError = guestGuard(scopedReq);
+  if (guestError) return guestError;
 
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;

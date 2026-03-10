@@ -6,6 +6,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { guestGuard } from '../../../middlewares/guestGuard';
 import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/requireBoardWritable';
 import { writeEvent } from '../../../mods/events/write';
 import type { MonetizationType, BoardVisibility } from '../types';
@@ -26,6 +27,9 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
+
+  const guestError = guestGuard(scopedReq);
+  if (guestError) return guestError;
 
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
