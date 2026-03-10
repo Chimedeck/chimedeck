@@ -165,6 +165,17 @@ const boardSlice = createSlice({
       }
     },
 
+    /** Optimistically update a single field on a card (e.g. due_date from CalendarView drag) */
+    optimisticUpdateCardField(
+      state,
+      action: PayloadAction<{ cardId: string; field: keyof Card; value: unknown }>,
+    ) {
+      const { cardId, field, value } = action.payload;
+      if (state.cards[cardId]) {
+        (state.cards[cardId] as Record<string, unknown>)[field as string] = value;
+      }
+    },
+
     /** Move a card between lists without saving an undo snapshot (WS events) */
     remoteCardMove(
       state,

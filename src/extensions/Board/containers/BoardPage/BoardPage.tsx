@@ -39,6 +39,7 @@ import BoardArchivedCardsPanel from '../../../BoardViews/BoardArchivedCardsPanel
 import BoardViewSwitcher from '../../../BoardViewSwitcher/BoardViewSwitcher';
 import { selectActiveView } from '../../../BoardViewSwitcher/viewPreference.slice';
 import TableView from '../../../TableView/TableView';
+import CalendarView from '../../../CalendarView/CalendarView';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -364,8 +365,15 @@ const BoardPage = () => {
               lists={lists}
               onCardClick={handleCardClick}
             />
+          ) : activeView === 'CALENDAR' ? (
+            <CalendarView
+              cards={Object.values(cards)}
+              lists={lists}
+              onCardClick={handleCardClick}
+              addToast={addToast}
+            />
           ) : (
-            /* Placeholder for Calendar/Timeline views — implemented in subsequent iterations */
+            /* Placeholder for Timeline view — implemented in a subsequent iteration */
             <div className="flex flex-1 items-center justify-center py-24 text-slate-500">
               {activeView} view coming soon
             </div>

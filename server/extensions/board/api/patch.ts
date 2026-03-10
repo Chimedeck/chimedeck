@@ -72,7 +72,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   if (body.visibility !== undefined) {
     if (!VALID_VISIBILITY.includes(body.visibility)) {
       return Response.json(
-        { error: { code: 'bad-request', message: 'visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'' } },
+        { error: { code: 'bad-request', message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
         { status: 400 },
       );
     }

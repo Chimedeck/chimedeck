@@ -42,7 +42,7 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
 
   if (body.visibility !== undefined && !VALID_VISIBILITY.includes(body.visibility)) {
     return Response.json(
-      { error: { code: 'bad-request', message: 'visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'' } },
+      { error: { code: 'bad-request', message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
       { status: 400 },
     );
   }
