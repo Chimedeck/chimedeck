@@ -59,6 +59,8 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
       .orderBy('created_at', 'asc');
   }
 
+  const customFieldValues = await db('card_custom_field_values').where({ card_id: cardId });
+
   return Response.json({
     data: card,
     includes: {
@@ -70,6 +72,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
       comments: [],
       attachments: [],
       activities,
+      customFieldValues,
     },
   });
 }
