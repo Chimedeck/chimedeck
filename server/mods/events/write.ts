@@ -43,6 +43,8 @@ export async function writeEvent(input: WriteEventInput): Promise<WrittenEvent> 
       entity_id: event.entity_id,
       actor_id: event.actor_id,
       payload: event.payload,
+      // version mirrors sequence so clients can detect ordering gaps and duplicates (§8)
+      version: Number(event.sequence),
       sequence: event.sequence.toString(),
       timestamp: event.created_at,
     });

@@ -2,6 +2,8 @@
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import { validateInvite } from '../../mods/invite/validate';
 import { consumeInvite } from '../../mods/invite/consume';
+import { writeEvent } from '../../../../mods/events/index';
+import { db } from '../../../../common/db';
 
 export async function handleAcceptInvite(req: Request, token: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -35,6 +37,25 @@ export async function handleAcceptInvite(req: Request, token: string): Promise<R
   const { invite } = result as Extract<typeof result, { ok: true }>;
 
   await consumeInvite({ invite, userId: currentUser!.id });
+
+  // Emit real-time event so connected clients learn about the new workspace member (§8).
+  // Resolve displayName from the users table since the JWT only carries id + email.
+  db('users').where({ id: currentUser!.id }).first().then((user) => {
+    const displayName = (user?.name as string | undefined) ?? currentUser!.email;
+    return writeEvent({
+      type: 'member_joined',
+      boardId: null,
+      entityId: invite.workspace_id,
+      actorId: currentUser!.id,
+      payload: {
+        scope: 'workspace',
+        userId: currentUser!.id,
+        displayName,
+        role: invite.role,
+        joinedAt: new Date().toISOString(),
+      },
+    });
+  }).catch(() => {});
 
   return Response.json({
     data: {

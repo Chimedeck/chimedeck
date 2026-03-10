@@ -7,6 +7,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import type { Role } from '../../../../middlewares/permissionManager';
+import { writeEvent } from '../../../../mods/events/index';
 
 const VALID_ROLES: Role[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'];
 
@@ -74,6 +75,21 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
     name: user.name ?? user.email,
     role,
   };
+
+  // Emit real-time event so connected clients learn about the new workspace member (§8).
+  writeEvent({
+    type: 'member_joined',
+    boardId: null,
+    entityId: workspaceId,
+    actorId: (req as AuthenticatedRequest).currentUser!.id,
+    payload: {
+      scope: 'workspace',
+      userId: user.id,
+      displayName: (user.name as string | undefined) ?? user.email,
+      role,
+      joinedAt: new Date().toISOString(),
+    },
+  }).catch(() => {});
 
   return Response.json({ data: member }, { status: 201 });
 }

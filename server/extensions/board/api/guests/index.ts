@@ -10,6 +10,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
+import { writeEvent } from '../../../../mods/events/index';
 
 // POST /api/v1/boards/:id/guests
 // Body: { userId: string }
@@ -64,10 +65,7 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
 
   if (existingMembership && existingMembership.role !== 'GUEST') {
     return Response.json(
-      {
-        name: 'user-already-workspace-member',
-        data: { message: 'User is already a workspace member with a higher role' },
-      },
+      { error: { code: 'user-already-workspace-member', message: 'User is already a workspace member with a higher role' } },
       { status: 409 },
     );
   }
@@ -97,6 +95,21 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
   const grantRow = await db('board_guest_access')
     .where({ user_id: userId, board_id: boardId })
     .first();
+
+  // Emit real-time event so board subscribers learn about the new guest member (§8).
+  writeEvent({
+    type: 'member_joined',
+    boardId,
+    entityId: boardId,
+    actorId: (req as AuthenticatedRequest).currentUser!.id,
+    payload: {
+      scope: 'board',
+      userId: targetUser.id,
+      displayName: (targetUser.name as string | undefined) ?? targetUser.email,
+      role: 'GUEST',
+      joinedAt: new Date().toISOString(),
+    },
+  }).catch(() => {});
 
   return Response.json({ data: grantRow }, { status: 201 });
 }

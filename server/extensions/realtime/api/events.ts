@@ -23,6 +23,8 @@ export async function handleGetBoardEvents(req: Request, boardId: string): Promi
 
   const serialized = events.map((e) => ({
     ...e,
+    // version mirrors sequence as a number for client ordering/dedup (§8)
+    version: Number(e.sequence),
     sequence: e.sequence.toString(),
   }));
 
