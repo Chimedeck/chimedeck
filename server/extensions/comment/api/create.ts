@@ -11,6 +11,7 @@ import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { syncMentions } from '../../../common/mentions/sync';
+import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
@@ -68,7 +69,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   }
 
   const id = randomUUID();
-  const trimmedContent = body.content.trim();
+  const trimmedContent = sanitizeRichText(body.content.trim());
 
   await db.transaction(async (trx) => {
     await trx('comments').insert({

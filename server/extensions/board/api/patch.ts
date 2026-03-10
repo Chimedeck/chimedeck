@@ -10,6 +10,7 @@ import { guestGuard } from '../../../middlewares/guestGuard';
 import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/requireBoardWritable';
 import { writeEvent } from '../../../mods/events/write';
 import type { MonetizationType, BoardVisibility } from '../types';
+import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 
 const VALID_MONETIZATION_TYPES: Array<MonetizationType | null> = [null, 'pre-paid', 'pay-to-paid'];
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
@@ -53,7 +54,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
         { status: 400 },
       );
     }
-    updates.title = body.title.trim();
+    updates.title = sanitizeText(body.title.trim());
   }
 
   if ('monetization_type' in body) {
@@ -80,7 +81,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   }
 
   if ('description' in body) {
-    updates.description = body.description?.trim() ?? null;
+    updates.description = body.description ? sanitizeRichText(body.description.trim()) : null;
   }
 
   if ('background' in body) {

@@ -11,6 +11,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
+import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 
 // ISO 4217 3-letter currency code regex
 const CURRENCY_RE = /^[A-Z]{3}$/;
@@ -57,11 +58,11 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         { status: 400 },
       );
     }
-    updates.title = body.title.trim();
+    updates.title = sanitizeText(body.title.trim());
   }
 
   if (body.description !== undefined) {
-    updates.description = body.description?.trim() ?? null;
+    updates.description = body.description ? sanitizeRichText(body.description.trim()) : null;
   }
 
   if (body.due_date !== undefined) {

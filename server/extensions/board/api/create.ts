@@ -9,6 +9,7 @@ import {
 
 import { writeEvent } from '../../../mods/events/write';
 import type { BoardVisibility } from '../types';
+import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
@@ -51,10 +52,10 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   await db('boards').insert({
     id,
     workspace_id: workspaceId,
-    title: body.title.trim(),
+    title: sanitizeText(body.title.trim()),
     state: 'ACTIVE',
     visibility: body.visibility ?? 'PRIVATE',
-    description: body.description?.trim() ?? null,
+    description: body.description ? sanitizeRichText(body.description.trim()) : null,
     background: body.background?.trim() ?? null,
   });
 

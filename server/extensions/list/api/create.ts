@@ -10,6 +10,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { between, HIGH_SENTINEL } from '../mods/fractional';
+import { sanitizeText } from '../../../common/sanitize';
 
 export async function handleCreateList(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -72,7 +73,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   await db('lists').insert({
     id,
     board_id: boardId,
-    title: body.title.trim(),
+    title: sanitizeText(body.title.trim()),
     position,
     archived: false,
   });

@@ -8,6 +8,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/requireBoardWritable';
 import { writeEvent } from '../../../mods/events/write';
+import { sanitizeText } from '../../../common/sanitize';
 
 export async function handleUpdateBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -43,12 +44,13 @@ export async function handleUpdateBoard(req: Request, boardId: string): Promise<
     );
   }
 
+  const sanitizedTitle = sanitizeText(body.title.trim());
   const updated = await db('boards')
     .where({ id: boardId })
-    .update({ title: body.title.trim() }, ['*']);
+    .update({ title: sanitizedTitle }, ['*']);
 
   // Stub event emission.
-  await writeEvent({ type: 'board_renamed', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: body.title.trim() } });
+  await writeEvent({ type: 'board_renamed', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: sanitizedTitle } });
 
   return Response.json({ data: updated[0] });
 }

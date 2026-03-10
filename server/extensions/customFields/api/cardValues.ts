@@ -14,6 +14,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { sanitizeText } from '../../../common/sanitize';
 
 export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'CHECKBOX' | 'DROPDOWN';
 
@@ -266,7 +267,7 @@ function buildValuePayload(
       if (typeof raw !== 'string') {
         return { error: { name: 'bad-request', data: { message: 'value_text must be a string' } } };
       }
-      return { data: { ...base, value_text: raw } };
+      return { data: { ...base, value_text: sanitizeText(raw) } };
     }
 
     case 'NUMBER': {

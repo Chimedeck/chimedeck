@@ -10,6 +10,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
+import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -82,8 +83,8 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   await db('cards').insert({
     id,
     list_id: listId,
-    title: body.title.trim(),
-    description: body.description?.trim() ?? null,
+    title: sanitizeText(body.title.trim()),
+    description: body.description ? sanitizeRichText(body.description.trim()) : null,
     position,
     archived: false,
     start_date: body.start_date ?? null,
