@@ -43,8 +43,8 @@ export async function handleRemoveMember(
 
     if (Number(ownerCount?.count ?? 0) <= 1) {
       return Response.json(
-        { error: { code: 'workspace-must-have-owner', message: 'Cannot remove the last owner' } },
-        { status: 409 },
+        { error: { code: 'workspace-must-have-one-owner', message: 'A workspace must always have at least one Owner. Promote another member first.' } },
+        { status: 422 },
       );
     }
   }

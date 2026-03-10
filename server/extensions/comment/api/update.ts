@@ -49,6 +49,13 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
     );
   }
 
+  if (board.state === 'ARCHIVED') {
+    return Response.json(
+      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
+      { status: 403 },
+    );
+  }
+
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;

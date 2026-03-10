@@ -49,7 +49,7 @@ export async function requireCardWritable(
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-archived', message: 'Board is archived and cannot be modified' } },
+      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
       { status: 403 },
     );
   }

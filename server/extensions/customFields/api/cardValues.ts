@@ -123,6 +123,13 @@ export async function handleUpsertCardFieldValue(
   );
   if (membershipError) return membershipError;
 
+  if ((ctx.board as Record<string, unknown>).state === 'ARCHIVED') {
+    return Response.json(
+      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
+      { status: 403 },
+    );
+  }
+
   const field = await db('custom_fields').where({ id: fieldId }).first();
   if (!field) {
     return Response.json(
@@ -207,6 +214,13 @@ export async function handleDeleteCardFieldValue(
     ctx.board.workspace_id as string,
   );
   if (membershipError) return membershipError;
+
+  if ((ctx.board as Record<string, unknown>).state === 'ARCHIVED') {
+    return Response.json(
+      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
+      { status: 403 },
+    );
+  }
 
   const existing = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
