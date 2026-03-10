@@ -7,6 +7,6 @@ export const jwtConfig = {
   privateKey: env.JWT_PRIVATE_KEY,
   // PEM-encoded RS256 public key (SPKI format)
   publicKey: env.JWT_PUBLIC_KEY,
-  accessTokenTtlSeconds: 15 * 60, // 15 minutes
+  accessTokenTtlSeconds: env.ACCESS_TOKEN_TTL_SECONDS, // default 24h, overridable via env var
   refreshTokenTtlDays: 7,
 } as const;

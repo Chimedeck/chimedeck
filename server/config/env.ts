@@ -70,6 +70,10 @@ export const env = {
   FEATBIT_URL: Bun.env['FEATBIT_URL'] ?? undefined,
   FEATURE_FLAGS_JSON_PATH: Bun.env['FEATURE_FLAGS_JSON_PATH'] ?? undefined,
 
+  // Access token TTL in seconds. Defaults to 24 hours (production-safe).
+  // Override with ACCESS_TOKEN_TTL_SECONDS env var (e.g. set to 900 for tighter session windows).
+  ACCESS_TOKEN_TTL_SECONDS: parseInt(Bun.env['ACCESS_TOKEN_TTL_SECONDS'] ?? String(24 * 60 * 60), 10),
+
   // Platform admin emails — comma-separated list of emails allowed to manage the plugin registry.
   // Fail safe: deny all if not set.
   PLATFORM_ADMIN_EMAILS: Bun.env['PLATFORM_ADMIN_EMAILS'] ?? '',

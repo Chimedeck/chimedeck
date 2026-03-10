@@ -2,6 +2,7 @@
 // Public endpoint — validates the reset token, sets a new password, and invalidates all sessions.
 import { db } from '../../../common/db';
 import { hashPassword } from '../mods/password/hash';
+import { pubsub } from '../../../mods/pubsub/index';
 
 export async function handleResetPassword(req: Request): Promise<Response> {
   let body: { token?: string; password?: string };
@@ -56,8 +57,14 @@ export async function handleResetPassword(req: Request): Promise<Response> {
     password_reset_token_expires_at: null,
   });
 
-  // Invalidate all refresh tokens — password changed means re-login required
+  // Invalidate all refresh tokens — password changed means re-login required.
   await db('refresh_tokens').where({ user_id: user.id }).delete();
+
+  // Notify any open WebSocket connections for this user to close (code 4001).
+  await pubsub.publish(
+    `session:${user.id}`,
+    JSON.stringify({ type: 'session_revoked' }),
+  );
 
   return Response.json({ data: { reset: true } }, { status: 200 });
 }

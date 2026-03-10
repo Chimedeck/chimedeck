@@ -10,6 +10,10 @@ import { recordPong, initHeartbeat, startHeartbeatLoop } from '../mods/heartbeat
 import { cache } from '../../../mods/cache/index';
 import { db } from '../../../common/db';
 import { registerUserSocket, deregisterUserSocket } from '../userChannel';
+import {
+  subscribeSessionRevocation,
+  unsubscribeSessionRevocation,
+} from '../sessionRevocation';
 
 const allSockets = new Set<ServerWebSocket<WsData>>();
 
@@ -46,6 +50,8 @@ export const wsHandlers = {
     allSockets.add(ws);
     initHeartbeat(ws);
     registerUserSocket(ws);
+    // Subscribe to session revocation so logout/password-reset closes this socket.
+    subscribeSessionRevocation(ws.data.userId).catch(() => {});
   },
 
   async message(ws: ServerWebSocket<WsData>, raw: string | Buffer): Promise<void> {
@@ -103,5 +109,7 @@ export const wsHandlers = {
     for (const boardId of ws.data.subscribedBoards) {
       await unsubscribeFromBoard({ ws, boardId });
     }
+    // Clean up session revocation listener when the last socket for this user closes.
+    await unsubscribeSessionRevocation(ws.data.userId);
   },
 };
