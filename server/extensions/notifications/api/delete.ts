@@ -14,14 +14,14 @@ export async function handleDeleteNotification(
   const notification = await db('notifications').where({ id: notificationId }).first();
   if (!notification) {
     return Response.json(
-      { name: 'notification-not-found', data: { message: 'Notification not found' } },
+      { error: { code: 'notification-not-found', message: 'Notification not found' } },
       { status: 404 },
     );
   }
 
   if (notification.user_id !== userId) {
     return Response.json(
-      { name: 'forbidden', data: { message: 'Not your notification' } },
+      { error: { code: 'forbidden', message: 'Not your notification' } },
       { status: 403 },
     );
   }

@@ -14,7 +14,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -24,7 +24,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
 
   if (!list || !board) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }

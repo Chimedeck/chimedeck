@@ -14,19 +14,19 @@ export async function handleAcceptInvite(req: Request, token: string): Promise<R
   if (!result.ok) {
     if (result.reason === 'not-found') {
       return Response.json(
-        { name: 'invite-not-found', data: { message: 'Invite not found' } },
+        { error: { code: 'invite-not-found', message: 'Invite not found' } },
         { status: 404 },
       );
     }
     if (result.reason === 'invite-expired') {
       return Response.json(
-        { name: 'invite-expired', data: { message: 'Invite has expired' } },
+        { error: { code: 'invite-expired', message: 'Invite has expired' } },
         { status: 410 },
       );
     }
     if (result.reason === 'invite-already-used') {
       return Response.json(
-        { name: 'invite-already-used', data: { message: 'Invite has already been used' } },
+        { error: { code: 'invite-already-used', message: 'Invite has already been used' } },
         { status: 409 },
       );
     }

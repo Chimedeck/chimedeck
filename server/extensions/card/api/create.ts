@@ -18,7 +18,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
-      { name: 'list-not-found', data: { message: 'List not found' } },
+      { error: { code: 'list-not-found', message: 'List not found' } },
       { status: 404 },
     );
   }
@@ -41,21 +41,21 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'title is required' } },
+      { error: { code: 'bad-request', message: 'title is required' } },
       { status: 400 },
     );
   }
 
   if (body.title.trim().length > 512) {
     return Response.json(
-      { name: 'card-title-too-long', data: { message: 'title must be ≤ 512 characters' } },
+      { error: { code: 'card-title-too-long', message: 'title must be ≤ 512 characters' } },
       { status: 400 },
     );
   }
@@ -64,7 +64,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     const parsed = new Date(body.start_date);
     if (isNaN(parsed.getTime())) {
       return Response.json(
-        { name: 'bad-request', data: { message: 'start_date must be a valid ISO 8601 date string or null' } },
+        { error: { code: 'bad-request', message: 'start_date must be a valid ISO 8601 date string or null' } },
         { status: 400 },
       );
     }

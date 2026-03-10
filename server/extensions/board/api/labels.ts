@@ -58,14 +58,14 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'name is required' } },
+      { error: { code: 'bad-request', message: 'name is required' } },
       { status: 400 },
     );
   }

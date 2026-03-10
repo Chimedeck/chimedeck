@@ -20,7 +20,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -29,7 +29,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
@@ -48,14 +48,14 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.content || typeof body.content !== 'string' || body.content.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'content is required' } },
+      { error: { code: 'bad-request', message: 'content is required' } },
       { status: 400 },
     );
   }

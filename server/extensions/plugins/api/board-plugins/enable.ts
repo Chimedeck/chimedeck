@@ -14,14 +14,14 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.pluginId || typeof body.pluginId !== 'string') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'pluginId is required' } },
+      { error: { code: 'bad-request', message: 'pluginId is required' } },
       { status: 400 },
     );
   }
@@ -29,7 +29,7 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
   const plugin = await db('plugins').where({ id: body.pluginId }).first();
   if (!plugin || !plugin.is_active) {
     return Response.json(
-      { name: 'plugin-not-active', data: { message: 'Plugin not found or not active in registry' } },
+      { error: { code: 'plugin-not-active', message: 'Plugin not found or not active in registry' } },
       { status: 404 },
     );
   }
@@ -40,7 +40,7 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
 
   if (existing && !existing.disabled_at) {
     return Response.json(
-      { name: 'plugin-already-enabled', data: { message: 'Plugin is already enabled on this board' } },
+      { error: { code: 'plugin-already-enabled', message: 'Plugin is already enabled on this board' } },
       { status: 409 },
     );
   }

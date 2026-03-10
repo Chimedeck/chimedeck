@@ -43,13 +43,13 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
 
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
-    return Response.json({ name: 'card-not-found', data: { message: 'Card not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
   }
 
   const list = await db('lists').where({ id: card.list_id }).first();
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -62,19 +62,19 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
   }
 
   if (!body.name || !body.url) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'name and url are required' } },
+      { error: { code: 'bad-request', message: 'name and url are required' } },
       { status: 400 },
     );
   }
 
   if (isForbiddenUrl(body.url)) {
     return Response.json(
-      { name: 'url-target-forbidden', data: { message: 'URL resolves to a forbidden internal address' } },
+      { error: { code: 'url-target-forbidden', message: 'URL resolves to a forbidden internal address' } },
       { status: 400 },
     );
   }

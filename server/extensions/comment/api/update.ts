@@ -18,14 +18,14 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   const comment = await db('comments').where({ id: commentId }).first();
   if (!comment) {
     return Response.json(
-      { name: 'comment-not-found', data: { message: 'Comment not found' } },
+      { error: { code: 'comment-not-found', message: 'Comment not found' } },
       { status: 404 },
     );
   }
 
   if (comment.deleted) {
     return Response.json(
-      { name: 'comment-deleted', data: { message: 'Cannot edit a deleted comment' } },
+      { error: { code: 'comment-deleted', message: 'Cannot edit a deleted comment' } },
       { status: 409 },
     );
   }
@@ -34,7 +34,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
 
   if (comment.user_id !== actorId) {
     return Response.json(
-      { name: 'comment-not-owner', data: { message: 'You can only edit your own comments' } },
+      { error: { code: 'comment-not-owner', message: 'You can only edit your own comments' } },
       { status: 403 },
     );
   }
@@ -44,7 +44,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
@@ -58,14 +58,14 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.content || typeof body.content !== 'string' || body.content.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'content is required' } },
+      { error: { code: 'bad-request', message: 'content is required' } },
       { status: 400 },
     );
   }

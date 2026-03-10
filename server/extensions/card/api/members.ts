@@ -25,7 +25,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -33,7 +33,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   const workspaceId = await resolveWorkspaceId(cardId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }
@@ -50,14 +50,14 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.userId || typeof body.userId !== 'string') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'userId is required' } },
+      { error: { code: 'bad-request', message: 'userId is required' } },
       { status: 400 },
     );
   }
@@ -69,7 +69,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
 
   if (!targetMembership) {
     return Response.json(
-      { name: 'member-not-in-workspace', data: { message: 'User is not a member of this workspace' } },
+      { error: { code: 'member-not-in-workspace', message: 'User is not a member of this workspace' } },
       { status: 400 },
     );
   }
@@ -95,7 +95,7 @@ export async function handleRemoveMember(
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -103,7 +103,7 @@ export async function handleRemoveMember(
   const workspaceId = await resolveWorkspaceId(cardId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }

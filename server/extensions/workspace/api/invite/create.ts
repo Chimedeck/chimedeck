@@ -26,14 +26,14 @@ export async function handleCreateInvite(req: Request, workspaceId: string): Pro
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.email || typeof body.email !== 'string') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'email is required' } },
+      { error: { code: 'bad-request', message: 'email is required' } },
       { status: 400 },
     );
   }

@@ -15,14 +15,14 @@ export async function requireBoardWritable(
 
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { name: 'board-archived', data: { message: 'Board is archived and cannot be modified' } },
+      { error: { code: 'board-archived', message: 'Board is archived and cannot be modified' } },
       { status: 403 },
     );
   }

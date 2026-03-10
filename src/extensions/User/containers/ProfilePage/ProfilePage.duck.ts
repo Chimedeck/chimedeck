@@ -24,7 +24,7 @@ const initialState: ProfileState = {
 
 // ---------- Helpers ----------
 
-function isApiError(err: unknown): err is { response: { data: { name: string } } } {
+function isApiError(err: unknown): err is { response: { data: { error?: { code: string; message: string } } } } {
   return (
     typeof err === 'object' &&
     err !== null &&
@@ -42,7 +42,7 @@ export const fetchProfileThunk = createAppAsyncThunk(
       const res = await userApi.getProfile();
       return (res as unknown as { data: UserProfile }).data;
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.name : 'fetch-failed');
+      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'fetch-failed');
     }
   },
 );
@@ -57,7 +57,7 @@ export const updateProfileThunk = createAppAsyncThunk(
       const res = await userApi.updateProfile(payload);
       return (res as unknown as { data: UserProfile }).data;
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.name : 'update-failed');
+      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'update-failed');
     }
   },
 );
@@ -69,7 +69,7 @@ export const uploadAvatarThunk = createAppAsyncThunk(
       const res = await userApi.uploadAvatar({ file });
       return (res as unknown as { data: { avatar_url: string } }).data;
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.name : 'upload-failed');
+      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'upload-failed');
     }
   },
 );
@@ -80,7 +80,7 @@ export const removeAvatarThunk = createAppAsyncThunk(
     try {
       await userApi.removeAvatar();
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.name : 'remove-failed');
+      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'remove-failed');
     }
   },
 );

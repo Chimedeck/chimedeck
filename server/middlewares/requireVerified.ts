@@ -12,7 +12,7 @@ export async function requireVerified(req: AuthenticatedRequest): Promise<Respon
   const userId = req.currentUser?.id;
   if (!userId) {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Authentication required' } },
+      { error: { code: 'unauthorized', message: 'Authentication required' } },
       { status: 401 },
     );
   }
@@ -20,7 +20,7 @@ export async function requireVerified(req: AuthenticatedRequest): Promise<Respon
   const user = await db('users').where({ id: userId }).select('email_verified').first();
   if (!user?.email_verified) {
     return Response.json(
-      { name: 'email-not-verified', data: { message: 'Please verify your email to continue.' } },
+      { error: { code: 'email-not-verified', message: 'Please verify your email to continue.' } },
       { status: 403 },
     );
   }

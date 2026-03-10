@@ -13,7 +13,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
-      { name: 'list-not-found', data: { message: 'List not found' } },
+      { error: { code: 'list-not-found', message: 'List not found' } },
       { status: 404 },
     );
   }
@@ -21,7 +21,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }

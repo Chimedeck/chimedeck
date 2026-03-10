@@ -16,7 +16,7 @@ export async function handleDeleteList(req: Request, listId: string): Promise<Re
   const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
-      { name: 'list-not-found', data: { message: 'List not found' } },
+      { error: { code: 'list-not-found', message: 'List not found' } },
       { status: 404 },
     );
   }

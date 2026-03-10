@@ -28,21 +28,21 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'title is required' } },
+      { error: { code: 'bad-request', message: 'title is required' } },
       { status: 400 },
     );
   }
 
   if (body.visibility !== undefined && !VALID_VISIBILITY.includes(body.visibility)) {
     return Response.json(
-      { name: 'bad-request', data: { message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
+      { error: { code: 'bad-request', message: 'visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'' } },
       { status: 400 },
     );
   }

@@ -17,7 +17,7 @@ export async function authenticate(req: AuthenticatedRequest): Promise<Response 
 
   if (!token) {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Missing Bearer token' } },
+      { error: { code: 'unauthorized', message: 'Missing Bearer token' } },
       { status: 401 },
     );
   }
@@ -25,7 +25,7 @@ export async function authenticate(req: AuthenticatedRequest): Promise<Response 
   const decoded = await verifyAccessToken({ token });
   if (!decoded) {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Invalid or expired access token' } },
+      { error: { code: 'unauthorized', message: 'Invalid or expired access token' } },
       { status: 401 },
     );
   }

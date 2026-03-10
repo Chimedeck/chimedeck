@@ -8,7 +8,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
 
   if (!token) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is required' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is required' } },
       { status: 400 },
     );
   }
@@ -17,7 +17,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
 
   if (!user) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
       { status: 400 },
     );
   }
@@ -25,7 +25,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   const now = new Date();
   if (!user.email_change_token_expires_at || new Date(user.email_change_token_expires_at) < now) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
       { status: 400 },
     );
   }
@@ -33,7 +33,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   const newEmail = user.pending_email;
   if (!newEmail) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'No pending email change found' } },
+      { error: { code: 'invalid-or-expired-token', message: 'No pending email change found' } },
       { status: 400 },
     );
   }
@@ -42,7 +42,7 @@ export async function handleConfirmEmailChange(req: Request): Promise<Response> 
   const conflict = await db('users').where({ email: newEmail }).whereNot({ id: user.id }).first();
   if (conflict) {
     return Response.json(
-      { name: 'email-already-in-use', data: { message: 'That email address is already in use' } },
+      { error: { code: 'email-already-in-use', message: 'That email address is already in use' } },
       { status: 409 },
     );
   }

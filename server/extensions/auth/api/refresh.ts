@@ -16,7 +16,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
 
   if (!refreshToken) {
     return Response.json(
-      { name: 'refresh-token-invalid', data: { message: 'No refresh token cookie present' } },
+      { error: { code: 'refresh-token-invalid', message: 'No refresh token cookie present' } },
       { status: 401 },
     );
   }
@@ -25,7 +25,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
 
   if (result.status !== 200 || !result.token || !result.userId) {
     return Response.json(
-      { name: 'refresh-token-invalid', data: { message: 'Refresh token expired or revoked' } },
+      { error: { code: 'refresh-token-invalid', message: 'Refresh token expired or revoked' } },
       { status: 401 },
     );
   }
@@ -33,7 +33,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
   const user = await db('users').where({ id: result.userId }).first();
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User no longer exists' } },
+      { error: { code: 'user-not-found', message: 'User no longer exists' } },
       { status: 404 },
     );
   }

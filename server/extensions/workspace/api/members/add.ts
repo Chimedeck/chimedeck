@@ -26,14 +26,14 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.email || typeof body.email !== 'string') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'email is required' } },
+      { error: { code: 'bad-request', message: 'email is required' } },
       { status: 400 },
     );
   }
@@ -45,7 +45,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   const user = await db('users').where({ email }).first();
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: `No account found for ${email}. Ask them to sign up first.` } },
+      { error: { code: 'user-not-found', message: `No account found for ${email}. Ask them to sign up first.` } },
       { status: 404 },
     );
   }
@@ -57,7 +57,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
 
   if (existing) {
     return Response.json(
-      { name: 'already-a-member', data: { message: `${email} is already a member of this workspace.` } },
+      { error: { code: 'already-a-member', message: `${email} is already a member of this workspace.` } },
       { status: 409 },
     );
   }

@@ -14,7 +14,7 @@ export async function handleListLabels(req: Request, workspaceId: string): Promi
   const workspace = await db('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
-      { name: 'workspace-not-found', data: { message: 'Workspace not found' } },
+      { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
       { status: 404 },
     );
   }

@@ -26,7 +26,7 @@ export const forgotPasswordThunk = createAppAsyncThunk(
       const response = await authApi.forgotPassword({ email });
       return (response as unknown as { data: { sent: boolean } }).data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.name : 'forgot-password-failed';
+      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'forgot-password-failed';
       return rejectWithValue(msg);
     }
   }
@@ -68,7 +68,7 @@ export const selectForgotPasswordError = (state: RootState) => state.forgotPassw
 
 function isApiError(
   err: unknown
-): err is { response: { status: number; data: { name: string } } } {
+): err is { response: { status: number; data: { error?: { code: string; message: string } } } } {
   return (
     typeof err === 'object' &&
     err !== null &&

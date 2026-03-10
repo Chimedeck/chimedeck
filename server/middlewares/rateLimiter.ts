@@ -89,7 +89,7 @@ export async function applyRateLimit(
     const result = await checkLimit(client, key, limit);
     if (!result.allowed) {
       return Response.json(
-        { name: 'rate-limit-exceeded', data: { message: 'Too many requests, please slow down.' } },
+        { error: { code: 'rate-limit-exceeded', message: 'Too many requests, please slow down.' } },
         {
           status: 429,
           headers: { 'Retry-After': String(result.retryAfterSeconds) },

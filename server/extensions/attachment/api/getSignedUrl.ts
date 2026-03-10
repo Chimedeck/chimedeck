@@ -18,7 +18,7 @@ export async function handleGetSignedUrl(req: Request, attachmentId: string): Pr
   const attachment = await db('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+      { error: { code: 'attachment-not-found', message: 'Attachment not found' } },
       { status: 404 },
     );
   }
@@ -27,7 +27,7 @@ export async function handleGetSignedUrl(req: Request, attachmentId: string): Pr
   const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -44,21 +44,21 @@ export async function handleGetSignedUrl(req: Request, attachmentId: string): Pr
   // Gating by scan status
   if (attachment.status === 'PENDING') {
     return Response.json(
-      { name: 'attachment-pending', data: { message: 'Attachment is still being scanned' } },
+      { error: { code: 'attachment-pending', message: 'Attachment is still being scanned' } },
       { status: 202 },
     );
   }
 
   if (attachment.status === 'REJECTED') {
     return Response.json(
-      { name: 'virus-scan-rejected', data: { message: 'Attachment was rejected by virus scan' } },
+      { error: { code: 'virus-scan-rejected', message: 'Attachment was rejected by virus scan' } },
       { status: 422 },
     );
   }
 
   if (!attachment.s3_key) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'No S3 key on attachment' } },
+      { error: { code: 'attachment-not-found', message: 'No S3 key on attachment' } },
       { status: 404 },
     );
   }

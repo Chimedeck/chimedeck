@@ -29,7 +29,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   const count = memCache.incr(rlKey, RATE_LIMIT_WINDOW_SECONDS);
   if (count > RATE_LIMIT_MAX) {
     return Response.json(
-      { name: 'rate-limit-exceeded', data: { message: 'Too many email change requests. Try again in an hour.' } },
+      { error: { code: 'rate-limit-exceeded', message: 'Too many email change requests. Try again in an hour.' } },
       { status: 429 },
     );
   }
@@ -39,14 +39,14 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.email || !body.currentPassword) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'email and currentPassword are required' } },
+      { error: { code: 'bad-request', message: 'email and currentPassword are required' } },
       { status: 400 },
     );
   }
@@ -56,7 +56,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   const user = await db('users').where({ id: userId }).first();
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User not found' } },
+      { error: { code: 'user-not-found', message: 'User not found' } },
       { status: 404 },
     );
   }
@@ -65,14 +65,14 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   const valid = await verifyPassword({ password: body.currentPassword, hash: user.password_hash });
   if (!valid) {
     return Response.json(
-      { name: 'credentials-invalid', data: { message: 'Current password is incorrect' } },
+      { error: { code: 'credentials-invalid', message: 'Current password is incorrect' } },
       { status: 401 },
     );
   }
 
   if (newEmail === user.email.toLowerCase().trim()) {
     return Response.json(
-      { name: 'email-unchanged', data: { message: 'New email must be different from current email' } },
+      { error: { code: 'email-unchanged', message: 'New email must be different from current email' } },
       { status: 422 },
     );
   }
@@ -85,7 +85,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   const existing = await db('users').where({ email: newEmail }).whereNot({ id: userId }).first();
   if (existing) {
     return Response.json(
-      { name: 'email-already-in-use', data: { message: 'That email address is already in use' } },
+      { error: { code: 'email-already-in-use', message: 'That email address is already in use' } },
       { status: 409 },
     );
   }

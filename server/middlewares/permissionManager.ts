@@ -37,7 +37,7 @@ export async function requireWorkspaceMembership(
 ): Promise<Response | null> {
   if (!req.currentUser) {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Authentication required' } },
+      { error: { code: 'unauthorized', message: 'Authentication required' } },
       { status: 401 },
     );
   }
@@ -48,7 +48,7 @@ export async function requireWorkspaceMembership(
 
   if (!membership) {
     return Response.json(
-      { name: 'insufficient-role', data: { message: 'You are not a member of this workspace' } },
+      { error: { code: 'insufficient-role', message: 'You are not a member of this workspace' } },
       { status: 403 },
     );
   }
@@ -66,7 +66,7 @@ export function requireRole(
 ): Response | null {
   if (!req.callerRole || !hasRole(req.callerRole, minRole)) {
     return Response.json(
-      { name: 'insufficient-role', data: { message: `Requires at least ${minRole} role` } },
+      { error: { code: 'insufficient-role', message: `Requires at least ${minRole} role` } },
       { status: 403 },
     );
   }

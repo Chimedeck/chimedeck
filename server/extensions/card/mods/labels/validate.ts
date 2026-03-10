@@ -6,7 +6,7 @@ export async function validateCardLabelLimit(cardId: string): Promise<Response |
   const n = Number((count as { n: number })?.n ?? 0);
   if (n >= 20) {
     return Response.json(
-      { name: 'card-label-limit', data: { message: 'A card can have at most 20 labels' } },
+      { error: { code: 'card-label-limit', message: 'A card can have at most 20 labels' } },
       { status: 400 },
     );
   }

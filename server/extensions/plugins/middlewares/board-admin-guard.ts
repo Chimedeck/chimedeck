@@ -22,7 +22,7 @@ export async function boardAdminGuard(
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
@@ -33,7 +33,7 @@ export async function boardAdminGuard(
 
   if (!membership || !ADMIN_ROLES.includes(membership.role as Role)) {
     return Response.json(
-      { name: 'not-board-admin', data: { message: 'Board admin access required' } },
+      { error: { code: 'not-board-admin', message: 'Board admin access required' } },
       { status: 403 },
     );
   }

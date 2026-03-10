@@ -44,14 +44,14 @@ export async function handleGetPlugin(req: Request, pluginId: string): Promise<R
 
   if (!plugin) {
     return Response.json(
-      { name: 'plugin-not-found', data: { message: 'Plugin not found' } },
+      { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
       { status: 404 },
     );
   }
 
   if (!admin && (!plugin.is_public || !plugin.is_active)) {
     return Response.json(
-      { name: 'plugin-not-found', data: { message: 'Plugin not found' } },
+      { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
       { status: 404 },
     );
   }

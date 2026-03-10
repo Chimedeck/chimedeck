@@ -11,7 +11,7 @@ export async function handleDeletePlugin(req: Request, pluginId: string): Promis
   const plugin = await db('plugins').where({ id: pluginId }).first();
   if (!plugin) {
     return Response.json(
-      { name: 'plugin-not-found', data: { message: 'Plugin not found' } },
+      { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
       { status: 404 },
     );
   }

@@ -12,7 +12,7 @@ export async function handleGetMe(req: Request): Promise<Response> {
 
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User not found' } },
+      { error: { code: 'user-not-found', message: 'User not found' } },
       { status: 404 },
     );
   }
@@ -39,7 +39,7 @@ export async function handlePatchMe(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -50,7 +50,7 @@ export async function handlePatchMe(req: Request): Promise<Response> {
 
   if (Object.keys(updates).length === 0) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Nothing to update' } },
+      { error: { code: 'bad-request', message: 'Nothing to update' } },
       { status: 400 },
     );
   }
@@ -59,7 +59,7 @@ export async function handlePatchMe(req: Request): Promise<Response> {
 
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User not found' } },
+      { error: { code: 'user-not-found', message: 'User not found' } },
       { status: 404 },
     );
   }

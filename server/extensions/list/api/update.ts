@@ -16,7 +16,7 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
   const list = await db('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
-      { name: 'list-not-found', data: { message: 'List not found' } },
+      { error: { code: 'list-not-found', message: 'List not found' } },
       { status: 404 },
     );
   }
@@ -39,14 +39,14 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'title is required' } },
+      { error: { code: 'bad-request', message: 'title is required' } },
       { status: 400 },
     );
   }

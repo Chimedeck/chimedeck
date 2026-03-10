@@ -18,7 +18,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   const searchEnabled = await flags.isEnabled('SEARCH_ENABLED');
   if (!searchEnabled) {
     return Response.json(
-      { name: 'search-not-available', data: { message: 'Search feature is not enabled' } },
+      { error: { code: 'search-not-available', message: 'Search feature is not enabled' } },
       { status: 501 },
     );
   }
@@ -29,7 +29,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   const workspace = await db('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
-      { name: 'workspace-not-found', data: { message: 'Workspace not found' } },
+      { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
       { status: 404 },
     );
   }
@@ -50,7 +50,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
 
   if (q.length < 2) {
     return Response.json(
-      { name: 'search-query-too-short', data: { message: 'Query must be at least 2 characters' } },
+      { error: { code: 'search-query-too-short', message: 'Query must be at least 2 characters' } },
       { status: 400 },
     );
   }
@@ -58,7 +58,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   const tsquery = buildQuery({ q });
   if (!tsquery) {
     return Response.json(
-      { name: 'search-query-invalid', data: { message: 'Query contains no searchable terms' } },
+      { error: { code: 'search-query-invalid', message: 'Query contains no searchable terms' } },
       { status: 400 },
     );
   }

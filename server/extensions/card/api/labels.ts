@@ -27,7 +27,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -42,7 +42,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   const workspaceId = await resolveWorkspaceId(cardId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }
@@ -59,14 +59,14 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.labelId || typeof body.labelId !== 'string') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'labelId is required' } },
+      { error: { code: 'bad-request', message: 'labelId is required' } },
       { status: 400 },
     );
   }
@@ -74,14 +74,14 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   const label = await db('labels').where({ id: body.labelId }).first();
   if (!label) {
     return Response.json(
-      { name: 'label-not-found', data: { message: 'Label not found' } },
+      { error: { code: 'label-not-found', message: 'Label not found' } },
       { status: 404 },
     );
   }
 
   if (label.workspace_id !== workspaceId) {
     return Response.json(
-      { name: 'label-not-in-workspace', data: { message: 'Label does not belong to this workspace' } },
+      { error: { code: 'label-not-in-workspace', message: 'Label does not belong to this workspace' } },
       { status: 400 },
     );
   }
@@ -110,7 +110,7 @@ export async function handleDetachLabel(
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -118,7 +118,7 @@ export async function handleDetachLabel(
   const workspaceId = await resolveWorkspaceId(cardId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }

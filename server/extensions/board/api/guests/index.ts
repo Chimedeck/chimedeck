@@ -36,7 +36,7 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
     body = await req.json();
   } catch {
     return Response.json(
-      { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
+      { error: { code: 'invalid-request-body', message: 'Request body must be JSON' } },
       { status: 400 },
     );
   }
@@ -44,7 +44,7 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
   const { userId } = body;
   if (!userId) {
     return Response.json(
-      { name: 'missing-user-id', data: { message: 'userId is required' } },
+      { error: { code: 'missing-user-id', message: 'userId is required' } },
       { status: 400 },
     );
   }
@@ -52,7 +52,7 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
   const targetUser = await db('users').where({ id: userId }).first();
   if (!targetUser) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User not found' } },
+      { error: { code: 'user-not-found', message: 'User not found' } },
       { status: 404 },
     );
   }
@@ -127,7 +127,7 @@ export async function handleRevokeGuest(
   const grantRow = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first();
   if (!grantRow) {
     return Response.json(
-      { name: 'guest-access-not-found', data: { message: 'Guest access record not found' } },
+      { error: { code: 'guest-access-not-found', message: 'Guest access record not found' } },
       { status: 404 },
     );
   }

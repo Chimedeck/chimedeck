@@ -9,14 +9,14 @@ export async function handleResetPassword(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.token || !body.password) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'token and password are required' } },
+      { error: { code: 'bad-request', message: 'token and password are required' } },
       { status: 400 },
     );
   }
@@ -25,7 +25,7 @@ export async function handleResetPassword(req: Request): Promise<Response> {
 
   if (!user) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
       { status: 400 },
     );
   }
@@ -33,7 +33,7 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   const now = new Date();
   if (!user.password_reset_token_expires_at || new Date(user.password_reset_token_expires_at) < now) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
       { status: 400 },
     );
   }
@@ -42,7 +42,7 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   const { password } = body;
   if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
     return Response.json(
-      { name: 'password-too-weak', data: { message: 'Password must be at least 8 characters and contain a letter and a number' } },
+      { error: { code: 'password-too-weak', message: 'Password must be at least 8 characters and contain a letter and a number' } },
       { status: 422 },
     );
   }

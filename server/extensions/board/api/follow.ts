@@ -12,7 +12,7 @@ export async function handleFollowBoard(req: Request, boardId: string): Promise<
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
@@ -35,7 +35,7 @@ export async function handleUnfollowBoard(req: Request, boardId: string): Promis
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }

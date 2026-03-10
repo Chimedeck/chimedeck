@@ -32,7 +32,7 @@ const AcceptInvitePage = () => {
       .then((res) => setState({ status: 'ready', invite: res.data }))
       .catch((err) => {
         const errorName =
-          err?.response?.data?.name ?? err?.name ?? 'unknown-error';
+          err?.response?.data?.error?.code ?? 'unknown-error';
         setState({ status: 'error', errorName });
       });
   }, [token]);
@@ -44,9 +44,9 @@ const AcceptInvitePage = () => {
       await acceptInvite({ api, token });
       setState({ status: 'success' });
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { name?: string } }; name?: string };
+      const e = err as { response?: { data?: { error?: { code?: string } } } };
       const errorName =
-        e?.response?.data?.name ?? e?.name ?? 'unknown-error';
+        e?.response?.data?.error?.code ?? 'unknown-error';
       setState({ status: 'error', errorName });
     }
   };

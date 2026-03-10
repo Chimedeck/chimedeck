@@ -17,14 +17,14 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   const comment = await db('comments').where({ id: commentId }).first();
   if (!comment) {
     return Response.json(
-      { name: 'comment-not-found', data: { message: 'Comment not found' } },
+      { error: { code: 'comment-not-found', message: 'Comment not found' } },
       { status: 404 },
     );
   }
 
   if (comment.deleted) {
     return Response.json(
-      { name: 'comment-deleted', data: { message: 'Comment is already deleted' } },
+      { error: { code: 'comment-deleted', message: 'Comment is already deleted' } },
       { status: 409 },
     );
   }
@@ -36,7 +36,7 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
@@ -50,7 +50,7 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   const isAdmin = scopedReq.callerRole ? hasRole(scopedReq.callerRole, 'ADMIN') : false;
   if (!isOwner && !isAdmin) {
     return Response.json(
-      { name: 'comment-not-owner', data: { message: 'You can only delete your own comments (or be an ADMIN)' } },
+      { error: { code: 'comment-not-owner', message: 'You can only delete your own comments (or be an ADMIN)' } },
       { status: 403 },
     );
   }

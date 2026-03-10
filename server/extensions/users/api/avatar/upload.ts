@@ -18,7 +18,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
     formData = await req.formData();
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Expected multipart/form-data' } },
+      { error: { code: 'bad-request', message: 'Expected multipart/form-data' } },
       { status: 400 },
     );
   }
@@ -26,7 +26,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
   const file = formData.get('avatar');
   if (!(file instanceof File)) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Missing avatar field' } },
+      { error: { code: 'bad-request', message: 'Missing avatar field' } },
       { status: 400 },
     );
   }

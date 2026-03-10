@@ -15,7 +15,7 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   const workspace = await db('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
-      { name: 'workspace-not-found', data: { message: 'Workspace not found' } },
+      { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
       { status: 404 },
     );
   }
@@ -32,21 +32,21 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'name is required' } },
+      { error: { code: 'bad-request', message: 'name is required' } },
       { status: 400 },
     );
   }
 
   if (!body.color || typeof body.color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(body.color)) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'color must be a hex color (e.g. #FF5733)' } },
+      { error: { code: 'bad-request', message: 'color must be a hex color (e.g. #FF5733)' } },
       { status: 400 },
     );
   }

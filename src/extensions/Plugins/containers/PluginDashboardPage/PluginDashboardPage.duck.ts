@@ -96,8 +96,8 @@ export const enablePluginThunk = createAppAsyncThunk(
     try {
       return await enablePluginApi({ boardId, pluginId });
     } catch (err: unknown) {
-      const e = err as { response?: { status?: number; data?: { name?: string } } };
-      const name = e?.response?.data?.name ?? (e?.response?.status === 403 ? 'not-board-admin' : 'enable-plugin-failed');
+      const e = err as { response?: { status?: number; data?: { error?: { code?: string } } } };
+      const name = e?.response?.data?.error?.code ?? (e?.response?.status === 403 ? 'not-board-admin' : 'enable-plugin-failed');
       return rejectWithValue(name);
     }
   },
@@ -116,8 +116,8 @@ export const registerPluginThunk = createAppAsyncThunk(
     try {
       return await registerPluginApi(body);
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { name?: string } } };
-      const name = e?.response?.data?.name ?? 'register-plugin-failed';
+      const e = err as { response?: { data?: { error?: { code?: string } } } };
+      const name = e?.response?.data?.error?.code ?? 'register-plugin-failed';
       return rejectWithValue(name);
     }
   },
@@ -129,8 +129,8 @@ export const updatePluginThunk = createAppAsyncThunk(
     try {
       return await updatePluginApi({ pluginId, body });
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { name?: string } } };
-      const name = e?.response?.data?.name ?? 'update-plugin-failed';
+      const e = err as { response?: { data?: { error?: { code?: string } } } };
+      const name = e?.response?.data?.error?.code ?? 'update-plugin-failed';
       return rejectWithValue(name);
     }
   },

@@ -54,7 +54,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         setPassword('');
       }
     } catch (err: unknown) {
-      const apiError = isApiError(err) ? err.response.data.name : null;
+      const apiError = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : null;
       if (apiError === 'email-already-in-use') {
         setError(translations.changeEmail.emailInUse);
       } else if (apiError === 'email-unchanged') {
@@ -127,7 +127,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
 
 function isApiError(
   err: unknown
-): err is { response: { status: number; data: { name: string } } } {
+): err is { response: { status: number; data: { error?: { code: string; message: string } } } } {
   return (
     typeof err === 'object' &&
     err !== null &&

@@ -27,7 +27,7 @@ export async function handleGetPluginToken(
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
@@ -51,14 +51,14 @@ export async function handleGetPluginToken(
 
   if (!boardPlugin) {
     return Response.json(
-      { name: 'plugin-not-active-on-board', data: { message: 'Plugin is not active on this board' } },
+      { error: { code: 'plugin-not-active-on-board', message: 'Plugin is not active on this board' } },
       { status: 404 },
     );
   }
 
   if (!boardPlugin.api_key) {
     return Response.json(
-      { name: 'plugin-misconfigured', data: { message: 'Plugin has no API key configured' } },
+      { error: { code: 'plugin-misconfigured', message: 'Plugin has no API key configured' } },
       { status: 500 },
     );
   }

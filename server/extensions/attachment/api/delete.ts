@@ -19,7 +19,7 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   const attachment = await db('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+      { error: { code: 'attachment-not-found', message: 'Attachment not found' } },
       { status: 404 },
     );
   }
@@ -28,7 +28,7 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -41,7 +41,7 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
 
   if (!isOwner && !isAdmin) {
     return Response.json(
-      { name: 'attachment-not-owner', data: { message: 'Only the uploader or an ADMIN may delete this attachment' } },
+      { error: { code: 'attachment-not-owner', message: 'Only the uploader or an ADMIN may delete this attachment' } },
       { status: 403 },
     );
   }

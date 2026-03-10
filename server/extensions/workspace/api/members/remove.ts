@@ -29,7 +29,7 @@ export async function handleRemoveMember(
 
   if (!targetMembership) {
     return Response.json(
-      { name: 'member-not-found', data: { message: 'User is not a member of this workspace' } },
+      { error: { code: 'member-not-found', message: 'User is not a member of this workspace' } },
       { status: 404 },
     );
   }
@@ -43,7 +43,7 @@ export async function handleRemoveMember(
 
     if (Number(ownerCount?.count ?? 0) <= 1) {
       return Response.json(
-        { name: 'workspace-must-have-owner', data: { message: 'Cannot remove the last owner' } },
+        { error: { code: 'workspace-must-have-owner', message: 'Cannot remove the last owner' } },
         { status: 409 },
       );
     }

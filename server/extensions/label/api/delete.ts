@@ -14,7 +14,7 @@ export async function handleDeleteLabel(req: Request, labelId: string): Promise<
   const label = await db('labels').where({ id: labelId }).first();
   if (!label) {
     return Response.json(
-      { name: 'label-not-found', data: { message: 'Label not found' } },
+      { error: { code: 'label-not-found', message: 'Label not found' } },
       { status: 404 },
     );
   }

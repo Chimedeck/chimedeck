@@ -34,14 +34,14 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!Array.isArray(body.order)) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'order must be an array of list IDs' } },
+      { error: { code: 'bad-request', message: 'order must be an array of list IDs' } },
       { status: 400 },
     );
   }
@@ -67,7 +67,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   for (const id of body.order) {
     if (!activeIds.has(id)) {
       return Response.json(
-        { name: 'list-board-mismatch', data: { message: `List ${id} does not belong to this board` } },
+        { error: { code: 'list-board-mismatch', message: `List ${id} does not belong to this board` } },
         { status: 400 },
       );
     }

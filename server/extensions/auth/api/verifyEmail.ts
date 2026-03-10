@@ -12,7 +12,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
 
   if (!token) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is required' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is required' } },
       { status: 400 },
     );
   }
@@ -21,7 +21,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
 
   if (!user) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
       { status: 400 },
     );
   }
@@ -29,7 +29,7 @@ export async function handleVerifyEmail(req: Request): Promise<Response> {
   const now = new Date();
   if (!user.verification_token_expires_at || new Date(user.verification_token_expires_at) < now) {
     return Response.json(
-      { name: 'invalid-or-expired-token', data: { message: 'Token is invalid or has expired' } },
+      { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
       { status: 400 },
     );
   }

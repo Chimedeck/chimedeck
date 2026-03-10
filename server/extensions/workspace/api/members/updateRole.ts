@@ -31,14 +31,14 @@ export async function handleUpdateMemberRole(
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.role || !VALID_ROLES.includes(body.role as Role)) {
     return Response.json(
-      { name: 'bad-request', data: { message: `role must be one of: ${VALID_ROLES.join(', ')}` } },
+      { error: { code: 'bad-request', message: `role must be one of: ${VALID_ROLES.join(', ')}` } },
       { status: 400 },
     );
   }
@@ -49,7 +49,7 @@ export async function handleUpdateMemberRole(
 
   if (!targetMembership) {
     return Response.json(
-      { name: 'member-not-found', data: { message: 'User is not a member of this workspace' } },
+      { error: { code: 'member-not-found', message: 'User is not a member of this workspace' } },
       { status: 404 },
     );
   }
@@ -65,7 +65,7 @@ export async function handleUpdateMemberRole(
 
     if (Number(ownerCount?.count ?? 0) <= 1) {
       return Response.json(
-        { name: 'workspace-must-have-owner', data: { message: 'Cannot demote the last owner' } },
+        { error: { code: 'workspace-must-have-owner', message: 'Cannot demote the last owner' } },
         { status: 409 },
       );
     }

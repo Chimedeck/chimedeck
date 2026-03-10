@@ -15,7 +15,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
   const plugin = await db('plugins').where({ id: pluginId }).first();
   if (!plugin) {
     return Response.json(
-      { name: 'plugin-not-found', data: { message: 'Plugin not found' } },
+      { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
       { status: 404 },
     );
   }
@@ -25,7 +25,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
     body = (await req.json()) as Record<string, unknown>;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -48,20 +48,20 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
     const rawDomains = body.whitelistedDomains;
     if (!Array.isArray(rawDomains)) {
       return Response.json(
-        { name: 'invalid-whitelisted-domains', data: { message: 'whitelistedDomains must be an array' } },
+        { error: { code: 'invalid-whitelisted-domains', message: 'whitelistedDomains must be an array' } },
         { status: 422 },
       );
     }
     if (rawDomains.length > MAX_WHITELISTED_DOMAINS) {
       return Response.json(
-        { name: 'too-many-whitelisted-domains', data: { message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
+        { error: { code: 'too-many-whitelisted-domains', message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
         { status: 422 },
       );
     }
     for (const domain of rawDomains) {
       if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
         return Response.json(
-          { name: 'invalid-whitelisted-domain', data: { message: `'${domain}' is not a valid HTTPS origin` } },
+          { error: { code: 'invalid-whitelisted-domain', message: `'${domain}' is not a valid HTTPS origin` } },
           { status: 422 },
         );
       }

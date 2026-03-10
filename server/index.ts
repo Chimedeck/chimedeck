@@ -126,7 +126,7 @@ async function router(req: Request): Promise<Response> {
   }
 
   return Response.json(
-    { name: 'not-found', data: { message: `${req.method} ${path} not found` } },
+    { error: { code: 'not-found', message: `${req.method} ${path} not found` } },
     { status: 404 }
   );
 }

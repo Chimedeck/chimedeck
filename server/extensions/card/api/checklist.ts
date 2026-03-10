@@ -35,7 +35,7 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -43,7 +43,7 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   const workspaceId = await resolveWorkspaceIdFromCard(cardId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }
@@ -60,14 +60,14 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'title is required' } },
+      { error: { code: 'bad-request', message: 'title is required' } },
       { status: 400 },
     );
   }
@@ -100,7 +100,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
-      { name: 'checklist-item-not-found', data: { message: 'Checklist item not found' } },
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
       { status: 404 },
     );
   }
@@ -108,7 +108,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   const { workspaceId } = await resolveWorkspaceIdFromItem(itemId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'checklist-item-not-found', data: { message: 'Checklist item context not found' } },
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
       { status: 404 },
     );
   }
@@ -125,7 +125,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -135,7 +135,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   if (body.title !== undefined) {
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
-        { name: 'bad-request', data: { message: 'title must be a non-empty string' } },
+        { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
         { status: 400 },
       );
     }
@@ -145,7 +145,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   if (body.checked !== undefined) {
     if (typeof body.checked !== 'boolean') {
       return Response.json(
-        { name: 'bad-request', data: { message: 'checked must be a boolean' } },
+        { error: { code: 'bad-request', message: 'checked must be a boolean' } },
         { status: 400 },
       );
     }
@@ -155,7 +155,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   if (body.position !== undefined) {
     if (typeof body.position !== 'string' || body.position.trim() === '') {
       return Response.json(
-        { name: 'bad-request', data: { message: 'position must be a non-empty string' } },
+        { error: { code: 'bad-request', message: 'position must be a non-empty string' } },
         { status: 400 },
       );
     }
@@ -177,7 +177,7 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
-      { name: 'checklist-item-not-found', data: { message: 'Checklist item not found' } },
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
       { status: 404 },
     );
   }
@@ -185,7 +185,7 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   const { workspaceId } = await resolveWorkspaceIdFromItem(itemId);
   if (!workspaceId) {
     return Response.json(
-      { name: 'checklist-item-not-found', data: { message: 'Checklist item context not found' } },
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
       { status: 404 },
     );
   }

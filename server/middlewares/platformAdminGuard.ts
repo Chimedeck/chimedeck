@@ -12,7 +12,7 @@ export async function platformAdminGuard(req: AuthenticatedRequest): Promise<Res
   const email = req.currentUser?.email;
   if (!email || !isPlatformAdmin(email)) {
     return Response.json(
-      { name: 'not-platform-admin', data: { message: 'Platform admin access required' } },
+      { error: { code: 'not-platform-admin', message: 'Platform admin access required' } },
       { status: 403 },
     );
   }

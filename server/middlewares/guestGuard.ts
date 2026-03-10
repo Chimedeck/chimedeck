@@ -8,10 +8,7 @@ import type { WorkspaceScopedRequest } from './permissionManager';
 export function guestGuard(req: WorkspaceScopedRequest): Response | null {
   if (req.callerRole === 'GUEST') {
     return Response.json(
-      {
-        name: 'guest-role-insufficient-permissions',
-        data: { message: 'Guests have read-only access and cannot perform this action' },
-      },
+      { error: { code: 'guest-role-insufficient-permissions', message: 'Guests have read-only access and cannot perform this action' } },
       { status: 403 },
     );
   }

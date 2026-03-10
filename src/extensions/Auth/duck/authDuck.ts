@@ -44,7 +44,7 @@ export const loginThunk = createAppAsyncThunk(
       const response = await authApi.login({ email, password });
       return response.data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.name : 'login-failed';
+      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'login-failed';
       return rejectWithValue(msg);
     }
   }
@@ -66,7 +66,7 @@ export const signupThunk = createAppAsyncThunk(
       }
       return response.data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.name : 'signup-failed';
+      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'signup-failed';
       return rejectWithValue(msg);
     }
   }
@@ -193,7 +193,7 @@ export const selectPendingEmail = (state: RootState) => state.auth.pendingEmail;
 
 function isApiError(
   err: unknown
-): err is { response: { status: number; data: { name: string } } } {
+): err is { response: { status: number; data: { error?: { code: string; message: string } } } } {
   return (
     typeof err === 'object' &&
     err !== null &&

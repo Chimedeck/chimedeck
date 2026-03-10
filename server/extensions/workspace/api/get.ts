@@ -43,7 +43,7 @@ export async function handleGetWorkspace(req: Request, workspaceId: string): Pro
 
   if (!workspace) {
     return Response.json(
-      { name: 'workspace-not-found', data: { message: 'Workspace not found' } },
+      { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
       { status: 404 },
     );
   }

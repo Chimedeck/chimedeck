@@ -26,7 +26,7 @@ export async function requireCardWritable(
 
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -34,7 +34,7 @@ export async function requireCardWritable(
   const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card parent list not found' } },
+      { error: { code: 'card-not-found', message: 'Card parent list not found' } },
       { status: 404 },
     );
   }
@@ -42,21 +42,21 @@ export async function requireCardWritable(
   const board = await db('boards').where({ id: list.board_id }).first();
   if (!board) {
     return Response.json(
-      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { name: 'board-archived', data: { message: 'Board is archived and cannot be modified' } },
+      { error: { code: 'board-archived', message: 'Board is archived and cannot be modified' } },
       { status: 403 },
     );
   }
 
   if (card.archived) {
     return Response.json(
-      { name: 'card-archived', data: { message: 'Card is archived and cannot be modified' } },
+      { error: { code: 'card-archived', message: 'Card is archived and cannot be modified' } },
       { status: 403 },
     );
   }

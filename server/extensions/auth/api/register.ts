@@ -17,7 +17,7 @@ export async function handleRegister(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -26,14 +26,14 @@ export async function handleRegister(req: Request): Promise<Response> {
 
   if (!name || !email || !password) {
     return Response.json(
-      { name: 'validation-error', data: { message: 'name, email, and password are required' } },
+      { error: { code: 'validation-error', message: 'name, email, and password are required' } },
       { status: 400 },
     );
   }
 
   if (password.length < 8) {
     return Response.json(
-      { name: 'validation-error', data: { message: 'Password must be at least 8 characters' } },
+      { error: { code: 'validation-error', message: 'Password must be at least 8 characters' } },
       { status: 400 },
     );
   }
@@ -46,7 +46,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   const existing = await db('users').where({ email }).first();
   if (existing) {
     return Response.json(
-      { name: 'email-already-registered', data: { message: 'Email is already in use' } },
+      { error: { code: 'email-already-registered', message: 'Email is already in use' } },
       { status: 409 },
     );
   }

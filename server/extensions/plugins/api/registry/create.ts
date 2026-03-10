@@ -47,7 +47,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 }
     );
   }
@@ -56,26 +56,26 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
 
   if (!name || typeof name !== 'string') {
     return Response.json(
-      { name: 'missing-param', data: { message: 'name is required' } },
+      { error: { code: 'missing-param', message: 'name is required' } },
       { status: 400 }
     );
   }
   if (!slug || typeof slug !== 'string') {
     return Response.json(
-      { name: 'missing-param', data: { message: 'slug is required' } },
+      { error: { code: 'missing-param', message: 'slug is required' } },
       { status: 400 }
     );
   }
   if (!connectorUrl || typeof connectorUrl !== 'string') {
     return Response.json(
-      { name: 'missing-param', data: { message: 'connectorUrl is required' } },
+      { error: { code: 'missing-param', message: 'connectorUrl is required' } },
       { status: 400 }
     );
   }
 
   if (!connectorUrl.startsWith('https://')) {
     return Response.json(
-      { name: 'invalid-connector-url', data: { message: 'connectorUrl must start with https://' } },
+      { error: { code: 'invalid-connector-url', message: 'connectorUrl must start with https://' } },
       { status: 422 }
     );
   }

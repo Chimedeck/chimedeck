@@ -11,7 +11,7 @@ export async function handleGetProfile(req: Request): Promise<Response> {
 
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User not found' } },
+      { error: { code: 'user-not-found', message: 'User not found' } },
       { status: 404 },
     );
   }

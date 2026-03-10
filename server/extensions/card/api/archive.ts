@@ -16,7 +16,7 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
@@ -26,14 +26,14 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
 
   if (!list || !board) {
     return Response.json(
-      { name: 'card-not-found', data: { message: 'Card context not found' } },
+      { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { name: 'board-archived', data: { message: 'Board is archived and cannot be modified' } },
+      { error: { code: 'board-archived', message: 'Board is archived and cannot be modified' } },
       { status: 403 },
     );
   }

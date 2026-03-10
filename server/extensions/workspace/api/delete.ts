@@ -22,7 +22,7 @@ export async function handleDeleteWorkspace(req: Request, workspaceId: string): 
 
   if (!deleted) {
     return Response.json(
-      { name: 'workspace-not-found', data: { message: 'Workspace not found' } },
+      { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
       { status: 404 },
     );
   }

@@ -21,14 +21,14 @@ export async function handleOAuthCallback(
 
   if (error) {
     return Response.json(
-      { name: 'oauth-provider-error', data: { message: error } },
+      { error: { code: 'oauth-provider-error', message: error } },
       { status: 502 },
     );
   }
 
   if (!code || !state) {
     return Response.json(
-      { name: 'oauth-state-mismatch', data: { message: 'Missing code or state' } },
+      { error: { code: 'oauth-state-mismatch', message: 'Missing code or state' } },
       { status: 400 },
     );
   }
@@ -37,7 +37,7 @@ export async function handleOAuthCallback(
   const storedProvider = memCache.get(`oauth_state:${state}`);
   if (storedProvider !== provider) {
     return Response.json(
-      { name: 'oauth-state-mismatch', data: { message: 'Invalid OAuth state' } },
+      { error: { code: 'oauth-state-mismatch', message: 'Invalid OAuth state' } },
       { status: 400 },
     );
   }
@@ -53,7 +53,7 @@ export async function handleOAuthCallback(
 
   if (profileResult.status !== 200 || !profileResult.profile) {
     return Response.json(
-      { name: 'oauth-provider-error', data: { message: 'Failed to get user profile from provider' } },
+      { error: { code: 'oauth-provider-error', message: 'Failed to get user profile from provider' } },
       { status: 502 },
     );
   }

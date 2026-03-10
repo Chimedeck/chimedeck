@@ -15,7 +15,7 @@ export async function handleListDueCards(req: Request, workspaceId: string): Pro
   const workspace = await db('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
     return Response.json(
-      { name: 'workspace-not-found', data: { message: 'Workspace not found' } },
+      { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
       { status: 404 },
     );
   }
@@ -32,7 +32,7 @@ export async function handleListDueCards(req: Request, workspaceId: string): Pro
 
   if (!before) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'before query param (ISO 8601) is required' } },
+      { error: { code: 'bad-request', message: 'before query param (ISO 8601) is required' } },
       { status: 400 },
     );
   }
@@ -40,7 +40,7 @@ export async function handleListDueCards(req: Request, workspaceId: string): Pro
   const beforeDate = new Date(before);
   if (isNaN(beforeDate.getTime())) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'before must be a valid ISO 8601 date' } },
+      { error: { code: 'bad-request', message: 'before must be a valid ISO 8601 date' } },
       { status: 400 },
     );
   }

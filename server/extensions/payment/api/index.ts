@@ -21,7 +21,7 @@ export async function paymentRouter(req: Request, pathname: string): Promise<Res
 
   if (typeof amount !== 'number' || amount <= 0) {
     return Response.json(
-      { name: 'invalid-amount', data: { message: 'amount must be a positive number' } },
+      { error: { code: 'invalid-amount', message: 'amount must be a positive number' } },
       { status: 400 },
     );
   }
@@ -46,7 +46,7 @@ export async function paymentRouter(req: Request, pathname: string): Promise<Res
     return Response.json({ data: { url: paymentLink.url, id: paymentLink.id } });
   } catch (err: any) {
     return Response.json(
-      { name: 'stripe-error', data: { message: err.message ?? 'Stripe error' } },
+      { error: { code: 'stripe-error', message: err.message ?? 'Stripe error' } },
       { status: 502 },
     );
   }

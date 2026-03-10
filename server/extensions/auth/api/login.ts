@@ -23,7 +23,7 @@ export async function handleLogin(req: Request): Promise<Response> {
 
   if (!checkRateLimit(ip)) {
     return Response.json(
-      { name: 'rate-limit-exceeded', data: { message: 'Too many login attempts' } },
+      { error: { code: 'rate-limit-exceeded', message: 'Too many login attempts' } },
       { status: 429 },
     );
   }
@@ -33,14 +33,14 @@ export async function handleLogin(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.email || !body.password) {
     return Response.json(
-      { name: 'credentials-invalid', data: { message: 'Email and password are required' } },
+      { error: { code: 'credentials-invalid', message: 'Email and password are required' } },
       { status: 401 },
     );
   }
@@ -49,7 +49,7 @@ export async function handleLogin(req: Request): Promise<Response> {
 
   if (!user || !user.password_hash) {
     return Response.json(
-      { name: 'credentials-invalid', data: { message: 'Invalid email or password' } },
+      { error: { code: 'credentials-invalid', message: 'Invalid email or password' } },
       { status: 401 },
     );
   }
@@ -57,7 +57,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   const valid = await verifyPassword({ password: body.password, hash: user.password_hash });
   if (!valid) {
     return Response.json(
-      { name: 'credentials-invalid', data: { message: 'Invalid email or password' } },
+      { error: { code: 'credentials-invalid', message: 'Invalid email or password' } },
       { status: 401 },
     );
   }
@@ -66,7 +66,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   const verificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
   if (verificationEnabled && !user.email_verified) {
     return Response.json(
-      { name: 'email-not-verified', data: { message: 'Please verify your email before logging in.' } },
+      { error: { code: 'email-not-verified', message: 'Please verify your email before logging in.' } },
       { status: 403 },
     );
   }

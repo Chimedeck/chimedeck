@@ -36,7 +36,7 @@ export async function handlePatchCard(req: Request, cardId: string): Promise<Res
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -50,13 +50,13 @@ export async function handlePatchCard(req: Request, cardId: string): Promise<Res
     } else {
       if (typeof body.amount !== 'number' || isNaN(body.amount)) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'amount must be a number or null' } },
+          { error: { code: 'bad-request', message: 'amount must be a number or null' } },
           { status: 400 },
         );
       }
       if (body.amount < 0) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'amount must be non-negative' } },
+          { error: { code: 'bad-request', message: 'amount must be non-negative' } },
           { status: 400 },
         );
       }
@@ -70,7 +70,7 @@ export async function handlePatchCard(req: Request, cardId: string): Promise<Res
     } else {
       if (typeof body.currency !== 'string' || !CURRENCY_RE.test(body.currency)) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' } },
+          { error: { code: 'bad-request', message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' } },
           { status: 400 },
         );
       }

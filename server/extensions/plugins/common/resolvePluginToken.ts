@@ -17,7 +17,7 @@ export async function resolvePluginToken(
   const match = /^Bearer\s+(.+)$/i.exec(authHeader);
   if (!match) {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Authorization: Bearer <plugin-token> header required' } },
+      { error: { code: 'unauthorized', message: 'Authorization: Bearer <plugin-token> header required' } },
       { status: 401 },
     );
   }
@@ -32,7 +32,7 @@ export async function resolvePluginToken(
     rawClaims = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf-8'));
   } catch {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Malformed plugin token' } },
+      { error: { code: 'unauthorized', message: 'Malformed plugin token' } },
       { status: 401 },
     );
   }
@@ -40,7 +40,7 @@ export async function resolvePluginToken(
   const pluginId = rawClaims['pluginId'];
   if (!pluginId || typeof pluginId !== 'string') {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Plugin token missing pluginId claim' } },
+      { error: { code: 'unauthorized', message: 'Plugin token missing pluginId claim' } },
       { status: 401 },
     );
   }
@@ -48,7 +48,7 @@ export async function resolvePluginToken(
   const plugin = await db('plugins').where({ id: pluginId, is_active: true }).first();
   if (!plugin?.api_key) {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Invalid or inactive plugin' } },
+      { error: { code: 'unauthorized', message: 'Invalid or inactive plugin' } },
       { status: 401 },
     );
   }
@@ -67,7 +67,7 @@ export async function resolvePluginToken(
     return { plugin, claims };
   } catch {
     return Response.json(
-      { name: 'unauthorized', data: { message: 'Invalid or expired plugin token' } },
+      { error: { code: 'unauthorized', message: 'Invalid or expired plugin token' } },
       { status: 401 },
     );
   }

@@ -17,7 +17,7 @@ export async function handleDisableBoardPlugin(
 
   if (!row || row.disabled_at) {
     return Response.json(
-      { name: 'plugin-not-enabled', data: { message: 'Plugin is not currently enabled on this board' } },
+      { error: { code: 'plugin-not-enabled', message: 'Plugin is not currently enabled on this board' } },
       { status: 404 },
     );
   }

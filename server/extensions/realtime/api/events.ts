@@ -10,7 +10,7 @@ export async function handleGetBoardEvents(req: Request, boardId: string): Promi
 
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
 
   const url = new URL(req.url);

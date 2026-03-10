@@ -37,7 +37,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -47,13 +47,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   if (body.title !== undefined) {
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
-        { name: 'bad-request', data: { message: 'title must be a non-empty string' } },
+        { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
         { status: 400 },
       );
     }
     if (body.title.trim().length > 512) {
       return Response.json(
-        { name: 'card-title-too-long', data: { message: 'title must be ≤ 512 characters' } },
+        { error: { code: 'card-title-too-long', message: 'title must be ≤ 512 characters' } },
         { status: 400 },
       );
     }
@@ -73,7 +73,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       const parsed = new Date(body.start_date);
       if (isNaN(parsed.getTime())) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'start_date must be a valid ISO 8601 date string or null' } },
+          { error: { code: 'bad-request', message: 'start_date must be a valid ISO 8601 date string or null' } },
           { status: 400 },
         );
       }
@@ -88,13 +88,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     } else {
       if (typeof body.amount !== 'number' || isNaN(body.amount)) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'amount must be a number or null' } },
+          { error: { code: 'bad-request', message: 'amount must be a number or null' } },
           { status: 400 },
         );
       }
       if (body.amount < 0) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'amount must be non-negative' } },
+          { error: { code: 'bad-request', message: 'amount must be non-negative' } },
           { status: 400 },
         );
       }
@@ -108,7 +108,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     } else {
       if (typeof body.currency !== 'string' || !CURRENCY_RE.test(body.currency)) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' } },
+          { error: { code: 'bad-request', message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' } },
           { status: 400 },
         );
       }

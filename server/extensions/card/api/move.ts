@@ -34,14 +34,14 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
 
   if (!body.targetListId) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'targetListId is required' } },
+      { error: { code: 'bad-request', message: 'targetListId is required' } },
       { status: 400 },
     );
   }
@@ -50,7 +50,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const targetList = await db('lists').where({ id: body.targetListId }).first();
   if (!targetList) {
     return Response.json(
-      { name: 'target-list-not-found', data: { message: 'Target list not found' } },
+      { error: { code: 'target-list-not-found', message: 'Target list not found' } },
       { status: 404 },
     );
   }
@@ -59,7 +59,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const sourceList = await db('lists').where({ id: card.list_id }).first();
   if (sourceList!.board_id !== targetList.board_id) {
     return Response.json(
-      { name: 'cross-board-move', data: { message: 'Cannot move card to a list on a different board' } },
+      { error: { code: 'cross-board-move', message: 'Cannot move card to a list on a different board' } },
       { status: 400 },
     );
   }
@@ -86,7 +86,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     const afterIndex = targetCards.findIndex((c) => c.id === body.afterCardId);
     if (afterIndex === -1) {
       return Response.json(
-        { name: 'card-not-found', data: { message: 'afterCardId not found in target list' } },
+        { error: { code: 'card-not-found', message: 'afterCardId not found in target list' } },
         { status: 404 },
       );
     }

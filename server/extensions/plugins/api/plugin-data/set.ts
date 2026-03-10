@@ -33,7 +33,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -45,44 +45,44 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
 
   if (boardIdBody && typeof boardIdBody === 'string' && boardIdBody !== boardId) {
     return Response.json(
-      { name: 'forbidden', data: { message: 'boardId does not match token scope' } },
+      { error: { code: 'forbidden', message: 'boardId does not match token scope' } },
       { status: 403 },
     );
   }
 
   if (!boardId) {
     return Response.json(
-      { name: 'missing-param', data: { message: 'boardId is required' } },
+      { error: { code: 'missing-param', message: 'boardId is required' } },
       { status: 400 },
     );
   }
   if (!scope || !VALID_SCOPES.includes(scope as Scope)) {
     return Response.json(
-      { name: 'missing-param', data: { message: 'scope must be one of: card, list, board, member' } },
+      { error: { code: 'missing-param', message: 'scope must be one of: card, list, board, member' } },
       { status: 400 },
     );
   }
   if (!resourceId || typeof resourceId !== 'string') {
     return Response.json(
-      { name: 'missing-param', data: { message: 'resourceId is required' } },
+      { error: { code: 'missing-param', message: 'resourceId is required' } },
       { status: 400 },
     );
   }
   if (!key || typeof key !== 'string') {
     return Response.json(
-      { name: 'missing-param', data: { message: 'key is required' } },
+      { error: { code: 'missing-param', message: 'key is required' } },
       { status: 400 },
     );
   }
   if (!VALID_VISIBILITY.includes(visibility as Visibility)) {
     return Response.json(
-      { name: 'missing-param', data: { message: 'visibility must be private or shared' } },
+      { error: { code: 'missing-param', message: 'visibility must be private or shared' } },
       { status: 400 },
     );
   }
   if (visibility === 'private' && (!userId || typeof userId !== 'string')) {
     return Response.json(
-      { name: 'missing-param', data: { message: 'userId is required for private visibility' } },
+      { error: { code: 'missing-param', message: 'userId is required for private visibility' } },
       { status: 400 },
     );
   }
@@ -94,7 +94,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   } catch (err) {
     if (err instanceof ResourceBoardMismatchError) {
       return Response.json(
-        { name: 'resource-board-mismatch', data: { message: err.message } },
+        { error: { code: 'resource-board-mismatch', message: err.message } },
         { status: 403 },
       );
     }

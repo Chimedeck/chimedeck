@@ -18,13 +18,13 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
 
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
-    return Response.json({ name: 'card-not-found', data: { message: 'Card not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
   }
 
   const list = await db('lists').where({ id: card.list_id }).first();
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -37,11 +37,11 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
   }
 
   if (!body.attachmentId) {
-    return Response.json({ name: 'bad-request', data: { message: 'attachmentId is required' } }, { status: 400 });
+    return Response.json({ error: { code: 'bad-request', message: 'attachmentId is required' } }, { status: 400 });
   }
 
   const attachment = await db('attachments')
@@ -50,7 +50,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
 
   if (!attachment) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+      { error: { code: 'attachment-not-found', message: 'Attachment not found' } },
       { status: 404 },
     );
   }
@@ -58,7 +58,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   // Verify the client actually PUT the file to S3
   if (!attachment.s3_key) {
     return Response.json(
-      { name: 'upload-url-expired', data: { message: 'Upload was not completed' } },
+      { error: { code: 'upload-url-expired', message: 'Upload was not completed' } },
       { status: 400 },
     );
   }
@@ -66,7 +66,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   const exists = await headObject({ s3Key: attachment.s3_key }).catch(() => false);
   if (!exists) {
     return Response.json(
-      { name: 'upload-url-expired', data: { message: 'S3 object not found — upload may not have completed' } },
+      { error: { code: 'upload-url-expired', message: 'S3 object not found — upload may not have completed' } },
       { status: 400 },
     );
   }

@@ -26,7 +26,7 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   const count = memCache.incr(rlKey, RESEND_WINDOW_SECONDS);
   if (count > RESEND_RATE_LIMIT) {
     return Response.json(
-      { name: 'rate-limit-exceeded', data: { message: 'Too many resend requests. Try again in an hour.' } },
+      { error: { code: 'rate-limit-exceeded', message: 'Too many resend requests. Try again in an hour.' } },
       { status: 429 },
     );
   }
@@ -34,14 +34,14 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   const user = await db('users').where({ id: userId }).first();
   if (!user) {
     return Response.json(
-      { name: 'user-not-found', data: { message: 'User not found' } },
+      { error: { code: 'user-not-found', message: 'User not found' } },
       { status: 404 },
     );
   }
 
   if (user.email_verified) {
     return Response.json(
-      { name: 'already-verified', data: { message: 'Email is already verified' } },
+      { error: { code: 'already-verified', message: 'Email is already verified' } },
       { status: 400 },
     );
   }
@@ -49,7 +49,7 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   const verificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
   if (!verificationEnabled) {
     return Response.json(
-      { name: 'feature-disabled', data: { message: 'Email verification is not enabled' } },
+      { error: { code: 'feature-disabled', message: 'Email verification is not enabled' } },
       { status: 400 },
     );
   }

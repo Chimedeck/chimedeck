@@ -14,7 +14,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
   const label = await db('labels').where({ id: labelId }).first();
   if (!label) {
     return Response.json(
-      { name: 'label-not-found', data: { message: 'Label not found' } },
+      { error: { code: 'label-not-found', message: 'Label not found' } },
       { status: 404 },
     );
   }
@@ -31,7 +31,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
     );
   }
@@ -41,7 +41,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
   if (body.name !== undefined) {
     if (typeof body.name !== 'string' || body.name.trim() === '') {
       return Response.json(
-        { name: 'bad-request', data: { message: 'name must be a non-empty string' } },
+        { error: { code: 'bad-request', message: 'name must be a non-empty string' } },
         { status: 400 },
       );
     }
@@ -51,7 +51,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
   if (body.color !== undefined) {
     if (typeof body.color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(body.color)) {
       return Response.json(
-        { name: 'bad-request', data: { message: 'color must be a hex color (e.g. #FF5733)' } },
+        { error: { code: 'bad-request', message: 'color must be a hex color (e.g. #FF5733)' } },
         { status: 400 },
       );
     }
