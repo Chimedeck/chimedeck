@@ -1,0 +1,8 @@
+{
+  "boardViewSwitcher": {
+    "kanban": "Kanban",
+    "table": "Table",
+    "calendar": "Calendar",
+    "timeline": "Timeline"
+  }
+}

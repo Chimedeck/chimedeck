@@ -3,6 +3,7 @@
 // Sprint 19: ?card=:id URL param opens CardModal.
 // Sprint 20: real-time sync via useWebSocket + useBoardSync; ConnectionBadge in header.
 // Sprint 48: tabbed view adds Activity, Comments, and Archived Cards panels.
+// Sprint 52: BoardViewSwitcher mounted above canvas for Kanban/Table/Calendar/Timeline.
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -35,6 +36,8 @@ import PluginIframeContainer from '../../../Plugins/iframeHost/PluginIframeConta
 import BoardActivityPanel from '../../../BoardViews/BoardActivityPanel';
 import BoardCommentsPanel from '../../../BoardViews/BoardCommentsPanel';
 import BoardArchivedCardsPanel from '../../../BoardViews/BoardArchivedCardsPanel';
+import BoardViewSwitcher from '../../../BoardViewSwitcher/BoardViewSwitcher';
+import { selectActiveView } from '../../../BoardViewSwitcher/viewPreference.slice';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -57,6 +60,8 @@ const BoardPage = () => {
   const cards = useAppSelector(selectCards);
   const status = useAppSelector(selectBoardStatus);
   const accessToken = useAppSelector(selectAuthToken);
+  // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
+  const activeView = useAppSelector(selectActiveView);
 
   // Use the shared axios client instead of a globalThis reference
   const api = apiClient;
@@ -327,26 +332,37 @@ const BoardPage = () => {
       {activeTab === 'board' ? (
         /* Hidden plugin iframes + bridge provider for card plugin UI injections */
         <PluginIframeContainer boardId={boardId ?? ''}>
-          <BoardCanvas
-            boardId={boardId ?? ''}
-            boardTitle={board.title}
-            listOrder={listOrder}
-            lists={lists}
-            cardsByList={cardsByList}
-            cards={cards}
-            onCardMove={handleCardMove}
-            onListReorder={handleListReorder}
-            onDragStart={handleDragStart}
-            onDragCommit={handleDragCommit}
-            onDragRollback={handleDragRollback}
-            onAddCard={handleAddCard}
-            onAddList={handleAddList}
-            onRenameList={handleRenameList}
-            onArchiveList={handleArchiveList}
-            onDeleteList={handleDeleteList}
-            onCardClick={handleCardClick}
-            isReadOnly={board.state === 'ARCHIVED'}
-          />
+          {/* View switcher: Kanban | Table | Calendar | Timeline (Sprint 52) */}
+          <BoardViewSwitcher boardId={boardId ?? ''} />
+
+          {/* Render the active view */}
+          {activeView === 'KANBAN' ? (
+            <BoardCanvas
+              boardId={boardId ?? ''}
+              boardTitle={board.title}
+              listOrder={listOrder}
+              lists={lists}
+              cardsByList={cardsByList}
+              cards={cards}
+              onCardMove={handleCardMove}
+              onListReorder={handleListReorder}
+              onDragStart={handleDragStart}
+              onDragCommit={handleDragCommit}
+              onDragRollback={handleDragRollback}
+              onAddCard={handleAddCard}
+              onAddList={handleAddList}
+              onRenameList={handleRenameList}
+              onArchiveList={handleArchiveList}
+              onDeleteList={handleDeleteList}
+              onCardClick={handleCardClick}
+              isReadOnly={board.state === 'ARCHIVED'}
+            />
+          ) : (
+            /* Placeholder for Table/Calendar/Timeline views — implemented in subsequent iterations */
+            <div className="flex flex-1 items-center justify-center py-24 text-slate-500">
+              {activeView} view coming soon
+            </div>
+          )}
           {/* Card detail modal — URL-driven (?card=:id) */}
           <CardModalContainer />
           {/* Board settings panel */}
