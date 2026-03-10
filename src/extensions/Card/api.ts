@@ -8,6 +8,7 @@ export interface Card {
   position: string;
   archived: boolean;
   due_date: string | null;
+  start_date: string | null;
   amount: string | null;
   currency: string | null;
   created_at: string;

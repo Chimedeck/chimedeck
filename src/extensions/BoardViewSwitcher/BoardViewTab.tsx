@@ -23,6 +23,7 @@ const BoardViewTab = ({ viewType, isActive, onClick }: Props) => {
       aria-selected={isActive}
       aria-label={LABELS[viewType]}
       onClick={() => onClick(viewType)}
+      data-testid={`board-view-tab-${viewType}`}
       className={`flex items-center gap-1.5 rounded-t px-3 py-2 text-sm font-medium transition-colors ${
         isActive
           ? 'border-b-2 border-blue-500 text-blue-400'

@@ -38,6 +38,7 @@ import BoardCommentsPanel from '../../../BoardViews/BoardCommentsPanel';
 import BoardArchivedCardsPanel from '../../../BoardViews/BoardArchivedCardsPanel';
 import BoardViewSwitcher from '../../../BoardViewSwitcher/BoardViewSwitcher';
 import { selectActiveView } from '../../../BoardViewSwitcher/viewPreference.slice';
+import TableView from '../../../TableView/TableView';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -357,8 +358,14 @@ const BoardPage = () => {
               onCardClick={handleCardClick}
               isReadOnly={board.state === 'ARCHIVED'}
             />
+          ) : activeView === 'TABLE' ? (
+            <TableView
+              cards={Object.values(cards)}
+              lists={lists}
+              onCardClick={handleCardClick}
+            />
           ) : (
-            /* Placeholder for Table/Calendar/Timeline views — implemented in subsequent iterations */
+            /* Placeholder for Calendar/Timeline views — implemented in subsequent iterations */
             <div className="flex flex-1 items-center justify-center py-24 text-slate-500">
               {activeView} view coming soon
             </div>
