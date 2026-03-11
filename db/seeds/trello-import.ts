@@ -76,6 +76,17 @@ const s3 = new S3Client({
 const BATCH_SIZE = 500; // rows per INSERT batch
 
 // ---------------------------------------------------------------------------
+// Member ID → email mapper (from trello-import-member-ids-mapper.json)
+// ---------------------------------------------------------------------------
+
+const mapperPath = resolve(ROOT, 'db/trello-import-member-ids-mapper.json');
+const mapperRaw: { id: string; username: string; email?: string }[] =
+  await Bun.file(mapperPath).json();
+const memberMapper = new Map(
+  mapperRaw.map((entry) => [entry.id, entry]),
+);
+
+// ---------------------------------------------------------------------------
 // DB connection
 // ---------------------------------------------------------------------------
 
@@ -128,8 +139,11 @@ function memberId(trelloMemberId: string): string {
   return trelloMemberId;
 }
 
-function memberEmail(trelloMemberId: string): string {
-  return `tam.vu+${trelloMemberId}@journeyh.io`;
+function memberEmail(trelloMemberId: string, username?: string): string {
+  const mapped = memberMapper.get(trelloMemberId);
+  if (mapped?.email) return mapped.email;
+  const slug = username ?? mapped?.username ?? trelloMemberId;
+  return `developer+${slug}@journeyh.io`;
 }
 
 // ---------------------------------------------------------------------------
@@ -437,7 +451,7 @@ async function main() {
       const richData = memberDataMap.get(trelloId);
       memberRows.push({
         id: memberId(trelloId),
-        email: memberEmail(trelloId),
+        email: memberEmail(trelloId, richData?.username),
         // Use fullName when available, fall back to trello ID
         name: richData?.fullName || trelloId,
         // Use Trello username as our nickname; must be unique — use id as fallback

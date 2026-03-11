@@ -333,7 +333,7 @@ const BoardPage = () => {
   ];
 
   return (
-    <div className="flex flex-col bg-slate-950 text-slate-100 min-h-full">
+    <div className="flex flex-col bg-slate-950 text-slate-100 h-full overflow-hidden">
       <BoardHeader
         board={board}
         connectionState={connectionState}
@@ -369,6 +369,7 @@ const BoardPage = () => {
       {/* Tab content */}
       {activeTab === 'board' ? (
         /* Hidden plugin iframes + bridge provider for card plugin UI injections */
+        <div className="flex flex-col flex-1 overflow-hidden">
         <PluginIframeContainer boardId={boardId ?? ''}>
           {/* View switcher: Kanban | Table | Calendar | Timeline (Sprint 52) */}
           <BoardViewSwitcher boardId={boardId ?? ''} />
@@ -427,6 +428,7 @@ const BoardPage = () => {
           {/* Toast notifications (rollback errors, conflicts) */}
           <ToastRegion toasts={toasts} onDismiss={dismissToast} />
         </PluginIframeContainer>
+        </div>
       ) : activeTab === 'activity' ? (
         <div className="flex-1 overflow-y-auto">
           <BoardActivityPanel boardId={boardId ?? ''} />

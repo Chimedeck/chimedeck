@@ -73,7 +73,7 @@ const SortableListColumn = ({
     <div
       ref={setNodeRef}
       style={style}
-      className="w-72 shrink-0 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-xl flex flex-col max-h-[calc(100vh-140px)]"
+      className="w-72 shrink-0 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-xl flex flex-col h-full"
       role="listitem"
       aria-label={`List: ${list.title}`}
     >

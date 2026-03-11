@@ -241,7 +241,7 @@ const BoardCanvas = ({
     >
       <SortableContext items={listOrder} strategy={horizontalListSortingStrategy}>
         <div
-          className="flex gap-3 p-4 overflow-x-auto min-h-[calc(100vh-112px)]"
+          className="flex gap-3 p-4 overflow-x-auto overflow-y-hidden flex-1"
           role="list"
           aria-label="Board lists"
         >
