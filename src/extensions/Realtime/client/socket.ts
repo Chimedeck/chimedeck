@@ -10,6 +10,8 @@ export interface RealtimeEvent {
   type: string;
   board_id?: string;
   sequence?: number;
+  /** Epoch ms when the server published this event — used to compute propagation delay. */
+  emittedAt?: number;
   payload?: unknown;
 }
 

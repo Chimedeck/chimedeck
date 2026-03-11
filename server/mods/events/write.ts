@@ -47,6 +47,9 @@ export async function writeEvent(input: WriteEventInput): Promise<WrittenEvent> 
       version: Number(event.sequence),
       sequence: event.sequence.toString(),
       timestamp: event.created_at,
+      // emittedAt: epoch ms when the server published this event; used by the client
+      // to compute propagation delay for the realtime.propagation_delay_ms histogram.
+      emittedAt: Date.now(),
     });
     publisher.publish(input.boardId, message).catch(() => {});
   }

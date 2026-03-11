@@ -22,6 +22,10 @@ interface Metrics {
   httpErrorTotal: Counter;
   conflictTotal: Counter;
   wsDisconnectTotal: Counter;
+  /** realtime.conflicts — spec §3a: incremented when an optimistic conflict is resolved */
+  realtimeConflicts: Counter;
+  /** realtime.propagation_delay_ms — spec §3b: ms between server event emission and client ack */
+  realtimePropagationDelayMs: Histogram;
 }
 
 const noop: Metrics = {
@@ -30,6 +34,8 @@ const noop: Metrics = {
   httpErrorTotal: noopCounter,
   conflictTotal: noopCounter,
   wsDisconnectTotal: noopCounter,
+  realtimeConflicts: noopCounter,
+  realtimePropagationDelayMs: noopHistogram,
 };
 
 let _metrics: Metrics = noop;
@@ -72,6 +78,13 @@ export async function initMetrics(): Promise<void> {
       }),
       wsDisconnectTotal: meter.createCounter('ws_disconnect_total', {
         description: 'WebSocket client disconnections',
+      }),
+      realtimeConflicts: meter.createCounter('realtime.conflicts', {
+        description: 'Number of optimistic update conflicts detected during event processing',
+      }),
+      realtimePropagationDelayMs: meter.createHistogram('realtime.propagation_delay_ms', {
+        description: 'Milliseconds between server event emission and client acknowledgement',
+        unit: 'ms',
       }),
     };
 

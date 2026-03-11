@@ -14,6 +14,7 @@ import { listRouter } from './extensions/list/api/index';
 import { cardRouter } from './extensions/card/api/index';
 import { labelRouter } from './extensions/label/api/index';
 import { handleWsUpgrade, wsHandlers } from './extensions/realtime/api/index';
+import { handlePropagationPing } from './extensions/realtime/api/metrics';
 import { commentRouter } from './extensions/comment/api/index';
 import { activityRouter } from './extensions/activity/api/index';
 import { attachmentRouter } from './extensions/attachment/api/index';
@@ -68,6 +69,10 @@ async function router(req: Request): Promise<Response> {
         adminEmailDomains: env.ADMIN_EMAIL_DOMAINS,
       },
     });
+  }
+
+  if (path === '/api/v1/metrics/propagation') {
+    return handlePropagationPing(req);
   }
 
   const authResponse = await authRouter(req, path);

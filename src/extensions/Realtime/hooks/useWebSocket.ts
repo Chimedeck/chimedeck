@@ -10,6 +10,19 @@ import { messageQueue } from '../client/messageQueue';
 import type { RealtimeEvent } from '../client/socket';
 import type { ConnectionState } from '~/common/components/ConnectionBadge';
 
+/** Fire-and-forget POST to record propagation delay; never throws. */
+function pingPropagationDelay(event: RealtimeEvent): void {
+  if (event.emittedAt === undefined) return;
+  const delayMs = Date.now() - event.emittedAt;
+  fetch('/api/v1/metrics/propagation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ delayMs }),
+    // keepalive so the request survives page unload
+    keepalive: true,
+  }).catch(() => {});
+}
+
 export interface UseWebSocketOptions {
   boardId: string;
   token: string;
@@ -118,7 +131,11 @@ export function useWebSocket({
     }
 
     const unsubscribe = socket.subscribe({
-      onEvent,
+      onEvent: (event) => {
+        // Record propagation delay before dispatching so timing is as close as possible
+        pingPropagationDelay(event);
+        onEvent(event);
+      },
       onOpen: handleOpen,
       onClose: handleClose,
       onPollingActive: () => setPollingActive(true),

@@ -10,6 +10,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
+import { recordConflict } from '../../realtime/mods/conflictHandler';
 
 export async function handleMoveCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -98,6 +99,16 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const updated = await db('cards')
     .where({ id: cardId })
     .update({ list_id: body.targetListId, position, updated_at: new Date().toISOString() }, ['*']);
+
+  // Detect position collision: if another card already occupies the computed position
+  // (concurrent move race), record it as a conflict before broadcasting the resolution.
+  const collision = await db('cards')
+    .where({ list_id: body.targetListId, position, archived: false })
+    .whereNot({ id: cardId })
+    .first();
+  if (collision) {
+    recordConflict({ boardId: board.id, entityType: 'card' });
+  }
 
   // Client expects { card, fromListId } to update both card slice and board slice
   const fromListId = card.list_id;
