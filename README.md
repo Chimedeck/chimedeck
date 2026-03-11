@@ -26,7 +26,7 @@ docker compose up -d postgres localstack
 bun run db:migrate
 
 # 5. Start the dev server (hot-reload)
-bun run dev
+bun run dev:full
 ```
 
 > `curl http://localhost:3000/health` → `{ "status": "ok" }`

@@ -1,0 +1,35 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - production
+env:
+  ENV: production
+  AWS_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCOUNT_ID: ${{ secrets.PRODUCTION_AWS_ACCOUNT_ID }}
+  AWS_ECR_REGION: ${{ secrets.PRODUCTION_AWS_ECR_REGION }}
+  AWS_ECR_REPO_NAME: ${{ secrets.PRODUCTION_AWS_ECR_REPO_NAME }}
+  AWS_JH_ENV_SECRET_NAME: ${{ secrets.PRODUCTION_AWS_JH_ENV_SECRET_NAME }}
+  AWS_ENV_USER_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ENV_USER_ACCESS_KEY_ID }}
+  AWS_ENV_USER_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_ENV_USER_SECRET_ACCESS_KEY }}
+  AWS_ENV_USER_REGION: ${{ secrets.PRODUCTION_AWS_ENV_USER_REGION }}
+  AWS_ECR_TAG_NAME: ${{ secrets.PRODUCTION_AWS_ECR_TAG_NAME }}
+  AWS_PROFILE_PARAM: ${{ secrets.PRODUCTION_AWS_PROFILE_PARAM }}
+  ENV_FILE_PATH: ${{ secrets.PRODUCTION_ENV_FILE_PATH }}
+  AWS_INSTANCE_DEPLOY_SCRIPT: ${{ secrets.PRODUCTION_AWS_INSTANCE_DEPLOY_SCRIPT }}
+  AWS_INSTANCE_URL: ${{ secrets.PRODUCTION_AWS_INSTANCE_URL }}
+  USE_SSH_DEPLOYMENT: ${{ secrets.PRODUCTION_USE_SSH_DEPLOYMENT }}
+  ENCODED_PEM: ${{ secrets.PRODUCTION_ENCODED_PEM }}
+
+jobs:
+  deploy:
+    builder:
+      - ubuntu
+      - docker
+      - aws
+    steps:
+      - uses: checkout
+      - name: Run deploy script to build docker and ship docker to ECR and make sure the website can be deployed
+        run: ./scripts/deploy.sh

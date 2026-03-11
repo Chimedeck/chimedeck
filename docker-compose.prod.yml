@@ -9,10 +9,13 @@ name: vello-prod
 
 services:
   app:
-    image: "${DOCKER_IMAGE:-vello-app}:${IMAGE_TAG:-latest}"
+    image: "${IMAGE_URL}"
+    container_name: "${CONTAINER_NAME}"
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT}:3000"
     env_file: .env.production
+    environment:
+      SEED_TRELLO: "${SEED_TRELLO:-false}"
     # depends_on entries below are only honoured when the matching profile is active
     depends_on:
       postgres:
@@ -31,7 +34,7 @@ services:
     image: postgres:16-alpine
     env_file: .env.production
     ports:
-      - "6400:5432"   # host 6400 → container 5432 (app uses internal postgres:5432)
+      - "6400:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -39,12 +42,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   localstack:
     profiles: [local-s3]
     image: localstack/localstack:latest
     ports:
-      - "6401:4566"   # host 6401 → container 4566 (app uses internal localstack:4566)
+      - "6401:4566"
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
@@ -57,12 +61,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     profiles: [redis]
     image: redis:7-alpine
     volumes:
       - redis_data:/data
+    restart: unless-stopped
 
 volumes:
   postgres_data:
