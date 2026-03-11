@@ -59,6 +59,8 @@ export interface TimelineBarProps {
   card: Card;
   originDate: Date;
   dayWidth: number;
+  /** Which vertical sub-row inside the swimlane to place the bar (0 = top). */
+  rowIndex: number;
   /** Optional optimistic override applied while the user is dragging. */
   dragOverride?: TimelineDragOverride;
   onCardClick: (cardId: string) => void;

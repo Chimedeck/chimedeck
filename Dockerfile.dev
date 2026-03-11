@@ -8,8 +8,12 @@ RUN bun install
 # Mount source as a volume — no COPY of src
 # Hot-reload via bun --hot
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 ARG PORT=3000
 ENV PORT=$PORT
 EXPOSE $PORT
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bun", "run", "--hot", "server/index.ts"]

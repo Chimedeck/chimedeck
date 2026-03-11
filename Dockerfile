@@ -25,6 +25,8 @@ COPY --from=build /app/package.json  ./package.json
 COPY --from=build /app/server        ./server
 COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY --from=build /app/db            ./db
+COPY entrypoint.sh                   /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 USER app
 
@@ -35,4 +37,5 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://localhost:$PORT/health || exit 1
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bun", "run", "start"]

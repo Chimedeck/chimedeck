@@ -56,18 +56,20 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
   const todayIso = useMemo(() => today.toISOString().slice(0, 10), [today]);
 
   // Group cards into swimlanes (one per list).
+  // Cards are only shown when their due_date is today or in the future.
+  // Cards with no due_date, a past due_date, or both dates in the past are hidden.
   const swimlanes: Swimlane[] = useMemo(() => {
     return Object.values(lists).map((list) => {
       const listCards = cards.filter((c) => c.list_id === list.id);
       return {
         listId: list.id,
         listTitle: list.title,
-        // A card is "scheduled" when it has a due_date. start_date defaults to today if absent.
+        // Only cards with a due_date that is today or in the future are scheduled.
         scheduledCards: listCards
-          .filter((c) => !!c.due_date)
+          .filter((c) => !!c.due_date && c.due_date >= todayIso)
           .map((c) => (c.start_date ? c : { ...c, start_date: todayIso })),
-        // Only cards with no due_date are considered unscheduled.
-        unscheduledCards: listCards.filter((c) => !c.due_date),
+        // No unscheduled cards — cards with no due_date are not displayed.
+        unscheduledCards: [],
       };
     });
   }, [cards, lists, todayIso]);

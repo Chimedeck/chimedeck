@@ -10,8 +10,10 @@ import type { TimelineBarProps } from './types';
 const HANDLE_WIDTH = 8;
 /** Height of the bar in pixels. */
 const BAR_HEIGHT = 28;
-/** Top offset of the bar within its 44 px row. */
+/** Top offset of the first sub-row within its swimlane slot. */
 const BAR_TOP = 8;
+/** Vertical space allocated per sub-row (bar height + 4 px gap). */
+export const ROW_SLOT_HEIGHT = BAR_HEIGHT + 4;
 /** Default bar colour when the card has no labels. */
 const DEFAULT_COLOR = '#3b82f6';
 /** Minimum bar width in pixels (ensures handles are always reachable). */
@@ -33,6 +35,7 @@ const TimelineBar = ({
   card,
   originDate,
   dayWidth,
+  rowIndex,
   dragOverride,
   onCardClick,
   onMoveStart,
@@ -59,11 +62,12 @@ const TimelineBar = ({
   return (
     <div
       data-testid={`timeline-bar-${card.id}`}
+      title={card.title}
       className="absolute flex items-center rounded text-xs text-white shadow select-none"
       style={{
         left,
         width,
-        top: BAR_TOP,
+        top: BAR_TOP + rowIndex * ROW_SLOT_HEIGHT,
         height: BAR_HEIGHT,
         backgroundColor: barColor,
         cursor: 'grab',
