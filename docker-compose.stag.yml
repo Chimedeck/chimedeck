@@ -1,0 +1,76 @@
+name: vello-staging
+
+# By default only the app container runs.
+# External managed services (AWS RDS + S3) are used via env vars.
+# Opt in to local replacements with profiles:
+#   --profile local-db   → start internal Postgres instead of RDS
+#   --profile local-s3   → start LocalStack instead of AWS S3
+#   --profile redis      → start Redis sidecar
+
+services:
+  app:
+    image: "${IMAGE_URL}"
+    container_name: "${CONTAINER_NAME}"
+    ports:
+      - "${APP_PORT}:3000"
+    env_file: .env.staging
+    environment:
+      SEED_TRELLO: "${SEED_TRELLO:-false}"
+    # depends_on entries below are only honoured when the matching profile is active
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      localstack:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_started
+        required: false
+    restart: always
+
+  postgres:
+    profiles: [local-db]
+    image: postgres:16-alpine
+    env_file: .env.staging
+    ports:
+      - "6403:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  localstack:
+    profiles: [local-s3]
+    image: localstack/localstack:latest
+    ports:
+      - "6404:4566"
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-vello}
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    profiles: [redis]
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  localstack_data:
+  redis_data:
