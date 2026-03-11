@@ -36,7 +36,7 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
   const handleRestore = async (cardId: string) => {
     setRestoringId(cardId);
     try {
-      await apiClient.patch(`/cards/${cardId}`, { archived: false });
+      await apiClient.patch(`/cards/${cardId}/archive`, {});
       // Optimistically remove from list
       setCards((prev) => prev.filter((c) => c.id !== cardId));
       onCardUnarchived?.();

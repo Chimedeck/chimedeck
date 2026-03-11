@@ -26,7 +26,9 @@ interface DragState {
 }
 
 function parseLocalDate(s: string): Date {
-  const parts = s.split('-');
+  // Slice the first 10 chars to handle both "YYYY-MM-DD" and full ISO "YYYY-MM-DDTHH:mm:ss...Z"
+  const datePart = s.slice(0, 10);
+  const parts = datePart.split('-');
   return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
 }
 

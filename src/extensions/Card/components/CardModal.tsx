@@ -44,6 +44,7 @@ interface Props {
   onClose: () => void;
   onTitleSave: (title: string) => void;
   onDescriptionSave: (description: string) => void;
+  onStartDateChange: (date: string | null) => void;
   onDueDateChange: (date: string | null) => void;
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
@@ -80,6 +81,7 @@ const CardModal = ({
   onClose,
   onTitleSave,
   onDescriptionSave,
+  onStartDateChange,
   onDueDateChange,
   onArchive,
   onDelete,
@@ -216,6 +218,15 @@ const CardModal = ({
                     onDetach={onLabelDetach}
                     onCreateAndAttach={onLabelCreate}
                     disabled={isReadOnly}
+                  />
+                </CardSidebarSection>
+
+                <CardSidebarSection title="Start Date">
+                  <CardDueDate
+                    dueDate={card.start_date}
+                    onChange={onStartDateChange}
+                    disabled={isReadOnly}
+                    label="Start date"
                   />
                 </CardSidebarSection>
 

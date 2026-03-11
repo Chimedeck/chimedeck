@@ -34,6 +34,10 @@ export const env = {
   // Base URL used by the CSRF origin guard to validate incoming Origin/Referer headers.
   // Falls back to APP_URL so existing deployments work without extra config.
   APP_BASE_URL: Bun.env['APP_BASE_URL'] ?? Bun.env['APP_URL'] ?? 'http://localhost:3000',
+  // Optional comma-separated list of additional trusted origins for the CSRF guard.
+  // Useful when a reverse proxy or CDN presents a different origin than APP_BASE_URL.
+  // Note: localhost-to-localhost requests are automatically trusted (dev proxy support).
+  CSRF_ALLOWED_ORIGINS: Bun.env['CSRF_ALLOWED_ORIGINS'] ?? '',
 
   // OAuth providers
   OAUTH_GOOGLE_CLIENT_ID: Bun.env['OAUTH_GOOGLE_CLIENT_ID'] ?? '',

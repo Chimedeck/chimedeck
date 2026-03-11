@@ -18,7 +18,10 @@ const DEFAULT_COLOR = '#3b82f6';
 const MIN_BAR_WIDTH = HANDLE_WIDTH * 2 + 8;
 
 function parseLocalDate(s: string): Date {
-  const parts = s.split('-');
+  // Slice the first 10 chars to handle both "YYYY-MM-DD" and full ISO "YYYY-MM-DDTHH:mm:ss...Z"
+  // DB timestamp columns return full ISO strings; slicing avoids NaN from the time component.
+  const datePart = s.slice(0, 10);
+  const parts = datePart.split('-');
   return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
 }
 

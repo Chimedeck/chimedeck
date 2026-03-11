@@ -12,13 +12,13 @@ interface Props {
 const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore, loading = false }: Props) => {
   return (
     <div className="flex flex-col">
-      <h3 className="mb-2 text-xs font-semibold uppercase text-gray-500">Activity</h3>
+      <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400">Activity</h3>
 
       {activities.length === 0 && !loading && (
         <p className="text-sm italic text-gray-400">No activity yet.</p>
       )}
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-700">
         {activities.map((activity) => (
           <ActivityItem
             key={activity.id}

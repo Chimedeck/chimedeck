@@ -53,6 +53,8 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { scrollToToday(); }, [zoom]);
 
+  const todayIso = useMemo(() => today.toISOString().slice(0, 10), [today]);
+
   // Group cards into swimlanes (one per list).
   const swimlanes: Swimlane[] = useMemo(() => {
     return Object.values(lists).map((list) => {
@@ -60,12 +62,15 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
       return {
         listId: list.id,
         listTitle: list.title,
-        // A card is "scheduled" only when it has both dates — otherwise it is unscheduled.
-        scheduledCards: listCards.filter((c) => !!c.start_date && !!c.due_date),
-        unscheduledCards: listCards.filter((c) => !c.start_date || !c.due_date),
+        // A card is "scheduled" when it has a due_date. start_date defaults to today if absent.
+        scheduledCards: listCards
+          .filter((c) => !!c.due_date)
+          .map((c) => (c.start_date ? c : { ...c, start_date: todayIso })),
+        // Only cards with no due_date are considered unscheduled.
+        unscheduledCards: listCards.filter((c) => !c.due_date),
       };
     });
-  }, [cards, lists]);
+  }, [cards, lists, todayIso]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden" data-testid="timeline-view">

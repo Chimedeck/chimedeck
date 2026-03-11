@@ -1,10 +1,10 @@
 // TimelineHeader — renders the horizontal date axis for the Timeline view.
 // The leftmost cell is a sticky placeholder aligned with the swimlane label column.
 // Date columns adapt to the current zoom level:
-//   day   → one column per day, showing "Mon 10"
-//   week  → one column per week (7 days), showing "Mar 10"
-//   month → one column per month, showing "March 2026"
-import type { TimelineHeaderProps, ZoomLevel } from './types';
+//   day   → 2-tier: month band on top row, individual day columns on bottom row
+//   week  → one column per week showing start–end range e.g. "Mar 10 – 16"
+//   month → one column per month, showing "Mar 2026"
+import type { TimelineHeaderProps } from './types';
 
 const MONTH_SHORT = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -26,10 +26,36 @@ function toIsoDate(date: Date): string {
 }
 
 interface DateColumn {
+  dateKey: string;
   label: string;
   subLabel?: string;
   widthPx: number;
   isToday: boolean;
+}
+
+interface MonthBand {
+  dateKey: string;
+  label: string;
+  widthPx: number;
+}
+
+/** Build the month-spanning bands used as the top tier in day zoom. */
+function buildMonthBands(originDate: Date, totalDays: number, dayWidth: number): MonthBand[] {
+  const bands: MonthBand[] = [];
+  let i = 0;
+  while (i < totalDays) {
+    const d = addDays(originDate, i);
+    const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const daysLeft = Math.floor((endOfMonth.getTime() - d.getTime()) / 86400000) + 1;
+    const daysInChunk = Math.min(daysLeft, totalDays - i);
+    bands.push({
+      dateKey: toIsoDate(d),
+      label: `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`,
+      widthPx: daysInChunk * dayWidth,
+    });
+    i += daysInChunk;
+  }
+  return bands;
 }
 
 function buildDayColumns(
@@ -42,6 +68,7 @@ function buildDayColumns(
   return Array.from({ length: totalDays }, (_, i) => {
     const d = addDays(originDate, i);
     return {
+      dateKey: toIsoDate(d),
       label: DAY_SHORT[d.getDay()] as string,
       subLabel: String(d.getDate()),
       widthPx: dayWidth,
@@ -62,11 +89,19 @@ function buildWeekColumns(
   while (i < totalDays) {
     const d = addDays(originDate, i);
     const daysInChunk = Math.min(7, totalDays - i);
+    const endDate = addDays(d, daysInChunk - 1);
     const isCurrentWeek = Array.from({ length: daysInChunk }, (_, k) =>
       toIsoDate(addDays(d, k)),
     ).includes(todayIso);
+    // Show the week range: "Mar 10 – 16" or "Mar 29 – Apr 4" when spanning a month boundary.
+    const startLabel = `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`;
+    const endLabel =
+      endDate.getMonth() === d.getMonth()
+        ? String(endDate.getDate())
+        : `${MONTH_SHORT[endDate.getMonth()]} ${endDate.getDate()}`;
     cols.push({
-      label: `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`,
+      dateKey: toIsoDate(d),
+      label: `${startLabel} – ${endLabel}`,
       widthPx: daysInChunk * dayWidth,
       isToday: isCurrentWeek,
     });
@@ -91,6 +126,7 @@ function buildMonthColumns(
     const isCurrentMonth =
       today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear();
     cols.push({
+      dateKey: toIsoDate(d),
       label: `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`,
       widthPx: daysInChunk * dayWidth,
       isToday: isCurrentMonth,
@@ -100,17 +136,13 @@ function buildMonthColumns(
   return cols;
 }
 
-function buildColumns(
-  zoom: ZoomLevel,
-  originDate: Date,
-  totalDays: number,
-  dayWidth: number,
-  today: Date,
-): DateColumn[] {
-  if (zoom === 'day') return buildDayColumns(originDate, totalDays, dayWidth, today);
-  if (zoom === 'week') return buildWeekColumns(originDate, totalDays, dayWidth, today);
-  return buildMonthColumns(originDate, totalDays, dayWidth, today);
-}
+/** Shared sticky label-column placeholder rendered in each header tier. */
+const StickyPlaceholder = ({ width }: { width: number }) => (
+  <div
+    className="sticky left-0 z-10 shrink-0 border-r border-slate-700 bg-slate-900"
+    style={{ width }}
+  />
+);
 
 const TimelineHeader = ({
   zoom,
@@ -120,8 +152,65 @@ const TimelineHeader = ({
   labelWidth,
   today,
 }: TimelineHeaderProps) => {
-  const columns = buildColumns(zoom, originDate, totalDays, dayWidth, today);
   const totalWidth = totalDays * dayWidth;
+
+  // Day zoom: 2-tier header — month band on top, individual day columns below.
+  if (zoom === 'day') {
+    const monthBands = buildMonthBands(originDate, totalDays, dayWidth);
+    const dayColumns = buildDayColumns(originDate, totalDays, dayWidth, today);
+
+    return (
+      <div
+        className="flex shrink-0 flex-col border-b border-slate-700 bg-slate-900 text-xs text-slate-400"
+        style={{ minWidth: labelWidth + totalWidth }}
+        data-testid="timeline-header"
+      >
+        {/* Top tier: month bands */}
+        <div className="flex border-b border-slate-700/60">
+          <StickyPlaceholder width={labelWidth} />
+          <div className="flex" style={{ width: totalWidth }}>
+            {monthBands.map((band) => (
+              <div
+                key={band.dateKey}
+                style={{ width: band.widthPx, minWidth: band.widthPx }}
+                className="overflow-hidden border-r border-slate-700 px-2 py-0.5 font-semibold text-slate-300"
+              >
+                {band.label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom tier: individual day columns */}
+        <div className="flex">
+          <StickyPlaceholder width={labelWidth} />
+          <div className="flex" style={{ width: totalWidth }}>
+            {dayColumns.map((col) => (
+              <div
+                key={col.dateKey}
+                style={{ width: col.widthPx, minWidth: col.widthPx }}
+                className={`flex flex-col items-center justify-center overflow-hidden border-r border-slate-800 py-1 ${
+                  col.isToday ? 'bg-blue-950/40 text-blue-300' : ''
+                }`}
+                data-testid={col.isToday ? 'timeline-today-column' : undefined}
+              >
+                <span className="font-medium leading-tight">{col.label}</span>
+                {col.subLabel && (
+                  <span className="text-slate-500 leading-tight">{col.subLabel}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Week / month zoom: single-tier header.
+  const columns =
+    zoom === 'week'
+      ? buildWeekColumns(originDate, totalDays, dayWidth, today)
+      : buildMonthColumns(originDate, totalDays, dayWidth, today);
 
   return (
     <div
@@ -129,17 +218,12 @@ const TimelineHeader = ({
       style={{ minWidth: labelWidth + totalWidth }}
       data-testid="timeline-header"
     >
-      {/* Sticky placeholder aligned with swimlane label column */}
-      <div
-        className="sticky left-0 z-10 shrink-0 border-r border-slate-700 bg-slate-900"
-        style={{ width: labelWidth }}
-      />
+      <StickyPlaceholder width={labelWidth} />
 
-      {/* Date columns */}
       <div className="flex" style={{ width: totalWidth }}>
-        {columns.map((col, i) => (
+        {columns.map((col) => (
           <div
-            key={i}
+            key={col.dateKey}
             style={{ width: col.widthPx, minWidth: col.widthPx }}
             className={`flex flex-col items-center justify-center overflow-hidden border-r border-slate-800 py-1 ${
               col.isToday ? 'bg-blue-950/40 text-blue-300' : ''

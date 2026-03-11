@@ -127,6 +127,21 @@ const CardModalContainer = () => {
     [api, card, dispatch],
   );
 
+  const handleStartDateChange = useCallback(
+    (start_date: string | null) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { start_date } }));
+      patchCard({ api, cardId: card.id, fields: { start_date } })
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
   const handleDueDateChange = useCallback(
     (due_date: string | null) => {
       if (!card) return;
@@ -400,6 +415,7 @@ const CardModalContainer = () => {
       onTitleSave={handleTitleSave}
       onDescriptionSave={handleDescriptionSave}
       onDueDateChange={handleDueDateChange}
+      onStartDateChange={handleStartDateChange}
       onArchive={handleArchive}
       onDelete={handleDelete}
       onCopyLink={handleCopyLink}

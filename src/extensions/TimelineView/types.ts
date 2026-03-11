@@ -15,9 +15,9 @@ export interface TimelineViewProps {
 export interface Swimlane {
   listId: string;
   listTitle: string;
-  /** Cards with both start_date and due_date — rendered as bars. */
+  /** Cards with a due_date — rendered as bars. start_date defaults to today if absent. */
   scheduledCards: Card[];
-  /** Cards missing start_date or due_date — rendered as chips below the swimlane. */
+  /** Cards missing due_date — rendered as chips below the swimlane. */
   unscheduledCards: Card[];
 }
 

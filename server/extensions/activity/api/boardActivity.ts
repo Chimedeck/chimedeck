@@ -31,18 +31,20 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
   const limit = Math.min(isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam, MAX_LIMIT);
 
   let query = db('activities')
+    .leftJoin('users', 'activities.actor_id', 'users.id')
+    .select('activities.*', 'users.name as actor_name')
     .where({ board_id: boardId })
     .whereIn('action', VISIBLE_EVENT_TYPES)
-    .orderBy('created_at', 'desc')
-    .orderBy('id', 'desc')
+    .orderBy('activities.created_at', 'desc')
+    .orderBy('activities.id', 'desc')
     .limit(limit + 1); // fetch one extra to determine hasMore
 
   if (cursor) {
     const cursorRow = await db('activities').where({ id: cursor }).first();
     if (cursorRow) {
       query = query.where(function () {
-        this.where('created_at', '<', cursorRow.created_at).orWhere(function () {
-          this.where('created_at', '=', cursorRow.created_at).andWhere('id', '<', cursor);
+        this.where('activities.created_at', '<', cursorRow.created_at).orWhere(function () {
+          this.where('activities.created_at', '=', cursorRow.created_at).andWhere('activities.id', '<', cursor);
         });
       });
     }

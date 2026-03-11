@@ -3,9 +3,10 @@ interface Props {
   dueDate: string | null;
   onChange: (date: string | null) => void;
   disabled?: boolean;
+  label?: string;
 }
 
-const CardDueDate = ({ dueDate, onChange, disabled }: Props) => {
+const CardDueDate = ({ dueDate, onChange, disabled, label = 'Due date' }: Props) => {
   return (
     <div className="space-y-1">
       <input
@@ -14,7 +15,7 @@ const CardDueDate = ({ dueDate, onChange, disabled }: Props) => {
         value={dueDate ? dueDate.slice(0, 10) : ''}
         onChange={(e) => onChange(e.target.value || null)}
         disabled={disabled}
-        aria-label="Due date"
+        aria-label={label}
       />
       {dueDate && !disabled && (
         <button

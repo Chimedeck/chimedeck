@@ -46,7 +46,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
       {/* Assignees */}
       <td className="px-3 py-2" data-testid={`table-cell-assignees-${row.id}`}>
         <div className="flex flex-wrap gap-1">
-          {row.members.map((m) => (
+          {(row.members ?? []).map((m) => (
             <span
               key={m.id}
               className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-700 text-xs font-bold text-white uppercase"

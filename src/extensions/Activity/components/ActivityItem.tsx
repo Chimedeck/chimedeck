@@ -65,7 +65,7 @@ const ActivityItem = ({ activity, actorName }: Props) => {
     <div className="flex items-start gap-2 py-1.5 text-sm">
       <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
       <div className="flex-1">
-        <span className="text-gray-800">{description}</span>
+        <span className="text-gray-100">{description}</span>
         <span className="ml-2 text-xs text-gray-400">{new Date(activity.created_at).toLocaleString()}</span>
       </div>
     </div>
