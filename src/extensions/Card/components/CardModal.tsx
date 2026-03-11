@@ -17,6 +17,7 @@ import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginB
 import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
 import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
 import CustomFieldsSection from '../../CustomFields/CustomFieldsSection';
+import { AttachmentPanel } from '../../Attachments/components/AttachmentPanel';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -174,6 +175,8 @@ const CardModal = ({
                   listId={card.list_id}
                   boardId={boardId}
                 />
+
+                <AttachmentPanel cardId={card.id} />
 
                 <ActivityFeed
                   boardId={boardId}
