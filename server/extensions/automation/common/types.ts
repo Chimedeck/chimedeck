@@ -72,6 +72,9 @@ export interface TriggerHandler {
 // An action handler registered in the ACTION_REGISTRY.
 export interface ActionHandler {
   type: string;
+  label?: string;
+  category?: string;
+  configSchema: import('zod').ZodTypeAny;
   /** Execute the action. Throws on unrecoverable failure. */
   execute(context: ActionContext): Promise<void>;
 }

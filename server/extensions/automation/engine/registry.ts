@@ -38,3 +38,7 @@ export function getActionHandler(type: string): ActionHandler | undefined {
 export function getAllActionTypes(): string[] {
   return Array.from(actionRegistry.keys());
 }
+
+export function getAllActionHandlers(): ActionHandler[] {
+  return Array.from(actionRegistry.values());
+}
