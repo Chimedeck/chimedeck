@@ -155,6 +155,27 @@ async function batchInsert<T extends object>(
   }
 }
 
+/**
+ * Upsert helper — inserts rows and, on conflict, updates only the specified
+ * columns. Columns omitted from `updateColumns` (e.g. created_at, owner_id,
+ * password_hash) are left untouched on subsequent runs.
+ */
+async function batchUpsert<T extends object>(
+  table: string,
+  rows: T[],
+  conflictTarget: string | string[],
+  updateColumns: string[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const chunk = rows.slice(i, i + BATCH_SIZE);
+    await db(table)
+      .insert(chunk)
+      .onConflict(conflictTarget as any)
+      .merge(updateColumns);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Types for the Trello JSON
 // ---------------------------------------------------------------------------
@@ -433,17 +454,20 @@ async function main() {
   }
   console.log('');
 
-  await batchInsert('users', memberRows, 'id');
+  // email and password_hash are excluded — preserve any changes the user made.
+  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'avatar_url']);
 
   // -------------------------------------------------------------------------
   // 4. Workspaces
   // -------------------------------------------------------------------------
 
-  console.log(`🏢  Creating ${workspaceSet.size} workspaces…`);
-  await batchInsert(
+  console.log(`🏢  Creating/updating ${workspaceSet.size} workspaces…`);
+  // owner_id is excluded from the update set — preserve current ownership.
+  await batchUpsert(
     'workspaces',
     [...workspaceSet.values()].map((w) => ({ ...w, owner_id: SYSTEM_USER_ID })),
     'id',
+    ['name'],
   );
 
   // Make all member users MEMBER of every workspace they appear on
@@ -453,32 +477,36 @@ async function main() {
   // 5. Boards
   // -------------------------------------------------------------------------
 
-  console.log(`📋  Creating ${boardSet.size} boards…`);
-  await batchInsert('boards', [...boardSet.values()], 'id');
+  console.log(`📋  Creating/updating ${boardSet.size} boards…`);
+  await batchUpsert('boards', [...boardSet.values()], 'id', ['title', 'state']);
 
   // -------------------------------------------------------------------------
   // 6. Lists
   // -------------------------------------------------------------------------
 
-  console.log(`📑  Creating ${listSet.size} lists…`);
-  await batchInsert('lists', [...listSet.values()], 'id');
+  console.log(`📑  Creating/updating ${listSet.size} lists…`);
+  await batchUpsert('lists', [...listSet.values()], 'id', ['title', 'position', 'archived', 'board_id']);
 
   // -------------------------------------------------------------------------
   // 7. Labels
   // -------------------------------------------------------------------------
 
-  console.log(`🏷️   Creating ${labelSet.size} labels…`);
-  await batchInsert('labels', [...labelSet.values()], 'id');
+  console.log(`🏷️   Creating/updating ${labelSet.size} labels…`);
+  await batchUpsert('labels', [...labelSet.values()], 'id', ['name', 'color']);
 
   // -------------------------------------------------------------------------
   // 8. Cards + card_labels + card_members (batched)
   // -------------------------------------------------------------------------
 
-  console.log(`🃏  Inserting ${cards.length.toLocaleString()} cards…`);
+  console.log(`🃏  Inserting/updating ${cards.length.toLocaleString()} cards…`);
 
   const cardRows: object[] = [];
-  const cardLabelRows: object[] = [];
-  const cardMemberRows: object[] = [];
+  // Junction rows are ID pairs only — small footprint, collected in full so we
+  // can sync them with a single delete-then-insert pass after all cards are processed.
+  const allCardLabelRows: object[] = [];
+  const allCardMemberRows: object[] = [];
+  // All Trello card IDs that appear in this JSON (used to scope the junction sync)
+  const trelloCardIds: string[] = [];
   // Track uniqueness for junction tables within this run
   const cardLabelSeen = new Set<string>();
   const cardMemberSeen = new Set<string>();
@@ -486,6 +514,8 @@ async function main() {
   for (const card of cards) {
     // Skip cards whose list was not collected (list property missing)
     if (!listSet.has(card.idList)) continue;
+
+    trelloCardIds.push(card.id);
 
     cardRows.push({
       id: card.id,
@@ -506,7 +536,7 @@ async function main() {
         const key = `${card.id}:${labelId}`;
         if (!cardLabelSeen.has(key)) {
           cardLabelSeen.add(key);
-          cardLabelRows.push({ card_id: card.id, label_id: labelId });
+          allCardLabelRows.push({ card_id: card.id, label_id: labelId });
         }
       }
     }
@@ -516,21 +546,41 @@ async function main() {
       const key = `${card.id}:${userId}`;
       if (!cardMemberSeen.has(key)) {
         cardMemberSeen.add(key);
-        cardMemberRows.push({ card_id: card.id, user_id: userId });
+        allCardMemberRows.push({ card_id: card.id, user_id: userId });
       }
     }
 
-    // Flush when batches are large enough to avoid holding too much in memory
+    // Flush card rows when large to avoid holding everything in memory.
+    // Junction rows (ID pairs only) are small and collected in full above.
     if (cardRows.length >= BATCH_SIZE * 4) {
-      await flushCards(cardRows, cardLabelRows, cardMemberRows);
+      await batchUpsert('cards', cardRows, 'id', [
+        'list_id', 'title', 'description', 'position', 'archived',
+        'due_date', 'short_link', 'short_url', 'updated_at',
+      ]);
       cardRows.length = 0;
-      cardLabelRows.length = 0;
-      cardMemberRows.length = 0;
     }
   }
 
-  // Final flush
-  await flushCards(cardRows, cardLabelRows, cardMemberRows);
+  // Final flush for remaining card rows
+  await batchUpsert('cards', cardRows, 'id', [
+    'list_id', 'title', 'description', 'position', 'archived',
+    'due_date', 'short_link', 'short_url', 'updated_at',
+  ]);
+
+  // Sync junction tables: delete existing rows only for Trello-sourced cards,
+  // then re-insert from the latest JSON. Natively-created cards (whose IDs are
+  // not in trelloCardIds) are never touched.
+  console.log('🔄  Syncing card labels…');
+  for (let i = 0; i < trelloCardIds.length; i += BATCH_SIZE) {
+    await db('card_labels').whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE)).delete();
+  }
+  await batchInsert('card_labels', allCardLabelRows, ['card_id', 'label_id']);
+
+  console.log('🔄  Syncing card members…');
+  for (let i = 0; i < trelloCardIds.length; i += BATCH_SIZE) {
+    await db('card_members').whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE)).delete();
+  }
+  await batchInsert('card_members', allCardMemberRows, ['card_id', 'user_id']);
 
   // -------------------------------------------------------------------------
   // 8b. Comments from Trello actions
@@ -583,8 +633,8 @@ async function main() {
     }
   }
 
-  console.log(`💬  Inserting ${commentRows.length.toLocaleString()} comments…`);
-  await batchInsert('comments', commentRows, 'id');
+  console.log(`💬  Inserting/updating ${commentRows.length.toLocaleString()} comments…`);
+  await batchUpsert('comments', commentRows, 'id', ['content', 'updated_at']);
 
   // -------------------------------------------------------------------------
   // 9. Workspace memberships for member users
@@ -627,7 +677,13 @@ async function main() {
   // -------------------------------------------------------------------------
 
   const workspaceIds = [...workspaceSet.keys()];
-  const memberIds = [...memberSet.keys()].map(memberId);
+  const memberRecords = [...memberSet.keys()].map((trelloId) => {
+    const rich = memberDataMap.get(trelloId);
+    return {
+      id: memberId(trelloId),
+      username: rich?.username ?? null,
+    };
+  });
 
   console.log('\n✅  Import complete!\n');
 
@@ -635,7 +691,7 @@ async function main() {
   console.log(JSON.stringify(workspaceIds, null, 2));
 
   console.log('\n=== MEMBER IDs ===');
-  console.log(JSON.stringify(memberIds, null, 2));
+  console.log(JSON.stringify(memberRecords, null, 2));
 
   // Also write them to files for easy scripting
   const outDir = resolve(ROOT, 'db');
@@ -645,7 +701,7 @@ async function main() {
   );
   await Bun.write(
     resolve(outDir, 'trello-import-member-ids.json'),
-    JSON.stringify(memberIds, null, 2),
+    JSON.stringify(memberRecords, null, 2),
   );
   console.log('\n📄  Written to db/trello-import-workspace-ids.json and db/trello-import-member-ids.json');
 
@@ -655,16 +711,6 @@ async function main() {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-async function flushCards(
-  cardRows: object[],
-  cardLabelRows: object[],
-  cardMemberRows: object[],
-): Promise<void> {
-  await batchInsert('cards', cardRows, 'id');
-  await batchInsert('card_labels', cardLabelRows, ['card_id', 'label_id']);
-  await batchInsert('card_members', cardMemberRows, ['card_id', 'user_id']);
-}
 
 /**
  * Download a Trello member avatar to a temp file, upload it to S3, then

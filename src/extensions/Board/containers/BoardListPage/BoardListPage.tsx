@@ -2,6 +2,7 @@
 // Sprint 48: adds star/unstar per board tile and a "Starred boards" filter chip.
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { StarIcon } from '@heroicons/react/24/solid';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import BoardCard from '../../components/BoardCard';
@@ -57,11 +58,11 @@ const BoardListPage = () => {
   const handleUnstar = (boardId: string) => dispatch(unstarBoardThunk({ boardId }));
 
   const pageContent = (() => {
-    if (loading) return <p className="text-gray-500">Loading boards…</p>;
-    if (error) return <p className="text-red-600">Failed to load boards.</p>;
+    if (loading) return <p className="text-slate-400">Loading boards…</p>;
+    if (error) return <p className="text-red-400">Failed to load boards.</p>;
     if (!boards.length) {
       return (
-        <p className="text-gray-500">
+        <p className="text-slate-400">
           {showStarredOnly
             ? 'No starred boards. Star a board to add it here.'
             : 'No boards yet. Create your first board to get started.'}
@@ -89,7 +90,7 @@ const BoardListPage = () => {
   return (
     <div className="px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Boards</h1>
+        <h1 className="text-2xl font-bold text-white">Boards</h1>
         <button
           className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           onClick={() => setShowCreateModal(true)}
@@ -98,18 +99,29 @@ const BoardListPage = () => {
         </button>
       </div>
 
-      {/* Filter chips */}
-      <div className="mb-4 flex gap-2">
+      {/* Filter chips — radio-group style so current state is always explicit */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs text-slate-500">Show:</span>
         <button
-          onClick={() => dispatch(toggleStarredFilter())}
-          className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-            showStarredOnly
-              ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-              : 'border-gray-300 bg-white text-gray-600 hover:border-yellow-400 hover:text-yellow-600'
+          onClick={() => showStarredOnly && dispatch(toggleStarredFilter())}
+          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            !showStarredOnly
+              ? 'border-slate-500 bg-slate-700 text-white'
+              : 'border-slate-700 bg-transparent text-slate-500 hover:border-slate-500 hover:text-slate-300'
           }`}
         >
-          <span>⭐</span>
-          <span>Starred boards</span>
+          All boards
+        </button>
+        <button
+          onClick={() => !showStarredOnly && dispatch(toggleStarredFilter())}
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            showStarredOnly
+              ? 'border-yellow-500 bg-yellow-500/10 text-yellow-400'
+              : 'border-slate-700 bg-transparent text-slate-500 hover:border-yellow-500 hover:text-yellow-400'
+          }`}
+        >
+          <StarIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Starred only</span>
         </button>
       </div>
 
