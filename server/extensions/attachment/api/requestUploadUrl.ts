@@ -1,5 +1,6 @@
 // POST /api/v1/cards/:id/attachments/upload-url
-// Creates a PENDING Attachment row and returns a pre-signed S3 PUT URL (TTL 5 min).
+// Validates MIME type and file size, creates a PENDING Attachment row, and returns
+// a pre-signed S3 PUT URL (TTL 5 min).
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
@@ -10,10 +11,40 @@ import {
 } from '../../../middlewares/permissionManager';
 import { presignPut } from '../mods/s3/presignPut';
 import { s3Config } from '../common/config/s3';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../config/allowedTypes';
 
 export async function handleRequestUploadUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+
+  // Parse and validate body early — before any DB lookup so validation errors
+  // are returned cheaply without hitting the database.
+  let body: { filename?: string; mimeType?: string; sizeBytes?: number };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
+  }
+
+  if (!body.filename || !body.mimeType || typeof body.sizeBytes !== 'number') {
+    return Response.json(
+      { error: { code: 'bad-request', message: 'filename, mimeType, and sizeBytes are required' } },
+      { status: 400 },
+    );
+  }
+
+  // Validate MIME type against the allowlist
+  if (!ALLOWED_MIME_TYPES.includes(body.mimeType)) {
+    return Response.json({ name: 'mime-type-not-allowed', data: { mimeType: body.mimeType } }, { status: 400 });
+  }
+
+  // Enforce file size cap
+  if (body.sizeBytes > MAX_FILE_SIZE_BYTES) {
+    return Response.json(
+      { name: 'file-too-large', data: { sizeBytes: body.sizeBytes, maxBytes: MAX_FILE_SIZE_BYTES } },
+      { status: 413 },
+    );
+  }
 
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) {
@@ -31,20 +62,6 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
   if (membershipError) return membershipError;
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
-
-  let body: { filename?: string; mimeType?: string; sizeBytes?: number };
-  try {
-    body = (await req.json()) as typeof body;
-  } catch {
-    return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
-  }
-
-  if (!body.filename || !body.mimeType || typeof body.sizeBytes !== 'number') {
-    return Response.json(
-      { error: { code: 'bad-request', message: 'filename, mimeType, and sizeBytes are required' } },
-      { status: 400 },
-    );
-  }
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const attachmentId = randomUUID();

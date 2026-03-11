@@ -87,6 +87,17 @@
 | [56](./sprint-56.md) | Business Logic Invariants | Archived board read-only guard; workspace ≥1 Owner invariant; delete-with-nested-content confirmation flag | ⬜ Future |
 | [57](./sprint-57.md) | Security Hardening | CSRF `Origin` header guard on all mutations; server-side input sanitization (`sanitize-html`) on all text fields | ⬜ Future |
 | [58](./sprint-58.md) | Observability & Reliability | Install `@opentelemetry/*` packages; IndexedDB offline mutation queue; conflict counter + propagation delay histogram | ⬜ Future |
+| **— Attachments & Automation —** | | | |
+| [59](./sprint-59.md) | Card Attachment Upload (Enhanced Backend) | Multipart S3 upload for large files, MIME-type allowlist, image thumbnail generation (sharp), orphan-cleanup worker | ⬜ Needs 12 |
+| [60](./sprint-60.md) | Card Attachment Upload UI | Drag-and-drop drop zone, clipboard paste (Cmd+V), multi-file progress bars, thumbnail previews, Heroicons for file types | ⬜ Needs 59 + 21 |
+| [61](./sprint-61.md) | Automation: DB Schema & Core Engine | `automations`, `automation_triggers`, `automation_actions`, `automation_run_log` tables; rule evaluator + executor; `AUTOMATION_ENABLED` flag | ⬜ Needs 07 + 09 |
+| [62](./sprint-62.md) | Automation: Triggers | 15 trigger types (card moved, label added, member assigned, checklist completed, …); trigger registry; `GET /automation/trigger-types` | ⬜ Needs 61 |
+| [63](./sprint-63.md) | Automation: Actions | 18 action types (move card, add label, assign member, post comment, archive, sort list, …); variable substitution; `GET /automation/action-types` | ⬜ Needs 62 |
+| [64](./sprint-64.md) | Automation: Scheduled & Due Date Commands | `pg_cron` + `pg_notify`/`LISTEN` scheduler (no `setInterval`); `automation_scheduler_tick()` stored proc; Bun Worker fallback for local dev (`AUTOMATION_USE_PGCRON=false`); **pre-deploy ops task required on self-hosted prod**: install `postgresql-16-cron` package, add to `shared_preload_libraries`, restart PostgreSQL, then `CREATE EXTENSION pg_cron` + `cron.schedule(...)` as superuser | ⬜ Needs 63 |
+| [65](./sprint-65.md) | Automation: Rules Builder UI | Board header **BoltIcon button** (left of `...`); slide-in Automation panel; guided trigger + action builder; Heroicons throughout | ⬜ Needs 64 + 18 |
+| [66](./sprint-66.md) | Automation: Card & Board Buttons UI | Card back "Automation" section with custom Heroicon buttons; board header action buttons; icon picker (24 Heroicons); Buttons tab live | ⬜ Needs 65 + 19 |
+| [67](./sprint-67.md) | Automation: Scheduled Commands UI | Schedule tab live: calendar-command builder, due-date-command builder, schedule summary formatter, 3 quick-start templates | ⬜ Needs 66 + 64 |
+| [68](./sprint-68.md) | Automation: Run History, Logs & Quota | Log tab: paginated run log, expandable rows, real-time WS updates; quota bar (`ChartBarIcon`); monthly quota via env var | ⬜ Needs 67 |
 
 ---
 
@@ -107,6 +118,9 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `PLUGINS_ENABLED` | Sprint 34 | Disable plugin routes and SDK endpoint entirely (off by default in dev until Sprint 34) |
 | `EMAIL_DOMAIN_RESTRICTION_ENABLED` | Sprint 43 | Reject registration / email-change for domains not in `ALLOWED_EMAIL_DOMAINS` (default: `true`) |
 | `ADMIN_INVITE_EMAIL_ENABLED` | Sprint 44 | Send invitation email to externally created users via SES (requires `SES_ENABLED` also `true`) |
+| `AUTOMATION_ENABLED` | Sprint 61 | Disable all automation routes and the event-pipeline evaluation hook |
+| `AUTOMATION_SCHEDULER_ENABLED` | Sprint 64 | Prevent calendar + due-date scheduler workers from starting (useful in read-only replicas) |
+| `AUTOMATION_MONTHLY_QUOTA` | Sprint 68 | Maximum automation runs per board per calendar month (default: `1000`) |
 
 ---
 
@@ -177,6 +191,17 @@ Sprint 55 ──────────── Custom fields: definitions per bo
 Sprint 56 ──────────── Business logic invariants: archived read-only, ≥1 owner, delete confirmation
 Sprint 57 ──────────── Security hardening: CSRF Origin guard, server-side input sanitization
 Sprint 58 ──────────── Observability: install OTel packages, IndexedDB offline queue, conflict + lag metrics
+──── Attachments & Automation ───────────────────────────────────────────────────────────────────
+Sprint 59 ──────────── Enhanced attachments: multipart S3 upload, MIME allowlist, thumbnail generation, orphan cleanup
+Sprint 60 ──────────── Attachment Upload UI: drag-and-drop, clipboard paste, progress bars, thumbnails, Heroicons
+Sprint 61 ──────────── Automation core: DB schema (automations, triggers, actions, run_log), engine + executor
+Sprint 62 ──────────── Automation triggers: 15 trigger types registered (card moved, labeled, member, checklist, …)
+Sprint 63 ──────────── Automation actions: 18 action types (move, label, assign, comment, archive, sort list, …)
+Sprint 64 ──────────── Automation scheduler: pg_cron + pg_notify/LISTEN; automation_scheduler_tick() stored proc; Bun Worker fallback
+Sprint 65 ──────────── Automation Rules UI: BoltIcon board-header button (left of ...), slide-in panel, rule builder
+Sprint 66 ──────────── Automation Buttons UI: card-back buttons, board-header buttons, Heroicon icon picker
+Sprint 67 ──────────── Automation Schedule UI: calendar command builder, due-date command builder, quick-start templates
+Sprint 68 ──────────── Automation Log & Quota: run history log, quota bar, real-time WS updates, monthly quota config
 ```
 
 ---

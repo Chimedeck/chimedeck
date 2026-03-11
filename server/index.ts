@@ -31,6 +31,9 @@ import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
 import { boardViewRouter } from './extensions/boardView/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
+import { automationRouter } from './extensions/automation/api/index';
+// Register all automation trigger handlers at startup.
+import './extensions/automation/engine/triggers/index';
 import { initObservability } from './mods/observability/index';
 
 // Initialise OTel tracing + metrics (no-op when OTEL_ENABLED=false)
@@ -122,6 +125,9 @@ async function router(req: Request): Promise<Response> {
 
   const pluginsResponse = await pluginsRouter(req, path);
   if (pluginsResponse) return pluginsResponse;
+
+  const automationResponse = await automationRouter(req, path);
+  if (automationResponse) return automationResponse;
 
   // Serve the SDK static bundle at /sdk/jh-instance.js
   if (path === pluginsConfig.sdkServePath && req.method === 'GET') {

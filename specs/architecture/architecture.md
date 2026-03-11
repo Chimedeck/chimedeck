@@ -41,6 +41,11 @@ Event
 
 BoardSnapshot
   └── board_id, state JSONB, since_sequence
+
+Automation (board-scoped)
+  ├── AutomationTrigger  (exactly one per RULE / DUE_DATE automation)
+  ├── AutomationAction[] (ordered; shared by all automation types)
+  └── AutomationRunLog[] (immutable audit; capped at 1 000 rows per automation)
 ```
 
 All entity IDs: CUID2 (sortable). Positions: lexicographic base-62 fractional index.
@@ -86,8 +91,13 @@ server/
     label/                   # Sprint 08 — labels, card-members, checklists
     events/                  # Sprint 09 — event store writes + WS fan-out
     comments/                # Sprint 11 — comments + activity
-    attachment/              # Sprint 12 — file upload, S3, virus scan
+    attachment/              # Sprint 12 / 59 — file upload, S3, multipart, thumbnails
     search/                  # Sprint 13 — full-text search
+    automation/              # Sprint 61–68 — automation engine, triggers, actions, scheduler
+      api/                   #   REST endpoints (CRUD + run + quota + log)
+      engine/                #   matcher, executor, registry (triggers + actions)
+      scheduler/             #   pg_cron tick function (migration) + LISTEN client (listener.ts)
+      config/                #   AUTOMATION_ENABLED, AUTOMATION_SCHEDULER_ENABLED, AUTOMATION_USE_PGCRON flags
   mods/
     flags/                   # Sprint 01 — composite feature flag provider
       index.ts               # getFlag(key, context?) → boolean | string | number
@@ -133,8 +143,19 @@ src/
     Card/                    # Sprint 07/08 — card modal, checklist, labels
     Realtime/                # Sprint 10 — WS hook, optimistic update, rollback
     Comments/                # Sprint 11 — comment thread
-    Attachments/             # Sprint 12 — file upload UI
+    Attachments/             # Sprint 12 / 60 — file upload UI, drag-and-drop, thumbnails
     Search/                  # Sprint 13 — search overlay
+    Automation/              # Sprint 65–68 — Automation panel, rule builder, buttons, schedule, log
+      api.ts                 #   RTK Query endpoints
+      components/
+        AutomationHeaderButton.tsx  # BoltIcon in board header (left of ... menu)
+        AutomationPanel/            # slide-in panel; tabs: Rules / Buttons / Schedule / Log
+        CardButtons/                # card-back automation buttons
+        BoardButtons/               # board-header action buttons
+        SchedulePanel/              # calendar + due-date command builders
+        LogPanel/                   # run history, quota bar
+        shared/
+          IconPicker.tsx            # 24 selectable Heroicons for button customisation
   store.ts                   # Redux store
   reducers.ts                # root reducer
 ```
@@ -186,6 +207,99 @@ Priority order (highest wins):
 4. Hardcoded defaults in `server/mods/flags/providers/defaults.ts`
 
 All server code accesses flags via `import { getFlag } from 'server/mods/flags'` — never raw `Bun.env`.
+
+---
+
+## 11. Automation System
+
+Full spec: [Sprints 61–68](../sprints/sprint-61.md)
+
+### Automation types
+
+| Type | Triggered by | Typical use |
+|------|-------------|-------------|
+| `RULE` | Any board event matching a trigger predicate | "When card moved to Done, mark due date complete" |
+| `CARD_BUTTON` | Explicit button press on a card's back panel | "Move forward to Review, assign owner, set due +3 days" |
+| `BOARD_BUTTON` | Explicit button press in the board header | "Sort backlog by story points" |
+| `SCHEDULED` | Cron-like calendar interval (daily/weekly/monthly) | "Every Monday 09:00: archive Done, move Next Sprint → To Do" |
+| `DUE_DATE` | Offset relative to a card's `due_date` | "2 days before due: add red label, post @card comment" |
+
+### Evaluation pipeline (RULE type)
+
+```
+Card mutation
+  └──▶ Event persisted to `events` table
+         └──▶ events/dispatch.ts calls automation/engine/evaluate()
+                └──▶ matcher.ts — tests each enabled RULE trigger against the event
+                       └──▶ executor.ts — runs ordered action handlers inside a DB transaction
+                              └──▶ logger.ts — writes to automation_run_log
+                                     └──▶ WS broadcast: `automation_ran` event to board channel
+```
+
+Automation evaluation is **fire-and-forget** inside an async `try/catch` — a failing automation never blocks the originating mutation.
+
+### Scheduler workers (SCHEDULED + DUE_DATE types)
+
+Time-based automations use **`pg_cron` + `pg_notify` / `LISTEN`** — not `setInterval`. This is non-blocking and replica-safe.
+
+- **`pg_cron`** (PostgreSQL extension) runs `automation_scheduler_tick()` stored procedure every minute inside the database
+- The stored procedure finds due SCHEDULED automations and cards inside a DUE_DATE window, then calls `pg_notify('automation_tick', payload::text)` for each
+- **`scheduler/listener.ts`** holds one dedicated `pg` connection, executes `LISTEN automation_tick`, and dispatches payloads to `engine/execute()` asynchronously — pure I/O event, never blocks the main thread
+- Across replicas `pg_cron` fires exactly once (it runs inside PostgreSQL, not in each app instance)
+- `AUTOMATION_SCHEDULER_ENABLED` flag controls whether the listener is started; `AUTOMATION_USE_PGCRON` controls whether `pg_cron` or the Bun-Worker fallback is used (local dev without the extension)
+- Full spec: [technical-decisions.md §18.5](./technical-decisions.md)
+
+### Action execution contract
+
+- All actions within one rule run share **a single Knex transaction**
+- A failing individual action is caught, logged, and execution continues (status → `PARTIAL`)
+- Variable substitution in text fields: `{cardName}`, `{boardName}`, `{listName}`, `{date}`, `{dueDate}`, `{triggerMember}`
+
+### DB schema (short form)
+
+```
+automations         id, board_id, created_by, name, automation_type, is_enabled, icon, run_count
+automation_triggers  id, automation_id, trigger_type, config (jsonb)
+automation_actions   id, automation_id, position, action_type, config (jsonb)
+automation_run_log   id, automation_id, card_id, status, context (jsonb), error_message, ran_at
+                     └── capped at 1 000 rows per automation (oldest purged on insert)
+```
+
+### API surface (summary)
+
+```
+GET    /api/v1/boards/:id/automations
+POST   /api/v1/boards/:id/automations
+GET    /api/v1/boards/:id/automations/:automationId
+PATCH  /api/v1/boards/:id/automations/:automationId
+DELETE /api/v1/boards/:id/automations/:automationId
+
+POST   /api/v1/cards/:cardId/automation-buttons/:automationId/run    # CARD_BUTTON
+POST   /api/v1/boards/:boardId/automation-buttons/:automationId/run  # BOARD_BUTTON
+
+GET    /api/v1/boards/:id/automations/:automationId/runs  # run log (paginated)
+GET    /api/v1/boards/:id/automation-runs                 # board-wide log
+GET    /api/v1/boards/:id/automation-quota                # monthly quota usage
+
+GET    /api/v1/automation/trigger-types   # discovery — config schemas
+GET    /api/v1/automation/action-types    # discovery — config schemas
+```
+
+### UI entry point
+
+- A `BoltIcon` (Heroicons solid, 20 px) button sits **immediately to the left of the `...` board menu** in the board header (`AutomationHeaderButton`)
+- Clicking opens a slide-in `AutomationPanel` drawer with four tabs: **Rules**, **Buttons**, **Schedule**, **Log**
+- Card buttons surface in every card's back panel under an "Automation" section
+- Board buttons render as an icon strip in the board header to the left of the `BoltIcon`
+
+### Feature flags
+
+| Flag | Default | Effect when `false` |
+|------|---------|---------------------|
+| `AUTOMATION_ENABLED` | `true` | All automation routes return 404; event-pipeline hook skipped |
+| `AUTOMATION_SCHEDULER_ENABLED` | `true` | `pg_notify` LISTEN client not started; no scheduled or due-date automations fire |
+| `AUTOMATION_USE_PGCRON` | `true` (prod) | `false` → Bun Worker fallback calls `automation_scheduler_tick()` directly via SQL every 60 s (local dev without `pg_cron` extension) |
+| `AUTOMATION_MONTHLY_QUOTA` | `1000` | Maximum automation runs per board per calendar month |
 
 ---
 
