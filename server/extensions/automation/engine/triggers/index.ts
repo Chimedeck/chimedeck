@@ -16,6 +16,8 @@ import { cardChecklistCompletedTrigger } from './card/checklistCompleted';
 import { cardAllChecklistsCompletedTrigger } from './card/allChecklistsCompleted';
 import { cardArchivedTrigger } from './card/archived';
 import { cardCommentAddedTrigger } from './card/commentAdded';
+import { boardMemberAddedTrigger } from './board/memberAdded';
+import { listCardAddedTrigger } from './list/cardAdded';
 
 // Register all card triggers.
 registerTrigger(cardCreatedTrigger);
@@ -32,6 +34,10 @@ registerTrigger(cardAllChecklistsCompletedTrigger);
 registerTrigger(cardArchivedTrigger);
 registerTrigger(cardCommentAddedTrigger);
 
+// Register board and list triggers.
+registerTrigger(boardMemberAddedTrigger);
+registerTrigger(listCardAddedTrigger);
+
 // Re-export individual handlers for direct use and testing.
 export {
   cardCreatedTrigger,
@@ -47,6 +53,8 @@ export {
   cardAllChecklistsCompletedTrigger,
   cardArchivedTrigger,
   cardCommentAddedTrigger,
+  boardMemberAddedTrigger,
+  listCardAddedTrigger,
 };
 
 export { validateTrigger } from './validate';

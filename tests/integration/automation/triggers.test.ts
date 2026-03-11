@@ -20,11 +20,12 @@ import { cardChecklistCompletedTrigger } from '../../../server/extensions/automa
 import { cardAllChecklistsCompletedTrigger } from '../../../server/extensions/automation/engine/triggers/card/allChecklistsCompleted';
 import { cardArchivedTrigger } from '../../../server/extensions/automation/engine/triggers/card/archived';
 import { cardCommentAddedTrigger } from '../../../server/extensions/automation/engine/triggers/card/commentAdded';
+import { boardMemberAddedTrigger } from '../../../server/extensions/automation/engine/triggers/board/memberAdded';
+import { listCardAddedTrigger } from '../../../server/extensions/automation/engine/triggers/list/cardAdded';
 import { validateTrigger } from '../../../server/extensions/automation/engine/triggers/validate';
 import { getTriggerHandler, getAllTriggerTypes } from '../../../server/extensions/automation/engine/registry';
-import type { AutomationEvent } from '../../../server/extensions/automation/common/types';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+import type { AutomationEvent } from '../../../server/extensions/automation/common/types';
 
 function makeEvent(type: string, payload: Record<string, unknown> = {}): AutomationEvent {
   return {
@@ -45,7 +46,7 @@ const CHECKLIST_ID = 'e5f6a7b8-c9d0-4123-8def-234567890124';
 // ── trigger registry ──────────────────────────────────────────────────────────
 
 describe('Trigger registry', () => {
-  it('registers all 13 card trigger types', () => {
+  it('registers all 15 trigger types (13 card + board.member_added + list.card_added)', () => {
     const types = getAllTriggerTypes();
     const expected = [
       'card.created',
@@ -61,6 +62,8 @@ describe('Trigger registry', () => {
       'card.all_checklists_completed',
       'card.archived',
       'card.comment_added',
+      'board.member_added',
+      'list.card_added',
     ];
     for (const t of expected) {
       expect(types).toContain(t);
@@ -345,5 +348,70 @@ describe('card.comment_added trigger', () => {
 
   it('does not match wrong event type', () => {
     expect(cardCommentAddedTrigger.matches(makeEvent('card.archived'), {})).toBe(false);
+  });
+});
+
+// ── board.member_added ────────────────────────────────────────────────────────
+
+describe('board.member_added trigger', () => {
+  it('matches board.member_added event with no memberId filter', () => {
+    expect(boardMemberAddedTrigger.matches(makeEvent('board.member_added', { memberId: MEMBER_ID }), {})).toBe(true);
+  });
+
+  it('matches when memberId filter matches', () => {
+    expect(
+      boardMemberAddedTrigger.matches(makeEvent('board.member_added', { memberId: MEMBER_ID }), { memberId: MEMBER_ID }),
+    ).toBe(true);
+  });
+
+  it('does not match when memberId differs', () => {
+    expect(
+      boardMemberAddedTrigger.matches(
+        makeEvent('board.member_added', { memberId: MEMBER_ID }),
+        { memberId: 'f6a7b8c9-d0e1-4234-8abc-345678901235' },
+      ),
+    ).toBe(false);
+  });
+
+  it('does not match wrong event type', () => {
+    expect(boardMemberAddedTrigger.matches(makeEvent('card.member_added', { memberId: MEMBER_ID }), {})).toBe(false);
+  });
+});
+
+// ── list.card_added ───────────────────────────────────────────────────────────
+
+describe('list.card_added trigger', () => {
+  it('matches card.created event when listId matches', () => {
+    expect(
+      listCardAddedTrigger.matches(makeEvent('card.created', { listId: LIST_ID }), { listId: LIST_ID }),
+    ).toBe(true);
+  });
+
+  it('matches card.moved event when toListId matches', () => {
+    expect(
+      listCardAddedTrigger.matches(makeEvent('card.moved', { toListId: LIST_ID, fromListId: OTHER_LIST_ID }), { listId: LIST_ID }),
+    ).toBe(true);
+  });
+
+  it('does not match card.created when listId differs', () => {
+    expect(
+      listCardAddedTrigger.matches(makeEvent('card.created', { listId: OTHER_LIST_ID }), { listId: LIST_ID }),
+    ).toBe(false);
+  });
+
+  it('does not match card.moved when toListId differs', () => {
+    expect(
+      listCardAddedTrigger.matches(makeEvent('card.moved', { toListId: OTHER_LIST_ID }), { listId: LIST_ID }),
+    ).toBe(false);
+  });
+
+  it('does not match unrelated event types', () => {
+    expect(listCardAddedTrigger.matches(makeEvent('card.archived'), { listId: LIST_ID })).toBe(false);
+  });
+
+  it('validateTrigger returns invalid for missing required listId', () => {
+    const result = validateTrigger('list.card_added', {});
+    expect(result.valid).toBe(false);
+    expect(result.errorName).toBe('trigger-config-invalid');
   });
 });

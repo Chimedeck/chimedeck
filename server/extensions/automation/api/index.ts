@@ -6,14 +6,19 @@ import { handleGetAutomation } from './get';
 import { handleUpdateAutomation } from './update';
 import { handleDeleteAutomation } from './delete';
 import { handleGetTriggerTypes } from './triggerTypes';
+import { handleGetActionTypes } from './actionTypes';
 // Register all card action handlers so the executor can resolve them by type.
 import '../engine/actions/index';
 
 // Returns a Response if the path matches an automation route, otherwise null.
 export async function automationRouter(req: Request, pathname: string): Promise<Response | null> {
-  // Discovery endpoint — not scoped to a specific board.
+  // Discovery endpoints — not scoped to a specific board.
   if (pathname === '/api/v1/automation/trigger-types' && req.method === 'GET') {
     return handleGetTriggerTypes(req);
+  }
+
+  if (pathname === '/api/v1/automation/action-types' && req.method === 'GET') {
+    return handleGetActionTypes(req);
   }
 
   // Match /api/v1/boards/:boardId/automations[/:automationId]

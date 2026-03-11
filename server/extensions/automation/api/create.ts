@@ -4,6 +4,9 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { automationConfig } from '../config';
 import type { AutomationType } from '../common/types';
+import { validateTrigger } from '../engine/triggers/validate';
+// Ensure trigger registry is populated.
+import '../engine/triggers/index';
 import { formatAutomation } from './format';
 
 const VALID_AUTOMATION_TYPES: AutomationType[] = [
@@ -71,6 +74,18 @@ export async function handleCreateAutomation(req: Request, boardId: string): Pro
 
   if (body.trigger && typeof body.trigger.triggerType !== 'string') {
     return Response.json({ error: { name: 'trigger-type-unknown' } }, { status: 422 });
+  }
+
+  // Validate trigger type and config against the registry.
+  if (body.trigger && typeof body.trigger.triggerType === 'string') {
+    const triggerValidation = validateTrigger(body.trigger.triggerType, body.trigger.config ?? {});
+    if (!triggerValidation.valid) {
+      const status = triggerValidation.errorName === 'trigger-type-unknown' ? 422 : 422;
+      return Response.json(
+        { error: { name: triggerValidation.errorName, data: triggerValidation.errorData } },
+        { status },
+      );
+    }
   }
 
   // Validate actions array
