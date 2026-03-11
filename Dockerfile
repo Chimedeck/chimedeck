@@ -5,11 +5,12 @@ WORKDIR /app
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile
 
-# ── Stage 2: Build (typecheck; Bun runs TS directly — no transpile) ─────
+# ── Stage 2: Build (Vite client bundle + typecheck) ──────────────────
 FROM deps AS build
 WORKDIR /app
 
 COPY . .
+RUN bun run build:client
 RUN bun run typecheck
 
 # ── Stage 3: Production runtime (minimal image) ────────────────
@@ -25,6 +26,7 @@ COPY --from=build /app/package.json  ./package.json
 COPY --from=build /app/server        ./server
 COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY --from=build /app/db            ./db
+COPY --from=build /app/dist          ./dist
 COPY entrypoint.sh                   /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

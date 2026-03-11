@@ -1,4 +1,4 @@
-name: kanban-dev
+name: vello-dev
 
 services:
   app:
@@ -19,15 +19,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: kanban
-      POSTGRES_PASSWORD: kanban
-      POSTGRES_DB: kanban_dev
+      POSTGRES_USER: vello
+      POSTGRES_PASSWORD: vello
+      POSTGRES_DB: vello_dev
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kanban"]
+      test: ["CMD-SHELL", "pg_isready -U vello"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -39,7 +39,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-kanban}
+      S3_BUCKET: ${S3_BUCKET:-vello}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

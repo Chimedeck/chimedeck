@@ -1,6 +1,6 @@
-# Collaborative Kanban System
+# Vello
 
-A real-time collaborative Kanban board platform built with Bun, PostgreSQL, and WebSockets.  
+A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.  
 This repo also contains the agent loop that builds it sprint by sprint.
 
 ## Application Setup
@@ -62,11 +62,107 @@ FLAG_VIRUS_SCAN_ENABLED=false bun run dev
 |---|---|
 | `bun run dev` | Start with hot-reload |
 | `bun run start` | Start production server |
+| `bun run build` | Build client (Vite) + typecheck server |
 | `bun run lint` | Run ESLint |
 | `bun run typecheck` | Run TypeScript type checking |
-| `bun run db:migrate` | Run Prisma migrations |
-| `bun run db:studio` | Open Prisma Studio |
+| `bun run db:migrate` | Run database migrations |
+| `bun run db:seed:trello` | Seed database from Trello export |
 | `bun test` | Run all tests |
+
+---
+
+## Production Build & Deployment
+
+The production image is a single self-contained Docker container (Vite client bundle + Bun server). External services — Postgres (RDS) and S3 — are referenced by URL via environment variables; nothing is co-located with the app container.
+
+### What the Docker build does
+
+1. **Stage 1 — deps**: `bun install --frozen-lockfile`
+2. **Stage 2 — build**: `vite build` (client bundle → `dist/`) + `tsc --noEmit` (typecheck)
+3. **Stage 3 — runtime**: copies `node_modules`, `server/`, `db/`, `dist/`, and `entrypoint.sh` into a minimal Alpine image; runs as a non-root user
+
+### CI pipeline (build & push to ECR)
+
+```bash
+# Authenticate to ECR
+aws ecr get-login-password --region <region> \
+  | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
+
+# Build — typecheck + Vite bundle happen inside the multi-stage Dockerfile
+docker build -t vello-app:${IMAGE_TAG} .
+
+# Tag and push
+docker tag vello-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG}
+docker push <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG}
+```
+
+### CD pipeline (host machine)
+
+The host only needs two files — **no source code required**:
+
+| File | How it gets there |
+|---|---|
+| `docker-compose.prod.yml` | `scp`'d once, or kept in a separate deploy repo |
+| `.env.production` | Created manually on the host (contains secrets — never commit this) |
+
+`docker-compose.prod.yml` references the ECR image by name/tag via `image: "${DOCKER_IMAGE}:${IMAGE_TAG}"`. Compose pulls it from ECR and starts it — no build step on the host.
+
+```bash
+# 1. Authenticate to ECR
+aws ecr get-login-password --region <region> \
+  | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
+
+# 2. Run database migrations (one-off container — Compose pulls the image here)
+docker run --rm --env-file .env.production \
+  <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG} \
+  bun run db:migrate
+
+# 3. Start the app (Compose reuses the already-pulled image)
+#
+# Default — external RDS + S3 (AWS managed):
+DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/vello-app \
+IMAGE_TAG=${IMAGE_TAG} \
+docker compose -f docker-compose.prod.yml up -d
+
+# With internal Postgres instead of RDS:
+docker compose -f docker-compose.prod.yml --profile local-db up -d
+
+# With LocalStack instead of AWS S3:
+docker compose -f docker-compose.prod.yml --profile local-s3 up -d
+
+# With Redis sidecar:
+docker compose -f docker-compose.prod.yml --profile redis up -d
+
+# Combining profiles:
+docker compose -f docker-compose.prod.yml --profile local-db --profile local-s3 --profile redis up -d
+```
+
+> The app connects to **AWS RDS** via `DATABASE_URL` and to **AWS S3** via `S3_BUCKET` / `AWS_*` credentials — no database or S3 container runs on the host.
+
+### Environment
+
+Copy `.env.example` to `.env.production` on the host and fill in all values.
+
+```bash
+cp .env.example .env.production
+```
+
+Key production-only variables:
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Full Postgres connection string (e.g. RDS endpoint) |
+| `S3_BUCKET` | AWS S3 bucket name |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | IAM credentials for S3 |
+| `AWS_REGION` | AWS region |
+
+### Feature flags at startup
+
+| Variable | Default | Effect |
+|---|---|---|
+| `SEED_TRELLO` | `false` | Runs `bun run db:seed:trello` before the server starts |
+
+Set `SEED_TRELLO=true` in `.env.production` for the first deployment to import Trello data, then set it back to `false`.
 
 ---
 

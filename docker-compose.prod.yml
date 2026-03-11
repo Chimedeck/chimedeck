@@ -1,26 +1,37 @@
-name: kanban-prod
+name: vello-prod
+
+# By default only the app container runs.
+# External managed services (AWS RDS + S3) are used via env vars.
+# Opt in to local replacements with profiles:
+#   --profile local-db   → start internal Postgres instead of RDS
+#   --profile local-s3   → start LocalStack instead of AWS S3
+#   --profile redis      → start Redis sidecar
 
 services:
   app:
-    image: "${DOCKER_IMAGE:-kanban-app}:${IMAGE_TAG:-latest}"
+    image: "${DOCKER_IMAGE:-vello-app}:${IMAGE_TAG:-latest}"
     ports:
       - "${APP_PORT:-3000}:3000"
     env_file: .env.production
+    # depends_on entries below are only honoured when the matching profile is active
     depends_on:
       postgres:
         condition: service_healthy
+        required: false
+      localstack:
+        condition: service_healthy
+        required: false
       redis:
         condition: service_started
+        required: false
     restart: always
-    deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        delay: 10s
 
   postgres:
+    profiles: [local-db]
     image: postgres:16-alpine
     env_file: .env.production
+    ports:
+      - "6400:5432"   # host 6400 → container 5432 (app uses internal postgres:5432)
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,11 +40,31 @@ services:
       timeout: 5s
       retries: 5
 
+  localstack:
+    profiles: [local-s3]
+    image: localstack/localstack:latest
+    ports:
+      - "6401:4566"   # host 6401 → container 4566 (app uses internal localstack:4566)
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-vello}
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
+    profiles: [redis]
     image: redis:7-alpine
     volumes:
       - redis_data:/data
 
 volumes:
   postgres_data:
+  localstack_data:
   redis_data:

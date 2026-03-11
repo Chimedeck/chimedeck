@@ -1,7 +1,7 @@
 import type { Knex } from 'knex';
 // knexfile is invoked by the knex CLI (Node.js), not Bun, so use process.env here.
 // This is the only permitted exception to the "never use Bun.env outside config/" rule.
-const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://kanban:kanban@localhost:5432/kanban_dev';
+const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://vello:vello@localhost:5432/vello_dev';
 
 const config: Knex.Config = {
   client: 'pg',
