@@ -30,6 +30,10 @@ import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
 import { boardViewRouter } from './extensions/boardView/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
+import { initObservability } from './mods/observability/index';
+
+// Initialise OTel tracing + metrics (no-op when OTEL_ENABLED=false)
+await initObservability();
 
 // Load all feature flag sources before handling any requests
 await flags.load();

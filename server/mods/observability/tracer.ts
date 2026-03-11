@@ -54,8 +54,9 @@ export async function initTracer(): Promise<void> {
 
     const exporterConfig = getExporterConfig();
     const exporter = new OTLPTraceExporter(exporterConfig);
-    const provider = new NodeTracerProvider();
-    provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+    const provider = new NodeTracerProvider({
+      spanProcessors: [new BatchSpanProcessor(exporter)],
+    });
     provider.register();
 
     const rawTracer = otelApi.trace.getTracer('kanban-server', '1.0.0');
