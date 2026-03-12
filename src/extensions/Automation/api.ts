@@ -8,6 +8,9 @@ import type {
   CreateAutomationPayload,
   UpdateAutomationPayload,
   CardButtonRunResult,
+  BoardButtonRunResult,
+  PaginatedRunLogs,
+  AutomationQuota,
 } from './types';
 
 type Api = typeof apiClient;
@@ -74,4 +77,47 @@ export async function runCardButton({
   automationId: string;
 }): Promise<{ data: CardButtonRunResult }> {
   return apiClient.post(`/cards/${cardId}/automation-buttons/${automationId}/run`, {});
+}
+
+export async function runBoardButton({
+  boardId,
+  automationId,
+}: {
+  boardId: string;
+  automationId: string;
+}): Promise<{ data: BoardButtonRunResult }> {
+  return apiClient.post(`/boards/${boardId}/automation-buttons/${automationId}/run`, {});
+}
+
+// Run log — per-automation paginated list
+export async function getAutomationRuns({
+  boardId,
+  automationId,
+  params = {},
+}: {
+  boardId: string;
+  automationId: string;
+  params?: { page?: number; perPage?: number; status?: string };
+}): Promise<PaginatedRunLogs> {
+  return apiClient.get(`/boards/${boardId}/automations/${automationId}/runs`, { params });
+}
+
+// Run log — board-wide, last 200 runs
+export async function getBoardRuns({
+  boardId,
+  params = {},
+}: {
+  boardId: string;
+  params?: { page?: number; perPage?: number };
+}): Promise<PaginatedRunLogs> {
+  return apiClient.get(`/boards/${boardId}/automation-runs`, { params });
+}
+
+// Quota — current board's monthly automation run usage
+export async function getAutomationQuota({
+  boardId,
+}: {
+  boardId: string;
+}): Promise<{ data: AutomationQuota }> {
+  return apiClient.get(`/boards/${boardId}/automation-quota`);
 }

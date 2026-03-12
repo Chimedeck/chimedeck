@@ -80,8 +80,48 @@ export interface UpdateAutomationPayload {
 // UI tab state for AutomationPanel
 export type AutomationTab = 'rules' | 'buttons' | 'schedule' | 'log';
 
-// Result returned by POST .../automation-buttons/:automationId/run
+// Result returned by POST .../automation-buttons/:automationId/run (card)
 export interface CardButtonRunResult {
   runLogId: string;
   status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+}
+
+// Result returned by POST /boards/:boardId/automation-buttons/:automationId/run
+export interface BoardButtonRunResult {
+  runLogId: string | null;
+  cardCount: number;
+  status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+}
+
+// Run log entry returned by GET .../runs
+export type RunStatus = 'SUCCESS' | 'PARTIAL' | 'FAILED';
+
+export interface AutomationRunLog {
+  id: string;
+  automationId: string;
+  automationName: string;
+  automationType?: AutomationType;
+  status: RunStatus;
+  cardId?: string | null;
+  cardName?: string | null;
+  triggeredByUser?: { id: string; name: string } | null;
+  ranAt: string;
+  context: Record<string, unknown>;
+  errorMessage?: string | null;
+}
+
+export interface PaginatedRunLogs {
+  data: AutomationRunLog[];
+  metadata: {
+    totalPage: number;
+    perPage: number;
+  };
+}
+
+// Quota returned by GET /boards/:boardId/automation-quota
+export interface AutomationQuota {
+  usedRuns: number;
+  maxRuns: number;
+  resetAt: string;
+  percentUsed: number;
 }

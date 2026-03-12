@@ -9,6 +9,7 @@ import AutomationEmptyState from './AutomationEmptyState';
 import RuleBuilder from './RuleBuilder';
 import ButtonsTab from './ButtonsTab';
 import SchedulePanel from '../SchedulePanel';
+import LogPanel from '../LogPanel';
 
 interface Props {
   boardId: string;
@@ -192,7 +193,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
               onChanged={loadAutomations}
             />
           )}
-          {activeTab === 'log' && <ComingSoon tab="log" />}
+          {activeTab === 'log' && <LogPanel boardId={boardId} />}
         </div>
       </div>
     </>
