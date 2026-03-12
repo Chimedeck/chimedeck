@@ -264,11 +264,26 @@ interface TrelloCard {
 
 async function main() {
   const jsonPath = resolve(ROOT, 'db/all_trello_cards.json');
-  const jsonFile = Bun.file(jsonPath);
+  let jsonFile = Bun.file(jsonPath);
 
   if (!(await jsonFile.exists())) {
-    console.error(`❌  File not found: ${jsonPath}`);
-    process.exit(1);
+    const seedFileUrl = Bun.env['SEED_FILE_URL'];
+    if (!seedFileUrl) {
+      console.error(`❌  File not found: ${jsonPath}`);
+      console.error(`    Set SEED_FILE_URL to an S3 URL to download it automatically.`);
+      process.exit(1);
+    }
+
+    console.log(`📥  ${jsonPath} not found — downloading from SEED_FILE_URL…`);
+    const response = await fetch(seedFileUrl);
+    if (!response.ok) {
+      console.error(`❌  Failed to download seed file: ${response.status} ${response.statusText}`);
+      process.exit(1);
+    }
+
+    await Bun.write(jsonPath, response);
+    console.log(`✅  Downloaded seed file to ${jsonPath}`);
+    jsonFile = Bun.file(jsonPath);
   }
 
   const bytes = jsonFile.size;
@@ -373,8 +388,8 @@ async function main() {
   // 2. System owner user — owns all workspaces
   // -------------------------------------------------------------------------
 
-  const SYSTEM_USER_ID = 'system-trello-import';
-  const SYSTEM_USER_EMAIL = 'system@trello-import.local';
+  const SYSTEM_USER_ID = '58ce49cc971aa59ff0ef284c'; // tam.vu@journeyh.io
+  const SYSTEM_USER_EMAIL = 'tam.vu@journeyh.io';
   const DEFAULT_PASSWORD = '12345678';
 
   console.log('\n👤  Hashing passwords…');
@@ -389,7 +404,7 @@ async function main() {
       {
         id: SYSTEM_USER_ID,
         email: SYSTEM_USER_EMAIL,
-        name: 'System (Trello Import)',
+        name: 'Tam Vu',
         password_hash: systemPasswordHash,
       },
     ],

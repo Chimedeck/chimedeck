@@ -10,16 +10,17 @@ export const automationConfig = {
   runLogCap: 1000,
   /**
    * When true, pg_cron fires automation_scheduler_tick() every minute via pg_notify.
-   * When false (local dev default), the Bun Worker fallback uses setInterval instead.
    * Requires pg_cron installed and configured on the DB host — see sprint-64.md §2.
+   * When false, time-based scheduling is fully disabled (Bun Worker fallback caused
+   * memory leaks and has been removed).
    */
   usePgCron: Bun.env['AUTOMATION_USE_PGCRON'] === 'true',
   /**
-   * Gate for the scheduler (LISTEN client + Worker fallback).
-   * Set to false to disable all time-based automation scheduling without disabling
-   * the rest of the automation system.
+   * Scheduling is only active when pg_cron is available (AUTOMATION_USE_PGCRON=true).
+   * The Bun Worker fallback has been removed due to memory leaks — there is no
+   * in-process scheduler fallback.
    */
-  schedulerEnabled: Bun.env['AUTOMATION_SCHEDULER_ENABLED'] !== 'false',
+  schedulerEnabled: Bun.env['AUTOMATION_USE_PGCRON'] === 'true',
   /**
    * Maximum automation runs allowed per board per calendar month.
    * Defaults to 1000. Override with AUTOMATION_MONTHLY_QUOTA env var.

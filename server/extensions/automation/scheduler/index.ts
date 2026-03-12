@@ -1,6 +1,7 @@
 // Automation scheduler entry point.
-// Starts either the pg LISTEN client (pg_cron path) or the Bun Worker fallback
-// depending on the AUTOMATION_USE_PGCRON config flag.
+// Starts the pg LISTEN client when AUTOMATION_USE_PGCRON=true.
+// When pg_cron is not available scheduling is fully disabled — the Bun Worker
+// fallback has been removed because it caused memory leaks.
 //
 // Called once at server startup from server/index.ts.
 
@@ -9,18 +10,12 @@ import { startAutomationListener } from './listener';
 
 export async function startAutomationScheduler(): Promise<void> {
   if (!automationConfig.schedulerEnabled) {
-    console.info('[automation-scheduler] disabled via AUTOMATION_SCHEDULER_ENABLED=false');
+    // schedulerEnabled is only true when AUTOMATION_USE_PGCRON=true, so this
+    // branch covers both "flag explicitly off" and "pg_cron not configured".
+    console.info('[automation-scheduler] disabled — set AUTOMATION_USE_PGCRON=true to enable pg_cron scheduling');
     return;
   }
 
-  if (automationConfig.usePgCron) {
-    // Production path: pg_cron fires pg_notify; we LISTEN for ticks.
-    await startAutomationListener();
-  } else {
-    // Local dev fallback: no pg_cron — use a Bun Worker thread with setInterval.
-    // The worker is spawned in an isolated thread so it doesn't block HTTP handling.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    new (Worker as any)(new URL('./workerFallback.ts', import.meta.url));
-    console.info('[automation-scheduler] Bun Worker fallback started (AUTOMATION_USE_PGCRON=false)');
-  }
+  // pg_cron fires pg_notify every minute; we LISTEN for those ticks.
+  await startAutomationListener();
 }

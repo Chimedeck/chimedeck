@@ -7,18 +7,26 @@ import {
 } from '../containers/WorkspacePage/WorkspacePage.duck';
 import type { Role } from '../api';
 
-const ROLES: Role[] = ['ADMIN', 'MEMBER', 'VIEWER'];
+// All assignable roles ordered from most to least privileged.
+const ALL_ROLES: Role[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'];
+const ROLE_RANK: Record<Role, number> = { OWNER: 4, ADMIN: 3, MEMBER: 2, VIEWER: 1, GUEST: 0 };
 
 interface InviteMemberModalProps {
   workspaceId: string;
+  // Caller's own role — available roles are capped to this rank.
+  callerRole: Role;
   onClose: () => void;
 }
 
-const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => {
+const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberModalProps) => {
+  // Only offer roles the caller is allowed to assign (≤ their own rank).
+  const assignableRoles = ALL_ROLES.filter((r) => ROLE_RANK[r] <= ROLE_RANK[callerRole]);
   const dispatch = useAppDispatch();
 
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<Role>('MEMBER');
+  // Default to MEMBER if assignable, otherwise the highest assignable role.
+  const defaultRole: Role = assignableRoles.includes('MEMBER') ? 'MEMBER' : (assignableRoles[0] ?? 'VIEWER');
+  const [role, setRole] = useState<Role>(defaultRole);
   const [inProgress, setInProgress] = useState(false);
   const [success, setSuccess] = useState(false);
   const [addedEmail, setAddedEmail] = useState('');
@@ -110,7 +118,7 @@ const InviteMemberModal = ({ workspaceId, onClose }: InviteMemberModalProps) => 
                 onChange={(e) => setRole(e.target.value as Role)}
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {ROLES.map((r) => (
+                {assignableRoles.map((r) => (
                   <option key={r} value={r}>
                     {r.charAt(0) + r.slice(1).toLowerCase()}
                   </option>

@@ -9,6 +9,11 @@ export interface SecurityHeaderOptions {
    * Always includes 'self' and wss:.
    */
   extraConnectSrc?: string[];
+  /**
+   * Origins to add to the img-src directive (e.g. S3 bucket URL, CDN).
+   * Always includes 'self', data:, and blob:.
+   */
+  extraImgSrc?: string[];
 }
 
 // Applies security headers to every response.
@@ -16,13 +21,15 @@ export interface SecurityHeaderOptions {
 // dynamically registered plugin iframes and their declared API domains are
 // allowed by the browser's CSP enforcement.
 export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptions = {}): void {
-  const { extraFrameSrc = [], extraConnectSrc = [] } = opts;
+  const { extraFrameSrc = [], extraConnectSrc = [], extraImgSrc = [] } = opts;
 
   const frameSrc = extraFrameSrc.length > 0
     ? `'self' ${extraFrameSrc.join(' ')}`
     : "'none'";
 
   const connectSrc = ['\'self\'', 'wss:', ...extraConnectSrc].join(' ');
+
+  const imgSrc = ['\'self\'', 'data:', 'blob:', ...extraImgSrc].join(' ');
 
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'DENY');
@@ -34,7 +41,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   );
   headers.set(
     'Content-Security-Policy',
-    `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors 'none'`
+    `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors 'none'`
   );
   headers.set(
     'Permissions-Policy',

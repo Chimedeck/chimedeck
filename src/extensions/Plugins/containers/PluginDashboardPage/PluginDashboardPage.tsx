@@ -1,4 +1,6 @@
-// PluginDashboardPage — board admin-only page for managing plugins.
+// PluginDashboardPage — board settings page for managing plugins.
+// All board members (MEMBER+) can enable/disable plugins.
+// Registering new plugins in the registry requires platform-admin access.
 // Route: /boards/:boardId/settings/plugins
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -69,7 +71,7 @@ const PluginDashboardPage = () => {
     async (plugin: Parameters<typeof enablePluginRaw>[0]) => {
       const result = await enablePluginRaw(plugin);
       if (result?.error) {
-        if (result.error === 'not-board-admin' || result.error.includes('403')) {
+        if (result.error === 'not-board-member' || result.error === 'not-board-admin' || result.error.includes('403')) {
           addToast('You do not have permission to enable plugins on this board.', 'error');
         } else {
           addToast('Failed to enable plugin. Please try again.', 'error');
@@ -101,9 +103,10 @@ const PluginDashboardPage = () => {
     dispatch(fetchCategoriesThunk());
   }, [dispatch]);
 
-  // If the API returns a 403-style error, redirect back to board
+  // If the API returns a 403-style error for a non-member, redirect back to board.
+  // Board members (MEMBER+) get no error and stay on the page normally.
   useEffect(() => {
-    if (error && (error.includes('not-board-admin') || error.includes('403'))) {
+    if (error && (error.includes('not-board-member') || error.includes('not-board-admin') || error.includes('403'))) {
       navigate(`/boards/${boardId}`);
     }
   }, [error, boardId, navigate]);
@@ -226,22 +229,9 @@ const PluginDashboardPage = () => {
             onClick={() => setRegisterOpen(true)}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2"
           >
-            + Add a Plugin
+            + Register Plugin
           </button>
-        ) : (
-          <div className="relative group">
-            <button
-              className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2 opacity-50 cursor-not-allowed"
-              disabled
-              title="Coming soon"
-            >
-              + Add a Plugin
-            </button>
-            <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-slate-300 whitespace-nowrap z-10">
-              Marketplace coming soon
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Content */}

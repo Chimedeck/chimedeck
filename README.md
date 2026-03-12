@@ -74,6 +74,32 @@ AUTOMATION_USE_PGCRON=false bun run dev
 | `bun run db:migrate` | Run database migrations |
 | `bun run db:seed:trello` | Seed database from Trello export |
 | `bun test` | Run all tests |
+| `bun run docker:build` | Build the production Docker image |
+| `bun run docker:prod` | Run the production image via docker-compose |
+
+### Running production mode locally
+
+**Option A — native Bun (no Docker):**
+
+```bash
+# Build Vite client bundle + typecheck
+bun run build
+
+# Start server in production mode
+bun run start
+```
+
+**Option B — Docker (closest to real production):**
+
+```bash
+# Build the production image (multi-stage: deps → build → runtime)
+bun run docker:build
+
+# Run with the prod compose file (uses .env for config)
+bun run docker:prod
+```
+
+> Make sure `.env` contains all required variables (see `.env.example`) before running either option.
 
 ---
 

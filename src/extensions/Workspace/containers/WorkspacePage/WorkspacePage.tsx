@@ -38,6 +38,8 @@ const WorkspacePage = () => {
   const currentMember = members.find((m) => m.userId === authUser?.id);
   const canManageMembers =
     currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
+  // MEMBERs can also invite, but the role options they see are capped to their own rank.
+  const canInvite = canManageMembers || currentMember?.role === 'MEMBER';
 
   const handleDeleteWorkspace = () => {
     if (workspace && window.confirm(`Delete workspace "${workspace.name}"?`)) {
@@ -93,7 +95,7 @@ const WorkspacePage = () => {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-100">Members</h2>
-          {canManageMembers && (
+          {canInvite && (
             <button
               onClick={() => setShowInviteModal(true)}
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
@@ -113,6 +115,7 @@ const WorkspacePage = () => {
       {showInviteModal && (
         <InviteMemberModal
           workspaceId={workspace.id}
+          callerRole={currentMember?.role ?? 'MEMBER'}
           onClose={() => setShowInviteModal(false)}
         />
       )}

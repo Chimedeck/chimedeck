@@ -200,9 +200,17 @@ Bun.serve({
     const res = await router(req);
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();
+
+    // S3 origin for avatar/attachment images — LocalStack uses S3_ENDPOINT directly,
+    // production uses the virtual-hosted bucket URL.
+    const s3ImgOrigin = env.S3_ENDPOINT
+      ? env.S3_ENDPOINT
+      : `https://${env.S3_BUCKET}.s3.${env.S3_REGION}.amazonaws.com`;
+
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: pluginOrigins.connectSrc,
+      extraImgSrc: [s3ImgOrigin, 'https://horiflow.jhorizon.io'],
     });
     const response = new Response(res.body, {
       status: res.status,
