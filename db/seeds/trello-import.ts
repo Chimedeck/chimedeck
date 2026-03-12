@@ -47,9 +47,9 @@ if (await envFile.exists()) {
 }
 
 const DATABASE_URL =
-  Bun.env['DATABASE_URL'] ?? 'postgresql://vello:vello@localhost:5432/vello_dev';
+  Bun.env['DATABASE_URL'] ?? 'postgresql://horiflow:horiflow@localhost:5432/horiflow_dev';
 
-const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'vello';
+const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'horiflow';
 const S3_REGION    = Bun.env['S3_REGION'] ?? 'us-east-1';
 const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || undefined;
 const S3_BASE_URL  = S3_ENDPOINT

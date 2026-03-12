@@ -1,4 +1,4 @@
-name: vello-prod
+name: horiflow-prod
 
 # By default only the app container runs.
 # External managed services (AWS RDS + S3) are used via env vars.
@@ -37,7 +37,7 @@ services:
     env_file: .env.production
     command: >
       postgres -c shared_preload_libraries=pg_cron
-               -c cron.database_name=${POSTGRES_DB:-vello}
+               -c cron.database_name=${POSTGRES_DB:-horiflow}
     ports:
       - "6400:5432"
     volumes:
@@ -57,7 +57,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-vello}
+      S3_BUCKET: ${S3_BUCKET:-horiflow}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

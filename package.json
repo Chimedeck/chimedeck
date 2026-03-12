@@ -28,8 +28,8 @@
     "docker:dev": "docker compose -f docker-compose.yml up --build",
     "docker:dev:redis": "docker compose -f docker-compose.yml --profile redis up --build",
     "docker:prod": "docker compose -f docker-compose.prod.yml up",
-    "docker:build": "docker build -t vello-app:latest .",
-    "docker:build:nc": "docker build --no-cache -t vello-app:latest .",
+    "docker:build": "docker build -t horiflow-app:latest .",
+    "docker:build:nc": "docker build --no-cache -t horiflow-app:latest .",
     "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
     "clean": "rm -rf dist .vite node_modules/.cache"
   },
