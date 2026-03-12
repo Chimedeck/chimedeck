@@ -6,6 +6,7 @@ import type { Automation, AutomationTab } from '../../types';
 import { getAutomations } from '../../api';
 import AutomationList from './AutomationList';
 import AutomationEmptyState from './AutomationEmptyState';
+import RuleBuilder from './RuleBuilder';
 
 interface Props {
   boardId: string;
@@ -33,6 +34,8 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // null = list view; undefined = new rule; Automation object = edit mode
+  const [editingRule, setEditingRule] = useState<Automation | null | undefined>(null);
 
   const loadAutomations = useCallback(async () => {
     setLoading(true);
@@ -136,15 +139,38 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                   </button>
                 </div>
               )}
-              {!loading && !error && rules.length === 0 && (
-                <AutomationEmptyState onCreateRule={() => {/* RuleBuilder in Sprint 65 iter 3 */}} />
+              {!loading && !error && editingRule !== null && editingRule !== undefined && (
+                /* RuleBuilder (edit mode) */
+                <RuleBuilder
+                  boardId={boardId}
+                  initialAutomation={editingRule}
+                  onSaved={() => {
+                    setEditingRule(null);
+                    loadAutomations();
+                  }}
+                  onCancel={() => setEditingRule(null)}
+                />
               )}
-              {!loading && !error && rules.length > 0 && (
+              {!loading && !error && editingRule === undefined && (
+                /* RuleBuilder (create mode) */
+                <RuleBuilder
+                  boardId={boardId}
+                  onSaved={() => {
+                    setEditingRule(null);
+                    loadAutomations();
+                  }}
+                  onCancel={() => setEditingRule(null)}
+                />
+              )}
+              {!loading && !error && editingRule === null && rules.length === 0 && (
+                <AutomationEmptyState onCreateRule={() => setEditingRule(undefined)} />
+              )}
+              {!loading && !error && editingRule === null && rules.length > 0 && (
                 <AutomationList
                   boardId={boardId}
                   automations={automations}
-                  onCreateRule={() => {/* RuleBuilder in Sprint 65 iter 3 */}}
-                  onEditRule={() => {/* RuleBuilder in Sprint 65 iter 3 */}}
+                  onCreateRule={() => setEditingRule(undefined)}
+                  onEditRule={(a) => setEditingRule(a)}
                   onChanged={loadAutomations}
                 />
               )}
