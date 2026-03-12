@@ -1,0 +1,162 @@
+// AutomationPanel — slide-in drawer with tabs (Rules / Buttons / Schedule / Log).
+// Unimplemented tabs show a "Coming soon" placeholder.
+import { useEffect, useState, useCallback } from 'react';
+import { BoltIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import type { Automation, AutomationTab } from '../../types';
+import { getAutomations } from '../../api';
+import AutomationList from './AutomationList';
+import AutomationEmptyState from './AutomationEmptyState';
+
+interface Props {
+  boardId: string;
+  isOpen: boolean;
+  activeTab: AutomationTab;
+  onClose: () => void;
+  onTabChange: (tab: AutomationTab) => void;
+}
+
+const TABS: { id: AutomationTab; label: string }[] = [
+  { id: 'rules', label: 'Rules' },
+  { id: 'buttons', label: 'Buttons' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'log', label: 'Log' },
+];
+
+const ComingSoon = ({ tab }: { tab: string }) => (
+  <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+    <p className="text-slate-200 font-medium capitalize">{tab}</p>
+    <p className="text-sm text-slate-400">Coming soon</p>
+  </div>
+);
+
+const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: Props) => {
+  const [automations, setAutomations] = useState<Automation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadAutomations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getAutomations({ boardId });
+      setAutomations(res.data);
+    } catch {
+      setError('Failed to load automations.');
+    } finally {
+      setLoading(false);
+    }
+  }, [boardId]);
+
+  // Reload whenever the panel is opened or boardId changes.
+  useEffect(() => {
+    if (isOpen) loadAutomations();
+  }, [isOpen, loadAutomations]);
+
+  // Trap focus and close on Escape when panel is open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const rules = automations.filter((a) => a.automationType === 'RULE');
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-30 bg-black/50"
+        aria-hidden="true"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div
+        className="absolute right-0 top-0 h-full w-96 bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-40"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Automation panel"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+          <div className="flex items-center gap-2">
+            <BoltIcon className="h-5 w-5 text-slate-300" aria-hidden="true" />
+            <h2 className="text-slate-100 font-semibold text-sm">Automation</h2>
+          </div>
+          <button
+            className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            onClick={onClose}
+            aria-label="Close automation panel"
+          >
+            <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-1 border-b border-slate-700 px-4 pt-2 shrink-0">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`rounded-t px-3 py-2 text-xs font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'border-b-2 border-blue-500 text-blue-400'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              aria-selected={activeTab === tab.id}
+              role="tab"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div className="flex-1 overflow-y-auto" role="tabpanel">
+          {activeTab === 'rules' && (
+            <>
+              {loading && (
+                <div className="flex items-center justify-center py-12">
+                  <p className="text-sm text-slate-400">Loading…</p>
+                </div>
+              )}
+              {!loading && error && (
+                <div className="p-4">
+                  <p className="text-sm text-red-400">{error}</p>
+                  <button
+                    className="mt-2 text-xs text-blue-400 hover:underline"
+                    onClick={loadAutomations}
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+              {!loading && !error && rules.length === 0 && (
+                <AutomationEmptyState onCreateRule={() => {/* RuleBuilder in Sprint 65 iter 3 */}} />
+              )}
+              {!loading && !error && rules.length > 0 && (
+                <AutomationList
+                  boardId={boardId}
+                  automations={automations}
+                  onCreateRule={() => {/* RuleBuilder in Sprint 65 iter 3 */}}
+                  onEditRule={() => {/* RuleBuilder in Sprint 65 iter 3 */}}
+                  onChanged={loadAutomations}
+                />
+              )}
+            </>
+          )}
+          {activeTab === 'buttons' && <ComingSoon tab="buttons" />}
+          {activeTab === 'schedule' && <ComingSoon tab="schedule" />}
+          {activeTab === 'log' && <ComingSoon tab="log" />}
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default AutomationPanel;

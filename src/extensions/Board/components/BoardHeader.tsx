@@ -5,6 +5,7 @@ import BoardMemberAvatars from './BoardMemberAvatars';
 import ConnectionBadge from '~/common/components/ConnectionBadge';
 import type { ConnectionState } from '~/common/components/ConnectionBadge';
 import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
+import AutomationHeaderButton from '~/extensions/Automation/components/AutomationHeaderButton';
 
 interface Member {
   id: string;
@@ -25,6 +26,8 @@ interface Props {
   onArchive?: () => void;
   onDelete?: () => void;
   onOpenSettings?: () => void;
+  onOpenAutomation?: () => void;
+  activeAutomationCount?: number;
 }
 
 const BoardHeader = ({
@@ -37,6 +40,8 @@ const BoardHeader = ({
   onArchive,
   onDelete,
   onOpenSettings,
+  onOpenAutomation,
+  activeAutomationCount = 0,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -120,6 +125,14 @@ const BoardHeader = ({
       <div className="ml-auto flex items-center gap-2">
         {/* Member avatars */}
         {members.length > 0 && <BoardMemberAvatars members={members} />}
+
+        {/* Automation button — left of the ··· settings menu */}
+        {onOpenAutomation && (
+          <AutomationHeaderButton
+            activeCount={activeAutomationCount}
+            onClick={onOpenAutomation}
+          />
+        )}
 
         {/* Settings menu */}
         <div className="relative" ref={menuContainerRef}>

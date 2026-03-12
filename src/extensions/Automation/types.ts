@@ -1,0 +1,79 @@
+// Automation domain types — mirrors the server's formatAutomation response shape.
+
+export type AutomationType = 'RULE' | 'CARD_BUTTON' | 'BOARD_BUTTON' | 'SCHEDULED' | 'DUE_DATE';
+
+export interface AutomationTrigger {
+  id: string;
+  triggerType: string;
+  config: Record<string, unknown>;
+}
+
+export interface AutomationAction {
+  id: string;
+  position: number;
+  actionType: string;
+  config: Record<string, unknown>;
+}
+
+export interface Automation {
+  id: string;
+  boardId: string;
+  createdBy: string;
+  name: string;
+  automationType: AutomationType;
+  isEnabled: boolean;
+  icon: string | null;
+  runCount: number;
+  lastRunAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  trigger: AutomationTrigger | null;
+  actions: AutomationAction[];
+}
+
+// Discovery types returned by GET /api/v1/automation/trigger-types
+export interface TriggerType {
+  type: string;
+  label: string;
+  configSchema: Record<string, unknown>;
+}
+
+// Discovery types returned by GET /api/v1/automation/action-types
+export interface ActionType {
+  type: string;
+  label: string;
+  category: string;
+  configSchema: Record<string, unknown>;
+}
+
+// Payload shapes for mutation endpoints
+export interface CreateAutomationPayload {
+  name: string;
+  automationType: AutomationType;
+  trigger: {
+    triggerType: string;
+    config: Record<string, unknown>;
+  };
+  actions: Array<{
+    actionType: string;
+    position: number;
+    config: Record<string, unknown>;
+  }>;
+}
+
+export interface UpdateAutomationPayload {
+  name?: string;
+  isEnabled?: boolean;
+  trigger?: {
+    triggerType: string;
+    config: Record<string, unknown>;
+  };
+  actions?: Array<{
+    actionType: string;
+    position: number;
+    config: Record<string, unknown>;
+  }>;
+}
+
+// UI tab state for AutomationPanel
+export type AutomationTab = 'rules' | 'buttons' | 'schedule' | 'log';

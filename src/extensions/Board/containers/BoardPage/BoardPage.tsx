@@ -44,6 +44,8 @@ import CalendarView from '../../../CalendarView/CalendarView';
 import TimelineView from '../../../TimelineView/TimelineView';
 import BoardDeleteDialog from '../../components/BoardDeleteDialog';
 import ListDeleteDialog from '../../../List/components/ListDeleteDialog';
+import AutomationPanel from '../../../Automation/components/AutomationPanel';
+import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -88,6 +90,9 @@ const BoardPage = () => {
 
   // ── Board settings panel ─────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // ── Automation panel (Sprint 65) ─────────────────────────────────────────
+  const automationPanel = useAutomationPanel();
 
   // ── Delete confirmation dialogs (Sprint 56) ───────────────────────────────
   // Board delete: open when server returns 409 delete-requires-confirmation.
@@ -342,6 +347,7 @@ const BoardPage = () => {
         onArchive={handleBoardArchive}
         onDelete={handleBoardDelete}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAutomation={automationPanel.openPanel}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
@@ -425,6 +431,14 @@ const BoardPage = () => {
               onClose={() => setSettingsOpen(false)}
             />
           )}
+          {/* Automation panel (Sprint 65) */}
+          <AutomationPanel
+            boardId={boardId ?? ''}
+            isOpen={automationPanel.isOpen}
+            activeTab={automationPanel.activeTab}
+            onClose={automationPanel.closePanel}
+            onTabChange={automationPanel.setActiveTab}
+          />
           {/* Toast notifications (rollback errors, conflicts) */}
           <ToastRegion toasts={toasts} onDismiss={dismissToast} />
         </PluginIframeContainer>
