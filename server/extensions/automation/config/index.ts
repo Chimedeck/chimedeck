@@ -20,4 +20,14 @@ export const automationConfig = {
    * the rest of the automation system.
    */
   schedulerEnabled: Bun.env['AUTOMATION_SCHEDULER_ENABLED'] !== 'false',
+  /**
+   * Maximum automation runs allowed per board per calendar month.
+   * Defaults to 1000. Override with AUTOMATION_MONTHLY_QUOTA env var.
+   * Invalid or missing values fall back to the default.
+   */
+  monthlyQuota: (() => {
+    const raw = Bun.env['AUTOMATION_MONTHLY_QUOTA'];
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1000;
+  })(),
 } as const;

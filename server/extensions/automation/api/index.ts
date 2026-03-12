@@ -8,6 +8,10 @@ import { handleDeleteAutomation } from './delete';
 import { handleGetTriggerTypes } from './triggerTypes';
 import { handleGetActionTypes } from './actionTypes';
 import { handleRunCardButton } from './runCardButton';
+import { handleRunBoardButton } from './runBoardButton';
+import { handleGetAutomationRuns } from './runs';
+import { handleGetBoardRuns } from './boardRuns';
+import { handleGetAutomationQuota } from './quota';
 // Register all card action handlers so the executor can resolve them by type.
 import '../engine/actions/index';
 
@@ -41,6 +45,30 @@ export async function automationRouter(req: Request, pathname: string): Promise<
     return null;
   }
 
+  // GET /api/v1/boards/:boardId/automations/:automationId/runs
+  const automationRunsMatch = pathname.match(
+    /^\/api\/v1\/boards\/([^/]+)\/automations\/([^/]+)\/runs$/,
+  );
+  if (automationRunsMatch && req.method === 'GET') {
+    const boardId = automationRunsMatch[1] as string;
+    const automationId = automationRunsMatch[2] as string;
+    return handleGetAutomationRuns(req, boardId, automationId);
+  }
+
+  // GET /api/v1/boards/:boardId/automation-runs
+  const boardRunsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/automation-runs$/);
+  if (boardRunsMatch && req.method === 'GET') {
+    const boardId = boardRunsMatch[1] as string;
+    return handleGetBoardRuns(req, boardId);
+  }
+
+  // GET /api/v1/boards/:boardId/automation-quota
+  const quotaMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/automation-quota$/);
+  if (quotaMatch && req.method === 'GET') {
+    const boardId = quotaMatch[1] as string;
+    return handleGetAutomationQuota(req, boardId);
+  }
+
   // POST /api/v1/cards/:cardId/automation-buttons/:automationId/run
   const runCardButtonMatch = pathname.match(
     /^\/api\/v1\/cards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/,
@@ -49,6 +77,16 @@ export async function automationRouter(req: Request, pathname: string): Promise<
     const cardId = runCardButtonMatch[1] as string;
     const automationId = runCardButtonMatch[2] as string;
     return handleRunCardButton(req, cardId, automationId);
+  }
+
+  // POST /api/v1/boards/:boardId/automation-buttons/:automationId/run
+  const runBoardButtonMatch = pathname.match(
+    /^\/api\/v1\/boards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/,
+  );
+  if (runBoardButtonMatch && req.method === 'POST') {
+    const boardId = runBoardButtonMatch[1] as string;
+    const automationId = runBoardButtonMatch[2] as string;
+    return handleRunBoardButton(req, boardId, automationId);
   }
 
   return null;
