@@ -38,6 +38,8 @@ export async function executeAutomation({
 
   let successCount = 0;
   const errors: string[] = [];
+  const postCommitCallbacks: Array<() => void> = [];
+  const postCommit = (fn: () => void) => postCommitCallbacks.push(fn);
 
   await db.transaction(async (trx) => {
     for (const action of sortedActions) {
@@ -49,7 +51,7 @@ export async function executeAutomation({
       }
 
       try {
-        await handler.execute({ automation, action, event, evalContext, trx });
+        await handler.execute({ automation, action, event, evalContext, trx, postCommit });
         successCount++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -57,6 +59,12 @@ export async function executeAutomation({
       }
     }
   });
+
+  // Fire post-commit side effects (e.g. WS broadcasts) after the transaction is committed.
+  console.log('[automation:executor] running', postCommitCallbacks.length, 'postCommit callbacks');
+  for (const fn of postCommitCallbacks) {
+    try { fn(); } catch { /* ignore */ }
+  }
 
   const totalActions = sortedActions.length;
 

@@ -85,4 +85,6 @@ export interface ActionContext {
   event: AutomationEvent;
   evalContext: EvaluationContext;
   trx: import('knex').Knex.Transaction;
+  /** Register a side-effect to run after the DB transaction commits (e.g. WS broadcasts). */
+  postCommit: (fn: () => void) => void;
 }

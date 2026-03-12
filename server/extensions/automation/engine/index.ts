@@ -41,6 +41,8 @@ export async function evaluate({ boardId, event, context }: EvaluateInput): Prom
       (a) => a.trigger !== null && matchesTrigger({ event, trigger: a.trigger }),
     );
 
+    console.log('[automation:evaluate] event:', event.type, 'board:', boardId, 'matching:', matching.length);
+
     if (matching.length === 0) return;
 
     // Process in chunks of maxConcurrent to avoid overwhelming the DB.
