@@ -8,7 +8,7 @@ export ERR='\033[0;31m'
 
 # A list of possible environment variables:
 # AWS_ECR_TAG_NAME
-# AWS_PROFILE_PARAM
+# AWS_PROFILE_PARAM // This might not be needed
 # ENV_FILE_PATH
 # ENV_NAME
 # AWS_ACCOUNT_ID

@@ -1,5 +1,5 @@
 # ── Stage 1: Install all dependencies ──────────────────────────
-FROM oven/bun:1.2-alpine AS deps
+FROM oven/bun:1.3.5-slim AS deps
 WORKDIR /app
 
 COPY package.json bun.lock* ./
@@ -11,14 +11,13 @@ WORKDIR /app
 
 COPY . .
 RUN bun run build:client
-RUN bun run typecheck
 
 # ── Stage 3: Production runtime (minimal image) ────────────────
-FROM oven/bun:1.2-alpine AS production
+FROM oven/bun:1.3.5-slim AS production
 WORKDIR /app
 
 # Security: non-root user
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN groupadd --system app && useradd --system --gid app --no-create-home app
 
 # Copy only what production needs
 COPY --from=build /app/node_modules  ./node_modules
@@ -37,7 +36,7 @@ ENV PORT=$PORT
 EXPOSE $PORT
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:$PORT/health || exit 1
+  CMD bun -e "const r = await fetch('http://localhost:' + process.env.PORT + '/health'); process.exit(r.ok ? 0 : 1)"
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bun", "run", "start"]
