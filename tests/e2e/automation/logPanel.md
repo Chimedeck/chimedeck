@@ -127,3 +127,75 @@
 
 ### Expected
 - The Card column shows "Board-wide" text (grey, not a link)
+
+---
+
+## Test: Real-time row prepend on automation_ran WebSocket event
+
+### Steps
+1. Open the Automation panel → Log tab on a board with at least one automation
+2. Observe the current first row in the run log table (note its automation name and timestamp)
+3. Trigger an automation (e.g. click a board button or move a card to fire a rule)
+4. Wait up to 3 seconds without refreshing the page
+
+### Expected
+- A new row appears at the top of the run log table without any page reload
+- The new row shows the correct automation name and a "just now" relative time
+- The new row has a status icon matching the run result (SUCCESS → green, PARTIAL → amber, FAILED → red)
+- The run count chip on the corresponding automation row in the Rules / Buttons / Schedule tab increments by 1
+
+---
+
+## Test: Run-count chip on Rules tab
+
+### Steps
+1. Open the Automation panel → Rules tab
+2. Identify an automation that has never been run (runCount = 0)
+
+### Expected
+- The automation row shows a grey run-count chip with "0"
+
+### Steps (variant: after a run)
+1. Trigger the automation once
+2. Wait for the automation_ran WS event
+
+### Expected
+- The grey chip changes to green and shows "1" (or the incremented total)
+
+---
+
+## Test: Run-count chip on Buttons tab
+
+### Steps
+1. Open the Automation panel → Buttons tab
+2. Identify a card or board button
+
+### Expected
+- Each button row shows a run-count chip (grey if 0, green if > 0)
+- After clicking "Run" on a board button, the chip increments in real time
+
+---
+
+## Test: Run-count chip on Schedule tab
+
+### Steps
+1. Open the Automation panel → Schedule tab
+2. Identify a scheduled or due-date command
+
+### Expected
+- Each schedule item row shows a run-count chip (grey if 0, green if > 0)
+- After a scheduled run fires, the chip increments without refreshing
+
+---
+
+## Test: Real-time rows deduplicated on reconnect
+
+### Steps
+1. Open Log tab with several rows visible
+2. Simulate WS disconnect and reconnect (e.g. close and re-open the panel)
+3. Check the run log table
+
+### Expected
+- No duplicate rows appear for runs that were already shown before the reconnect
+- The prependedRuns list is cleared when the panel is closed and re-opened
+

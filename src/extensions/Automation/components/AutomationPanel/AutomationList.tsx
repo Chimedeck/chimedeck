@@ -1,5 +1,5 @@
 // AutomationList — renders the list of RULE automations with enable toggle + edit/delete actions.
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PencilSquareIcon,
   TrashIcon,
@@ -9,6 +9,8 @@ import {
 } from '@heroicons/react/24/outline';
 import type { Automation } from '../../types';
 import { updateAutomation, deleteAutomation } from '../../api';
+import RunCountChip from '../LogPanel/RunCountChip';
+import { socket } from '~/extensions/Realtime/client/socket';
 
 interface Props {
   boardId: string;
@@ -30,6 +32,22 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Optimistic run-count delta incremented on automation_ran WS event.
+  const [runDelta, setRunDelta] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = socket.subscribe({
+      onEvent(event) {
+        if (
+          event.type === 'automation_ran' &&
+          (event.payload as { automationId?: string } | undefined)?.automationId === automation.id
+        ) {
+          setRunDelta((d) => d + 1);
+        }
+      },
+    });
+    return unsubscribe;
+  }, [automation.id]);
 
   const handleToggle = async () => {
     setToggling(true);
@@ -78,6 +96,9 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
           {triggerLabel} · {automation.actions.length} action{automation.actions.length !== 1 ? 's' : ''}
         </p>
       </div>
+
+      {/* Run count chip */}
+      <RunCountChip count={automation.runCount + runDelta} />
 
       {/* Actions */}
       <div className="flex shrink-0 items-center gap-1">

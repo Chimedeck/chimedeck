@@ -193,7 +193,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
               onChanged={loadAutomations}
             />
           )}
-          {activeTab === 'log' && <LogPanel boardId={boardId} />}
+          {activeTab === 'log' && <LogPanel boardId={boardId} automations={automations} />}
         </div>
       </div>
     </>

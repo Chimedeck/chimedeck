@@ -1,6 +1,6 @@
 // ScheduleItem — a single row for a SCHEDULED or DUE_DATE automation.
-// Shows: icon, name, schedule summary, enable toggle, edit/delete actions.
-import { useState } from 'react';
+// Shows: icon, name, schedule summary, run-count chip, enable toggle, edit/delete actions.
+import { useState, useEffect } from 'react';
 import {
   ClockIcon,
   ExclamationCircleIcon,
@@ -14,6 +14,8 @@ import type { Automation } from '../../types';
 import { scheduleSummary, dueDateSummary } from '../../utils/scheduleSummary';
 import type { ScheduleConfig, DueDateConfig } from '../../utils/scheduleSummary';
 import { updateAutomation, deleteAutomation } from '../../api';
+import RunCountChip from '../LogPanel/RunCountChip';
+import { socket } from '~/extensions/Realtime/client/socket';
 
 interface Props {
   boardId: string;
@@ -45,6 +47,22 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Optimistic run-count delta incremented on automation_ran WS event.
+  const [runDelta, setRunDelta] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = socket.subscribe({
+      onEvent(event) {
+        if (
+          event.type === 'automation_ran' &&
+          (event.payload as { automationId?: string } | undefined)?.automationId === automation.id
+        ) {
+          setRunDelta((d) => d + 1);
+        }
+      },
+    });
+    return unsubscribe;
+  }, [automation.id]);
 
   const handleToggle = async () => {
     setToggling(true);
@@ -92,6 +110,9 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           {summary} · {automation.actions.length} action{automation.actions.length !== 1 ? 's' : ''}
         </p>
       </div>
+
+      {/* Run count chip — always visible */}
+      <RunCountChip count={automation.runCount + runDelta} />
 
       {/* Actions */}
       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
