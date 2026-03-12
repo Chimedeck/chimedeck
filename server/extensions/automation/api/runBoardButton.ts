@@ -71,10 +71,10 @@ export async function handleRunBoardButton(
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
-  const boardMember = await db('board_members')
-    .where({ board_id: boardId, user_id: currentUser.id })
+  const boardMembership = await db('memberships')
+    .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
     .first();
-  if (!boardMember) {
+  if (!boardMembership) {
     return Response.json({ error: { name: 'not-a-board-member' } }, { status: 403 });
   }
 

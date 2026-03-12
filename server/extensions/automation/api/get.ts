@@ -15,8 +15,12 @@ export async function handleGetAutomation(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+  const currentUser = (req as AuthenticatedRequest).currentUser!;
 
-  const automation = await db('automations').where({ id: automationId, board_id: boardId }).first();
+  // Automations are private to their creator.
+  const automation = await db('automations')
+    .where({ id: automationId, board_id: boardId, created_by: currentUser.id })
+    .first();
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }

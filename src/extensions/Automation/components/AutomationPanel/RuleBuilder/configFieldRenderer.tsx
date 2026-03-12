@@ -10,6 +10,16 @@ export interface FieldDef {
   required?: boolean;
 }
 
+export interface BoardOption {
+  id: string;
+  title: string;
+}
+
+export interface ListOption {
+  id: string;
+  title: string;
+}
+
 // Shape of a single property in the JSON Schema produced by z.toJSONSchema.
 interface JsonSchemaProp {
   type?: string;
@@ -50,6 +60,16 @@ export function parseConfigSchema(schema: unknown): Array<{ key: string; fieldDe
       };
     }
 
+    // UUID fields whose key is exactly "targetBoardId" → board picker for cross-board actions.
+    if (prop.format === 'uuid' && key === 'targetBoardId') {
+      return { key, fieldDef: { type: 'board-select', label, required } satisfies FieldDef };
+    }
+
+    // UUID fields whose key ends in "targetListId" → list picker that reads from targetBoardId.
+    if (prop.format === 'uuid' && /targetListId$/i.test(key)) {
+      return { key, fieldDef: { type: 'target-list-select', label, required } satisfies FieldDef };
+    }
+
     // UUID fields whose key ends in "listId" reference a board list — render as a list picker.
     if (prop.format === 'uuid' && /listId$/i.test(key)) {
       return { key, fieldDef: { type: 'list-select', label, required } satisfies FieldDef };
@@ -74,106 +94,125 @@ interface RenderArgs {
   value: unknown;
   onChange: (val: unknown) => void;
   boardLists?: { id: string; title: string }[];
+  workspaceBoards?: BoardOption[];
+  targetBoardLists?: ListOption[];
 }
 
-export function renderConfigField({ key, fieldDef, value, onChange, boardLists }: RenderArgs): JSX.Element {
-  const id = `cfg-${key}`;
-  const label = (
+const SELECT_CLASS = 'w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500';
+const INPUT_CLASS = 'w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+function FieldLabel({ id, label, required }: Readonly<{ id: string; label: string; required?: boolean }>) {
+  return (
     <label htmlFor={id} className="block text-xs font-medium text-slate-400 mb-1">
-      {fieldDef.label}
-      {fieldDef.required && <span className="ml-1 text-red-400">*</span>}
+      {label}
+      {required && <span className="ml-1 text-red-400">*</span>}
     </label>
   );
+}
 
-  if (fieldDef.type === 'list-select') {
-    return (
-      <div key={key}>
-        {label}
-        <select
-          id={id}
-          className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value || undefined)}
-          required={fieldDef.required}
-        >
-          <option value="">Any list…</option>
-          {(boardLists ?? []).map((list) => (
-            <option key={list.id} value={list.id}>
-              {list.title}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (fieldDef.type === 'select' && fieldDef.options) {
-    return (
-      <div key={key}>
-        {label}
-        <select
-          id={id}
-          className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={typeof value === 'string' ? value : ''}
-          onChange={(e) => onChange(e.target.value)}
-          required={fieldDef.required}
-        >
-          <option value="">Choose…</option>
-          {fieldDef.options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (fieldDef.type === 'boolean') {
-    return (
-      <div key={key} className="flex items-center gap-2">
-        <input
-          id={id}
-          type="checkbox"
-          className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-2 focus:ring-blue-500"
-          checked={!!value}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <label htmlFor={id} className="text-xs font-medium text-slate-400">
-          {fieldDef.label}
-        </label>
-      </div>
-    );
-  }
-
-  if (fieldDef.type === 'number') {
-    return (
-      <div key={key}>
-        {label}
-        <input
-          id={id}
-          type="number"
-          className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={typeof value === 'number' ? value : ''}
-          onChange={(e) => onChange(Number(e.target.value))}
-          required={fieldDef.required}
-        />
-      </div>
-    );
-  }
-
-  // Default: text input (covers 'string' type and any unknown types)
+function renderListSelect(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange, boardLists } = args;
+  const id = `cfg-${key}`;
   return (
     <div key={key}>
-      {label}
-      <input
-        id={id}
-        type="text"
-        className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={typeof value === 'string' ? value : ''}
-        onChange={(e) => onChange(e.target.value)}
-        required={fieldDef.required}
-      />
+      <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value || undefined)} required={fieldDef.required}>
+        <option value="">Any list…</option>
+        {(boardLists ?? []).map((list) => <option key={list.id} value={list.id}>{list.title}</option>)}
+      </select>
     </div>
   );
+}
+
+function renderBoardSelect(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange, workspaceBoards } = args;
+  const id = `cfg-${key}`;
+  return (
+    <div key={key}>
+      <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value || undefined)} required={fieldDef.required}>
+        <option value="">Select a board…</option>
+        {(workspaceBoards ?? []).map((b) => <option key={b.id} value={b.id}>{b.title}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function renderTargetListSelect(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange, targetBoardLists } = args;
+  const id = `cfg-${key}`;
+  const lists = targetBoardLists ?? [];
+  return (
+    <div key={key}>
+      <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value || undefined)} required={fieldDef.required} disabled={lists.length === 0}>
+        <option value="">{lists.length === 0 ? 'Select a board first…' : 'Select a list…'}</option>
+        {lists.map((list) => <option key={list.id} value={list.id}>{list.title}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function renderEnumSelect(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange } = args;
+  const id = `cfg-${key}`;
+  return (
+    <div key={key}>
+      <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} required={fieldDef.required}>
+        <option value="">Choose…</option>
+        {(fieldDef.options ?? []).map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function renderBoolean(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange } = args;
+  const id = `cfg-${key}`;
+  return (
+    <div key={key} className="flex items-center gap-2">
+      <input id={id} type="checkbox" className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-2 focus:ring-blue-500" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+      <label htmlFor={id} className="text-xs font-medium text-slate-400">{fieldDef.label}</label>
+    </div>
+  );
+}
+
+function renderNumber(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange } = args;
+  const id = `cfg-${key}`;
+  return (
+    <div key={key}>
+      <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
+      <input id={id} type="number" className={SELECT_CLASS} value={typeof value === 'number' ? value : ''} onChange={(e) => onChange(Number(e.target.value))} required={fieldDef.required} />
+    </div>
+  );
+}
+
+function renderText(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, value, onChange } = args;
+  const id = `cfg-${key}`;
+  return (
+    <div key={key}>
+      <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
+      <input id={id} type="text" className={INPUT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} required={fieldDef.required} />
+    </div>
+  );
+}
+
+type TypeRenderer = (args: RenderArgs) => JSX.Element;
+
+const TYPE_RENDERERS: Record<string, TypeRenderer> = {
+  'list-select': renderListSelect,
+  'board-select': renderBoardSelect,
+  'target-list-select': renderTargetListSelect,
+  boolean: renderBoolean,
+  number: renderNumber,
+};
+
+export function renderConfigField(args: RenderArgs): JSX.Element {
+  const renderer = TYPE_RENDERERS[args.fieldDef.type];
+  if (renderer) return renderer(args);
+  if (args.fieldDef.type === 'select' && args.fieldDef.options) return renderEnumSelect(args);
+  return renderText(args);
 }

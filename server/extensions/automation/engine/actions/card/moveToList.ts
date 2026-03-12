@@ -24,6 +24,9 @@ export const cardMoveToListAction: ActionHandler = {
     const targetList = await trx('lists').where({ id: config.listId }).first();
     if (!targetList) throw new Error('target-list-not-found');
 
+    // Guard: the target list must belong to the same board as the automation.
+    if (targetList.board_id !== automation.board_id) throw new Error('target-list-on-different-board');
+
     const targetCards = await trx('cards')
       .where({ list_id: config.listId, archived: false })
       .whereNot({ id: cardId })

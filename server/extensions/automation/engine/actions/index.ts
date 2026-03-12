@@ -11,6 +11,7 @@ import { listMoveAllCardsAction } from './list/moveAllCards';
 import { cardMoveToListAction } from './card/moveToList';
 import { cardMoveToTopAction } from './card/moveToTop';
 import { cardMoveToBottomAction } from './card/moveToBottom';
+import { cardCopyToBoardAction } from './card/copyToBoard';
 import { cardAddLabelAction } from './card/addLabel';
 import { cardRemoveLabelAction } from './card/removeLabel';
 import { cardAddMemberAction } from './card/addMember';
@@ -44,6 +45,7 @@ registerAction(cardAddCommentAction);
 registerAction(cardArchiveAction);
 registerAction(cardAddChecklistAction);
 registerAction(cardMentionMembersAction);
+registerAction(cardCopyToBoardAction);
 
 // Re-export individual handlers for direct use and testing.
 export {

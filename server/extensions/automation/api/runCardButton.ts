@@ -29,16 +29,21 @@ export async function handleRunCardButton(
     return Response.json({ error: { name: 'card-not-found' } }, { status: 404 });
   }
 
-  // Verify caller is a board member.
+  // Verify caller is a workspace member of the board.
   const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) {
     return Response.json({ error: { name: 'list-not-found' } }, { status: 404 });
   }
 
-  const boardMember = await db('board_members')
-    .where({ board_id: list.board_id, user_id: currentUser.id })
+  const boardForCard = await db('boards').where({ id: list.board_id }).first();
+  if (!boardForCard) {
+    return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
+  }
+
+  const boardMembership = await db('memberships')
+    .where({ user_id: currentUser.id, workspace_id: boardForCard.workspace_id })
     .first();
-  if (!boardMember) {
+  if (!boardMembership) {
     return Response.json({ error: { name: 'not-a-board-member' } }, { status: 403 });
   }
 

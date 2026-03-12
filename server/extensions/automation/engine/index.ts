@@ -49,7 +49,17 @@ export async function evaluate({ boardId, event, context }: EvaluateInput): Prom
     for (let i = 0; i < matching.length; i += automationConfig.maxConcurrent) {
       const batch = matching.slice(i, i + automationConfig.maxConcurrent);
       await Promise.all(
-        batch.map((automation) => runOne({ automation, event, evalContext: context })),
+        batch.map((automation) => {
+          // For RULE automations the actor is always the automation's creator — not the user
+          // who triggered the event. This keeps rules personal: actions (comments, copies,
+          // moves) are attributed to the person who set the rule up, and permission checks
+          // (e.g. card.copy_to_board) run against the creator's access, not the event actor.
+          const ruleEvalContext: typeof context = {
+            ...context,
+            actorId: automation.created_by,
+          };
+          return runOne({ automation, event, evalContext: ruleEvalContext });
+        }),
       );
     }
   } catch {

@@ -19,6 +19,7 @@ import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
 import { handleGetArchivedCards } from './archived-cards';
 import { handleInviteGuest, handleRevokeGuest, handleListGuests } from './guests/index';
+import { handleGetWorkspaceBoards } from './workspaceBoards';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -107,6 +108,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (guestRevokeMatch && req.method === 'DELETE') {
       return handleRevokeGuest(req, boardId, guestRevokeMatch[1] as string);
     }
+
+    // GET /api/v1/boards/:id/workspace/boards — list all ACTIVE boards in the same workspace
+    if (sub === '/workspace/boards' && req.method === 'GET') return handleGetWorkspaceBoards(req, boardId);
   }
 
   return null;

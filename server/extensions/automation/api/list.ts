@@ -12,9 +12,11 @@ export async function handleListAutomations(req: Request, boardId: string): Prom
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+  const currentUser = (req as AuthenticatedRequest).currentUser!;
 
+  // Automations are private to their creator — each user only sees their own.
   const automations = await db('automations')
-    .where({ board_id: boardId })
+    .where({ board_id: boardId, created_by: currentUser.id })
     .orderBy('created_at', 'asc')
     .select('*');
 

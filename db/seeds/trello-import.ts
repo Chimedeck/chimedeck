@@ -282,8 +282,13 @@ async function main() {
   // 1. Collect unique entities from all cards
   // -------------------------------------------------------------------------
 
-  // workspaces / boards keyed by idBoard (we use the Trello board ID as both)
+  // Single Journeyhorizon workspace — all Trello boards belong to this one org
+  const JOURNEYHORIZON_WORKSPACE_ID = 'journeyhorizon';
+  const JOURNEYHORIZON_WORKSPACE_NAME = 'Journeyhorizon';
+
+  // workspaces — single org; boards are keyed by their Trello board ID
   const workspaceSet = new Map<string, { id: string; name: string }>();
+  workspaceSet.set(JOURNEYHORIZON_WORKSPACE_ID, { id: JOURNEYHORIZON_WORKSPACE_ID, name: JOURNEYHORIZON_WORKSPACE_NAME });
   const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
@@ -292,13 +297,12 @@ async function main() {
   const memberDataMap = new Map<string, TrelloMember>();
 
   for (const card of cards) {
-    // Board / workspace — prefer the name from card.board if present
-    if (!workspaceSet.has(card.idBoard)) {
+    // Board — prefer the name from card.board if present; all boards belong to the single workspace
+    if (!boardSet.has(card.idBoard)) {
       const boardName = card.board?.name ?? card.idBoard;
-      workspaceSet.set(card.idBoard, { id: card.idBoard, name: boardName });
       boardSet.set(card.idBoard, {
         id: card.idBoard,
-        workspace_id: card.idBoard,
+        workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
         title: boardName,
         state: 'ACTIVE',
       });
@@ -320,7 +324,7 @@ async function main() {
       if (!labelSet.has(label.id)) {
         labelSet.set(label.id, {
           id: label.id,
-          workspace_id: label.idBoard,
+          workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
           name: label.name || 'Label',
           color: trelloColor(label.color),
         });
@@ -359,7 +363,8 @@ async function main() {
   }
 
   console.log(`\n📊  Unique entities:`);
-  console.log(`    Workspaces / Boards : ${workspaceSet.size}`);
+  console.log(`    Workspaces          : ${workspaceSet.size}`);
+  console.log(`    Boards              : ${boardSet.size}`);
   console.log(`    Lists               : ${listSet.size}`);
   console.log(`    Labels              : ${labelSet.size}`);
   console.log(`    Members             : ${memberSet.size}`);
@@ -656,32 +661,25 @@ async function main() {
   //    This is a cross-product; we do it after cards so we know who's who.
   // -------------------------------------------------------------------------
 
-  // Build workspace→member mapping from cards
-  const workspaceMemberMap = new Map<string, Set<string>>();
+  // Collect all member users across every board into the single Journeyhorizon workspace
+  const workspaceMemberSet = new Set<string>();
   for (const card of cards) {
-    if (!workspaceMemberMap.has(card.idBoard)) {
-      workspaceMemberMap.set(card.idBoard, new Set());
-    }
     for (const mid of card.idMembers ?? []) {
-      workspaceMemberMap.get(card.idBoard)!.add(memberId(mid));
+      workspaceMemberSet.add(memberId(mid));
     }
   }
 
   const membershipRows: object[] = [];
-  for (const [workspaceId, userIds] of workspaceMemberMap.entries()) {
-    for (const userId of userIds) {
-      membershipRows.push({ user_id: userId, workspace_id: workspaceId, role: 'MEMBER' });
-    }
+  for (const userId of workspaceMemberSet) {
+    membershipRows.push({ user_id: userId, workspace_id: JOURNEYHORIZON_WORKSPACE_ID, role: 'MEMBER' });
   }
 
-  // System user is OWNER
-  for (const workspaceId of workspaceSet.keys()) {
-    membershipRows.push({
-      user_id: SYSTEM_USER_ID,
-      workspace_id: workspaceId,
-      role: 'OWNER',
-    });
-  }
+  // System user is OWNER of the single Journeyhorizon workspace
+  membershipRows.push({
+    user_id: SYSTEM_USER_ID,
+    workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+    role: 'OWNER',
+  });
 
   console.log(`🔗  Creating ${membershipRows.length.toLocaleString()} workspace memberships…`);
   await batchInsert('memberships', membershipRows, ['user_id', 'workspace_id']);

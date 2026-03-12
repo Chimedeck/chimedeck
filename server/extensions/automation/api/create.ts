@@ -47,6 +47,14 @@ export async function handleCreateAutomation(req: Request, boardId: string): Pro
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
+  // Only workspace members with at least MEMBER role can manage automations.
+  const membership = await db('memberships')
+    .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
+    .first();
+  if (!membership || !['OWNER', 'ADMIN', 'MEMBER'].includes(membership.role)) {
+    return Response.json({ error: { name: 'insufficient-role' } }, { status: 403 });
+  }
+
   let body: CreateAutomationBody;
   try {
     body = (await req.json()) as CreateAutomationBody;
