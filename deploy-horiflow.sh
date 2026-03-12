@@ -12,7 +12,7 @@
 
 COMPOSE_FILE=docker-compose.horiflow.prod.yml
 AWS_REGION=${AWS_REGION:-ap-southeast-1}
-export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db,local-s3,redis}
+export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db,local-s3}
 
 # Main deployment config
 MAIN_CONTAINER_NAME=horiflow-prod

@@ -478,6 +478,9 @@ async function main() {
         nickname: richData?.username || trelloId,
         avatar_url: avatarUrlMap.get(trelloId) ?? null,
         password_hash: hashes[j],
+        // [why] Seeded accounts are trusted imports — skip the email verification
+        // flow so they can log in immediately even when FLAG_EMAIL_VERIFICATION_ENABLED=true.
+        email_verified: true,
       });
     }
     if ((i / HASH_CONCURRENCY) % 5 === 0) {
