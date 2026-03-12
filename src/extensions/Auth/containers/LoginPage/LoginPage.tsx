@@ -30,7 +30,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">Kanban</span>
+          <span className="text-xl font-bold text-white">HoriFlow</span>
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-1">{translations.login.title}</h1>

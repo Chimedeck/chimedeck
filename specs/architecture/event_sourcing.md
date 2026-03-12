@@ -1,4 +1,4 @@
-# Event Sourcing — Trello Kanban App
+# Event Sourcing — Kanban App
 
 ## Principles
 - All state changes are events

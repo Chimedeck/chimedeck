@@ -1,4 +1,4 @@
-# Vello
+# HoriFlow
 
 A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.  
 This repo also contains the agent loop that builds it sprint by sprint.

@@ -1,7 +1,7 @@
 {
-  "name": "agentic-trello-replacement",
+  "name": "horiflow",
   "version": "0.1.0",
-  "description": "Vello — server",
+  "description": "horiflow — server",
   "module": "server/index.ts",
   "type": "module",
   "scripts": {

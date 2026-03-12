@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Deploy script for Vello — runs on the host machine alongside docker-compose.vello.stag.yml
+# Deploy script for HoriFlow — runs on the host machine alongside docker-compose.horiflow.prod.yml
 # Required env vars:
-#   IMAGE_URL        — full image URI, e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/vello-app:abc1234
+#   IMAGE_URL        — full image URI, e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/horiflow-app:abc1234
 #   AWS_REGION       — AWS region for ECR login (default: ap-southeast-1)
 # Optional env vars:
 #   COMPOSE_PROFILES — comma-separated list of profiles to activate (default: local-db,local-s3,redis)
@@ -10,17 +10,17 @@
 #                      redis     → start Redis sidecar
 #                      e.g. COMPOSE_PROFILES="" to use all external AWS services
 
-COMPOSE_FILE=docker-compose.vello.stag.yml
+COMPOSE_FILE=docker-compose.horiflow.prod.yml
 AWS_REGION=${AWS_REGION:-ap-southeast-1}
 export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db,local-s3,redis}
 
 # Main deployment config
-MAIN_CONTAINER_NAME=vello-stag
-MAIN_APP_PORT=6405
+MAIN_CONTAINER_NAME=horiflow-prod
+MAIN_APP_PORT=6402
 
 # Fallback deployment config
-FALLBACK_CONTAINER_NAME=vello-stag-fallback
-FALLBACK_APP_PORT=6415
+FALLBACK_CONTAINER_NAME=horiflow-prod-fallback
+FALLBACK_APP_PORT=6412
 
 echo "Begin deploy process"
 set -e
@@ -60,8 +60,8 @@ sleep 5
 
 echo "____________________"
 echo "Working on NGINX to use fallback server"
-sudo rm -f /etc/nginx/conf.d/main-vello.conf
-sudo cp ./fallback-vello.conf /etc/nginx/conf.d/
+sudo rm -f /etc/nginx/conf.d/main-horiflow.conf
+sudo cp ./fallback-horiflow.conf /etc/nginx/conf.d/
 sudo systemctl restart nginx
 echo "____________________"
 
@@ -78,8 +78,8 @@ sleep 5
 
 echo "____________________"
 echo "Switch NGINX to use main server"
-sudo rm -f /etc/nginx/conf.d/fallback-vello.conf
-sudo cp ./main-vello.conf /etc/nginx/conf.d/
+sudo rm -f /etc/nginx/conf.d/fallback-horiflow.conf
+sudo cp ./main-horiflow.conf /etc/nginx/conf.d/
 sudo systemctl restart nginx
 echo "____________________"
 

@@ -87,7 +87,7 @@ export default function AppShell() {
           >
             <Bars3Icon className="h-5 w-5" aria-hidden="true" />
           </button>
-          <span className="text-base font-bold text-white">Kanban</span>
+          <span className="text-base font-bold text-white">HoriFlow</span>
           <div className="ml-auto">
             <NotificationContainer />
           </div>

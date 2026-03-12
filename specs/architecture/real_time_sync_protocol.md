@@ -1,4 +1,4 @@
-# Real-Time Sync Protocol — Trello Kanban App
+# Real-Time Sync Protocol — Kanban App
 
 ## Transport
 - WebSocket (wss://)

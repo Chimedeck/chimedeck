@@ -1,4 +1,4 @@
-name: vello-dev
+name: horiflow-dev
 
 services:
   app:
@@ -21,18 +21,18 @@ services:
       context: .
       dockerfile: Dockerfile.postgres
     environment:
-      POSTGRES_USER: vello
-      POSTGRES_PASSWORD: vello
-      POSTGRES_DB: vello_dev
+      POSTGRES_USER: horiflow
+      POSTGRES_PASSWORD: horiflow
+      POSTGRES_DB: horiflow_dev
     command: >
       postgres -c shared_preload_libraries=pg_cron
-               -c cron.database_name=vello_dev
+               -c cron.database_name=horiflow_dev
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vello"]
+      test: ["CMD-SHELL", "pg_isready -U horiflow"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -44,7 +44,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-vello}
+      S3_BUCKET: ${S3_BUCKET:-horiflow}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

@@ -10,9 +10,9 @@ export function buildVerificationEmail({ verificationUrl }: VerificationEmailInp
   html: string;
   text: string;
 } {
-  const subject = 'Verify your email — Kanban';
+  const subject = 'Verify your email — HoriFlow';
 
-  const text = `Welcome to Kanban!\n\nPlease verify your email address by visiting the link below:\n\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create an account, you can safely ignore this email.`;
+  const text = `Welcome to HoriFlow!\n\nPlease verify your email address by visiting the link below:\n\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create an account, you can safely ignore this email.`;
 
   const html = `
 <!DOCTYPE html>

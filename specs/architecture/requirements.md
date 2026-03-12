@@ -1,4 +1,4 @@
-# Vello Application Requirements
+# HoriFlow Application Requirements
 
 ## 1. Goal and Scope
 
