@@ -7,6 +7,7 @@ import type {
   ActionType,
   CreateAutomationPayload,
   UpdateAutomationPayload,
+  CardButtonRunResult,
 } from './types';
 
 type Api = typeof apiClient;
@@ -63,4 +64,14 @@ export async function getTriggerTypes(): Promise<{ data: TriggerType[] }> {
 
 export async function getActionTypes(): Promise<{ data: ActionType[] }> {
   return apiClient.get('/automation/action-types');
+}
+
+export async function runCardButton({
+  cardId,
+  automationId,
+}: {
+  cardId: string;
+  automationId: string;
+}): Promise<{ data: CardButtonRunResult }> {
+  return apiClient.post(`/cards/${cardId}/automation-buttons/${automationId}/run`, {});
 }

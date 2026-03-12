@@ -50,10 +50,11 @@ export interface ActionType {
 export interface CreateAutomationPayload {
   name: string;
   automationType: AutomationType;
+  icon?: string | null;
   trigger: {
     triggerType: string;
     config: Record<string, unknown>;
-  };
+  } | null;
   actions: Array<{
     actionType: string;
     position: number;
@@ -64,6 +65,7 @@ export interface CreateAutomationPayload {
 export interface UpdateAutomationPayload {
   name?: string;
   isEnabled?: boolean;
+  icon?: string | null;
   trigger?: {
     triggerType: string;
     config: Record<string, unknown>;
@@ -77,3 +79,9 @@ export interface UpdateAutomationPayload {
 
 // UI tab state for AutomationPanel
 export type AutomationTab = 'rules' | 'buttons' | 'schedule' | 'log';
+
+// Result returned by POST .../automation-buttons/:automationId/run
+export interface CardButtonRunResult {
+  runLogId: string;
+  status: 'SUCCESS' | 'PARTIAL' | 'FAILED';
+}

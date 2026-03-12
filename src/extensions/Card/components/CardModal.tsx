@@ -18,6 +18,7 @@ import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
 import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
 import CustomFieldsSection from '../../CustomFields/CustomFieldsSection';
 import { AttachmentPanel } from '../../Attachments/components/AttachmentPanel';
+import CardButtonsSection from '../../Automation/components/CardButtons/CardButtonsSection';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -177,6 +178,12 @@ const CardModal = ({
                 />
 
                 <AttachmentPanel cardId={card.id} />
+
+                <CardButtonsSection
+                  boardId={boardId}
+                  cardId={card.id}
+                  disabled={isReadOnly}
+                />
 
                 <ActivityFeed
                   boardId={boardId}

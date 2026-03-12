@@ -7,6 +7,7 @@ import { handleUpdateAutomation } from './update';
 import { handleDeleteAutomation } from './delete';
 import { handleGetTriggerTypes } from './triggerTypes';
 import { handleGetActionTypes } from './actionTypes';
+import { handleRunCardButton } from './runCardButton';
 // Register all card action handlers so the executor can resolve them by type.
 import '../engine/actions/index';
 
@@ -38,6 +39,16 @@ export async function automationRouter(req: Request, pathname: string): Promise<
     if (req.method === 'PATCH') return handleUpdateAutomation(req, boardId, automationId);
     if (req.method === 'DELETE') return handleDeleteAutomation(req, boardId, automationId);
     return null;
+  }
+
+  // POST /api/v1/cards/:cardId/automation-buttons/:automationId/run
+  const runCardButtonMatch = pathname.match(
+    /^\/api\/v1\/cards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/,
+  );
+  if (runCardButtonMatch && req.method === 'POST') {
+    const cardId = runCardButtonMatch[1] as string;
+    const automationId = runCardButtonMatch[2] as string;
+    return handleRunCardButton(req, cardId, automationId);
   }
 
   return null;
