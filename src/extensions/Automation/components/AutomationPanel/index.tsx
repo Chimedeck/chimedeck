@@ -7,6 +7,8 @@ import { getAutomations } from '../../api';
 import AutomationList from './AutomationList';
 import AutomationEmptyState from './AutomationEmptyState';
 import RuleBuilder from './RuleBuilder';
+import ButtonsTab from './ButtonsTab';
+import SchedulePanel from '../SchedulePanel';
 
 interface Props {
   boardId: string;
@@ -176,8 +178,20 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
               )}
             </>
           )}
-          {activeTab === 'buttons' && <ComingSoon tab="buttons" />}
-          {activeTab === 'schedule' && <ComingSoon tab="schedule" />}
+          {activeTab === 'buttons' && (
+            <ButtonsTab
+              boardId={boardId}
+              automations={automations}
+              onChanged={loadAutomations}
+            />
+          )}
+          {activeTab === 'schedule' && (
+            <SchedulePanel
+              boardId={boardId}
+              automations={automations}
+              onChanged={loadAutomations}
+            />
+          )}
           {activeTab === 'log' && <ComingSoon tab="log" />}
         </div>
       </div>
