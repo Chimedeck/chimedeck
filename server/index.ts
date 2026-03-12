@@ -34,6 +34,7 @@ import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
+import { startAutomationScheduler } from './extensions/automation/scheduler/index';
 import { initObservability } from './mods/observability/index';
 
 // Initialise OTel tracing + metrics (no-op when OTEL_ENABLED=false)
@@ -47,6 +48,9 @@ await ensureBucketExists();
 
 // Start presence expiry background job — fires every 10 s
 startExpiryJob(() => new Set(rooms.keys()));
+
+// Start automation scheduler (pg LISTEN or Bun Worker fallback depending on config)
+await startAutomationScheduler();
 
 // Serve a static file from the dist/ folder (production SPA assets)
 async function serveStatic(filePath: string): Promise<Response | null> {
