@@ -17,11 +17,16 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     environment:
       POSTGRES_USER: vello
       POSTGRES_PASSWORD: vello
       POSTGRES_DB: vello_dev
+    command: >
+      postgres -c shared_preload_libraries=pg_cron
+               -c cron.database_name=vello_dev
     ports:
       - "5432:5432"
     volumes:

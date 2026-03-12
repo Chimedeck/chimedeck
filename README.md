@@ -19,7 +19,7 @@ bun install
 # 2. Copy environment config and edit as needed
 cp .env.example .env
 
-# 3. Start Postgres + LocalStack S3 (Redis is optional)
+# 3. Build + start Postgres (pg_cron image built on first run, ~20 s) + LocalStack S3
 docker compose up -d postgres localstack
 
 # 4. Run database migrations
@@ -54,6 +54,9 @@ FLAG_USE_REDIS=false bun run dev
 
 # Run without virus scanning
 FLAG_VIRUS_SCAN_ENABLED=false bun run dev
+
+# Use Bun Worker scheduler instead of pg_cron (default for local dev)
+AUTOMATION_USE_PGCRON=false bun run dev
 ```
 
 ### Available scripts
@@ -117,14 +120,21 @@ docker run --rm --env-file .env.production \
   <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG} \
   bun run db:migrate
 
-# 3. Start the app (Compose reuses the already-pulled image)
+# 3. (One-time, local-db profile only) Activate pg_cron after the first migration
+#    Skip this step when using external RDS — configure pg_cron there separately.
+docker compose -f docker-compose.prod.yml --profile local-db exec postgres \
+  psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
+  -c "CREATE EXTENSION IF NOT EXISTS pg_cron;" \
+  -c "SELECT cron.schedule('automation-tick','* * * * *',\$\$SELECT automation_scheduler_tick()\$\$);"
+
+# 4. Start the app (Compose reuses the already-pulled image)
 #
 # Default — external RDS + S3 (AWS managed):
 DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/vello-app \
 IMAGE_TAG=${IMAGE_TAG} \
 docker compose -f docker-compose.prod.yml up -d
 
-# With internal Postgres instead of RDS:
+# With internal Postgres instead of RDS (builds Dockerfile.postgres on first run, ~20 s):
 docker compose -f docker-compose.prod.yml --profile local-db up -d
 
 # With LocalStack instead of AWS S3:
@@ -161,6 +171,7 @@ Key production-only variables:
 | Variable | Default | Effect |
 |---|---|---|
 | `SEED_TRELLO` | `false` | Runs `bun run db:seed:trello` before the server starts |
+| `AUTOMATION_USE_PGCRON` | `false` | `true` enables pg_cron scheduling; `false` uses Bun Worker (setInterval) fallback — the fallback does not survive restarts so use `true` in production |
 
 Set `SEED_TRELLO=true` in `.env.production` for the first deployment to import Trello data, then set it back to `false`.
 

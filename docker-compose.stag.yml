@@ -31,8 +31,13 @@ services:
 
   postgres:
     profiles: [local-db]
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     env_file: .env.staging
+    command: >
+      postgres -c shared_preload_libraries=pg_cron
+               -c cron.database_name=${POSTGRES_DB:-vello}
     ports:
       - "6403:5432"
     volumes:
