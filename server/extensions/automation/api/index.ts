@@ -11,7 +11,6 @@ import { handleRunCardButton } from './runCardButton';
 import { handleRunBoardButton } from './runBoardButton';
 import { handleGetAutomationRuns } from './runs';
 import { handleGetBoardRuns } from './boardRuns';
-import { handleGetAutomationQuota } from './quota';
 // Register all card action handlers so the executor can resolve them by type.
 import '../engine/actions/index';
 
@@ -60,13 +59,6 @@ export async function automationRouter(req: Request, pathname: string): Promise<
   if (boardRunsMatch && req.method === 'GET') {
     const boardId = boardRunsMatch[1] as string;
     return handleGetBoardRuns(req, boardId);
-  }
-
-  // GET /api/v1/boards/:boardId/automation-quota
-  const quotaMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/automation-quota$/);
-  if (quotaMatch && req.method === 'GET') {
-    const boardId = quotaMatch[1] as string;
-    return handleGetAutomationQuota(req, boardId);
   }
 
   // POST /api/v1/cards/:cardId/automation-buttons/:automationId/run

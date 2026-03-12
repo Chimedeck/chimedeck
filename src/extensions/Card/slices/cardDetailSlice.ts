@@ -13,6 +13,8 @@ export interface ActivityData {
   board_id: string | null;
   action: string;
   actor_id: string;
+  actor_name: string | null;
+  actor_email: string | null;
   payload: Record<string, unknown>;
   created_at: string;
 }

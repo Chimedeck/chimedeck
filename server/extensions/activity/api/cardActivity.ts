@@ -41,5 +41,21 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
     .whereIn('action', VISIBLE_EVENT_TYPES)
     .orderBy('created_at', 'desc');
 
-  return Response.json({ data: activities });
+  // Join actor display info so the client never has to resolve IDs separately
+  const actorIds = [...new Set(activities.map((a) => a.actor_id))];
+  const actors = actorIds.length
+    ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email')
+    : [];
+  const actorMap = new Map(actors.map((u) => [u.id, u]));
+
+  const data = activities.map((a) => {
+    const actor = actorMap.get(a.actor_id);
+    return {
+      ...a,
+      actor_name: actor?.name ?? null,
+      actor_email: actor?.email ?? null,
+    };
+  });
+
+  return Response.json({ data });
 }

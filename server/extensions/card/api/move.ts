@@ -1,7 +1,7 @@
 // PATCH /api/v1/cards/:id/move — move card to another list (or reorder within same list); min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { publisher } from '../../../mods/pubsub/publisher';
 import {
   requireWorkspaceMembership,
@@ -112,7 +112,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
 
   // Client expects { card, fromListId } to update both card slice and board slice
   const fromListId = card.list_id;
-  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId } });
+  await dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId, toListId: updated[0].list_id } });
 
   // Broadcast to all other board subscribers so their kanban updates in real time
   publisher.publish(

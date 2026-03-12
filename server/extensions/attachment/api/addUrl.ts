@@ -10,6 +10,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
+import { writeActivity } from '../../activity/mods/write';
 
 // Private/internal IP ranges that must not be targeted (SSRF prevention).
 const FORBIDDEN_RANGES = [
@@ -100,7 +101,16 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     boardId: board.id,
     entityId: cardId,
     actorId,
-    payload: { attachmentId, cardId },
+    payload: { attachmentId, cardId, name: body.name },
+  });
+
+  await writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: 'attachment_added',
+    actorId,
+    payload: { attachmentId, cardId, name: body.name },
   });
 
   publisher

@@ -55,16 +55,21 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
 
       return {
         id: attachment.id,
+        card_id: attachment.card_id,
         name: attachment.name,
         type: attachment.type,
-        mimeType: attachment.mime_type ?? null,
-        sizeBytes: attachment.size_bytes ?? null,
+        content_type: attachment.mime_type ?? null,
+        size_bytes: attachment.size_bytes ?? null,
         status: attachment.status,
+        key: attachment.s3_key ?? null,
+        thumbnail_key: attachment.thumbnail_key ?? null,
         url,
-        thumbnailUrl,
+        thumbnail_url: thumbnailUrl,
+        external_url: attachment.external_url ?? null,
         width: attachment.width ?? null,
         height: attachment.height ?? null,
-        createdAt: attachment.created_at,
+        created_at: attachment.created_at,
+        updated_at: attachment.updated_at,
       };
     }),
   );

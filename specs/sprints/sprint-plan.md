@@ -98,6 +98,7 @@
 | [66](./sprint-66.md) | Automation: Card & Board Buttons UI | Card back "Automation" section with custom Heroicon buttons; board header action buttons; icon picker (24 Heroicons); Buttons tab live | ⬜ Needs 65 + 19 |
 | [67](./sprint-67.md) | Automation: Scheduled Commands UI | Schedule tab live: calendar-command builder, due-date-command builder, schedule summary formatter, 3 quick-start templates | ⬜ Needs 66 + 64 |
 | [68](./sprint-68.md) | Automation: Run History, Logs & Quota | Log tab: paginated run log, expandable rows, real-time WS updates; quota bar (`ChartBarIcon`); monthly quota via env var | ⬜ Needs 67 |
+| [69](./sprint-69.md) | In-House Virus Scanning (ClamAV) | ClamAV sidecar, INSTREAM TCP protocol, EICAR integration test, `REJECTED` UI state with tooltip | ⬜ Needs 59 |
 
 ---
 
@@ -202,6 +203,7 @@ Sprint 65 ──────────── Automation Rules UI: BoltIcon boa
 Sprint 66 ──────────── Automation Buttons UI: card-back buttons, board-header buttons, Heroicon icon picker
 Sprint 67 ──────────── Automation Schedule UI: calendar command builder, due-date command builder, quick-start templates
 Sprint 68 ──────────── Automation Log & Quota: run history log, quota bar, real-time WS updates, monthly quota config
+Sprint 69 ──────────── In-house virus scanning: ClamAV sidecar, INSTREAM protocol, EICAR test, REJECTED UI state
 ```
 
 ---

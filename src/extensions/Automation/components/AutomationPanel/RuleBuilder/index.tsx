@@ -1,13 +1,14 @@
 // RuleBuilder — multi-step guided builder for RULE-type automations.
 // Steps: 1. Trigger picker + config  2. Action list  3. Name + Save
 // Supports both "create" (no initialAutomation) and "edit" (with initialAutomation) modes.
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { Automation, TriggerType } from '../../../types';
-import { createAutomation, updateAutomation } from '../../../api';
+import { createAutomation, updateAutomation, getTriggerTypes } from '../../../api';
 import TriggerPicker from './TriggerPicker';
 import TriggerConfig from './TriggerConfig';
 import ActionList from './ActionList';
+import { hasConfigFields } from './configFieldRenderer';
 import RuleBuilderFooter from './RuleBuilderFooter';
 import type { ActionItemData } from './ActionItem';
 
@@ -20,9 +21,16 @@ interface Props {
 
 const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) => {
   const [selectedTriggerType, setSelectedTriggerType] = useState<TriggerType | null>(null);
+  const [allTriggerTypes, setAllTriggerTypes] = useState<TriggerType[]>([]);
   const [triggerConfig, setTriggerConfig] = useState<Record<string, unknown>>(
     initialAutomation?.trigger?.config ?? {}
   );
+
+  useEffect(() => {
+    getTriggerTypes()
+      .then((res) => setAllTriggerTypes(res.data))
+      .catch(() => {});
+  }, []);
   const [actions, setActions] = useState<ActionItemData[]>(
     initialAutomation?.actions.map((a) => ({
       id: a.id,
@@ -39,6 +47,14 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
   const initialTriggerTypeStr = initialAutomation?.trigger?.triggerType ?? null;
 
   const activeTriggerTypeStr = selectedTriggerType?.type ?? initialTriggerTypeStr;
+
+  // In edit mode, resolve the full TriggerType object from the fetched list so TriggerConfig
+  // can render its config fields even before the user interacts with the picker.
+  const activeTriggerType =
+    selectedTriggerType ??
+    (initialTriggerTypeStr
+      ? (allTriggerTypes.find((t) => t.type === initialTriggerTypeStr) ?? null)
+      : null);
 
   const canSave =
     !!activeTriggerTypeStr && actions.length > 0 && ruleName.trim().length > 0;
@@ -114,17 +130,18 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
           <TriggerPicker
             selectedType={activeTriggerTypeStr}
             onSelect={(t) => {
+              // Only reset config when the trigger type actually changes.
+              if (t.type !== activeTriggerTypeStr) setTriggerConfig({});
               setSelectedTriggerType(t);
-              // Reset config when trigger type changes.
-              setTriggerConfig({});
             }}
           />
-          {selectedTriggerType && Object.keys(selectedTriggerType.configSchema).length > 0 && (
+          {activeTriggerType && hasConfigFields(activeTriggerType.configSchema) && (
             <div className="mt-3">
               <TriggerConfig
-                triggerType={selectedTriggerType}
+                triggerType={activeTriggerType}
                 config={triggerConfig}
                 onChange={setTriggerConfig}
+                boardId={boardId}
               />
             </div>
           )}
@@ -132,7 +149,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
 
         {/* Actions section */}
         <section>
-          <ActionList actions={actions} onChange={setActions} />
+          <ActionList actions={actions} onChange={setActions} boardId={boardId} />
         </section>
 
         {error && (

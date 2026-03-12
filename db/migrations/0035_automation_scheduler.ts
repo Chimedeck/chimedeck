@@ -158,7 +158,8 @@ export async function up(knex: Knex): Promise<void> {
           c.id         AS card_id
         FROM   automations a
         JOIN   automation_triggers t ON t.automation_id = a.id
-        JOIN   cards c ON c.board_id = a.board_id
+        JOIN   lists l ON l.board_id = a.board_id
+        JOIN   cards c ON c.list_id = l.id
         WHERE  a.automation_type = 'DUE_DATE'
           AND  a.is_enabled = TRUE
           AND  c.due_date IS NOT NULL

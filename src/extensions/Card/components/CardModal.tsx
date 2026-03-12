@@ -187,9 +187,11 @@ const CardModal = ({
 
                 <ActivityFeed
                   boardId={boardId}
+                  cardId={card.id}
                   comments={comments}
                   activities={activities}
                   currentUserId={currentUserId}
+                  boardMembers={boardMembers}
                   onAddComment={onAddComment}
                   onEditComment={onEditComment}
                   onDeleteComment={onDeleteComment}

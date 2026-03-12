@@ -1,7 +1,7 @@
 // PATCH /api/v1/cards/:id/archive — toggle card archived state; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -51,7 +51,7 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
     .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*']);
 
   // Client expects { cardId, listId } to remove card from board state
-  await writeEvent({ type: 'card_archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { cardId, listId: card.list_id } });
+  await dispatchEvent({ type: 'card.archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { cardId, listId: card.list_id } });
 
   return Response.json({ data: updated[0] });
 }

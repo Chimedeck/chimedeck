@@ -7,7 +7,7 @@ import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
 import { listAttachments, deleteAttachment, createUrlAttachment } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
-import { AttachmentThumbnail } from './AttachmentThumbnail';
+import { AttachmentThumbnail, VideoThumbnail } from './AttachmentThumbnail';
 import { PasteListener } from './PasteListener';
 import type { Attachment } from '../types';
 import { useEffect } from 'react';
@@ -108,6 +108,11 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
     (a) => a.status === 'READY' && a.content_type?.startsWith('image/'),
   );
 
+  // Separate video attachments (READY + video/* content_type) for thumbnail grid
+  const videoAttachments = attachments.filter(
+    (a) => a.status === 'READY' && a.content_type?.startsWith('video/'),
+  );
+
   // Find the progress for a given server attachment id (by matching attachmentId on upload entries)
   const progressForAttachment = (id: string): number | null => {
     const entry = uploads.find((u) => u.attachmentId === id && u.phase === 'uploading');
@@ -119,11 +124,12 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
       {/* Invisible paste listener — active whenever this panel is mounted */}
       <PasteListener enabled={true} onFiles={upload} />
 
-      {/* Hidden file input */}
+      {/* Hidden file input — accept covers all server-allowed types; server re-validates */}
       <input
         ref={fileInputRef}
         type="file"
         multiple
+        accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,text/markdown,application/zip,application/x-tar,application/gzip,audio/*"
         className="hidden"
         onChange={handleFileInputChange}
         data-testid="attachment-file-input"
@@ -131,14 +137,14 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
 
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
-          <PaperClipIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
+        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
+          <PaperClipIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
           Attachments
         </h3>
         <button
           type="button"
           onClick={handlePickerClick}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 rounded px-2 py-1 transition-colors"
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 border border-slate-600 hover:border-slate-400 rounded px-2 py-1 transition-colors"
           data-testid="attach-file-button"
         >
           <PaperClipIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -185,7 +191,7 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
       )}
 
       {attachments.length === 0 && uploads.filter((u) => u.phase !== 'done').length === 0 && (
-        <p className="text-xs text-gray-400 italic mt-1">No attachments yet. Drop a file or click "Attach file".</p>
+        <p className="text-xs text-slate-500 italic mt-1">No attachments yet. Drop a file or click "Attach file".</p>
       )}
 
       <div className="space-y-0" data-testid="attachment-list">
@@ -202,10 +208,22 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
       {/* Thumbnail grid — image/* READY attachments */}
       {imageAttachments.length > 0 && (
         <div className="mt-3" data-testid="attachment-thumbnail-grid">
-          <p className="text-xs text-gray-400 mb-2">Images</p>
+          <p className="text-xs text-slate-400 mb-2">Images</p>
           <div className="flex flex-wrap gap-2">
             {imageAttachments.map((a) => (
               <AttachmentThumbnail key={a.id} attachment={a} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Thumbnail grid — video/* READY attachments */}
+      {videoAttachments.length > 0 && (
+        <div className="mt-3" data-testid="attachment-video-grid">
+          <p className="text-xs text-slate-400 mb-2">Videos</p>
+          <div className="flex flex-wrap gap-2">
+            {videoAttachments.map((a) => (
+              <VideoThumbnail key={a.id} attachment={a} />
             ))}
           </div>
         </div>
@@ -225,7 +243,7 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               required
-              className="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
               data-testid="link-url-input"
               autoFocus
             />
@@ -234,7 +252,7 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
               placeholder="Display name (optional)"
               value={linkName}
               onChange={(e) => setLinkName(e.target.value)}
-              className="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
               data-testid="link-name-input"
             />
             <div className="flex gap-2">
@@ -253,7 +271,7 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
                   setLinkUrl('');
                   setLinkName('');
                 }}
-                className="text-xs text-gray-500 hover:text-gray-700 rounded px-3 py-1.5 border border-gray-200 hover:border-gray-300"
+                className="text-xs text-slate-400 hover:text-slate-200 rounded px-3 py-1.5 border border-slate-600 hover:border-slate-400"
               >
                 Cancel
               </button>

@@ -9,7 +9,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { writeActivity } from '../../activity/mods/write';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 
 // ISO 4217 3-letter currency code regex
 const CURRENCY_RE = /^[A-Z]{3}$/;
@@ -101,8 +101,8 @@ export async function handlePatchCard(req: Request, cardId: string): Promise<Res
       payload: { amount: updated.amount, currency: updated.currency },
     });
 
-    await writeEvent({
-      type: 'card_updated',
+    await dispatchEvent({
+      type: 'card.updated',
       boardId: board.id,
       entityId: cardId,
       actorId,

@@ -96,11 +96,11 @@ export async function createUrlAttachment({
 // ---------- Delete ----------
 
 export async function deleteAttachment({
-  cardId,
+  cardId: _cardId,
   attachmentId,
 }: {
   cardId: string;
   attachmentId: string;
 }): Promise<void> {
-  return apiClient.delete(`/cards/${cardId}/attachments/${attachmentId}`);
+  return apiClient.delete(`/attachments/${attachmentId}`);
 }

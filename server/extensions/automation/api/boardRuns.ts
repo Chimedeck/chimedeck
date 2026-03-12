@@ -53,7 +53,7 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
       'a.automation_type as automationType',
       'r.status',
       'r.card_id as cardId',
-      'c.name as cardName',
+      'c.title as cardName',
       'r.triggered_by_user_id as triggeredByUserId',
       'u.name as triggeredByUserName',
       'r.ran_at as ranAt',

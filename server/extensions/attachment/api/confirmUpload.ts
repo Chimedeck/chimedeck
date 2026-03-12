@@ -11,6 +11,7 @@ import { headObject } from '../mods/s3/headObject';
 import { enqueueScan } from '../mods/virusScan/enqueue';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
+import { writeActivity } from '../../activity/mods/write';
 
 export async function handleConfirmUpload(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -81,7 +82,16 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     boardId: board.id,
     entityId: cardId,
     actorId,
-    payload: { attachmentId: attachment.id, cardId },
+    payload: { attachmentId: attachment.id, cardId, name: attachment.name },
+  });
+
+  await writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: 'attachment_added',
+    actorId,
+    payload: { attachmentId: attachment.id, cardId, name: attachment.name },
   });
 
   publisher

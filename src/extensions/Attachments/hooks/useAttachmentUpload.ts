@@ -11,6 +11,7 @@ import {
   abortMultipart,
 } from '../api';
 import type { UploadEntry, CompletedPart } from '../types';
+import config from '~/config';
 
 const MULTIPART_THRESHOLD = 5 * 1024 * 1024; // 5 MB
 const PART_SIZE = 5 * 1024 * 1024;           // 5 MB per part
@@ -103,7 +104,15 @@ export function useAttachmentUpload({
 
   const upload = useCallback(
     (files: File[]) => {
-      const newEntries: UploadEntry[] = files.map((file) => ({
+      const validFiles = files.filter((file) => {
+        if (file.size > config.maxAttachmentSizeBytes) {
+          onError?.('', `"${file.name}" exceeds the ${config.maxAttachmentSizeBytes / 1024 / 1024} MB size limit`);
+          return false;
+        }
+        return true;
+      });
+
+      const newEntries: UploadEntry[] = validFiles.map((file) => ({
         clientId: uuidv4(),
         file,
         phase: 'requesting-url',

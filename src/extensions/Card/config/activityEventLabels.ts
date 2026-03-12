@@ -15,6 +15,17 @@ const EVENT_LABELS: Record<string, ActivityEventMeta> = {
 
 const FALLBACK: ActivityEventMeta = { label: 'Activity', dotColor: 'bg-slate-600' };
 
-export function getActivityEventMeta(eventType: string): ActivityEventMeta {
+export function getActivityEventMeta(
+  eventType: string,
+  payload?: Record<string, unknown>,
+): ActivityEventMeta {
+  if (eventType === 'attachment_added') {
+    const name = typeof payload?.name === 'string' ? payload.name : 'a file';
+    return { label: `attached ${name} to this card`, dotColor: 'bg-blue-400' };
+  }
+  if (eventType === 'attachment_removed') {
+    const name = typeof payload?.name === 'string' ? payload.name : 'a file';
+    return { label: `removed attachment ${name}`, dotColor: 'bg-slate-500' };
+  }
   return EVENT_LABELS[eventType] ?? FALLBACK;
 }

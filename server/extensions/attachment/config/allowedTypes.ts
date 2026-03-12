@@ -1,5 +1,7 @@
 // Centralised MIME-type allowlist and size cap for attachment uploads.
 // Update this file to permit additional file types — avoid scattering allow-lists.
+import { env } from '../../../config/env';
+
 export const ALLOWED_MIME_TYPES: string[] = [
   // Images
   'image/jpeg',
@@ -21,14 +23,22 @@ export const ALLOWED_MIME_TYPES: string[] = [
   'application/zip',
   'application/x-tar',
   'application/gzip',
-  // Video (stored but no preview)
+  // Video
   'video/mp4',
   'video/webm',
+  'video/ogg',
+  'video/quicktime',     // .mov
+  'video/x-msvideo',     // .avi
+  'video/x-matroska',   // .mkv
+  'video/mpeg',
+  'video/3gpp',
+  'video/3gpp2',
+  'video/x-flv',
   // Audio
   'audio/mpeg',
   'audio/ogg',
   'audio/wav',
 ];
 
-/** 100 MB hard cap — applies to both single-file and multipart uploads. */
-export const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+/** Hard cap driven by MAX_ATTACHMENT_SIZE_MB env var (default 250 MB). */
+export const MAX_FILE_SIZE_BYTES = env.MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;

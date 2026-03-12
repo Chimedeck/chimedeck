@@ -20,14 +20,16 @@ import { PlayIcon, PlusIcon } from '@heroicons/react/24/outline';
 import ActionItem, { type ActionItemData } from './ActionItem';
 import ActionPicker from './ActionPicker';
 import ActionConfig from './ActionConfig';
+import { hasConfigFields } from './configFieldRenderer';
 import type { ActionType } from '../../../types';
 
 interface Props {
   actions: ActionItemData[];
   onChange: (actions: ActionItemData[]) => void;
+  boardId: string;
 }
 
-const ActionList = ({ actions, onChange }: Props) => {
+const ActionList = ({ actions, onChange, boardId }: Props) => {
   const [showPicker, setShowPicker] = useState(false);
   // Track which action is being configured (by local id).
   const [configuringId, setConfiguringId] = useState<string | null>(null);
@@ -60,7 +62,7 @@ const ActionList = ({ actions, onChange }: Props) => {
     setActionTypeMeta((prev) => ({ ...prev, [localId]: type }));
     setShowPicker(false);
     // Open config if the action has configurable fields.
-    if (Object.keys(type.configSchema).length > 0) {
+    if (hasConfigFields(type.configSchema)) {
       setConfiguringId(localId);
     }
   };
@@ -101,13 +103,14 @@ const ActionList = ({ actions, onChange }: Props) => {
                       actionType={meta}
                       config={action.config}
                       onChange={(cfg) => handleConfigChange(action.id, cfg)}
+                      boardId={boardId}
                     />
                   ) : null;
                 })()}
                 {/* Show/hide config toggle */}
                 {(() => {
                   const meta = actionTypeMeta[action.id];
-                  if (!meta || Object.keys(meta.configSchema).length === 0) return null;
+                  if (!meta || !hasConfigFields(meta.configSchema)) return null;
                   return (
                     <button
                       type="button"

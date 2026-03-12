@@ -1,7 +1,7 @@
 // PATCH /api/v1/cards/:id — update title, description, due_date, amount, or currency; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { syncMentions } from '../../../common/mentions/sync';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
@@ -157,7 +157,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   });
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
-  await writeEvent({ type: 'card_updated', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0] } });
+  await dispatchEvent({ type: 'card.updated', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0] } });
 
   // Emit activity event when money fields change
   if (body.amount !== undefined || (body.currency !== undefined && body.amount !== null)) {

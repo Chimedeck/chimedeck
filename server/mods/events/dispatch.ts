@@ -21,7 +21,11 @@ export async function dispatchEvent(input: WriteEventInput): Promise<WrittenEven
             actorId: event.actor_id,
             payload: event.payload,
           },
-          context: { actorId: event.actor_id },
+          context: {
+            actorId: event.actor_id,
+            // For card.* events, entityId is the card ID — actions need it.
+            ...(event.type.startsWith('card.') ? { cardId: event.entity_id } : {}),
+          },
         }),
       )
       .catch(() => {

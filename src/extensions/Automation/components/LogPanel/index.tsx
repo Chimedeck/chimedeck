@@ -1,12 +1,11 @@
-// LogPanel/index.tsx — Log tab content: QuotaBar + board-wide RunLogTable.
-// Fetches quota and last 200 runs on mount; re-fetches when page changes.
+// LogPanel/index.tsx — Log tab content: board-wide RunLogTable.
+// Fetches last 200 runs on mount; re-fetches when page changes.
 // Subscribes to automation_ran WS event to prepend new rows in real time.
 import { useEffect, useState, useCallback } from 'react';
 import type { FC } from 'react';
-import type { AutomationQuota, AutomationRunLog, PaginatedRunLogs, Automation } from '../../types';
-import { getBoardRuns, getAutomationQuota } from '../../api';
+import type { AutomationRunLog, PaginatedRunLogs, Automation } from '../../types';
+import { getBoardRuns } from '../../api';
 import { socket } from '~/extensions/Realtime/client/socket';
-import QuotaBar from './QuotaBar';
 import RunLogTable from './RunLogTable';
 
 interface Props {
@@ -17,9 +16,6 @@ interface Props {
 }
 
 const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
-  const [quota, setQuota] = useState<AutomationQuota | null>(null);
-  const [quotaError, setQuotaError] = useState<string | null>(null);
-
   const [runsResult, setRunsResult] = useState<PaginatedRunLogs | null>(null);
   const [runsLoading, setRunsLoading] = useState(false);
   const [runsError, setRunsError] = useState<string | null>(null);
@@ -27,15 +23,6 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
 
   // Real-time rows prepended when automation_ran fires while this tab is open.
   const [prependedRuns, setPrependedRuns] = useState<AutomationRunLog[]>([]);
-
-  // Fetch quota once on mount
-  useEffect(() => {
-    let cancelled = false;
-    getAutomationQuota({ boardId })
-      .then((res) => { if (!cancelled) setQuota(res.data); })
-      .catch(() => { if (!cancelled) setQuotaError('Could not load quota.'); });
-    return () => { cancelled = true; };
-  }, [boardId]);
 
   const fetchRuns = useCallback((targetPage: number) => {
     let cancelled = false;
@@ -96,11 +83,6 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
 
   return (
     <div className="flex flex-col h-full">
-      {quota && <QuotaBar quota={quota} />}
-      {quotaError && (
-        <p className="px-4 py-2 text-xs text-red-400">{quotaError}</p>
-      )}
-
       <RunLogTable
         result={runsResult}
         loading={runsLoading}

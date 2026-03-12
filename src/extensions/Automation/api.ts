@@ -113,11 +113,4 @@ export async function getBoardRuns({
   return apiClient.get(`/boards/${boardId}/automation-runs`, { params });
 }
 
-// Quota — current board's monthly automation run usage
-export async function getAutomationQuota({
-  boardId,
-}: {
-  boardId: string;
-}): Promise<{ data: AutomationQuota }> {
-  return apiClient.get(`/boards/${boardId}/automation-quota`);
-}
+

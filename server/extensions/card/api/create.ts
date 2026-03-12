@@ -2,7 +2,7 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -93,7 +93,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const card = await db('cards').where({ id }).first();
 
   // Broadcast the full card object so clients can update their local state immediately
-  await writeEvent({ type: 'card_created', boardId: list.board_id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card } });
+  await dispatchEvent({ type: 'card.created', boardId: list.board_id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card, listId } });
 
   return Response.json({ data: card }, { status: 201 });
 }

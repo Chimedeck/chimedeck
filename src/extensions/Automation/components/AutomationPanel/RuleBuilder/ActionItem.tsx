@@ -3,6 +3,8 @@
 import { TrashIcon, Bars2Icon } from '@heroicons/react/24/outline';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useAppSelector } from '~/hooks/useAppSelector';
+import { selectLists } from '~/extensions/Board/slices/boardSlice';
 
 export interface ActionItemData {
   id: string; // local id (stable across re-renders)
@@ -22,16 +24,29 @@ const ActionItem = ({ item, onDelete }: Props) => {
     id: item.id,
   });
 
+  const lists = useAppSelector(selectLists);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Resolve known ID fields to human-readable names; fall back to the raw value.
+  const resolveConfigValue = (key: string, value: unknown): string => {
+    if (key === 'listId' && typeof value === 'string' && lists[value]) {
+      return lists[value].title;
+    }
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    if (value !== null && typeof value === 'object') return JSON.stringify(value);
+    return '';
+  };
+
   // Show the first config value as a summary hint (skip if empty).
-  const configSummary = Object.values(item.config)
-    .filter((v) => v !== undefined && v !== null && v !== '')
-    .map(String)
+  const configSummary = Object.entries(item.config)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => resolveConfigValue(k, v))
     .slice(0, 2)
     .join(', ');
 

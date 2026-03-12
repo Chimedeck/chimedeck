@@ -118,10 +118,3 @@ export interface PaginatedRunLogs {
   };
 }
 
-// Quota returned by GET /boards/:boardId/automation-quota
-export interface AutomationQuota {
-  usedRuns: number;
-  maxRuns: number;
-  resetAt: string;
-  percentUsed: number;
-}
