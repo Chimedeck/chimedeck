@@ -6,6 +6,7 @@ import { s3Client, s3Config } from '../../../attachment/common/config/s3';
 import { env } from '../../../../config/env';
 import { resizeAvatar, avatarExtension, isValidAvatarFile } from '../../../../mods/imageProcessor';
 import { deleteObject } from '../../../attachment/mods/s3/deleteObject';
+import { extractS3KeyFromAvatarUrl, resolveAvatarUrl } from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleUploadAvatar(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -54,8 +55,10 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
   const existingUser = await db('users').where({ id: currentUser!.id }).first();
   if (existingUser?.avatar_url) {
     try {
-      const oldKey = existingUser.avatar_url.split('/').slice(-2).join('/'); // avatars/<id>.<ext>
-      await deleteObject({ s3Key: oldKey });
+      const oldKey = extractS3KeyFromAvatarUrl({ avatarUrl: existingUser.avatar_url });
+      if (oldKey) {
+        await deleteObject({ s3Key: oldKey });
+      }
     } catch {
       // Non-fatal — old file may already be gone
     }
@@ -81,5 +84,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
     .update({ avatar_url: avatarUrl })
     .returning('*');
 
-  return Response.json({ data: { avatar_url: user.avatar_url } });
+  const signedAvatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
+  return Response.json({ data: { avatar_url: signedAvatarUrl } });
 }

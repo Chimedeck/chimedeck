@@ -9,6 +9,7 @@ import {
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
+import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -47,6 +48,17 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
         .groupBy('c.id')
     : [];
 
+  const cardsWithResolvedMembers = await Promise.all(
+    cards.map(async (card) => ({
+      ...card,
+      members: await resolveAvatarUrlsInCollection(
+        Array.isArray(card.members)
+          ? (card.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+          : [],
+      ),
+    })),
+  );
+
   const url = new URL(req.url);
   const includes = url.searchParams.get('include')?.split(',') ?? [];
 
@@ -63,6 +75,6 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
 
   return Response.json({
     data: board,
-    includes: { lists, cards, activities },
+    includes: { lists, cards: cardsWithResolvedMembers, activities },
   });
 }

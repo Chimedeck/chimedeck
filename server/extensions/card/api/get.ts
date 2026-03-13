@@ -6,6 +6,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
+import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -44,6 +45,10 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     .where('card_members.card_id', cardId)
     .select('users.id', 'users.email', 'users.name', 'users.avatar_url');
 
+  const members = await resolveAvatarUrlsInCollection(
+    memberRows as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
+  );
+
   const checklistItems = await db('checklist_items')
     .where({ card_id: cardId })
     .orderBy('position', 'asc');
@@ -78,7 +83,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
       list,
       board: { id: board.id, title: board.title },
       labels: labelRows,
-      members: memberRows,
+      members,
       checklistItems,
       comments: [],
       attachments: [],

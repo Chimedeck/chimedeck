@@ -10,6 +10,7 @@ import { flags } from '../../../mods/flags';
 import { send } from '../../email';
 import { buildVerificationEmail } from '../../email/templates/verificationEmail';
 import { env } from '../../../config/env';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 // Rate limit: 10 login attempts per IP per minute.
 const RATE_LIMIT_MAX = 10;
@@ -132,11 +133,13 @@ export async function handleLogin(req: Request): Promise<Response> {
     `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
 
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
   return new Response(
     JSON.stringify({
       data: {
         accessToken,
-        user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url ?? null },
+        user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
     { status: 200, headers: responseHeaders },

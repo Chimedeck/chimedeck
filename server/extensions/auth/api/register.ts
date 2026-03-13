@@ -1,5 +1,5 @@
 // POST /api/v1/auth/register — create a new account and return an auth session.
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { hashPassword } from '../mods/password/hash';
@@ -10,6 +10,7 @@ import { send } from '../../email';
 import { buildVerificationEmail } from '../../email/templates/verificationEmail';
 import { env } from '../../../config/env';
 import { isEmailDomainAllowed } from '../common/emailDomain';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleRegister(req: Request): Promise<Response> {
   let body: { name?: string; email?: string; password?: string };
@@ -106,11 +107,13 @@ export async function handleRegister(req: Request): Promise<Response> {
     `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
 
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
   return new Response(
     JSON.stringify({
       data: {
         accessToken,
-        user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url ?? null },
+        user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
     { status: 201, headers: responseHeaders },

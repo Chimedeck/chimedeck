@@ -3,6 +3,7 @@
 // a real-time event to their personal WS channel.
 import { db } from '../../../common/db';
 import { publishToUser } from '../../realtime/userChannel';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import type { Knex } from 'knex';
 
 interface CreateNotificationsParams {
@@ -51,13 +52,20 @@ export async function createNotificationsForMentions({
     .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
     .first();
 
+  const actorPayload = actor
+    ? {
+        ...actor,
+        avatar_url: await resolveAvatarUrl({ avatarUrl: actor.avatar_url ?? null }),
+      }
+    : { id: actorId, nickname: null, name: null, avatar_url: null };
+
   for (const notification of inserted) {
     publishToUser(notification.user_id, {
       type: 'notification_created',
       payload: {
         notification: {
           ...notification,
-          actor: actor ?? { id: actorId, nickname: null, name: null, avatar_url: null },
+          actor: actorPayload,
         },
       },
     });

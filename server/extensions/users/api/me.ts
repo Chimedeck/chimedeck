@@ -2,6 +2,7 @@
 // PATCH /api/v1/users/me — update name / avatar_url.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetMe(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -17,12 +18,14 @@ export async function handleGetMe(req: Request): Promise<Response> {
     );
   }
 
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
   return Response.json({
     data: {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatar_url: user.avatar_url,
+      avatar_url: avatarUrl,
       created_at: user.created_at,
     },
   });
@@ -64,12 +67,14 @@ export async function handlePatchMe(req: Request): Promise<Response> {
     );
   }
 
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
   return Response.json({
     data: {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatar_url: user.avatar_url,
+      avatar_url: avatarUrl,
       created_at: user.created_at,
     },
   });

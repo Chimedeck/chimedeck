@@ -5,6 +5,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleListCards(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -66,5 +67,16 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
     .leftJoin('users as u', 'u.id', 'cm.user_id')
     .groupBy('c.id');
 
-  return Response.json({ data: rows });
+  const data = await Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      members: await resolveAvatarUrlsInCollection(
+        Array.isArray(row.members)
+          ? (row.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+          : [],
+      ),
+    })),
+  );
+
+  return Response.json({ data });
 }
