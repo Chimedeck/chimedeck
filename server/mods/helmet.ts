@@ -41,7 +41,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   );
   headers.set(
     'Content-Security-Policy',
-    `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors 'none'`
+    `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors 'none'`
   );
   headers.set(
     'Permissions-Policy',
