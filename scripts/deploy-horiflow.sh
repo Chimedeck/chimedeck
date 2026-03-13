@@ -41,7 +41,7 @@ echo "Pulling new image: ${IMAGE_URL}"
 CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
   docker compose -f "${COMPOSE_FILE}" pull app
 
-echo "Ensuring infra services (postgres, localstack, redis) are running"
+echo "Ensuring infra services (postgres, localstack or redis) are running"
 # Only starts services whose profile is active in COMPOSE_PROFILES.
 # If COMPOSE_PROFILES is unset (using AWS RDS/S3), no infra containers are started.
 if [[ -n "${COMPOSE_PROFILES}" ]]; then
