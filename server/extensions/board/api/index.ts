@@ -20,6 +20,8 @@ import { handleGetBoardComments } from './comments';
 import { handleGetArchivedCards } from './archived-cards';
 import { handleInviteGuest, handleRevokeGuest, handleListGuests } from './guests/index';
 import { handleGetWorkspaceBoards } from './workspaceBoards';
+import { handleUploadBackground } from './uploadBackground';
+import { handleDeleteBackground } from './deleteBackground';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -111,6 +113,12 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/workspace/boards — list all ACTIVE boards in the same workspace
     if (sub === '/workspace/boards' && req.method === 'GET') return handleGetWorkspaceBoards(req, boardId);
+
+    // POST /api/v1/boards/:id/background — upload a background image (Owner/Admin only)
+    if (sub === '/background' && req.method === 'POST') return handleUploadBackground(req, boardId);
+
+    // DELETE /api/v1/boards/:id/background — remove the background image (Owner/Admin only)
+    if (sub === '/background' && req.method === 'DELETE') return handleDeleteBackground(req, boardId);
   }
 
   return null;
