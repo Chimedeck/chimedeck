@@ -13,7 +13,6 @@ services:
     container_name: "${CONTAINER_NAME}"
     ports:
       - "${APP_PORT}:3000"
-    env_file: .env.horiflow.prod
     environment:
       SEED_TRELLO: "${SEED_TRELLO:-false}"
     # depends_on entries below are only honoured when the matching profile is active
@@ -34,7 +33,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.postgres
-    env_file: .env.horiflow.prod
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-horiflow}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-horiflow}"
+      POSTGRES_DB: "${POSTGRES_DB:-horiflow}"
     command: >
       postgres -c shared_preload_libraries=pg_cron
                -c cron.database_name=${POSTGRES_DB:-horiflow}

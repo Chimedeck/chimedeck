@@ -46,6 +46,7 @@ echo "Ensuring infra services (postgres, localstack, redis) are running"
 # If COMPOSE_PROFILES is unset (using AWS RDS/S3), no infra containers are started.
 if [[ -n "${COMPOSE_PROFILES}" ]]; then
   CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
+  POSTGRES_USER=horiflow POSTGRES_PASSWORD=horiflow POSTGRES_DB=horiflow_dev \
     docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
 else
   echo "No local infra profiles active — using external AWS services"
