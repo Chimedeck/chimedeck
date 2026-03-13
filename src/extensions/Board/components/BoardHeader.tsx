@@ -1,7 +1,7 @@
 // BoardHeader — sticky top bar with editable title, member avatars, share button and ⋯ menu.
 import { useState, useRef, useEffect } from 'react';
 import type { Board } from '../api';
-import BoardMemberAvatars from './BoardMemberAvatars';
+import MemberAvatarStack from './MemberAvatarStack';
 import ConnectionBadge from '~/common/components/ConnectionBadge';
 import type { ConnectionState } from '~/common/components/ConnectionBadge';
 import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
@@ -28,6 +28,7 @@ interface Props {
   onDelete?: () => void;
   onOpenSettings?: () => void;
   onOpenAutomation?: () => void;
+  onOpenMembers?: () => void;
   activeAutomationCount?: number;
 }
 
@@ -42,6 +43,7 @@ const BoardHeader = ({
   onDelete,
   onOpenSettings,
   onOpenAutomation,
+  onOpenMembers,
   activeAutomationCount = 0,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
@@ -124,8 +126,11 @@ const BoardHeader = ({
       <PollingIndicator active={pollingActive} />
 
       <div className="ml-auto flex items-center gap-2">
-        {/* Member avatars */}
-        {members.length > 0 && <BoardMemberAvatars members={members} />}
+        {/* Member avatar stack — click to open the members panel */}
+        <MemberAvatarStack
+          members={members}
+          onOpenMembers={onOpenMembers ?? (() => {})}
+        />
 
         {/* Board buttons bar — left of automation header button */}
         {onOpenAutomation && <BoardButtonsBar boardId={board.id} />}

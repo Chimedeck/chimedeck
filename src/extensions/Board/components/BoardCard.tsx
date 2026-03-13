@@ -1,6 +1,7 @@
 // BoardCard — summary tile for a single board in the board list.
 import type { Board } from '../api';
 import BoardStateChip from './BoardStateChip';
+import VisibilityBadge from './VisibilityBadge';
 
 interface Props {
   board: Board;
@@ -64,6 +65,7 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
         <div className="flex items-center justify-between">
           <h3 className="truncate text-base font-semibold text-gray-900 dark:text-slate-100">{board.title}</h3>
           <div className="flex items-center gap-2">
+            <VisibilityBadge visibility={board.visibility} />
             <BoardStateChip state={board.state} />
             <button
               aria-label={board.isStarred ? 'Unstar board' : 'Star board'}

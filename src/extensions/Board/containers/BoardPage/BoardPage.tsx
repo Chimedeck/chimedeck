@@ -46,6 +46,8 @@ import BoardDeleteDialog from '../../components/BoardDeleteDialog';
 import ListDeleteDialog from '../../../List/components/ListDeleteDialog';
 import AutomationPanel from '../../../Automation/components/AutomationPanel';
 import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel';
+import BoardMembersPanel from '../../components/BoardMembersPanel';
+import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -90,6 +92,10 @@ const BoardPage = () => {
 
   // ── Board settings panel ─────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // ── Board members panel ───────────────────────────────────────────────────
+  const [membersOpen, setMembersOpen] = useState(false);
+  const { data: boardMembers = [] } = useGetBoardMembersQuery(boardId ?? '', { skip: !boardId });
 
   // ── Automation panel (Sprint 65) ─────────────────────────────────────────
   const automationPanel = useAutomationPanel();
@@ -350,6 +356,7 @@ const BoardPage = () => {
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
       <BoardHeader
         board={board}
+        members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email }))}
         connectionState={connectionState}
         pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
@@ -357,6 +364,7 @@ const BoardPage = () => {
         onDelete={handleBoardDelete}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenAutomation={automationPanel.openPanel}
+        onOpenMembers={() => setMembersOpen(true)}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
@@ -439,6 +447,10 @@ const BoardPage = () => {
             <BoardSettings
               onClose={() => setSettingsOpen(false)}
             />
+          )}
+          {/* Board members panel (Sprint 79) */}
+          {membersOpen && (
+            <BoardMembersPanel onClose={() => setMembersOpen(false)} />
           )}
           {/* Automation panel (Sprint 65) */}
           <AutomationPanel
