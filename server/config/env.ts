@@ -109,4 +109,8 @@ export const env = {
   // for other flows (e.g. email verification, password reset) without
   // automatically enabling admin invite emails.
   ADMIN_INVITE_EMAIL_ENABLED: Bun.env['ADMIN_INVITE_EMAIL_ENABLED'] === 'true',
+
+  // Notification preferences — when false, GET/PATCH /preferences return 501
+  // and all channels remain enabled for all users.
+  NOTIFICATION_PREFERENCES_ENABLED: Bun.env['NOTIFICATION_PREFERENCES_ENABLED'] !== 'false',
 } as const;
