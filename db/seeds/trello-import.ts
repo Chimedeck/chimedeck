@@ -263,7 +263,8 @@ interface TrelloCard {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const jsonPath = resolve(ROOT, 'db/all_trello_cards.json');
+  const defaultJsonPath = resolve(ROOT, 'db/all_trello_cards.json');
+  let jsonPath = defaultJsonPath;
   let jsonFile = Bun.file(jsonPath);
 
   if (!(await jsonFile.exists())) {
@@ -281,8 +282,26 @@ async function main() {
       process.exit(1);
     }
 
-    await Bun.write(jsonPath, response);
+    const seedBuffer = await response.arrayBuffer();
+    const fallbackJsonPath = resolve(tmpdir(), 'all_trello_cards.json');
+    let writeError: unknown = null;
+
+    try {
+      await Bun.write(defaultJsonPath, seedBuffer);
+      jsonPath = defaultJsonPath;
+    } catch (err) {
+      writeError = err;
+      // Docker production runs as non-root user and /app/db may be read-only.
+      // Fall back to a temp location so seeding can still proceed.
+      await Bun.write(fallbackJsonPath, seedBuffer);
+      jsonPath = fallbackJsonPath;
+      console.warn(`⚠️   Could not write seed file to ${defaultJsonPath}; using ${fallbackJsonPath} instead.`);
+    }
+
     console.log(`✅  Downloaded seed file to ${jsonPath}`);
+    if (writeError) {
+      console.warn(`    Original write error: ${toErrorMessage(writeError)}`);
+    }
     jsonFile = Bun.file(jsonPath);
   }
 
@@ -725,15 +744,19 @@ async function main() {
 
   // Also write them to files for easy scripting
   const outDir = resolve(ROOT, 'db');
-  await Bun.write(
-    resolve(outDir, 'trello-import-workspace-ids.json'),
-    JSON.stringify(workspaceIds, null, 2),
-  );
-  await Bun.write(
-    resolve(outDir, 'trello-import-member-ids.json'),
-    JSON.stringify(memberRecords, null, 2),
-  );
-  console.log('\n📄  Written to db/trello-import-workspace-ids.json and db/trello-import-member-ids.json');
+  const workspaceIdsPath = await writeOutputJsonWithFallback({
+    preferredPath: resolve(outDir, 'trello-import-workspace-ids.json'),
+    fallbackPath: resolve(tmpdir(), 'trello-import-workspace-ids.json'),
+    body: JSON.stringify(workspaceIds, null, 2),
+  });
+  const memberIdsPath = await writeOutputJsonWithFallback({
+    preferredPath: resolve(outDir, 'trello-import-member-ids.json'),
+    fallbackPath: resolve(tmpdir(), 'trello-import-member-ids.json'),
+    body: JSON.stringify(memberRecords, null, 2),
+  });
+
+  console.log(`\n📄  Written workspace IDs to ${workspaceIdsPath}`);
+  console.log(`📄  Written member IDs to ${memberIdsPath}`);
 
   await db.destroy();
 }
@@ -779,6 +802,40 @@ async function downloadAndUploadAvatar(member: TrelloMember): Promise<string | n
   } finally {
     // Always clean up the temp file
     try { await unlink(tmpPath); } catch { /* ignore — file may not exist */ }
+  }
+}
+
+async function writeOutputJsonWithFallback({
+  preferredPath,
+  fallbackPath,
+  body,
+}: {
+  preferredPath: string;
+  fallbackPath: string;
+  body: string;
+}): Promise<string> {
+  try {
+    await Bun.write(preferredPath, body);
+    return preferredPath;
+  } catch (err) {
+    await Bun.write(fallbackPath, body);
+    console.warn(`⚠️   Could not write ${preferredPath}; wrote ${fallbackPath} instead.`);
+    console.warn(`    Original write error: ${toErrorMessage(err)}`);
+    return fallbackPath;
+  }
+}
+
+function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (typeof err === 'number' || typeof err === 'boolean' || typeof err === 'bigint') {
+    return `${err}`;
+  }
+  try {
+    const parsed = JSON.stringify(err);
+    return parsed ?? 'unknown-error';
+  } catch {
+    return 'unknown-error';
   }
 }
 
