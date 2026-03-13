@@ -14,6 +14,11 @@ export async function handleListNotifications(req: Request): Promise<Response> {
   const limit = Math.min(Number.parseInt(url.searchParams.get('limit') ?? '20', 10), 100);
   const cursor = url.searchParams.get('cursor') ?? null;
 
+  // Optional type filter — must be one of the four valid notification types.
+  const VALID_TYPES = new Set(['mention', 'card_created', 'card_moved', 'card_commented']);
+  const typeParam = url.searchParams.get('type') ?? null;
+  const typeFilter = typeParam && VALID_TYPES.has(typeParam) ? typeParam : null;
+
   let query = db('notifications')
     .where('notifications.user_id', userId)
     .leftJoin('users as actor', 'notifications.actor_id', 'actor.id')
@@ -40,6 +45,10 @@ export async function handleListNotifications(req: Request): Promise<Response> {
 
   if (unreadOnly) {
     query = query.where('notifications.read', false);
+  }
+
+  if (typeFilter) {
+    query = query.where('notifications.type', typeFilter);
   }
 
   if (cursor) {

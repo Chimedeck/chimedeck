@@ -1,9 +1,14 @@
-// boardActivityDispatch.ts — Fire-and-forget email notification dispatch for board-level events.
+// boardActivityDispatch.ts — Fire-and-forget notification dispatch for board-level events.
+// Handles both email and in-app channels for card_created, card_moved, card_commented events.
 // Called from the events pipeline after event persistence. Fetches board members
-// and dispatches email notifications via dispatchNotificationEmail.
+// and dispatches notifications via emailDispatch and direct DB insert + WS publish.
 // Failures are logged and never propagate — this must not block mutations.
 import { db } from '../../../common/db';
 import { dispatchNotificationEmail } from './emailDispatch';
+import { preferenceGuard } from './preferenceGuard';
+import { publishToUser } from '../../realtime/userChannel';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { env } from '../../../config/env';
 import type { WrittenEvent } from '../../../mods/events/index';
 
 type SupportedEventType = 'card.created' | 'card.moved' | 'comment_added';
@@ -45,8 +50,76 @@ export async function handleBoardActivityNotification({
 
     const notificationType = eventTypeToNotificationType(event.type as SupportedEventType);
 
+    // Fetch actor details once for the WS payload
+    const actor = await db('users')
+      .where({ id: actorId })
+      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+      .first();
+    const actorAvatarUrl = actor?.avatar_url
+      ? await resolveAvatarUrl({ avatarUrl: actor.avatar_url })
+      : null;
+    const actorPayload = {
+      id: actorId,
+      nickname: actor?.nickname ?? null,
+      name: actor?.name ?? null,
+      avatar_url: actorAvatarUrl,
+    };
+
+    const now = new Date().toISOString();
+
+    // Derive card_id and board_id for the notification row from event payload
+    const payload = event.payload as Record<string, unknown>;
+    const cardId = (
+      (payload.card as { id?: string } | undefined)?.id ??
+      (payload.cardId as string | undefined) ??
+      null
+    );
+
     // Fire-and-forget per recipient — failures never block the mutation path
     for (const recipientId of recipientIds) {
+      // --- In-app channel ---
+      let inAppEnabled = true;
+      if (env.NOTIFICATION_PREFERENCES_ENABLED) {
+        try {
+          const pref = await preferenceGuard({ userId: recipientId, type: notificationType });
+          inAppEnabled = pref.in_app_enabled;
+        } catch {
+          inAppEnabled = true; // fail open
+        }
+      }
+
+      if (inAppEnabled) {
+        db('notifications')
+          .insert({
+            user_id: recipientId,
+            type: notificationType,
+            source_type: 'board_activity',
+            source_id: event.id,
+            card_id: cardId,
+            board_id: boardId,
+            actor_id: actorId,
+            read: false,
+            created_at: now,
+          }, ['*'])
+          .then(([inserted]) => {
+            if (inserted) {
+              publishToUser(recipientId, {
+                type: 'notification_created',
+                payload: {
+                  notification: {
+                    ...inserted,
+                    actor: actorPayload,
+                  },
+                },
+              });
+            }
+          })
+          .catch(() => {
+            // Per-recipient in-app failures are silently swallowed
+          });
+      }
+
+      // --- Email channel ---
       dispatchNotificationEmail({
         recipientId,
         type: notificationType,
