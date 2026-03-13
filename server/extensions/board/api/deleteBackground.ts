@@ -1,6 +1,6 @@
 // DELETE /api/v1/boards/:id/background — remove board background image.
 // Clears boards.background, deletes the S3 object, and emits a WS event.
-// Only Owner/Admin may call this.
+// Owner/Admin/Member may call this.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
@@ -45,7 +45,7 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'ADMIN');
+  const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
   const existingBoard = await db('boards').where({ id: boardId }).first();

@@ -1,5 +1,5 @@
 // POST /api/v1/boards/:id/background — upload a background image to S3.
-// Only JPEG and PNG are accepted; max 10 MB. Only Owner/Admin may call this.
+// Only JPEG and PNG are accepted; max 10 MB. Owner/Admin/Member may call this.
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
@@ -56,7 +56,7 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'ADMIN');
+  const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
   let formData: FormData;

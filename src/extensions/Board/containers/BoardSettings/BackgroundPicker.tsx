@@ -1,5 +1,5 @@
 // BackgroundPicker — upload or remove a board background image.
-// Only rendered for Owner/Admin; caller is responsible for role-gating.
+// Rendered for Owner/Admin/Member; caller is responsible for role-gating.
 import { useRef, useState } from 'react';
 import { PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '~/hooks/useAppSelector';
