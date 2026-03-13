@@ -1,4 +1,5 @@
 // Board API router — mounts all board routes.
+import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 import { handleCreateBoard } from './create';
 import { handleListBoards } from './list';
 import { handleGetBoard } from './get';
@@ -44,6 +45,11 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
   if (boardMatch) {
     const boardId = boardMatch[1] as string;
     const sub = boardMatch[2] ?? '';
+
+    // Enforce board visibility before dispatching to any board-scoped handler.
+    // Populates req.board (and req.currentUser, req.workspaceId, req.callerRole for non-public boards).
+    const visibilityError = await applyBoardVisibility(req, boardId);
+    if (visibilityError) return visibilityError;
 
     // GET /api/v1/boards/:id
     if (sub === '' && req.method === 'GET') return handleGetBoard(req, boardId);

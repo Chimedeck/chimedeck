@@ -1,12 +1,22 @@
-// boardVisibility.ts — enforces board visibility access rules on GET routes.
-// PUBLIC boards: accessible without authentication.
-// WORKSPACE boards: require workspace membership.
-// PRIVATE boards: require workspace membership (strictest mode).
+// boardVisibility.ts — enforces board visibility access rules.
+//
+// Access matrix:
+// | Caller                                  | PRIVATE | WORKSPACE | PUBLIC   |
+// |----------------------------------------|---------|-----------|----------|
+// | Unauthenticated                         | 403     | 403       | read-only|
+// | Workspace OWNER / ADMIN                 | allow   | allow     | allow    |
+// | Workspace MEMBER with board_members row | allow   | allow     | allow    |
+// | Workspace MEMBER without board_members  | 403     | allow     | allow    |
+// | Workspace VIEWER with board_members row | allow   | allow     | allow    |
+// | Workspace VIEWER without board_members  | 403     | allow     | allow    |
+// | GUEST with board_guest_access row       | allow   | 403       | allow    |
+// | GUEST without board_guest_access row    | 403     | 403       | allow    |
 import { db } from '../common/db';
 import { authenticate, type AuthenticatedRequest } from '../extensions/auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
+  type Role,
 } from './permissionManager';
 import type { BoardVisibility } from '../extensions/board/types';
 
@@ -53,11 +63,107 @@ export async function applyBoardVisibility(
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const membershipError = await requireWorkspaceMembership(
-    req as WorkspaceScopedRequest,
-    board.workspace_id,
-  );
+  const scopedReq = req as WorkspaceScopedRequest;
+  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
+  const callerRole = scopedReq.callerRole as Role;
+  const userId = (req as AuthenticatedRequest).currentUser!.id;
+
+  // Guests only have access to boards they have been explicitly invited to.
+  // WORKSPACE boards are never accessible to guests.
+  if (callerRole === 'GUEST') {
+    if (board.visibility === 'WORKSPACE') {
+      return Response.json(
+        { error: { code: 'board-access-denied', message: 'Guests cannot access workspace-visibility boards' } },
+        { status: 403 },
+      );
+    }
+    const guestAccess = await db('board_guest_access')
+      .where({ user_id: userId, board_id: boardId })
+      .first();
+    if (!guestAccess) {
+      return Response.json(
+        { error: { code: 'board-access-denied', message: 'You do not have access to this board' } },
+        { status: 403 },
+      );
+    }
+    return null;
+  }
+
+  // OWNER and ADMIN bypass the board_members check — they can access any board.
+  if (callerRole === 'OWNER' || callerRole === 'ADMIN') {
+    return null;
+  }
+
+  // PRIVATE boards: workspace MEMBER and VIEWER require an explicit board_members entry.
+  if (board.visibility === 'PRIVATE') {
+    const boardMember = await db('board_members')
+      .where({ user_id: userId, board_id: boardId })
+      .first();
+    if (!boardMember) {
+      return Response.json(
+        { error: { code: 'board-access-denied', message: 'You do not have access to this board' } },
+        { status: 403 },
+      );
+    }
+  }
+
+  // WORKSPACE boards: MEMBER and VIEWER are automatically allowed.
   return null;
+}
+
+// Looks up the board from the given list ID, then applies board visibility.
+// Use this for list-scoped routes where boardId is not in the URL.
+export async function applyBoardVisibilityFromList(
+  req: Request,
+  listId: string,
+): Promise<Response | null> {
+  const list = await db('lists').where({ id: listId }).first();
+  if (!list) {
+    return Response.json(
+      { error: { code: 'list-not-found', message: 'List not found' } },
+      { status: 404 },
+    );
+  }
+  return applyBoardVisibility(req, list.board_id);
+}
+
+// Looks up the board from the given card ID (via its list), then applies board visibility.
+// Use this for card-scoped routes where boardId is not in the URL.
+export async function applyBoardVisibilityFromCard(
+  req: Request,
+  cardId: string,
+): Promise<Response | null> {
+  const card = await db('cards').where({ id: cardId }).first();
+  if (!card) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 },
+    );
+  }
+  const list = await db('lists').where({ id: card.list_id }).first();
+  if (!list) {
+    return Response.json(
+      { error: { code: 'list-not-found', message: 'Card context not found' } },
+      { status: 404 },
+    );
+  }
+  return applyBoardVisibility(req, list.board_id);
+}
+
+// Looks up the board from the given checklist item ID (via card → list → board),
+// then applies board visibility. Use this for /api/v1/checklist-items/:id routes.
+export async function applyBoardVisibilityFromChecklistItem(
+  req: Request,
+  itemId: string,
+): Promise<Response | null> {
+  const item = await db('checklist_items').where({ id: itemId }).first();
+  if (!item) {
+    return Response.json(
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
+      { status: 404 },
+    );
+  }
+  return applyBoardVisibilityFromCard(req, item.card_id);
 }

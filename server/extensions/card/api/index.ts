@@ -1,4 +1,9 @@
 // Card API router — mounts all card routes.
+import {
+  applyBoardVisibilityFromList,
+  applyBoardVisibilityFromCard,
+  applyBoardVisibilityFromChecklistItem,
+} from '../../../middlewares/boardVisibility';
 import { handleCreateCard } from './create';
 import { handleListCards } from './list';
 import { handleGetCard } from './get';
@@ -18,11 +23,17 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
   const listCardsMatch = pathname.match(/^\/api\/v1\/lists\/([^/]+)\/cards$/);
   if (listCardsMatch) {
     const listId = listCardsMatch[1] as string;
+
+    // Enforce board visibility by resolving the board from the list.
+    const visibilityError = await applyBoardVisibilityFromList(req, listId);
+    if (visibilityError) return visibilityError;
+
     if (req.method === 'POST') return handleCreateCard(req, listId);
     if (req.method === 'GET') return handleListCards(req, listId);
   }
 
   // Due date query: /api/v1/workspaces/:id/cards/due
+  // Workspace-scoped — no board visibility check needed here.
   const dueDateMatch = pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/cards\/due$/);
   if (dueDateMatch && req.method === 'GET') {
     return handleListDueCards(req, dueDateMatch[1] as string);
@@ -32,6 +43,11 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
   const checklistItemMatch = pathname.match(/^\/api\/v1\/checklist-items\/([^/]+)$/);
   if (checklistItemMatch) {
     const itemId = checklistItemMatch[1] as string;
+
+    // Enforce board visibility by resolving the board from the checklist item.
+    const visibilityError = await applyBoardVisibilityFromChecklistItem(req, itemId);
+    if (visibilityError) return visibilityError;
+
     if (req.method === 'PATCH') return handleUpdateChecklistItem(req, itemId);
     if (req.method === 'DELETE') return handleDeleteChecklistItem(req, itemId);
   }
@@ -41,6 +57,10 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
   if (cardMatch) {
     const cardId = cardMatch[1] as string;
     const sub = cardMatch[2] ?? '';
+
+    // Enforce board visibility by resolving the board from the card.
+    const visibilityError = await applyBoardVisibilityFromCard(req, cardId);
+    if (visibilityError) return visibilityError;
 
     // GET /api/v1/cards/:id
     if (sub === '' && req.method === 'GET') return handleGetCard(req, cardId);
