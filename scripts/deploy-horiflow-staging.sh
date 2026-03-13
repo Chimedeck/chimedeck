@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy script for horiflow — runs on the host machine alongside docker-compose.horiflow.stag.yml
+# Deploy script for HoriFlow — runs on the host machine alongside docker-compose.horiflow.prod.yml
 # Required env vars:
 #   IMAGE_URL        — full image URI, e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/horiflow-app:abc1234
 #   AWS_REGION       — AWS region for ECR login (default: ap-southeast-1)
@@ -12,7 +12,7 @@
 
 COMPOSE_FILE=docker-compose.horiflow.stag.yml
 AWS_REGION=${AWS_REGION:-ap-southeast-1}
-export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db,local-s3,redis}
+export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db}
 
 # Main deployment config
 MAIN_CONTAINER_NAME=horiflow-stag
@@ -41,11 +41,13 @@ echo "Pulling new image: ${IMAGE_URL}"
 CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
   docker compose -f "${COMPOSE_FILE}" pull app
 
-echo "Ensuring infra services (postgres, localstack, redis) are running"
+echo "Ensuring infra services (postgres, localstack or redis) are running"
 # Only starts services whose profile is active in COMPOSE_PROFILES.
 # If COMPOSE_PROFILES is unset (using AWS RDS/S3), no infra containers are started.
 if [[ -n "${COMPOSE_PROFILES}" ]]; then
-  docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
+  CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
+  POSTGRES_USER=horiflow POSTGRES_PASSWORD=horiflow POSTGRES_DB=horiflow_dev \
+    docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
 else
   echo "No local infra profiles active — using external AWS services"
 fi
