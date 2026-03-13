@@ -40,7 +40,7 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         clearAuthCallback?.();
         // Redirect to login with reason so the login page can show a message
-        if (typeof globalThis.window !== 'undefined') {
+        if (globalThis.window !== undefined) {
           globalThis.window.location.href = '/login?reason=session_expired';
         }
         throw error;

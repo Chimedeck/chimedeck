@@ -1,5 +1,10 @@
 const API_PREFIX = '/api/v1';
 
+type ApiRequestDescriptor = {
+  url: string | undefined;
+  method: string | undefined;
+};
+
 const PUBLIC_API_ROUTES: Array<{ method: string; pattern: RegExp }> = [
   { method: 'GET', pattern: /^\/flags$/ },
   { method: 'POST', pattern: /^\/auth\/token$/ },
@@ -29,10 +34,7 @@ function normalizeApiPath(url?: string): string | null {
 export function isPublicApiRoute({
   url,
   method,
-}: {
-  url?: string;
-  method?: string;
-}): boolean {
+}: ApiRequestDescriptor): boolean {
   const pathname = normalizeApiPath(url);
   if (!pathname) return false;
 
@@ -45,10 +47,7 @@ export function isPublicApiRoute({
 export function isRefreshApiRoute({
   url,
   method,
-}: {
-  url?: string;
-  method?: string;
-}): boolean {
+}: ApiRequestDescriptor): boolean {
   const pathname = normalizeApiPath(url);
   return pathname === '/auth/refresh' && (method ?? 'GET').toUpperCase() === 'POST';
 }
@@ -56,19 +55,13 @@ export function isRefreshApiRoute({
 export function shouldAttachAccessToken({
   url,
   method,
-}: {
-  url?: string;
-  method?: string;
-}): boolean {
+}: ApiRequestDescriptor): boolean {
   return !isPublicApiRoute({ url, method });
 }
 
 export function shouldAttemptAuthRecovery({
   url,
   method,
-}: {
-  url?: string;
-  method?: string;
-}): boolean {
+}: ApiRequestDescriptor): boolean {
   return !isPublicApiRoute({ url, method }) && !isRefreshApiRoute({ url, method });
 }
