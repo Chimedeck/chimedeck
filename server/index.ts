@@ -209,7 +209,7 @@ Bun.serve({
 
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
-      extraConnectSrc: pluginOrigins.connectSrc,
+      extraConnectSrc: [s3ImgOrigin, ...pluginOrigins.connectSrc],
       extraImgSrc: [s3ImgOrigin, 'https://horiflow.jhorizon.io'],
     });
     const response = new Response(res.body, {
