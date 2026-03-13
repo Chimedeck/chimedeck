@@ -48,21 +48,34 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
     );
   }
 
+  const creatorId = (req as AuthenticatedRequest).currentUser!.id;
   const id = randomUUID();
-  await db('boards').insert({
-    id,
-    workspace_id: workspaceId,
-    title: sanitizeText(body.title.trim()),
-    state: 'ACTIVE',
-    visibility: body.visibility ?? 'PRIVATE',
-    description: body.description ? sanitizeRichText(body.description.trim()) : null,
-    background: body.background?.trim() ?? null,
+
+  // Wrap board creation + initial member insert in a transaction so no partial state is persisted.
+  await db.transaction(async (trx) => {
+    await trx('boards').insert({
+      id,
+      workspace_id: workspaceId,
+      title: sanitizeText(body.title.trim()),
+      state: 'ACTIVE',
+      visibility: body.visibility ?? 'PRIVATE',
+      description: body.description ? sanitizeRichText(body.description.trim()) : null,
+      background: body.background?.trim() ?? null,
+    });
+
+    // Auto-insert the creator as ADMIN of the new board.
+    await trx('board_members').insert({
+      id: randomUUID(),
+      board_id: id,
+      user_id: creatorId,
+      role: 'ADMIN',
+    });
   });
 
   const board = await db('boards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  await writeEvent({ type: 'board_created', boardId: id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { workspaceId } });
+  await writeEvent({ type: 'board_created', boardId: id, entityId: id, actorId: creatorId, payload: { workspaceId } });
 
   return Response.json({ data: board }, { status: 201 });
 }
