@@ -26,6 +26,7 @@ docker compose up -d postgres localstack
 bun run db:migrate
 
 # Optionally, when you have the seeds file to test
+# Put this files in db/all_trello_cards.json
 bun run db:seed:trello 
 
 # 5. Start the dev server (hot-reload)
