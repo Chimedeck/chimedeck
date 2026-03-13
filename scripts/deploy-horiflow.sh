@@ -45,7 +45,8 @@ echo "Ensuring infra services (postgres, localstack, redis) are running"
 # Only starts services whose profile is active in COMPOSE_PROFILES.
 # If COMPOSE_PROFILES is unset (using AWS RDS/S3), no infra containers are started.
 if [[ -n "${COMPOSE_PROFILES}" ]]; then
-  docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
+  CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
+    docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
 else
   echo "No local infra profiles active — using external AWS services"
 fi
