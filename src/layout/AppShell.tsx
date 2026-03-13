@@ -56,7 +56,7 @@ export default function AppShell() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* Desktop sidebar — always visible on md+ */}
       <div className="hidden md:flex md:shrink-0">
         <Sidebar />
@@ -79,22 +79,22 @@ export default function AppShell() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile topbar with hamburger */}
-        <div className="flex h-14 shrink-0 items-center border-b border-slate-800 bg-slate-900 px-4 md:hidden">
+        <div className="flex h-14 shrink-0 items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 md:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="mr-3 rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="mr-3 rounded p-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             aria-label="Open sidebar"
           >
             <Bars3Icon className="h-5 w-5" aria-hidden="true" />
           </button>
-          <span className="text-base font-bold text-white">HoriFlow</span>
+          <span className="text-base font-bold text-slate-900 dark:text-white">HoriFlow</span>
           <div className="ml-auto">
             <NotificationContainer />
           </div>
         </div>
 
         {/* Desktop topbar — notification bell */}
-        <div className="hidden md:flex h-12 shrink-0 items-center justify-end border-b border-slate-800 bg-slate-900 px-4">
+        <div className="hidden md:flex h-12 shrink-0 items-center justify-end border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4">
           <NotificationContainer />
         </div>
 

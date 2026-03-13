@@ -78,8 +78,8 @@ const WorkspacePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">{workspace.name}</h1>
-          <p className="text-sm text-gray-400 mt-1">Workspace Settings</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{workspace.name}</h1>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Workspace Settings</p>
         </div>
         {currentMember?.role === 'OWNER' && (
           <button
@@ -94,7 +94,7 @@ const WorkspacePage = () => {
       {/* Members section */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-100">Members</h2>
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-gray-100">Members</h2>
           {canInvite && (
             <button
               onClick={() => setShowInviteModal(true)}

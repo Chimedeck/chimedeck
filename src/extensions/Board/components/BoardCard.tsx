@@ -42,18 +42,18 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
 
   return (
     <div
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md"
+      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-sm hover:shadow-md"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <h3 className="truncate text-base font-semibold text-gray-900">{board.title}</h3>
+        <h3 className="truncate text-base font-semibold text-gray-900 dark:text-slate-100">{board.title}</h3>
         <div className="flex items-center gap-2">
           <BoardStateChip state={board.state} />
           <button
             aria-label={board.isStarred ? 'Unstar board' : 'Star board'}
             onClick={handleStarClick}
-            className={`rounded p-0.5 transition-colors hover:bg-gray-100 ${
-              board.isStarred ? 'text-yellow-500' : 'text-gray-400'
+            className={`rounded p-0.5 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700 ${
+              board.isStarred ? 'text-yellow-500' : 'text-gray-400 dark:text-slate-500'
             }`}
           >
             <StarIcon filled={!!board.isStarred} />
