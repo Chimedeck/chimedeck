@@ -86,9 +86,7 @@ sudo systemctl restart nginx
 echo "____________________"
 
 echo "Closing fallback container"
-CONTAINER_NAME=${FALLBACK_CONTAINER_NAME} APP_PORT=${FALLBACK_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
-  docker compose -f "${COMPOSE_FILE}" stop app
-docker container rm ${FALLBACK_CONTAINER_NAME} -f
+docker container rm "${FALLBACK_CONTAINER_NAME}" -f || echo "No fallback container to remove"
 
 echo "Pruning dangling images"
 docker image prune -f
