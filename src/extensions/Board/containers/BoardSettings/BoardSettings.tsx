@@ -12,9 +12,13 @@ import BackgroundPicker from './BackgroundPicker';
 
 interface Props {
   onClose: () => void;
+  /** When true, the entire panel is suppressed (workspace GUEST role). */
+  isGuest?: boolean;
 }
 
-const BoardSettings = ({ onClose }: Props) => {
+const BoardSettings = ({ onClose, isGuest = false }: Props) => {
+  // [why] GUEST users must not access board settings — return nothing to prevent render.
+  if (isGuest) return null;
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);

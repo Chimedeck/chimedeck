@@ -17,9 +17,13 @@ interface Props {
   onClose: () => void;
   /** ID of the current authenticated user; used to check board role. */
   currentUserId?: string;
+  /** When true, the entire panel is suppressed (workspace GUEST role). */
+  isGuest?: boolean;
 }
 
-const BoardSettings = ({ onClose, currentUserId }: Props) => {
+const BoardSettings = ({ onClose, currentUserId, isGuest = false }: Props) => {
+  // [why] GUEST users must not access board settings — return nothing to prevent render.
+  if (isGuest) return null;
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);

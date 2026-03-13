@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import PublicRoute from './PublicRoute';
+import GuestBlockedRoute from './GuestBlockedRoute';
 import Spinner from '~/common/components/Spinner';
 import AppShell from '~/layout/AppShell';
 
@@ -112,13 +113,16 @@ export default function AppRouter() {
             <Route element={<AppShell />}>
               <Route path="/workspaces" element={<WorkspacesPage />} />
               <Route
-                path="/workspace/:workspaceId"
-                element={<WorkspacePage />}
-              />
-              <Route
                 path="/workspaces/:workspaceId/boards"
                 element={<BoardsPage />}
               />
+              {/* Workspace members/settings page — redirect GUEST users to their boards */}
+              <Route element={<GuestBlockedRoute />}>
+                <Route
+                  path="/workspace/:workspaceId"
+                  element={<WorkspacePage />}
+                />
+              </Route>
               <Route path="/boards/:boardId" element={<BoardPage />} />
               <Route path="/boards/:boardId/settings/plugins" element={<PluginDashboardPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />

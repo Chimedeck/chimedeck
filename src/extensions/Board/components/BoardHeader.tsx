@@ -30,6 +30,8 @@ interface Props {
   onOpenAutomation?: () => void;
   onOpenMembers?: () => void;
   activeAutomationCount?: number;
+  /** When true, hides member avatar stack and board settings menu (GUEST workspace role). */
+  isGuest?: boolean;
 }
 
 const BoardHeader = ({
@@ -45,6 +47,7 @@ const BoardHeader = ({
   onOpenAutomation,
   onOpenMembers,
   activeAutomationCount = 0,
+  isGuest = false,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -126,11 +129,13 @@ const BoardHeader = ({
       <PollingIndicator active={pollingActive} />
 
       <div className="ml-auto flex items-center gap-2">
-        {/* Member avatar stack — click to open the members panel */}
-        <MemberAvatarStack
-          members={members}
-          onOpenMembers={onOpenMembers ?? (() => {})}
-        />
+        {/* Member avatar stack — hidden for workspace GUESTs */}
+        {!isGuest && (
+          <MemberAvatarStack
+            members={members}
+            onOpenMembers={onOpenMembers ?? (() => {})}
+          />
+        )}
 
         {/* Board buttons bar — left of automation header button */}
         {onOpenAutomation && <BoardButtonsBar boardId={board.id} />}
@@ -143,7 +148,8 @@ const BoardHeader = ({
           />
         )}
 
-        {/* Settings menu */}
+        {/* Settings menu — hidden for workspace GUESTs */}
+        {!isGuest && (
         <div className="relative" ref={menuContainerRef}>
           <button
             className="rounded p-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
@@ -183,6 +189,7 @@ const BoardHeader = ({
             </div>
           )}
         </div>
+        )}
       </div>
     </header>
   );

@@ -48,6 +48,7 @@ import AutomationPanel from '../../../Automation/components/AutomationPanel';
 import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel';
 import BoardMembersPanel from '../../components/BoardMembersPanel';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
+import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -72,6 +73,8 @@ const BoardPage = () => {
   const accessToken = useAppSelector(selectAuthToken);
   // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
   const activeView = useAppSelector(selectActiveView);
+  // [why] GUEST workspace members can view boards but not manage settings or members.
+  const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
 
   // Use the shared axios client instead of a globalThis reference
   const api = apiClient;
@@ -360,11 +363,14 @@ const BoardPage = () => {
         connectionState={connectionState}
         pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
-        onArchive={handleBoardArchive}
-        onDelete={handleBoardDelete}
-        onOpenSettings={() => setSettingsOpen(true)}
         onOpenAutomation={automationPanel.openPanel}
-        onOpenMembers={() => setMembersOpen(true)}
+        isGuest={isGuest}
+        {...(!isGuest && {
+          onArchive: handleBoardArchive,
+          onDelete: handleBoardDelete,
+          onOpenSettings: () => setSettingsOpen(true),
+          onOpenMembers: () => setMembersOpen(true),
+        })}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
@@ -446,11 +452,12 @@ const BoardPage = () => {
           {settingsOpen && (
             <BoardSettings
               onClose={() => setSettingsOpen(false)}
+              isGuest={isGuest}
             />
           )}
           {/* Board members panel (Sprint 79) */}
           {membersOpen && (
-            <BoardMembersPanel onClose={() => setMembersOpen(false)} />
+            <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
           )}
           {/* Automation panel (Sprint 65) */}
           <AutomationPanel

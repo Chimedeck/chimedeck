@@ -21,9 +21,13 @@ type Tab = 'members' | 'guests';
 
 interface Props {
   onClose: () => void;
+  /** When true, the entire panel is suppressed (workspace GUEST role). */
+  isGuest?: boolean;
 }
 
-const BoardMembersPanel = ({ onClose }: Props) => {
+const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
+  // [why] GUEST users have no member-management rights — suppress the panel entirely.
+  if (isGuest) return null;
   const { boardId } = useParams<{ boardId: string }>();
   const currentUser = useAppSelector(selectAuthUser);
   const workspaceMembers = useAppSelector(membersSelector);
