@@ -32,7 +32,7 @@ services:
     profiles: [local-db]
     build:
       context: .
-      dockerfile: Dockerfile.postgres
+      dockerfile: Dockerfile.horiflow.postgres
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-horiflow}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-horiflow}"
