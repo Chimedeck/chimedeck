@@ -1,6 +1,9 @@
-// POST /api/v1/boards/:id/guests   — invite a user as a guest to a specific board (ADMIN+ only).
+// Barrel export for board guest handlers.
+// POST /api/v1/boards/:id/guests   — invite a user as a guest (ADMIN+ only) via email.
 // DELETE /api/v1/boards/:id/guests/:userId — revoke guest access.
 // GET  /api/v1/boards/:id/guests   — list current board guests.
+export { handleInviteGuestByEmail as handleInviteGuest } from './create';
+
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
@@ -12,11 +15,8 @@ import {
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { writeEvent } from '../../../../mods/events/index';
 
-// POST /api/v1/boards/:id/guests
-// Body: { userId: string }
-// Requires ADMIN+ role. Creates a membership row with role=GUEST (if none exists)
-// and a board_guest_access row granting access to the specific board.
-export async function handleInviteGuest(req: Request, boardId: string): Promise<Response> {
+// Legacy userId-based handler kept for internal use.
+async function handleInviteGuestById(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 

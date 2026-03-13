@@ -1,8 +1,7 @@
-// BoardMembersPanel — slide-in panel for managing board members.
-// Features: list members with role, add workspace members via typeahead,
-//           change role, remove member, last-admin guard.
-// Only ADMIN/OWNER board members can edit; others see a read-only list.
-import { useMemo } from 'react';
+// BoardMembersPanel — slide-in panel for managing board members and guests.
+// Tabs: Members (list/add/change role/remove), Guests (invite by email/list/revoke).
+// Only ADMIN/OWNER board members can edit; others see read-only views.
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
@@ -16,6 +15,9 @@ import {
 } from '../../slices/boardMembersSlice';
 import MemberRow from './MemberRow';
 import AddMemberInput from './AddMemberInput';
+import GuestsTab from './GuestsTab';
+
+type Tab = 'members' | 'guests';
 
 interface Props {
   onClose: () => void;
@@ -25,6 +27,7 @@ const BoardMembersPanel = ({ onClose }: Props) => {
   const { boardId } = useParams<{ boardId: string }>();
   const currentUser = useAppSelector(selectAuthUser);
   const workspaceMembers = useAppSelector(membersSelector);
+  const [activeTab, setActiveTab] = useState<Tab>('members');
 
   const { data: boardMembers = [], isLoading } = useGetBoardMembersQuery(boardId ?? '', {
     skip: !boardId,
@@ -103,48 +106,85 @@ const BoardMembersPanel = ({ onClose }: Props) => {
           </button>
         </div>
 
+        {/* Tab navigation */}
+        <div className="flex border-b border-slate-700">
+          <button
+            type="button"
+            onClick={() => setActiveTab('members')}
+            className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
+              activeTab === 'members'
+                ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            aria-selected={activeTab === 'members'}
+            role="tab"
+          >
+            Members
+          </button>
+          {/* Guests tab — only admins can invite guests; all can view */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('guests')}
+            className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
+              activeTab === 'guests'
+                ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            aria-selected={activeTab === 'guests'}
+            role="tab"
+          >
+            Guests
+          </button>
+        </div>
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {/* Add member input — only admins can add */}
-          {isAdmin && (
-            <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                Add member
-              </p>
-              <AddMemberInput candidates={candidates} onAdd={handleAdd} />
-            </div>
+          {activeTab === 'members' ? (
+            <>
+              {/* Add member input — only admins can add */}
+              {isAdmin && (
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Add member
+                  </p>
+                  <AddMemberInput candidates={candidates} onAdd={handleAdd} />
+                </div>
+              )}
+
+              {/* Member list */}
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                  Members
+                </p>
+                {isLoading ? (
+                  <p className="text-sm text-slate-500">Loading…</p>
+                ) : boardMembers.length === 0 ? (
+                  <p className="text-sm text-slate-500">No members yet.</p>
+                ) : (
+                  <ul className="divide-y divide-slate-800">
+                    {boardMembers.map((member) => {
+                      // Last-admin guard: disable remove for the last ADMIN/OWNER.
+                      const isThisLastAdmin =
+                        (member.role === 'ADMIN' || member.role === 'OWNER') && adminCount <= 1;
+
+                      return (
+                        <MemberRow
+                          key={member.user_id}
+                          member={member}
+                          isLastAdmin={isThisLastAdmin}
+                          canEdit={isAdmin}
+                          onRoleChange={handleRoleChange}
+                          onRemove={handleRemove}
+                        />
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </>
+          ) : (
+            <GuestsTab boardId={boardId ?? ''} isAdmin={isAdmin} />
           )}
-
-          {/* Member list */}
-          <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-              Members
-            </p>
-            {isLoading ? (
-              <p className="text-sm text-slate-500">Loading…</p>
-            ) : boardMembers.length === 0 ? (
-              <p className="text-sm text-slate-500">No members yet.</p>
-            ) : (
-              <ul className="divide-y divide-slate-800">
-                {boardMembers.map((member) => {
-                  // Last-admin guard: disable remove for the last ADMIN/OWNER.
-                  const isThisLastAdmin =
-                    (member.role === 'ADMIN' || member.role === 'OWNER') && adminCount <= 1;
-
-                  return (
-                    <MemberRow
-                      key={member.user_id}
-                      member={member}
-                      isLastAdmin={isThisLastAdmin}
-                      canEdit={isAdmin}
-                      onRoleChange={handleRoleChange}
-                      onRemove={handleRemove}
-                    />
-                  );
-                })}
-              </ul>
-            )}
-          </div>
         </div>
       </div>
     </div>
