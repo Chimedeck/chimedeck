@@ -16,3 +16,4 @@ export { pluginDashboardReducer } from './extensions/Plugins/reducers';
 export { adminInviteReducer } from './extensions/AdminInvite/adminInvite.slice';
 export { default as viewPreferenceReducer } from './extensions/BoardViewSwitcher/viewPreference.slice';
 export { notificationPreferencesApi } from './extensions/Notifications/NotificationPreferences/notificationPreferences.slice';
+export { boardMembersApi } from './extensions/Board/slices/boardMembersSlice';
