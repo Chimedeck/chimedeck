@@ -43,7 +43,7 @@ const AddListForm = ({ onSubmit }: Props) => {
   if (!open) {
     return (
       <button
-        className="w-72 shrink-0 bg-slate-900/40 border border-dashed border-slate-700 rounded-xl p-3 text-slate-400 hover:text-slate-200 hover:border-slate-500 text-sm text-left transition-colors"
+        className="w-72 shrink-0 bg-white/40 dark:bg-slate-900/40 border border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-3 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-400 dark:hover:border-slate-500 text-sm text-left transition-colors"
         onClick={() => setOpen(true)}
         aria-label="Add a list"
       >
@@ -55,7 +55,7 @@ const AddListForm = ({ onSubmit }: Props) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-72 shrink-0 bg-slate-900/80 border border-slate-700 rounded-xl p-3 flex flex-col gap-2"
+      className="w-72 shrink-0 bg-white/90 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700 rounded-xl p-3 flex flex-col gap-2"
     >
       <input
         ref={inputRef}
@@ -65,7 +65,7 @@ const AddListForm = ({ onSubmit }: Props) => {
         onKeyDown={handleKeyDown}
         placeholder="List title…"
         disabled={submitting}
-        className="rounded-lg bg-slate-700 border border-slate-600 text-slate-200 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500"
+        className="rounded-lg bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-slate-200 text-sm px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-slate-500"
         aria-label="New list title"
       />
       <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ const AddListForm = ({ onSubmit }: Props) => {
         <button
           type="button"
           onClick={() => { setOpen(false); setTitle(''); }}
-          className="rounded-md px-2 py-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors"
+          className="rounded-md px-2 py-1 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
           aria-label="Cancel"
         >
           <XMarkIcon className="h-4 w-4" aria-hidden="true" />

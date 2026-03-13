@@ -26,30 +26,30 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-md rounded-xl bg-slate-900 border border-slate-700 p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-6 shadow-xl">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <ExclamationTriangleIcon className="w-6 h-6 text-red-400 shrink-0" />
-            <h2 className="text-lg font-semibold text-slate-100">Delete board?</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Delete board?</h2>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
             aria-label="Close"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-sm text-slate-300 mb-2">
-          <span className="font-medium text-slate-100">"{boardTitle}"</span> contains:
+        <p className="text-sm text-gray-700 dark:text-slate-300 mb-2">
+          <span className="font-medium text-gray-900 dark:text-slate-100">"{boardTitle}"</span> contains:
         </p>
-        <ul className="text-sm text-slate-400 mb-4 list-disc list-inside space-y-1">
+        <ul className="text-sm text-gray-500 dark:text-slate-400 mb-4 list-disc list-inside space-y-1">
           <li>{listCount} list{listCount !== 1 ? 's' : ''}</li>
           <li>{cardCount} card{cardCount !== 1 ? 's' : ''}</li>
         </ul>
-        <p className="text-sm text-red-400 mb-6">
+        <p className="text-sm text-red-500 dark:text-red-400 mb-6">
           All of this content will be permanently deleted. This cannot be undone.
         </p>
 
@@ -57,7 +57,7 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors"
+            className="px-4 py-2 text-sm rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
           >
             Cancel
           </button>

@@ -83,7 +83,7 @@ const CardLabels = ({
         <div className="relative">
           <button
             type="button"
-            className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+            className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 flex items-center gap-1 transition-colors"
             onClick={() => setPickerOpen((v) => !v)}
             aria-haspopup="true"
             aria-expanded={pickerOpen}
@@ -99,10 +99,10 @@ const CardLabels = ({
                 onClick={() => setPickerOpen(false)}
                 aria-hidden="true"
               />
-              <div className="absolute left-0 top-6 z-20 w-64 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-3 space-y-3">
+              <div className="absolute left-0 top-6 z-20 w-64 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-3 space-y-3">
                 {/* Search / create input */}
                 <input
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="Label name…"
                   value={newLabelName}
                   onChange={(e) => setNewLabelName(e.target.value)}
@@ -112,7 +112,7 @@ const CardLabels = ({
 
                 {/* Colour grid */}
                 <div>
-                  <p className="text-xs text-slate-500 mb-1.5">Colour</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mb-1.5">Colour</p>
                   <div className="grid grid-cols-4 gap-1.5">
                     {PRESET_COLORS.map((c) => (
                       <button
@@ -145,12 +145,12 @@ const CardLabels = ({
                 {/* Existing unassigned labels */}
                 {unassigned.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs text-slate-500">Existing labels</p>
+                    <p className="text-xs text-gray-400 dark:text-slate-500">Existing labels</p>
                     {unassigned.map((label) => (
                       <button
                         key={label.id}
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                         onClick={() => handleToggle(label)}
                       >
                         <span
@@ -165,13 +165,13 @@ const CardLabels = ({
 
                 {/* Already assigned labels (toggle off) */}
                 {assignedLabels.length > 0 && (
-                  <div className="space-y-1 border-t border-slate-700 pt-2">
-                    <p className="text-xs text-slate-500">Assigned</p>
+                  <div className="space-y-1 border-t border-gray-200 dark:border-slate-700 pt-2">
+                    <p className="text-xs text-gray-400 dark:text-slate-500">Assigned</p>
                     {assignedLabels.map((label) => (
                       <button
                         key={label.id}
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                         onClick={() => handleToggle(label)}
                       >
                         <span

@@ -56,13 +56,13 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   return (
     <section aria-label="Description">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
           Description
         </h3>
         {!disabled && (
           <button
             type="button"
-            className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-xs text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
             onClick={() => setMode((m) => (m === 'edit' ? 'preview' : 'edit'))}
           >
             {mode === 'edit' ? 'Preview' : 'Edit'}
@@ -76,7 +76,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
           value={draft}
           onChange={handleChange}
           placeholder="Add a more detailed description…"
-          className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] font-mono"
+          className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-gray-700 dark:text-slate-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] font-mono"
           aria-label="Card description"
         />
       ) : (
@@ -84,7 +84,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
           <div className="relative">
             <div
               className={[
-                'prose prose-invert prose-sm max-w-none text-slate-300 bg-slate-800/50 rounded-lg p-3 min-h-[80px]',
+                'prose dark:prose-invert prose-sm max-w-none text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 min-h-[80px]',
                 isLong && !expanded ? 'overflow-hidden' : '',
               ].join(' ')}
               style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
@@ -93,7 +93,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             />
             {/* Gradient overlay when truncated */}
             {isLong && !expanded && (
-              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-900/80 to-transparent rounded-b-lg pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 dark:from-slate-900/80 to-transparent rounded-b-lg pointer-events-none" />
             )}
           </div>
           {isLong && (

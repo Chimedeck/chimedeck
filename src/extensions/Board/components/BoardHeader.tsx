@@ -95,7 +95,7 @@ const BoardHeader = ({
   };
 
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-3 bg-slate-900/80 backdrop-blur-sm px-4 py-2 border-b border-slate-800">
+    <header className="sticky top-0 z-10 flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-4 py-2 border-b border-gray-200 dark:border-slate-800">
       {/* Editable board title */}
       {editing ? (
         <input
@@ -106,12 +106,12 @@ const BoardHeader = ({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleSave}
           onKeyDown={handleKeyDown}
-          className="bg-slate-800 text-slate-100 font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 max-w-xs"
+          className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 max-w-xs"
           aria-label="Edit board title"
         />
       ) : (
         <button
-          className="text-slate-100 font-semibold text-lg hover:bg-slate-800 rounded px-2 py-0.5 transition-colors"
+          className="text-gray-900 dark:text-slate-100 font-semibold text-lg hover:bg-gray-100 dark:hover:bg-slate-800 rounded px-2 py-0.5 transition-colors"
           onClick={handleTitleClick}
           aria-label="Click to edit board title"
         >
@@ -141,7 +141,7 @@ const BoardHeader = ({
         {/* Settings menu */}
         <div className="relative" ref={menuContainerRef}>
           <button
-            className="rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+            className="rounded p-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Board settings"
             aria-haspopup="true"
@@ -150,10 +150,10 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-48 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
+            <div className="absolute right-0 mt-1 w-48 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl z-20">
               {onOpenSettings && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                   onClick={() => { setMenuOpen(false); onOpenSettings(); }}
                 >
                   Board settings
@@ -161,7 +161,7 @@ const BoardHeader = ({
               )}
               {onArchive && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                   onClick={() => { setMenuOpen(false); onArchive(); }}
                 >
                   {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
@@ -169,7 +169,7 @@ const BoardHeader = ({
               )}
               {onDelete && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700"
                   onClick={() => { setMenuOpen(false); onDelete(); }}
                 >
                   Delete board

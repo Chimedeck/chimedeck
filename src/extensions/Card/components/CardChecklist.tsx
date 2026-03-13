@@ -21,15 +21,15 @@ const CardChecklist = ({ items, onAdd, onToggle, onRename, onDelete, disabled }:
   return (
     <section aria-label="Checklist">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
           Checklist
         </h3>
-        <span className="text-xs text-slate-500">{checked}/{total}</span>
+        <span className="text-xs text-gray-400 dark:text-slate-500">{checked}/{total}</span>
       </div>
 
       {total > 0 && (
         <div className="mb-3" aria-label={`Checklist progress: ${pct}%`}>
-          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-emerald-500 transition-all duration-300"
               style={{ width: `${pct}%` }}

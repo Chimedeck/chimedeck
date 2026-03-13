@@ -36,7 +36,7 @@ const BoardMemberAvatars = ({ members, max = 5 }: Props) => {
           key={member.id}
           role="listitem"
           title={member.display_name ?? member.email}
-          className={`relative -ml-2 first:ml-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 text-xs font-semibold text-white ${COLORS[i % COLORS.length]}`}
+          className={`relative -ml-2 first:ml-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 text-xs font-semibold text-white ${COLORS[i % COLORS.length]}`}
           style={{ zIndex: visible.length - i }}
         >
           {initials(member)}
@@ -44,7 +44,7 @@ const BoardMemberAvatars = ({ members, max = 5 }: Props) => {
       ))}
       {overflow > 0 && (
         <div
-          className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 bg-slate-600 text-xs font-semibold text-white"
+          className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-gray-400 dark:bg-slate-600 text-xs font-semibold text-white"
           title={`${overflow} more member${overflow > 1 ? 's' : ''}`}
         >
           +{overflow}

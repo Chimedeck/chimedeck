@@ -117,7 +117,7 @@ const CardModal = ({
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
             {/* Header */}
             <div className="flex items-start gap-2 p-5 pb-2">
               <div className="flex-1 min-w-0">
@@ -126,13 +126,13 @@ const CardModal = ({
                   onSave={onTitleSave}
                   disabled={isReadOnly}
                 />
-                <p className="mt-1 text-xs text-slate-500 px-2">
-                  in list <span className="text-slate-400 font-medium">{listTitle}</span>{' '}
+                <p className="mt-1 text-xs text-gray-400 dark:text-slate-500 px-2">
+                  in list <span className="text-gray-500 dark:text-slate-400 font-medium">{listTitle}</span>{' '}
                   · {boardTitle}
                 </p>
               </div>
               <Dialog.Close
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors flex-shrink-0"
+                className="rounded-lg p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
                 aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" aria-hidden="true" />

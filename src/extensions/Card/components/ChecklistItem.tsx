@@ -32,12 +32,12 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         checked={item.checked}
         onChange={(e) => onToggle(item.id, e.target.checked)}
         disabled={disabled}
-        className="mt-0.5 h-4 w-4 rounded border-slate-600 text-blue-500 bg-slate-800"
+        className="mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-500 bg-white dark:bg-slate-800"
         aria-label={`Toggle: ${item.title}`}
       />
       {editing ? (
         <input
-          className="flex-1 rounded border border-blue-400 px-1 py-0.5 text-sm focus:outline-none bg-slate-800 text-slate-200"
+          className="flex-1 rounded border border-blue-400 px-1 py-0.5 text-sm focus:outline-none bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={submitRename}
@@ -46,7 +46,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         />
       ) : (
         <span
-          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-slate-500 line-through' : 'text-slate-200'}`}
+          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-gray-400 dark:text-slate-500 line-through' : 'text-gray-800 dark:text-slate-200'}`}
           onClick={() => !disabled && setEditing(true)}
           role="button"
           tabIndex={0}
@@ -59,7 +59,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
       {!disabled && (
         <button
           type="button"
-          className="text-slate-500 hover:text-red-400 focus:outline-none"
+          className="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 focus:outline-none"
           onClick={() => onDelete(item.id)}
           aria-label={`Delete checklist item: ${item.title}`}
         >

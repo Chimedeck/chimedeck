@@ -29,10 +29,10 @@ const ToggleSwitch = ({
   disabledTooltip?: string;
 }) => {
   const track = disabled
-    ? 'bg-slate-700 cursor-not-allowed opacity-40'
+    ? 'bg-gray-200 dark:bg-slate-700 cursor-not-allowed opacity-40'
     : enabled
       ? 'bg-indigo-600'
-      : 'bg-slate-600 hover:bg-slate-500';
+      : 'bg-gray-300 dark:bg-slate-600 hover:bg-gray-400 dark:hover:bg-slate-500';
 
   return (
     <span title={disabled ? disabledTooltip : undefined}>
@@ -42,7 +42,7 @@ const ToggleSwitch = ({
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => !disabled && onChange(!enabled)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${track}`}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${track}`}
       >
         <span
           className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
@@ -90,7 +90,7 @@ const NotificationPreferencesPanel = () => {
 
   if (isLoading) {
     return (
-      <div className="py-4 text-sm text-slate-500 animate-pulse">
+      <div className="py-4 text-sm text-gray-400 dark:text-slate-500 animate-pulse">
         Loading notification preferences…
       </div>
     );
@@ -99,15 +99,15 @@ const NotificationPreferencesPanel = () => {
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-slate-300">
+        <table className="w-full text-sm text-gray-700 dark:text-slate-300">
           <thead>
-            <tr className="text-xs text-slate-500 uppercase tracking-wide">
+            <tr className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">
               <th className="pb-3 text-left font-medium">Notification</th>
               <th className="pb-3 text-center font-medium w-24">In-App</th>
               <th className="pb-3 text-center font-medium w-24">Email</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
             {NOTIFICATION_TYPES.map((type) => {
               const pref = getPreference(type);
               // Opt-out model: default to enabled when no row exists yet.
@@ -116,7 +116,7 @@ const NotificationPreferencesPanel = () => {
 
               return (
                 <tr key={type} className="py-2">
-                  <td className="py-3 text-slate-200">
+                  <td className="py-3 text-gray-800 dark:text-slate-200">
                     {NOTIFICATION_TYPE_LABELS[type]}
                   </td>
                   <td className="py-3 text-center">
