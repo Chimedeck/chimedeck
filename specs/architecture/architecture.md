@@ -46,6 +46,15 @@ Automation (board-scoped)
   ├── AutomationTrigger  (exactly one per RULE / DUE_DATE automation)
   ├── AutomationAction[] (ordered; shared by all automation types)
   └── AutomationRunLog[] (immutable audit; capped at 1 000 rows per automation)
+
+Notification
+  └── user_id, type, source_type, source_id, card_id, board_id, actor_id, read
+      type: 'mention' | 'card_created' | 'card_moved' | 'card_commented'
+
+NotificationPreference
+  └── user_id, type, in_app_enabled, email_enabled
+      One row per (user, type); missing rows default to both channels enabled (opt-out model)
+      type: 'mention' | 'card_created' | 'card_moved' | 'card_commented'
 ```
 
 All entity IDs: CUID2 (sortable). Positions: lexicographic base-62 fractional index.
@@ -98,6 +107,28 @@ server/
       engine/                #   matcher, executor, registry (triggers + actions)
       scheduler/             #   pg_cron tick function (migration) + LISTEN client (listener.ts)
       config/                #   AUTOMATION_ENABLED, AUTOMATION_SCHEDULER_ENABLED, AUTOMATION_USE_PGCRON flags
+    notifications/           # Sprint 26 / 70–73 — in-app notifications + email dispatch
+      api/
+        index.ts             #   mount list, markRead, markAllRead, delete, preferences sub-routes
+        list.ts              #   GET  /api/v1/notifications (supports ?type= filter)
+        markRead.ts          #   PATCH /api/v1/notifications/:id/read
+        markAllRead.ts       #   PATCH /api/v1/notifications/read-all
+        delete.ts            #   DELETE /api/v1/notifications/:id
+        preferences/
+          index.ts           #   mount GET + PATCH
+          get.ts             #   GET  /api/v1/notifications/preferences
+          update.ts          #   PATCH /api/v1/notifications/preferences
+      mods/
+        dispatch.ts          #   mention notification creation + WS push (Sprint 26)
+        boardActivityDispatch.ts  # card_created / card_moved / card_commented in-app + email (Sprints 72–73)
+        preferenceGuard.ts   #   lookup helper; falls back to all-enabled when no row exists
+        emailDispatch.ts     #   gated SES dispatch helper (Sprint 72)
+        emailTemplates/
+          mention.ts
+          cardCreated.ts
+          cardMoved.ts
+          cardCommented.ts
+          shared.ts          #   base HTML wrapper + plain-text fallback
   mods/
     flags/                   # Sprint 01 — composite feature flag provider
       index.ts               # getFlag(key, context?) → boolean | string | number
@@ -156,6 +187,23 @@ src/
         LogPanel/                   # run history, quota bar
         shared/
           IconPicker.tsx            # 24 selectable Heroicons for button customisation
+    Notifications/           # Sprint 26 / 70–73 — notification bell, panel, preferences
+      components/
+        NotificationBell.tsx        # badge + popover trigger
+        NotificationPanel/          # list of notifications with icons per type
+        NotificationItem.tsx        # mention / card_created / card_moved / card_commented rows
+      NotificationPreferences/
+        NotificationPreferencesPanel.tsx  # 4×2 toggle matrix in Profile Settings
+        notificationPreferences.slice.ts  # RTK Query: GET + PATCH preferences
+        types.ts
+      hooks/
+        useNotifications.ts         # WS subscription + Redux update
+    AdminInvite/             # Sprint 44–45 / 74 — external user invite + auto-verify
+      api.ts                 #   RTK Query: POST /api/v1/admin/users
+      InviteExternalUserModal.tsx   # form: email, name, password, send-email toggle, auto-verify checkbox
+      CredentialSheet.tsx    #   verification status + copyable credentials
+      adminInvite.slice.ts
+      types.ts
   store.ts                   # Redux store
   reducers.ts                # root reducer
 ```
@@ -207,6 +255,61 @@ Priority order (highest wins):
 4. Hardcoded defaults in `server/mods/flags/providers/defaults.ts`
 
 All server code accesses flags via `import { getFlag } from 'server/mods/flags'` — never raw `Bun.env`.
+
+---
+
+## 10. Notification System
+
+Full spec: [Sprints 26](../sprints/sprint-26.md), [70](../sprints/sprint-70.md), [71](../sprints/sprint-71.md), [72](../sprints/sprint-72.md), [73](../sprints/sprint-73.md)
+
+### Notification channels
+
+The notification system has two independent delivery channels. Each can be toggled per user, per notification type via `NotificationPreference`:
+
+| Channel | Mechanism | Sprint introduced |
+|---------|-----------|------------------|
+| **In-app** | WS push to `user:<userId>` channel + persistent row in `notifications` table | Sprint 26 |
+| **Email** | SES transactional email via `emailDispatch.ts` | Sprint 72 |
+
+### Notification types
+
+| Type | Trigger event | Recipients |
+|------|--------------|-----------|
+| `mention` | User @mentioned in card description or comment | Mentioned user only |
+| `card_created` | `card.created` event | All board members except actor |
+| `card_moved` | `card.moved` event | All board members except actor |
+| `card_commented` | `comment.created` event | All board members except actor |
+
+### Dispatch pipeline
+
+```
+Board event persisted (events/dispatch.ts)
+  └──▶ boardActivityDispatch.ts  (fire-and-forget)
+         ├── For each board member (excluding actor):
+         │     ├── preferenceGuard.getPreference({ userId, type })
+         │     ├── if in_app_enabled → insert notifications row + WS push to user:<userId>
+         │     └── if email_enabled && SES_ENABLED && EMAIL_NOTIFICATIONS_ENABLED
+         │               → dispatchNotificationEmail(...)  [fire-and-forget]
+         └── Failures are caught, logged — never block the originating mutation
+
+@mention created (mention sync hook)
+  └──▶ dispatch.ts
+         ├── if in_app_enabled → insert notifications row + WS push to user:<userId>
+         └── if email_enabled → dispatchNotificationEmail({ type: 'mention', ... })
+```
+
+### Preference model
+
+Stored in `notification_preferences` table (`user_id`, `type`, `in_app_enabled`, `email_enabled`).
+Missing rows are treated as both channels enabled (opt-out model).
+When `NOTIFICATION_PREFERENCES_ENABLED=false`, the guard always returns all-enabled.
+
+### Feature flags
+
+| Flag | Default | Effect when `false` |
+|------|---------|---------------------|
+| `NOTIFICATION_PREFERENCES_ENABLED` | `true` | Treats all channels as enabled for all users |
+| `EMAIL_NOTIFICATIONS_ENABLED` | `false` | No notification emails dispatched (SES still used for verification etc.) |
 
 ---
 

@@ -98,7 +98,18 @@
 | [66](./sprint-66.md) | Automation: Card & Board Buttons UI | Card back "Automation" section with custom Heroicon buttons; board header action buttons; icon picker (24 Heroicons); Buttons tab live | ⬜ Needs 65 + 19 |
 | [67](./sprint-67.md) | Automation: Scheduled Commands UI | Schedule tab live: calendar-command builder, due-date-command builder, schedule summary formatter, 3 quick-start templates | ⬜ Needs 66 + 64 |
 | [68](./sprint-68.md) | Automation: Run History, Logs & Quota | Log tab: paginated run log, expandable rows, real-time WS updates; quota bar (`ChartBarIcon`); monthly quota via env var | ⬜ Needs 67 |
-| [69](./sprint-69.md) | In-House Virus Scanning (ClamAV) | ClamAV sidecar, INSTREAM TCP protocol, EICAR integration test, `REJECTED` UI state with tooltip | ⬜ Needs 59 |
+| [69](./sprint-future-1.md) | In-House Virus Scanning (ClamAV) | ClamAV sidecar, INSTREAM TCP protocol, EICAR integration test, `REJECTED` UI state with tooltip | ⬜ Needs 59 |
+| **— Notifications —** | | | |
+| [70](./sprint-70.md) | Notification Preferences: DB + API | `notification_preferences` table; GET/PATCH preference API; `preferenceGuard` helper; gate in-app + email dispatch; `NOTIFICATION_PREFERENCES_ENABLED` flag | ⬜ Needs 26 + 23 |
+| [71](./sprint-71.md) | Notification Preferences UI | Toggle matrix in Profile Settings (4 types × 2 channels); optimistic PATCH; email column disabled when SES off | ⬜ Needs 70 + 24 |
+| [72](./sprint-72.md) | Email Notifications (Mentions + Board Activity) | SES email templates for mention/card_created/card_moved/card_commented; `boardActivityDispatch`; `EMAIL_NOTIFICATIONS_ENABLED` flag; fire-and-forget | ⬜ Needs 70 + 23 + 26 |
+| [73](./sprint-73.md) | In-App Notifications for Board Activity | Extend in-app notifications to card_created/card_moved/card_commented; WS push to board members; new icons + copy in notification panel; `type` filter on list API | ⬜ Needs 70 + 26 + 72 |
+| **— Admin Enhancements —** | | | |
+| [74](./sprint-74.md) | Admin: Auto-Verify External User Email | `autoVerifyEmail` param on `POST /api/v1/admin/users`; sets `email_verified_at` at creation; checkbox in invite modal (default: checked); verification status in credential sheet | ⬜ Needs 44 + 45 |
+| **— UI / UX Polish —** | | | |
+| [75](./sprint-75.md) | Light / Dark Theme (Full Implementation) | Audit all components for hardcoded dark classes; dual-mode Tailwind `dark:` variants throughout; theme persisted in `localStorage`; no flash on load; `ThemeToggle` Sun/Moon icons | ⬜ Needs 22 |
+| [76](./sprint-76.md) | Board Background Image Upload | S3 upload for board backgrounds (`board-backgrounds/{boardId}/`); `POST/DELETE /api/v1/boards/:id/background`; background renders behind columns only — columns stay opaque; thumbnail in workspace grid + search results; real-time WS sync | ⬜ Needs 46 + 12 + 75 |
+| [77](./sprint-77.md) | Granular Search (Scoped by Type) | Scope tabs (`All` / `Boards` / `Cards`) in command palette; passes `type=board|card` to search API; scoped empty states; placeholder text matches scope; `sessionStorage` persistence | ⬜ Needs 22 + 13 + 76 |
 
 ---
 
@@ -119,6 +130,8 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `PLUGINS_ENABLED` | Sprint 34 | Disable plugin routes and SDK endpoint entirely (off by default in dev until Sprint 34) |
 | `EMAIL_DOMAIN_RESTRICTION_ENABLED` | Sprint 43 | Reject registration / email-change for domains not in `ALLOWED_EMAIL_DOMAINS` (default: `true`) |
 | `ADMIN_INVITE_EMAIL_ENABLED` | Sprint 44 | Send invitation email to externally created users via SES (requires `SES_ENABLED` also `true`) |
+| `NOTIFICATION_PREFERENCES_ENABLED` | Sprint 70 | When `false`, all notification channels are treated as enabled for all users (backward-compatible with Sprint 26) |
+| `EMAIL_NOTIFICATIONS_ENABLED` | Sprint 72 | Enable SES email dispatch for notification events — requires `SES_ENABLED` also `true` |
 | `AUTOMATION_ENABLED` | Sprint 61 | Disable all automation routes and the event-pipeline evaluation hook |
 | `AUTOMATION_SCHEDULER_ENABLED` | Sprint 64 | Prevent calendar + due-date scheduler workers from starting (useful in read-only replicas) |
 | `AUTOMATION_MONTHLY_QUOTA` | Sprint 68 | Maximum automation runs per board per calendar month (default: `1000`) |
@@ -204,6 +217,17 @@ Sprint 66 ──────────── Automation Buttons UI: card-back 
 Sprint 67 ──────────── Automation Schedule UI: calendar command builder, due-date command builder, quick-start templates
 Sprint 68 ──────────── Automation Log & Quota: run history log, quota bar, real-time WS updates, monthly quota config
 Sprint 69 ──────────── In-house virus scanning: ClamAV sidecar, INSTREAM protocol, EICAR test, REJECTED UI state
+──── Notifications ──────────────────────────────────────────────────────────────────────────────
+Sprint 70 ──────────── NotificationPreference (per user, per type, per channel)
+Sprint 71 ──────────── Notification preferences settings UI
+Sprint 72 ──────────── Email notification dispatch (mention, card_created, card_moved, card_commented)
+Sprint 73 ──────────── In-app board activity notifications; extend notification panel
+──── Admin Enhancements ─────────────────────────────────────────────────────────────────────────
+Sprint 74 ──────────── Admin auto-verify external user email on invite
+──── UI / UX Polish ─────────────────────────────────────────────────────────────────────────────
+Sprint 75 ──────────── Full light/dark theme: audit + dual-mode Tailwind classes, no-flash init
+Sprint 76 ──────────── Board background image upload; S3 storage; board card + search thumbnails
+Sprint 77 ──────────── Granular search: scope selector (All / Boards / Cards) in command palette
 ```
 
 ---

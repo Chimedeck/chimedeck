@@ -1,5 +1,6 @@
 # Sprint 69 — In-House Virus Scanning with ClamAV
 
+> **Status:** Future sprint — not scheduled yet
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 59 (Enhanced Attachments — multipart, thumbnails), Sprint 60 (Attachment Upload UI)
 > **References:** ClamAV docs — https://docs.clamav.net/
