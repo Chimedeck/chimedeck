@@ -8,6 +8,7 @@ import { apiClient } from '~/common/api/client';
 import { patchBoardVisibility } from '../../api';
 import VisibilitySelector, { type BoardVisibility } from './VisibilitySelector';
 import BoardCustomFieldsPanel from '~/extensions/CustomFields/BoardCustomFieldsPanel';
+import BackgroundPicker from './BackgroundPicker';
 
 interface Props {
   onClose: () => void;
@@ -84,6 +85,10 @@ const BoardSettings = ({ onClose }: Props) => {
             onChange={handleVisibilityChange}
             disabled={saving}
           />
+
+          <div className="border-t border-slate-700 pt-4">
+            <BackgroundPicker boardId={boardId ?? ''} />
+          </div>
 
           <div className="border-t border-slate-700 pt-4">
             <BoardCustomFieldsPanel />

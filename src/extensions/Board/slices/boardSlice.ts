@@ -176,6 +176,13 @@ const boardSlice = createSlice({
       }
     },
 
+    /** Update board background URL (from WS event or API response) */
+    updateBoardBackground(state, action: PayloadAction<{ background: string | null }>) {
+      if (state.board) {
+        state.board.background = action.payload.background;
+      }
+    },
+
     /** Move a card between lists without saving an undo snapshot (WS events) */
     remoteCardMove(
       state,

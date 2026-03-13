@@ -338,7 +338,16 @@ const BoardPage = () => {
   ];
 
   return (
-    <div className="flex flex-col bg-slate-950 text-slate-100 h-full overflow-hidden">
+    <div
+      className="flex flex-col text-slate-100 h-full overflow-hidden relative bg-slate-950 bg-cover bg-center"
+      style={board.background ? { backgroundImage: `url(${board.background})` } : undefined}
+    >
+      {/* Dark scrim over background image so text stays legible */}
+      {board.background && (
+        <div className="absolute inset-0 bg-black/50 pointer-events-none z-0" aria-hidden="true" />
+      )}
+      {/* All content above the scrim */}
+      <div className="relative z-10 flex flex-col h-full overflow-hidden">
       <BoardHeader
         board={board}
         connectionState={connectionState}
@@ -492,6 +501,7 @@ const BoardPage = () => {
           onCancel={() => setListDeleteDialog(null)}
         />
       )}
+    </div>
     </div>
   );
 };

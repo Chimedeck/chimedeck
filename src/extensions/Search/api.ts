@@ -10,6 +10,8 @@ export interface SearchResult {
   boardId?: string;
   archived?: boolean;
   rank?: number;
+  /** Background image URL — only present for board results */
+  background?: string | null;
 }
 
 export interface SearchResponse {

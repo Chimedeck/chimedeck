@@ -125,6 +125,13 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           // local state; nothing to dispatch to the entity slices.
           break;
 
+        // ── Board events ──────────────────────────────────────────────────
+        case 'board.background_changed': {
+          const { background } = payload as { background: string | null };
+          dispatch(boardSliceActions.updateBoardBackground({ background }));
+          break;
+        }
+
         default:
           // Unknown event type — ignore
           break;
