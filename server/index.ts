@@ -71,6 +71,7 @@ async function router(req: Request): Promise<Response> {
     const sesEnabled = await flags.isEnabled('SES_ENABLED');
     const notificationPreferencesEnabled = await flags.isEnabled('NOTIFICATION_PREFERENCES_ENABLED');
     const emailNotificationsEnabled = await flags.isEnabled('EMAIL_NOTIFICATIONS_ENABLED');
+    const emailVerificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
     return Response.json({
       data: {
         sesEnabled,
@@ -78,6 +79,7 @@ async function router(req: Request): Promise<Response> {
         adminEmailDomains: env.ADMIN_EMAIL_DOMAINS,
         notificationPreferencesEnabled,
         emailNotificationsEnabled,
+        emailVerificationEnabled,
       },
     });
   }

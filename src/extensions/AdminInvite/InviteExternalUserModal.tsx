@@ -10,9 +10,10 @@ import {
   selectInviteModalOpen,
   selectInviteCredentials,
   selectInviteEmailSent,
+  selectInviteEmailVerifiedAt,
   setInviteCredentials,
 } from './adminInvite.slice';
-import { selectShowEmailToggle } from '~/slices/featureFlagsSlice';
+import { selectShowEmailToggle, selectEmailVerificationEnabled } from '~/slices/featureFlagsSlice';
 import { adminInviteApi } from './api';
 import CredentialSheet from './CredentialSheet';
 import type { PasswordMode } from './types';
@@ -50,7 +51,9 @@ export default function InviteExternalUserModal() {
   const isOpen = useAppSelector(selectInviteModalOpen);
   const credentials = useAppSelector(selectInviteCredentials);
   const emailSentFromStore = useAppSelector(selectInviteEmailSent);
+  const emailVerifiedAt = useAppSelector(selectInviteEmailVerifiedAt);
   const showEmailToggle = useAppSelector(selectShowEmailToggle);
+  const emailVerificationEnabled = useAppSelector(selectEmailVerificationEnabled);
 
   // Form state
   const [email, setEmail] = useState('');
@@ -58,6 +61,7 @@ export default function InviteExternalUserModal() {
   const [passwordMode, setPasswordMode] = useState<PasswordMode>('auto');
   const [password, setPassword] = useState('');
   const [sendEmail, setSendEmail] = useState(false);
+  const [autoVerifyEmail, setAutoVerifyEmail] = useState(true);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -68,6 +72,7 @@ export default function InviteExternalUserModal() {
     setPasswordMode('auto');
     setPassword('');
     setSendEmail(false);
+    setAutoVerifyEmail(true);
     setFieldErrors({});
     setServerError(null);
     setLoading(false);
@@ -107,10 +112,16 @@ export default function InviteExternalUserModal() {
         displayName: displayName.trim(),
         ...(passwordMode === 'manual' ? { password } : {}),
         sendEmail: showEmailToggle ? sendEmail : false,
+        // Only send autoVerifyEmail when email verification is enabled; otherwise it's irrelevant.
+        ...(emailVerificationEnabled ? { autoVerifyEmail } : {}),
       };
       const response = await adminInviteApi.createUser(body);
       dispatch(
-        setInviteCredentials({ credentials: response.credentials, emailSent: response.emailSent }),
+        setInviteCredentials({
+          credentials: response.credentials,
+          emailSent: response.emailSent,
+          emailVerifiedAt: response.data.email_verified_at,
+        }),
       );
       resetForm();
     } catch (err: unknown) {
@@ -163,6 +174,7 @@ export default function InviteExternalUserModal() {
               plainPassword={credentials.plainPassword}
               loginUrl={loginUrl}
               emailSent={emailSentFromStore}
+              emailVerifiedAt={emailVerifiedAt}
               onDone={() => handleOpenChange(false)}
             />
           ) : (
@@ -307,7 +319,7 @@ export default function InviteExternalUserModal() {
 
                 {/* Send email toggle — only when both SES and invite email are enabled */}
                 {showEmailToggle && (
-                  <div className="mb-5">
+                  <div className="mb-4">
                     <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer">
                       <input
                         type="checkbox"
@@ -316,6 +328,22 @@ export default function InviteExternalUserModal() {
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                       />
                       Send login credentials to the user by email
+                    </label>
+                  </div>
+                )}
+
+                {/* Auto-verify email — hidden when email verification is disabled globally */}
+                {emailVerificationEnabled && (
+                  <div className="mb-5">
+                    <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoVerifyEmail}
+                        onChange={(e) => setAutoVerifyEmail(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
+                        data-testid="auto-verify-email-checkbox"
+                      />
+                      Mark email as verified
                     </label>
                   </div>
                 )}

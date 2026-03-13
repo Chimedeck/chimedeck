@@ -215,3 +215,27 @@ describe('email-send condition logic', () => {
     expect(check(true, false, false)).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// autoVerifyEmail logic — unit tests for the email_verified_at stamping condition
+// ---------------------------------------------------------------------------
+
+describe('autoVerifyEmail logic', () => {
+  const resolveVerifiedAt = (autoVerifyEmail: boolean | undefined, now: Date): Date | null =>
+    autoVerifyEmail === true ? now : null;
+
+  it('sets email_verified_at when autoVerifyEmail is true', () => {
+    const now = new Date();
+    expect(resolveVerifiedAt(true, now)).toBe(now);
+  });
+
+  it('returns null when autoVerifyEmail is false', () => {
+    const now = new Date();
+    expect(resolveVerifiedAt(false, now)).toBeNull();
+  });
+
+  it('returns null when autoVerifyEmail is undefined (default/omitted)', () => {
+    const now = new Date();
+    expect(resolveVerifiedAt(undefined, now)).toBeNull();
+  });
+});

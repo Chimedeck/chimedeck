@@ -8,6 +8,8 @@ interface CredentialSheetProps {
   plainPassword: string;
   loginUrl: string;
   emailSent: boolean;
+  /** ISO timestamp if the account was auto-verified, null otherwise. */
+  emailVerifiedAt: string | null;
   onDone: () => void;
 }
 
@@ -16,6 +18,7 @@ export default function CredentialSheet({
   plainPassword,
   loginUrl,
   emailSent,
+  emailVerifiedAt,
   onDone,
 }: CredentialSheetProps) {
   const [copied, setCopied] = useState(false);
@@ -43,6 +46,20 @@ export default function CredentialSheet({
       {emailSent && (
         <p className="mb-4 rounded-md bg-indigo-900/40 px-3 py-2 text-sm text-indigo-300">
           Credentials have also been sent to the user&apos;s email address.
+        </p>
+      )}
+
+      {/* Email verification status — only shown when the server returned a value */}
+      {emailVerifiedAt !== undefined && (
+        <p
+          className={`mb-4 rounded-md px-3 py-2 text-sm ${
+            emailVerifiedAt
+              ? 'bg-green-900/30 text-green-300'
+              : 'bg-yellow-900/30 text-yellow-300'
+          }`}
+          data-testid="email-verification-status"
+        >
+          {emailVerifiedAt ? 'Email verified' : 'Email not verified'}
         </p>
       )}
 

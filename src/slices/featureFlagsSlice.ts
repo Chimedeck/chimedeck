@@ -16,6 +16,8 @@ interface FeatureFlagsState {
   notificationPreferencesEnabled: boolean;
   // Whether email notification dispatch is enabled (Sprint 72)
   emailNotificationsEnabled: boolean;
+  // Whether email address verification is required on registration (Sprint 74)
+  emailVerificationEnabled: boolean;
   status: 'idle' | 'loading' | 'ready' | 'error';
 }
 
@@ -25,6 +27,7 @@ const initialState: FeatureFlagsState = {
   sesEnabled: false,
   notificationPreferencesEnabled: false,
   emailNotificationsEnabled: false,
+  emailVerificationEnabled: false,
   status: 'idle',
 };
 
@@ -39,6 +42,7 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
           sesEnabled?: boolean;
           notificationPreferencesEnabled?: boolean;
           emailNotificationsEnabled?: boolean;
+          emailVerificationEnabled?: boolean;
         };
       }>('/flags');
       return response.data;
@@ -63,6 +67,7 @@ const featureFlagsSlice = createSlice({
         state.sesEnabled = action.payload.sesEnabled ?? false;
         state.notificationPreferencesEnabled = action.payload.notificationPreferencesEnabled ?? false;
         state.emailNotificationsEnabled = action.payload.emailNotificationsEnabled ?? false;
+        state.emailVerificationEnabled = action.payload.emailVerificationEnabled ?? false;
         state.status = 'ready';
       })
       .addCase(fetchFeatureFlagsThunk.rejected, (state) => {
@@ -84,3 +89,5 @@ export const selectNotificationPreferencesEnabled = (state: RootState) =>
   state.featureFlags.notificationPreferencesEnabled;
 export const selectEmailNotificationsEnabled = (state: RootState) =>
   state.featureFlags.emailNotificationsEnabled;
+export const selectEmailVerificationEnabled = (state: RootState) =>
+  state.featureFlags.emailVerificationEnabled;
