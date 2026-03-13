@@ -113,4 +113,7 @@ export const env = {
   // Notification preferences — when false, GET/PATCH /preferences return 501
   // and all channels remain enabled for all users.
   NOTIFICATION_PREFERENCES_ENABLED: Bun.env['NOTIFICATION_PREFERENCES_ENABLED'] !== 'false',
+
+  // Email notifications — both SES_ENABLED and this flag must be true for notification emails to send.
+  EMAIL_NOTIFICATIONS_ENABLED: Bun.env['EMAIL_NOTIFICATIONS_ENABLED'] === 'true',
 } as const;

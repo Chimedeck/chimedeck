@@ -13,4 +13,5 @@ export const defaults: Record<string, boolean> = {
   EMAIL_VERIFICATION_ENABLED: false,
   SES_ENABLED: false,
   NOTIFICATION_PREFERENCES_ENABLED: true,
+  EMAIL_NOTIFICATIONS_ENABLED: false,
 };

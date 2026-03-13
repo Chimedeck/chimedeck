@@ -24,6 +24,8 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     .leftJoin('users as actor', 'notifications.actor_id', 'actor.id')
     .leftJoin('cards', 'notifications.card_id', 'cards.id')
     .leftJoin('boards', 'notifications.board_id', 'boards.id')
+    // Join to get the destination list name for card_moved notifications
+    .leftJoin('lists', 'cards.list_id', 'lists.id')
     .select(
       'notifications.id',
       'notifications.type',
@@ -33,6 +35,7 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'cards.title as card_title',
       'notifications.board_id',
       'boards.title as board_title',
+      'lists.name as list_title',
       'notifications.read',
       'notifications.created_at',
       db.raw("actor.id as actor_id"),
@@ -74,6 +77,7 @@ export async function handleListNotifications(req: Request): Promise<Response> {
         card_title: row.card_title ?? null,
         board_id: row.board_id,
         board_title: row.board_title ?? null,
+        list_title: row.list_title ?? null,
         actor: {
           id: row.actor_id,
           nickname: row.actor_nickname ?? null,

@@ -75,6 +75,10 @@ export async function handleBoardActivityNotification({
       null
     );
 
+    // For card_moved, include the destination list name in the WS payload
+    // so the client can render "{actorName} moved {cardTitle} to {listName}" without an extra fetch.
+    const listTitle = notificationType === 'card_moved' ? (templateData?.toList ?? null) : null;
+
     // Fire-and-forget per recipient — failures never block the mutation path
     for (const recipientId of recipientIds) {
       // --- In-app channel ---
@@ -108,6 +112,7 @@ export async function handleBoardActivityNotification({
                 payload: {
                   notification: {
                     ...inserted,
+                    list_title: listTitle,
                     actor: actorPayload,
                   },
                 },
