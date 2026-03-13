@@ -40,8 +40,6 @@ services:
     command: >
       postgres -c shared_preload_libraries=pg_cron
                -c cron.database_name=${POSTGRES_DB:-horiflow}
-    ports:
-      - "6400:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
