@@ -48,7 +48,6 @@ coverage/
 db/all_trello_cards.json
 db/trello-import-member-ids.json
 db/trello-import-workspace-ids.json
-db/trello-import-*.json
 public/avatars/
 
 .task
