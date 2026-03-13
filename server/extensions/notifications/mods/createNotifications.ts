@@ -3,10 +3,12 @@
 // a real-time event to their personal WS channel.
 // Respects notification preferences — skips insertion and WS publish when
 // in_app_enabled is false for the recipient (opt-out model).
+// Also dispatches mention email notifications (fire-and-forget) after in-app creation.
 import { db } from '../../../common/db';
 import { publishToUser } from '../../realtime/userChannel';
 import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { preferenceGuard } from './preferenceGuard';
+import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import type { Knex } from 'knex';
 
@@ -18,6 +20,9 @@ interface CreateNotificationsParams {
   sourceId: string;
   cardId: string | null;
   boardId: string;
+  // Optional context for mention email dispatch
+  cardTitle?: string;
+  boardName?: string;
 }
 
 export async function createNotificationsForMentions({
@@ -28,6 +33,8 @@ export async function createNotificationsForMentions({
   sourceId,
   cardId,
   boardId,
+  cardTitle,
+  boardName,
 }: CreateNotificationsParams): Promise<void> {
   if (addedUserIds.length === 0) return;
 
@@ -90,5 +97,22 @@ export async function createNotificationsForMentions({
         },
       },
     });
+
+    // Fire-and-forget mention email notification — must not block the transaction.
+    if (cardId) {
+      const cardUrl = `/boards/${boardId}/cards/${cardId}`;
+      dispatchNotificationEmail({
+        recipientId: userId,
+        type: 'mention',
+        templateData: {
+          actorName: (actorPayload.name as string | null) ?? 'Someone',
+          cardTitle: cardTitle ?? '',
+          boardName: boardName ?? '',
+          cardUrl,
+        },
+      }).catch(() => {
+        // Email dispatch failures must never break the notification flow.
+      });
+    }
   }
 }

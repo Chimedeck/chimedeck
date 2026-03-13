@@ -7,7 +7,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { syncMentions } from '../../../common/mentions/sync';
@@ -100,6 +100,8 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       sourceId: id,
       cardId,
       boardId: board.id,
+      cardTitle: card.title,
+      boardName: board.title,
     });
   });
 
@@ -121,7 +123,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     .first();
 
   await Promise.all([
-    writeEvent({
+    dispatchEvent({
       type: 'comment_added',
       boardId: board.id,
       entityId: cardId,

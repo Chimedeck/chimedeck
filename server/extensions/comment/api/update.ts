@@ -105,6 +105,8 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       sourceId: commentId,
       cardId: comment.card_id,
       boardId: board.id,
+      cardTitle: card?.title,
+      boardName: board.title,
     });
   });
 

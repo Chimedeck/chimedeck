@@ -1,9 +1,11 @@
 // server/mods/events/dispatch.ts
-// Writes an event and fire-and-forget triggers automation evaluation.
-// Automation failures are swallowed here and must never block card mutations.
+// Writes an event and fire-and-forget triggers automation evaluation and
+// board activity email notifications. Failures in either downstream hook are
+// swallowed and must never block card mutations.
 
 import { writeEvent, type WriteEventInput, type WrittenEvent } from './index';
 import { automationConfig } from '../../extensions/automation/config';
+import { handleBoardActivityNotification } from '../../extensions/notifications/mods/boardActivityDispatch';
 
 export async function dispatchEvent(input: WriteEventInput): Promise<WrittenEvent> {
   const event = await writeEvent(input);
@@ -31,6 +33,18 @@ export async function dispatchEvent(input: WriteEventInput): Promise<WrittenEven
       .catch(() => {
         // Automation errors must never propagate to the caller.
       });
+  }
+
+  // Fire-and-forget board activity email notifications.
+  // Handles card.created, card.moved, and comment_added events.
+  if (event.board_id && event.actor_id) {
+    handleBoardActivityNotification({
+      event,
+      boardId: event.board_id,
+      actorId: event.actor_id,
+    }).catch(() => {
+      // Notification errors must never propagate to the caller.
+    });
   }
 
   return event;

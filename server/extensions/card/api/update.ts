@@ -150,6 +150,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         sourceId: cardId,
         cardId,
         boardId: board.id,
+        cardTitle: rows[0]?.title,
+        boardName: board.title,
       });
     }
 
