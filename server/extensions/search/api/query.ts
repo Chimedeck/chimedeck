@@ -69,7 +69,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   if (!type || type === 'board') {
     let boardQ = db('boards')
       .select(
-        db.raw(`id, title, workspace_id, state, 'board' as type,
+        db.raw(`id, title, workspace_id, state, background, 'board' as type,
           ts_rank_cd(search_vector, to_tsquery('english', ?)) AS rank`, [tsquery]),
       )
       .where('workspace_id', workspaceId)
