@@ -62,20 +62,33 @@ When a session expires the system shall attemp a silent refresh
 
 ### Workspace Roles
 
-- Owner (immutable workspace owner)
-- Admin - can administer the workspace including all boards
-- Member - can be a member on boards based on the board type
-- Guests - users external to the workspace members that have been invited to work on boards. Guests can only view and edit the boards to which they've been added.
+- **Owner** — immutable workspace owner; can see and administer all boards regardless of visibility
+- **Admin** — can administer the workspace including all boards regardless of visibility; can add/remove board members and guests
+- **Member** — standard workspace member; can see `WORKSPACE` and `PUBLIC` boards automatically; must be explicitly added to `PRIVATE` boards
+- **Viewer** — read-only workspace member; can view `WORKSPACE` and `PUBLIC` boards; must be explicitly added to `PRIVATE` boards (read-only)
+- **Guest** — user external to the workspace invited to one or more specific boards; can view and edit only their granted boards; cannot see other boards or the workspace member list
 
 ### Board Visibility Settings
-- Private - Board members and Workspace Admins can see and edit this board
-- Workspace - All admins/members of the Workspace can see and edit this board, All Viewers can view this board.
-- Public - Anyone on the internet can see this board, but only board members can edit this board
 
-### Board Member Roles
-- Admin - can add and remove admins, members and viewers
-- Member - can view and edit board tasks
-- Viewer - can view board tasks
+- **Private (default)** — Only the board creator and workspace Owner/Admin can see the board initially. The creator or any workspace Owner/Admin can then explicitly add workspace members (or guests) to the board. Regular workspace Members are invisible to this board until added.
+- **Workspace** — All workspace Owners, Admins, and Members can view and edit this board. Viewers can view only.
+- **Public** — Anyone on the internet can view this board without authentication. Only explicit board members and workspace Owner/Admin can edit.
+
+### Board Member Roles (explicit `board_members` entries)
+
+- **Admin** — can add/remove board admins, members, and viewers; can change board settings
+- **Member** — can view and edit board tasks (cards, lists)
+- **Viewer** — read-only access to board tasks
+
+### Guest Access Rules
+
+When a user is invited to a board as a guest (they are not a workspace member):
+- They receive a `GUEST` workspace membership role
+- A `board_guest_access` row is created granting them access to that specific board
+- Browsing the workspace: they can see the workspace name and only the boards they have been explicitly added to — no other boards are visible
+- They cannot see the workspace member list
+- Multiple board invitations are allowed — each generates a separate `board_guest_access` row
+- Guests can view and edit the boards they are granted (same as a board Member); they cannot invite others or change board settings
 
 ---
 

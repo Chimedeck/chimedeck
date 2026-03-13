@@ -110,6 +110,10 @@
 | [75](./sprint-75.md) | Light / Dark Theme (Full Implementation) | Audit all components for hardcoded dark classes; dual-mode Tailwind `dark:` variants throughout; theme persisted in `localStorage`; no flash on load; `ThemeToggle` Sun/Moon icons | ⬜ Needs 22 |
 | [76](./sprint-76.md) | Board Background Image Upload | S3 upload for board backgrounds (`board-backgrounds/{boardId}/`); `POST/DELETE /api/v1/boards/:id/background`; background renders behind columns only — columns stay opaque; thumbnail in workspace grid + search results; real-time WS sync | ⬜ Needs 46 + 12 + 75 |
 | [77](./sprint-77.md) | Granular Search (Scoped by Type) | Scope tabs (`All` / `Boards` / `Cards`) in command palette; passes `type=board|card` to search API; scoped empty states; placeholder text matches scope; `sessionStorage` persistence | ⬜ Needs 22 + 13 + 76 |
+| **— Board Access Control —** | | | |
+| [78](./sprint-78.md) | Board Members Table + Visibility Enforcement (Server) | `board_members` table + migration; auto-insert creator as board ADMIN; visibility middleware; PRIVATE/WORKSPACE/PUBLIC access matrix; board member CRUD API; guest/PRIVATE board filtering on workspace boards list | ⬜ Needs 46 + 49 |
+| [79](./sprint-79.md) | Board Member Management UI | Visibility selector in board settings; Board Members Panel (add/change role/remove); workspace boards grid visibility badge; board header avatar stack | ⬜ Needs 78 + 17 + 18 |
+| [80](./sprint-80.md) | Guest Experience UI | Guest invite flow (by email, stub account creation); scoped workspace view for GUEST role (granted boards only, member list hidden); client-side permission guards; guest sidebar labels | ⬜ Needs 79 + 49 + 44 |
 
 ---
 

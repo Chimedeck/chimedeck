@@ -26,15 +26,22 @@ A multi-tenant, real-time collaborative Kanban board platform.
 ```
 Workspace
   └── Board (active | archived | deleted)
-        └── List (fractional-index ordered)
-              └── Card (fractional-index ordered)
-                    ├── Labels       (workspace-scoped, max 20 per card)
-                    ├── CardMembers  (user assignments)
-                    ├── ChecklistItems (max 100 per card)
-                    └── Attachments  (S3 / external URL)
+  │     ├── visibility: PRIVATE | WORKSPACE | PUBLIC  (default: PRIVATE)
+  │     ├── BoardMembers  (explicit members on PRIVATE boards — role: ADMIN|MEMBER|VIEWER)
+  │     └── List (fractional-index ordered)
+  │           └── Card (fractional-index ordered)
+  │                 ├── Labels          (workspace-scoped, max 20 per card)
+  │                 ├── CardMembers     (user assignments on cards)
+  │                 ├── ChecklistItems  (max 100 per card)
+  │                 └── Attachments     (S3 / external URL)
 
 User
-  └── Membership → Workspace  (role: Owner | Admin | Member | Viewer)
+  └── Membership → Workspace  (role: Owner | Admin | Member | Viewer | Guest)
+
+BoardGuestAccess
+  └── user_id, board_id, granted_by, granted_at
+      Grants a GUEST workspace member access to a specific board.
+      Guests can view and edit that board only; they cannot see other boards or the workspace member list.
 
 Event
   └── board_id, type, payload, sequence (append-only)
@@ -56,6 +63,22 @@ NotificationPreference
       One row per (user, type); missing rows default to both channels enabled (opt-out model)
       type: 'mention' | 'card_created' | 'card_moved' | 'card_commented'
 ```
+
+### Board Visibility Rules
+
+| Visibility | Who can VIEW | Who can EDIT |
+|---|---|---|
+| `PRIVATE` (default) | Workspace Owner/Admin always; explicit `board_members` entries for regular Members | Same as view — Members need explicit `board_members` entry |
+| `WORKSPACE` | All workspace Members/Admins/Owners | All workspace Members/Admins/Owners |
+| `PUBLIC` | Anyone on the internet (no authentication required) | Only explicit `board_members` + workspace Owner/Admin |
+
+**Guest (external user):**
+- Has `GUEST` workspace membership role
+- Access granted via `board_guest_access` rows (one per board)
+- Can view and edit boards they have been added to
+- Browsing the workspace shows only their granted boards — not other boards
+- Cannot view the workspace member list
+- Board creator is automatically added as board `ADMIN` in `board_members` on creation
 
 All entity IDs: CUID2 (sortable). Positions: lexicographic base-62 fractional index.
 
