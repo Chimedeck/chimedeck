@@ -26,6 +26,7 @@ COPY --from=build /app/server        ./server
 COPY --from=build /app/tsconfig.json ./tsconfig.json
 COPY --from=build /app/db            ./db
 COPY --from=build /app/dist          ./dist
+COPY --from=build /.env              ./env
 COPY entrypoint.sh                   /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
