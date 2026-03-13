@@ -9,7 +9,7 @@ import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import { fetchProfileThunk } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import { fetchFeatureFlagsThunk } from '~/slices/featureFlagsSlice';
 import Sidebar from '~/extensions/Workspace/components/Sidebar';
-import SearchModal from '~/extensions/Search/components/SearchModal';
+import CommandPalette from '~/common/components/CommandPalette';
 import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
 import InviteExternalUserModal from '~/extensions/AdminInvite/InviteExternalUserModal';
 import type { SearchResult } from '~/extensions/Search/api';
@@ -103,9 +103,9 @@ export default function AppShell() {
         </main>
       </div>
 
-      {/* Global search modal — triggered by Cmd+K or Ctrl+K */}
+      {/* Global command palette — triggered by Cmd+K or Ctrl+K */}
       {workspaceId && (
-        <SearchModal
+        <CommandPalette
           workspaceId={workspaceId}
           token={token}
           isOpen={searchOpen}
