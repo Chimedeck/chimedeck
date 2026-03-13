@@ -9,6 +9,7 @@ import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import { fetchProfileThunk } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import { fetchFeatureFlagsThunk } from '~/slices/featureFlagsSlice';
 import Sidebar from '~/extensions/Workspace/components/Sidebar';
+import { ThemeToggle } from '~/common/components/ThemeToggle';
 import CommandPalette from '~/common/components/CommandPalette';
 import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
 import InviteExternalUserModal from '~/extensions/AdminInvite/InviteExternalUserModal';
@@ -88,13 +89,15 @@ export default function AppShell() {
             <Bars3Icon className="h-5 w-5" aria-hidden="true" />
           </button>
           <span className="text-base font-bold text-slate-900 dark:text-white">HoriFlow</span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <ThemeToggle />
             <NotificationContainer />
           </div>
         </div>
 
         {/* Desktop topbar — notification bell */}
-        <div className="hidden md:flex h-12 shrink-0 items-center justify-end border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4">
+        <div className="hidden md:flex h-12 shrink-0 items-center justify-end gap-1 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4">
+          <ThemeToggle />
           <NotificationContainer />
         </div>
 

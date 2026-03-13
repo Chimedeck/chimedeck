@@ -80,7 +80,7 @@ const BATCH_SIZE = 500; // rows per INSERT batch
 // ---------------------------------------------------------------------------
 
 const mapperPath = resolve(ROOT, 'db/trello-import-member-ids-mapper.json');
-const mapperRaw: { id: string; username: string; email?: string }[] =
+const mapperRaw: { id: string; username: string; email?: string; role?: string }[] =
   await Bun.file(mapperPath).json();
 const memberMapper = new Map(
   mapperRaw.map((entry) => [entry.id, entry]),
@@ -707,20 +707,34 @@ async function main() {
     }
   }
 
-  const membershipRows: object[] = [];
-  for (const userId of workspaceMemberSet) {
-    membershipRows.push({ user_id: userId, workspace_id: JOURNEYHORIZON_WORKSPACE_ID, role: 'MEMBER' });
+  // Map mapper roles (lowercase) to DB roles
+  function resolveWorkspaceRole(trelloId: string): string {
+    const mapperRole = memberMapper.get(trelloId)?.role?.toLowerCase();
+    if (mapperRole === 'owner') return 'OWNER';
+    if (mapperRole === 'admin') return 'ADMIN';
+    return 'MEMBER';
   }
 
-  // System user is OWNER of the single Journeyhorizon workspace
-  membershipRows.push({
-    user_id: SYSTEM_USER_ID,
-    workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
-    role: 'OWNER',
-  });
+  const membershipRows: object[] = [];
+  for (const userId of workspaceMemberSet) {
+    membershipRows.push({
+      user_id: userId,
+      workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+      role: resolveWorkspaceRole(userId),
+    });
+  }
 
-  console.log(`🔗  Creating ${membershipRows.length.toLocaleString()} workspace memberships…`);
-  await batchInsert('memberships', membershipRows, ['user_id', 'workspace_id']);
+  // Ensure the system user is present as OWNER even if they appear on no cards
+  if (!workspaceMemberSet.has(SYSTEM_USER_ID)) {
+    membershipRows.push({
+      user_id: SYSTEM_USER_ID,
+      workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+      role: 'OWNER',
+    });
+  }
+
+  console.log(`🔗  Creating/updating ${membershipRows.length.toLocaleString()} workspace memberships…`);
+  await batchUpsert('memberships', membershipRows, ['user_id', 'workspace_id'], ['role']);
 
   // -------------------------------------------------------------------------
   // 10. Summary output
