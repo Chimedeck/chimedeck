@@ -511,7 +511,8 @@ async function main() {
   console.log('');
 
   // email and password_hash are excluded — preserve any changes the user made.
-  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'avatar_url']);
+  // email_verified is included so re-seeding fixes previously imported users.
+  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'avatar_url', 'email_verified']);
 
   // -------------------------------------------------------------------------
   // 4. Workspaces
