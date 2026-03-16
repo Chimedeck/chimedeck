@@ -24,11 +24,21 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
 
   const members = await db('board_members as bm')
     .join('users as u', 'bm.user_id', 'u.id')
+    // [why] Exclude workspace GUESTs — they belong in the Guests tab, not Members.
+    .join('memberships as ms', function () {
+      this.on('ms.user_id', '=', 'bm.user_id').andOn(
+        'ms.workspace_id',
+        '=',
+        db.raw('?', [board.workspace_id]),
+      );
+    })
+    .whereNot('ms.role', 'GUEST')
     .where('bm.board_id', boardId)
     .select(
-      db.raw('u.id as id'),
+      db.raw('u.id as user_id'),
+      db.raw('bm.board_id as board_id'),
       'u.email',
-      db.raw("COALESCE(u.name, u.email) as name"),
+      db.raw("COALESCE(u.name, u.email) as display_name"),
       'u.avatar_url',
       'u.nickname',
       'bm.role',

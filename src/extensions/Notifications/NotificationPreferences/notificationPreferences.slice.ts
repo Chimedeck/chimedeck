@@ -2,7 +2,6 @@
 // Uses createApi with fetchBaseQuery so cache invalidation works automatically
 // when the user toggles a preference.
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '~/store';
 import type { NotificationPreference, UpdatePreferencesBody } from './types';
 
 export const notificationPreferencesApi = createApi({
@@ -11,7 +10,7 @@ export const notificationPreferencesApi = createApi({
     baseUrl: '/api/v1',
     // [why] Attach Bearer token from Redux auth state so the API request is authenticated.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as RootState).auth?.accessToken ?? null;
+      const token = (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }

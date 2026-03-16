@@ -694,15 +694,15 @@ async function main() {
   await batchUpsert('comments', commentRows, 'id', ['content', 'updated_at']);
 
   // -------------------------------------------------------------------------
-  // 9. Workspace memberships (mapper users only) + board_members (all users)
+  // 9. Workspace memberships + board_members (mapper users) + board_guest_access (non-mapper)
   //
   // Users listed in trello-import-member-ids-mapper.json are organisation
-  // members — they get a `memberships` row with their mapped role.
+  // members — they get a `memberships` row with their mapped role and a
+  // `board_members` row for each board they appear on.
   //
-  // All other Trello members are board-level only: they receive a
-  // `board_members` row for every board they appear on, but no workspace
-  // membership. This preserves their role (MEMBER by default) while
-  // restricting their access to the specific boards they were added to.
+  // All other Trello members are external guests: they receive a GUEST
+  // `memberships` row, a `board_guest_access` row for each board, and are
+  // NOT added to `board_members` (so they appear in the Guests tab, not Members).
   // -------------------------------------------------------------------------
 
   // Set of Trello IDs that have an explicit mapper entry (org members)
@@ -734,9 +734,13 @@ async function main() {
     }
   }
 
-  // Workspace memberships — mapper users only (all of them, even if not on any card)
+  // Workspace memberships — mapper users only (all of them, even if not on any card).
+  // Deduplicate by user_id in case the JSON file has repeated entries.
   const membershipRows: object[] = [];
+  const membershipUsersSeen = new Set<string>();
   for (const entry of mapperRaw) {
+    if (membershipUsersSeen.has(entry.id)) continue;
+    membershipUsersSeen.add(entry.id);
     membershipRows.push({
       user_id: entry.id,
       workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
@@ -753,34 +757,72 @@ async function main() {
     });
   }
 
+  // GUEST workspace memberships for non-mapper users (external guests).
+  const guestMembershipSeen = new Set<string>();
+  for (const userIds of boardMemberMap.values()) {
+    for (const userId of userIds) {
+      // Derive the original Trello ID to check against mapperIds.
+      // memberId() maps trelloId → userId; we need the inverse lookup.
+      // We stored trelloId as the userId for non-mapper users, so check directly.
+      if (mapperIds.has(userId) || membershipUsersSeen.has(userId)) continue;
+      if (guestMembershipSeen.has(userId)) continue;
+      guestMembershipSeen.add(userId);
+      membershipRows.push({
+        user_id: userId,
+        workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+        role: 'GUEST',
+      });
+    }
+  }
+
   console.log(`🔗  Creating/updating ${membershipRows.length.toLocaleString()} workspace memberships…`);
   await batchUpsert('memberships', membershipRows, ['user_id', 'workspace_id'], ['role']);
 
-  // board_members — every user who appears on a board gets an explicit entry.
-  // Mapper users carry over their org role (OWNER/ADMIN → ADMIN, MEMBER → MEMBER).
-  // Non-mapper users are always MEMBER.
+  // board_members — mapper (org) users only, carrying their workspace role.
   const boardMemberRows: object[] = [];
   const boardMemberSeen = new Set<string>(); // dedup: boardId:userId
+
+  // board_guest_access — non-mapper users only.
+  const boardGuestRows: object[] = [];
+  const boardGuestSeen = new Set<string>(); // dedup: boardId:userId
 
   for (const [boardId, userIds] of boardMemberMap) {
     for (const userId of userIds) {
       const key = `${boardId}:${userId}`;
-      if (boardMemberSeen.has(key)) continue;
-      boardMemberSeen.add(key);
-      boardMemberRows.push({
-        // [why] Stable deterministic PK — avoids re-generating UUIDs on re-runs
-        id: `${boardId}:${userId}`,
-        board_id: boardId,
-        user_id: userId,
-        role: resolveBoardRole(userId),
-        created_at: new Date(),
-        updated_at: new Date(),
-      });
+      if (mapperIds.has(userId)) {
+        // Org member → board_members
+        if (boardMemberSeen.has(key)) continue;
+        boardMemberSeen.add(key);
+        boardMemberRows.push({
+          // [why] Stable deterministic PK — avoids re-generating UUIDs on re-runs
+          id: `${boardId}:${userId}`,
+          board_id: boardId,
+          user_id: userId,
+          role: resolveBoardRole(userId),
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      } else {
+        // External guest → board_guest_access
+        if (boardGuestSeen.has(key)) continue;
+        boardGuestSeen.add(key);
+        boardGuestRows.push({
+          // [why] Stable deterministic PK for idempotent re-runs
+          id: `${boardId}:${userId}`,
+          board_id: boardId,
+          user_id: userId,
+          granted_by: SYSTEM_USER_ID,
+          granted_at: new Date(),
+        });
+      }
     }
   }
 
   console.log(`📋  Creating/updating ${boardMemberRows.length.toLocaleString()} board memberships…`);
   await batchUpsert('board_members', boardMemberRows, ['board_id', 'user_id'], ['role', 'updated_at']);
+
+  console.log(`👥  Creating/updating ${boardGuestRows.length.toLocaleString()} board guest access rows…`);
+  await batchUpsert('board_guest_access', boardGuestRows, ['user_id', 'board_id'], ['granted_by']);
 
   // -------------------------------------------------------------------------
   // 10. Summary output

@@ -12,6 +12,7 @@ interface Member {
   id: string;
   display_name: string | null;
   email: string;
+  avatar_url?: string | null;
 }
 
 interface Props {
@@ -129,12 +130,25 @@ const BoardHeader = ({
       <PollingIndicator active={pollingActive} />
 
       <div className="ml-auto flex items-center gap-2">
-        {/* Member avatar stack — hidden for workspace GUESTs */}
+        {/* Member avatar stack + Share button — hidden for workspace GUESTs */}
         {!isGuest && (
-          <MemberAvatarStack
-            members={members}
-            onOpenMembers={onOpenMembers ?? (() => {})}
-          />
+          <>
+            <MemberAvatarStack
+              members={members}
+              onOpenMembers={onOpenMembers ?? (() => {})}
+            />
+            <button
+              type="button"
+              onClick={onOpenMembers}
+              className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              aria-label="Share board — invite members"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+                <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .793l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.475l6.733-3.367A2.52 2.52 0 0 1 13 4.5z" />
+              </svg>
+              Share
+            </button>
+          </>
         )}
 
         {/* Board buttons bar — left of automation header button */}

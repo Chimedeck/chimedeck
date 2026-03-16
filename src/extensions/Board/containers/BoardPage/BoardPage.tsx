@@ -20,6 +20,7 @@ import {
   selectBoardStatus,
 } from '../../slices/boardSlice';import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
+import { useBoardCardFieldValues } from '../../../CustomFields/api';
 import CardModalContainer from '../../../Card/containers/CardModal';
 import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
@@ -75,6 +76,11 @@ const BoardPage = () => {
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
+
+  // Batch-fetch custom field values for all cards on the board in a single request.
+  // [why] Prevents N individual requests (one per card tile) when the board renders.
+  const allCardIds = Object.keys(cards);
+  const customFieldValuesMap = useBoardCardFieldValues(boardId, allCardIds);
 
   // Use the shared axios client instead of a globalThis reference
   const api = apiClient;
@@ -359,7 +365,7 @@ const BoardPage = () => {
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
       <BoardHeader
         board={board}
-        members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email }))}
+        members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email, avatar_url: m.avatar_url }))}
         connectionState={connectionState}
         pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
@@ -424,6 +430,7 @@ const BoardPage = () => {
               onDeleteList={handleDeleteList}
               onCardClick={handleCardClick}
               isReadOnly={board.state === 'ARCHIVED'}
+              customFieldValuesMap={customFieldValuesMap}
             />
           ) : activeView === 'TABLE' ? (
             <TableView

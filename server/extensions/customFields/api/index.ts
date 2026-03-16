@@ -13,6 +13,7 @@ import {
   handleGetCardFieldValue,
   handleUpsertCardFieldValue,
   handleDeleteCardFieldValue,
+  handleBatchCardFieldValues,
 } from './cardValues';
 
 export async function customFieldsRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -31,6 +32,15 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
       if (req.method === 'PATCH') return handleUpdateCustomField(req, boardId, fieldId);
       if (req.method === 'DELETE') return handleDeleteCustomField(req, boardId, fieldId);
     }
+  }
+
+  // GET /api/v1/boards/:boardId/custom-field-values?cardIds=id1,id2,...  (batch)
+  // [why] Must be checked before the board custom-fields pattern since the path differs
+  //       (custom-field-values vs custom-fields) — placed here for clarity.
+  const boardBatchValuesMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/custom-field-values$/);
+  if (boardBatchValuesMatch && req.method === 'GET') {
+    const boardId = boardBatchValuesMatch[1] as string;
+    return handleBatchCardFieldValues(req, boardId);
   }
 
   // /api/v1/cards/:cardId/custom-field-values (list all)

@@ -15,6 +15,8 @@ import CardMoneyBadge from './CardMoneyBadge';
 import CardPluginBadges from '../../Plugins/uiInjections/CardPluginBadges';
 import CardCustomFieldBadges from './CardCustomFieldBadges';
 
+import type { CustomFieldValue } from '../../CustomFields/types';
+
 export interface CardItemProps {
   card: Card;
   isOverlay?: boolean;
@@ -24,6 +26,8 @@ export interface CardItemProps {
   listTitle?: string;
   boardTitle?: string;
   boardId?: string;
+  /** Pre-fetched custom field values for this card from a board-level batch request. */
+  customFieldValues?: CustomFieldValue[];
 }
 
 const CardItem = ({
@@ -35,6 +39,7 @@ const CardItem = ({
   listTitle,
   boardTitle,
   boardId,
+  customFieldValues,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -120,7 +125,7 @@ const CardItem = ({
         boardTitle={boardTitle}
       />
       {boardId && (
-        <CardCustomFieldBadges cardId={card.id} boardId={boardId} />
+        <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
       )}
     </div>
   );

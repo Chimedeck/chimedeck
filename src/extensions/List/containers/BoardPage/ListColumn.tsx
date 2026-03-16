@@ -8,6 +8,7 @@ import type { List } from '../../api';
 import type { Card } from '../../../Card/api';
 import ListHeader from '../../components/ListHeader';
 import CardItem from '../../../Card/components/CardItem';
+import type { CustomFieldValue } from '../../../CustomFields/types';
 import AddCardForm from '../../../Card/components/AddCardForm';
 
 interface Props {
@@ -23,6 +24,9 @@ interface Props {
   onCardClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
   onToggleLabels?: () => void;
+  /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
+   *  null = batch not yet loaded — tiles render no badges rather than firing per-card requests. */
+  customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
 }
 
 const SortableListColumn = ({
@@ -38,6 +42,7 @@ const SortableListColumn = ({
   onCardClick,
   labelsExpanded,
   onToggleLabels,
+  customFieldValuesMap,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -101,6 +106,7 @@ const SortableListColumn = ({
               labelsExpanded={labelsExpanded ?? false}
               onToggleLabels={stableToggleLabels}
               {...(onCardClick ? { onClick: onCardClick } : {})}
+              {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? [] } : {})}
             />
           ))}
         </SortableContext>

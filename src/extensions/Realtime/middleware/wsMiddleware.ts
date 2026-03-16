@@ -48,7 +48,7 @@ function isOptimisticAction(action: unknown): action is AnyAction & { meta: Opti
   );
 }
 
-export const wsMiddleware: Middleware = (storeAPI) => (next) => async (action: unknown) => {
+export const wsMiddleware: Middleware = (storeAPI) => (next) => (action: unknown) => {
   // ── WS confirmation of own mutation ────────────────────────────────────
   if (
     typeof action === 'object' &&
@@ -72,6 +72,21 @@ export const wsMiddleware: Middleware = (storeAPI) => (next) => async (action: u
     return next(action);
   }
 
+  // [why] Only optimistic actions need async handling. We delegate to a
+  // separate async function so the synchronous return path above is unaffected,
+  // ensuring RTK Query internal dispatches (e.g. internal_getRTKQSubscriptions)
+  // return their synchronous values instead of Promises.
+  return handleOptimisticAction(storeAPI, next, action);
+};
+
+type MiddlewareAPI = Parameters<Middleware>[0];
+type NextDispatch = Parameters<ReturnType<Middleware>>[0];
+
+async function handleOptimisticAction(
+  storeAPI: MiddlewareAPI,
+  next: NextDispatch,
+  action: AnyAction & { meta: OptimisticMeta },
+): Promise<unknown> {
   const { meta } = action;
 
   // 1. Let the optimistic action update the store immediately
@@ -137,4 +152,4 @@ export const wsMiddleware: Middleware = (storeAPI) => (next) => async (action: u
   }
 
   return result;
-};
+}

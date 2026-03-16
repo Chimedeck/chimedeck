@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { List } from '../../List/api';
 import type { Card } from '../../Card/api';
+import type { CustomFieldValue } from '../../CustomFields/types';
 import SortableListColumn from '../../List/containers/BoardPage/ListColumn';
 import CardItem from '../../Card/components/CardItem';
 import AddListForm from '../../List/components/AddListForm';
@@ -55,6 +56,9 @@ interface Props {
   onDeleteList: (listId: string) => void;
   onCardClick?: (cardId: string) => void;
   isReadOnly?: boolean;
+  /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
+   *  null = batch not yet loaded (don't pass per-card values to tiles). */
+  customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
 }
 
 /** Find which list contains a given card ID */
@@ -84,6 +88,7 @@ const BoardCanvas = ({
   onDeleteList,
   onCardClick,
   isReadOnly = false,
+  customFieldValuesMap,
 }: Props) => {
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
@@ -263,6 +268,7 @@ const BoardCanvas = ({
                 labelsExpanded={labelsExpanded}
                 onToggleLabels={onToggleLabels}
                 {...(onCardClick ? { onCardClick } : {})}
+                {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
               />
             );
           })}
