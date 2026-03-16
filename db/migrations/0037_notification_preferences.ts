@@ -5,8 +5,8 @@ import type { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('notification_preferences', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
+    table.string('id').primary();
+    table.string('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.text('type').notNullable(); // 'mention' | 'card_created' | 'card_moved' | 'card_commented'
     table.boolean('in_app_enabled').notNullable().defaultTo(true);
     table.boolean('email_enabled').notNullable().defaultTo(true);

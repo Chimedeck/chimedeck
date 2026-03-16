@@ -694,20 +694,21 @@ async function main() {
   await batchUpsert('comments', commentRows, 'id', ['content', 'updated_at']);
 
   // -------------------------------------------------------------------------
-  // 9. Workspace memberships for member users
-  //    Add every member user as MEMBER of every workspace (board).
-  //    This is a cross-product; we do it after cards so we know who's who.
+  // 9. Workspace memberships (mapper users only) + board_members (all users)
+  //
+  // Users listed in trello-import-member-ids-mapper.json are organisation
+  // members — they get a `memberships` row with their mapped role.
+  //
+  // All other Trello members are board-level only: they receive a
+  // `board_members` row for every board they appear on, but no workspace
+  // membership. This preserves their role (MEMBER by default) while
+  // restricting their access to the specific boards they were added to.
   // -------------------------------------------------------------------------
 
-  // Collect all member users across every board into the single Journeyhorizon workspace
-  const workspaceMemberSet = new Set<string>();
-  for (const card of cards) {
-    for (const mid of card.idMembers ?? []) {
-      workspaceMemberSet.add(memberId(mid));
-    }
-  }
+  // Set of Trello IDs that have an explicit mapper entry (org members)
+  const mapperIds = new Set(mapperRaw.map((e) => e.id));
 
-  // Map mapper roles (lowercase) to DB roles
+  // Map mapper roles (lowercase) to DB workspace roles
   function resolveWorkspaceRole(trelloId: string): string {
     const mapperRole = memberMapper.get(trelloId)?.role?.toLowerCase();
     if (mapperRole === 'owner') return 'OWNER';
@@ -715,17 +716,36 @@ async function main() {
     return 'MEMBER';
   }
 
+  // Map a user's workspace role to a board-level role (ADMIN | MEMBER only)
+  function resolveBoardRole(trelloId: string): 'ADMIN' | 'MEMBER' {
+    const wsRole = resolveWorkspaceRole(trelloId);
+    return wsRole === 'OWNER' || wsRole === 'ADMIN' ? 'ADMIN' : 'MEMBER';
+  }
+
+  // Collect per-board memberships from all card member references
+  const boardMemberMap = new Map<string, Set<string>>(); // boardId → Set<userId>
+  for (const card of cards) {
+    for (const mid of card.idMembers ?? []) {
+      const userId = memberId(mid);
+      if (!boardMemberMap.has(card.idBoard)) {
+        boardMemberMap.set(card.idBoard, new Set());
+      }
+      boardMemberMap.get(card.idBoard)!.add(userId);
+    }
+  }
+
+  // Workspace memberships — mapper users only (all of them, even if not on any card)
   const membershipRows: object[] = [];
-  for (const userId of workspaceMemberSet) {
+  for (const entry of mapperRaw) {
     membershipRows.push({
-      user_id: userId,
+      user_id: entry.id,
       workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
-      role: resolveWorkspaceRole(userId),
+      role: resolveWorkspaceRole(entry.id),
     });
   }
 
-  // Ensure the system user is present as OWNER even if they appear on no cards
-  if (!workspaceMemberSet.has(SYSTEM_USER_ID)) {
+  // Ensure the system user is present as OWNER even if absent from the mapper
+  if (!mapperIds.has(SYSTEM_USER_ID)) {
     membershipRows.push({
       user_id: SYSTEM_USER_ID,
       workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
@@ -735,6 +755,32 @@ async function main() {
 
   console.log(`🔗  Creating/updating ${membershipRows.length.toLocaleString()} workspace memberships…`);
   await batchUpsert('memberships', membershipRows, ['user_id', 'workspace_id'], ['role']);
+
+  // board_members — every user who appears on a board gets an explicit entry.
+  // Mapper users carry over their org role (OWNER/ADMIN → ADMIN, MEMBER → MEMBER).
+  // Non-mapper users are always MEMBER.
+  const boardMemberRows: object[] = [];
+  const boardMemberSeen = new Set<string>(); // dedup: boardId:userId
+
+  for (const [boardId, userIds] of boardMemberMap) {
+    for (const userId of userIds) {
+      const key = `${boardId}:${userId}`;
+      if (boardMemberSeen.has(key)) continue;
+      boardMemberSeen.add(key);
+      boardMemberRows.push({
+        // [why] Stable deterministic PK — avoids re-generating UUIDs on re-runs
+        id: `${boardId}:${userId}`,
+        board_id: boardId,
+        user_id: userId,
+        role: resolveBoardRole(userId),
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
+    }
+  }
+
+  console.log(`📋  Creating/updating ${boardMemberRows.length.toLocaleString()} board memberships…`);
+  await batchUpsert('board_members', boardMemberRows, ['board_id', 'user_id'], ['role', 'updated_at']);
 
   // -------------------------------------------------------------------------
   // 10. Summary output

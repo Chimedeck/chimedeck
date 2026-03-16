@@ -21,6 +21,7 @@ import {
   selectWorkspacesStatus,
   setActiveWorkspace,
 } from '../duck/workspaceDuck';
+import { selectIsGuestInActiveWorkspace } from '../slices/workspaceSlice';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { logoutThunk } from '~/extensions/Auth/duck/authDuck';
 import { selectProfile } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
@@ -39,6 +40,7 @@ export default function Sidebar() {
   const user = useAppSelector(selectAuthUser);
   const profile = useAppSelector(selectProfile);
   const adminEmailDomains = useAppSelector(selectAdminEmailDomains);
+  const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
 
   // Check if the current user's email domain is in ADMIN_EMAIL_DOMAINS (client-side evaluation).
   const userEmail = user?.email ?? '';
@@ -92,6 +94,11 @@ export default function Sidebar() {
                 {status === 'loading'
                   ? translations['WorkspaceSwitcher.loading']
                   : (activeWorkspace?.name ?? translations['WorkspaceSwitcher.noWorkspaces'])}
+                {isGuest && (
+                  <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    guest
+                  </span>
+                )}
               </span>
               <ChevronDownIcon className="ml-1 h-4 w-4 text-slate-400 dark:text-slate-400 shrink-0" aria-hidden="true" />
             </button>
@@ -158,8 +165,15 @@ export default function Sidebar() {
                 >
                   <RectangleStackIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {translations['Sidebar.boards']}
+                  {isGuest && (
+                    <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      guest
+                    </span>
+                  )}
                 </NavLink>
               </li>
+              {/* [why] GUEST users are not allowed to view workspace members (server enforces 403). */}
+              {!isGuest && (
               <li>
                 <NavLink
                   to={`/workspace/${activeWorkspace.id}`}
@@ -175,6 +189,7 @@ export default function Sidebar() {
                   {translations['Sidebar.members']}
                 </NavLink>
               </li>
+              )}
               <li>
                 <NavLink
                   to="/workspaces"

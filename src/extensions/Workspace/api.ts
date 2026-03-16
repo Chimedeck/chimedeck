@@ -1,12 +1,15 @@
 // API client for all workspace-related endpoints.
 // Callers must inject an axios-compatible `api` instance (from Redux thunk extras).
 
-export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+export type Role = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST';
 
 export interface Workspace {
   id: string;
   name: string;
   ownerId: string;
+  // [why] callerRole is returned by GET /workspaces so the client can gate UI
+  // without a separate members request (GUESTs cannot call the members endpoint).
+  callerRole?: Role;
   createdAt: string;
 }
 

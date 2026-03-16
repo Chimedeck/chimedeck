@@ -12,6 +12,7 @@ import {
   deleteWorkspaceThunk,
 } from './WorkspacePage.duck';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
+import { selectIsGuestInActiveWorkspace } from '../../slices/workspaceSlice';
 import MemberList from '../../components/MemberList';
 import InviteMemberModal from '../../components/InviteMemberModal';
 
@@ -24,6 +25,9 @@ const WorkspacePage = () => {
   const loading = useAppSelector(fetchWorkspaceInProgressSelector);
   const error = useAppSelector(fetchWorkspaceErrorSelector);
   const authUser = useAppSelector(selectAuthUser);
+  // [why] Derive guest status from callerRole on the active workspace so no extra
+  // API call is required — GUESTs are blocked from the members endpoint server-side.
+  const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
 
   const [showInviteModal, setShowInviteModal] = useState(false);
 
@@ -33,6 +37,25 @@ const WorkspacePage = () => {
       dispatch(fetchWorkspace({ workspaceId }));
     }
   }, [workspaceId, dispatch]);
+
+  // [why] GUEST users are explicitly blocked from the members page (server returns 403
+  // on GET /workspaces/:id/members for GUESTs). Show a clear 403 notice instead of
+  // a confusing loading state or error.
+  if (isGuest) {
+    return (
+      <div className="p-6 max-w-3xl">
+        <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-6 text-center">
+          <h2 className="mb-2 text-lg font-semibold text-amber-800 dark:text-amber-200">
+            Access Restricted
+          </h2>
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            Guest users cannot view workspace members. You have been granted access to specific
+            boards only.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Determine if the current user can manage members (OWNER or ADMIN)
   const currentMember = members.find((m) => m.userId === authUser?.id);

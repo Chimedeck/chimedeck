@@ -13,6 +13,18 @@ export const routes: RouteConfig[] = [
     name: 'WorkspaceListPage',
     auth: true,
   },
+  // [why] /workspaces/:workspaceId/boards uses WorkspaceDashboard (Workspace extension)
+  // rather than the Board extension's BoardListPage so that guest-role gating
+  // (hiding Create Board, showing guest badges) lives alongside other workspace UI.
+  {
+    path: '/workspaces/:workspaceId/boards',
+    component: () =>
+      import('./containers/WorkspaceDashboard').then(
+        (m) => m.default
+      ),
+    name: 'WorkspaceDashboard',
+    auth: true,
+  },
   {
     path: '/workspace',
     component: () =>
