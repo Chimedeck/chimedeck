@@ -14,6 +14,8 @@ interface Props {
   rows?: number;
   disabled?: boolean;
   'aria-label'?: string;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  autoFocus?: boolean;
 }
 
 const MentionInput = ({
@@ -25,6 +27,8 @@ const MentionInput = ({
   rows = 3,
   disabled = false,
   'aria-label': ariaLabel,
+  onKeyDown: externalKeyDown,
+  autoFocus,
 }: Props) => {
   const {
     textareaRef,
@@ -55,13 +59,18 @@ const MentionInput = ({
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(e) => {
+          externalKeyDown?.(e);
+          handleKeyDown(e);
+        }}
         onBlur={dismissSuggestions}
         disabled={disabled}
         aria-label={ariaLabel}
         aria-autocomplete="list"
         aria-expanded={showSuggestions}
         style={{ overflow: 'hidden' }}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
       />
       {showSuggestions && (
         <MentionSuggestions
