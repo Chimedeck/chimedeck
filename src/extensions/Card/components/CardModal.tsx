@@ -114,6 +114,7 @@ const CardModal = ({
         <Dialog.Content
           className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8"
           aria-label={`Card: ${card.title}`}
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
