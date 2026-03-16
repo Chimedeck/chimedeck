@@ -396,6 +396,16 @@ async function main() {
     }
   }
 
+  // [why] Guarantee all mapper users exist in memberSet even if they never appear
+  // on any card or comment. Without this, mapper users who are missing from the
+  // Trello export data would get memberships rows with no corresponding users row,
+  // causing a FK violation.
+  for (const entry of mapperRaw) {
+    if (!memberSet.has(entry.id)) {
+      memberSet.set(entry.id, memberEmail(entry.id, entry.username));
+    }
+  }
+
   console.log(`\n📊  Unique entities:`);
   console.log(`    Workspaces          : ${workspaceSet.size}`);
   console.log(`    Boards              : ${boardSet.size}`);

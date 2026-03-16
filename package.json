@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "bun run --hot server/index.ts",
     "dev:client": "vite",
-    "dev:full": "concurrently \"bun run dev\" \"bun run dev:client\"",
+    "dev:local": "concurrently \"bun run dev\" \"bun run dev:client\"",
     "build": "bun run build:client && bun run build:server",
     "build:client": "vite build",
     "build:server": "bun run typecheck",

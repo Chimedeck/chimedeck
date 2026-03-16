@@ -30,7 +30,7 @@ bun run db:migrate
 bun run db:seed:trello 
 
 # 5. Start the dev server (hot-reload)
-bun run dev:full
+bun run dev:local
 ```
 
 > `curl http://localhost:3000/health` → `{ "status": "ok" }`

@@ -21,7 +21,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
   let body: { email?: string; role?: string };

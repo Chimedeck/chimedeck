@@ -7,7 +7,7 @@ interface WorkspaceMember {
   userId: string;
   email: string;
   role: string;
-  display_name?: string | null;
+  name?: string | null;
 }
 
 const BOARD_ROLES: BoardMemberRole[] = ['MEMBER', 'VIEWER', 'ADMIN'];
@@ -28,7 +28,7 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
   const filtered = query.trim()
     ? candidates.filter((m) => {
         const q = query.toLowerCase();
-        const name = (m.display_name ?? '').toLowerCase();
+        const name = (m.name ?? '').toLowerCase();
         return name.includes(q) || m.email.toLowerCase().includes(q);
       })
     : candidates;
@@ -86,8 +86,8 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
                     onClick={() => handleSelect(m)}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700"
                   >
-                    <span className="font-medium">{m.display_name ?? m.email}</span>
-                    {m.display_name && (
+                    <span className="font-medium">{m.name ?? m.email}</span>
+                    {m.name && (
                       <span className="text-xs text-slate-400">{m.email}</span>
                     )}
                   </button>

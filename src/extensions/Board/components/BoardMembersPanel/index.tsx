@@ -1,11 +1,17 @@
 // BoardMembersPanel — slide-in panel for managing board members and guests.
 // Tabs: Members (list/add/change role/remove), Guests (invite by email/list/revoke).
 // Only ADMIN/OWNER board members can edit; others see read-only views.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
+import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
-import { membersSelector } from '~/extensions/Workspace/containers/WorkspacePage/WorkspacePage.duck';
+import {
+  membersSelector,
+  fetchWorkspaceMembersThunk,
+} from '~/extensions/Workspace/containers/WorkspacePage/WorkspacePage.duck';
+import { selectCurrentUserWorkspaceRole } from '~/extensions/Workspace/slices/workspaceSlice';
+import { selectBoard } from '~/extensions/Board/slices/boardSlice';
 import {
   useGetBoardMembersQuery,
   useAddBoardMemberMutation,
@@ -26,12 +32,21 @@ interface Props {
 }
 
 const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
-  // [why] GUEST users have no member-management rights — suppress the panel entirely.
-  if (isGuest) return null;
   const { boardId } = useParams<{ boardId: string }>();
+  const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectAuthUser);
+  const board = useAppSelector(selectBoard);
   const workspaceMembers = useAppSelector(membersSelector);
+  const workspaceRole = useAppSelector(selectCurrentUserWorkspaceRole);
   const [activeTab, setActiveTab] = useState<Tab>('members');
+
+  // [why] If the user navigates directly to a board URL (bypassing the workspace page),
+  // the workspace members slice is empty. Fetch members lazily so the add-member search works.
+  useEffect(() => {
+    if (board?.workspaceId && workspaceMembers.length === 0) {
+      dispatch(fetchWorkspaceMembersThunk({ workspaceId: board.workspaceId }));
+    }
+  }, [dispatch, board?.workspaceId, workspaceMembers.length]);
 
   const { data: boardMembers = [], isLoading } = useGetBoardMembersQuery(boardId ?? '', {
     skip: !boardId,
@@ -40,12 +55,15 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   const [updateMember] = useUpdateBoardMemberMutation();
   const [removeMember] = useRemoveBoardMemberMutation();
 
-  // Determine if the current user is a board ADMIN or OWNER.
+  // Determine if the current user can manage board members.
+  // [why] Workspace OWNER/ADMIN have authority over all boards even if not explicitly
+  // added to board_members — the server checks workspace role for all board write ops.
   const isAdmin = useMemo(() => {
     if (!currentUser) return false;
+    if (workspaceRole === 'OWNER' || workspaceRole === 'ADMIN') return true;
     const self = boardMembers.find((m) => m.user_id === currentUser.id);
     return self?.role === 'ADMIN' || self?.role === 'OWNER';
-  }, [boardMembers, currentUser]);
+  }, [boardMembers, currentUser, workspaceRole]);
 
   // Count admins to enforce last-admin guard.
   const adminCount = useMemo(
@@ -68,6 +86,10 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       ),
     [workspaceMembers, boardMemberIds],
   );
+
+  // [why] GUEST users have no member-management rights — suppress the panel entirely.
+  // Must be after all hooks to satisfy the Rules of Hooks.
+  if (isGuest) return null;
 
   const handleAdd = async (userId: string, role: BoardMemberRole) => {
     if (!boardId) return;

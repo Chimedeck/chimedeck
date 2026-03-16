@@ -61,8 +61,8 @@ const WorkspacePage = () => {
   const currentMember = members.find((m) => m.userId === authUser?.id);
   const canManageMembers =
     currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
-  // MEMBERs can also invite, but the role options they see are capped to their own rank.
-  const canInvite = canManageMembers || currentMember?.role === 'MEMBER';
+  // Only OWNER/ADMIN may add members directly (matches remove permission).
+  const canInvite = canManageMembers;
 
   const handleDeleteWorkspace = () => {
     if (workspace && window.confirm(`Delete workspace "${workspace.name}"?`)) {

@@ -23,6 +23,8 @@ export async function handleListMembers(req: Request, workspaceId: string): Prom
   const members = await db('memberships')
     .join('users', 'memberships.user_id', 'users.id')
     .where('memberships.workspace_id', workspaceId)
+    // [why] GUESTs are board-level access only; they are not org/workspace members.
+    .whereNot('memberships.role', 'GUEST')
     .select(
       db.raw('users.id as "userId"'),
       'users.email',
