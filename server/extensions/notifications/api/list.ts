@@ -35,7 +35,7 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'cards.title as card_title',
       'notifications.board_id',
       'boards.title as board_title',
-      'lists.name as list_title',
+      'lists.title as list_title',
       'notifications.read',
       'notifications.created_at',
       db.raw("actor.id as actor_id"),
