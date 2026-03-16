@@ -326,6 +326,10 @@ async function main() {
   const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
+  // [why] Trello gives every board its own label IDs even for identical name+color combos.
+  // We deduplicate by name|color so workspace-scoped labels aren't duplicated per-board.
+  const labelKeyToId = new Map<string, string>(); // "name|color" → canonical Trello ID
+  const labelIdRemap = new Map<string, string>(); // duplicate Trello ID → canonical Trello ID
   const memberSet = new Map<string, string>(); // trelloId → email
   // Rich member data (fullName, username, avatarUrl) when available
   const memberDataMap = new Map<string, TrelloMember>();
@@ -353,15 +357,23 @@ async function main() {
       });
     }
 
-    // Labels
+    // Labels — deduplicate by name+color so boards sharing the same label name/colour
+    // don't produce separate rows in the workspace-scoped labels table.
     for (const label of card.labels ?? []) {
-      if (!labelSet.has(label.id)) {
+      const canonicalKey = `${label.name ?? ''}|${label.color ?? ''}`;
+      if (!labelKeyToId.has(canonicalKey)) {
+        labelKeyToId.set(canonicalKey, label.id);
         labelSet.set(label.id, {
           id: label.id,
           workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
           name: label.name || 'Label',
           color: trelloColor(label.color),
         });
+      } else {
+        const canonicalId = labelKeyToId.get(canonicalKey)!;
+        if (canonicalId !== label.id) {
+          labelIdRemap.set(label.id, canonicalId);
+        }
       }
     }
 
@@ -410,7 +422,7 @@ async function main() {
   console.log(`    Workspaces          : ${workspaceSet.size}`);
   console.log(`    Boards              : ${boardSet.size}`);
   console.log(`    Lists               : ${listSet.size}`);
-  console.log(`    Labels              : ${labelSet.size}`);
+  console.log(`    Labels              : ${labelSet.size} (${labelIdRemap.size} duplicates merged)`);  
   console.log(`    Members             : ${memberSet.size}`);
 
   // -------------------------------------------------------------------------
@@ -599,11 +611,12 @@ async function main() {
     });
 
     for (const labelId of card.idLabels ?? []) {
-      if (labelSet.has(labelId)) {
-        const key = `${card.id}:${labelId}`;
+      const resolvedId = labelIdRemap.get(labelId) ?? labelId;
+      if (labelSet.has(resolvedId)) {
+        const key = `${card.id}:${resolvedId}`;
         if (!cardLabelSeen.has(key)) {
           cardLabelSeen.add(key);
-          allCardLabelRows.push({ card_id: card.id, label_id: labelId });
+          allCardLabelRows.push({ card_id: card.id, label_id: resolvedId });
         }
       }
     }

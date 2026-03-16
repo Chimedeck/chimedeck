@@ -1,6 +1,6 @@
 // ActivityFeed — unified timeline of comments and system activity events for a card.
 // Renders comments as full bubbles and system events as compact single-line rows.
-// Feed is sorted ascending by created_at (oldest first).
+// Feed is sorted descending by created_at (newest first).
 import { useEffect, useState } from 'react';
 import CommentItem, { type Comment } from '~/extensions/Comment/components/CommentItem';
 import CommentEditor from '~/extensions/Comment/components/CommentEditor';
@@ -96,14 +96,21 @@ const ActivityFeed = ({
     .filter((a) => VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action))
     .map((a) => ({ kind: 'event', ts: a.created_at, activity: a }));
 
-  // Merge and sort ascending
+  // Merge and sort descending (newest first)
   const feed: FeedItem[] = [...commentItems, ...eventItems].sort(
-    (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
+    (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime(),
   );
 
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-xs font-semibold uppercase text-gray-500">Activity</h3>
+
+      <CommentEditor
+        {...(boardId !== undefined ? { boardId } : {})}
+        placeholder="Add a comment…"
+        onSubmit={onAddComment}
+        submitLabel="Comment"
+      />
 
       <div className="flex flex-col gap-3">
         {feed.length === 0 && (
@@ -173,13 +180,6 @@ const ActivityFeed = ({
           );
         })}
       </div>
-
-      <CommentEditor
-        {...(boardId !== undefined ? { boardId } : {})}
-        placeholder="Add a comment…"
-        onSubmit={onAddComment}
-        submitLabel="Comment"
-      />
     </div>
   );
 };
