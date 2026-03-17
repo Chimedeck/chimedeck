@@ -229,3 +229,95 @@
 - [ ] Keyboard ArrowDown navigates through overflow menu items
 - [ ] Enter/Space on a menu item executes the command and closes the menu
 - [ ] Escape closes the overflow menu without executing any command
+
+---
+
+# Test: + Command Menu — Search and Filter (CardDescriptionTiptap)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal, click the description area to enter edit mode
+- Click the **+** button to open the command menu
+
+## Steps
+1. The dropdown opens and a search input is focused automatically
+2. The full list of commands is visible: **Mention**, **Emoji**, **Code snippet**, **Quote**, **Numbered list**
+3. Type `"co"` in the search input — list filters to show only **Code snippet**
+4. Clear the search input — full list is restored
+5. Type `"xyz"` — no commands match; an empty-state message is shown ("No matching commands")
+6. Clear search, use **ArrowDown** to navigate to **Quote**, press **Enter** — Quote blockquote is applied, menu closes
+7. Reopen the menu, click **Mention** — `@` is inserted at cursor, menu closes
+8. Reopen the menu, click **Emoji** — `:` is inserted at cursor, menu closes
+9. Reopen the menu, press **Escape** — menu closes without any change
+
+## Acceptance Criteria
+- [ ] Search input is auto-focused when the command menu opens
+- [ ] All five commands are visible without a search query: Mention, Emoji, Code snippet, Quote, Numbered list
+- [ ] Typing in the search input filters the list in real time (case-insensitive, matches label and keywords)
+- [ ] Empty state message "No matching commands" is shown when no command matches
+- [ ] Clearing the search restores the full list
+- [ ] Arrow keys navigate the filtered list; active item is visually highlighted
+- [ ] Pressing Enter on an active command executes it and closes the menu
+- [ ] Pressing Escape closes the menu without executing any command
+- [ ] Clicking a command executes it and closes the menu
+
+---
+
+# Test: + Command Menu — Search and Filter (CommentEditor)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal, locate the new comment editor
+- Click the **+** button to open the command menu
+
+## Steps
+1. The dropdown opens and a search input is focused automatically
+2. The full list of commands is visible: **Mention**, **Emoji**, **Code snippet**, **Quote**, **Numbered list**
+3. Type `"qu"` — list filters to show only **Quote**
+4. Press **Enter** — Quote blockquote is applied in the comment editor, menu closes
+5. Reopen the menu, type `"em"` — list filters to show only **Emoji**
+6. Click **Emoji** — `:` is inserted at cursor, menu closes
+7. Reopen the menu, type `"zzz"` — empty-state message is shown
+8. Press **Escape** — menu closes, no change to comment content
+
+## Acceptance Criteria
+- [ ] Search input is auto-focused when the command menu opens
+- [ ] Full command list (Mention, Emoji, Code snippet, Quote, Numbered list) shown without a query
+- [ ] Real-time filtering by label/keyword; case-insensitive
+- [ ] Empty state shown for unmatched queries
+- [ ] Arrow key navigation with visual highlight on active item
+- [ ] Enter executes active command and closes menu
+- [ ] Escape closes menu without executing any command
+- [ ] Active formatting state (e.g. already in blockquote) is visually highlighted in the menu item
+
+---
+
+# Test: + Command Menu — Mention and Emoji Commands (Both Editors)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal, enter edit mode for the description or comment editor
+
+## Steps
+1. Open the **+** menu and click **Mention**
+2. Verify `@` is inserted at the current cursor position in the editor
+3. Open the **+** menu and click **Emoji**
+4. Verify `:` is inserted at the current cursor position in the editor
+5. Open the **+** menu and click **Code snippet**
+6. Verify the editor transitions to a code block
+7. Open the **+** menu and click **Quote**
+8. Verify the editor transitions to a blockquote block
+
+## Acceptance Criteria
+- [ ] Mention command inserts `@` at cursor
+- [ ] Emoji command inserts `:` at cursor
+- [ ] Code snippet command toggles the code block node
+- [ ] Quote command toggles the blockquote node
+- [ ] All commands close the menu immediately after execution
+- [ ] Editor focus is retained after each command (cursor is active in editor)

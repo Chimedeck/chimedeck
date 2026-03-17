@@ -8,11 +8,9 @@ import {
   ItalicIcon,
   StrikethroughIcon,
   ListBulletIcon,
-  NumberedListIcon,
-  ChatBubbleLeftEllipsisIcon,
-  CodeBracketIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
+import CommandMenu from './CommandMenu';
 
 interface Props {
   editor: Editor | null;
@@ -111,50 +109,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow }: Props) => {
         </button>
 
         {overflowOpen && (
-          <div
-            role="menu"
-            className="absolute right-0 top-full z-30 mt-1 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
-          >
-            <button
-              type="button"
-              role="menuitem"
-              className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 ${editor?.isActive('orderedList') ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                editor?.chain().focus().toggleOrderedList().run();
-                onToggleOverflow();
-              }}
-            >
-              <NumberedListIcon className="h-3.5 w-3.5 shrink-0" />
-              Numbered list
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 ${editor?.isActive('blockquote') ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                editor?.chain().focus().toggleBlockquote().run();
-                onToggleOverflow();
-              }}
-            >
-              <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5 shrink-0" />
-              Quote
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 ${editor?.isActive('codeBlock') ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                editor?.chain().focus().toggleCodeBlock().run();
-                onToggleOverflow();
-              }}
-            >
-              <CodeBracketIcon className="h-3.5 w-3.5 shrink-0" />
-              Code block
-            </button>
-          </div>
+          <CommandMenu editor={editor} onClose={onToggleOverflow} />
         )}
       </div>
     </div>
