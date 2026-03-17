@@ -1,5 +1,5 @@
 // CardDescriptionTiptap — rich text markdown editor using Tiptap.
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
@@ -11,6 +11,7 @@ import {
   NumberedListIcon,
   ChatBubbleLeftEllipsisIcon,
   CodeBracketIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { marked } from 'marked';
 
@@ -26,6 +27,8 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(description);
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const overflowRef = useRef<HTMLDivElement>(null);
 
   // Tiptap editor instance
   const editor = useEditor({
@@ -84,6 +87,18 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
     [],
   );
 
+  // Close overflow menu when clicking outside
+  useEffect(() => {
+    if (!overflowOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [overflowOpen]);
+
   // Sync external description changes when not editing
   useEffect(() => {
     if (!editing && editor) {
@@ -124,7 +139,7 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
   const previewHtml = marked.parse(draft || '') as string;
 
   const toolbarBtn =
-    'px-2 py-1 text-xs rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors';
+    'p-1.5 text-xs rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors';
   const toolbarBtnActive = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200';
 
   return (
@@ -155,63 +170,111 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
 
           {editMode === 'rich' ? (
             <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-              <div className="z-20 flex shrink-0 flex-wrap gap-1 border-b border-gray-200 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900">
+              {/* Single-line toolbar: primary controls always visible, secondary behind + */}
+              <div className="z-20 flex shrink-0 items-center gap-1 border-b border-gray-200 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900">
+                {/* Primary controls — always visible */}
                 <button
                   type="button"
+                  aria-label="Bold"
+                  title="Bold"
                   className={`${toolbarBtn} ${editor?.isActive('bold') ? toolbarBtnActive : ''}`}
                   onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleBold().run() ?? false)}
                 >
-                  <BoldIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Bold
+                  <BoldIcon className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
+                  aria-label="Italic"
+                  title="Italic"
                   className={`${toolbarBtn} ${editor?.isActive('italic') ? toolbarBtnActive : ''}`}
                   onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleItalic().run() ?? false)}
                 >
-                  <ItalicIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Italic
+                  <ItalicIcon className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
+                  aria-label="Strikethrough"
+                  title="Strikethrough"
                   className={`${toolbarBtn} ${editor?.isActive('strike') ? toolbarBtnActive : ''}`}
                   onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleStrike().run() ?? false)}
                 >
-                  <StrikethroughIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Strike
+                  <StrikethroughIcon className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
+                  aria-label="Bullet list"
+                  title="Bullet list"
                   className={`${toolbarBtn} ${editor?.isActive('bulletList') ? toolbarBtnActive : ''}`}
                   onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleBulletList().run() ?? false)}
                 >
-                  <ListBulletIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Bullet
+                  <ListBulletIcon className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  type="button"
-                  className={`${toolbarBtn} ${editor?.isActive('orderedList') ? toolbarBtnActive : ''}`}
-                  onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleOrderedList().run() ?? false)}
-                >
-                  <NumberedListIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Numbered
-                </button>
-                <button
-                  type="button"
-                  className={`${toolbarBtn} ${editor?.isActive('blockquote') ? toolbarBtnActive : ''}`}
-                  onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleBlockquote().run() ?? false)}
-                >
-                  <ChatBubbleLeftEllipsisIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Quote
-                </button>
-                <button
-                  type="button"
-                  className={`${toolbarBtn} ${editor?.isActive('codeBlock') ? toolbarBtnActive : ''}`}
-                  onMouseDown={runToolbarCommand(() => editor?.chain().focus().toggleCodeBlock().run() ?? false)}
-                >
-                  <CodeBracketIcon className="inline h-3.5 w-3.5 mr-1" />
-                  Code
-                </button>
+
+                {/* Overflow + button — secondary controls */}
+                <div ref={overflowRef} className="relative ml-auto">
+                  <button
+                    type="button"
+                    aria-label="More formatting options"
+                    title="More formatting options"
+                    aria-expanded={overflowOpen}
+                    aria-haspopup="menu"
+                    className={`${toolbarBtn} ${overflowOpen ? toolbarBtnActive : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setOverflowOpen((o) => !o);
+                    }}
+                  >
+                    <PlusIcon className="h-3.5 w-3.5" />
+                  </button>
+
+                  {overflowOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-full z-30 mt-1 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 ${editor?.isActive('orderedList') ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          editor?.chain().focus().toggleOrderedList().run();
+                          setOverflowOpen(false);
+                        }}
+                      >
+                        <NumberedListIcon className="h-3.5 w-3.5 shrink-0" />
+                        Numbered list
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 ${editor?.isActive('blockquote') ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          editor?.chain().focus().toggleBlockquote().run();
+                          setOverflowOpen(false);
+                        }}
+                      >
+                        <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5 shrink-0" />
+                        Quote
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-800 ${editor?.isActive('codeBlock') ? 'font-semibold text-indigo-600 dark:text-indigo-300' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          editor?.chain().focus().toggleCodeBlock().run();
+                          setOverflowOpen(false);
+                        }}
+                      >
+                        <CodeBracketIcon className="h-3.5 w-3.5 shrink-0" />
+                        Code block
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="relative min-h-[180px] flex-1 overflow-y-auto overscroll-contain rounded-b-lg">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900" />
