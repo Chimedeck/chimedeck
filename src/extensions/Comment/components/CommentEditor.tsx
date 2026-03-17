@@ -1,7 +1,11 @@
-// Markdown textarea for composing or editing a comment.
-// Supports @mention autocomplete when boardId is provided.
-import { useState } from 'react';
-import MentionInput from '~/common/components/MentionInput/MentionInput';
+// Rich text editor for composing or editing a comment.
+// Uses Tiptap with the shared OneLineToolbar (single-line, no wrapping).
+// @mention support is deferred to the + overflow menu in a future iteration.
+import { useState, useCallback } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Markdown } from '@tiptap/markdown';
+import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
 
 interface Props {
   boardId?: string;
@@ -13,19 +17,27 @@ interface Props {
 }
 
 const CommentEditor = ({
-  boardId,
+  boardId: _boardId,
   initialValue = '',
   placeholder = 'Write a comment…',
   onSubmit,
   onCancel,
   submitLabel = 'Save',
 }: Props) => {
-  const [content, setContent] = useState(initialValue);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [overflowOpen, setOverflowOpen] = useState(false);
 
-  const handleSubmit = async () => {
-    const trimmed = content.trim();
+  const editor = useEditor({
+    extensions: [StarterKit, Markdown],
+    content: initialValue || '',
+    contentType: 'markdown',
+    immediatelyRender: false,
+  });
+
+  const handleSubmit = useCallback(async () => {
+    if (!editor) return;
+    const trimmed = editor.getMarkdown().trim();
     if (!trimmed) {
       setError('Comment cannot be empty');
       return;
@@ -34,41 +46,47 @@ const CommentEditor = ({
     setSubmitting(true);
     try {
       await onSubmit(trimmed);
-      setContent('');
+      editor.commands.clearContent();
     } catch {
       setError('Failed to save comment');
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [editor, onSubmit]);
 
-  const textareaClass =
-    'w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400';
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      }
+      if (e.key === 'Escape' && onCancel) {
+        e.preventDefault();
+        onCancel();
+      }
+    },
+    [handleSubmit, onCancel],
+  );
 
   return (
     <div className="flex flex-col gap-2">
-      {boardId ? (
-        <MentionInput
-          boardId={boardId}
-          value={content}
-          onChange={setContent}
-          placeholder={placeholder}
-          className={textareaClass}
-          rows={3}
-          disabled={submitting}
-          aria-label="Comment text"
+      <div
+        className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"
+        onKeyDown={handleKeyDown}
+      >
+        {/* Single-line toolbar — never wraps */}
+        <OneLineToolbar
+          editor={editor}
+          overflowOpen={overflowOpen}
+          onToggleOverflow={() => setOverflowOpen((o) => !o)}
         />
-      ) : (
-        <textarea
-          className={textareaClass}
-          rows={3}
-          placeholder={placeholder}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          disabled={submitting}
+        <EditorContent
+          editor={editor}
           aria-label="Comment text"
+          aria-placeholder={placeholder}
+          className="px-3 py-2 text-sm [&_.ProseMirror]:min-h-[72px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert [&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0"
         />
-      )}
+      </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
       <div className="flex gap-2">
         <button
@@ -93,3 +111,4 @@ const CommentEditor = ({
 };
 
 export default CommentEditor;
+
