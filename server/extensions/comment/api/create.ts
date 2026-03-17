@@ -51,7 +51,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
-  let body: { content?: string };
+  let body: { content?: string; idempotency_key?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -68,8 +68,43 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     );
   }
 
+  // [why] If the client provided an idempotency_key (e.g. during offline replay), check
+  //        whether this user already created a comment with this key for this card.
+  //        If found, return the existing comment to the client without inserting a duplicate.
+  if (body.idempotency_key !== undefined) {
+    if (typeof body.idempotency_key !== 'string' || body.idempotency_key.trim() === '') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'idempotency_key must be a non-empty string' } },
+        { status: 400 },
+      );
+    }
+
+    const existing = await db('comments')
+      .leftJoin('users', 'comments.user_id', 'users.id')
+      .where('comments.user_id', actorId)
+      .where('comments.idempotency_key', body.idempotency_key.trim())
+      .select(
+        'comments.id',
+        'comments.card_id',
+        'comments.user_id',
+        'comments.content',
+        'comments.version',
+        'comments.deleted',
+        'comments.created_at',
+        'comments.updated_at',
+        db.raw("COALESCE(users.name, users.email) as author_name"),
+        'users.email as author_email',
+      )
+      .first();
+
+    if (existing) {
+      return Response.json({ data: existing }, { status: 201 });
+    }
+  }
+
   const id = randomUUID();
   const trimmedContent = sanitizeRichText(body.content.trim());
+  const idempotencyKey = body.idempotency_key?.trim() ?? null;
 
   await db.transaction(async (trx) => {
     await trx('comments').insert({
@@ -77,6 +112,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       card_id: cardId,
       user_id: actorId,
       content: trimmedContent,
+      idempotency_key: idempotencyKey,
       version: 1,
       deleted: false,
       created_at: new Date().toISOString(),

@@ -16,6 +16,7 @@ import { handleAttachLabel, handleDetachLabel } from './labels';
 import { handleAssignMember, handleRemoveMember } from './members';
 import { handleCreateChecklistItem, handleUpdateChecklistItem, handleDeleteChecklistItem } from './checklist';
 import { handleListDueCards } from './dueDate';
+import { handlePatchCardDescription } from './patch';
 
 // Returns a Response if the path matches a card route, otherwise null.
 export async function cardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -73,6 +74,9 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
 
     // PATCH /api/v1/cards/:id/archive
     if (sub === '/archive' && req.method === 'PATCH') return handleArchiveCard(req, cardId);
+
+    // PATCH /api/v1/cards/:id/description — idempotent offline-replay description save
+    if (sub === '/description' && req.method === 'PATCH') return handlePatchCardDescription(req, cardId);
 
     // PATCH /api/v1/cards/:id/move
     if (sub === '/move' && req.method === 'PATCH') return handleMoveCard(req, cardId);
