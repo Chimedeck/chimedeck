@@ -1,24 +1,35 @@
 // CardDescriptionTiptap — rich text markdown editor using Tiptap.
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
 import { marked } from 'marked';
 import OneLineToolbar from './OneLineToolbar';
+import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
+import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
 
 interface Props {
   boardId: string;
+  cardId?: string;
   description: string;
   onSave: (description: string) => void;
   disabled?: boolean;
 }
 
-const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disabled }: Props) => {
+const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(description);
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
   const [overflowOpen, setOverflowOpen] = useState(false);
+
+  // File picker input ref for attachment uploads
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Attachment upload — only active when a cardId is provided
+  const { uploads, upload: uploadFiles, removeEntry } = useAttachmentUpload({
+    cardId: cardId ?? '',
+  });
 
   // Tiptap editor instance
   const editor = useEditor({
@@ -89,6 +100,21 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
     setEditing(false);
   }, [description, editor]);
 
+  // Open file picker for attachment (only when cardId is available)
+  const handleAttach = useCallback(() => {
+    if (!cardId) return;
+    fileInputRef.current?.click();
+  }, [cardId]);
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files ?? []);
+      if (files.length > 0) uploadFiles(files);
+      e.target.value = '';
+    },
+    [uploadFiles],
+  );
+
   const handleEditorKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -114,6 +140,17 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
       </h3>
       {editing && !disabled ? (
         <div>
+          {/* Hidden file input for attachment upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.zip,.tar,.gz,audio/*"
+            className="hidden"
+            onChange={handleFileInputChange}
+            data-testid="description-attachment-input"
+          />
+
           <div className="mb-2 flex items-center justify-between">
             <div className="inline-flex rounded-md border border-gray-200 dark:border-slate-700 overflow-hidden">
               <button
@@ -140,6 +177,7 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
                 editor={editor}
                 overflowOpen={overflowOpen}
                 onToggleOverflow={() => setOverflowOpen((o) => !o)}
+                {...(cardId ? { onAttach: handleAttach } : {})}
               />
               <div className="relative min-h-[180px] flex-1 overflow-y-auto overscroll-contain rounded-b-lg">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900" />
@@ -148,6 +186,22 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
                   className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert [&_.ProseMirror>*:first-child]:mt-0"
                 />
               </div>
+
+              {/* Inline upload previews — shown while files are in-flight */}
+              {uploads.length > 0 && (
+                <div
+                  aria-label="File uploads"
+                  className="flex flex-col gap-1 border-t border-gray-200 dark:border-slate-700 p-2"
+                >
+                  {uploads.map((entry) => (
+                    <InlineUploadPreview
+                      key={entry.clientId}
+                      entry={entry}
+                      onCancel={removeEntry}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <textarea

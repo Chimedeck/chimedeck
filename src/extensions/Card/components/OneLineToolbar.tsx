@@ -9,6 +9,7 @@ import {
   StrikethroughIcon,
   ListBulletIcon,
   PlusIcon,
+  PaperClipIcon,
 } from '@heroicons/react/24/outline';
 import CommandMenu from './CommandMenu';
 
@@ -16,9 +17,11 @@ interface Props {
   editor: Editor | null;
   overflowOpen: boolean;
   onToggleOverflow: () => void;
+  /** When provided, a paperclip button appears in the toolbar to trigger file upload */
+  onAttach?: () => void;
 }
 
-const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow }: Props) => {
+const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Props) => {
   const overflowRef = useRef<HTMLDivElement>(null);
 
   // Close overflow menu when clicking outside
@@ -89,6 +92,23 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow }: Props) => {
       >
         <ListBulletIcon className="h-3.5 w-3.5" />
       </button>
+
+      {/* Attach file button — shown when caller provides onAttach handler */}
+      {onAttach && (
+        <button
+          type="button"
+          aria-label="Attach file"
+          title="Attach file"
+          className={btn}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAttach();
+          }}
+        >
+          <PaperClipIcon className="h-3.5 w-3.5" />
+        </button>
+      )}
 
       {/* Overflow + button — secondary controls */}
       <div ref={overflowRef} className="relative ml-auto">

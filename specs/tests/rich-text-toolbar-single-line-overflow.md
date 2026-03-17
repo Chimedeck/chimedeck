@@ -321,3 +321,158 @@
 - [ ] Quote command toggles the blockquote node
 - [ ] All commands close the menu immediately after execution
 - [ ] Editor focus is retained after each command (cursor is active in editor)
+
+---
+
+# Test: Attachment Upload — Image Preview + Progress (CardDescriptionTiptap)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal that has a `cardId` wired to the description editor
+- Click the description area to enter edit mode
+
+## Steps
+1. The toolbar shows a paperclip (🖇) icon button alongside Bold, Italic, etc.
+2. Click the paperclip button — the native file picker opens
+3. Select an image file (e.g. `photo.jpg`)
+4. The file picker closes; an inline upload row appears below the editor content area
+5. The row shows: a small image thumbnail on the left, filename and file size, and a progress bar
+6. While uploading, the progress bar advances from 0 % to 100 %
+7. When upload completes the progress bar disappears and a green "Uploaded" caption appears
+8. After ~2 s the row auto-dismisses
+
+## Acceptance Criteria
+- [ ] Paperclip button is visible in the toolbar when a `cardId` is present
+- [ ] Paperclip button is absent (or disabled) when no `cardId` is provided
+- [ ] Clicking the paperclip opens the system file picker
+- [ ] After file selection an inline preview row appears immediately (before upload starts)
+- [ ] Image files show a thumbnail (object-URL preview) in the row
+- [ ] The filename and formatted file size are visible in the row
+- [ ] A progress bar is present while the upload is in-flight
+- [ ] The row shows "Uploaded" on completion and auto-dismisses after ~2 s
+- [ ] Editor content and cursor are not disturbed by the upload flow
+
+---
+
+# Test: Attachment Upload — Non-Image File Preview + Progress (CardDescriptionTiptap)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal in edit mode for the description editor
+
+## Steps
+1. Click the paperclip button in the toolbar
+2. Select a non-image file (e.g. `report.pdf`)
+3. An inline upload row appears with a file-type icon (not a thumbnail), filename, size, and progress bar
+4. Upload completes; row shows "Uploaded" then auto-dismisses
+
+## Acceptance Criteria
+- [ ] Non-image files show a file-type icon (not an `<img>` thumbnail)
+- [ ] Icon matches the file category (PDF icon for `.pdf`, document icon for `.docx`, etc.)
+- [ ] Filename and file size are visible
+- [ ] Progress bar behaves identically to the image upload case
+
+---
+
+# Test: Attachment Upload — Cancel Mid-Upload (Both Editors)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal, enter edit mode (description or comment editor)
+
+## Steps
+1. Click the paperclip button and select a large file to ensure the upload takes several seconds
+2. The inline upload row appears with a progress bar
+3. Click the **×** (cancel) button on the row while the upload is still in progress
+4. The row disappears immediately
+5. No further progress updates occur; the upload is aborted
+
+## Acceptance Criteria
+- [ ] Each upload row has a clearly visible **×** button
+- [ ] The **×** button has `aria-label="Cancel upload of <filename>"`
+- [ ] Clicking **×** during an upload aborts the XHR / multipart upload
+- [ ] The row is removed from the DOM immediately on cancel
+- [ ] No duplicate rows or zombie entries remain after cancellation
+- [ ] Editor input is not blocked or frozen after a cancelled upload
+
+---
+
+# Test: Attachment Upload — Error State (Both Editors)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal, enter edit mode
+- (Simulate a network error or server 500 to trigger upload failure)
+
+## Steps
+1. Select a file via the paperclip button
+2. The upload row appears with a progress bar
+3. The upload fails (network error or server error response)
+4. The progress bar disappears; a red error message appears inline in the row (e.g. "S3 PUT failed: 500")
+5. The **×** button is still present to dismiss the error row
+
+## Acceptance Criteria
+- [ ] Upload failure transitions the row to an error state (no progress bar visible)
+- [ ] Error message text is visible in red within the row (using `role="alert"`)
+- [ ] The **×** button dismisses the error row
+- [ ] After dismissal the row is fully removed from the DOM
+- [ ] Editor remains fully functional after an upload error
+- [ ] Multiple simultaneous uploads show independent error states per file
+
+---
+
+# Test: Attachment Upload — Multiple Simultaneous Files (Both Editors)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal, enter edit mode
+
+## Steps
+1. Click the paperclip button and select 3 files at once (multi-select in the file picker)
+2. Three separate inline upload rows appear simultaneously, each with its own progress bar
+3. Each row progresses independently
+4. All three complete and auto-dismiss sequentially
+
+## Acceptance Criteria
+- [ ] Selecting multiple files creates one upload row per file
+- [ ] Each row has an independent progress bar and cancel button
+- [ ] Cancelling one upload does not affect the others
+- [ ] All rows auto-dismiss after their respective uploads complete
+- [ ] Upload rows do not overflow the editor container (scrollable if needed)
+
+---
+
+# Test: Attachment Upload — Image Preview + Progress (CommentEditor)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal with a `cardId` wired to the comment editor
+- Locate the new comment editor at the bottom of the activity feed
+
+## Steps
+1. The comment toolbar shows a paperclip icon button
+2. Click the paperclip button — native file picker opens
+3. Select an image file
+4. Inline preview row appears inside the editor container (below the text area, above the submit buttons)
+5. Row shows image thumbnail, filename, file size, and a progress bar
+6. Upload completes; "Uploaded" caption appears briefly then row auto-dismisses
+
+## Acceptance Criteria
+- [ ] Paperclip button visible in comment editor toolbar when `cardId` is provided
+- [ ] Inline upload rows appear inside the comment editor container (not in a separate section)
+- [ ] Image thumbnail shown for image/* files
+- [ ] Progress bar functional; auto-dismiss on completion
+- [ ] Submit button remains enabled during upload (uploads are non-blocking)
+- [ ] Submitted comment text is independent of in-flight attachments

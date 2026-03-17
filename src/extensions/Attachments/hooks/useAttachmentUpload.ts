@@ -10,7 +10,7 @@ import {
   completeMultipart,
   abortMultipart,
 } from '../api';
-import type { UploadEntry, CompletedPart } from '../types';
+import type { Attachment, UploadEntry, CompletedPart } from '../types';
 import config from '~/config';
 
 const MULTIPART_THRESHOLD = 5 * 1024 * 1024; // 5 MB
@@ -19,7 +19,8 @@ const MAX_CONCURRENT_PARTS = 3;
 
 interface UseAttachmentUploadOptions {
   cardId: string;
-  onSuccess?: (attachmentId: string) => void;
+  /** Called when an upload fully completes. Receives the server-confirmed Attachment payload. */
+  onSuccess?: (attachment: Attachment) => void;
   onError?: (clientId: string, message: string) => void;
 }
 
@@ -184,7 +185,7 @@ export function useAttachmentUpload({
     });
 
     updateEntry(clientId, { phase: 'done', attachmentId: attachment.id });
-    onSuccess?.(attachment.id);
+    onSuccess?.(attachment);
   }
 
   async function doMultipartUpload(
@@ -256,7 +257,7 @@ export function useAttachmentUpload({
     });
 
     updateEntry(clientId, { phase: 'done', attachmentId: attachment.id });
-    onSuccess?.(attachment.id);
+    onSuccess?.(attachment);
   }
 
   const removeEntry = useCallback((clientId: string) => {
