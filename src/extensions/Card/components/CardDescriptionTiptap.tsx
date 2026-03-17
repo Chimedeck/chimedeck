@@ -150,6 +150,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     }
 
     onSave(markdown);
+    // [why] Clear the draft immediately so the recovery banner doesn't reappear in the
+    // same session. The restore effect only re-runs on cardId changes, not on description
+    // prop changes, so without this the banner would show after every successful save.
     clearDraft();
     setEditing(false);
   }, [draft, onSave, editor, editMode, handleSaveIntent, clearDraft]);

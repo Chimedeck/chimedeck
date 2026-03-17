@@ -239,7 +239,7 @@ export function useOfflineCommentDraft({
     (markdown: string): boolean => {
       if (!cardId || !userId || !workspaceId || !boardId) return false;
 
-      if (socket.isConnected) {
+      if (navigator.onLine) {
         // Online path — caller submits normally via onSubmit callback
         return false;
       }

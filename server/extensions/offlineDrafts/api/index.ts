@@ -24,7 +24,8 @@ async function resolveCard({
   userId: string;
 }): Promise<{ card: Record<string, unknown> } | Response> {
   const card = await db('cards')
-    .join('boards', 'cards.board_id', 'boards.id')
+    .join('lists', 'cards.list_id', 'lists.id')
+    .join('boards', 'lists.board_id', 'boards.id')
     .leftJoin('board_members', (join) => {
       join.on('board_members.board_id', 'boards.id').andOn(
         db.raw('board_members.user_id = ?', [userId]),
@@ -34,7 +35,7 @@ async function resolveCard({
     .where((qb) => {
       qb.where('boards.visibility', 'public').orWhereNotNull('board_members.id');
     })
-    .select('cards.*')
+    .select('cards.*', 'lists.board_id as board_id', 'boards.workspace_id as workspace_id')
     .first();
 
   if (!card) {

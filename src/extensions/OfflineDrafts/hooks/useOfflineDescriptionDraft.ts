@@ -253,7 +253,7 @@ export function useOfflineDescriptionDraft({
     (markdown: string): boolean => {
       if (!cardId || !userId || !workspaceId) return false;
 
-      if (socket.isConnected) {
+      if (navigator.onLine) {
         // Online path — caller proceeds with normal onSave; clearDraft is their responsibility
         return false;
       }
