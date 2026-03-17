@@ -176,6 +176,7 @@ const CardModal = ({
                   <div className="h-full min-h-0 p-5 pt-3 pr-3 space-y-6">
                     <CardDescriptionTiptap
                       boardId={boardId}
+                      cardId={card.id}
                       description={card.description ?? ''}
                       onSave={onDescriptionSave}
                       disabled={isReadOnly}
@@ -244,6 +245,7 @@ const CardModal = ({
                 <div className="space-y-6">
                   <CardDescriptionTiptap
                     boardId={boardId}
+                    cardId={card.id}
                     description={card.description ?? ''}
                     onSave={onDescriptionSave}
                     disabled={isReadOnly}

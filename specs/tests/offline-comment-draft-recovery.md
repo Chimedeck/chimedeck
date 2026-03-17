@@ -256,3 +256,74 @@ mutation is replayed idempotently and the draft is cleared.
 **And** the draft will be restored next time the edit form is opened
 
 > Note: explicit draft discard is via the Discard button, not Cancel.
+
+---
+
+## Part 8 — Cross-Device Comment Draft Continuity
+
+### Scenario 20 — Comment draft synced on Device 1 is restored on Device 2
+
+**Given** User A typed a comment on Device 1 and the draft was synced to the server  
+**When** User A opens the same card modal on Device 2 (fresh browser, no local IndexedDB)  
+**Then** `GET /api/v1/cards/:cardId/drafts` returns the server comment draft  
+**And** the comment editor is pre-filled with the Device 1 draft content  
+**And** the footer shows `Synced draft`  
+**And** the draft is back-synced to Device 2's IndexedDB
+
+---
+
+### Scenario 21 — Offline Device 2 draft wins over stale server draft
+
+**Given** User A has a server comment draft from Device 1 at timestamp `T1`  
+**And** User A has a local comment draft on Device 2 at timestamp `T2` (T2 > T1), typed while offline  
+**When** Device 2 opens the card modal while still offline  
+**Then** the local draft wins (local-only restore since offline)  
+**And** the comment editor is pre-filled with the Device 2 draft  
+**And** the footer shows `Draft saved locally`
+
+---
+
+### Scenario 22 — submit_pending conflict: "Post failed" UI with Retry Post and Discard
+
+**Given** User A pressed Comment offline on Device 1 (`submit_pending` draft at `T1`)  
+**And** User A also edited the same comment draft on Device 2, syncing a newer version to the server at `T2` (T2 > T1)  
+**When** Device 1 reconnects and opens the card modal  
+**Then** reconcile returns server as winner with `loserPendingIntent: 'submit_pending'`  
+**And** the comment editor footer shows `Post failed`  
+**And** `data-testid="comment-draft-retry-sync"` button label is `Retry Post`  
+**And** `data-testid="comment-draft-discard-footer"` button is visible
+
+---
+
+### Scenario 23 — Retry Post button re-queues the comment POST
+
+**Given** the state from Scenario 22 ("Post failed" UI)  
+**When** User A clicks **Retry Post**  
+**Then** the comment content is saved locally with `intent: submit_pending`  
+**And** `POST /api/v1/cards/:cardId/comments` is enqueued with `idempotency_key`  
+**And** the footer transitions to `Will post when back online`  
+**And** on reconnect, the POST is replayed and the comment appears in the activity feed  
+**And** the local comment draft is cleared
+
+---
+
+### Scenario 24 — Discard after conflict clears comment draft
+
+**Given** the state from Scenario 22 ("Post failed" UI)  
+**When** User A clicks **Discard draft**  
+**Then** IndexedDB comment draft is deleted  
+**And** server comment draft is deleted  
+**And** the comment editor is cleared  
+**And** the draft recovery banner and footer disappear
+
+---
+
+### Scenario 25 — submit_pending draft survives login/logout cycle
+
+**Given** User A has a comment `submit_pending` draft saved in IndexedDB on Device 1  
+**And** User A logs out and logs back in on Device 1  
+**When** User A opens the same card modal  
+**Then** the submit_pending draft is re-fetched from the server (if token renewed)  
+**Or** the local draft is restored from IndexedDB if the server fetch fails  
+**And** the footer shows `Will post when back online` (not empty)  
+**And** no comment is leaked to the activity feed before explicit Post/Retry

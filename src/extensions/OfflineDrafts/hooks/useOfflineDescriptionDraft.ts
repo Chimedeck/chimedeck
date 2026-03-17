@@ -38,6 +38,12 @@ export interface UseOfflineDescriptionDraftResult {
   restoredDraft: string | null;
   draftStatus: DraftStatus;
   /**
+   * True when the current draft has a save_pending intent — i.e. the user pressed Save
+   * while offline and the PATCH has not yet been applied.
+   * [why] Callers use this to show "Retry Save" instead of the generic "Retry" label.
+   */
+  isSavePending: boolean;
+  /**
    * Call this on every editor change (after your own state update).
    * Internally debounced — safe to call on every keystroke.
    */
@@ -72,6 +78,9 @@ export function useOfflineDescriptionDraft({
 }: UseOfflineDescriptionDraftOptions): UseOfflineDescriptionDraftResult {
   const [restoredDraft, setRestoredDraft] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>('idle');
+  // [why] Track save_pending state separately so the UI can show "Retry Save"
+  // instead of the generic "Retry" label when a queued PATCH has not yet been applied.
+  const [isSavePending, setIsSavePending] = useState(false);
 
   // Latest markdown content — kept in a ref so debounced callbacks always
   // close over the current value without needing to re-create them.
@@ -130,6 +139,7 @@ export function useOfflineDescriptionDraft({
     if (!isReady || !cardId || !userId || !workspaceId) {
       setRestoredDraft(null);
       setDraftStatus('idle');
+      setIsSavePending(false);
       return;
     }
 
@@ -141,7 +151,7 @@ export function useOfflineDescriptionDraft({
 
       if (cancelled) return;
 
-      // 2. If online, also fetch server snapshot and reconcile
+      // 2. If online, also fetch server snapshot and reconcile (cross-device continuity)
       if (socket.isConnected && token) {
         try {
           const serverDrafts = await listServerDrafts({ cardId, token });
@@ -162,10 +172,26 @@ export function useOfflineDescriptionDraft({
                 updatedAt: result.updatedAt ?? new Date().toISOString(),
               });
             }
-            setDraftStatus(result.source === 'server' ? 'synced' : 'saved_local');
+
+            // [why] If local lost and had a save_pending intent, the user's offline
+            // save was overwritten by a newer server draft. Mark as sync_failed so
+            // the UI can show "Retry Save" (re-enqueue the PATCH with current content).
+            if (result.loserPendingIntent === 'save_pending') {
+              setDraftStatus('sync_failed');
+              setIsSavePending(true);
+            } else {
+              const winnerIntent = result.intent;
+              setIsSavePending(winnerIntent === 'save_pending');
+              setDraftStatus(
+                winnerIntent === 'save_pending' ? 'will_sync_when_online'
+                  : result.source === 'server' ? 'synced'
+                  : 'saved_local',
+              );
+            }
           } else {
             setRestoredDraft(null);
             setDraftStatus('idle');
+            setIsSavePending(false);
           }
           return;
         } catch {
@@ -176,12 +202,13 @@ export function useOfflineDescriptionDraft({
       // 3. Local-only restore (offline or server unreachable)
       if (local && local.contentMarkdown !== currentDescription) {
         setRestoredDraft(local.contentMarkdown);
-        setDraftStatus(
-          local.intent === 'save_pending' ? 'will_sync_when_online' : 'saved_local',
-        );
+        const savePending = local.intent === 'save_pending';
+        setIsSavePending(savePending);
+        setDraftStatus(savePending ? 'will_sync_when_online' : 'saved_local');
       } else {
         setRestoredDraft(null);
         setDraftStatus('idle');
+        setIsSavePending(false);
       }
     };
 
@@ -253,6 +280,7 @@ export function useOfflineDescriptionDraft({
         meta: { draftType: 'description', cardId, userId, workspaceId },
       });
 
+      setIsSavePending(true);
       setDraftStatus('will_sync_when_online');
       return true; // caller must NOT call onSave — replay will handle it
     },
@@ -280,6 +308,7 @@ export function useOfflineDescriptionDraft({
       })();
     }
     setRestoredDraft(null);
+    setIsSavePending(false);
     setDraftStatus('idle');
   }, [cardId, userId, workspaceId, token]);
 
@@ -288,9 +317,34 @@ export function useOfflineDescriptionDraft({
   const retrySync = useCallback(
     (markdown: string) => {
       if (!cardId || !token) return;
+      // [why] If the draft has save_pending intent, re-enqueue the PATCH instead of
+      // retrying the background draft PUT — the user wants to actually save, not just sync.
+      if (isSavePending && userId && workspaceId) {
+        const mutationId = crypto.randomUUID();
+        void saveDraft({
+          userId,
+          workspaceId,
+          cardId,
+          draftType: 'description',
+          contentMarkdown: markdown,
+          intent: 'save_pending',
+          updatedAt: new Date().toISOString(),
+        });
+        messageQueue.enqueue({
+          id: mutationId,
+          boardId,
+          method: 'PATCH',
+          url: `/api/v1/cards/${cardId}`,
+          body: { description: markdown },
+          enqueuedAt: Date.now(),
+          meta: { draftType: 'description', cardId, userId, workspaceId },
+        });
+        setDraftStatus('will_sync_when_online');
+        return;
+      }
       void syncToServer(markdown);
     },
-    [cardId, token, syncToServer],
+    [cardId, token, isSavePending, userId, workspaceId, boardId, syncToServer],
   );
 
   // ---------- Discard draft ----------
@@ -313,6 +367,7 @@ export function useOfflineDescriptionDraft({
       })();
     }
     setRestoredDraft(null);
+    setIsSavePending(false);
     setDraftStatus('idle');
   }, [cardId, userId, workspaceId, token]);
 
@@ -327,6 +382,7 @@ export function useOfflineDescriptionDraft({
   return {
     restoredDraft,
     draftStatus,
+    isSavePending,
     onContentChange,
     handleSaveIntent,
     clearDraft,

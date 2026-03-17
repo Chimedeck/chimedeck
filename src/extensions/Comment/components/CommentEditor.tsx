@@ -71,6 +71,7 @@ const CommentEditor = ({
   const {
     restoredDraft,
     draftStatus,
+    isSubmitPending,
     onContentChange: notifyDraftChange,
     handleSubmitIntent,
     clearDraft,
@@ -240,14 +241,17 @@ const CommentEditor = ({
         >
           {draftStatus === 'sync_failed' ? (
             <>
-              <span className="text-red-500 dark:text-red-400">Sync failed</span>
+              <span className="text-red-500 dark:text-red-400">
+                {isSubmitPending ? 'Post failed' : 'Sync failed'}
+              </span>
               <button
                 type="button"
                 className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
                 onClick={() => retrySync(currentMarkdown)}
                 data-testid="comment-draft-retry-sync"
               >
-                Retry
+                {/* [why] "Retry Post" clarifies the user's pending action vs a background sync retry */}
+                {isSubmitPending ? 'Retry Post' : 'Retry'}
               </button>
               <button
                 type="button"
@@ -268,7 +272,9 @@ const CommentEditor = ({
                     : 'text-gray-400 dark:text-slate-500'
               }
             >
-              {draftStatusLabel(draftStatus)}
+              {isSubmitPending && draftStatus === 'will_sync_when_online'
+                ? 'Will post when back online'
+                : draftStatusLabel(draftStatus)}
             </span>
           )}
         </div>

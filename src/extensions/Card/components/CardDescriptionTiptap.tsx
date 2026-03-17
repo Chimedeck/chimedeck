@@ -60,6 +60,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const {
     restoredDraft,
     draftStatus,
+    isSavePending,
     onContentChange: notifyDraftChange,
     handleSaveIntent,
     clearDraft,
@@ -288,14 +289,17 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             >
               {draftStatus === 'sync_failed' ? (
                 <>
-                  <span className="text-red-500 dark:text-red-400">Sync failed</span>
+                  <span className="text-red-500 dark:text-red-400">
+                    {isSavePending ? 'Save failed' : 'Sync failed'}
+                  </span>
                   <button
                     type="button"
                     className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
                     onClick={() => retrySync(editMode === 'rich' && editor ? editor.getMarkdown() : draft)}
                     data-testid="draft-retry-sync"
                   >
-                    Retry
+                    {/* [why] "Retry Save" clarifies the user's pending action vs a background sync retry */}
+                    {isSavePending ? 'Retry Save' : 'Retry'}
                   </button>
                   <button
                     type="button"
@@ -316,7 +320,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                         : 'text-gray-400 dark:text-slate-500'
                   }
                 >
-                  {draftStatusLabel(draftStatus)}
+                  {isSavePending && draftStatus === 'will_sync_when_online'
+                    ? 'Will save when back online'
+                    : draftStatusLabel(draftStatus)}
                 </span>
               )}
             </div>

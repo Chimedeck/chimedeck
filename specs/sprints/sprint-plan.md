@@ -114,6 +114,9 @@
 | [78](./sprint-78.md) | Board Members Table + Visibility Enforcement (Server) | `board_members` table + migration; auto-insert creator as board ADMIN; visibility middleware; PRIVATE/WORKSPACE/PUBLIC access matrix; board member CRUD API; guest/PRIVATE board filtering on workspace boards list | ⬜ Needs 46 + 49 |
 | [79](./sprint-79.md) | Board Member Management UI | Visibility selector in board settings; Board Members Panel (add/change role/remove); workspace boards grid visibility badge; board header avatar stack | ⬜ Needs 78 + 17 + 18 |
 | [80](./sprint-80.md) | Guest Experience UI | Guest invite flow (by email, stub account creation); scoped workspace view for GUEST role (granted boards only, member list hidden); client-side permission guards; guest sidebar labels | ⬜ Needs 79 + 49 + 44 |
+| **— Offline Experience —** | | | |
+| [82](./sprint-82.md) | Rich Text Toolbar One-Line Overflow + Inline Attachments | Keep description/comment rich toolbar to one line, move secondary commands into searchable `+` menu, and show inline upload previews (image thumbnail or file name) while uploading attachments from editor | ⬜ Needs 11 + 21 + 81 |
+| [83](./sprint-83.md) | Offline Drafts for Card Description + Comments | User-private draft store (description/comment), local IndexedDB draft persistence, cross-device draft sync for same user, offline Save/Comment replay with idempotency and retry states | ⬜ Needs 11 + 20 + 58 + 81 |
 
 ---
 

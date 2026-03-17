@@ -107,6 +107,7 @@ const ActivityFeed = ({
 
       <CommentEditor
         {...(boardId !== undefined ? { boardId } : {})}
+        cardId={cardId}
         placeholder="Add a comment…"
         onSubmit={onAddComment}
         submitLabel="Comment"

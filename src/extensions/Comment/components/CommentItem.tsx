@@ -126,6 +126,7 @@ const CommentItem = ({ comment, boardId, currentUserId, isAdmin = false, onEdit,
         {editing ? (
           <CommentEditor
             {...(boardId !== undefined ? { boardId } : {})}
+            cardId={comment.card_id}
             initialValue={comment.content}
             onSubmit={handleEdit}
             onCancel={() => setEditing(false)}

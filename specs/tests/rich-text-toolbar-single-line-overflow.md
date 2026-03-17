@@ -476,3 +476,91 @@
 - [ ] Progress bar functional; auto-dismiss on completion
 - [ ] Submit button remains enabled during upload (uploads are non-blocking)
 - [ ] Submitted comment text is independent of in-flight attachments
+
+---
+
+# Test: cardId Threading — Description Editor Attachment Upload (End-to-End)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in and open a board
+- Open a card modal (the card must have a known `card.id`)
+- The card modal passes `cardId={card.id}` to `CardDescriptionTiptap`
+
+## Steps
+1. Open a card modal — description editor is in view mode
+2. Click the description text area to enter edit mode
+3. The toolbar renders with a **paperclip** (📎) button
+4. Click the paperclip — native file picker opens
+5. Select any image file
+6. Inline upload preview row appears inside the description editor container
+7. Row shows: image thumbnail, filename, file size, and a progress indicator
+8. Upload completes; the attachment is associated with the correct card (verify via attachment panel)
+9. The inline row auto-dismisses after upload succeeds
+
+## Acceptance Criteria
+- [ ] `cardId` is non-null in `CardDescriptionTiptap` when opened from `CardModal`
+- [ ] Paperclip button appears in the description toolbar (only in edit mode)
+- [ ] File picker opens on click
+- [ ] Inline upload preview visible inside description editor; card attachment panel updates after upload
+- [ ] Upload is scoped to the correct card (attachment appears under `card.id` in the attachment panel)
+- [ ] If `cardId` is somehow absent, paperclip button is hidden and no upload is triggered
+
+---
+
+# Test: cardId Threading — New Comment Attachment Upload (End-to-End)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal
+- `ActivityFeed` is rendered with `cardId={card.id}` and passes it to the new-comment `CommentEditor`
+
+## Steps
+1. Open a card modal; the activity feed new-comment editor is visible
+2. The editor toolbar shows a paperclip button
+3. Click the paperclip — native file picker opens
+4. Select a non-image file (e.g. `.pdf`)
+5. Inline upload row appears: filename + file size + progress bar (no thumbnail)
+6. Cancel the upload mid-flight — row dismisses, no attachment is created
+7. Start a new upload with an image file; let it complete
+8. Attachment appears in the card's attachment panel for this card
+
+## Acceptance Criteria
+- [ ] `cardId` flows from `ActivityFeed` → new-comment `CommentEditor`
+- [ ] Paperclip visible in new-comment toolbar
+- [ ] Non-image files show filename row (no thumbnail)
+- [ ] Cancel removes the in-progress row and aborts the network request
+- [ ] Completed upload is associated with the correct `card.id`
+- [ ] Comment text can be submitted independently of attachment upload state
+
+---
+
+# Test: cardId Threading — Edit Comment Attachment Upload (End-to-End)
+
+**Sprint:** 82
+**Tool:** Playwright
+
+## Setup
+- Log in, open a card modal that has at least one existing comment authored by the current user
+- `CommentItem` passes `comment.card_id` to the edit `CommentEditor`
+
+## Steps
+1. Click **Edit** on a comment owned by the current user
+2. The inline edit `CommentEditor` opens with the existing comment text
+3. The editor toolbar shows a paperclip button
+4. Click the paperclip — file picker opens
+5. Select an image file — inline preview row appears with thumbnail + progress
+6. Upload completes; attachment appears in the card's attachment panel
+7. Click **Update** to save the edited comment text
+8. Both the comment edit and the attachment upload complete independently
+
+## Acceptance Criteria
+- [ ] `comment.card_id` is passed as `cardId` to the edit-mode `CommentEditor`
+- [ ] Paperclip visible in edit-comment toolbar
+- [ ] Upload is scoped to `comment.card_id` (the correct card)
+- [ ] Updating comment text does not abort or remove in-flight attachment uploads
+- [ ] Attachment appears under the correct card after upload

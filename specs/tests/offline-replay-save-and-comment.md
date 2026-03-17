@@ -236,3 +236,132 @@ the same result without creating duplicate comments or duplicate activity-feed e
 **And** the UI shows `Will save when back online` (not a blank description)  
 **When** the browser reconnects  
 **Then** the queued PATCH is replayed as in Scenario 15
+
+---
+
+## Part 4 — Cross-Device Draft Continuity
+
+### Scenario 17 — Server draft is newer than local: cross-device merge on card open
+
+**Given** User A edited a description on Device 1, which synced draft to server at `T1`  
+**And** User A opens the same card on Device 2, which has no local draft  
+**When** the card modal opens on Device 2 (online)  
+**Then** `GET /api/v1/cards/:cardId/drafts` is called  
+**And** the description editor is pre-filled with the server draft content  
+**And** the footer shows `Synced draft`  
+**And** the server draft is back-synced to Device 2's IndexedDB
+
+---
+
+### Scenario 18 — Local draft is newer than server: local wins on reconcile
+
+**Given** User A edited a description on Device 1 (local only, not yet synced) at `T2`  
+**And** the server has an older draft from a previous session at `T1` (T1 < T2)  
+**When** User A opens the card modal on Device 1 (online)  
+**Then** the reconcile logic picks the local draft (T2 > T1)  
+**And** the description editor is pre-filled with the Device 1 local content  
+**And** the footer shows `Draft saved locally`  
+**And** the local draft is NOT overwritten with the stale server version
+
+---
+
+### Scenario 19 — Both sides have equal timestamps: server wins (tie-break)
+
+**Given** User A has a local draft and a server draft with identical `client_updated_at`  
+**When** the card modal opens  
+**Then** reconcile picks the server draft (server wins tie-break)  
+**And** the description editor is pre-filled with the server content  
+**And** the footer shows `Synced draft`
+
+---
+
+### Scenario 20 — Cross-device: offline device keeps local draft until reconnect
+
+**Given** User A edited a description on Device 2 while offline at `T2`  
+**And** the server has a draft from Device 1 at `T1` (T1 < T2)  
+**When** the card modal opens on Device 2 while still offline  
+**Then** the description editor is pre-filled with the local Device 2 content (local-only restore)  
+**And** the footer shows `Draft saved locally`  
+**When** Device 2 comes back online  
+**Then** background sync pushes the local draft to the server (since T2 > T1, it will win on next open)
+
+---
+
+## Part 5 — Replay Conflict UI
+
+### Scenario 21 — save_pending conflict: server overwritten local pending save
+
+**Given** User A pressed Save offline on Device 1 (draft `save_pending`, timestamp `T1`)  
+**And** User A also edited the same card on Device 2, which synced a newer draft to the server at `T2` (T2 > T1)  
+**When** Device 1 comes back online and opens the card modal  
+**Then** reconcile fetches both local (`save_pending`, `T1`) and server (`editing`, `T2`)  
+**And** the server draft wins (T2 > T1)  
+**And** `loserPendingIntent` is `save_pending`  
+**And** the footer shows `Save failed` with a `Retry Save` button and `Discard draft` button  
+**And** `data-testid="draft-retry-sync"` button label is `Retry Save`  
+**And** `data-testid="draft-discard"` button is visible
+
+---
+
+### Scenario 22 — Retry Save re-enqueues the PATCH
+
+**Given** the state from Scenario 21 (save conflict, "Save failed" UI shown)  
+**When** User A clicks `Retry Save`  
+**Then** the current editor content is saved locally with `intent: save_pending`  
+**And** a new `PATCH /api/v1/cards/:cardId` is enqueued in messageQueue  
+**And** the footer transitions to `Will save when back online`  
+**And** on reconnect, the PATCH is replayed and the description is updated
+
+---
+
+### Scenario 23 — Discard draft after save conflict clears state
+
+**Given** the state from Scenario 21 (save conflict, "Save failed" UI shown)  
+**When** User A clicks `Discard draft`  
+**Then** the local draft is deleted from IndexedDB  
+**And** the server draft is deleted  
+**And** the footer disappears (status becomes `idle`)  
+**And** the description reverts to the last saved server value
+
+---
+
+### Scenario 24 — submit_pending conflict: server newer than local comment draft
+
+**Given** User A pressed Comment offline on Device 1 (draft `submit_pending`, `T1`)  
+**And** User A edited the same comment draft on Device 2, which synced a newer comment draft to the server at `T2` (T2 > T1)  
+**When** Device 1 opens the card modal online  
+**Then** reconcile resolves with server winning  
+**And** `loserPendingIntent` is `submit_pending`  
+**And** the comment footer shows `Post failed` with `Retry Post` and `Discard draft` buttons  
+**And** `data-testid="comment-draft-retry-sync"` button label is `Retry Post`
+
+---
+
+### Scenario 25 — Retry Post re-enqueues the POST with idempotency key
+
+**Given** the state from Scenario 24 (post conflict, "Post failed" UI shown)  
+**When** User A clicks `Retry Post`  
+**Then** the current comment content is saved locally with `intent: submit_pending`  
+**And** a `POST /api/v1/cards/:cardId/comments` is enqueued with the same (or new stable) `idempotency_key`  
+**And** the footer shows `Will post when back online`  
+**And** on reconnect, the POST is replayed idempotently
+
+---
+
+### Scenario 26 — Non-pending sync failure shows generic "Retry" label
+
+**Given** User A is typing in the description editor (background sync running)  
+**And** the background `PUT /api/v1/cards/:cardId/drafts/description` call fails with a 500  
+**When** the error is returned  
+**Then** the footer shows `Sync failed` with `Retry` (NOT `Retry Save`)  
+**And** clicking `Retry` retries the background draft PUT (not a PATCH)
+
+---
+
+### Scenario 27 — Non-pending comment sync failure shows generic "Retry" label
+
+**Given** User A is typing in the comment editor (background draft sync running)  
+**And** the background `PUT /api/v1/cards/:cardId/drafts/comment` call fails with a 500  
+**When** the error is returned  
+**Then** the footer shows `Sync failed` with `Retry` (NOT `Retry Post`)  
+**And** clicking `Retry` retries the background draft PUT

@@ -32,6 +32,7 @@ import { env } from './config/env';
 import { boardViewRouter } from './extensions/boardView/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
+import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -138,6 +139,9 @@ async function router(req: Request): Promise<Response> {
 
   const automationResponse = await automationRouter(req, path);
   if (automationResponse) return automationResponse;
+
+  const offlineDraftsResponse = await offlineDraftsRouter(req, path);
+  if (offlineDraftsResponse) return offlineDraftsResponse;
 
   // Serve the SDK static bundle at /sdk/jh-instance.js
   if (path === pluginsConfig.sdkServePath && req.method === 'GET') {

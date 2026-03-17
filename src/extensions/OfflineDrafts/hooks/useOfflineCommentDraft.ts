@@ -29,6 +29,12 @@ export interface UseOfflineCommentDraftResult {
   restoredDraft: string | null;
   draftStatus: DraftStatus;
   /**
+   * True when the current draft has a submit_pending intent — the user pressed Comment
+   * while offline and the POST has not yet been applied.
+   * [why] Callers use this to show "Retry Post" instead of the generic "Retry" label.
+   */
+  isSubmitPending: boolean;
+  /**
    * Call this on every editor keystroke (after your own state update).
    * Internally debounced — safe to call on every keystroke.
    */
@@ -59,6 +65,9 @@ export function useOfflineCommentDraft({
 }: UseOfflineCommentDraftOptions): UseOfflineCommentDraftResult {
   const [restoredDraft, setRestoredDraft] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>('idle');
+  // [why] Track submit_pending state separately so the UI can show "Retry Post"
+  // instead of the generic "Retry" label when a queued POST has not yet been applied.
+  const [isSubmitPending, setIsSubmitPending] = useState(false);
 
   // Latest content ref — always current without recreating debounced callbacks
   const latestContentRef = useRef<string>('');
@@ -119,6 +128,7 @@ export function useOfflineCommentDraft({
     if (!isReady || !cardId || !userId || !workspaceId) {
       setRestoredDraft(null);
       setDraftStatus('idle');
+      setIsSubmitPending(false);
       idempotencyKeyRef.current = null;
       return;
     }
@@ -130,6 +140,7 @@ export function useOfflineCommentDraft({
 
       if (cancelled) return;
 
+      // Cross-device continuity: if online, fetch server snapshot and reconcile
       if (socket.isConnected && token) {
         try {
           const serverDrafts = await listServerDrafts({ cardId, token });
@@ -149,15 +160,26 @@ export function useOfflineCommentDraft({
                 updatedAt: result.updatedAt ?? new Date().toISOString(),
               });
             }
-            const isSubmitPending = result.intent === 'submit_pending';
-            setDraftStatus(
-              isSubmitPending ? 'will_sync_when_online'
-                : result.source === 'server' ? 'synced'
-                : 'saved_local',
-            );
+
+            // [why] If local lost and had submit_pending, the user's queued post was
+            // overwritten by a newer server draft. Mark as sync_failed so the UI can
+            // show "Retry Post" to let the user re-queue the comment POST.
+            if (result.loserPendingIntent === 'submit_pending') {
+              setDraftStatus('sync_failed');
+              setIsSubmitPending(true);
+            } else {
+              const submitPending = result.intent === 'submit_pending';
+              setIsSubmitPending(submitPending);
+              setDraftStatus(
+                submitPending ? 'will_sync_when_online'
+                  : result.source === 'server' ? 'synced'
+                  : 'saved_local',
+              );
+            }
           } else {
             setRestoredDraft(null);
             setDraftStatus('idle');
+            setIsSubmitPending(false);
           }
           return;
         } catch {
@@ -168,11 +190,12 @@ export function useOfflineCommentDraft({
       // Local-only restore (offline or server unreachable)
       if (local && local.contentMarkdown) {
         setRestoredDraft(local.contentMarkdown);
-        setDraftStatus(
-          local.intent === 'submit_pending' ? 'will_sync_when_online' : 'saved_local',
-        );
+        const submitPending = local.intent === 'submit_pending';
+        setIsSubmitPending(submitPending);
+        setDraftStatus(submitPending ? 'will_sync_when_online' : 'saved_local');
       } else {
         setRestoredDraft(null);
+        setIsSubmitPending(false);
         setDraftStatus('idle');
       }
     };
@@ -248,6 +271,7 @@ export function useOfflineCommentDraft({
         meta: { draftType: 'comment', cardId, userId, workspaceId },
       });
 
+      setIsSubmitPending(true);
       setDraftStatus('will_sync_when_online');
       return true; // caller must NOT call onSubmit — replay will handle it
     },
@@ -276,6 +300,7 @@ export function useOfflineCommentDraft({
       })();
     }
     setRestoredDraft(null);
+    setIsSubmitPending(false);
     setDraftStatus('idle');
   }, [cardId, userId, workspaceId, token]);
 
@@ -284,9 +309,37 @@ export function useOfflineCommentDraft({
   const retrySync = useCallback(
     (markdown: string) => {
       if (!cardId || !token) return;
+      // [why] If the draft has submit_pending intent, re-enqueue the comment POST
+      // instead of retrying the background draft PUT — the user wants to post, not just sync.
+      if (isSubmitPending && userId && workspaceId && boardId) {
+        if (!idempotencyKeyRef.current) {
+          idempotencyKeyRef.current = crypto.randomUUID();
+        }
+        const idempotencyKey = idempotencyKeyRef.current;
+        void saveDraft({
+          userId,
+          workspaceId,
+          cardId,
+          draftType: 'comment',
+          contentMarkdown: markdown,
+          intent: 'submit_pending',
+          updatedAt: new Date().toISOString(),
+        });
+        messageQueue.enqueue({
+          id: idempotencyKey,
+          boardId,
+          method: 'POST',
+          url: `/api/v1/cards/${cardId}/comments`,
+          body: { content: markdown, idempotency_key: idempotencyKey },
+          enqueuedAt: Date.now(),
+          meta: { draftType: 'comment', cardId, userId, workspaceId },
+        });
+        setDraftStatus('will_sync_when_online');
+        return;
+      }
       void syncToServer(markdown);
     },
-    [cardId, token, syncToServer],
+    [cardId, token, isSubmitPending, userId, workspaceId, boardId, syncToServer],
   );
 
   // ---------- Discard draft ----------
@@ -311,6 +364,7 @@ export function useOfflineCommentDraft({
       })();
     }
     setRestoredDraft(null);
+    setIsSubmitPending(false);
     setDraftStatus('idle');
   }, [cardId, userId, workspaceId, token]);
 
@@ -325,6 +379,7 @@ export function useOfflineCommentDraft({
   return {
     restoredDraft,
     draftStatus,
+    isSubmitPending,
     onContentChange,
     handleSubmitIntent,
     clearDraft,
