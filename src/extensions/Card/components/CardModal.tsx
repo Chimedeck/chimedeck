@@ -173,7 +173,7 @@ const CardModal = ({
               <ResizablePanels
                 className="flex-1 min-h-0"
                 left={
-                  <div className="h-full overflow-y-auto p-5 pt-3 pr-3 space-y-6">
+                  <div className="h-full min-h-0 p-5 pt-3 pr-3 space-y-6">
                     <CardDescriptionTiptap
                       boardId={boardId}
                       description={card.description ?? ''}
@@ -224,7 +224,7 @@ const CardModal = ({
                   </div>
                 }
                 right={
-                  <div className="h-full overflow-y-auto p-5 pt-3 pl-3 border-l border-gray-100 dark:border-slate-800">
+                  <div className="h-full min-h-0 p-5 pt-3 pl-3 border-l border-gray-100 dark:border-slate-800">
                     <ActivityFeed
                       boardId={boardId}
                       cardId={card.id}

@@ -154,8 +154,8 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
           </div>
 
           {editMode === 'rich' ? (
-            <div className="border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 overflow-hidden">
-              <div className="flex flex-wrap gap-1 p-2 border-b border-gray-200 dark:border-slate-700">
+            <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+              <div className="z-20 flex shrink-0 flex-wrap gap-1 border-b border-gray-200 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900">
                 <button
                   type="button"
                   className={`${toolbarBtn} ${editor?.isActive('bold') ? toolbarBtnActive : ''}`}
@@ -213,10 +213,13 @@ const CardDescriptionTiptap = ({ boardId: _boardId, description, onSave, disable
                   Code
                 </button>
               </div>
-              <EditorContent
-                editor={editor}
-                className="p-3 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert"
-              />
+              <div className="relative min-h-[180px] flex-1 overflow-y-auto overscroll-contain rounded-b-lg">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900" />
+                <EditorContent
+                  editor={editor}
+                  className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert [&_.ProseMirror>*:first-child]:mt-0"
+                />
+              </div>
             </div>
           ) : (
             <textarea
