@@ -1,12 +1,19 @@
-// CardDescriptionTiptap — rich text markdown editor using Tiptap.
+// CardDescriptionTiptap — rich text markdown editor using Tiptap with offline draft support.
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
 import { marked } from 'marked';
+import { useSelector } from 'react-redux';
 import OneLineToolbar from './OneLineToolbar';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
+import {
+  useOfflineDescriptionDraft,
+  type DraftStatus,
+} from '~/extensions/OfflineDrafts/hooks/useOfflineDescriptionDraft';
+import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
+import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 
 interface Props {
   boardId: string;
@@ -16,12 +23,30 @@ interface Props {
   disabled?: boolean;
 }
 
-const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave, disabled }: Props) => {
+// Map draft status to a human-readable footer label.
+function draftStatusLabel(status: DraftStatus): string | null {
+  switch (status) {
+    case 'saving_local': return 'Saving draft…';
+    case 'saved_local':  return 'Draft saved locally';
+    case 'syncing':      return 'Syncing draft…';
+    case 'synced':       return 'Synced draft';
+    case 'will_sync_when_online': return 'Will sync when online';
+    case 'sync_failed':  return 'Sync failed';
+    default:             return null;
+  }
+}
+
+const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(description);
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
   const [overflowOpen, setOverflowOpen] = useState(false);
+
+  // Auth + workspace context needed by the offline draft hook
+  const currentUser = useSelector(selectCurrentUser);
+  const token = useSelector(selectAccessToken) ?? undefined;
+  const workspaceId = useSelector(selectActiveWorkspaceId) ?? undefined;
 
   // File picker input ref for attachment uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +54,24 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
   // Attachment upload — only active when a cardId is provided
   const { uploads, upload: uploadFiles, removeEntry } = useAttachmentUpload({
     cardId: cardId ?? '',
+  });
+
+  // Offline draft integration
+  const {
+    restoredDraft,
+    draftStatus,
+    onContentChange: notifyDraftChange,
+    handleSaveIntent,
+    clearDraft,
+    retrySync,
+    discardDraft,
+  } = useOfflineDescriptionDraft({
+    cardId,
+    boardId,
+    userId: currentUser?.id,
+    workspaceId,
+    token,
+    currentDescription: description,
   });
 
   // Tiptap editor instance
@@ -39,7 +82,9 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
     editable: editing && !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      setDraft(editor.getMarkdown());
+      const markdown = editor.getMarkdown();
+      setDraft(markdown);
+      notifyDraftChange(markdown);
     },
   });
 
@@ -53,11 +98,15 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
     if (disabled) return;
     setEditing(true);
     if (editor) {
-      editor.commands.setContent(draft || description || '', { contentType: 'markdown' });
+      // [why] Prefer the restored offline draft over the saved description so the
+      // user never loses work that hasn't been synced yet.
+      const startContent = restoredDraft ?? draft ?? description ?? '';
+      editor.commands.setContent(startContent, { contentType: 'markdown' });
       editor.commands.focus('end');
+      if (restoredDraft) setDraft(restoredDraft);
     }
     setEditMode('rich');
-  }, [disabled, editor, draft, description]);
+  }, [disabled, editor, draft, description, restoredDraft]);
 
   const handleModeChange = useCallback(
     (mode: 'rich' | 'markdown') => {
@@ -90,15 +139,26 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
   const handleSave = useCallback(() => {
     const markdown = editMode === 'rich' && editor ? editor.getMarkdown() : draft;
     setDraft(markdown);
+
+    // [why] If offline, queue the save for replay rather than calling onSave
+    // which would silently fail or show a network error.
+    const handledOffline = handleSaveIntent(markdown);
+    if (handledOffline) {
+      // Stay in editing mode so the user can see the "Will sync when online" status
+      return;
+    }
+
     onSave(markdown);
+    clearDraft();
     setEditing(false);
-  }, [draft, onSave, editor, editMode]);
+  }, [draft, onSave, editor, editMode, handleSaveIntent, clearDraft]);
 
   const handleCancel = useCallback(() => {
     if (editor) editor.commands.setContent(description || '', { contentType: 'markdown' });
     setDraft(description);
+    discardDraft();
     setEditing(false);
-  }, [description, editor]);
+  }, [description, editor, discardDraft]);
 
   // Open file picker for attachment (only when cardId is available)
   const handleAttach = useCallback(() => {
@@ -206,7 +266,10 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
           ) : (
             <textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                notifyDraftChange(e.target.value);
+              }}
               onKeyDown={handleEditorKeyDown}
               className="w-full min-h-[180px] rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm text-gray-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Write markdown..."
@@ -216,6 +279,48 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
           <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
             Save as markdown. Shortcut: Ctrl/Cmd+Enter to save, Escape to cancel.
           </p>
+
+          {/* Draft status footer */}
+          {draftStatus !== 'idle' && (
+            <div
+              data-testid="draft-status-footer"
+              className="mt-1 flex items-center gap-2 text-[11px]"
+            >
+              {draftStatus === 'sync_failed' ? (
+                <>
+                  <span className="text-red-500 dark:text-red-400">Sync failed</span>
+                  <button
+                    type="button"
+                    className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
+                    onClick={() => retrySync(editMode === 'rich' && editor ? editor.getMarkdown() : draft)}
+                    data-testid="draft-retry-sync"
+                  >
+                    Retry
+                  </button>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-300 underline transition-colors"
+                    onClick={discardDraft}
+                    data-testid="draft-discard"
+                  >
+                    Discard draft
+                  </button>
+                </>
+              ) : (
+                <span
+                  className={
+                    draftStatus === 'will_sync_when_online'
+                      ? 'text-amber-500 dark:text-amber-400'
+                      : draftStatus === 'synced'
+                        ? 'text-green-500 dark:text-green-400'
+                        : 'text-gray-400 dark:text-slate-500'
+                  }
+                >
+                  {draftStatusLabel(draftStatus)}
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-2 mt-2">
             <button
@@ -236,6 +341,22 @@ const CardDescriptionTiptap = ({ boardId: _boardId, cardId, description, onSave,
         </div>
       ) : (
         <div>
+          {/* Draft recovery banner — shown in view mode when a local/synced draft differs from saved content */}
+          {restoredDraft && !editing && !disabled && (
+            <div
+              data-testid="draft-recovery-banner"
+              className="mb-2 flex items-center justify-between rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300"
+            >
+              <span>You have an unsaved draft</span>
+              <button
+                type="button"
+                className="ml-4 text-indigo-500 hover:text-indigo-400 underline"
+                onClick={handleEnterEdit}
+              >
+                Resume editing
+              </button>
+            </div>
+          )}
           <button
             type="button"
             aria-label={isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'}
