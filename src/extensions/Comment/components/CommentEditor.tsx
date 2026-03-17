@@ -1,13 +1,22 @@
 // Rich text editor for composing or editing a comment.
 // Uses Tiptap with the shared OneLineToolbar (single-line, no wrapping).
-// @mention support is deferred to the + overflow menu in a future iteration.
-import { useState, useCallback, useRef } from 'react';
+// Integrates offline draft persistence: debounce-saves on every keystroke,
+// background-syncs to server when online, restores draft on card open, and
+// queues the POST with an idempotency key when submitting while offline.
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
+import { useSelector } from 'react-redux';
 import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
+import {
+  useOfflineCommentDraft,
+  type DraftStatus,
+} from '~/extensions/OfflineDrafts/hooks/useOfflineCommentDraft';
+import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
+import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 
 interface Props {
   boardId?: string;
@@ -19,8 +28,21 @@ interface Props {
   submitLabel?: string;
 }
 
+// Map draft status to a human-readable footer label — mirrors description editor.
+function draftStatusLabel(status: DraftStatus): string | null {
+  switch (status) {
+    case 'saving_local': return 'Saving draft…';
+    case 'saved_local':  return 'Draft saved locally';
+    case 'syncing':      return 'Syncing draft…';
+    case 'synced':       return 'Synced draft';
+    case 'will_sync_when_online': return 'Will post when back online';
+    case 'sync_failed':  return 'Sync failed';
+    default:             return null;
+  }
+}
+
 const CommentEditor = ({
-  boardId: _boardId,
+  boardId,
   cardId,
   initialValue = '',
   placeholder = 'Write a comment…',
@@ -32,6 +54,11 @@ const CommentEditor = ({
   const [error, setError] = useState<string | null>(null);
   const [overflowOpen, setOverflowOpen] = useState(false);
 
+  // Auth + workspace context needed by the offline draft hook
+  const currentUser = useSelector(selectCurrentUser);
+  const token = useSelector(selectAccessToken) ?? undefined;
+  const workspaceId = useSelector(selectActiveWorkspaceId) ?? undefined;
+
   // File picker ref for attachment uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,12 +67,41 @@ const CommentEditor = ({
     cardId: cardId ?? '',
   });
 
+  // Offline draft integration
+  const {
+    restoredDraft,
+    draftStatus,
+    onContentChange: notifyDraftChange,
+    handleSubmitIntent,
+    clearDraft,
+    retrySync,
+    discardDraft,
+  } = useOfflineCommentDraft({
+    cardId,
+    boardId,
+    userId: currentUser?.id,
+    workspaceId,
+    token,
+  });
+
   const editor = useEditor({
     extensions: [StarterKit, Markdown],
     content: initialValue || '',
     contentType: 'markdown',
     immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      notifyDraftChange(editor.getMarkdown());
+    },
   });
+
+  // Restore offline draft into editor once it's loaded (async, after initial render)
+  useEffect(() => {
+    if (restoredDraft && editor && !editor.isDestroyed) {
+      editor.commands.setContent(restoredDraft, { contentType: 'markdown' });
+    }
+  // [why] Only restore when the draft first becomes available — not on every render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restoredDraft]);
 
   const handleSubmit = useCallback(async () => {
     if (!editor) return;
@@ -55,16 +111,23 @@ const CommentEditor = ({
       return;
     }
     setError(null);
+
+    // Offline path: queue POST and show "Will post when back online"
+    const handledOffline = handleSubmitIntent(trimmed);
+    if (handledOffline) return;
+
+    // Online path: submit normally then clear the draft
     setSubmitting(true);
     try {
       await onSubmit(trimmed);
       editor.commands.clearContent();
+      clearDraft();
     } catch {
       setError('Failed to save comment');
     } finally {
       setSubmitting(false);
     }
-  }, [editor, onSubmit]);
+  }, [editor, onSubmit, handleSubmitIntent, clearDraft]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -95,6 +158,8 @@ const CommentEditor = ({
     [uploadFiles],
   );
 
+  const currentMarkdown = editor?.getMarkdown() ?? '';
+
   return (
     <div className="flex flex-col gap-2">
       {/* Hidden file input for attachment upload */}
@@ -107,6 +172,28 @@ const CommentEditor = ({
         onChange={handleFileInputChange}
         data-testid="comment-attachment-input"
       />
+
+      {/* Draft recovery banner — shown when a draft was restored from local/server storage */}
+      {restoredDraft && draftStatus !== 'idle' && (
+        <div
+          data-testid="comment-draft-recovery-banner"
+          className="flex items-center justify-between rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300"
+        >
+          <span>
+            {draftStatus === 'will_sync_when_online'
+              ? 'Unsaved comment (will post when back online)'
+              : 'Unsaved comment draft restored'}
+          </span>
+          <button
+            type="button"
+            className="ml-4 text-gray-400 hover:text-gray-300 underline transition-colors"
+            onClick={discardDraft}
+            data-testid="comment-draft-discard"
+          >
+            Discard
+          </button>
+        </div>
+      )}
 
       <div
         className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"
@@ -142,7 +229,51 @@ const CommentEditor = ({
           </div>
         )}
       </div>
+
       {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {/* Draft status footer */}
+      {draftStatus !== 'idle' && (
+        <div
+          data-testid="comment-draft-status-footer"
+          className="flex items-center gap-2 text-[11px]"
+        >
+          {draftStatus === 'sync_failed' ? (
+            <>
+              <span className="text-red-500 dark:text-red-400">Sync failed</span>
+              <button
+                type="button"
+                className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
+                onClick={() => retrySync(currentMarkdown)}
+                data-testid="comment-draft-retry-sync"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-300 underline transition-colors"
+                onClick={discardDraft}
+                data-testid="comment-draft-discard-footer"
+              >
+                Discard draft
+              </button>
+            </>
+          ) : (
+            <span
+              className={
+                draftStatus === 'will_sync_when_online'
+                  ? 'text-amber-500 dark:text-amber-400'
+                  : draftStatus === 'synced'
+                    ? 'text-green-500 dark:text-green-400'
+                    : 'text-gray-400 dark:text-slate-500'
+              }
+            >
+              {draftStatusLabel(draftStatus)}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           onClick={handleSubmit}
