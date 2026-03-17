@@ -95,15 +95,15 @@ const BoardCanvas = ({
   // WHY: capture the source list at drag-start; by drag-end the optimistic move
   // has already updated cardsByList so re-deriving fromListId returns toListId.
   const fromListIdRef = useRef<string | null>(null);
-  // WHY: keep a stable ref to cardsByList so handleDragStart can read it
-  // without being listed as a dependency (which would give DndContext a new
-  // onDragStart every optimistic update and cause a re-render loop).
-  const cardsByListRef = useRef(cardsByList);
-  cardsByListRef.current = cardsByList;
-  // WHY: deduplicate onDragOver dispatches — each onCardMove triggers a Redux
-  // state update which re-renders the tree, causing DnDKit to fire onDragOver
-  // again for the same position, creating an infinite update loop.
-  const lastMoveRef = useRef<{ cardId: string; toListId: string; newIndex: number } | null>(null);
+  // WHY: track card ordering locally during drag instead of dispatching to Redux
+  // on every onDragOver. Dispatching applyOptimisticCardMove each frame causes
+  // DnD-kit to re-fire onDragOver after the re-render (with shifted indices),
+  // creating an infinite update loop. Local state only affects BoardCanvas and
+  // its children — no BoardPage/PluginIframeContainer re-renders during drag.
+  const [dragCardsByList, setDragCardsByList] = useState<Record<string, string[]> | null>(null);
+  const dragCardsByListRef = useRef<Record<string, string[]> | null>(null);
+  dragCardsByListRef.current = dragCardsByList;
+  const effectiveCardsByList = dragCardsByList ?? cardsByList;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -116,14 +116,14 @@ const BoardCanvas = ({
       // Only set active card if the dragged item is a card (not a list)
       if (cards[id]) {
         setActiveCardId(id);
-        // Read via ref so this callback doesn't depend on cardsByList and
-        // won't give DndContext a new onDragStart on every optimistic update.
-        fromListIdRef.current = findListForCard(id, cardsByListRef.current);
+        fromListIdRef.current = findListForCard(id, cardsByList);
+        // Snapshot current ordering into local drag state — onDragOver will
+        // mutate this without touching Redux, preventing re-render loops.
+        setDragCardsByList(cardsByList);
       }
-      lastMoveRef.current = null;
       onDragStart();
     },
-    [cards, onDragStart],
+    [cards, cardsByList, onDragStart],
   );
 
   const handleDragOver = useCallback(
@@ -134,39 +134,46 @@ const BoardCanvas = ({
       const activeId = String(active.id);
       const overId = String(over.id);
 
-      // Only handle card-over-column or card-over-card
-      if (!cards[activeId]) return; // dragging a list, not a card
+      // Only handle card-over-card or card-over-column (not list reorder)
+      if (!cards[activeId]) return;
 
-      const fromListId = findListForCard(activeId, cardsByList);
-      if (!fromListId) return;
+      // WHY: update local drag state only — no Redux dispatch here.
+      // Dispatching onCardMove on every drag-over event triggers a Redux
+      // re-render, which causes DnD-kit to re-fire onDragOver with shifted
+      // indices → infinite update loop.
+      setDragCardsByList((prev) => {
+        if (!prev) return prev;
+        const fromListId = findListForCard(activeId, prev);
+        if (!fromListId) return prev;
 
-      // Determine target list: either the over item is a list, or find its parent list
-      let toListId = overId;
-      if (!lists[overId]) {
-        toListId = findListForCard(overId, cardsByList) ?? fromListId;
-      }
+        let toListId = overId;
+        if (!lists[overId]) {
+          toListId = findListForCard(overId, prev) ?? fromListId;
+        }
+        if (fromListId === toListId && activeId === overId) return prev;
 
-      if (fromListId === toListId && activeId === overId) return;
+        const toCards = prev[toListId] ?? [];
+        let insertIndex = toCards.length;
+        if (cards[overId]) {
+          const idx = toCards.indexOf(overId);
+          insertIndex = idx >= 0 ? idx : toCards.length;
+        }
 
-      const toCards = cardsByList[toListId] ?? [];
-      let newIndex = toCards.length;
-      if (cards[overId] && toListId === findListForCard(overId, cardsByList)) {
-        const idx = toCards.indexOf(overId);
-        newIndex = idx >= 0 ? idx : toCards.length;
-      }
-
-      // Skip if this is the same move we already dispatched — prevents the
-      // optimistic-update → re-render → onDragOver → dispatch cycle that
-      // exceeds React's maximum update depth.
-      const last = lastMoveRef.current;
-      if (last && last.cardId === activeId && last.toListId === toListId && last.newIndex === newIndex) {
-        return;
-      }
-      lastMoveRef.current = { cardId: activeId, toListId, newIndex };
-
-      onCardMove({ cardId: activeId, fromListId, toListId, newIndex });
+        if (fromListId === toListId) {
+          const mutable = [...toCards];
+          const fromIdx = mutable.indexOf(activeId);
+          if (fromIdx === -1) return prev;
+          mutable.splice(fromIdx, 1);
+          mutable.splice(insertIndex > fromIdx ? insertIndex - 1 : insertIndex, 0, activeId);
+          return { ...prev, [toListId]: mutable };
+        }
+        const newFrom = (prev[fromListId] ?? []).filter((id) => id !== activeId);
+        const newTo = [...(prev[toListId] ?? [])];
+        newTo.splice(insertIndex, 0, activeId);
+        return { ...prev, [fromListId]: newFrom, [toListId]: newTo };
+      });
     },
-    [cards, cardsByList, lists, onCardMove],
+    [cards, lists],
   );
 
   const handleDragEnd = useCallback(
@@ -175,6 +182,7 @@ const BoardCanvas = ({
       setActiveCardId(null);
 
       if (!over) {
+        setDragCardsByList(null);
         fromListIdRef.current = null;
         onDragRollback();
         return;
@@ -182,8 +190,6 @@ const BoardCanvas = ({
 
       const activeId = String(active.id);
       const overId = String(over.id);
-
-      lastMoveRef.current = null;
 
       // List reorder
       if (lists[activeId]) {
@@ -207,18 +213,23 @@ const BoardCanvas = ({
 
       // Card move commit
       if (cards[activeId]) {
-        const toListId = findListForCard(activeId, cardsByList);
-        // Use the ref captured at drag-start; by this point cardsByList already
-        // reflects the optimistic move so re-deriving would give the wrong list.
+        // Read final position from local drag state before clearing it
+        const finalCardsByList = dragCardsByListRef.current ?? cardsByList;
+        const toListId = findListForCard(activeId, finalCardsByList);
         const fromListId = fromListIdRef.current ?? toListId;
         fromListIdRef.current = null;
+        setDragCardsByList(null);
         if (!toListId || !fromListId) {
           onDragRollback();
           return;
         }
-        const toCards = cardsByList[toListId] ?? [];
+        const toCards = finalCardsByList[toListId] ?? [];
         const cardIndex = toCards.indexOf(activeId);
         const afterCardId = cardIndex > 0 ? (toCards[cardIndex - 1] ?? null) : null;
+        const newIndex = cardIndex >= 0 ? cardIndex : toCards.length;
+        // Apply the final position to Redux in a single dispatch (moved here
+        // from onDragOver — see handleDragOver comment for why)
+        onCardMove({ cardId: activeId, fromListId, toListId, newIndex });
         try {
           await onDragCommit({
             type: 'card',
@@ -232,7 +243,7 @@ const BoardCanvas = ({
         }
       }
     },
-    [cards, cardsByList, lists, listOrder, onDragCommit, onDragRollback, onListReorder],
+    [cards, cardsByList, lists, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder],
   );
 
   const activeCard = activeCardId ? cards[activeCardId] : null;
@@ -257,7 +268,7 @@ const BoardCanvas = ({
               <SortableListColumn
                 key={listId}
                 list={list}
-                cardIds={cardsByList[listId] ?? []}
+                cardIds={effectiveCardsByList[listId] ?? []}
                 cards={cards}
                 boardId={boardId}
                 {...(boardTitle ? { boardTitle } : {})}
