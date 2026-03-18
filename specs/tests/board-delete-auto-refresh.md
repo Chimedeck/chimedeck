@@ -464,3 +464,99 @@ These scenarios validate the full board-deletion lifecycle:
 - After reconnect, the boards page fetches from the server (`fetchBoardsThunk` runs on mount)
 - B1 is absent from the refreshed list
 - No stale board data is shown after reconnect + refetch
+
+---
+
+## Section: Regression and acceptance hardening (Sprint 88 Iteration 11)
+
+These scenarios were finalized in Iteration 11 to ensure full coverage across all edge and
+error paths before Sprint 87 is declared closed. They supplement the scenarios above and
+must all pass in the final regression run.
+
+---
+
+## BDAR-REG-01 — VIEWER role cannot delete a board
+
+**Preconditions:**
+- Authenticated user U4 with VIEWER role in workspace W1
+- Board B1 exists in workspace W1
+
+**Steps:**
+1. Send `DELETE /api/v1/boards/{B1.id}` with U4's auth token
+
+**Expected:**
+- Response status: `403 Forbidden`
+- No `board_deleted` event emitted
+- Board B1 still exists in the workspace board list
+
+---
+
+## BDAR-REG-02 — Board settings panel closes before delete redirect
+
+**Preconditions:**
+- Authenticated U1 (ADMIN) is viewing board B1's detail page
+- The **board settings panel** (e.g., labels, automation) is currently open
+
+**Steps:**
+1. With the settings panel visible, trigger board deletion via the header action menu
+2. Confirm the deletion dialog
+
+**Expected:**
+- The settings panel is unmounted before navigation occurs (no stale panel on the new page)
+- Browser navigates to `/workspace/{W1.id}/boards`
+- "Board deleted" toast is shown on the workspace boards page
+- No open-panel state persists in the Redux store after navigation
+
+---
+
+## BDAR-REG-03 — Board members panel closes before delete redirect
+
+**Preconditions:**
+- Authenticated U1 (ADMIN) is viewing board B1's detail page
+- The **board members panel** is currently open
+
+**Steps:**
+1. With the members panel visible, trigger board deletion
+2. Confirm deletion
+
+**Expected:**
+- Navigation occurs without the members panel overlaying the workspace boards page
+- URL is `/workspace/{W1.id}/boards`
+- "Board deleted" toast is visible
+
+---
+
+## BDAR-REG-04 — Delete API returns 404 for already-deleted board (idempotency)
+
+**Preconditions:**
+- Authenticated U1 (ADMIN) in workspace W1
+- Board B1 has already been deleted
+
+**Steps:**
+1. Send `DELETE /api/v1/boards/{B1.id}` again (second delete attempt)
+
+**Expected:**
+- Response status: `404 Not Found`
+- Response body contains error code `board-not-found`
+- No duplicate `board_deleted` event is emitted
+- The workspace board list still does not contain B1
+
+---
+
+## BDAR-REG-05 — Full acceptance smoke test — delete from board page with realtime propagation
+
+This is the definitive end-to-end acceptance scenario that must pass before Sprint 87 is closed.
+
+**Actors:** U1 (ADMIN) and U2 (MEMBER), both in workspace W1. U2 is on the workspace boards page.
+
+1. U1 navigates to board B1's detail page (`/boards/{B1.id}`).
+2. U1 opens the board header action menu and clicks "Delete board".
+3. Server returns 409 (B1 has content) → confirmation dialog appears.
+4. U1 confirms the deletion.
+5. Assert U1's browser navigates to `/workspace/{W1.id}/boards`.
+6. Assert "Board deleted" toast is visible on U1's workspace boards page.
+7. Assert B1 is absent from U1's board list.
+8. Assert U2's workspace boards page (without reload) no longer shows B1 within ~1 second.
+9. Assert no ghost board tile appears in either session.
+10. Assert one `board_deleted` event row exists in the events table with correct `payload.boardId` and `payload.workspaceId`.
+11. Assert no duplicate events in the events table for this deletion.

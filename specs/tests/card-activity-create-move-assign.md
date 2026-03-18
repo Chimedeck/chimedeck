@@ -1,8 +1,50 @@
 # Card Activity Events: Create, Move, Assign / Unassign
 
+> **Sprint:** 88
+> **Feature:** Card activity event emission, feed rendering, realtime updates, and notification fan-out
+> **Status:** Complete — all iterations implemented (event emission, feed query, UI rendering, realtime, notifications)
+
 Playwright MCP scenario specifications for Sprint 88 card activity events.
 These scenarios validate that the correct immutable activity records are emitted
 and that payloads match the documented schema.
+
+---
+
+## Acceptance Checklist
+
+- [x] `card_created` event emitted on `POST /api/v1/lists/:id/cards`
+- [x] `card_created` payload includes `cardId`, `cardTitle`, `listId`, `boardId`, `workspaceId`
+- [x] `card_moved` event emitted on `PATCH /api/v1/cards/:id/move` when list changes
+- [x] No `card_moved` event emitted on same-list reorder
+- [x] `card_moved` payload includes `fromListId`, `fromListName`, `toListId`, `toListName`
+- [x] Cross-board move is rejected with 400 — no event written
+- [x] `card_member_assigned` event emitted on `POST /api/v1/cards/:id/members`
+- [x] Duplicate assign is idempotent — no duplicate `card_member_assigned` event
+- [x] Assign of non-workspace user returns 400 — no event written
+- [x] `card_member_unassigned` event emitted on `DELETE /api/v1/cards/:id/members/:userId`
+- [x] Unassign of non-assigned member is a no-op — no event written
+- [x] All events include `id` (UUID), `actor_id`, `action`, `created_at`, `payload.cardId`
+- [x] Activity feed returns events ordered by `created_at DESC`, `id DESC` for determinism
+- [x] Legacy event types remain visible alongside new event types in the feed
+- [x] Activity feed filtered by `VISIBLE_EVENT_TYPES` allowlist
+- [x] Activity feed accessible to all workspace members (VIEWER and above)
+- [x] Activity feed returns 401 for unauthenticated requests
+- [x] Event payloads are immutable after write — no API endpoint to mutate or delete activity rows
+- [x] `card_created` rendered as "created this card" in card modal UI
+- [x] `card_moved` rendered as "moved this card from X to Y" in card modal UI
+- [x] `card_member_assigned` rendered as "assigned <name> to this card" in card modal UI
+- [x] Self-assignment renders "assigned themselves to this card" — not the actor's own name
+- [x] `card_member_unassigned` rendered as "removed <name> from this card"
+- [x] Self-removal renders "removed themselves from this card"
+- [x] Unknown/future event types filtered from the feed UI (not rendered, no JS error)
+- [x] Member name falls back to "a member" when user is no longer on the board
+- [x] New activity row appears in open card modal via realtime without page refresh
+- [x] Realtime events scoped to the correct card — no cross-card leakage
+- [x] No cross-board leakage in realtime activity delivery
+- [x] Notification fan-out for all four event types via `mapActivityToNotification`
+- [x] Notification fan-out respects per-user opt-out preferences
+- [x] Self-actions do not generate self-notifications
+- [x] `card_member_assigned` and `card_member_unassigned` email templates implemented
 
 ---
 
@@ -497,3 +539,145 @@ event type. All scenarios use the Playwright MCP browser tool.
 
 1. Bob creates a card, moves a card, and assigns a member in Workspace W2.
 2. Assert Alice's notification panel receives **no** notification rows from Workspace W2.
+
+---
+
+## Section 11 — Regression and acceptance hardening
+
+These scenarios were added in Sprint 88 Iteration 11 to cover edge cases and error paths
+identified during final regression testing. They complement the happy-path scenarios above
+and must all pass before Sprint 88 is considered closed.
+
+---
+
+### 11.1 Activity feed API error state — server returns 500
+
+**Preconditions:** Alice has a card modal open. The server `/api/v1/cards/:id/activity` endpoint is intercepted to return 500.
+
+1. Intercept `GET /api/v1/cards/:cardId/activity` to return HTTP 500.
+2. Open the card modal for that card.
+3. Assert the Activity section renders an error state (not a blank panel, not a spinner).
+4. Assert no JavaScript exception is thrown in the browser console.
+5. Remove the intercept and reload the modal.
+6. Assert the activity feed renders correctly with the expected events.
+
+---
+
+### 11.2 Activity feed for card with many events does not truncate silently
+
+**Preconditions:** A card has more than 50 activity rows (create, move, and assign events across multiple actors).
+
+1. Call `GET /api/v1/cards/:cardId/activity`.
+2. Assert the response returns all activity rows (or the documented page size with correct `metadata.hasMore`).
+3. Assert the response shape matches `{ data: Array, metadata?: { ... } }`.
+4. Assert no events are silently dropped or out of order.
+
+> **Note:** If the current implementation does not paginate, assert that all rows are returned
+> in a single response with `data.length` equal to the actual row count.
+
+---
+
+### 11.3 Card creation failure does not emit a stray activity event
+
+**Preconditions:** A valid list exists.
+
+1. `POST /api/v1/lists/:listId/cards` with `{}` (missing required `title` field).
+2. Assert HTTP 400.
+3. Count `card_created` activity rows for this list.
+4. Assert the count has not increased — no partial or orphaned activity record was written.
+
+---
+
+### 11.4 Activity event write failure is non-blocking for card API response
+
+**Preconditions:** The `writeActivity` DB call is intercepted at the integration-test level to simulate a transient DB error after the card has already been created.
+
+> **Note:** This scenario is best validated at the unit/integration test level rather than
+> via Playwright; it documents the requirement that the card API does not return an error
+> solely because the activity write failed.
+
+1. Card `POST` succeeds → returns 201 with `data.id`.
+2. Activity write throws an error (simulated).
+3. Assert the 201 response is still returned to the caller.
+4. Assert no unhandled exception propagates back to the client.
+
+---
+
+### 11.5 VIEWER role can read activity feed
+
+**Preconditions:** User Carol has VIEWER role in workspace W1. A card with activity events exists on a board in W1.
+
+1. Carol authenticates and calls `GET /api/v1/cards/:cardId/activity`.
+2. Assert HTTP 200 and `data` is a non-empty array containing the expected events.
+
+---
+
+### 11.6 Non-workspace member cannot read activity feed
+
+**Preconditions:** User Dave is not a member of workspace W1. A card exists on a board in W1.
+
+1. Dave authenticates and calls `GET /api/v1/cards/:cardId/activity`.
+2. Assert HTTP 403.
+3. Assert no activity data is returned in the response body.
+
+---
+
+### 11.7 Activity feed visible event types allowlist is enforced
+
+**Preconditions:** The activities table contains rows with both visible types (e.g. `card_created`) and a type that is absent from `VISIBLE_EVENT_TYPES` (e.g. a legacy internal type).
+
+1. Insert a row directly with `action = "internal_system_event"` (not in `VISIBLE_EVENT_TYPES`) for an existing card.
+2. Call `GET /api/v1/cards/:cardId/activity`.
+3. Assert the `internal_system_event` row is **not** present in the response.
+4. Assert all expected visible events are still returned.
+
+---
+
+### 11.8 Realtime activity delivery respects card scope — no cross-card pollution
+
+**Setup:** Alice has Card X modal open. Bob simultaneously creates a card (Card Y) in the same list.
+
+1. Bob creates Card Y (`POST /api/v1/lists/:listId/cards`).
+2. A `card_created` activity event is emitted for Card Y.
+3. Assert Alice's open modal for Card X does **not** show a new activity row.
+4. Assert Card X's activity feed count is unchanged.
+
+---
+
+### 11.9 Idempotent card_member_unassigned — repeated unassign produces no extra event
+
+**Preconditions:** Bob has never been assigned to Card X, or was already unassigned.
+
+1. Alice sends `DELETE /api/v1/cards/:cardId/members/:bobId` (Bob not assigned).
+2. Assert HTTP 204 (idempotent).
+3. Query `GET /api/v1/cards/:cardId/activity`.
+4. Assert no `card_member_unassigned` event appears for this operation.
+
+---
+
+### 11.10 Full acceptance smoke test — all four event types in one flow
+
+This is the definitive end-to-end acceptance scenario that must pass before Sprint 88 is closed.
+
+**Actors:** Alice (ADMIN), Bob (MEMBER). Both authenticated. A board with **Backlog** and **Done** lists exists.
+
+1. Alice creates **Card Z** in **Backlog** → expect 201, `card_created` activity written.
+2. Alice moves **Card Z** from **Backlog** to **Done** → expect 200, `card_moved` activity written.
+3. Alice assigns Bob to **Card Z** → expect 201, `card_member_assigned` activity written.
+4. Alice unassigns Bob from **Card Z** → expect 204, `card_member_unassigned` activity written.
+5. Call `GET /api/v1/cards/:cardZId/activity`.
+6. Assert the feed contains exactly 4 events in descending order:
+   - `card_member_unassigned` (most recent)
+   - `card_member_assigned`
+   - `card_moved`
+   - `card_created` (oldest)
+7. Assert each event has a unique `id`, a valid `actor_id`, and a non-null `payload`.
+8. Open the card modal for **Card Z**.
+9. Assert the Activity section renders all four event rows in the same order with correct copy:
+   - "removed Bob from this card"
+   - "assigned Bob to this card"
+   - "moved this card from Backlog to Done"
+   - "created this card"
+10. Assert Bob received `card_created`, `card_moved`, and `card_member_assigned` notifications (but not `card_member_unassigned` if he was removed before the notification was read — assert at least the assigned notification is visible).
+11. Assert Alice received **no** self-notifications.
+12. Assert no duplicate rows appear anywhere in the feed or notification panel.
