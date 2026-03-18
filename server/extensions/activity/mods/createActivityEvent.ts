@@ -3,6 +3,7 @@
 // so call sites stay declarative and payload contracts are enforced in one place.
 import { writeActivity } from './write';
 import { publishCardActivityEvent } from '../events/publishCardActivityEvent';
+import { mapActivityToNotification } from './mapActivityToNotification';
 
 export interface CardCreatedPayload {
   cardId: string;
@@ -35,6 +36,8 @@ export async function emitCardCreated({
   });
   // [why] Fire-and-forget so a WS delivery failure never blocks the API response.
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  // [why] Fan-out notifications after the activity write; failures are swallowed.
+  mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
   return activity;
 }
 
@@ -73,6 +76,7 @@ export async function emitCardMoved({
     userAgent: userAgent ?? null,
   });
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
   return activity;
 }
 
@@ -105,6 +109,7 @@ export async function emitCardMemberAssigned({
     userAgent: userAgent ?? null,
   });
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
   return activity;
 }
 
@@ -137,5 +142,6 @@ export async function emitCardMemberUnassigned({
     userAgent: userAgent ?? null,
   });
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
   return activity;
 }

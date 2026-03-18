@@ -386,3 +386,114 @@ event type. All scenarios use the Playwright MCP browser tool.
    - Her submitted comment (at the top or chronologically correct position).
    - Bob's `card_moved` activity row.
 3. Assert no duplicate rows appear for either event.
+
+---
+
+## Section 10 — Notification mapping and fan-out
+
+### 10.1 card_created activity triggers in-app notification for workspace members
+
+**Setup:** Workspace W has members Alice, Bob, and Carol. Bob is authenticated and creates a card on a board owned by workspace W.
+
+1. Bob creates **Card X** in list **To Do** on Board B.
+2. Assert a `card_created` notification row is visible in Alice's notification panel.
+3. Assert the notification copy reads: **Bob** · created "Card X" in Board B.
+4. Assert Carol also receives the same notification.
+5. Assert Bob does **not** receive a self-notification for his own card creation.
+
+---
+
+### 10.2 card_moved activity triggers in-app notification with destination list
+
+**Setup:** Alice, Bob, and Carol are workspace members. Alice moves a card.
+
+1. Alice moves **Card X** from list **Backlog** to list **In Progress**.
+2. Assert Bob's notification panel shows a `card_moved` notification row.
+3. Assert the copy reads: **Alice** · moved "Card X" to In Progress.
+4. Assert Carol receives the same notification.
+5. Assert Alice does **not** receive a self-notification.
+
+---
+
+### 10.3 card_member_assigned activity notifies the assigned user
+
+**Setup:** Alice is a workspace member. Bob assigns Alice to Card X.
+
+1. Bob assigns Alice to **Card X**.
+2. Assert Alice's notification panel shows a `card_member_assigned` row.
+3. Assert the copy reads: **Bob** · was assigned to "Card X" (or similar).
+4. Assert Carol (another workspace member) also receives the notification.
+5. Assert Bob does **not** receive a self-notification.
+
+---
+
+### 10.4 card_member_unassigned activity notifies the removed user
+
+**Setup:** Alice is assigned to Card X. Bob removes Alice from the card.
+
+1. Bob removes Alice from **Card X**.
+2. Assert Alice's notification panel shows a `card_member_unassigned` row.
+3. Assert the copy reads: **Bob** · was removed from "Card X" (or similar).
+4. Assert Bob does **not** receive a self-notification.
+
+---
+
+### 10.5 Preference opt-out suppresses in-app notification
+
+**Setup:** Bob has disabled in-app notifications for `card_created` (set `in_app_enabled = false`).
+
+1. Alice creates **Card Y** on a board in workspace W.
+2. Assert Alice's notification panel shows the `card_created` row.
+3. Assert Bob's notification panel does **not** show a `card_created` row for Card Y.
+4. Assert the notification row was not inserted into Bob's notifications in the DB.
+
+---
+
+### 10.6 Preference opt-out does not affect other notification types
+
+**Setup:** Bob has disabled `card_created` in-app notifications but has `card_moved` enabled.
+
+1. Alice moves **Card X** to list **Done**.
+2. Assert Bob's notification panel **does** show the `card_moved` row.
+3. Assert the row's copy correctly names the destination list.
+
+---
+
+### 10.7 Realtime delivery: notification appears without page refresh
+
+**Setup:** Bob is authenticated with his notification panel open.
+
+1. Alice creates **Card Z** on a board in workspace W (Bob is a member).
+2. Assert Bob's open notification panel gains a new `card_created` row within 2 seconds.
+3. Assert the unread count badge in the notification bell increments.
+4. Assert Bob did **not** refresh the page.
+
+---
+
+### 10.8 Self-assignment notification — actor assigns themselves
+
+**Setup:** Alice assigns herself to Card X.
+
+1. Alice opens Card X and assigns herself via the Members section.
+2. Assert Alice does **not** receive a `card_member_assigned` self-notification.
+3. Assert other workspace members (Bob, Carol) do receive the `card_member_assigned` notification.
+
+---
+
+### 10.9 Edge: rapid successive assignments do not create duplicate notifications
+
+**Setup:** Bob rapidly assigns and then unassigns Alice from Card X in quick succession.
+
+1. Bob assigns Alice to Card X → `card_member_assigned` activity emitted.
+2. Within 1 second, Bob unassigns Alice → `card_member_unassigned` activity emitted.
+3. Assert Alice's notification panel shows exactly two rows: one assigned, one unassigned.
+4. Assert no duplicate rows appear.
+
+---
+
+### 10.10 No cross-workspace notification leakage
+
+**Setup:** Alice is a member of Workspace W1 only. Bob performs actions on a board in Workspace W2.
+
+1. Bob creates a card, moves a card, and assigns a member in Workspace W2.
+2. Assert Alice's notification panel receives **no** notification rows from Workspace W2.

@@ -71,6 +71,12 @@ export async function archiveBoard({
   return api.patch<{ data: Board }>(`/boards/${boardId}/archive`);
 }
 
+// 409 Conflict payload returned when deleting a non-empty board without `confirm: true`.
+export interface BoardDeleteConflictError {
+  name: 'delete-requires-confirmation';
+  data: { listCount: number; cardCount: number };
+}
+
 export async function deleteBoard({
   api,
   boardId,

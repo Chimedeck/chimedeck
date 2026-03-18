@@ -7,6 +7,8 @@ import {
   RectangleStackIcon,
   ArrowRightIcon,
   ChatBubbleLeftEllipsisIcon,
+  UserPlusIcon,
+  UserMinusIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { markReadThunk, deleteNotificationThunk } from '../slices/notificationSlice';
@@ -25,6 +27,8 @@ const TYPE_ICON: Record<string, HeroIcon> = {
   card_created: RectangleStackIcon as HeroIcon,
   card_moved: ArrowRightIcon as HeroIcon,
   card_commented: ChatBubbleLeftEllipsisIcon as HeroIcon,
+  card_member_assigned: UserPlusIcon as HeroIcon,
+  card_member_unassigned: UserMinusIcon as HeroIcon,
 };
 
 const TYPE_ACCENT: Record<string, string> = {
@@ -32,13 +36,15 @@ const TYPE_ACCENT: Record<string, string> = {
   card_created: 'text-emerald-400',
   card_moved: 'text-sky-400',
   card_commented: 'text-amber-400',
+  card_member_assigned: 'text-violet-400',
+  card_member_unassigned: 'text-rose-400',
 };
 
 function buildCopy(notification: Notification): string {
   const actor = notification.actor.nickname ?? notification.actor.name ?? 'Someone';
   const card = notification.card_title ?? 'a card';
 
-  switch (notification.type as NotificationType) {
+  switch (notification.type as NotificationType | string) {
     case 'card_created':
       return `${actor} created "${card}" in ${notification.board_title ?? 'a board'}`;
     case 'card_moved':
@@ -47,6 +53,10 @@ function buildCopy(notification: Notification): string {
         : `${actor} moved "${card}"`;
     case 'card_commented':
       return `${actor} commented on "${card}"`;
+    case 'card_member_assigned':
+      return `${actor} was assigned to "${card}"`;
+    case 'card_member_unassigned':
+      return `${actor} was removed from "${card}"`;
     case 'mention':
     default:
       return `${actor} mentioned you in "${card}"`;

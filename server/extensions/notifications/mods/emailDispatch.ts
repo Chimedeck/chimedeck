@@ -11,6 +11,8 @@ import { renderMentionEmail } from './emailTemplates/mention';
 import { renderCardCreatedEmail } from './emailTemplates/cardCreated';
 import { renderCardMovedEmail } from './emailTemplates/cardMoved';
 import { renderCardCommentedEmail } from './emailTemplates/cardCommented';
+import { renderCardMemberAssignedEmail } from './emailTemplates/cardMemberAssigned';
+import { renderCardMemberUnassignedEmail } from './emailTemplates/cardMemberUnassigned';
 
 export async function dispatchNotificationEmail({
   recipientId,
@@ -82,6 +84,20 @@ function renderTemplate(type: NotificationType, data: Record<string, string>) {
         cardTitle: data.cardTitle ?? '',
         boardName: data.boardName ?? '',
         commentPreview: data.commentPreview ?? '',
+        cardUrl: data.cardUrl ?? '',
+      });
+    case 'card_member_assigned':
+      return renderCardMemberAssignedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
+        cardUrl: data.cardUrl ?? '',
+      });
+    case 'card_member_unassigned':
+      return renderCardMemberUnassignedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
         cardUrl: data.cardUrl ?? '',
       });
   }

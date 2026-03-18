@@ -40,7 +40,10 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   const activities = await db('activities')
     .where({ entity_id: cardId })
     .whereIn('action', VISIBLE_EVENT_TYPES)
-    .orderBy('created_at', 'desc');
+    // [why] Secondary sort by id ensures deterministic ordering when two events share
+    //       the same created_at timestamp (e.g. batch-emitted events or test fixtures).
+    .orderBy('created_at', 'desc')
+    .orderBy('id', 'desc');
 
   // Join actor display info so the client never has to resolve IDs separately
   const actorIds = [...new Set(activities.map((a) => a.actor_id))];

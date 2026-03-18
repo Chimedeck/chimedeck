@@ -2,7 +2,14 @@
 // and falls back to both channels enabled when no row exists (opt-out model).
 import { db } from '../../../common/db';
 
-export const NOTIFICATION_TYPES = ['mention', 'card_created', 'card_moved', 'card_commented'] as const;
+export const NOTIFICATION_TYPES = [
+  'mention',
+  'card_created',
+  'card_moved',
+  'card_commented',
+  'card_member_assigned',
+  'card_member_unassigned',
+] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export interface NotificationPreference {
