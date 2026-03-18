@@ -24,9 +24,6 @@ export async function handleListDueCards(req: Request, workspaceId: string): Pro
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
-
   const url = new URL(req.url);
   const before = url.searchParams.get('before');
 

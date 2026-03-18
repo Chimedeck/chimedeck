@@ -23,8 +23,8 @@ export async function handleGetBoardLabels(req: Request, boardId: string): Promi
   const board = scopedReq.board!;
 
   if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
+    const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+    if (membershipError) return membershipError;
   }
 
   const labels = await db('labels')
@@ -59,14 +59,14 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

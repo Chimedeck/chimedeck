@@ -1,9 +1,7 @@
 // GET /api/v1/boards/:id/archived-cards — all archived cards in a board.
 // PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import {
-  requireRole,
-} from '../../../middlewares/permissionManager';
+import { requireWorkspaceMembership } from '../../../middlewares/permissionManager';
 import {
   applyBoardVisibility,
   type BoardVisibilityScopedRequest,
@@ -17,8 +15,8 @@ export async function handleGetArchivedCards(req: Request, boardId: string): Pro
   const board = scopedReq.board!;
 
   if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
+    const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+    if (membershipError) return membershipError;
   }
 
   const cards = await db('cards')
@@ -37,7 +35,7 @@ export async function handleGetArchivedCards(req: Request, boardId: string): Pro
       'cards.due_date',
       'cards.created_at',
       'cards.updated_at',
-      'lists.title as list_title',
+      'lists.title as list_title'
     );
 
   return Response.json({ data: cards });

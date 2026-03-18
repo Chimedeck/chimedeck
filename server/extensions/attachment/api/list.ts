@@ -28,8 +28,6 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
 
   const attachments = await db('attachments')
     .where({ card_id: cardId })

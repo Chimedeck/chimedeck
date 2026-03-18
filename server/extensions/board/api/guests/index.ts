@@ -184,9 +184,6 @@ export async function handleListGuests(req: Request, boardId: string): Promise<R
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
-
   const guests = await db('board_guest_access')
     .join('users', 'board_guest_access.user_id', 'users.id')
     .where('board_guest_access.board_id', boardId)

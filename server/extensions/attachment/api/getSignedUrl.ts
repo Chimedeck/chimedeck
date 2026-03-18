@@ -33,8 +33,6 @@ export async function handleGetSignedUrl(req: Request, attachmentId: string): Pr
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
 
   // URL attachments: return the raw URL directly
   if (attachment.type === 'URL') {

@@ -34,9 +34,6 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
-
   const activities = await db('activities')
     .where({ entity_id: cardId })
     .whereIn('action', VISIBLE_EVENT_TYPES)

@@ -23,9 +23,6 @@ export async function handleListLists(req: Request, boardId: string): Promise<Re
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
-
   const lists = await db('lists')
     .where({ board_id: boardId, archived: false })
     .orderBy('position', 'asc');
