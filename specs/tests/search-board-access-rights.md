@@ -480,28 +480,131 @@
 
 ---
 
+## Observability Scenarios
+
+> These scenarios verify that structured log events are emitted for observable access decisions.
+> Log events are JSON lines written to stdout. Test by inspecting server stdout during the request.
+
+---
+
+### SBAR-OBS-01 — `search.permission_denied` logged on unauthenticated search
+
+**Preconditions:** No `Authorization` header.  
+**Steps:**
+1. Send `GET /api/v1/workspaces/:workspaceId/search?q=task` without auth.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "search.permission_denied", "workspaceId": "<id>", "reason": "unauthenticated" }`.
+- No `userId` field in the log entry (caller is anonymous).
+
+---
+
+### SBAR-OBS-02 — `search.permission_denied` logged for non-member caller
+
+**Preconditions:** Authenticated user not in the workspace.  
+**Steps:**
+1. Send `GET /api/v1/workspaces/:workspaceId/search?q=task` with valid token.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "search.permission_denied", "workspaceId": "<id>", "userId": "<id>", "reason": "not-workspace-member" }`.
+
+---
+
+### SBAR-OBS-03 — `search.permission_filter_applied` logged on every successful search
+
+**Preconditions:** Authenticated workspace member.  
+**Steps:**
+1. Send `GET /api/v1/workspaces/:workspaceId/search?q=task`.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "search.permission_filter_applied", "workspaceId": "<id>", "userId": "<id>", "callerRole": "<role>" }`.
+- The `ts` field is present and is a valid ISO 8601 timestamp.
+- The search query text (`q`) is **not** present in the log entry.
+
+---
+
+### SBAR-OBS-04 — `search.results` logged with result count and hasMore
+
+**Preconditions:** Authenticated workspace member with at least one matching board/card.  
+**Steps:**
+1. Send `GET /api/v1/workspaces/:workspaceId/search?q=task`.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "search.results", "workspaceId": "<id>", "resultCount": <n>, "hasMore": false }`.
+- `resultCount` matches the number of items in `data`.
+
+---
+
+### SBAR-OBS-05 — `board.access_checked` logged with `result: "denied"` for PRIVATE non-member
+
+**Preconditions:**
+- PRIVATE board, caller is workspace MEMBER with no board_members row.
+
+**Steps:**
+1. Send `GET /api/v1/boards/:boardId` with a MEMBER token.
+
+**Expected:**
+- Server stdout contains `{ "event": "board.access_checked", "boardId": "<id>", "result": "denied", "statusCode": 403 }`.
+- The `userId` field is present and matches the caller.
+
+---
+
+### SBAR-OBS-06 — `board.access_checked` logged with `result: "allowed"` for accessible board
+
+**Preconditions:**
+- WORKSPACE board, caller is workspace MEMBER.
+
+**Steps:**
+1. Send `GET /api/v1/boards/:boardId` with a MEMBER token.
+
+**Expected:**
+- Server stdout contains `{ "event": "board.access_checked", "boardId": "<id>", "result": "allowed", "visibility": "WORKSPACE", "statusCode": 200 }`.
+
+---
+
+### SBAR-OBS-07 — Log entries contain `ts` field and no sensitive data
+
+**Preconditions:** Any search or board-access request.  
+**Steps:**
+1. Execute any search or board GET request.
+2. Inspect the emitted log lines.
+
+**Expected:**
+- Every log entry has a `ts` field with a valid ISO 8601 timestamp.
+- No log entry contains the search query (`q`), card titles, or board titles.
+- No log entry contains passwords, tokens, or email addresses.
+
+---
+
 ## Acceptance Checklist
 
-> Use this checklist to verify Sprint 86 (access-aware search) acceptance criteria are fully met.
+> Use this checklist to verify Sprint 86 (access-aware search + observability) acceptance criteria are fully met.
 
-| # | Criterion | Status |
-|---|-----------|--------|
-| 1 | PRIVATE boards never returned for non-member MEMBER/VIEWER | ⬜ PASS / FAIL |
-| 2 | WORKSPACE boards never returned for GUEST role | ⬜ PASS / FAIL |
-| 3 | PRIVATE boards returned for OWNER and ADMIN without extra board_members row | ⬜ PASS / FAIL |
-| 4 | PRIVATE boards returned for MEMBER/VIEWER with explicit board_members row | ⬜ PASS / FAIL |
-| 5 | PRIVATE boards returned for GUEST with explicit board_guest_access row | ⬜ PASS / FAIL |
-| 6 | Card results filtered through same board access rules (no card leaks from inaccessible boards) | ⬜ PASS / FAIL |
-| 7 | Board metadata never leaked for inaccessible boards | ⬜ PASS / FAIL |
-| 8 | GET /api/v1/boards/:id PRIVATE + non-member → 403 (board-access-denied) | ⬜ PASS / FAIL |
-| 9 | GET /api/v1/boards/:id WORKSPACE + GUEST → 403 (board-access-denied) | ⬜ PASS / FAIL |
-| 10 | GET /api/v1/boards/:id PUBLIC + unauthenticated → 200 | ⬜ PASS / FAIL |
-| 11 | Auth required for workspace search → 401 | ⬜ PASS / FAIL |
-| 12 | Non-workspace-member → 403 on workspace search | ⬜ PASS / FAIL |
-| 13 | Query <2 chars → 400 (search-query-too-short) | ⬜ PASS / FAIL |
-| 14 | Query with no valid terms → 400 (search-query-invalid) | ⬜ PASS / FAIL |
-| 15 | Stale board click (403) → amber banner shown, entry purged from cache, redirect to boards list | ⬜ PASS / FAIL |
-| 16 | Stale board click (404) → same behaviour as 403 | ⬜ PASS / FAIL |
-| 17 | Accessible board click → no banner, normal navigation, no cache purge | ⬜ PASS / FAIL |
-| 18 | Card result click bypasses board access pre-check | ⬜ PASS / FAIL |
-| 19 | 5xx on access check falls through to normal navigation (no false-positive stale warning) | ⬜ PASS / FAIL |
+| # | Criterion | Covered By | Status |
+|---|-----------|-----------|--------|
+| 1 | PRIVATE boards never returned for non-member MEMBER/VIEWER | SBAR-API-03 | ⬜ PASS / FAIL |
+| 2 | WORKSPACE boards never returned for GUEST role | SBAR-API-07 | ⬜ PASS / FAIL |
+| 3 | PRIVATE boards returned for OWNER and ADMIN without extra board_members row | SBAR-API-05, SBAR-API-06 | ⬜ PASS / FAIL |
+| 4 | PRIVATE boards returned for MEMBER/VIEWER with explicit board_members row | SBAR-API-04 | ⬜ PASS / FAIL |
+| 5 | PRIVATE boards returned for GUEST with explicit board_guest_access row | SBAR-API-08 | ⬜ PASS / FAIL |
+| 6 | Card results filtered through same board access rules (no card leaks from inaccessible boards) | SBAR-API-16 | ⬜ PASS / FAIL |
+| 7 | Board metadata never leaked for inaccessible boards | SBAR-API-11 | ⬜ PASS / FAIL |
+| 8 | GET /api/v1/boards/:id PRIVATE + non-member → 403 (board-access-denied) | SBAR-API-17 | ⬜ PASS / FAIL |
+| 9 | GET /api/v1/boards/:id WORKSPACE + GUEST → 403 (board-access-denied) | SBAR-API-20 | ⬜ PASS / FAIL |
+| 10 | GET /api/v1/boards/:id PUBLIC + unauthenticated → 200 | SBAR-API-19 | ⬜ PASS / FAIL |
+| 11 | Auth required for workspace search → 401 | SBAR-API-01 | ⬜ PASS / FAIL |
+| 12 | Non-workspace-member → 403 on workspace search | SBAR-API-02 | ⬜ PASS / FAIL |
+| 13 | Query <2 chars → 400 (search-query-too-short) | SBAR-API-12 | ⬜ PASS / FAIL |
+| 14 | Query with no valid terms → 400 (search-query-invalid) | SBAR-API-13 | ⬜ PASS / FAIL |
+| 15 | Stale board click (403) → amber banner shown, entry purged from cache, redirect to boards list | SBAR-UI-05 | ⬜ PASS / FAIL |
+| 16 | Stale board click (404) → same behaviour as 403 | SBAR-UI-06 | ⬜ PASS / FAIL |
+| 17 | Accessible board click → no banner, normal navigation, no cache purge | SBAR-UI-07 | ⬜ PASS / FAIL |
+| 18 | Card result click bypasses board access pre-check | SBAR-UI-10 | ⬜ PASS / FAIL |
+| 19 | 5xx on access check falls through to normal navigation (no false-positive stale warning) | SBAR-UI-09 | ⬜ PASS / FAIL |
+| 20 | `search.permission_denied` logged on unauthenticated search | SBAR-OBS-01 | ⬜ PASS / FAIL |
+| 21 | `search.permission_denied` logged for non-member caller | SBAR-OBS-02 | ⬜ PASS / FAIL |
+| 22 | `search.permission_filter_applied` logged on every successful search | SBAR-OBS-03 | ⬜ PASS / FAIL |
+| 23 | `search.results` logged with result count | SBAR-OBS-04 | ⬜ PASS / FAIL |
+| 24 | `board.access_checked` logged with `result: "denied"` for PRIVATE non-member | SBAR-OBS-05 | ⬜ PASS / FAIL |
+| 25 | `board.access_checked` logged with `result: "allowed"` for accessible board | SBAR-OBS-06 | ⬜ PASS / FAIL |
+| 26 | Log entries contain `ts` field and no sensitive data (no `q`, no titles) | SBAR-OBS-07 | ⬜ PASS / FAIL |

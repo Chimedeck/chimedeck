@@ -13,6 +13,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { flags } from '../../../mods/flags';
 import { queryWorkspaceSearch } from '../mods/queryWorkspaceSearch';
+import { searchLog } from '../common/searchLogger';
 
 const DEFAULT_LIMIT = 20;
 
@@ -20,6 +21,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   // Guard: SEARCH_ENABLED feature flag
   const searchEnabled = await flags.isEnabled('SEARCH_ENABLED');
   if (!searchEnabled) {
+    searchLog.featureDisabled({ workspaceId });
     return Response.json(
       { error: { code: 'search-not-available', message: 'Search feature is not enabled' } },
       { status: 501 },
@@ -27,7 +29,10 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   }
 
   const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
+  if (authError) {
+    searchLog.permissionDenied({ workspaceId, userId: undefined, reason: 'unauthenticated' });
+    return authError;
+  }
 
   const workspace = await db('workspaces').where({ id: workspaceId }).first();
   if (!workspace) {
@@ -41,7 +46,14 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   // and populates req.callerRole used by the permission-aware search mod.
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
-  if (membershipError) return membershipError;
+  if (membershipError) {
+    searchLog.permissionDenied({
+      workspaceId,
+      userId: (scopedReq.currentUser as { id?: string } | undefined)?.id,
+      reason: 'not-workspace-member',
+    });
+    return membershipError;
+  }
 
   const url = new URL(req.url);
   const q = url.searchParams.get('q') ?? '';
@@ -51,10 +63,15 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   const includeArchived = url.searchParams.get('includeArchived') === 'true';
   const limit = Math.min(parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10), 100);
 
+  const userId = scopedReq.currentUser!.id;
+  const callerRole = scopedReq.callerRole!;
+
+  searchLog.request({ workspaceId, userId, callerRole, type, limit });
+
   const result = await queryWorkspaceSearch({
     workspaceId,
-    userId: scopedReq.currentUser!.id,
-    callerRole: scopedReq.callerRole!,
+    userId,
+    callerRole,
     q,
     type,
     cursor,
@@ -68,6 +85,14 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
       { status: result.status },
     );
   }
+
+  searchLog.results({
+    workspaceId,
+    userId,
+    callerRole,
+    resultCount: result.data?.length ?? 0,
+    hasMore: result.metadata?.hasMore ?? false,
+  });
 
   return Response.json({ data: result.data, metadata: result.metadata });
 }

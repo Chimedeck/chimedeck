@@ -10,10 +10,22 @@ import {
 } from '../../../middlewares/boardVisibility';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
 import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { searchLog } from '../../search/common/searchLogger';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
-  if (visibilityError) return visibilityError;
+  if (visibilityError) {
+    const scopedForLog = req as Partial<BoardVisibilityScopedRequest>;
+    searchLog.boardAccessChecked({
+      boardId,
+      userId: (scopedForLog.currentUser as { id?: string } | undefined)?.id,
+      visibility: 'unknown',
+      callerRole: scopedForLog.callerRole,
+      result: 'denied',
+      statusCode: visibilityError.status,
+    });
+    return visibilityError;
+  }
 
   const scopedReq = req as BoardVisibilityScopedRequest;
   const board = scopedReq.board!;
@@ -21,8 +33,27 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   // Non-public boards require at least VIEWER role.
   if (board.visibility !== 'PUBLIC') {
     const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
+    if (roleError) {
+      searchLog.boardAccessChecked({
+        boardId,
+        userId: (scopedReq.currentUser as { id?: string } | undefined)?.id,
+        visibility: board.visibility,
+        callerRole: scopedReq.callerRole,
+        result: 'denied',
+        statusCode: roleError.status,
+      });
+      return roleError;
+    }
   }
+
+  searchLog.boardAccessChecked({
+    boardId,
+    userId: (scopedReq.currentUser as { id?: string } | undefined)?.id,
+    visibility: board.visibility,
+    callerRole: scopedReq.callerRole,
+    result: 'allowed',
+    statusCode: 200,
+  });
 
   // Load active lists now that the lists table exists (sprint 06)
   const lists = await db('lists')

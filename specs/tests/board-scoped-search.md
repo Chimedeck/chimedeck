@@ -397,13 +397,57 @@
 
 
 
-| # | Criterion | Status |
-|---|-----------|--------|
-| AC-1 | Each board page renders a board-local search bar in the header | ✅ Done |
-| AC-2 | Searching from board page returns only cards/lists from that board | ✅ Done (server-enforced + UI-10) |
-| AC-3 | No result from other boards appears in board-local search | ✅ Done (server-enforced + UI-10) |
-| AC-4 | Clicking a card result opens that card in the current board modal | ✅ Done (UI-11) |
-| AC-5 | Query state restores on refresh and resets when board changes | ✅ Done (UI-13, UI-14) |
-| AC-6 | Searching with fewer than 2 characters does not call the server | ✅ Done (UI-02, min-char guard) |
-| AC-7 | Default result limit is 20; maximum is 50 | ✅ Done (server-enforced, API-09) |
-| AC-8 | Results ordered by relevance (stable) | ✅ Done (server-enforced, API-11) |
+## Observability Scenarios
+
+> Board-scoped search observability is covered by the server logging in `getBoardSearch.ts` and `queryBoardSearch.ts`.
+> These scenarios verify log events for board-scoped search access denials and result delivery.
+
+---
+
+### OBS-01 — Board search request logged (boardId, no query text)
+
+**Preconditions:** Authenticated user with board access.  
+**Steps:**
+1. Send `GET /api/v1/boards/:boardId/search?q=deploy`.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "board_search.request", "boardId": "<id>" }`.
+- The search query (`q`) is **not** present in the log entry.
+
+---
+
+### OBS-02 — Board search results logged with count
+
+**Preconditions:** Authenticated user with board access; at least one matching result.  
+**Steps:**
+1. Send `GET /api/v1/boards/:boardId/search?q=deploy`.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "board_search.results", "boardId": "<id>", "resultCount": <n> }`.
+- `resultCount` matches the number of items in `data`.
+
+---
+
+### OBS-03 — Board search access denied event logged
+
+**Preconditions:** Board is PRIVATE; caller is workspace MEMBER with no board_members row.  
+**Steps:**
+1. Send `GET /api/v1/boards/:boardId/search?q=task`.
+
+**Expected:**
+- Server stdout contains a JSON line matching `{ "event": "board_search.access_denied", "boardId": "<id>", "statusCode": 403 }`.
+
+---
+
+| # | Criterion | Covered By | Status |
+|---|-----------|-----------|--------|
+| AC-1 | Each board page renders a board-local search bar in the header | UI-01 | ✅ Done |
+| AC-2 | Searching from board page returns only cards/lists from that board | API-06, UI-10 | ✅ Done |
+| AC-3 | No result from other boards appears in board-local search | API-06, UI-10 | ✅ Done |
+| AC-4 | Clicking a card result opens that card in the current board modal | UI-11 | ✅ Done |
+| AC-5 | Query state restores on refresh and resets when board changes | UI-13, UI-14 | ✅ Done |
+| AC-6 | Searching with fewer than 2 characters does not call the server | UI-02, API-04 | ✅ Done |
+| AC-7 | Default result limit is 20; maximum is 50 | API-09 | ✅ Done |
+| AC-8 | Results ordered by relevance (stable) | API-11 | ✅ Done |
+| AC-9 | Board search access denials are logged (observability) | OBS-03 | ✅ Done |
+| AC-10 | Search result count logged per request (no query text in log) | OBS-01, OBS-02 | ✅ Done |

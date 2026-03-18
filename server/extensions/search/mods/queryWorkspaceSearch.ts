@@ -14,6 +14,7 @@
 import { db } from '../../../common/db';
 import { buildQuery } from './buildQuery';
 import type { Role } from '../../../middlewares/permissionManager';
+import { searchLog } from '../common/searchLogger';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -123,6 +124,15 @@ export async function queryWorkspaceSearch({
 
   const limit = Math.min(rawLimit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const results: WorkspaceSearchResult[] = [];
+
+  // Log the permission filter being applied so access control decisions are observable.
+  searchLog.permissionFilterApplied({
+    workspaceId,
+    userId,
+    callerRole,
+    type: type ?? null,
+    includeArchived: includeArchived ?? false,
+  });
 
   // ── Board search ──────────────────────────────────────────────────────────
   if (!type || type === 'board') {
