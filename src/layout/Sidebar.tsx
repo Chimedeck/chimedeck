@@ -449,7 +449,11 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             {userMenuOpen && (
               <ul
                 role="menu"
-                className="absolute bottom-full left-0 mb-1 w-40 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl z-50"
+                // [why] When collapsed the nav is w-16; the menu must escape to the right
+                // rather than rendering within the clipped overflow-hidden container.
+                className={`absolute ${
+                  collapsed ? 'left-full bottom-0 ml-2' : 'bottom-full left-0 mb-1'
+                } w-40 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl z-50`}
               >
                 <li role="none">
                   <NavLink

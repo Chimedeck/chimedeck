@@ -254,6 +254,98 @@ Tests covering desktop collapsible sidebar, icon-only rail, tooltip behavior, an
 
 ---
 
+---
+
+## Viewport Matrix
+
+The following table defines the expected sidebar/topbar behaviour at each canonical breakpoint. Tests should set the viewport before each row.
+
+| Viewport | Width | Desktop sidebar visible | Mobile topbar visible | Topbar height | Drawer available |
+|----------|-------|------------------------|----------------------|---------------|-----------------|
+| Mobile S | 375px | ❌ (hidden) | ✅ | 56px (h-14) | ✅ |
+| Mobile L | 425px | ❌ (hidden) | ✅ | 56px (h-14) | ✅ |
+| Tablet   | 768px | ✅ (md breakpoint) | ❌ (hidden) | 56px (h-14) | ❌ |
+| Laptop   | 1024px | ✅ | ❌ | 56px (h-14) | ❌ |
+| Desktop  | 1280px | ✅ | ❌ | 56px (h-14) | ❌ |
+| Wide     | 1920px | ✅ | ❌ | 56px (h-14) | ❌ |
+
+---
+
+## Scenario 22: Board page renders correctly with expanded desktop sidebar
+
+**Given** the viewport is desktop (≥ 768px) and the sidebar is expanded  
+**When** the user navigates to `/boards/:boardId`  
+**Then**:
+- The sidebar (`[data-testid="sidebar"]`) is visible with width `256px`
+- The board content area fills the remaining horizontal space (flex-1)
+- No horizontal scrollbar appears on the AppShell root
+- The board kanban canvas scrolls independently within the content area
+- No content is obscured behind the sidebar
+
+---
+
+## Scenario 23: Board page renders correctly with collapsed desktop sidebar
+
+**Given** the viewport is desktop (≥ 768px) and the sidebar is collapsed  
+**When** the user navigates to `/boards/:boardId`  
+**Then**:
+- The sidebar (`[data-testid="sidebar"]`) has width `64px`
+- The board content area gains the extra `192px` of horizontal space
+- No layout overflow or horizontal scroll appears at the AppShell level
+- Board column labels and cards are still fully readable
+
+---
+
+## Scenario 24: Card modal opens correctly with collapsed sidebar
+
+**Given** the desktop sidebar is collapsed  
+**And** the user is on a board page  
+**When** the user clicks on a card (or navigates to `?card=:id`)  
+**Then**:
+- The card modal opens and is centred over the content area (not obscured by the sidebar)
+- The sidebar remains collapsed in the background
+- The modal overlay covers the full viewport
+
+---
+
+## Scenario 25: Board page scrolls correctly on mobile (drawer closed)
+
+**Given** the viewport is mobile (375px wide)  
+**And** the mobile drawer is closed  
+**When** the user navigates to `/boards/:boardId`  
+**Then**:
+- The board takes the full viewport width
+- The kanban canvas can scroll horizontally within the main content area
+- The topbar remains fixed at the top (does not scroll away)
+
+---
+
+## Scenario 26: TopBar is consistent across board and card pages
+
+**Given** the user visits the board page and then opens a card modal  
+**When** inspecting the topbar on each page  
+**Then**:
+- The topbar height is `56px` (`h-14`) on both desktop and mobile
+- The topbar border-bottom is visible on both pages
+- `[data-testid="mobile-sidebar-toggle"]` is present on mobile for both board and card pages
+
+---
+
+## Regression Checklist (Board/Card Pages)
+
+| # | Regression scenario | Expected | Selectors / checks |
+|---|---------------------|----------|--------------------|
+| R-1 | Sidebar toggles do not cause board page to full-refresh | Page state preserved after toggle | Board data still loaded, no network refetch |
+| R-2 | Collapsing sidebar does not overflow the outer `flex h-screen` container | No horizontal scrollbar on `<html>` or `<body>` | `document.documentElement.scrollWidth <= window.innerWidth` |
+| R-3 | Desktop topbar stays at top during board column horizontal scroll | Topbar fixed, does not scroll | `[data-testid="topbar"]` remains at `top: 0` |
+| R-4 | Card modal is accessible by keyboard when drawer is closed | Tab cycles within modal | Focus stays inside modal dialog while open |
+| R-5 | Closing mobile drawer restores page scroll position | No scroll jump | `window.scrollY` unchanged after drawer close |
+| R-6 | User menu in collapsed sidebar appears to the right (not clipped) | Menu visible outside sidebar | `[role="menu"]` has `getBoundingClientRect().left >= 64` when sidebar collapsed |
+| R-7 | Sidebar transition does not leave ghost whitespace | No gap between sidebar and content | Layout box model consistent before/after transition |
+| R-8 | Focus trap in drawer does not bleed into board canvas | Tab does not escape drawer | All focusable elements in board out of reach while drawer open |
+
+---
+
 ## Acceptance Criteria Checklist
 
 | ID | Criterion | Status |
@@ -277,3 +369,8 @@ Tests covering desktop collapsible sidebar, icon-only rail, tooltip behavior, an
 | AC-17 | Mobile drawer is always fully expanded (no collapse rail) | ✅ Done |
 | AC-18 | `localStorage` does not influence mobile drawer open state | ✅ Done |
 | AC-19 | Escape does not affect desktop sidebar | ✅ Done |
+| AC-20 | Topbar height is `56px` (h-14) on both mobile and desktop | ✅ Done |
+| AC-21 | TopBar extracted to `src/layout/TopBar.tsx`; AppShell uses it | ✅ Done |
+| AC-22 | User menu dropdown escapes sidebar overflow-hidden when collapsed | ✅ Done |
+| AC-23 | Main content wrapper has `min-w-0` to prevent flex overflow | ✅ Done |
+| AC-24 | Board/card pages render correctly in all viewport matrix rows | ✅ Done |

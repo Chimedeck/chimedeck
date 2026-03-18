@@ -1,6 +1,5 @@
 // AppShell — sidebar + main content area wrapper used by all private pages.
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Bars3Icon } from '@heroicons/react/24/outline';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -9,9 +8,8 @@ import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import { fetchProfileThunk } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import { fetchFeatureFlagsThunk } from '~/slices/featureFlagsSlice';
 import Sidebar from '~/layout/Sidebar';
-import { ThemeToggle } from '~/common/components/ThemeToggle';
+import TopBar from '~/layout/TopBar';
 import CommandPalette from '~/common/components/CommandPalette';
-import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
 import InviteExternalUserModal from '~/extensions/AdminInvite/InviteExternalUserModal';
 import type { SearchResult } from '~/extensions/Search/api';
 
@@ -137,32 +135,9 @@ export default function AppShell() {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile topbar with hamburger */}
-        <div className="flex h-14 shrink-0 items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 md:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="mr-3 rounded p-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
-            aria-label="Open sidebar"
-            aria-expanded={sidebarOpen}
-            aria-controls="mobile-sidebar"
-            data-testid="mobile-sidebar-toggle"
-          >
-            <Bars3Icon className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <span className="text-base font-bold text-slate-900 dark:text-white">HoriFlow</span>
-          <div className="ml-auto flex items-center gap-1">
-            <ThemeToggle />
-            <NotificationContainer />
-          </div>
-        </div>
-
-        {/* Desktop topbar — notification bell */}
-        <div className="hidden md:flex h-12 shrink-0 items-center justify-end gap-1 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4">
-          <ThemeToggle />
-          <NotificationContainer />
-        </div>
+      {/* Main content — min-w-0 prevents flex children overflowing on narrow viewports */}
+      <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+        <TopBar onOpenDrawer={() => setSidebarOpen(true)} drawerOpen={sidebarOpen} />
 
         <main className="flex-1 overflow-auto">
           <Outlet />
