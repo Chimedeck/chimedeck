@@ -19,7 +19,7 @@ import { handleGetMeStarredBoards } from './me-starred-boards';
 import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
 import { handleGetArchivedCards } from './archived-cards';
-import { handleInviteGuest, handleRevokeGuest, handleListGuests } from './guests/index';
+import { handleInviteGuest, handleRevokeGuest, handleListGuests, handleUpdateGuestType } from './guests/index';
 import { handleGetWorkspaceBoards } from './workspaceBoards';
 import { handleUploadBackground } from './uploadBackground';
 import { handleDeleteBackground } from './deleteBackground';
@@ -123,9 +123,12 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (sub === '/guests' && req.method === 'GET') return handleListGuests(req, boardId);
 
     // DELETE /api/v1/boards/:id/guests/:userId — revoke guest access
-    const guestRevokeMatch = sub.match(/^\/guests\/([^/]+)$/);
-    if (guestRevokeMatch && req.method === 'DELETE') {
-      return handleRevokeGuest(req, boardId, guestRevokeMatch[1] as string);
+    // PATCH /api/v1/boards/:id/guests/:userId — update guest type (ADMIN+ only)
+    const guestUserMatch = sub.match(/^\/guests\/([^/]+)$/);
+    if (guestUserMatch) {
+      const targetUserId = guestUserMatch[1] as string;
+      if (req.method === 'DELETE') return handleRevokeGuest(req, boardId, targetUserId);
+      if (req.method === 'PATCH') return handleUpdateGuestType(req, boardId, targetUserId);
     }
 
     // GET /api/v1/boards/:id/workspace/boards — list all ACTIVE boards in the same workspace

@@ -18,9 +18,11 @@ import {
   type WorkspaceScopedRequest,
   type Role,
 } from './permissionManager';
-import type { BoardVisibility } from '../extensions/board/types';
+import type { BoardVisibility, GuestType } from '../extensions/board/types';
 
 export interface BoardVisibilityScopedRequest extends WorkspaceScopedRequest {
+  // Set when the authenticated caller is a GUEST; reflects their sub-type on this board.
+  guestType?: GuestType;
   board?: {
     id: string;
     workspace_id: string;
@@ -88,6 +90,8 @@ export async function applyBoardVisibility(
         { status: 403 },
       );
     }
+    // Attach guestType so downstream handlers can enforce VIEWER vs MEMBER write gates.
+    (req as BoardVisibilityScopedRequest).guestType = (guestAccess.guest_type ?? 'VIEWER') as GuestType;
     return null;
   }
 
