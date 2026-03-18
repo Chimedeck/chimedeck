@@ -19,15 +19,28 @@ const MAX_CONCURRENT_PARTS = 3;
 
 interface UseAttachmentUploadOptions {
   cardId: string;
-  /** Called when an upload fully completes. Receives the server-confirmed Attachment payload. */
-  onSuccess?: (attachment: Attachment) => void;
+  /**
+   * When true, `upload()` queues files locally (phase: 'pending') without starting
+   * the actual upload. Call `flush()` to start all queued uploads.
+   * Use this in draft editors so files are only uploaded on submit.
+   */
+  deferred?: boolean;
+  /** Called when an upload fully completes. Receives the server-confirmed Attachment payload and the client-side tracking id. */
+  onSuccess?: (attachment: Attachment, clientId: string) => void;
   onError?: (clientId: string, message: string) => void;
 }
 
 interface UseAttachmentUploadReturn {
   uploads: UploadEntry[];
-  upload: (files: File[]) => void;
+  /** Starts uploads (or queues them when deferred=true) and returns the generated client-side ids for position tracking. */
+  upload: (files: File[]) => string[];
   removeEntry: (clientId: string) => void;
+  /**
+   * Only meaningful when `deferred: true`.
+   * Starts all queued (phase: 'pending') uploads and returns a Promise that
+   * resolves when every upload has reached 'done' or 'error'.
+   */
+  flush: () => Promise<void>;
 }
 
 // Upload a file via a single pre-signed PUT, reporting XHR progress.
@@ -90,12 +103,24 @@ async function runConcurrent<T>(
 
 export function useAttachmentUpload({
   cardId,
+  deferred = false,
   onSuccess,
   onError,
 }: UseAttachmentUploadOptions): UseAttachmentUploadReturn {
   const [uploads, setUploads] = useState<UploadEntry[]>([]);
   // Abort controllers keyed by clientId for cancellation support
   const abortRefs = useRef<Record<string, AbortController>>({});
+  // [why] Tracks entries queued in deferred mode so flush() can start them
+  // without needing to read state inside the Promise constructor (avoids deep nesting).
+  const deferredEntriesRef = useRef<UploadEntry[]>([]);
+  // [why] Used by flush() to resolve once all in-flight deferred uploads complete.
+  const flushResolverRef = useRef<{ remaining: number; resolve: () => void } | null>(null);
+  // [why] Use refs so inner async functions always invoke the latest callback version
+  // without needing to be re-created on every render (prevents stale closures).
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
   const updateEntry = useCallback((clientId: string, patch: Partial<UploadEntry>) => {
     setUploads((prev) =>
@@ -107,7 +132,7 @@ export function useAttachmentUpload({
     (files: File[]) => {
       const validFiles = files.filter((file) => {
         if (file.size > config.maxAttachmentSizeBytes) {
-          onError?.('', `"${file.name}" exceeds the ${config.maxAttachmentSizeBytes / 1024 / 1024} MB size limit`);
+          onErrorRef.current?.('', `"${file.name}" exceeds the ${config.maxAttachmentSizeBytes / 1024 / 1024} MB size limit`);
           return false;
         }
         return true;
@@ -116,7 +141,8 @@ export function useAttachmentUpload({
       const newEntries: UploadEntry[] = validFiles.map((file) => ({
         clientId: uuidv4(),
         file,
-        phase: 'requesting-url',
+        // [why] In deferred mode entries sit as 'pending' until flush() is called.
+        phase: deferred ? 'pending' : 'requesting-url',
         progress: 0,
         error: null,
         attachmentId: null,
@@ -124,13 +150,45 @@ export function useAttachmentUpload({
 
       setUploads((prev) => [...prev, ...newEntries]);
 
-      for (const entry of newEntries) {
-        void uploadFile(entry);
+      if (deferred) {
+        deferredEntriesRef.current = [...deferredEntriesRef.current, ...newEntries];
+      } else {
+        for (const entry of newEntries) {
+          void uploadFile(entry);
+        }
       }
+
+      return newEntries.map((e) => e.clientId);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cardId],
+    [cardId, deferred],
   );
+
+  // [why] flush() starts all 'pending' entries (deferred mode) and returns a
+  // Promise that resolves once every upload reaches 'done' or 'error'. This lets
+  // submit handlers await all uploads before sending the comment content.
+  const flush = useCallback((): Promise<void> => {
+    const pendingEntries = deferredEntriesRef.current;
+    deferredEntriesRef.current = [];
+    if (pendingEntries.length === 0) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      flushResolverRef.current = { remaining: pendingEntries.length, resolve };
+      for (const entry of pendingEntries) {
+        void uploadFile(entry);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function notifyFlushComplete() {
+    const resolver = flushResolverRef.current;
+    if (!resolver) return;
+    resolver.remaining -= 1;
+    if (resolver.remaining <= 0) {
+      resolver.resolve();
+      flushResolverRef.current = null;
+    }
+  }
 
   async function uploadFile(entry: UploadEntry): Promise<void> {
     const { clientId, file } = entry;
@@ -147,9 +205,11 @@ export function useAttachmentUpload({
       if (ac.signal.aborted) return;
       const msg = err instanceof Error ? err.message : 'Upload failed';
       updateEntry(clientId, { phase: 'error', error: msg });
-      onError?.(clientId, msg);
+      onErrorRef.current?.(clientId, msg);
     } finally {
       delete abortRefs.current[clientId];
+      // [why] Notify any active flush() Promise that one more upload has settled.
+      notifyFlushComplete();
     }
   }
 
@@ -185,7 +245,7 @@ export function useAttachmentUpload({
     });
 
     updateEntry(clientId, { phase: 'done', attachmentId: attachment.id });
-    onSuccess?.(attachment);
+    onSuccessRef.current?.(attachment, clientId);
   }
 
   async function doMultipartUpload(
@@ -257,7 +317,7 @@ export function useAttachmentUpload({
     });
 
     updateEntry(clientId, { phase: 'done', attachmentId: attachment.id });
-    onSuccess?.(attachment);
+    onSuccessRef.current?.(attachment, clientId);
   }
 
   const removeEntry = useCallback((clientId: string) => {
@@ -265,5 +325,5 @@ export function useAttachmentUpload({
     setUploads((prev) => prev.filter((e) => e.clientId !== clientId));
   }, []);
 
-  return { uploads, upload, removeEntry };
+  return { uploads, upload, removeEntry, flush };
 }

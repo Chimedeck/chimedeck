@@ -9,10 +9,7 @@
 //   - status that drives the footer UI
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getDraft, saveDraft, deleteDraft } from '../storage';
-import { listServerDrafts, upsertServerDraft } from '../api';
-import { reconcileDraftForType } from '../reconcile';
 import { messageQueue } from '~/extensions/Realtime/client/messageQueue';
-import { socket } from '~/extensions/Realtime/client/socket';
 
 export type DraftStatus =
   | 'idle'
@@ -65,8 +62,6 @@ export interface UseOfflineDescriptionDraftResult {
 
 // Debounce delay for local IndexedDB persistence
 const LOCAL_SAVE_DEBOUNCE_MS = 800;
-// Debounce delay for background server sync
-const SERVER_SYNC_DEBOUNCE_MS = 3_000;
 
 export function useOfflineDescriptionDraft({
   cardId,
@@ -87,7 +82,6 @@ export function useOfflineDescriptionDraft({
   const latestContentRef = useRef<string>('');
 
   const localSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const serverSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ---------- Helpers ----------
 
@@ -110,29 +104,6 @@ export function useOfflineDescriptionDraft({
     [cardId, userId, workspaceId],
   );
 
-  const syncToServer = useCallback(
-    async (markdown: string) => {
-      if (!cardId || !token) return;
-      setDraftStatus('syncing');
-      try {
-        await upsertServerDraft({
-          cardId,
-          draftType: 'description',
-          payload: {
-            content_markdown: markdown,
-            intent: 'editing',
-            client_updated_at: new Date().toISOString(),
-          },
-          token,
-        });
-        setDraftStatus('synced');
-      } catch {
-        setDraftStatus('sync_failed');
-      }
-    },
-    [cardId, token],
-  );
-
   // ---------- Restore draft on card open ----------
 
   useEffect(() => {
@@ -146,60 +117,10 @@ export function useOfflineDescriptionDraft({
     let cancelled = false;
 
     const restore = async () => {
-      // 1. Immediately check IndexedDB (fast, works offline)
       const local = await getDraft({ userId, workspaceId, cardId, draftType: 'description' });
 
       if (cancelled) return;
 
-      // 2. If online, also fetch server snapshot and reconcile (cross-device continuity)
-      if (socket.isConnected && token) {
-        try {
-          const serverDrafts = await listServerDrafts({ cardId, token });
-          if (cancelled) return;
-          const result = reconcileDraftForType({ local, serverDrafts, draftType: 'description' });
-
-          if (result.source !== 'none' && result.contentMarkdown !== currentDescription) {
-            setRestoredDraft(result.contentMarkdown);
-            // If server had a newer draft, back-sync to local IndexedDB
-            if (result.source === 'server' && result.contentMarkdown) {
-              void saveDraft({
-                userId,
-                workspaceId,
-                cardId,
-                draftType: 'description',
-                contentMarkdown: result.contentMarkdown,
-                intent: result.intent ?? 'editing',
-                updatedAt: result.updatedAt ?? new Date().toISOString(),
-              });
-            }
-
-            // [why] If local lost and had a save_pending intent, the user's offline
-            // save was overwritten by a newer server draft. Mark as sync_failed so
-            // the UI can show "Retry Save" (re-enqueue the PATCH with current content).
-            if (result.loserPendingIntent === 'save_pending') {
-              setDraftStatus('sync_failed');
-              setIsSavePending(true);
-            } else {
-              const winnerIntent = result.intent;
-              setIsSavePending(winnerIntent === 'save_pending');
-              setDraftStatus(
-                winnerIntent === 'save_pending' ? 'will_sync_when_online'
-                  : result.source === 'server' ? 'synced'
-                  : 'saved_local',
-              );
-            }
-          } else {
-            setRestoredDraft(null);
-            setDraftStatus('idle');
-            setIsSavePending(false);
-          }
-          return;
-        } catch {
-          // Server fetch failed — fall through to local-only restore
-        }
-      }
-
-      // 3. Local-only restore (offline or server unreachable)
       if (local && local.contentMarkdown !== currentDescription) {
         setRestoredDraft(local.contentMarkdown);
         const savePending = local.intent === 'save_pending';
@@ -234,17 +155,8 @@ export function useOfflineDescriptionDraft({
         void saveLocal(latestContentRef.current);
       }, LOCAL_SAVE_DEBOUNCE_MS);
 
-      // Debounce server sync (only when online)
-      if (socket.isConnected && token) {
-        if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
-        serverSyncTimer.current = setTimeout(() => {
-          void syncToServer(latestContentRef.current);
-        }, SERVER_SYNC_DEBOUNCE_MS);
-      } else {
-        setDraftStatus('will_sync_when_online');
-      }
     },
-    [isReady, token, saveLocal, syncToServer],
+    [isReady, saveLocal],
   );
 
   // ---------- Offline save intent ----------
@@ -292,59 +204,41 @@ export function useOfflineDescriptionDraft({
   const clearDraft = useCallback(() => {
     if (!cardId || !userId || !workspaceId) return;
 
-    // Cancel pending timers
     if (localSaveTimer.current) clearTimeout(localSaveTimer.current);
-    if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
 
     void deleteDraft({ userId, workspaceId, cardId, draftType: 'description' });
-    if (token) {
-      void (async () => {
-        try {
-          const { deleteServerDraft } = await import('../api');
-          await deleteServerDraft({ cardId, draftType: 'description', token });
-        } catch {
-          // Best-effort — missing draft on server is not an error
-        }
-      })();
-    }
     setRestoredDraft(null);
     setIsSavePending(false);
     setDraftStatus('idle');
-  }, [cardId, userId, workspaceId, token]);
+  }, [cardId, userId, workspaceId]);
 
-  // ---------- Retry failed sync ----------
+  // ---------- Retry ----------
 
   const retrySync = useCallback(
     (markdown: string) => {
-      if (!cardId || !token) return;
-      // [why] If the draft has save_pending intent, re-enqueue the PATCH instead of
-      // retrying the background draft PUT — the user wants to actually save, not just sync.
-      if (isSavePending && userId && workspaceId) {
-        const mutationId = crypto.randomUUID();
-        void saveDraft({
-          userId,
-          workspaceId,
-          cardId,
-          draftType: 'description',
-          contentMarkdown: markdown,
-          intent: 'save_pending',
-          updatedAt: new Date().toISOString(),
-        });
-        messageQueue.enqueue({
-          id: mutationId,
-          boardId,
-          method: 'PATCH',
-          url: `/api/v1/cards/${cardId}`,
-          body: { description: markdown },
-          enqueuedAt: Date.now(),
-          meta: { draftType: 'description', cardId, userId, workspaceId },
-        });
-        setDraftStatus('will_sync_when_online');
-        return;
-      }
-      void syncToServer(markdown);
+      if (!isSavePending || !cardId || !userId || !workspaceId) return;
+      const mutationId = crypto.randomUUID();
+      void saveDraft({
+        userId,
+        workspaceId,
+        cardId,
+        draftType: 'description',
+        contentMarkdown: markdown,
+        intent: 'save_pending',
+        updatedAt: new Date().toISOString(),
+      });
+      messageQueue.enqueue({
+        id: mutationId,
+        boardId,
+        method: 'PATCH',
+        url: `/api/v1/cards/${cardId}`,
+        body: { description: markdown },
+        enqueuedAt: Date.now(),
+        meta: { draftType: 'description', cardId, userId, workspaceId },
+      });
+      setDraftStatus('will_sync_when_online');
     },
-    [cardId, token, isSavePending, userId, workspaceId, boardId, syncToServer],
+    [cardId, isSavePending, userId, workspaceId, boardId],
   );
 
   // ---------- Discard draft ----------
@@ -353,29 +247,17 @@ export function useOfflineDescriptionDraft({
     if (!cardId || !userId || !workspaceId) return;
 
     if (localSaveTimer.current) clearTimeout(localSaveTimer.current);
-    if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
 
     void deleteDraft({ userId, workspaceId, cardId, draftType: 'description' });
-    if (token) {
-      void (async () => {
-        try {
-          const { deleteServerDraft } = await import('../api');
-          await deleteServerDraft({ cardId, draftType: 'description', token });
-        } catch {
-          // Best-effort
-        }
-      })();
-    }
     setRestoredDraft(null);
     setIsSavePending(false);
     setDraftStatus('idle');
-  }, [cardId, userId, workspaceId, token]);
+  }, [cardId, userId, workspaceId]);
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (localSaveTimer.current) clearTimeout(localSaveTimer.current);
-      if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
     };
   }, []);
 

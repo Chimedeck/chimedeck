@@ -8,13 +8,8 @@
 //   - boardId may be undefined (new comment editors don't always have it)
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getDraft, saveDraft, deleteDraft } from '../storage';
-import { listServerDrafts, upsertServerDraft } from '../api';
-import { reconcileDraftForType } from '../reconcile';
 import { messageQueue } from '~/extensions/Realtime/client/messageQueue';
-import { socket } from '~/extensions/Realtime/client/socket';
-import type { DraftStatus } from './useOfflineDescriptionDraft';
-
-export type { DraftStatus };
+export type { DraftStatus } from './useOfflineDescriptionDraft';
 
 export interface UseOfflineCommentDraftOptions {
   cardId: string | undefined;
@@ -54,7 +49,6 @@ export interface UseOfflineCommentDraftResult {
 }
 
 const LOCAL_SAVE_DEBOUNCE_MS = 800;
-const SERVER_SYNC_DEBOUNCE_MS = 3_000;
 
 export function useOfflineCommentDraft({
   cardId,
@@ -72,7 +66,6 @@ export function useOfflineCommentDraft({
   // Latest content ref — always current without recreating debounced callbacks
   const latestContentRef = useRef<string>('');
   const localSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const serverSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // [why] Stable idempotency key for the current submit_pending attempt.
   // Generated once per offline-submit; reused on retry so the server deduplicates.
@@ -99,29 +92,6 @@ export function useOfflineCommentDraft({
     [cardId, userId, workspaceId],
   );
 
-  const syncToServer = useCallback(
-    async (markdown: string) => {
-      if (!cardId || !token) return;
-      setDraftStatus('syncing');
-      try {
-        await upsertServerDraft({
-          cardId,
-          draftType: 'comment',
-          payload: {
-            content_markdown: markdown,
-            intent: 'editing',
-            client_updated_at: new Date().toISOString(),
-          },
-          token,
-        });
-        setDraftStatus('synced');
-      } catch {
-        setDraftStatus('sync_failed');
-      }
-    },
-    [cardId, token],
-  );
-
   // ---------- Restore draft on card open ----------
 
   useEffect(() => {
@@ -140,55 +110,7 @@ export function useOfflineCommentDraft({
 
       if (cancelled) return;
 
-      // Cross-device continuity: if online, fetch server snapshot and reconcile
-      if (socket.isConnected && token) {
-        try {
-          const serverDrafts = await listServerDrafts({ cardId, token });
-          if (cancelled) return;
-          const result = reconcileDraftForType({ local, serverDrafts, draftType: 'comment' });
-
-          if (result.source !== 'none' && result.contentMarkdown) {
-            setRestoredDraft(result.contentMarkdown);
-            if (result.source === 'server' && result.contentMarkdown) {
-              void saveDraft({
-                userId,
-                workspaceId,
-                cardId,
-                draftType: 'comment',
-                contentMarkdown: result.contentMarkdown,
-                intent: result.intent ?? 'editing',
-                updatedAt: result.updatedAt ?? new Date().toISOString(),
-              });
-            }
-
-            // [why] If local lost and had submit_pending, the user's queued post was
-            // overwritten by a newer server draft. Mark as sync_failed so the UI can
-            // show "Retry Post" to let the user re-queue the comment POST.
-            if (result.loserPendingIntent === 'submit_pending') {
-              setDraftStatus('sync_failed');
-              setIsSubmitPending(true);
-            } else {
-              const submitPending = result.intent === 'submit_pending';
-              setIsSubmitPending(submitPending);
-              setDraftStatus(
-                submitPending ? 'will_sync_when_online'
-                  : result.source === 'server' ? 'synced'
-                  : 'saved_local',
-              );
-            }
-          } else {
-            setRestoredDraft(null);
-            setDraftStatus('idle');
-            setIsSubmitPending(false);
-          }
-          return;
-        } catch {
-          // Server fetch failed — fall through to local-only restore
-        }
-      }
-
-      // Local-only restore (offline or server unreachable)
-      if (local && local.contentMarkdown) {
+      if (local?.contentMarkdown) {
         setRestoredDraft(local.contentMarkdown);
         const submitPending = local.intent === 'submit_pending';
         setIsSubmitPending(submitPending);
@@ -221,16 +143,8 @@ export function useOfflineCommentDraft({
         void saveLocal(latestContentRef.current);
       }, LOCAL_SAVE_DEBOUNCE_MS);
 
-      if (socket.isConnected && token) {
-        if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
-        serverSyncTimer.current = setTimeout(() => {
-          void syncToServer(latestContentRef.current);
-        }, SERVER_SYNC_DEBOUNCE_MS);
-      } else {
-        setDraftStatus('will_sync_when_online');
-      }
     },
-    [isReady, token, saveLocal, syncToServer],
+    [isReady, saveLocal],
   );
 
   // ---------- Offline submit intent ----------
@@ -284,62 +198,45 @@ export function useOfflineCommentDraft({
     if (!cardId || !userId || !workspaceId) return;
 
     if (localSaveTimer.current) clearTimeout(localSaveTimer.current);
-    if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
 
     idempotencyKeyRef.current = null;
 
     void deleteDraft({ userId, workspaceId, cardId, draftType: 'comment' });
-    if (token) {
-      void (async () => {
-        try {
-          const { deleteServerDraft } = await import('../api');
-          await deleteServerDraft({ cardId, draftType: 'comment', token });
-        } catch {
-          // Best-effort — missing draft on server is fine
-        }
-      })();
-    }
     setRestoredDraft(null);
     setIsSubmitPending(false);
     setDraftStatus('idle');
-  }, [cardId, userId, workspaceId, token]);
+  }, [cardId, userId, workspaceId]);
 
-  // ---------- Retry failed server draft sync ----------
+  // ---------- Retry ----------
 
   const retrySync = useCallback(
     (markdown: string) => {
-      if (!cardId || !token) return;
-      // [why] If the draft has submit_pending intent, re-enqueue the comment POST
-      // instead of retrying the background draft PUT — the user wants to post, not just sync.
-      if (isSubmitPending && userId && workspaceId && boardId) {
-        if (!idempotencyKeyRef.current) {
-          idempotencyKeyRef.current = crypto.randomUUID();
-        }
-        const idempotencyKey = idempotencyKeyRef.current;
-        void saveDraft({
-          userId,
-          workspaceId,
-          cardId,
-          draftType: 'comment',
-          contentMarkdown: markdown,
-          intent: 'submit_pending',
-          updatedAt: new Date().toISOString(),
-        });
-        messageQueue.enqueue({
-          id: idempotencyKey,
-          boardId,
-          method: 'POST',
-          url: `/api/v1/cards/${cardId}/comments`,
-          body: { content: markdown, idempotency_key: idempotencyKey },
-          enqueuedAt: Date.now(),
-          meta: { draftType: 'comment', cardId, userId, workspaceId },
-        });
-        setDraftStatus('will_sync_when_online');
-        return;
+      if (!isSubmitPending || !cardId || !userId || !workspaceId || !boardId) return;
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = crypto.randomUUID();
       }
-      void syncToServer(markdown);
+      const idempotencyKey = idempotencyKeyRef.current;
+      void saveDraft({
+        userId,
+        workspaceId,
+        cardId,
+        draftType: 'comment',
+        contentMarkdown: markdown,
+        intent: 'submit_pending',
+        updatedAt: new Date().toISOString(),
+      });
+      messageQueue.enqueue({
+        id: idempotencyKey,
+        boardId,
+        method: 'POST',
+        url: `/api/v1/cards/${cardId}/comments`,
+        body: { content: markdown, idempotency_key: idempotencyKey },
+        enqueuedAt: Date.now(),
+        meta: { draftType: 'comment', cardId, userId, workspaceId },
+      });
+      setDraftStatus('will_sync_when_online');
     },
-    [cardId, token, isSubmitPending, userId, workspaceId, boardId, syncToServer],
+    [cardId, isSubmitPending, userId, workspaceId, boardId],
   );
 
   // ---------- Discard draft ----------
@@ -348,31 +245,19 @@ export function useOfflineCommentDraft({
     if (!cardId || !userId || !workspaceId) return;
 
     if (localSaveTimer.current) clearTimeout(localSaveTimer.current);
-    if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
 
     idempotencyKeyRef.current = null;
 
     void deleteDraft({ userId, workspaceId, cardId, draftType: 'comment' });
-    if (token) {
-      void (async () => {
-        try {
-          const { deleteServerDraft } = await import('../api');
-          await deleteServerDraft({ cardId, draftType: 'comment', token });
-        } catch {
-          // Best-effort
-        }
-      })();
-    }
     setRestoredDraft(null);
     setIsSubmitPending(false);
     setDraftStatus('idle');
-  }, [cardId, userId, workspaceId, token]);
+  }, [cardId, userId, workspaceId]);
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (localSaveTimer.current) clearTimeout(localSaveTimer.current);
-      if (serverSyncTimer.current) clearTimeout(serverSyncTimer.current);
     };
   }, []);
 

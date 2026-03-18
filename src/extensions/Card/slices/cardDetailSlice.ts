@@ -15,6 +15,7 @@ export interface ActivityData {
   actor_id: string;
   actor_name: string | null;
   actor_email: string | null;
+  actor_avatar_url: string | null;
   payload: Record<string, unknown>;
   created_at: string;
 }

@@ -7,9 +7,21 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
+import type { Editor } from '@tiptap/react';
+import type { Attachment } from '~/extensions/Attachments/types';
+import InlineImage from '../extensions/InlineImage';
+import {
+  dehydrateCommentAttachmentMarkdown,
+  hasAttachmentPlaceholder,
+  hydrateCommentAttachmentMarkdown,
+  resolveAttachmentMarkdownUrl,
+  stripCommentAttachmentPlaceholders,
+} from '~/extensions/Comment/utils/attachmentMarkdown';
+import { CardAssetPicker } from './CardAssetPicker';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
+import { listAttachments } from '~/extensions/Attachments/api';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
 import {
   useOfflineCommentDraft,
@@ -21,6 +33,7 @@ import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDu
 interface Props {
   boardId?: string;
   cardId?: string;
+  availableAttachments?: Attachment[];
   initialValue?: string;
   placeholder?: string;
   onSubmit: (content: string) => Promise<void>;
@@ -41,9 +54,117 @@ function draftStatusLabel(status: DraftStatus): string | null {
   }
 }
 
+// @tiptap/markdown may omit custom image nodes in some serialization paths.
+// Ensure images in the current doc are present in the final markdown payload.
+function buildCommentMarkdown(editor: Editor, attachments: Attachment[]): string {
+  let markdown = editor.getMarkdown() || '';
+  const imageSnippets: string[] = [];
+
+  editor.state.doc.descendants((node) => {
+    if (node.type.name !== 'image') return;
+    const src = typeof node.attrs?.src === 'string' ? node.attrs.src : '';
+    if (!src) return;
+    const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt : '';
+    imageSnippets.push(`![${alt}](${src})`);
+  });
+
+  imageSnippets.forEach((snippet) => {
+    // Presence check by URL keeps this stable even if alt text changes.
+    const urlMatch = /\((.*)\)$/.exec(snippet);
+    const url = urlMatch?.[1] ?? '';
+    if (url && markdown.includes(url)) return;
+    markdown = markdown.trim().length > 0
+      ? `${markdown.trim()}\n\n${snippet}`
+      : snippet;
+  });
+
+  return dehydrateCommentAttachmentMarkdown(markdown, attachments);
+}
+
+function escapeMdLabel(value: string): string {
+  return value
+    .replaceAll('[', String.raw`\[`)
+    .replaceAll(']', String.raw`\]`);
+}
+
+function buildAttachmentSnippet({ name, url, isImage }: { name: string; url: string; isImage: boolean }): string {
+  const safeName = escapeMdLabel(name || 'attachment');
+  return isImage
+    ? `![${safeName}](${url}) `
+    : `[${safeName}](${url}) `;
+}
+
+function insertSnippetAt(editor: Editor, pos: number, snippet: string): void {
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(pos, snippet)
+    .setTextSelection(pos + snippet.length)
+    .run();
+}
+
+function buildBoardProps(boardId?: string): { boardId: string } | Record<string, never> {
+  return boardId ? { boardId } : {};
+}
+
+function getDraftStatusClass(status: DraftStatus): string {
+  if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
+  if (status === 'synced') return 'text-green-500 dark:text-green-400';
+  return 'text-gray-400 dark:text-slate-500';
+}
+
+function resolvePendingHydratedContent(pendingContent: string | null, attachments: Attachment[]): string | null {
+  if (!pendingContent) return null;
+  if (hasAttachmentPlaceholder(pendingContent) && attachments.length === 0) return null;
+  return hydrateCommentAttachmentMarkdown(pendingContent, attachments);
+}
+
+function getInitialEditorContent(initialValue: string, attachments: Attachment[]): string {
+  if (hasAttachmentPlaceholder(initialValue) && attachments.length === 0) {
+    return stripCommentAttachmentPlaceholders(initialValue);
+  }
+  return hydrateCommentAttachmentMarkdown(initialValue, attachments);
+}
+
+function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): void {
+  const isImage = attachment.content_type?.startsWith('image/') ?? false;
+  const url = resolveAttachmentMarkdownUrl(attachment, isImage);
+  if (!url) return;
+
+  if (isImage) {
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(pos, [
+        {
+          type: 'image',
+          attrs: {
+            src: url,
+            alt: attachment.name,
+          },
+        },
+        {
+          type: 'text',
+          text: ' ',
+        },
+      ])
+      .setTextSelection(pos + 2)
+      .run();
+    return;
+  }
+
+  const snippet = buildAttachmentSnippet({
+    name: attachment.name,
+    url,
+    isImage,
+  });
+  insertSnippetAt(editor, pos, snippet);
+}
+
 const CommentEditor = ({
   boardId,
   cardId,
+  availableAttachments = [],
   initialValue = '',
   placeholder = 'Write a comment…',
   onSubmit,
@@ -53,6 +174,8 @@ const CommentEditor = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [cardAttachments, setCardAttachments] = useState<Attachment[]>(availableAttachments);
 
   // Auth + workspace context needed by the offline draft hook
   const currentUser = useSelector(selectCurrentUser);
@@ -61,11 +184,80 @@ const CommentEditor = ({
 
   // File picker ref for attachment uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // [why] Track the editor position at the moment each upload was initiated so the
+  // completed image/link can be inserted at the right cursor location, even when
+  // the user kept typing while the upload was in-flight.
+  const insertPosMap = useRef<Map<string, number>>(new Map());
+  // [why] Refs break the circular dep: useAttachmentUpload onSuccess needs the editor,
+  // and useEditor handleDrop needs uploadFiles. Refs are updated each render so
+  // async callbacks always read the latest instance without stale-closure issues.
+  const editorRef = useRef<Editor | null>(null);
+  const uploadFilesRef = useRef<((files: File[]) => string[]) | null>(null);
+  const cardAttachmentsRef = useRef<Attachment[]>(availableAttachments);
+  const pendingHydratedContentRef = useRef<string | null>(initialValue || null);
 
-  // Attachment upload — only active when a cardId is provided
-  const { uploads, upload: uploadFiles, removeEntry } = useAttachmentUpload({
+  const replaceCardAttachments = useCallback((attachments: Attachment[]) => {
+    cardAttachmentsRef.current = attachments;
+    setCardAttachments(attachments);
+  }, []);
+
+  const prependCardAttachment = useCallback((attachment: Attachment) => {
+    setCardAttachments((prev) => {
+      const next = [attachment, ...prev.filter((entry) => entry.id !== attachment.id)];
+      cardAttachmentsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    replaceCardAttachments(availableAttachments);
+  }, [availableAttachments, replaceCardAttachments]);
+
+  // Attachment upload — only active when a cardId is provided.
+  // [why] deferred=true keeps uploads queueable, while explicit flushes let us
+  // upload immediately from picker/file-input flows when needed.
+  const { uploads, upload: uploadFiles, removeEntry, flush: flushUploads } = useAttachmentUpload({
     cardId: cardId ?? '',
+    deferred: true,
+    onSuccess(attachment: Attachment, clientId: string) {
+      // Prepend the newly uploaded attachment so it appears immediately in the picker
+      prependCardAttachment(attachment);
+      const ed = editorRef.current;
+      if (!ed || ed.isDestroyed) return;
+      const savedPos = insertPosMap.current.get(clientId);
+      insertPosMap.current.delete(clientId);
+      const docSize = ed.state.doc.content.size;
+      // Clamp to valid range in case the document shrank while uploading
+      const insertAt = savedPos === undefined ? ed.state.selection.anchor : Math.min(savedPos, docSize);
+      insertAttachmentAt(ed, attachment, insertAt);
+    },
   });
+  // Keep the ref current so the async onSuccess always reads the live editor
+  uploadFilesRef.current = uploadFiles;
+
+  // Load card attachments once (and refresh after a new upload succeeds)
+  const loadCardAttachments = useCallback(async () => {
+    if (!cardId) return;
+    try {
+      const res = await listAttachments({ cardId });
+      const sorted = [...res.data].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+      setCardAttachments(sorted);
+    } catch {
+      // non-critical — picker will show empty list
+    }
+  }, [cardId, replaceCardAttachments]);
+
+  useEffect(() => {
+    void loadCardAttachments();
+  }, [loadCardAttachments]);
+
+  // Keep picker data fresh when opening so it reflects uploads made elsewhere in the card.
+  useEffect(() => {
+    if (!assetPickerOpen) return;
+    void loadCardAttachments();
+  }, [assetPickerOpen, loadCardAttachments]);
 
   // Offline draft integration
   const {
@@ -86,27 +278,61 @@ const CommentEditor = ({
   });
 
   const editor = useEditor({
-    extensions: [StarterKit, Markdown],
-    content: initialValue || '',
+    extensions: [
+      StarterKit,
+      Markdown,
+      // [why] InlineImage now includes markdown parse/render support.
+      InlineImage,
+    ],
+    content: getInitialEditorContent(initialValue || '', cardAttachmentsRef.current),
     contentType: 'markdown',
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      notifyDraftChange(editor.getMarkdown());
+      notifyDraftChange(buildCommentMarkdown(editor, cardAttachmentsRef.current));
+    },
+    editorProps: {
+      // [why] Intercept file drops directly onto the editor so images dropped
+      // anywhere in the text area are uploaded and inserted at the drop position.
+      handleDrop(view, event, _slice, moved) {
+        if (moved || !event.dataTransfer) return false;
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length === 0) return false;
+        event.preventDefault();
+        const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+        const pos = coords?.pos ?? view.state.doc.content.size;
+        // [why] Read from ref so this closure always calls the current uploadFiles
+        // even though handleDrop was created before uploadFiles was first assigned.
+        const ids = uploadFilesRef.current?.(files) ?? [];
+        ids.forEach((id) => insertPosMap.current.set(id, pos));
+        return true;
+      },
     },
   });
+  // Keep editorRef current so the async onSuccess always reads the live editor
+  editorRef.current = editor;
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const hydratedContent = resolvePendingHydratedContent(
+      pendingHydratedContentRef.current,
+      cardAttachmentsRef.current,
+    );
+    if (!hydratedContent) return;
+    editor.commands.setContent(hydratedContent, { contentType: 'markdown' });
+    pendingHydratedContentRef.current = null;
+  }, [editor, cardAttachments, restoredDraft]);
 
   // Restore offline draft into editor once it's loaded (async, after initial render)
   useEffect(() => {
-    if (restoredDraft && editor && !editor.isDestroyed) {
-      editor.commands.setContent(restoredDraft, { contentType: 'markdown' });
-    }
+    if (!restoredDraft) return;
+    pendingHydratedContentRef.current = restoredDraft;
   // [why] Only restore when the draft first becomes available — not on every render
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoredDraft]);
 
   const handleSubmit = useCallback(async () => {
     if (!editor) return;
-    const trimmed = editor.getMarkdown().trim();
+    const trimmed = buildCommentMarkdown(editor, cardAttachmentsRef.current).trim();
     if (!trimmed) {
       setError('Comment cannot be empty');
       return;
@@ -117,10 +343,14 @@ const CommentEditor = ({
     const handledOffline = handleSubmitIntent(trimmed);
     if (handledOffline) return;
 
-    // Online path: submit normally then clear the draft
+    // Online path: flush any queued (deferred) attachments first, then submit.
     setSubmitting(true);
     try {
-      await onSubmit(trimmed);
+      // [why] Deferred uploads haven't started yet — flush() triggers them all and
+      // waits for completion so onSuccess inserts the attachment URLs into the editor
+      // before we read the final markdown to post.
+      await flushUploads();
+      await onSubmit(buildCommentMarkdown(editor, cardAttachmentsRef.current).trim());
       editor.commands.clearContent();
       clearDraft();
     } catch {
@@ -128,7 +358,7 @@ const CommentEditor = ({
     } finally {
       setSubmitting(false);
     }
-  }, [editor, onSubmit, handleSubmitIntent, clearDraft]);
+  }, [editor, onSubmit, handleSubmitIntent, clearDraft, flushUploads]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -144,22 +374,48 @@ const CommentEditor = ({
     [handleSubmit, onCancel],
   );
 
-  // Open file picker for attachment (only when cardId is available)
+  // Toggle the asset picker (file upload + existing card assets)
   const handleAttach = useCallback(() => {
     if (!cardId) return;
-    fileInputRef.current?.click();
-  }, [cardId]);
+    // Focus editor to lock in the cursor position before the picker opens
+    if (editor && !editor.isDestroyed) {
+      editor.commands.focus();
+    }
+    setAssetPickerOpen((prev) => !prev);
+  }, [cardId, editor]);
+
+  // Insert an existing card attachment at the current cursor position
+  const handleInsertExisting = useCallback(
+    (attachment: Attachment) => {
+      const ed = editorRef.current;
+      if (!ed || ed.isDestroyed) return;
+      insertAttachmentAt(ed, attachment, ed.state.selection.anchor);
+    },
+    [],
+  );
 
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? []);
-      if (files.length > 0) uploadFiles(files);
+      if (files.length > 0) {
+        const pos = editor && !editor.isDestroyed
+          ? editor.state.selection.anchor
+          : 0;
+        const ids = uploadFiles(files);
+        ids.forEach((id) => insertPosMap.current.set(id, pos));
+
+        // Start deferred uploads right away so newly uploaded files show up in
+        // the insert-attachment picker without waiting for comment submit.
+        void flushUploads()
+          .then(() => loadCardAttachments())
+          .catch(() => setError('Failed to upload attachment'));
+      }
       e.target.value = '';
     },
-    [uploadFiles],
+    [editor, uploadFiles, flushUploads, loadCardAttachments],
   );
 
-  const currentMarkdown = editor?.getMarkdown() ?? '';
+  const currentMarkdown = editor ? buildCommentMarkdown(editor, cardAttachmentsRef.current) : '';
 
   return (
     <div className="flex flex-col gap-2">
@@ -197,16 +453,27 @@ const CommentEditor = ({
       )}
 
       <div
-        className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"
+        className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
         onKeyDown={handleKeyDown}
       >
         {/* Single-line toolbar — never wraps */}
-        <OneLineToolbar
-          editor={editor}
-          overflowOpen={overflowOpen}
-          onToggleOverflow={() => setOverflowOpen((o) => !o)}
-          {...(cardId ? { onAttach: handleAttach } : {})}
-        />
+        {/* [why] relative wrapper anchors the CardAssetPicker popover to the toolbar row */}
+        <div className="relative">
+          <OneLineToolbar
+            editor={editor}
+            overflowOpen={overflowOpen}
+            onToggleOverflow={() => setOverflowOpen((o) => !o)}
+            {...(cardId ? { onAttach: handleAttach } : {})}
+          />
+          {assetPickerOpen && cardId && (
+            <CardAssetPicker
+              attachments={cardAttachments}
+              onUploadNew={() => fileInputRef.current?.click()}
+              onInsert={handleInsertExisting}
+              onClose={() => setAssetPickerOpen(false)}
+            />
+          )}
+        </div>
         <EditorContent
           editor={editor}
           aria-label="Comment text"
@@ -263,15 +530,7 @@ const CommentEditor = ({
               </button>
             </>
           ) : (
-            <span
-              className={
-                draftStatus === 'will_sync_when_online'
-                  ? 'text-amber-500 dark:text-amber-400'
-                  : draftStatus === 'synced'
-                    ? 'text-green-500 dark:text-green-400'
-                    : 'text-gray-400 dark:text-slate-500'
-              }
-            >
+            <span className={getDraftStatusClass(draftStatus)}>
               {isSubmitPending && draftStatus === 'will_sync_when_online'
                 ? 'Will post when back online'
                 : draftStatusLabel(draftStatus)}

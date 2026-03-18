@@ -79,7 +79,12 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
           <p className="mt-0.5 text-[10px] text-green-600 dark:text-green-400">Uploaded</p>
         )}
 
-        {entry.phase !== 'error' && entry.phase !== 'done' && (
+        {/* [why] 'pending' means the file is queued locally and will upload on submit. */}
+        {entry.phase === 'pending' && (
+          <p className="mt-0.5 text-[10px] text-gray-400 dark:text-slate-500">Queued</p>
+        )}
+
+        {entry.phase !== 'error' && entry.phase !== 'done' && entry.phase !== 'pending' && (
           <div className="mt-1">
             <UploadProgressBar
               progress={entry.phase === 'uploading' ? entry.progress : null}
@@ -93,7 +98,7 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
       <button
         type="button"
         aria-label={`Cancel upload of ${entry.file.name}`}
-        title={entry.phase === 'error' || entry.phase === 'done' ? 'Dismiss' : 'Cancel upload'}
+        title={entry.phase === 'pending' ? 'Remove' : entry.phase === 'error' || entry.phase === 'done' ? 'Dismiss' : 'Cancel upload'}
         className="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
         onClick={() => onCancel(entry.clientId)}
       >

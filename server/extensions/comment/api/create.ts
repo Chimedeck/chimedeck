@@ -1,6 +1,7 @@
 // POST /api/v1/cards/:id/comments — add a comment; min role: MEMBER.
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
@@ -94,11 +95,13 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
         'comments.updated_at',
         db.raw("COALESCE(users.name, users.email) as author_name"),
         'users.email as author_email',
+        'users.avatar_url as author_avatar_url',
       )
       .first();
 
     if (existing) {
-      return Response.json({ data: existing }, { status: 201 });
+      const authorAvatarUrl = await resolveAvatarUrl({ avatarUrl: (existing as Record<string, unknown>).author_avatar_url as string | null ?? null });
+      return Response.json({ data: { ...existing, author_avatar_url: authorAvatarUrl } }, { status: 201 });
     }
   }
 
@@ -155,8 +158,12 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       'comments.updated_at',
       db.raw("COALESCE(users.name, users.email) as author_name"),
       'users.email as author_email',
+      'users.avatar_url as author_avatar_url',
     )
     .first();
+
+  const authorAvatarUrl = await resolveAvatarUrl({ avatarUrl: (comment as Record<string, unknown>).author_avatar_url as string | null ?? null });
+  const commentData = { ...comment, author_avatar_url: authorAvatarUrl };
 
   await Promise.all([
     dispatchEvent({
@@ -179,8 +186,8 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   // Broadcast WS event to board subscribers
   publisher.publish(
     board.id,
-    JSON.stringify({ type: 'comment_added', payload: { comment } }),
+    JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }),
   ).catch(() => {});
 
-  return Response.json({ data: comment }, { status: 201 });
+  return Response.json({ data: commentData }, { status: 201 });
 }

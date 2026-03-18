@@ -7,6 +7,7 @@ import CommentEditor from '~/extensions/Comment/components/CommentEditor';
 import { getActivityEventMeta } from '../../config/activityEventLabels';
 import { VISIBLE_ACTIVITY_EVENT_TYPES } from '../../config/activityEventsConfig';
 import { listAttachments } from '~/extensions/Attachments/api';
+import type { Attachment } from '~/extensions/Attachments/types';
 import type { ActivityData } from '../../slices/cardDetailSlice';
 import type { CommentData } from '../../api/cardDetail';
 
@@ -45,6 +46,10 @@ function getInitials(name: string | null | undefined, email: string): string {
   return source.slice(0, 2).toUpperCase();
 }
 
+function buildBoardProps(boardId?: string): { boardId: string } | Record<string, never> {
+  return boardId ? { boardId } : {};
+}
+
 type FeedItem =
   | { kind: 'comment'; ts: string; comment: Comment }
   | { kind: 'event'; ts: string; activity: ActivityData };
@@ -70,19 +75,26 @@ const ActivityFeed = ({
   onEditComment,
   onDeleteComment,
 }: Props) => {
-  // Map of attachmentId → { thumbnail_url, content_type } for inline previews
-  const [attachmentMap, setAttachmentMap] = useState<Map<string, { thumbnail_url: string | null; url: string | null; content_type: string | null }>>(new Map());
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   useEffect(() => {
-    const hasAttachmentEvents = activities.some((a) => a.action === 'attachment_added');
-    if (!hasAttachmentEvents) return;
     listAttachments({ cardId })
       .then(({ data }) => {
-        const map = new Map(data.map((a) => [a.id, { thumbnail_url: a.thumbnail_url, url: a.url, content_type: a.content_type }]));
-        setAttachmentMap(map);
+        setAttachments(data);
       })
       .catch(() => {});
-  }, [cardId, activities]);
+  }, [cardId]);
+
+  const attachmentMap = new Map(
+    attachments.map((attachment) => [
+      attachment.id,
+      {
+        thumbnail_url: attachment.thumbnail_url,
+        url: attachment.url,
+        content_type: attachment.content_type,
+      },
+    ]),
+  );
 
   const memberMap = new Map(boardMembers.map((m) => [m.id, m]));
 
@@ -106,8 +118,9 @@ const ActivityFeed = ({
       <h3 className="text-xs font-semibold uppercase text-gray-500">Activity</h3>
 
       <CommentEditor
-        {...(boardId !== undefined ? { boardId } : {})}
+        {...buildBoardProps(boardId)}
         cardId={cardId}
+        availableAttachments={attachments}
         placeholder="Add a comment…"
         onSubmit={onAddComment}
         submitLabel="Comment"
@@ -124,7 +137,8 @@ const ActivityFeed = ({
               <CommentItem
                 key={`comment-${item.comment.id}`}
                 comment={item.comment}
-                {...(boardId !== undefined ? { boardId } : {})}
+                {...buildBoardProps(boardId)}
+                attachments={attachments}
                 currentUserId={currentUserId}
                 onEdit={onEditComment}
                 onDelete={onDeleteComment}
@@ -152,15 +166,19 @@ const ActivityFeed = ({
           const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
           const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
           const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.url);
+          const actorAvatarUrl = activity.actor_avatar_url ?? null;
 
           return (
             <div key={`event-${activity.id}`} className="flex gap-3">
               {/* Avatar */}
               <div
-                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${color}`}
+                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`}
                 title={displayName}
               >
-                {initials}
+                {actorAvatarUrl
+                  ? <img src={actorAvatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
+                  : initials
+                }
               </div>
               {/* Body */}
               <div className="flex-1 min-w-0">
@@ -170,11 +188,17 @@ const ActivityFeed = ({
                   <span className="text-xs text-slate-600 flex-shrink-0">{relativeTime(activity.created_at)}</span>
                 </div>
                 {showThumbnail && (
-                  <img
-                    src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.url)!}
-                    alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
-                    className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover"
-                  />
+                  <a
+                    href={(attachmentInfo!.url ?? attachmentInfo!.thumbnail_url)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.url)!}
+                      alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
+                      className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
+                    />
+                  </a>
                 )}
               </div>
             </div>

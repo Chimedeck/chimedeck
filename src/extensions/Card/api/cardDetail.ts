@@ -172,6 +172,9 @@ export interface CommentData {
   deleted: boolean;
   created_at: string;
   updated_at: string;
+  author_name?: string | null;
+  author_email?: string | null;
+  author_avatar_url?: string | null;
 }
 
 export async function getCardComments({

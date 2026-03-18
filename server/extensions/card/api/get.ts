@@ -64,14 +64,15 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
       .orderBy('created_at', 'asc');
 
     const actorIds = [...new Set(rows.map((a) => a.actor_id))];
-    const actors = actorIds.length
-      ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email')
+    const rawActors = actorIds.length
+      ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email', 'avatar_url')
       : [];
-    const actorMap = new Map(actors.map((u) => [u.id, u]));
+    const resolvedActors = await resolveAvatarUrlsInCollection(rawActors);
+    const actorMap = new Map(resolvedActors.map((u) => [u.id, u]));
 
     activities = rows.map((a) => {
       const actor = actorMap.get(a.actor_id);
-      return { ...a, actor_name: actor?.name ?? null, actor_email: actor?.email ?? null };
+      return { ...a, actor_name: actor?.name ?? null, actor_email: actor?.email ?? null, actor_avatar_url: actor?.avatar_url ?? null };
     });
   }
 

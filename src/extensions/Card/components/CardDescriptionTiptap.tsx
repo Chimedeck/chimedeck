@@ -3,11 +3,23 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
+import type { Editor } from '@tiptap/react';
 import { marked } from 'marked';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from './OneLineToolbar';
+import type { Attachment } from '~/extensions/Attachments/types';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
+import { CardAssetPicker } from '~/extensions/Comment/components/CardAssetPicker';
+import { listAttachments } from '~/extensions/Attachments/api';
+import InlineImage from '~/extensions/Comment/extensions/InlineImage';
+import {
+  dehydrateCommentAttachmentMarkdown,
+  hasAttachmentPlaceholder,
+  hydrateCommentAttachmentMarkdown,
+  resolveAttachmentMarkdownUrl,
+  stripCommentAttachmentPlaceholders,
+} from '~/common/utils/attachmentMarkdown';
 import {
   useOfflineDescriptionDraft,
   type DraftStatus,
@@ -36,12 +48,155 @@ function draftStatusLabel(status: DraftStatus): string | null {
   }
 }
 
+function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): string {
+  let markdown = editor.getMarkdown() || '';
+  const imageSnippets: string[] = [];
+
+  editor.state.doc.descendants((node) => {
+    if (node.type.name !== 'image') return;
+    const src = typeof node.attrs?.src === 'string' ? node.attrs.src : '';
+    if (!src) return;
+    const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt : '';
+    imageSnippets.push(`![${alt}](${src})`);
+  });
+
+  imageSnippets.forEach((snippet) => {
+    const urlMatch = /\((.*)\)$/.exec(snippet);
+    const url = urlMatch?.[1] ?? '';
+    if (url && markdown.includes(url)) return;
+    markdown = markdown.trim().length > 0
+      ? `${markdown.trim()}\n\n${snippet}`
+      : snippet;
+  });
+
+  return dehydrateCommentAttachmentMarkdown(markdown, attachments);
+}
+
+function escapeMdLabel(value: string): string {
+  return value
+    .replaceAll('[', String.raw`\[`)
+    .replaceAll(']', String.raw`\]`);
+}
+
+function buildAttachmentSnippet({ name, url, isImage }: { name: string; url: string; isImage: boolean }): string {
+  const safeName = escapeMdLabel(name || 'attachment');
+  return isImage
+    ? `![${safeName}](${url}) `
+    : `[${safeName}](${url}) `;
+}
+
+function insertSnippetAt(editor: Editor, pos: number, snippet: string): void {
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(pos, snippet)
+    .setTextSelection(pos + snippet.length)
+    .run();
+}
+
+function resolvePendingHydratedContent(pendingContent: string | null, attachments: Attachment[]): string | null {
+  if (!pendingContent) return null;
+  if (hasAttachmentPlaceholder(pendingContent) && attachments.length === 0) return null;
+  return hydrateCommentAttachmentMarkdown(pendingContent, attachments);
+}
+
+function getInitialEditorContent(initialValue: string, attachments: Attachment[]): string {
+  if (hasAttachmentPlaceholder(initialValue) && attachments.length === 0) {
+    return stripCommentAttachmentPlaceholders(initialValue);
+  }
+  return hydrateCommentAttachmentMarkdown(initialValue, attachments);
+}
+
+function looksLikeHtmlContent(value: string): boolean {
+  return /<\/?[a-z][\w-]*(?:\s[^>]*)?>/i.test(value);
+}
+
+function buildEditorContentHtml(source: string, attachments: Attachment[]): string {
+  const initialContent = getInitialEditorContent(source, attachments);
+  if (!initialContent) return '';
+  if (looksLikeHtmlContent(initialContent)) return initialContent;
+  return marked.parse(initialContent) as string;
+}
+
+function setEditorContentFromSource(editor: Editor, source: string, attachments: Attachment[]): void {
+  const htmlContent = buildEditorContentHtml(source, attachments);
+  if (!htmlContent) {
+    editor.commands.clearContent();
+    return;
+  }
+  editor.commands.setContent(htmlContent);
+}
+
+function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): boolean {
+  const isImage = attachment.content_type?.startsWith('image/') ?? false;
+  const url = resolveAttachmentMarkdownUrl(attachment, isImage);
+  if (!url) return false;
+
+  if (isImage) {
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(pos, [
+        {
+          type: 'image',
+          attrs: {
+            src: url,
+            alt: attachment.name,
+          },
+        },
+        {
+          type: 'text',
+          text: ' ',
+        },
+      ])
+      .setTextSelection(pos + 2)
+      .run();
+    return true;
+  }
+
+  insertSnippetAt(
+    editor,
+    pos,
+    buildAttachmentSnippet({ name: attachment.name, url, isImage }),
+  );
+  return true;
+}
+
+function getDraftStatusClass(status: DraftStatus): string {
+  if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
+  if (status === 'synced') return 'text-green-500 dark:text-green-400';
+  return 'text-gray-400 dark:text-slate-500';
+}
+
+function buildDescriptionSaveMarkdown(
+  editMode: 'rich' | 'markdown',
+  editor: Editor | null,
+  draft: string,
+  attachments: Attachment[],
+): string {
+  if (editMode === 'rich' && editor) {
+    return buildDescriptionMarkdown(editor, attachments);
+  }
+
+  return dehydrateCommentAttachmentMarkdown(draft, attachments);
+}
+
+function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): string {
+  if (attachments.length > 0) {
+    return hydrateCommentAttachmentMarkdown(markdown, attachments);
+  }
+
+  return stripCommentAttachmentPlaceholders(markdown);
+}
+
 const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(description);
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
 
   // Auth + workspace context needed by the offline draft hook
   const currentUser = useSelector(selectCurrentUser);
@@ -50,11 +205,71 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   // File picker input ref for attachment uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const insertPosMap = useRef<Map<string, number>>(new Map());
+  const editorRef = useRef<Editor | null>(null);
+  const uploadFilesRef = useRef<((files: File[]) => string[]) | null>(null);
+  const cardAttachmentsRef = useRef<Attachment[]>([]);
+  const pendingHydratedContentRef = useRef<string | null>(description || null);
+  const pendingAttachmentInsertRef = useRef<Map<string, number>>(new Map());
 
-  // Attachment upload — only active when a cardId is provided
-  const { uploads, upload: uploadFiles, removeEntry } = useAttachmentUpload({
+  const replaceCardAttachments = useCallback((attachments: Attachment[]) => {
+    cardAttachmentsRef.current = attachments;
+    setCardAttachments(attachments);
+  }, []);
+
+  const prependCardAttachment = useCallback((attachment: Attachment) => {
+    setCardAttachments((prev) => {
+      const next = [attachment, ...prev.filter((entry) => entry.id !== attachment.id)];
+      cardAttachmentsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const loadCardAttachments = useCallback(async () => {
+    if (!cardId) {
+      replaceCardAttachments([]);
+      return;
+    }
+    try {
+      const res = await listAttachments({ cardId });
+      const sorted = [...res.data].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+      replaceCardAttachments(sorted);
+    } catch {
+      replaceCardAttachments([]);
+    }
+  }, [cardId, replaceCardAttachments]);
+
+  useEffect(() => {
+    void loadCardAttachments();
+  }, [loadCardAttachments]);
+
+  // Keep card attachments fresh when opening the picker.
+  useEffect(() => {
+    if (!assetPickerOpen) return;
+    void loadCardAttachments();
+  }, [assetPickerOpen, loadCardAttachments]);
+
+  // Attachment upload — only active when a cardId is provided.
+  const { uploads, upload: uploadFiles, removeEntry, flush: flushUploads } = useAttachmentUpload({
     cardId: cardId ?? '',
+    deferred: true,
+    onSuccess(attachment: Attachment, clientId: string) {
+      prependCardAttachment(attachment);
+      const ed = editorRef.current;
+      if (!ed || ed.isDestroyed) return;
+      const savedPos = insertPosMap.current.get(clientId);
+      insertPosMap.current.delete(clientId);
+      const docSize = ed.state.doc.content.size;
+      const insertAt = savedPos === undefined ? ed.state.selection.anchor : Math.min(savedPos, docSize);
+      if (insertAttachmentAt(ed, attachment, insertAt)) return;
+      // [why] Some fresh upload responses arrive before the card attachment URLs are
+      // hydrated. Retry once the follow-up attachment list fetch returns URLs.
+      pendingAttachmentInsertRef.current.set(attachment.id, insertAt);
+    },
   });
+  uploadFilesRef.current = uploadFiles;
 
   // Offline draft integration
   const {
@@ -77,17 +292,57 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   // Tiptap editor instance
   const editor = useEditor({
-    extensions: [StarterKit, Markdown],
-    content: description || '',
-    contentType: 'markdown',
+    extensions: [StarterKit, Markdown, InlineImage],
+    content: buildEditorContentHtml(description || '', cardAttachmentsRef.current),
     editable: editing && !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      const markdown = editor.getMarkdown();
+      if (!editor.isEditable) return;
+      const markdown = buildDescriptionMarkdown(editor, cardAttachmentsRef.current);
       setDraft(markdown);
       notifyDraftChange(markdown);
     },
+    editorProps: {
+      handleDrop(view, event, _slice, moved) {
+        if (moved || !event.dataTransfer) return false;
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length === 0) return false;
+        event.preventDefault();
+        const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+        const pos = coords?.pos ?? view.state.doc.content.size;
+        const ids = uploadFilesRef.current?.(files) ?? [];
+        ids.forEach((id) => insertPosMap.current.set(id, pos));
+        void flushUploads()
+          .then(() => loadCardAttachments())
+          .catch(() => {});
+        return true;
+      },
+    },
   });
+  editorRef.current = editor;
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const hydratedContent = resolvePendingHydratedContent(
+      pendingHydratedContentRef.current,
+      cardAttachmentsRef.current,
+    );
+    if (!hydratedContent) return;
+    setEditorContentFromSource(editor, hydratedContent, cardAttachmentsRef.current);
+    pendingHydratedContentRef.current = null;
+  }, [editor, cardAttachments, restoredDraft]);
+
+  useEffect(() => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed || pendingAttachmentInsertRef.current.size === 0) return;
+
+    pendingAttachmentInsertRef.current.forEach((pos, attachmentId) => {
+      const attachment = cardAttachmentsRef.current.find((entry) => entry.id === attachmentId);
+      if (!attachment) return;
+      if (!insertAttachmentAt(ed, attachment, Math.min(pos, ed.state.doc.content.size))) return;
+      pendingAttachmentInsertRef.current.delete(attachmentId);
+    });
+  }, [cardAttachments]);
 
   useEffect(() => {
     if (editor) {
@@ -101,13 +356,14 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     if (editor) {
       // [why] Prefer the restored offline draft over the saved description so the
       // user never loses work that hasn't been synced yet.
-      const startContent = restoredDraft ?? draft ?? description ?? '';
-      editor.commands.setContent(startContent, { contentType: 'markdown' });
+      const startContent = restoredDraft ?? description ?? '';
+      pendingHydratedContentRef.current = startContent;
+      setEditorContentFromSource(editor, startContent, cardAttachmentsRef.current);
       editor.commands.focus('end');
       if (restoredDraft) setDraft(restoredDraft);
     }
     setEditMode('rich');
-  }, [disabled, editor, draft, description, restoredDraft]);
+  }, [disabled, editor, description, restoredDraft]);
 
   const handleModeChange = useCallback(
     (mode: 'rich' | 'markdown') => {
@@ -117,11 +373,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       }
 
       if (mode === 'markdown' && editMode === 'rich') {
-        setDraft(editor.getMarkdown());
+        setDraft(buildDescriptionMarkdown(editor, cardAttachmentsRef.current));
       }
 
       if (mode === 'rich' && editMode === 'markdown') {
-        editor.commands.setContent(draft || '', { contentType: 'markdown' });
+        pendingHydratedContentRef.current = draft || '';
+        setEditorContentFromSource(editor, draft || '', cardAttachmentsRef.current);
       }
 
       setEditMode(mode);
@@ -132,13 +389,24 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   // Sync external description changes when not editing
   useEffect(() => {
     if (!editing && editor) {
-      editor.commands.setContent(description || '', { contentType: 'markdown' });
+      pendingHydratedContentRef.current = description || null;
+      setEditorContentFromSource(editor, description || '', cardAttachmentsRef.current);
       setDraft(description);
     }
   }, [description, editing, editor]);
 
+  useEffect(() => {
+    if (!restoredDraft) return;
+    pendingHydratedContentRef.current = restoredDraft;
+  }, [restoredDraft]);
+
   const handleSave = useCallback(() => {
-    const markdown = editMode === 'rich' && editor ? editor.getMarkdown() : draft;
+    const markdown = buildDescriptionSaveMarkdown(
+      editMode,
+      editor,
+      draft,
+      cardAttachmentsRef.current,
+    );
     setDraft(markdown);
 
     // [why] If offline, queue the save for replay rather than calling onSave
@@ -154,29 +422,54 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     // same session. The restore effect only re-runs on cardId changes, not on description
     // prop changes, so without this the banner would show after every successful save.
     clearDraft();
+    setAssetPickerOpen(false);
     setEditing(false);
   }, [draft, onSave, editor, editMode, handleSaveIntent, clearDraft]);
 
   const handleCancel = useCallback(() => {
-    if (editor) editor.commands.setContent(description || '', { contentType: 'markdown' });
+    pendingHydratedContentRef.current = description || null;
+    if (editor) {
+      setEditorContentFromSource(editor, description || '', cardAttachmentsRef.current);
+    }
     setDraft(description);
     discardDraft();
+    setAssetPickerOpen(false);
     setEditing(false);
   }, [description, editor, discardDraft]);
 
-  // Open file picker for attachment (only when cardId is available)
+  // Toggle the asset picker (existing card assets + upload action).
   const handleAttach = useCallback(() => {
     if (!cardId) return;
-    fileInputRef.current?.click();
-  }, [cardId]);
+    if (editor && !editor.isDestroyed) {
+      editor.commands.focus();
+    }
+    setAssetPickerOpen((prev) => !prev);
+  }, [cardId, editor]);
+
+  // Insert an existing card attachment at the current cursor position.
+  const handleInsertExisting = useCallback((attachment: Attachment) => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed) return;
+    insertAttachmentAt(ed, attachment, ed.state.selection.anchor);
+  }, []);
 
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files ?? []);
-      if (files.length > 0) uploadFiles(files);
+      if (files.length > 0) {
+        const pos = editor && !editor.isDestroyed
+          ? editor.state.selection.anchor
+          : 0;
+        const ids = uploadFiles(files);
+        ids.forEach((id) => insertPosMap.current.set(id, pos));
+        void flushUploads()
+          .then(() => loadCardAttachments())
+          .catch(() => {});
+      }
+      setAssetPickerOpen(false);
       e.target.value = '';
     },
-    [uploadFiles],
+    [editor, uploadFiles, flushUploads, loadCardAttachments],
   );
 
   const handleEditorKeyDown = useCallback(
@@ -193,9 +486,11 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     [handleSave, handleCancel],
   );
 
+  const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
   const isLong = draft.length > 400;
-  const previewHtml = marked.parse(draft || '') as string;
+  const previewHtml = marked.parse(hydratedPreviewMarkdown) as string;
+  const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
   return (
     <section aria-label="Description">
@@ -237,12 +532,22 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           {editMode === 'rich' ? (
             <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
               {/* Single-line toolbar: primary controls always visible, secondary behind + */}
-              <OneLineToolbar
-                editor={editor}
-                overflowOpen={overflowOpen}
-                onToggleOverflow={() => setOverflowOpen((o) => !o)}
-                {...(cardId ? { onAttach: handleAttach } : {})}
-              />
+              <div className="relative">
+                <OneLineToolbar
+                  editor={editor}
+                  overflowOpen={overflowOpen}
+                  onToggleOverflow={() => setOverflowOpen((o) => !o)}
+                  {...attachProps}
+                />
+                {assetPickerOpen && cardId && (
+                  <CardAssetPicker
+                    attachments={cardAttachments}
+                    onUploadNew={() => fileInputRef.current?.click()}
+                    onInsert={handleInsertExisting}
+                    onClose={() => setAssetPickerOpen(false)}
+                  />
+                )}
+              </div>
               <div className="relative min-h-[180px] flex-1 overflow-y-auto overscroll-contain rounded-b-lg">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900" />
                 <EditorContent
@@ -298,7 +603,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   <button
                     type="button"
                     className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
-                    onClick={() => retrySync(editMode === 'rich' && editor ? editor.getMarkdown() : draft)}
+                    onClick={() => retrySync(buildDescriptionSaveMarkdown(
+                      editMode,
+                      editor,
+                      draft,
+                      cardAttachmentsRef.current,
+                    ))}
                     data-testid="draft-retry-sync"
                   >
                     {/* [why] "Retry Save" clarifies the user's pending action vs a background sync retry */}
@@ -314,15 +624,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   </button>
                 </>
               ) : (
-                <span
-                  className={
-                    draftStatus === 'will_sync_when_online'
-                      ? 'text-amber-500 dark:text-amber-400'
-                      : draftStatus === 'synced'
-                        ? 'text-green-500 dark:text-green-400'
-                        : 'text-gray-400 dark:text-slate-500'
-                  }
-                >
+                <span className={getDraftStatusClass(draftStatus)}>
                   {isSavePending && draftStatus === 'will_sync_when_online'
                     ? 'Will save when back online'
                     : draftStatusLabel(draftStatus)}

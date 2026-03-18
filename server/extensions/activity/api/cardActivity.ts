@@ -7,6 +7,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../config/visibleEventTypes';
+import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleCardActivity(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -43,9 +44,10 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
 
   // Join actor display info so the client never has to resolve IDs separately
   const actorIds = [...new Set(activities.map((a) => a.actor_id))];
-  const actors = actorIds.length
-    ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email')
+  const rawActors = actorIds.length
+    ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email', 'avatar_url')
     : [];
+  const actors = await resolveAvatarUrlsInCollection(rawActors);
   const actorMap = new Map(actors.map((u) => [u.id, u]));
 
   const data = activities.map((a) => {
@@ -54,6 +56,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
       ...a,
       actor_name: actor?.name ?? null,
       actor_email: actor?.email ?? null,
+      actor_avatar_url: actor?.avatar_url ?? null,
     };
   });
 
