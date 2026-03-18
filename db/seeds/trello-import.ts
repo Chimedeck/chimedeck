@@ -834,6 +834,7 @@ async function main() {
           id: `${boardId}:${userId}`,
           board_id: boardId,
           user_id: userId,
+          guest_type: 'MEMBER', // [why] Imported Trello board members were active participants
           granted_by: SYSTEM_USER_ID,
           granted_at: new Date(),
         });
@@ -845,7 +846,7 @@ async function main() {
   await batchUpsert('board_members', boardMemberRows, ['board_id', 'user_id'], ['role', 'updated_at']);
 
   console.log(`👥  Creating/updating ${boardGuestRows.length.toLocaleString()} board guest access rows…`);
-  await batchUpsert('board_guest_access', boardGuestRows, ['user_id', 'board_id'], ['granted_by']);
+  await batchUpsert('board_guest_access', boardGuestRows, ['user_id', 'board_id'], ['granted_by', 'guest_type']);
 
   // -------------------------------------------------------------------------
   // 10. Summary output
