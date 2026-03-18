@@ -1,14 +1,14 @@
 // AppShell — sidebar + main content area wrapper used by all private pages.
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Bars3Icon } from '@heroicons/react/24/outline';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { fetchWorkspacesThunk, selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import { fetchProfileThunk } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import { fetchFeatureFlagsThunk } from '~/slices/featureFlagsSlice';
-import Sidebar from '~/extensions/Workspace/components/Sidebar';
+import Sidebar from '~/layout/Sidebar';
 import { ThemeToggle } from '~/common/components/ThemeToggle';
 import CommandPalette from '~/common/components/CommandPalette';
 import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
@@ -18,10 +18,13 @@ import type { SearchResult } from '~/extensions/Search/api';
 export default function AppShell() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const workspaceId = useAppSelector(selectActiveWorkspaceId) ?? '';
   const token = useAppSelector(selectAuthToken) ?? '';
+  // Ref for the mobile drawer panel — used by the focus trap
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   // Load workspace list, user profile, and client feature flags once when the shell mounts
   useEffect(() => {
@@ -29,6 +32,11 @@ export default function AppShell() {
     dispatch(fetchProfileThunk());
     dispatch(fetchFeatureFlagsThunk());
   }, [dispatch]);
+
+  // Close mobile drawer on route change (e.g. nav link clicked or browser back)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   // Open search modal on Cmd+K / Ctrl+K
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -42,6 +50,43 @@ export default function AppShell() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Focus trap + Escape close for mobile drawer
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const drawer = drawerRef.current;
+    if (!drawer) return;
+
+    // Focus first focusable element on open
+    const focusableSelectors =
+      'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])';
+    const focusableElements = Array.from(drawer.querySelectorAll<HTMLElement>(focusableSelectors));
+    focusableElements[0]?.focus();
+
+    const handleDrawerKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSidebarOpen(false);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleDrawerKeyDown);
+    return () => document.removeEventListener('keydown', handleDrawerKeyDown);
+  }, [sidebarOpen]);
 
   // Navigate when a search result is selected
   const handleSearchSelect = useCallback((result: SearchResult) => {
@@ -63,19 +108,34 @@ export default function AppShell() {
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-30 flex md:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setSidebarOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="relative z-40 flex">
-            <Sidebar />
-          </div>
+      {/* Mobile sidebar overlay — always rendered to allow CSS transitions */}
+      <div
+        className="fixed inset-0 z-30 md:hidden"
+        aria-hidden={!sidebarOpen}
+        style={{ pointerEvents: sidebarOpen ? 'auto' : 'none' }}
+      >
+        {/* Backdrop */}
+        <div
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+            sidebarOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setSidebarOpen(false)}
+          data-testid="mobile-sidebar-backdrop"
+        />
+        {/* Drawer panel — slides in from the left */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation"
+          id="mobile-sidebar"
+          ref={drawerRef}
+          className={`relative z-40 flex h-full transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <Sidebar onClose={() => setSidebarOpen(false)} />
         </div>
-      )}
+      </div>
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -85,6 +145,9 @@ export default function AppShell() {
             onClick={() => setSidebarOpen(true)}
             className="mr-3 rounded p-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             aria-label="Open sidebar"
+            aria-expanded={sidebarOpen}
+            aria-controls="mobile-sidebar"
+            data-testid="mobile-sidebar-toggle"
           >
             <Bars3Icon className="h-5 w-5" aria-hidden="true" />
           </button>
