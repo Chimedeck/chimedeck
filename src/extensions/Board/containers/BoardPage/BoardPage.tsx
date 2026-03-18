@@ -5,6 +5,7 @@
 // Sprint 48: tabbed view adds Activity, Comments, and Archived Cards panels.
 // Sprint 52: BoardViewSwitcher mounted above canvas for Kanban/Table/Calendar/Timeline.
 // Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
+// Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -351,7 +352,13 @@ const BoardPage = () => {
     if (!boardId) return;
     try {
       await deleteBoard({ api, boardId });
-      navigate('/workspaces');
+      // Close all open panels before navigating away so they don't flash on unmount.
+      setSettingsOpen(false);
+      setMembersOpen(false);
+      automationPanel.closePanel();
+      navigate(`/workspace/${board?.workspaceId}/boards`, {
+        state: { successToast: 'Board deleted' },
+      });
     } catch (err: unknown) {
       // 409 means the board has lists/cards — open confirmation dialog.
       const resp = (err as { response?: { status?: number; data?: { name?: string; data?: { listCount?: number; cardCount?: number } } } }).response;
@@ -364,7 +371,7 @@ const BoardPage = () => {
         addToast('Failed to delete board.', 'error');
       }
     }
-  }, [api, boardId, navigate, addToast]);
+  }, [api, boardId, board, navigate, addToast, automationPanel]);
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -551,8 +558,17 @@ const BoardPage = () => {
           cardCount={boardDeleteDialog.cardCount}
           onConfirm={async () => {
             setBoardDeleteDialog(null);
-            await deleteBoard({ api, boardId: boardId!, confirm: true });
-            navigate('/workspaces');
+            try {
+              await deleteBoard({ api, boardId: boardId!, confirm: true });
+              setSettingsOpen(false);
+              setMembersOpen(false);
+              automationPanel.closePanel();
+              navigate(`/workspace/${board.workspaceId}/boards`, {
+                state: { successToast: 'Board deleted' },
+              });
+            } catch {
+              addToast('Failed to delete board.', 'error');
+            }
           }}
           onCancel={() => setBoardDeleteDialog(null)}
         />

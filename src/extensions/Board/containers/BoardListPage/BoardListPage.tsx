@@ -1,12 +1,15 @@
 // BoardListPage — shows all boards in a workspace; supports create, archive, delete, duplicate.
 // Sprint 48: adds star/unstar per board tile and a "Starred boards" filter chip.
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// Sprint 87: reads navigate state to display success toast after board-deletion redirect.
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import BoardCard from '../../components/BoardCard';
 import CreateBoardModal from '../../components/CreateBoardModal';
+import ToastRegion from '~/common/components/ToastRegion';
+import type { ToastItem } from '~/common/components/ToastRegion';
 import {
   visibleBoardsSelector,
   showStarredOnlySelector,
@@ -15,7 +18,7 @@ import {
   fetchBoardsThunk,
   createBoardThunk,
   archiveBoardThunk,
-  deleteBoardThunk,
+  deleteBoardOptimisticThunk,
   duplicateBoardThunk,
   starBoardThunk,
   unstarBoardThunk,
@@ -25,6 +28,7 @@ import {
 const BoardListPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
   const boards = useAppSelector(visibleBoardsSelector);
@@ -33,6 +37,28 @@ const BoardListPage = () => {
   const error = useAppSelector(fetchBoardsErrorSelector);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // ── Toast notifications ───────────────────────────────────────────────────
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const addToast = useCallback((message: string, variant: ToastItem['variant'] = 'info') => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, message, variant }]);
+  }, []);
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Show one-shot toast passed via navigate state (e.g. after board-deletion redirect).
+  // [why] Empty deps: only consume the state once on mount, not on every re-render.
+  useEffect(() => {
+    const state = location.state as { successToast?: string } | null;
+    if (state?.successToast) {
+      addToast(state.successToast, 'info');
+      // Clear the router state so the toast doesn't reappear if the user navigates back.
+      window.history.replaceState({}, '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (workspaceId) dispatch(fetchBoardsThunk({ workspaceId }));
@@ -48,7 +74,7 @@ const BoardListPage = () => {
 
   const handleDelete = (boardId: string) => {
     if (window.confirm('Are you sure you want to delete this board? This cannot be undone.')) {
-      dispatch(deleteBoardThunk({ boardId }));
+      dispatch(deleteBoardOptimisticThunk({ boardId }));
     }
   };
 
@@ -132,6 +158,7 @@ const BoardListPage = () => {
           onCreate={handleCreate}
         />
       )}
+      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };
