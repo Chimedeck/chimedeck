@@ -53,7 +53,11 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
 
           popup = tippy('body', {
             getReferenceClientRect: props.clientRect as () => DOMRect,
-            appendTo: () => document.body,
+            // [why] Radix Dialog sets body.style.pointerEvents='none' while a modal is open,
+            // which blocks all mouse events on tippy popups appended to body. Appending inside
+            // the dialog element keeps pointer-events working correctly.
+            appendTo: () =>
+              (props.editor.view.dom.closest('[role="dialog"]') as HTMLElement) ?? document.body,
             content: renderer.element,
             showOnCreate: true,
             interactive: true,
