@@ -35,34 +35,24 @@ export async function queryBoardSearch({
   limit: rawLimit,
 }: BoardSearchOptions): Promise<BoardSearchOutput> {
   if (q.length < 2) {
-    return { status: 400, name: 'search-query-too-short', message: 'Query must be at least 2 characters' };
+    return {
+      status: 400,
+      name: 'search-query-too-short',
+      message: 'Query must be at least 2 characters',
+    };
   }
 
   const tsquery = buildQuery({ q });
   if (!tsquery) {
-    return { status: 400, name: 'search-query-invalid', message: 'Query contains no searchable terms' };
+    return {
+      status: 400,
+      name: 'search-query-invalid',
+      message: 'Query contains no searchable terms',
+    };
   }
 
   const limit = Math.min(rawLimit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const results: BoardSearchResult[] = [];
-
-  // Search lists within the board
-  const lists = await db('lists')
-    .select(
-      db.raw(
-        `id, title, board_id, 'list' as type,
-        ts_rank_cd(search_vector, to_tsquery('english', ?)) AS rank`,
-        [tsquery],
-      ),
-    )
-    .where('board_id', boardId)
-    .whereRaw(`search_vector @@ to_tsquery('english', ?)`, [tsquery])
-    .orderByRaw(`ts_rank_cd(search_vector, to_tsquery('english', ?)) DESC`, [tsquery])
-    .limit(limit);
-
-  for (const row of lists) {
-    results.push({ type: 'list', id: row.id, title: row.title, rank: Number(row.rank) });
-  }
 
   // Search cards within the board (joined through lists to enforce board scope)
   const cards = await db('cards')
@@ -71,8 +61,8 @@ export async function queryBoardSearch({
       db.raw(
         `cards.id, cards.title, cards.list_id, 'card' as type,
         ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
-        [tsquery],
-      ),
+        [tsquery]
+      )
     )
     .where('lists.board_id', boardId)
     .where('cards.archived', false)
@@ -81,7 +71,13 @@ export async function queryBoardSearch({
     .limit(limit);
 
   for (const row of cards) {
-    results.push({ type: 'card', id: row.id, title: row.title, listId: row.list_id, rank: Number(row.rank) });
+    results.push({
+      type: 'card',
+      id: row.id,
+      title: row.title,
+      listId: row.list_id,
+      rank: Number(row.rank),
+    });
   }
 
   // Sort combined results by rank descending, then updated_at as tiebreaker for stable ordering
