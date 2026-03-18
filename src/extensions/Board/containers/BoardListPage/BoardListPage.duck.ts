@@ -17,6 +17,7 @@ import {
   unstarBoard,
   type Board,
 } from '../../api';
+import { deleteBoardOptimisticThunk } from '../../slices/boardsSlice';
 
 // ---------- State ----------
 
@@ -34,6 +35,8 @@ interface BoardListPageState {
   duplicateError: SerializedError | null;
   // Starred filter: when true, only starred boards are shown
   showStarredOnly: boolean;
+  // Snapshot of boards array captured before an optimistic delete; null when idle.
+  deleteSnapshot: Board[] | null;
 }
 
 const initialState: BoardListPageState = {
@@ -48,6 +51,7 @@ const initialState: BoardListPageState = {
   deleteError: null,
   duplicateInProgress: false,
   duplicateError: null,
+  deleteSnapshot: null,
   showStarredOnly: false,
 };
 
@@ -118,6 +122,17 @@ const boardListPageSlice = createSlice({
     toggleStarredFilter(state) {
       state.showStarredOnly = !state.showStarredOnly;
     },
+    // boardRemovedByRealtime handles board_deleted events arriving via the personal
+    // WS channel for other users viewing the same workspace boards list.
+    // [why] Also prunes the deleteSnapshot so a concurrent optimistic-delete rollback
+    // does not restore a board that was genuinely deleted by another actor.
+    boardRemovedByRealtime(state, action: PayloadAction<{ boardId: string }>) {
+      const { boardId } = action.payload;
+      state.boards = state.boards.filter((b) => b.id !== boardId);
+      if (state.deleteSnapshot !== null) {
+        state.deleteSnapshot = state.deleteSnapshot.filter((b) => b.id !== boardId);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -164,13 +179,35 @@ const boardListPageSlice = createSlice({
       .addCase(unstarBoardThunk.fulfilled, (state, action: PayloadAction<string>) => {
         const board = state.boards.find((b) => b.id === action.payload);
         if (board) board.isStarred = false;
+      })
+      // Optimistic delete: remove board immediately and snapshot for rollback.
+      .addCase(deleteBoardOptimisticThunk.pending, (state, action) => {
+        state.deleteSnapshot = [...state.boards];
+        state.boards = state.boards.filter((b) => b.id !== action.meta.arg.boardId);
+        state.deleteInProgress = true;
+        state.deleteError = null;
+      })
+      .addCase(deleteBoardOptimisticThunk.fulfilled, (state) => {
+        state.deleteSnapshot = null;
+        state.deleteInProgress = false;
+      })
+      // Rollback: restore boards from snapshot on API failure.
+      .addCase(deleteBoardOptimisticThunk.rejected, (state, action) => {
+        if (state.deleteSnapshot !== null) {
+          state.boards = state.deleteSnapshot;
+          state.deleteSnapshot = null;
+        }
+        state.deleteInProgress = false;
+        state.deleteError = action.error;
       });
   },
 });
 
 export default boardListPageSlice.reducer;
 
-export const { toggleStarredFilter } = boardListPageSlice.actions;
+export const { toggleStarredFilter, boardRemovedByRealtime } = boardListPageSlice.actions;
+// Re-export so UI components only import from this single duck file.
+export { deleteBoardOptimisticThunk } from '../../slices/boardsSlice';
 
 // ---------- Selectors ----------
 

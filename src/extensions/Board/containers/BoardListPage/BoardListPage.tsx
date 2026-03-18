@@ -1,11 +1,14 @@
 // BoardListPage — shows all boards in a workspace; supports create, archive, delete, duplicate.
 // Sprint 48: adds star/unstar per board tile and a "Starred boards" filter chip.
 // Sprint 87: reads navigate state to display success toast after board-deletion redirect.
+// Sprint 87 (Iter 4): connects workspace realtime sync to remove boards for all users on delete.
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
+import { selectAuthToken } from '../../../Auth/duck/authDuck';
+import { useWorkspaceSync } from '../../realtime';
 import BoardCard from '../../components/BoardCard';
 import CreateBoardModal from '../../components/CreateBoardModal';
 import ToastRegion from '~/common/components/ToastRegion';
@@ -35,6 +38,11 @@ const BoardListPage = () => {
   const showStarredOnly = useAppSelector(showStarredOnlySelector);
   const loading = useAppSelector(fetchBoardsInProgressSelector);
   const error = useAppSelector(fetchBoardsErrorSelector);
+  const accessToken = useAppSelector(selectAuthToken);
+
+  // Subscribe to workspace-scoped board_deleted events so remote deletions are
+  // reflected immediately for all users without a page reload.
+  useWorkspaceSync({ workspaceId: workspaceId ?? '', token: accessToken ?? '' });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 

@@ -2,7 +2,7 @@
 
 > **Sprint:** 87
 > **Feature:** Board deletion with automatic UI refresh and real-time propagation
-> **Status:** In progress — server-side event emission complete; client-side scenarios pending (Iterations 2–4)
+> **Status:** Complete — all iterations implemented (server event emission, optimistic delete, redirect, realtime propagation)
 
 ---
 
@@ -32,7 +32,10 @@ These scenarios validate the full board-deletion lifecycle:
 - [x] Optimistic removal is rolled back if API call fails (Iteration 2)
 - [x] Viewing a board that is deleted redirects to workspace boards page (Iteration 3)
 - [x] Success toast "Board deleted" appears after successful delete (Iteration 3)
-- [ ] Other connected users see board removed in real-time (Iteration 4)
+- [x] Other connected users see board removed in real-time (Iteration 4)
+- [x] Board list auto-refreshes without page reload for all workspace members (Iteration 4)
+- [x] No ghost board after realtime delete event (Iteration 4)
+- [x] Concurrent optimistic delete and realtime event do not leave stale state (Iteration 4)
 
 ---
 
@@ -362,6 +365,102 @@ These scenarios validate the full board-deletion lifecycle:
 
 ---
 
-## BDAR-RT-01 — Other connected users see board removed in real-time (Iteration 4)
+## BDAR-RT-01 — Other connected users see board removed in real-time
 
-> **Deferred to Iteration 4.**
+> **Sprint 87, Iteration 4 — implemented via `useWorkspaceSync` + personal WS channel fan-out.**
+
+**Preconditions:**
+- Workspace W1 has two members: U1 (ADMIN) and U2 (MEMBER)
+- Both users are on the workspace boards page (`/workspace/{W1.id}/boards`) in separate browser sessions
+- Both sessions have active WebSocket connections (the workspace sync hook is connected)
+- Board B1 exists in workspace W1 and is visible in both sessions
+
+**Steps:**
+1. In U1's session: open board B1's action menu and click "Delete"
+2. Confirm deletion in the browser dialog
+3. In U2's session: observe the boards list **without reloading**
+
+**Expected:**
+- U1's session: B1 disappears immediately (optimistic removal)
+- U2's session: B1 disappears within ~1 second as the `board_deleted` WS event arrives
+- Neither session requires a page reload
+- No ghost board tile remains in either session after the event settles
+- U2 receives no toast (toast is only shown to the actor on redirect from board page)
+
+---
+
+## BDAR-RT-02 — Board removed for user viewing a different board in same workspace
+
+**Preconditions:**
+- Workspace W1 has two members: U1 (ADMIN) and U2 (MEMBER)
+- U1 is on the workspace boards page (`/workspace/{W1.id}/boards`)
+- U2 is viewing a different board B2 in workspace W1 (`/boards/{B2.id}`)
+- Board B1 exists in W1 (visible on U1's boards page)
+
+**Steps:**
+1. U1 deletes B1 from the workspace boards page
+2. U2 navigates back to `/workspace/{W1.id}/boards` after the deletion
+
+**Expected:**
+- When U2 navigates back to the boards page: B1 is not present in the boards list
+- The boards page fetches fresh data on mount, so B1 is absent even if the realtime event was missed
+- No error state is shown on U2's boards page
+
+---
+
+## BDAR-RT-03 — Realtime propagation does not affect boards in other workspaces
+
+**Preconditions:**
+- U1 is a member of W1 and W2
+- U1 is viewing `/workspace/{W2.id}/boards`
+- Board B1 exists in W1
+- U2 (ADMIN in W1) deletes B1
+
+**Steps:**
+1. U2 sends `DELETE /api/v1/boards/{B1.id}`
+2. U1's session on W2's boards page receives the WS event
+
+**Expected:**
+- U1's W2 boards page is **not** modified — boards from W1 events are ignored because `payload.workspaceId !== W2.id`
+- U1's W2 board list remains intact and unchanged
+
+---
+
+## BDAR-RT-04 — Realtime event deduplicates with concurrent optimistic delete (same actor)
+
+**Preconditions:**
+- U1 (ADMIN) is on the workspace boards page
+- Board B1 is visible
+- U1 triggers deletion of B1 (optimistic remove fires instantly)
+
+**Steps:**
+1. U1 deletes B1 — optimistic remove removes it from the list immediately
+2. Server processes the delete, publishes `board_deleted`, fans out to U1's WS channel
+3. U1's WS receives `board_deleted` for B1
+
+**Expected:**
+- B1 remains absent — the `boardRemovedByRealtime` action is a no-op on an already-absent board (filter is idempotent)
+- No ghost board appears
+- No duplicate entry is added
+- Redux state is consistent: `boards` array does not contain B1 after either event
+
+---
+
+## BDAR-RT-05 — Stale board list refreshes correctly after reconnect
+
+**Preconditions:**
+- U2 is on the workspace boards page
+- U2's WebSocket disconnects temporarily (network interruption)
+- While disconnected, U1 (ADMIN) deletes board B1
+- U2's socket reconnects
+
+**Steps:**
+1. U2's connection drops — WS close event fires, reconnect backoff starts
+2. U1 deletes B1 while U2 is offline
+3. U2's socket reconnects
+4. U2 reloads the boards page (or `fetchBoardsThunk` re-runs on reconnect)
+
+**Expected:**
+- After reconnect, the boards page fetches from the server (`fetchBoardsThunk` runs on mount)
+- B1 is absent from the refreshed list
+- No stale board data is shown after reconnect + refetch
