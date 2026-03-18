@@ -5,19 +5,22 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { validateCardLabelLimit } from '../mods/labels/validate';
 
-async function resolveWorkspaceId(cardId: string): Promise<string | null> {
+interface CardLabelContext { boardId: string; workspaceId: string; }
+
+async function resolveCardLabelContext(cardId: string): Promise<CardLabelContext | null> {
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) return null;
   const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) return null;
   const board = await db('boards').where({ id: list.board_id }).first();
-  return board?.workspace_id ?? null;
+  if (!board) return null;
+  return { boardId: board.id, workspaceId: board.workspace_id };
 }
 
 export async function handleAttachLabel(req: Request, cardId: string): Promise<Response> {
@@ -39,8 +42,8 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
     if (writableError) return writableError;
   }
 
-  const workspaceId = await resolveWorkspaceId(cardId);
-  if (!workspaceId) {
+  const labelContext = await resolveCardLabelContext(cardId);
+  if (!labelContext) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
@@ -48,10 +51,10 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
+  const membershipError = await requireWorkspaceMembership(scopedReq, labelContext.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, labelContext.boardId);
   if (roleError) return roleError;
 
   let body: { labelId?: string };
@@ -79,7 +82,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
     );
   }
 
-  if (label.workspace_id !== workspaceId) {
+  if (label.workspace_id !== labelContext.workspaceId) {
     return Response.json(
       { error: { code: 'label-not-in-workspace', message: 'Label does not belong to this workspace' } },
       { status: 400 },
@@ -115,8 +118,8 @@ export async function handleDetachLabel(
     );
   }
 
-  const workspaceId = await resolveWorkspaceId(cardId);
-  if (!workspaceId) {
+  const detachContext = await resolveCardLabelContext(cardId);
+  if (!detachContext) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
@@ -124,10 +127,10 @@ export async function handleDetachLabel(
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
+  const membershipError = await requireWorkspaceMembership(scopedReq, detachContext.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, detachContext.boardId);
   if (roleError) return roleError;
 
   await db('card_labels').where({ card_id: cardId, label_id: labelId }).delete();

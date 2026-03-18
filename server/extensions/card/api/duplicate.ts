@@ -5,7 +5,7 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
@@ -26,7 +26,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   // Insert copy immediately after the source card

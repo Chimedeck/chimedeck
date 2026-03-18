@@ -7,7 +7,7 @@ import { syncMentions } from '../../../common/mentions/sync';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
@@ -30,7 +30,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { title?: string; description?: string; due_date?: string | null; start_date?: string | null; amount?: number | null; currency?: string | null };

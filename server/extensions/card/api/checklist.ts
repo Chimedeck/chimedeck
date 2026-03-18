@@ -7,25 +7,28 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 
-async function resolveWorkspaceIdFromCard(cardId: string): Promise<string | null> {
+interface CardContext { boardId: string; workspaceId: string; }
+
+async function resolveContextFromCard(cardId: string): Promise<CardContext | null> {
   const card = await db('cards').where({ id: cardId }).first();
   if (!card) return null;
   const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) return null;
   const board = await db('boards').where({ id: list.board_id }).first();
-  return board?.workspace_id ?? null;
+  if (!board) return null;
+  return { boardId: board.id, workspaceId: board.workspace_id };
 }
 
-async function resolveWorkspaceIdFromItem(itemId: string): Promise<{ workspaceId: string | null; cardId: string | null }> {
+async function resolveContextFromItem(itemId: string): Promise<{ context: CardContext | null; cardId: string | null }> {
   const item = await db('checklist_items').where({ id: itemId }).first();
-  if (!item) return { workspaceId: null, cardId: null };
-  const workspaceId = await resolveWorkspaceIdFromCard(item.card_id);
-  return { workspaceId, cardId: item.card_id };
+  if (!item) return { context: null, cardId: null };
+  const context = await resolveContextFromCard(item.card_id);
+  return { context, cardId: item.card_id };
 }
 
 export async function handleCreateChecklistItem(req: Request, cardId: string): Promise<Response> {
@@ -40,8 +43,8 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
     );
   }
 
-  const workspaceId = await resolveWorkspaceIdFromCard(cardId);
-  if (!workspaceId) {
+  const context = await resolveContextFromCard(cardId);
+  if (!context) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
       { status: 404 },
@@ -49,10 +52,10 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
+  const membershipError = await requireWorkspaceMembership(scopedReq, context.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, context.boardId);
   if (roleError) return roleError;
 
   let body: { title?: string };
@@ -105,8 +108,8 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     );
   }
 
-  const { workspaceId } = await resolveWorkspaceIdFromItem(itemId);
-  if (!workspaceId) {
+  const { context: updateContext } = await resolveContextFromItem(itemId);
+  if (!updateContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
       { status: 404 },
@@ -114,10 +117,10 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
+  const membershipError = await requireWorkspaceMembership(scopedReq, updateContext.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, updateContext.boardId);
   if (roleError) return roleError;
 
   let body: { title?: string; checked?: boolean; position?: string };
@@ -182,8 +185,8 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
     );
   }
 
-  const { workspaceId } = await resolveWorkspaceIdFromItem(itemId);
-  if (!workspaceId) {
+  const { context: deleteContext } = await resolveContextFromItem(itemId);
+  if (!deleteContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
       { status: 404 },
@@ -191,10 +194,10 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
+  const membershipError = await requireWorkspaceMembership(scopedReq, deleteContext.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, deleteContext.boardId);
   if (roleError) return roleError;
 
   await db('checklist_items').where({ id: itemId }).delete();

@@ -5,7 +5,7 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
@@ -35,7 +35,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { title?: string; description?: string; start_date?: string | null };

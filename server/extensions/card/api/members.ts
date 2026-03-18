@@ -5,7 +5,7 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { emitCardMemberAssigned, emitCardMemberUnassigned } from '../../activity/mods/createActivityEvent';
@@ -49,7 +49,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   const membershipError = await requireWorkspaceMembership(scopedReq, context.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, context.boardId);
   if (roleError) return roleError;
 
   let body: { userId?: string };
@@ -133,7 +133,7 @@ export async function handleRemoveMember(
   const membershipError = await requireWorkspaceMembership(scopedReq, context.workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, context.boardId);
   if (roleError) return roleError;
 
   // Only emit an event if the membership actually existed (avoid phantom unassign events)

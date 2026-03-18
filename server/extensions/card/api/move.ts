@@ -5,7 +5,7 @@ import { dispatchEvent } from '../../../mods/events/dispatch';
 import { publisher } from '../../../mods/pubsub/publisher';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
@@ -28,7 +28,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { targetListId: string; afterCardId?: string | null };

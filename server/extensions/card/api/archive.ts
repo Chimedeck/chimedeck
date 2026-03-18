@@ -4,7 +4,7 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
@@ -42,7 +42,7 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   const newArchived = !card.archived;
