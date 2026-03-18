@@ -18,3 +18,4 @@ export { default as viewPreferenceReducer } from './extensions/BoardViewSwitcher
 export { notificationPreferencesApi } from './extensions/Notifications/NotificationPreferences/notificationPreferences.slice';
 export { boardMembersApi } from './extensions/Board/slices/boardMembersSlice';
 export { boardGuestsApi } from './extensions/Board/slices/boardGuestsSlice';
+export { default as searchReducer } from './extensions/Search/slices/searchSlice';

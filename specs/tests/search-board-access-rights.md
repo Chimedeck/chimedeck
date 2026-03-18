@@ -366,6 +366,120 @@
 
 ---
 
+## UI Scenarios — Stale-Cache Safety (Client)
+
+> These scenarios cover the case where a board is returned in a search result but becomes inaccessible
+> (deleted, visibility changed, membership revoked) **after** the search response was cached on the client.
+> The `SearchResults` component verifies access on click; on failure it purges the stale entry and redirects.
+
+---
+
+### SBAR-UI-05 — Stale board result: click shows neutral message and redirects
+
+**Preconditions:**
+- Logged in as workspace MEMBER.
+- A board (`board-stale`) was returned in a previous workspace search result (cached client-side).
+- Between the search response and the click, `board-stale` visibility was changed to PRIVATE and the
+  user lost access (or the board was deleted).
+
+**Steps:**
+1. Open global search and search for the term that returned `board-stale`.
+2. Before clicking, simulate the board becoming inaccessible (intercept `GET /api/v1/boards/board-stale` to return `403`).
+3. Click the `board-stale` result in the results panel.
+
+**Expected:**
+- The UI shows a neutral amber banner: _"This board is no longer accessible. Redirecting to your boards list…"_
+- The banner has `role="status"` and `aria-live="polite"` for assistive-technology compatibility.
+- A loading spinner appears briefly on the clicked item during the access check.
+- After ~1.8 s the app navigates to `/workspaces/:workspaceId/boards`.
+- The stale board entry is **removed** from the in-memory result list (not shown again if the modal is re-opened with the same cached results).
+
+---
+
+### SBAR-UI-06 — Stale board result: 404 treated identically to 403
+
+**Preconditions:**
+- Same as SBAR-UI-05 but the access check returns `404` (board was deleted).
+
+**Steps:**
+1. Open global search and find the cached board result.
+2. Intercept `GET /api/v1/boards/board-deleted` to return `404`.
+3. Click the board result.
+
+**Expected:**
+- Identical behaviour to SBAR-UI-05: amber banner, cache purge, redirect to boards list.
+
+---
+
+### SBAR-UI-07 — Accessible board result: no stale banner, normal navigation
+
+**Preconditions:**
+- Logged in as workspace MEMBER with access to `board-accessible`.
+- `GET /api/v1/boards/board-accessible` returns `200`.
+
+**Steps:**
+1. Open global search and search for the query.
+2. Click the `board-accessible` result.
+
+**Expected:**
+- No amber banner is shown.
+- The app navigates directly to `/boards/board-accessible`.
+- The result is **not** purged from the local cache.
+
+---
+
+### SBAR-UI-08 — Stale board purged from local cache after failed click
+
+**Preconditions:**
+- Cached workspace search results contain two boards: `board-ok` (accessible) and `board-gone` (now inaccessible).
+
+**Steps:**
+1. Open global search (results are cached).
+2. Intercept `GET /api/v1/boards/board-gone` to return `403`.
+3. Click `board-gone`.
+4. After the redirect, reopen the search modal with the same query.
+
+**Expected:**
+- `board-gone` does **not** appear in the result list on the second open.
+- `board-ok` still appears (unaffected by the purge).
+
+---
+
+### SBAR-UI-09 — Network/server error on access check falls through to normal navigation
+
+**Preconditions:**
+- Logged in as workspace MEMBER.
+- Board result is in cached results.
+- `GET /api/v1/boards/board-id` returns `500` (server error).
+
+**Steps:**
+1. Open global search.
+2. Intercept `GET /api/v1/boards/board-id` to return `500`.
+3. Click the board result.
+
+**Expected:**
+- No amber banner is shown (5xx is treated as a transient error, not a permission failure).
+- The app proceeds with navigation to `/boards/board-id` as if the check passed.
+- The result is **not** purged from the cache.
+
+---
+
+### SBAR-UI-10 — Card results bypass access pre-check (no stale banner)
+
+**Preconditions:**
+- Cached workspace search results include a card result for a card on `board-stale`.
+
+**Steps:**
+1. Open global search.
+2. Click the card result.
+
+**Expected:**
+- No access pre-check fetch is made (card results are not subject to board access pre-check).
+- The app navigates immediately to `/boards/:boardId?card=:cardId`.
+- No amber banner is shown.
+
+---
+
 ## Acceptance Checklist
 
 > Use this checklist to verify Sprint 86 (access-aware search) acceptance criteria are fully met.
@@ -386,3 +500,8 @@
 | 12 | Non-workspace-member → 403 on workspace search | ⬜ PASS / FAIL |
 | 13 | Query <2 chars → 400 (search-query-too-short) | ⬜ PASS / FAIL |
 | 14 | Query with no valid terms → 400 (search-query-invalid) | ⬜ PASS / FAIL |
+| 15 | Stale board click (403) → amber banner shown, entry purged from cache, redirect to boards list | ⬜ PASS / FAIL |
+| 16 | Stale board click (404) → same behaviour as 403 | ⬜ PASS / FAIL |
+| 17 | Accessible board click → no banner, normal navigation, no cache purge | ⬜ PASS / FAIL |
+| 18 | Card result click bypasses board access pre-check | ⬜ PASS / FAIL |
+| 19 | 5xx on access check falls through to normal navigation (no false-positive stale warning) | ⬜ PASS / FAIL |
