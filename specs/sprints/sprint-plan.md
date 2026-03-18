@@ -117,6 +117,12 @@
 | **— Offline Experience —** | | | |
 | [82](./sprint-82.md) | Rich Text Toolbar One-Line Overflow + Inline Attachments | Keep description/comment rich toolbar to one line, move secondary commands into searchable `+` menu, and show inline upload previews (image thumbnail or file name) while uploading attachments from editor | ⬜ Needs 11 + 21 + 81 |
 | [83](./sprint-83.md) | Offline Drafts for Card Description + Comments | User-private draft store (description/comment), local IndexedDB draft persistence, cross-device draft sync for same user, offline Save/Comment replay with idempotency and retry states | ⬜ Needs 11 + 20 + 58 + 81 |
+| **— Board UX & Access Improvements —** | | | |
+| [84](./sprint-84.md) | Board-Scoped Search Bar | Board-header search bar scoped to active board only; board-local cards/lists results; board route integration for card open | ⬜ Needs 13 + 18 + 77 |
+| [85](./sprint-85.md) | Collapsible Sidebar Drawer (Tailwind) | Desktop collapse rail + mobile drawer behavior; persisted sidebar state; keyboard and accessibility support | ⬜ Needs 15 + 17 + 18 |
+| [86](./sprint-86.md) | Access-Aware Board Search Results | Hide inaccessible boards from search results; server-side permission filtering; stale-result click guard in client | ⬜ Needs 13 + 77 + 78 |
+| [87](./sprint-87.md) | Board Deletion Auto-Refresh | Remove deleted boards from UI without reload; redirect when current board deleted; workspace-wide real-time deletion sync | ⬜ Needs 05 + 17 + 20 |
+| [88](./sprint-88.md) | Expanded Card Activity Tracking | Track `card_created`, `card_moved`, `card_member_assigned` and unassign events in activity feed with real-time updates | ⬜ Needs 07 + 11 + 29 + 73 |
 
 ---
 
@@ -235,6 +241,19 @@ Sprint 74 ──────────── Admin auto-verify external user e
 Sprint 75 ──────────── Full light/dark theme: audit + dual-mode Tailwind classes, no-flash init
 Sprint 76 ──────────── Board background image upload; S3 storage; board card + search thumbnails
 Sprint 77 ──────────── Granular search: scope selector (All / Boards / Cards) in command palette
+──── Board Access Control ─────────────────────────────────────────────────────────
+Sprint 78 ──────────── Board members table + visibility enforcement middleware
+Sprint 79 ──────────── Board member management UI (visibility selector, members panel)
+Sprint 80 ──────────── Guest scoped workspace UI and permission guards
+──── Offline Experience ───────────────────────────────────────────────────────────
+Sprint 82 ──────────── Rich text one-line toolbar overflow + inline attachment previews
+Sprint 83 ──────────── Offline drafts for card description + comments with replay
+──── Board UX & Access Improvements ───────────────────────────────────────────────
+Sprint 84 ──────────── Board-scoped search bar inside board pages only
+Sprint 85 ──────────── Collapsible sidebar drawer using Tailwind CSS
+Sprint 86 ──────────── Search permission filtering to hide inaccessible boards
+Sprint 87 ──────────── Auto-refresh board lists after board deletion
+Sprint 88 ──────────── Card activity tracking: create, move, assign/unassign
 ```
 
 ---
