@@ -27,6 +27,8 @@ interface Props {
   /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
    *  null = batch not yet loaded — tiles render no badges rather than firing per-card requests. */
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
+  /** True when the current user is a VIEWER guest — hides the Add card button. */
+  isViewerGuest?: boolean;
 }
 
 const SortableListColumn = ({
@@ -43,6 +45,7 @@ const SortableListColumn = ({
   labelsExpanded,
   onToggleLabels,
   customFieldValuesMap,
+  isViewerGuest = false,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -113,9 +116,9 @@ const SortableListColumn = ({
         </SortableContext>
       </div>
 
-      {/* Add card footer */}
+      {/* Add card footer — hidden for VIEWER guests */}
       <div className="px-1 pb-2">
-        {addingCard ? (
+        {!isViewerGuest && (addingCard ? (
           <AddCardForm
             listId={list.id}
             onSubmit={async (listId, title) => {
@@ -132,7 +135,7 @@ const SortableListColumn = ({
           >
             + Add a card
           </button>
-        )}
+        ))}
       </div>
     </div>
   );

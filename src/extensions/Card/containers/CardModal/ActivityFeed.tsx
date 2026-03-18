@@ -27,6 +27,8 @@ interface Props {
   onAddComment: (content: string) => Promise<void>;
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
+  canAddComment?: boolean;
 }
 
 /** Consistent avatar colour based on user id. */
@@ -74,6 +76,7 @@ const ActivityFeed = ({
   onAddComment,
   onEditComment,
   onDeleteComment,
+  canAddComment = true,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
@@ -117,14 +120,17 @@ const ActivityFeed = ({
     <div className="flex flex-col gap-3">
       <h3 className="text-xs font-semibold uppercase text-gray-500">Activity</h3>
 
-      <CommentEditor
-        {...buildBoardProps(boardId)}
-        cardId={cardId}
-        availableAttachments={attachments}
-        placeholder="Add a comment…"
-        onSubmit={onAddComment}
-        submitLabel="Comment"
-      />
+      {/* Comment input — hidden for VIEWER guests */}
+      {canAddComment && (
+        <CommentEditor
+          {...buildBoardProps(boardId)}
+          cardId={cardId}
+          availableAttachments={attachments}
+          placeholder="Add a comment…"
+          onSubmit={onAddComment}
+          submitLabel="Comment"
+        />
+      )}
 
       <div className="flex flex-col gap-3">
         {feed.length === 0 && (

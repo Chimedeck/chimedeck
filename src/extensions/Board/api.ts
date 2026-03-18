@@ -13,6 +13,9 @@ export interface Board {
   createdAt: string;
   isStarred?: boolean;
   background?: string | null;
+  /** Sub-type of the caller's GUEST role on this board. null when caller is a
+   *  regular workspace member (OWNER/ADMIN/MEMBER/VIEWER). */
+  callerGuestType?: 'VIEWER' | 'MEMBER' | null;
 }
 
 // ---------- Board CRUD ----------

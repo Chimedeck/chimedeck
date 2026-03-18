@@ -123,6 +123,7 @@
 | [86](./sprint-86.md) | Access-Aware Board Search Results | Hide inaccessible boards from search results; server-side permission filtering; stale-result click guard in client | ⬜ Needs 13 + 77 + 78 |
 | [87](./sprint-87.md) | Board Deletion Auto-Refresh | Remove deleted boards from UI without reload; redirect when current board deleted; workspace-wide real-time deletion sync | ⬜ Needs 05 + 17 + 20 |
 | [88](./sprint-88.md) | Expanded Card Activity Tracking | Track `card_created`, `card_moved`, `card_member_assigned` and unassign events in activity feed with real-time updates | ⬜ Needs 07 + 11 + 29 + 73 |
+| [89](./sprint-89.md) | Guest Role Split: VIEWER vs MEMBER | Split board GUEST into read-only VIEWER and write-capable MEMBER (board-scoped only); `guest_type` column on `board_guest_access`; API + UI updates | ⬜ Needs 49 + 80 |
 
 ---
 

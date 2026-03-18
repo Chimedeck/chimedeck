@@ -5,8 +5,10 @@ import {
   useGetBoardGuestsQuery,
   useInviteBoardGuestMutation,
   useRevokeBoardGuestMutation,
+  useUpdateBoardGuestMutation,
   type BoardGuest,
 } from '../../slices/boardGuestsSlice';
+import type { GuestType } from '../../mods/guestPermissions';
 
 interface Props {
   boardId: string;
@@ -17,11 +19,16 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
   const { data: guests = [], isLoading } = useGetBoardGuestsQuery(boardId);
   const [inviteGuest] = useInviteBoardGuestMutation();
   const [revokeGuest] = useRevokeBoardGuestMutation();
+  const [updateGuest] = useUpdateBoardGuestMutation();
 
   const [email, setEmail] = useState('');
+  // [why] Default to VIEWER to preserve least-privilege behaviour per sprint-89 spec.
+  const [guestType, setGuestType] = useState<GuestType>('VIEWER');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Track which guest row is showing a type-change error
+  const [typeChangeError, setTypeChangeError] = useState<{ userId: string; message: string } | null>(null);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,9 +39,10 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
     setSuccess(null);
     setInviting(true);
     try {
-      await inviteGuest({ boardId, email: trimmed }).unwrap();
+      await inviteGuest({ boardId, email: trimmed, guestType }).unwrap();
       setEmail('');
-      setSuccess(`${trimmed} invited as a guest.`);
+      setGuestType('VIEWER');
+      setSuccess(`${trimmed} invited as a ${guestType === 'MEMBER' ? 'Member' : 'Viewer'}.`);
     } catch (err: unknown) {
       const apiErr = err as { data?: { name?: string; data?: { message?: string } } };
       const name = apiErr?.data?.name ?? '';
@@ -57,6 +65,15 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
       await revokeGuest({ boardId, userId: guest.id }).unwrap();
     } catch {
       setError(`Failed to remove ${guest.name ?? guest.email}.`);
+    }
+  };
+
+  const handleTypeChange = async (guest: BoardGuest, newType: GuestType) => {
+    setTypeChangeError(null);
+    try {
+      await updateGuest({ boardId, userId: guest.id, guestType: newType }).unwrap();
+    } catch {
+      setTypeChangeError({ userId: guest.id, message: `Failed to change type for ${guest.name ?? guest.email}.` });
     }
   };
 
@@ -87,6 +104,35 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
             </button>
           </form>
 
+          {/* Guest type toggle — Viewer (read-only) or Member (full write within board) */}
+          <div className="mt-2 flex items-center gap-1" role="group" aria-label="Guest type">
+            <span className="mr-1 text-xs text-slate-400">Role:</span>
+            <button
+              type="button"
+              onClick={() => setGuestType('VIEWER')}
+              aria-pressed={guestType === 'VIEWER'}
+              className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                guestType === 'VIEWER'
+                  ? 'bg-slate-600 text-slate-100'
+                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+              }`}
+            >
+              Viewer
+            </button>
+            <button
+              type="button"
+              onClick={() => setGuestType('MEMBER')}
+              aria-pressed={guestType === 'MEMBER'}
+              className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                guestType === 'MEMBER'
+                  ? 'bg-indigo-700 text-slate-100'
+                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+              }`}
+            >
+              Member
+            </button>
+          </div>
+
           {error && (
             <p role="alert" className="mt-2 text-xs text-red-400">
               {error}
@@ -112,22 +158,68 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
         ) : (
           <ul className="divide-y divide-slate-800">
             {guests.map((guest) => (
-              <li key={guest.id} className="flex items-center justify-between py-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm text-slate-100">{guest.name}</p>
-                  {guest.name !== guest.email && (
-                    <p className="truncate text-xs text-slate-400">{guest.email}</p>
-                  )}
+              <li key={guest.id} className="flex flex-col gap-1 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-slate-100">{guest.name}</p>
+                    {guest.name !== guest.email && (
+                      <p className="truncate text-xs text-slate-400">{guest.email}</p>
+                    )}
+                  </div>
+                  <div className="ml-2 flex items-center gap-1 shrink-0">
+                    {/* Guest type badge — interactive for admins */}
+                    {isAdmin ? (
+                      <div role="group" aria-label={`Guest type for ${guest.name ?? guest.email}`} className="flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => { if (guest.guestType !== 'VIEWER') void handleTypeChange(guest, 'VIEWER'); }}
+                          aria-pressed={guest.guestType === 'VIEWER'}
+                          className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                            guest.guestType === 'VIEWER'
+                              ? 'bg-slate-600 text-slate-100'
+                              : 'text-slate-500 hover:bg-slate-700 hover:text-slate-300'
+                          }`}
+                        >
+                          Viewer
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { if (guest.guestType !== 'MEMBER') void handleTypeChange(guest, 'MEMBER'); }}
+                          aria-pressed={guest.guestType === 'MEMBER'}
+                          className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+                            guest.guestType === 'MEMBER'
+                              ? 'bg-indigo-700 text-slate-100'
+                              : 'text-slate-500 hover:bg-slate-700 hover:text-slate-300'
+                          }`}
+                        >
+                          Member
+                        </button>
+                      </div>
+                    ) : (
+                      /* Read-only badge for non-admins */
+                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        guest.guestType === 'MEMBER'
+                          ? 'bg-indigo-900/60 text-indigo-300'
+                          : 'bg-slate-700 text-slate-400'
+                      }`}>
+                        {guest.guestType === 'MEMBER' ? 'Member' : 'Viewer'}
+                      </span>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleRevoke(guest)}
+                        className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-700 hover:text-red-400 transition-colors"
+                        aria-label={`Remove guest ${guest.name ?? guest.email}`}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => handleRevoke(guest)}
-                    className="ml-2 shrink-0 rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-700 hover:text-red-400 transition-colors"
-                    aria-label={`Remove guest ${guest.name ?? guest.email}`}
-                  >
-                    Remove
-                  </button>
+                {/* Per-row error for type change failure */}
+                {typeChangeError?.userId === guest.id && (
+                  <p role="alert" className="text-xs text-red-400">{typeChangeError.message}</p>
                 )}
               </li>
             ))}

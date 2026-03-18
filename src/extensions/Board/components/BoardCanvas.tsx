@@ -56,6 +56,8 @@ interface Props {
   onDeleteList: (listId: string) => void;
   onCardClick?: (cardId: string) => void;
   isReadOnly?: boolean;
+  /** True when the current user is a GUEST with guestType=VIEWER — hides write-action controls. */
+  isViewerGuest?: boolean;
   /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
    *  null = batch not yet loaded (don't pass per-card values to tiles). */
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
@@ -88,6 +90,7 @@ const BoardCanvas = ({
   onDeleteList,
   onCardClick,
   isReadOnly = false,
+  isViewerGuest = false,
   customFieldValuesMap,
 }: Props) => {
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
@@ -280,6 +283,7 @@ const BoardCanvas = ({
                 onToggleLabels={onToggleLabels}
                 {...(onCardClick ? { onCardClick } : {})}
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
+                isViewerGuest={isViewerGuest}
               />
             );
           })}

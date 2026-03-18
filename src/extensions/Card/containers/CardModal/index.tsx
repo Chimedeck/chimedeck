@@ -36,8 +36,10 @@ import {
   deleteComment,
 } from '../../api/cardDetail';
 import type { Label } from '../../api';
-import { boardSliceActions } from '../../../Board/slices/boardSlice';
+import { boardSliceActions, selectBoard } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
+import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
 
 let _mutationCounter = 0;
@@ -58,6 +60,11 @@ const CardModalContainer = () => {
   const meta = useAppSelector(selectCardDetailMeta);
   const { boardId } = meta;
   const currentUser = useAppSelector(selectCurrentUser);
+  const board = useAppSelector(selectBoard);
+  const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
+  // [why] Derive write permission from the board's callerGuestType so VIEWER guests
+  // cannot see comment/attachment/edit controls inside the card modal.
+  const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
 
@@ -432,6 +439,7 @@ const CardModalContainer = () => {
       onEditComment={handleEditComment}
       onDeleteComment={handleDeleteComment}
       onMoneySave={handleMoneySave}
+      isViewerGuest={isViewerGuest}
     />
   );
 };

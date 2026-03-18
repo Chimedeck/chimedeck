@@ -62,6 +62,8 @@ interface Props {
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
   onMoneySave: (amount: string | null, currency: string) => Promise<void>;
+  /** True when the current user is a VIEWER guest — hides write-action controls. */
+  isViewerGuest?: boolean;
 }
 
 const CardModal = ({
@@ -99,6 +101,7 @@ const CardModal = ({
   onEditComment,
   onDeleteComment,
   onMoneySave,
+  isViewerGuest = false,
 }: Props) => {
   const isReadOnly = card.archived;
   // Activity panel visibility — toggled from the bottom bar
@@ -203,7 +206,7 @@ const CardModal = ({
                       boardId={boardId}
                     />
 
-                    <AttachmentPanel cardId={card.id} />
+                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
 
                     {/* Plugin detail badges and value inline */}
                     <div className="flex flex-wrap gap-3">
@@ -236,6 +239,7 @@ const CardModal = ({
                       onAddComment={onAddComment}
                       onEditComment={onEditComment}
                       onDeleteComment={onDeleteComment}
+                      canAddComment={!isViewerGuest}
                     />
                   </div>
                 }
@@ -272,7 +276,7 @@ const CardModal = ({
                     boardId={boardId}
                   />
 
-                  <AttachmentPanel cardId={card.id} />
+                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
 
                   {/* Plugin detail badges and value inline */}
                   <div className="flex flex-wrap gap-3">

@@ -14,9 +14,11 @@ import { useEffect } from 'react';
 
 interface Props {
   cardId: string;
+  /** False when the current user is a VIEWER guest — hides upload/attach controls. Defaults to true. */
+  canWrite?: boolean;
 }
 
-export function AttachmentPanel({ cardId }: Props): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true }: Props): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -120,20 +122,22 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
   };
 
   return (
-    <AttachmentDropZone onFiles={upload}>
-      {/* Invisible paste listener — active whenever this panel is mounted */}
-      <PasteListener enabled={true} onFiles={upload} />
+    <AttachmentDropZone onFiles={canWrite ? upload : () => {}}>
+      {/* Invisible paste listener — only active when the user can write */}
+      <PasteListener enabled={canWrite} onFiles={upload} />
 
       {/* Hidden file input — accept covers all server-allowed types; server re-validates */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,text/markdown,application/zip,application/x-tar,application/gzip,audio/*"
-        className="hidden"
-        onChange={handleFileInputChange}
-        data-testid="attachment-file-input"
-      />
+      {canWrite && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,text/markdown,application/zip,application/x-tar,application/gzip,audio/*"
+          className="hidden"
+          onChange={handleFileInputChange}
+          data-testid="attachment-file-input"
+        />
+      )}
 
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
@@ -141,15 +145,17 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
           <PaperClipIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
           Attachments
         </h3>
-        <button
-          type="button"
-          onClick={handlePickerClick}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 border border-slate-600 hover:border-slate-400 rounded px-2 py-1 transition-colors"
-          data-testid="attach-file-button"
-        >
-          <PaperClipIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          Attach file
-        </button>
+        {canWrite && (
+          <button
+            type="button"
+            onClick={handlePickerClick}
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 border border-slate-600 hover:border-slate-400 rounded px-2 py-1 transition-colors"
+            data-testid="attach-file-button"
+          >
+            <PaperClipIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            Attach file
+          </button>
+        )}
       </div>
 
       {/* In-flight uploads (before server record exists) */}
@@ -229,66 +235,68 @@ export function AttachmentPanel({ cardId }: Props): React.ReactElement {
         </div>
       )}
 
-      {/* External URL form */}
-      <div className="mt-3">
-        {showLinkForm ? (
-          <form
-            onSubmit={handleLinkSubmit}
-            className="space-y-2"
-            data-testid="link-form"
-          >
-            <input
-              type="url"
-              placeholder="https://…"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              required
-              className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              data-testid="link-url-input"
-              autoFocus
-            />
-            <input
-              type="text"
-              placeholder="Display name (optional)"
-              value={linkName}
-              onChange={(e) => setLinkName(e.target.value)}
-              className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              data-testid="link-name-input"
-            />
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={linkSubmitting}
-                className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
-                data-testid="link-submit-button"
-              >
-                Attach
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLinkForm(false);
-                  setLinkUrl('');
-                  setLinkName('');
-                }}
-                className="text-xs text-slate-400 hover:text-slate-200 rounded px-3 py-1.5 border border-slate-600 hover:border-slate-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowLinkForm(true)}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-            data-testid="attach-link-button"
-          >
-            <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Attach a link
-          </button>
-        )}
-      </div>
+      {/* External URL form — hidden for VIEWER guests */}
+      {canWrite && (
+        <div className="mt-3">
+          {showLinkForm ? (
+            <form
+              onSubmit={handleLinkSubmit}
+              className="space-y-2"
+              data-testid="link-form"
+            >
+              <input
+                type="url"
+                placeholder="https://…"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                required
+                className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                data-testid="link-url-input"
+                autoFocus
+              />
+              <input
+                type="text"
+                placeholder="Display name (optional)"
+                value={linkName}
+                onChange={(e) => setLinkName(e.target.value)}
+                className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                data-testid="link-name-input"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={linkSubmitting}
+                  className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
+                  data-testid="link-submit-button"
+                >
+                  Attach
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLinkForm(false);
+                    setLinkUrl('');
+                    setLinkName('');
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-200 rounded px-3 py-1.5 border border-slate-600 hover:border-slate-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowLinkForm(true)}
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              data-testid="attach-link-button"
+            >
+              <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              Attach a link
+            </button>
+          )}
+        </div>
+      )}
     </AttachmentDropZone>
   );
 }

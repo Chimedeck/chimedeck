@@ -51,6 +51,7 @@ import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel
 import BoardMembersPanel from '../../components/BoardMembersPanel';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import { canBoardGuestWrite } from '../../mods/guestPermissions';
 import type { BoardSearchResult } from '~/extensions/Search/api';
 
 // Injected by app bootstrap (same pattern as other containers)
@@ -82,6 +83,9 @@ const BoardPage = () => {
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
+  // [why] VIEWER guests have read-only access; MEMBER guests can write.
+  // Non-guests always get full write access (canBoardGuestWrite returns true for null).
+  const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
 
   // Batch-fetch custom field values for all cards on the board in a single request.
   // [why] Prevents N individual requests (one per card tile) when the board renders.
@@ -482,6 +486,7 @@ const BoardPage = () => {
               onDeleteList={handleDeleteList}
               onCardClick={handleCardClick}
               isReadOnly={board.state === 'ARCHIVED'}
+              isViewerGuest={isViewerGuest}
               customFieldValuesMap={customFieldValuesMap}
             />
           ) : activeView === 'TABLE' ? (

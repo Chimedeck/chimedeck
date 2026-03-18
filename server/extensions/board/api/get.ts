@@ -101,8 +101,12 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
     }
   }
 
+  // [why] Expose the caller's guest sub-type so the client can conditionally
+  // render write-action controls without a second round-trip.
+  const callerGuestType = (scopedReq.guestType as string | undefined) ?? null;
+
   return Response.json({
-    data: board,
+    data: { ...board, callerGuestType },
     includes: { lists, cards: cardsWithResolvedMembers, activities },
   });
 }

@@ -319,3 +319,227 @@ AND each entry contains { id, email, name, guestType, grantedAt, grantedBy }
 AND user-a has guestType = "VIEWER"
 AND user-b has guestType = "MEMBER"
 ```
+
+---
+
+## Iteration 3 Scenarios — Client Permission Guard + Invite Modal Toggle
+
+---
+
+### Scenario 28: UI — Guest invite modal defaults role toggle to Viewer
+
+```
+GIVEN an ADMIN opens the guest invite panel for board-1 (GuestsTab)
+THEN the "Viewer" toggle button has aria-pressed="true"
+AND the "Member" toggle button has aria-pressed="false"
+```
+
+---
+
+### Scenario 29: UI — Admin selects Member role before inviting
+
+```
+GIVEN an ADMIN opens the guest invite panel for board-1
+WHEN ADMIN clicks the "Member" toggle button
+THEN the "Member" toggle button has aria-pressed="true"
+AND the "Viewer" toggle button has aria-pressed="false"
+WHEN ADMIN enters "newmember@example.com" and submits
+THEN POST /api/v1/boards/board-1/guests is called with { email: "newmember@example.com", guestType: "MEMBER" }
+AND the success message reads "newmember@example.com invited as a Member."
+AND the role toggle resets to "Viewer" after successful invite
+```
+
+---
+
+### Scenario 30: UI — Successful invite with Viewer role shows correct message
+
+```
+GIVEN an ADMIN opens the guest invite panel for board-1
+AND the "Viewer" toggle is selected (default)
+WHEN ADMIN enters "viewer@example.com" and submits
+THEN POST /api/v1/boards/board-1/guests is called with { email: "viewer@example.com", guestType: "VIEWER" }
+AND the success message reads "viewer@example.com invited as a Viewer."
+```
+
+---
+
+### Scenario 31: canBoardGuestWrite returns false for VIEWER
+
+```
+GIVEN guestType is "VIEWER"
+WHEN canBoardGuestWrite("VIEWER") is called
+THEN it returns false
+```
+
+---
+
+### Scenario 32: canBoardGuestWrite returns true for MEMBER
+
+```
+GIVEN guestType is "MEMBER"
+WHEN canBoardGuestWrite("MEMBER") is called
+THEN it returns true
+```
+
+---
+
+### Scenario 33: canBoardGuestWrite returns true for null (non-guest user)
+
+```
+GIVEN guestType is null (caller is a regular workspace member, not a guest)
+WHEN canBoardGuestWrite(null) is called
+THEN it returns true
+AND write-action controls remain visible
+```
+
+---
+
+## Iteration 4 Scenarios — Client Guest Management Panel + UI Permission Guards
+
+---
+
+### Scenario 34: UI — Guest list shows Viewer badge for VIEWER guests
+
+```
+GIVEN board-1 has a guest user-a with guestType = 'VIEWER'
+AND any authenticated board member views the Board Members panel > Guests tab
+THEN user-a's row shows a "Viewer" badge
+AND the badge style indicates it is the active selection
+```
+
+---
+
+### Scenario 35: UI — Guest list shows Member badge for MEMBER guests
+
+```
+GIVEN board-1 has a guest user-b with guestType = 'MEMBER'
+AND any authenticated board member views the Board Members panel > Guests tab
+THEN user-b's row shows a "Member" badge
+AND the badge style indicates it is the active selection
+```
+
+---
+
+### Scenario 36: UI — ADMIN can change guest type from Viewer to Member inline
+
+```
+GIVEN an ADMIN views the Board Members panel > Guests tab for board-1
+AND user-a has guestType = 'VIEWER'
+WHEN ADMIN clicks the "Member" button in user-a's row
+THEN PATCH /api/v1/boards/board-1/guests/user-a is called with { guestType: "MEMBER" }
+AND on success the "Member" badge becomes active for user-a
+AND the "Viewer" badge becomes inactive
+```
+
+---
+
+### Scenario 37: UI — ADMIN can change guest type from Member to Viewer inline
+
+```
+GIVEN an ADMIN views the Board Members panel > Guests tab for board-1
+AND user-b has guestType = 'MEMBER'
+WHEN ADMIN clicks the "Viewer" button in user-b's row
+THEN PATCH /api/v1/boards/board-1/guests/user-b is called with { guestType: "VIEWER" }
+AND on success the "Viewer" badge becomes active for user-b
+```
+
+---
+
+### Scenario 38: UI — Failed inline guest type change shows per-row error
+
+```
+GIVEN an ADMIN views the Board Members panel > Guests tab for board-1
+AND user-a has guestType = 'VIEWER'
+WHEN ADMIN clicks the "Member" button for user-a
+AND the PATCH request fails (e.g. 403 or network error)
+THEN an error message appears below user-a's row
+AND the badge does not change from "Viewer"
+```
+
+---
+
+### Scenario 39: UI — Non-ADMIN sees read-only type badge (not interactive)
+
+```
+GIVEN a workspace MEMBER (not ADMIN) views the Board Members panel > Guests tab
+AND user-a has guestType = 'VIEWER'
+THEN user-a's row shows a "Viewer" badge
+AND the badge is NOT an interactive button (no aria-pressed)
+```
+
+---
+
+### Scenario 40: UI — VIEWER guest does not see "Add a card" button
+
+```
+GIVEN user-viewer is logged in as GUEST with guestType = 'VIEWER' on board-1
+WHEN user-viewer navigates to board-1 in Kanban view
+THEN no "+ Add a card" button is visible in any list column
+AND the "Add list" form is not shown
+```
+
+---
+
+### Scenario 41: UI — MEMBER guest sees "Add a card" button
+
+```
+GIVEN user-member is logged in as GUEST with guestType = 'MEMBER' on board-1
+WHEN user-member navigates to board-1 in Kanban view
+THEN the "+ Add a card" button is visible in each list column
+```
+
+---
+
+### Scenario 42: UI — VIEWER guest does not see comment input in card modal
+
+```
+GIVEN user-viewer is logged in as GUEST with guestType = 'VIEWER' on board-1
+WHEN user-viewer opens a card modal
+THEN the CommentEditor (comment input area) is not rendered in the Activity feed
+AND existing comments are still visible
+```
+
+---
+
+### Scenario 43: UI — VIEWER guest does not see attachment upload controls in card modal
+
+```
+GIVEN user-viewer is logged in as GUEST with guestType = 'VIEWER' on board-1
+WHEN user-viewer opens a card modal
+THEN the "Attach file" button is not visible
+AND the "Attach a link" button is not visible
+AND the file drop zone does not accept files
+AND existing attachments are still listed
+```
+
+---
+
+### Scenario 44: UI — MEMBER guest sees comment input and attachment upload controls
+
+```
+GIVEN user-member is logged in as GUEST with guestType = 'MEMBER' on board-1
+WHEN user-member opens a card modal
+THEN the CommentEditor is visible and enabled
+AND the "Attach file" button is visible and enabled
+AND the "Attach a link" button is visible and enabled
+```
+
+---
+
+### Scenario 45: UI — callerGuestType is included in board GET response for VIEWER guest
+
+```
+GIVEN user-viewer is a GUEST with guestType = 'VIEWER' on board-1
+WHEN GET /api/v1/boards/board-1 is called by user-viewer
+THEN the response data.callerGuestType = "VIEWER"
+```
+
+---
+
+### Scenario 46: UI — callerGuestType is null in board GET response for workspace member
+
+```
+GIVEN user-admin is a workspace ADMIN (not a GUEST)
+WHEN GET /api/v1/boards/board-1 is called by user-admin
+THEN the response data.callerGuestType is null or absent
+```
