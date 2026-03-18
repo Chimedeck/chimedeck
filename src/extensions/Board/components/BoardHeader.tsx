@@ -7,6 +7,8 @@ import type { ConnectionState } from '~/common/components/ConnectionBadge';
 import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
 import AutomationHeaderButton from '~/extensions/Automation/components/AutomationHeaderButton';
 import BoardButtonsBar from '~/extensions/Automation/components/BoardButtons/BoardButtonsBar';
+import BoardSearchBar from './BoardSearchBar';
+import type { BoardSearchResult } from '~/extensions/Search/api';
 
 interface Member {
   id: string;
@@ -33,6 +35,14 @@ interface Props {
   activeAutomationCount?: number;
   /** When true, hides member avatar stack and board settings menu (GUEST workspace role). */
   isGuest?: boolean;
+  /** Auth token for board-scoped search requests */
+  searchToken?: string;
+  /** Initial query to pre-fill (restored from URL) */
+  initialSearchQuery?: string;
+  /** Called when the user selects a result from the board search bar */
+  onSearchResultSelect?: (result: BoardSearchResult) => void;
+  /** Called when the active search query changes (for URL sync) */
+  onSearchQueryChange?: (query: string) => void;
 }
 
 const BoardHeader = ({
@@ -49,6 +59,10 @@ const BoardHeader = ({
   onOpenMembers,
   activeAutomationCount = 0,
   isGuest = false,
+  searchToken,
+  initialSearchQuery,
+  onSearchResultSelect,
+  onSearchQueryChange,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -128,6 +142,17 @@ const BoardHeader = ({
       {/* Connection badge (sprint-20) */}
       <ConnectionBadge state={resolvedState} />
       <PollingIndicator active={pollingActive} />
+
+      {/* Board-scoped search — renders when a valid auth token is available */}
+      {searchToken && (
+        <BoardSearchBar
+          boardId={board.id}
+          token={searchToken}
+          {...(initialSearchQuery ? { initialQuery: initialSearchQuery } : {})}
+          {...(onSearchQueryChange ? { onQueryChange: onSearchQueryChange } : {})}
+          {...(onSearchResultSelect ? { onSelectResult: onSearchResultSelect } : {})}
+        />
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         {/* Member avatar stack + Share button — hidden for workspace GUESTs */}

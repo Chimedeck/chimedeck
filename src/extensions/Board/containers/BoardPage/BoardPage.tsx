@@ -50,6 +50,7 @@ import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel
 import BoardMembersPanel from '../../components/BoardMembersPanel';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import type { BoardSearchResult } from '~/extensions/Search/api';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -63,7 +64,11 @@ const BoardPage = () => {
   const dispatch = useAppDispatch();
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── Board-scoped search state ─────────────────────────────────────────────
+  // Restore search query from URL on mount; reset when boardId changes.
+  const initialBoardSearch = searchParams.get('boardSearch') ?? '';
 
   const board = useAppSelector(selectBoard);
   const listOrder = useAppSelector(selectListOrder);
@@ -158,6 +163,42 @@ const BoardPage = () => {
         next.set('card', cardId);
         return next;
       });
+    },
+    [setSearchParams],
+  );
+
+  // ── Board search result selection ────────────────────────────────────────
+  // Card results: open the card modal via the ?card= URL param.
+  // List results: scroll the list column into view.
+  const handleSearchResultSelect = useCallback(
+    (result: BoardSearchResult) => {
+      if (result.type === 'card') {
+        handleCardClick(result.id);
+      } else {
+        const el = document.getElementById(`board-list-${result.id}`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        el?.focus({ preventScroll: true });
+      }
+    },
+    [handleCardClick],
+  );
+
+  // Sync the active search query into the URL as ?boardSearch= so it survives refresh.
+  // An empty string removes the param entirely to keep URLs clean.
+  const handleSearchQueryChange = useCallback(
+    (query: string) => {
+      setSearchParams(
+        (p) => {
+          const next = new URLSearchParams(p);
+          if (query) {
+            next.set('boardSearch', query);
+          } else {
+            next.delete('boardSearch');
+          }
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setSearchParams],
   );
@@ -371,6 +412,10 @@ const BoardPage = () => {
         onTitleSave={handleTitleSave}
         onOpenAutomation={automationPanel.openPanel}
         isGuest={isGuest}
+        {...(accessToken ? { searchToken: accessToken } : {})}
+        {...(initialBoardSearch ? { initialSearchQuery: initialBoardSearch } : {})}
+        onSearchResultSelect={handleSearchResultSelect}
+        onSearchQueryChange={handleSearchQueryChange}
         {...(!isGuest && {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
