@@ -5,6 +5,11 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   'comment_added',
   'comment_edited',
   'comment_deleted',
+  // Card lifecycle events (sprint 88+)
+  'card_created',
+  'card_moved',
+  'card_member_assigned',
+  'card_member_unassigned',
   // System events (sprint 29+)
   'card.member.added',
   'card.member.removed',

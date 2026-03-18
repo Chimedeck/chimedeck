@@ -11,6 +11,7 @@ import {
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { recordConflict } from '../../realtime/mods/conflictHandler';
+import { emitCardMoved } from '../../activity/mods/createActivityEvent';
 
 export async function handleMoveCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -112,7 +113,24 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
 
   // Client expects { card, fromListId } to update both card slice and board slice
   const fromListId = card.list_id;
-  await dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId, toListId: updated[0].list_id } });
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+
+  await Promise.all([
+    dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0], fromListId, toListId: updated[0].list_id } }),
+    emitCardMoved({
+      actorId,
+      cardId,
+      cardTitle: updated[0].title,
+      fromListId,
+      fromListName: sourceList!.title ?? null,
+      toListId: updated[0].list_id,
+      toListName: targetList.title ?? null,
+      boardId: board.id,
+      workspaceId: board.workspace_id,
+      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+    }),
+  ]);
 
   // Broadcast to all other board subscribers so their kanban updates in real time
   publisher.publish(
