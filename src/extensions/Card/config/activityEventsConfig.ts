@@ -2,6 +2,12 @@
 // Must stay in sync with server/extensions/activity/config/visibleEventTypes.ts.
 // Comment events (comment_added etc.) are handled by the comment system, not listed here.
 export const VISIBLE_ACTIVITY_EVENT_TYPES: string[] = [
+  // Sprint 88 — card lifecycle events
+  'card_created',
+  'card_moved',
+  'card_member_assigned',
+  'card_member_unassigned',
+  // Legacy event types
   'card.member.added',
   'card.member.removed',
   'card.due_date.set',

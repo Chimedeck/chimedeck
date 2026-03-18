@@ -143,3 +143,173 @@ For each of `card_created`, `card_moved`, `card_member_assigned`, `card_member_u
 - Assert `actor_id` matches the authenticated user's id.
 - Assert `created_at` is a valid ISO 8601 timestamp.
 - Assert `payload` is a non-null object with at minimum `cardId`.
+
+---
+
+## 7. Feed ordering stability — activity events merged with comments
+
+### 7.1 Activity events appear before co-timestamp comments when IDs are lexicographically later
+
+Background: the server applies a secondary `ORDER BY id DESC` so that events with identical
+`created_at` values are returned in a stable, deterministic sequence.
+
+1. Alice creates a card (`cardId`).
+2. Alice posts a comment on the card via `POST /api/v1/cards/:cardId/comments`.
+3. (Simulate timestamp collision by checking that both the `card_created` activity row and a
+   synthetic activity row could share the same second — this is a unit-level concern; at the
+   integration level, assert that the feed order is consistent across repeated calls.)
+4. Call `GET /api/v1/cards/:cardId/activity` twice in succession.
+5. Assert both responses return identical ordering — no flipping between calls.
+
+### 7.2 Merged client feed: comments and events interleaved chronologically
+
+1. Alice creates a card.
+2. Alice posts comment C1 (`POST /api/v1/cards/:cardId/comments`).
+3. Alice moves the card to **In Progress** (`PATCH /api/v1/cards/:cardId/move`).
+4. Alice posts comment C2.
+5. Alice assigns Bob to the card.
+6. Fetch `GET /api/v1/cards/:cardId/activity` and `GET /api/v1/cards/:cardId/comments`.
+7. Merge the two arrays client-side, sorted by `created_at` descending.
+8. Assert the merged feed order (newest first) is:
+   - `card_member_assigned` (most recent event)
+   - C2 (most recent comment)
+   - `card_moved`
+   - C1
+   - `card_created`
+9. Assert no duplicate rows exist (unique `id` per item).
+
+### 7.3 Legacy activity events remain visible alongside new event types
+
+1. Alice performs a sequence that includes a legacy event (e.g., `card.member.added`) and a new
+   event (`card_member_assigned`) for the same card.
+2. Call `GET /api/v1/cards/:cardId/activity`.
+3. Assert both `card.member.added` and `card_member_assigned` appear in the response.
+4. Assert neither legacy nor new events are absent or duplicated.
+
+### 7.4 Empty activity feed returns valid shape
+
+1. A newly created card (no moves, assigns, or comments yet) should have exactly one event.
+2. Call `GET /api/v1/cards/:cardId/activity` immediately after creation.
+3. Assert response is `200` with `data` array of length 1 containing `card_created`.
+4. Assert no error fields are present in the response body.
+
+### 7.5 Feed is stable when two events share the exact same `created_at`
+
+1. Insert two activity rows for the same card directly with identical `created_at` values
+   (test-setup only; production rows from different actions will naturally differ).
+2. Call `GET /api/v1/cards/:cardId/activity` three times.
+3. Assert all three responses return the two rows in the same order every time (secondary `id`
+   sort guarantees determinism).
+
+---
+
+## 8. Client UI — Activity feed message rendering
+
+These scenarios verify the rendered copy inside the card modal activity feed for each new
+event type. All scenarios use the Playwright MCP browser tool.
+
+### Fixture Setup (UI)
+- Alice is authenticated and a board with **Backlog** and **In Progress** lists is open.
+- Bob is also a board member.
+
+---
+
+### 8.1 `card_created` — rendered as "created this card"
+
+1. Alice creates a card titled **"Design spec"** in Backlog.
+2. Open the card modal.
+3. In the **Activity** section, assert exactly one system-event row is visible.
+4. Assert the row reads: **Alice** · "created this card" · <relative timestamp>.
+5. Assert the row does **not** display a comment bubble (no reply, no edit).
+
+---
+
+### 8.2 `card_moved` — rendered with list names
+
+1. Alice creates a card in **Backlog** and opens the card modal.
+2. Alice moves the card to **In Progress** (via the list-move action in the modal).
+3. In the **Activity** section, assert a new event row appears at the top.
+4. Assert the row reads: **Alice** · "moved this card from Backlog to In Progress".
+5. Assert the row does **not** include a thumbnail or comment controls.
+
+---
+
+### 8.3 `card_moved` — no event row on same-list reorder
+
+1. Alice creates two cards in **Backlog**: Card A and Card B.
+2. Alice reorders Card A within Backlog (drag above Card B).
+3. Open Card A's modal and inspect the Activity section.
+4. Assert **no** "moved this card" row is present — only "created this card".
+
+---
+
+### 8.4 `card_member_assigned` — Alice assigns Bob
+
+1. Alice creates a card and opens the card modal.
+2. Alice assigns Bob to the card via the Members section.
+3. In the **Activity** section, assert a new event row reads:
+   **Alice** · "assigned Bob to this card".
+4. Assert Bob's display name (from board member list) is used, not his user id.
+
+---
+
+### 8.5 `card_member_assigned` — self-assignment copy
+
+1. Alice creates a card and opens the card modal.
+2. Alice assigns herself to the card.
+3. Assert the activity row reads: **Alice** · "assigned themselves to this card".
+4. Assert it does **not** read "assigned Alice to this card" (no double name).
+
+---
+
+### 8.6 `card_member_unassigned` — Alice removes Bob
+
+1. Alice creates a card, assigns Bob, then removes Bob via the Members section.
+2. In the **Activity** section, assert a row reads:
+   **Alice** · "removed Bob from this card".
+3. Assert the earlier "assigned Bob to this card" row is still present below it.
+
+---
+
+### 8.7 `card_member_unassigned` — self-removal copy
+
+1. Alice creates a card, assigns herself, then removes herself.
+2. Assert the activity row reads: **Alice** · "removed themselves from this card".
+
+---
+
+### 8.8 Unknown event type — graceful fallback
+
+1. Manually inject an activity row with `action = "future_unknown_event"` for a card
+   (via direct DB insert in test setup).
+2. Open the card modal.
+3. Assert the row is rendered (not omitted) — since `future_unknown_event` will not be in
+   the `VISIBLE_ACTIVITY_EVENT_TYPES` allowlist, it should be filtered out and **not** appear.
+4. (Informational) Confirm no JS errors are thrown in the browser console.
+
+---
+
+### 8.9 Member name falls back gracefully when user is not in boardMembers
+
+1. A card has a `card_member_assigned` event where `payload.userId` belongs to a user who
+   has since left the board (no longer in `boardMembers`).
+2. Open the card modal.
+3. Assert the row renders without error and reads: **<actor>** · "assigned a member to this card".
+4. Assert no blank or `undefined` text is displayed.
+
+---
+
+### 8.10 All four event types visible in combined chronological feed
+
+1. Alice creates a card in Backlog.
+2. Alice moves it to In Progress.
+3. Alice assigns Bob.
+4. Alice removes Bob.
+5. Open the card modal Activity feed.
+6. Assert all four event rows appear in descending timestamp order (newest first):
+   - "removed Bob from this card"
+   - "assigned Bob to this card"
+   - "moved this card from Backlog to In Progress"
+   - "created this card"
+7. Assert each row has an avatar, actor name, descriptive label, and relative timestamp.
+8. Assert no duplicate rows are present.

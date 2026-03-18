@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import CommentItem, { type Comment } from '~/extensions/Comment/components/CommentItem';
 import CommentEditor from '~/extensions/Comment/components/CommentEditor';
-import { getActivityEventMeta } from '../../config/activityEventLabels';
+import { getActivityEventMeta, type ActivityEventContext } from '../../config/activityEventLabels';
 import { VISIBLE_ACTIVITY_EVENT_TYPES } from '../../config/activityEventsConfig';
 import { listAttachments } from '~/extensions/Attachments/api';
 import type { Attachment } from '~/extensions/Attachments/types';
@@ -148,7 +148,6 @@ const ActivityFeed = ({
 
           // System event row: avatar + actor name + label + timestamp
           const { activity } = item;
-          const meta = getActivityEventMeta(activity.action, activity.payload);
           const member = memberMap.get(activity.actor_id);
           const displayName =
             activity.actor_name ||
@@ -167,6 +166,16 @@ const ActivityFeed = ({
           const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
           const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.url);
           const actorAvatarUrl = activity.actor_avatar_url ?? null;
+
+          // [why] Pass context so label builder can resolve member names and detect self-assignment.
+          const eventContext: ActivityEventContext = {
+            resolveName: (uid) => {
+              const m = memberMap.get(uid);
+              return m?.name ?? m?.email ?? undefined;
+            },
+            currentUserId,
+          };
+          const meta = getActivityEventMeta(activity.action, activity.payload, eventContext);
 
           return (
             <div key={`event-${activity.id}`} className="flex gap-3">
