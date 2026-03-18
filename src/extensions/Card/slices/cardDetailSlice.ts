@@ -123,6 +123,15 @@ const cardDetailSlice = createSlice({
       if (comment) comment.deleted = true;
     },
 
+    // ── Realtime activity events ─────────────────────────────────────────────
+    addActivity(state, action: PayloadAction<ActivityData>) {
+      // Only append if this activity belongs to the currently open card.
+      if (state.openCardId !== action.payload.entity_id) return;
+      // Deduplicate: skip if already present (initial fetch + realtime can both deliver the same row).
+      if (state.activities.some((a) => a.id === action.payload.id)) return;
+      state.activities.push(action.payload);
+    },
+
 
     // ── Optimistic card field update ────────────────────────────────────────
     applyOptimisticCardUpdate(

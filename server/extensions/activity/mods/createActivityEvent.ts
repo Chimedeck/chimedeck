@@ -2,6 +2,7 @@
 // Each function calls writeActivity with the correct action and payload shape
 // so call sites stay declarative and payload contracts are enforced in one place.
 import { writeActivity } from './write';
+import { publishCardActivityEvent } from '../events/publishCardActivityEvent';
 
 export interface CardCreatedPayload {
   cardId: string;
@@ -22,7 +23,7 @@ export async function emitCardCreated({
   ipAddress?: string | null;
   userAgent?: string | null;
 }) {
-  return writeActivity({
+  const activity = await writeActivity({
     entityType: 'card',
     entityId: payload.cardId,
     boardId: payload.boardId,
@@ -32,6 +33,9 @@ export async function emitCardCreated({
     ipAddress: ipAddress ?? null,
     userAgent: userAgent ?? null,
   });
+  // [why] Fire-and-forget so a WS delivery failure never blocks the API response.
+  publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  return activity;
 }
 
 export interface CardMovedPayload {
@@ -58,7 +62,7 @@ export async function emitCardMoved({
   // [why] Only emit if the card actually changed lists; same-list reorders are
   //        not a "move" for activity feed purposes.
   if (payload.fromListId === payload.toListId) return null;
-  return writeActivity({
+  const activity = await writeActivity({
     entityType: 'card',
     entityId: payload.cardId,
     boardId: payload.boardId,
@@ -68,6 +72,8 @@ export async function emitCardMoved({
     ipAddress: ipAddress ?? null,
     userAgent: userAgent ?? null,
   });
+  publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  return activity;
 }
 
 export interface CardMemberAssignedPayload {
@@ -88,7 +94,7 @@ export async function emitCardMemberAssigned({
   ipAddress?: string | null;
   userAgent?: string | null;
 }) {
-  return writeActivity({
+  const activity = await writeActivity({
     entityType: 'card',
     entityId: payload.cardId,
     boardId: payload.boardId,
@@ -98,6 +104,8 @@ export async function emitCardMemberAssigned({
     ipAddress: ipAddress ?? null,
     userAgent: userAgent ?? null,
   });
+  publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  return activity;
 }
 
 export interface CardMemberUnassignedPayload {
@@ -118,7 +126,7 @@ export async function emitCardMemberUnassigned({
   ipAddress?: string | null;
   userAgent?: string | null;
 }) {
-  return writeActivity({
+  const activity = await writeActivity({
     entityType: 'card',
     entityId: payload.cardId,
     boardId: payload.boardId,
@@ -128,4 +136,6 @@ export async function emitCardMemberUnassigned({
     ipAddress: ipAddress ?? null,
     userAgent: userAgent ?? null,
   });
+  publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
+  return activity;
 }

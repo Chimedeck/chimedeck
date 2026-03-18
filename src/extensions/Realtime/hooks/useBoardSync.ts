@@ -119,6 +119,14 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           break;
         }
 
+        // ── Card activity events ──────────────────────────────────────────
+        case 'card_activity_created': {
+          // [why] Reducer filters by openCardId so cross-card events are silently ignored.
+          const { activity } = payload as { activity: import('../../Card/slices/cardDetailSlice').ActivityData };
+          dispatch(cardDetailSliceActions.addActivity(activity));
+          break;
+        }
+
         // ── Presence events ───────────────────────────────────────────────
         case 'presence_update':
           // Presence is handled by the PresenceAvatars component via its own

@@ -313,3 +313,76 @@ event type. All scenarios use the Playwright MCP browser tool.
    - "created this card"
 7. Assert each row has an avatar, actor name, descriptive label, and relative timestamp.
 8. Assert no duplicate rows are present.
+
+---
+
+## Section 9 — Realtime activity feed updates (multi-session)
+
+### 9.1 New activity row appears in open modal without refresh
+
+**Setup:** Alice and Bob are both authenticated on the same board. Alice has the card modal open for Card X.
+
+1. Bob moves Card X from **Backlog** to **In Progress** (without Alice's modal closing).
+2. Assert that a `card_moved` activity row appears in Alice's open modal within 2 seconds.
+3. Assert the row reads: **Bob** · "moved this card from Backlog to In Progress".
+4. Assert Alice did **not** refresh the page or close/reopen the modal.
+
+---
+
+### 9.2 Self-action realtime row: actor sees own activity appear immediately
+
+1. Alice opens the card modal for Card X.
+2. Alice assigns herself to the card via the Members section.
+3. Assert an activity row appears in Alice's own feed:
+   **Alice** · "assigned themselves to this card".
+4. Assert the row appears without a page reload.
+
+---
+
+### 9.3 Assignment event received by other open modal session
+
+**Setup:** Alice has Card X modal open. Bob is viewing the same board (may or may not have the modal open).
+
+1. Bob assigns himself to Card X.
+2. Assert that Alice's open modal shows a new row: **Bob** · "assigned Bob to this card".
+3. Assert no duplicate rows are present (not both from initial fetch and realtime delivery).
+
+---
+
+### 9.4 Realtime event for a different card is ignored
+
+**Setup:** Alice has Card X modal open. Bob acts on Card Y (a different card on the same board).
+
+1. Bob moves Card Y to **Done**.
+2. Assert Alice's open modal for Card X does **not** gain any new activity rows.
+3. Assert Card X's activity count remains unchanged.
+
+---
+
+### 9.5 Realtime delivery after reconnect
+
+1. Alice opens the card modal for Card X.
+2. Alice's WebSocket disconnects (simulate by disabling network briefly).
+3. While disconnected, Bob creates a comment (triggers no `card_activity_created` event but confirms the connection lifecycle).
+4. Bob also moves Card X to another list (emits a `card_activity_created` event for card_moved).
+5. Alice's WebSocket reconnects.
+6. Assert that after reconnect the missed `card_moved` activity row appears in the feed (via board event re-sync or realtime delivery on reconnect).
+
+---
+
+### 9.6 No cross-board leakage
+
+**Setup:** Alice is viewing Board A with Card X's modal open. Bob acts on Card Z which lives on Board B.
+
+1. Bob creates Card Z on Board B.
+2. Assert Alice's open modal for Card X on Board A does **not** receive any new activity rows from Board B.
+
+---
+
+### 9.7 Concurrent comment + realtime activity — no duplicate or missing rows
+
+1. Alice types a comment and submits it at the same time Bob moves the card to another list.
+2. Assert Alice's feed shows both:
+   - Her submitted comment (at the top or chronologically correct position).
+   - Bob's `card_moved` activity row.
+3. Assert no duplicate rows appear for either event.
