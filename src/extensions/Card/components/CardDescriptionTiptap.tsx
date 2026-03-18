@@ -13,6 +13,7 @@ import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineU
 import { CardAssetPicker } from '~/extensions/Comment/components/CardAssetPicker';
 import { listAttachments } from '~/extensions/Attachments/api';
 import InlineImage from '~/extensions/Comment/extensions/InlineImage';
+import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
 import {
   dehydrateCommentAttachmentMarkdown,
   hasAttachmentPlaceholder,
@@ -292,7 +293,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   // Tiptap editor instance
   const editor = useEditor({
-    extensions: [StarterKit, Markdown, InlineImage],
+    extensions: [StarterKit, Markdown, InlineImage, buildMentionExtension(boardId)],
     content: buildEditorContentHtml(description || '', cardAttachmentsRef.current),
     editable: editing && !disabled,
     immediatelyRender: false,

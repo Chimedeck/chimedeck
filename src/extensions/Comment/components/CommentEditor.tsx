@@ -10,6 +10,7 @@ import { Markdown } from '@tiptap/markdown';
 import type { Editor } from '@tiptap/react';
 import type { Attachment } from '~/extensions/Attachments/types';
 import InlineImage from '../extensions/InlineImage';
+import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
 import {
   dehydrateCommentAttachmentMarkdown,
   hasAttachmentPlaceholder,
@@ -283,6 +284,8 @@ const CommentEditor = ({
       Markdown,
       // [why] InlineImage now includes markdown parse/render support.
       InlineImage,
+      // [why] Mention extension auto-loads for boards; skip if no boardId (edge case).
+      ...(boardId ? [buildMentionExtension(boardId)] : []),
     ],
     content: getInitialEditorContent(initialValue || '', cardAttachmentsRef.current),
     contentType: 'markdown',
