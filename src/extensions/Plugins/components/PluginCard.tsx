@@ -3,6 +3,7 @@
 // that triggers the plugin's settings modal.
 // When onEdit is provided (platform admins only), shows a pencil edit button.
 import { PuzzlePieceIcon, PencilIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import translations from '../translations/en.json';
 import PluginCapabilityChips from './PluginCapabilityChips';
 import type { Plugin, BoardPlugin } from '../api';
 
@@ -56,7 +57,7 @@ const PluginCard = (props: Props) => {
         <div className="flex items-center gap-2">
           <span className="text-slate-100 font-medium text-sm truncate">{plugin.name}</span>
           {plugin.author && (
-            <span className="text-slate-500 text-xs">by {plugin.author}</span>
+            <span className="text-slate-500 text-xs">{translations['plugins.card.by']} {plugin.author}</span>
           )}
         </div>
         {plugin.description && (
@@ -80,9 +81,9 @@ const PluginCard = (props: Props) => {
         {props.onEdit && (
           <button
             onClick={() => props.onEdit!(plugin)}
-            title="Edit plugin"
+            title={translations['plugins.card.editTitle']}
             className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
-            aria-label="Edit plugin"
+            aria-label={translations['plugins.card.editAriaLabel']}
           >
             <PencilIcon className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -92,9 +93,9 @@ const PluginCard = (props: Props) => {
         {hasSettings && props.mode === 'disable' && props.onSettings && (
           <button
             onClick={() => (props as DisableCardProps).onSettings?.((props as DisableCardProps).boardPlugin)}
-            title="Plugin settings"
+            title={translations['plugins.card.settingsTitle']}
             className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
-            aria-label="Open plugin settings"
+            aria-label={translations['plugins.card.settingsAriaLabel']}
           >
             <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -106,7 +107,7 @@ const PluginCard = (props: Props) => {
             disabled={loading}
             className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded px-3 py-1.5 transition-colors"
           >
-            {loading ? 'Enabling…' : 'Enable'}
+            {loading ? translations['plugins.card.enabling'] : translations['plugins.card.enable']}
           </button>
         ) : (
           <button
@@ -114,7 +115,7 @@ const PluginCard = (props: Props) => {
             disabled={loading}
             className="text-xs bg-slate-600 hover:bg-red-700 disabled:opacity-50 text-slate-200 hover:text-white rounded px-3 py-1.5 transition-colors"
           >
-            {loading ? 'Disabling…' : 'Disable'}
+            {loading ? translations['plugins.card.disabling'] : translations['plugins.card.disable']}
           </button>
         )}
       </div>

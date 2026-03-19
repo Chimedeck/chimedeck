@@ -1,6 +1,7 @@
 // Modal form for platform admins to edit an existing plugin in the registry.
 import { useState, useCallback, useEffect, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import translations from '../translations/en.json';
 import type { Plugin, UpdatePluginBody } from '../api';
 
 interface Props {
@@ -91,16 +92,16 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = 'Name is required.';
-    if (!description.trim()) errs.description = 'Description is required.';
-    if (!connectorUrl.trim()) errs.connectorUrl = 'Connector URL is required.';
-    else if (!HTTPS_REGEX.test(connectorUrl)) errs.connectorUrl = 'Connector URL must start with https://';
-    if (!author.trim()) errs.author = 'Author name is required.';
-    if (authorEmail && !EMAIL_REGEX.test(authorEmail)) errs.authorEmail = 'Invalid email address.';
-    if (supportEmail && !EMAIL_REGEX.test(supportEmail)) errs.supportEmail = 'Invalid email address.';
+    if (!name.trim()) errs.name = translations['plugins.editModal.validation.nameRequired'];
+    if (!description.trim()) errs.description = translations['plugins.editModal.validation.descriptionRequired'];
+    if (!connectorUrl.trim()) errs.connectorUrl = translations['plugins.editModal.validation.connectorUrlRequired'];
+    else if (!HTTPS_REGEX.test(connectorUrl)) errs.connectorUrl = translations['plugins.editModal.validation.connectorUrlInvalid'];
+    if (!author.trim()) errs.author = translations['plugins.editModal.validation.authorRequired'];
+    if (authorEmail && !EMAIL_REGEX.test(authorEmail)) errs.authorEmail = translations['plugins.editModal.validation.emailInvalid'];
+    if (supportEmail && !EMAIL_REGEX.test(supportEmail)) errs.supportEmail = translations['plugins.editModal.validation.emailInvalid'];
     for (const domain of whitelistedDomains) {
       if (!HTTPS_REGEX.test(domain)) {
-        errs.whitelistedDomains = 'All domains must start with https://';
+        errs.whitelistedDomains = translations['plugins.editModal.validation.domainsInvalid'];
         break;
       }
     }
@@ -155,14 +156,14 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-label="Edit Plugin"
+      aria-label={translations['plugins.editModal.ariaLabel']}
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 rounded-lg shadow-2xl mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0">
-          <h2 className="text-slate-100 font-semibold text-base">Edit Plugin</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-lg leading-none" aria-label="Close">✕</button>
+          <h2 className="text-slate-100 font-semibold text-base">{translations['plugins.editModal.title']}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-lg leading-none" aria-label={translations['plugins.editModal.closeAriaLabel']}>✕</button>
         </div>
 
         {/* Scrollable body */}
@@ -170,19 +171,19 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
           {serverError && (
             <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
               {serverError === 'invalid-connector-url'
-                ? 'The connector URL is invalid. It must start with https://.'
+                ? translations['plugins.editModal.error.invalidConnectorUrl']
                 : serverError === 'invalid-whitelisted-domain'
-                ? 'One or more domains are invalid. They must start with https://.'
+                ? translations['plugins.editModal.error.invalidWhitelistedDomain']
                 : serverError === 'too-many-whitelisted-domains'
-                ? 'Too many whitelisted domains (max 20).'
+                ? translations['plugins.editModal.error.tooManyWhitelistedDomains']
                 : serverError}
             </div>
           )}
 
-          {field('Plugin Name', true,
+          {field(translations['plugins.editModal.field.pluginName'], true,
             <input
               className={inputCls(errors.name)}
-              placeholder="My Awesome Plugin"
+              placeholder={translations['plugins.editModal.placeholder.pluginName']}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isSubmitting}
@@ -190,11 +191,11 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             errors.name,
           )}
 
-          {field('Description', true,
+          {field(translations['plugins.editModal.field.description'], true,
             <textarea
               className={`${inputCls(errors.description)} resize-none`}
               rows={3}
-              placeholder="What does this plugin do?"
+              placeholder={translations['plugins.editModal.placeholder.description']}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isSubmitting}
@@ -202,10 +203,10 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             errors.description,
           )}
 
-          {field('Connector URL', true,
+          {field(translations['plugins.editModal.field.connectorUrl'], true,
             <input
               className={inputCls(errors.connectorUrl)}
-              placeholder="https://my-plugin.example.com/connector"
+              placeholder={translations['plugins.editModal.placeholder.connectorUrl']}
               value={connectorUrl}
               onChange={(e) => setConnectorUrl(e.target.value)}
               disabled={isSubmitting}
@@ -213,21 +214,21 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             errors.connectorUrl,
           )}
 
-          {field('Manifest URL', false,
+          {field(translations['plugins.editModal.field.manifestUrl'], false,
             <input
               className={inputCls()}
-              placeholder="https://my-plugin.example.com/manifest.json"
+              placeholder={translations['plugins.editModal.placeholder.manifestUrl']}
               value={manifestUrl}
               onChange={(e) => setManifestUrl(e.target.value)}
               disabled={isSubmitting}
             />,
           )}
 
-          {field('Icon URL', false,
+          {field(translations['plugins.editModal.field.iconUrl'], false,
             <div className="flex gap-2 items-center">
               <input
                 className={`${inputCls()} flex-1`}
-                placeholder="https://my-plugin.example.com/icon.png"
+                placeholder={translations['plugins.editModal.placeholder.iconUrl']}
                 value={iconUrl}
                 onChange={(e) => setIconUrl(e.target.value)}
                 disabled={isSubmitting}
@@ -243,10 +244,10 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             </div>,
           )}
 
-          {field('Author', true,
+          {field(translations['plugins.editModal.field.author'], true,
             <input
               className={inputCls(errors.author)}
-              placeholder="Jane Doe"
+              placeholder={translations['plugins.editModal.placeholder.author']}
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               disabled={isSubmitting}
@@ -254,11 +255,11 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             errors.author,
           )}
 
-          {field('Author Email', false,
+          {field(translations['plugins.editModal.field.authorEmail'], false,
             <input
               type="email"
               className={inputCls(errors.authorEmail)}
-              placeholder="jane@example.com"
+              placeholder={translations['plugins.editModal.placeholder.authorEmail']}
               value={authorEmail}
               onChange={(e) => setAuthorEmail(e.target.value)}
               disabled={isSubmitting}
@@ -266,11 +267,11 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             errors.authorEmail,
           )}
 
-          {field('Support Email', false,
+          {field(translations['plugins.editModal.field.supportEmail'], false,
             <input
               type="email"
               className={inputCls(errors.supportEmail)}
-              placeholder="support@example.com"
+              placeholder={translations['plugins.editModal.placeholder.supportEmail']}
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
               disabled={isSubmitting}
@@ -278,7 +279,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             errors.supportEmail,
           )}
 
-          {field('Categories', false,
+          {field(translations['plugins.editModal.field.categories'], false,
             <div>
               <div className="flex flex-wrap gap-1 mb-1">
                 {categories.map((tag) => (
@@ -297,7 +298,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               </div>
               <input
                 className={inputCls()}
-                placeholder="Type and press Enter or comma to add"
+                placeholder={translations['plugins.editModal.placeholder.categories']}
                 value={categoryInput}
                 onChange={(e) => setCategoryInput(e.target.value)}
                 onKeyDown={handleCategoryKeyDown}
@@ -307,10 +308,10 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             </div>,
           )}
 
-          {field('Whitelisted Domains', false,
+          {field(translations['plugins.editModal.field.whitelistedDomains'], false,
             <div>
               <p className="text-xs text-slate-500 mb-1">
-                External domains this plugin may load (https:// only, max 20).
+                {translations['plugins.editModal.whitelistedDomains.hint']}
               </p>
               <div className="flex flex-wrap gap-1 mb-1">
                 {whitelistedDomains.map((domain) => (
@@ -329,7 +330,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               </div>
               <input
                 className={inputCls(errors.whitelistedDomains)}
-                placeholder="https://api.example.com — press Enter to add"
+                placeholder={translations['plugins.editModal.placeholder.whitelistedDomains']}
                 value={domainInput}
                 onChange={(e) => setDomainInput(e.target.value)}
                 onKeyDown={handleDomainKeyDown}
@@ -350,7 +351,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               className="w-4 h-4 accent-blue-500"
             />
             <label htmlFor="editIsPublic" className="text-sm text-slate-300 cursor-pointer">
-              Public (visible to all users)
+              {translations['plugins.editModal.field.isPublic']}
             </label>
           </div>
         </div>
@@ -362,14 +363,14 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
             disabled={isSubmitting}
             className="text-sm text-slate-400 hover:text-slate-200 px-4 py-2"
           >
-            Cancel
+            {translations['plugins.editModal.cancel']}
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className="text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded px-4 py-2"
           >
-            {isSubmitting ? 'Saving…' : 'Save Changes'}
+            {isSubmitting ? translations['plugins.editModal.saving'] : translations['plugins.editModal.submit']}
           </button>
         </div>
       </div>

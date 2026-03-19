@@ -1,16 +1,18 @@
 // PluginCapabilityChips — compact chip list for plugin capabilities.
+import translations from '../translations/en.json';
+
 interface Props {
   capabilities: string[];
 }
 
 const CAPABILITY_LABELS: Record<string, string> = {
-  'card-badges': 'Card Badges',
-  'card-buttons': 'Card Buttons',
-  'card-detail-badges': 'Card Detail Badges',
-  section: 'Section',
-  'show-settings': 'Settings',
-  'authorization-status': 'Auth Status',
-  'show-authorization': 'Authorization',
+  'card-badges': translations['plugins.capabilities.cardBadges'],
+  'card-buttons': translations['plugins.capabilities.cardButtons'],
+  'card-detail-badges': translations['plugins.capabilities.cardDetailBadges'],
+  section: translations['plugins.capabilities.section'],
+  'show-settings': translations['plugins.capabilities.showSettings'],
+  'authorization-status': translations['plugins.capabilities.authorizationStatus'],
+  'show-authorization': translations['plugins.capabilities.showAuthorization'],
 };
 
 const PluginCapabilityChips = ({ capabilities }: Props) => {

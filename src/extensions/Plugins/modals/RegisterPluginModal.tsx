@@ -1,6 +1,7 @@
 // Modal form for platform admins to register a new plugin in the registry.
 import { useState, useCallback, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import translations from '../translations/en.json';
 import type { RegisterPluginBody } from '../api';
 
 interface Props {
@@ -72,15 +73,15 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = 'Name is required.';
-    if (!slug.trim()) errs.slug = 'Slug is required.';
-    else if (!SLUG_REGEX.test(slug)) errs.slug = 'Slug must be lowercase letters, numbers, and hyphens only.';
-    if (!description.trim()) errs.description = 'Description is required.';
-    if (!connectorUrl.trim()) errs.connectorUrl = 'Connector URL is required.';
-    else if (!HTTPS_REGEX.test(connectorUrl)) errs.connectorUrl = 'Connector URL must start with https://';
-    if (!author.trim()) errs.author = 'Author name is required.';
-    if (authorEmail && !EMAIL_REGEX.test(authorEmail)) errs.authorEmail = 'Invalid email address.';
-    if (supportEmail && !EMAIL_REGEX.test(supportEmail)) errs.supportEmail = 'Invalid email address.';
+    if (!name.trim()) errs.name = translations['plugins.registerModal.validation.nameRequired'];
+    if (!slug.trim()) errs.slug = translations['plugins.registerModal.validation.slugRequired'];
+    else if (!SLUG_REGEX.test(slug)) errs.slug = translations['plugins.registerModal.validation.slugInvalid'];
+    if (!description.trim()) errs.description = translations['plugins.registerModal.validation.descriptionRequired'];
+    if (!connectorUrl.trim()) errs.connectorUrl = translations['plugins.registerModal.validation.connectorUrlRequired'];
+    else if (!HTTPS_REGEX.test(connectorUrl)) errs.connectorUrl = translations['plugins.registerModal.validation.connectorUrlInvalid'];
+    if (!author.trim()) errs.author = translations['plugins.registerModal.validation.authorRequired'];
+    if (authorEmail && !EMAIL_REGEX.test(authorEmail)) errs.authorEmail = translations['plugins.registerModal.validation.emailInvalid'];
+    if (supportEmail && !EMAIL_REGEX.test(supportEmail)) errs.supportEmail = translations['plugins.registerModal.validation.emailInvalid'];
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -129,14 +130,14 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-label="Register Plugin"
+      aria-label={translations['plugins.registerModal.ariaLabel']}
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 rounded-lg shadow-2xl mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0">
-          <h2 className="text-slate-100 font-semibold text-base">Register a Plugin</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-lg leading-none" aria-label="Close">✕</button>
+          <h2 className="text-slate-100 font-semibold text-base">{translations['plugins.registerModal.title']}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-lg leading-none" aria-label={translations['plugins.registerModal.closeAriaLabel']}>✕</button>
         </div>
 
         {/* Scrollable body */}
@@ -144,17 +145,17 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
           {serverError && (
             <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
               {serverError === 'plugin-slug-taken'
-                ? 'This slug is already taken. Please choose a different slug.'
+                ? translations['plugins.registerModal.error.slugTaken']
                 : serverError === 'invalid-connector-url'
-                ? 'The connector URL is invalid. It must start with https://.'
+                ? translations['plugins.registerModal.error.invalidConnectorUrl']
                 : serverError}
             </div>
           )}
 
-          {field('Plugin Name', true,
+          {field(translations['plugins.registerModal.field.pluginName'], true,
             <input
               className={inputCls(errors.name)}
-              placeholder="My Awesome Plugin"
+              placeholder={translations['plugins.registerModal.placeholder.pluginName']}
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
               disabled={isSubmitting}
@@ -162,10 +163,10 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.name,
           )}
 
-          {field('Slug', true,
+          {field(translations['plugins.registerModal.field.slug'], true,
             <input
               className={inputCls(errors.slug)}
-              placeholder="my-awesome-plugin"
+              placeholder={translations['plugins.registerModal.placeholder.slug']}
               value={slug}
               onChange={(e) => handleSlugChange(e.target.value)}
               disabled={isSubmitting}
@@ -173,11 +174,11 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.slug,
           )}
 
-          {field('Description', true,
+          {field(translations['plugins.registerModal.field.description'], true,
             <textarea
               className={`${inputCls(errors.description)} resize-none`}
               rows={3}
-              placeholder="What does this plugin do?"
+              placeholder={translations['plugins.registerModal.placeholder.description']}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isSubmitting}
@@ -185,10 +186,10 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.description,
           )}
 
-          {field('Connector URL', true,
+          {field(translations['plugins.registerModal.field.connectorUrl'], true,
             <input
               className={inputCls(errors.connectorUrl)}
-              placeholder="https://my-plugin.example.com/connector"
+              placeholder={translations['plugins.registerModal.placeholder.connectorUrl']}
               value={connectorUrl}
               onChange={(e) => setConnectorUrl(e.target.value)}
               disabled={isSubmitting}
@@ -196,21 +197,21 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.connectorUrl,
           )}
 
-          {field('Manifest URL', false,
+          {field(translations['plugins.registerModal.field.manifestUrl'], false,
             <input
               className={inputCls()}
-              placeholder="https://my-plugin.example.com/manifest.json"
+              placeholder={translations['plugins.registerModal.placeholder.manifestUrl']}
               value={manifestUrl}
               onChange={(e) => setManifestUrl(e.target.value)}
               disabled={isSubmitting}
             />,
           )}
 
-          {field('Icon URL', false,
+          {field(translations['plugins.registerModal.field.iconUrl'], false,
             <div className="flex gap-2 items-center">
               <input
                 className={`${inputCls()} flex-1`}
-                placeholder="https://my-plugin.example.com/icon.png"
+                placeholder={translations['plugins.registerModal.placeholder.iconUrl']}
                 value={iconUrl}
                 onChange={(e) => setIconUrl(e.target.value)}
                 disabled={isSubmitting}
@@ -226,10 +227,10 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             </div>,
           )}
 
-          {field('Author', true,
+          {field(translations['plugins.registerModal.field.author'], true,
             <input
               className={inputCls(errors.author)}
-              placeholder="Jane Doe"
+              placeholder={translations['plugins.registerModal.placeholder.author']}
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               disabled={isSubmitting}
@@ -237,11 +238,11 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.author,
           )}
 
-          {field('Author Email', false,
+          {field(translations['plugins.registerModal.field.authorEmail'], false,
             <input
               type="email"
               className={inputCls(errors.authorEmail)}
-              placeholder="jane@example.com"
+              placeholder={translations['plugins.registerModal.placeholder.authorEmail']}
               value={authorEmail}
               onChange={(e) => setAuthorEmail(e.target.value)}
               disabled={isSubmitting}
@@ -249,11 +250,11 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.authorEmail,
           )}
 
-          {field('Support Email', false,
+          {field(translations['plugins.registerModal.field.supportEmail'], false,
             <input
               type="email"
               className={inputCls(errors.supportEmail)}
-              placeholder="support@example.com"
+              placeholder={translations['plugins.registerModal.placeholder.supportEmail']}
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
               disabled={isSubmitting}
@@ -261,7 +262,7 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             errors.supportEmail,
           )}
 
-          {field('Categories', false,
+          {field(translations['plugins.registerModal.field.categories'], false,
             <div>
               <div className="flex flex-wrap gap-1 mb-1">
                 {categories.map((tag) => (
@@ -280,7 +281,7 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
               </div>
               <input
                 className={inputCls()}
-                placeholder="Type and press Enter or comma to add"
+                placeholder={translations['plugins.registerModal.placeholder.categories']}
                 value={categoryInput}
                 onChange={(e) => setCategoryInput(e.target.value)}
                 onKeyDown={handleCategoryKeyDown}
@@ -300,7 +301,7 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
               className="w-4 h-4 accent-blue-500"
             />
             <label htmlFor="isPublic" className="text-sm text-slate-300 cursor-pointer">
-              Public (visible to all users)
+              {translations['plugins.registerModal.field.isPublic']}
             </label>
           </div>
         </div>
@@ -312,14 +313,14 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
             disabled={isSubmitting}
             className="text-sm text-slate-400 hover:text-slate-200 px-4 py-2"
           >
-            Cancel
+            {translations['plugins.registerModal.cancel']}
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className="text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded px-4 py-2"
           >
-            {isSubmitting ? 'Registering…' : 'Register Plugin'}
+            {isSubmitting ? translations['plugins.registerModal.registering'] : translations['plugins.registerModal.submit']}
           </button>
         </div>
       </div>

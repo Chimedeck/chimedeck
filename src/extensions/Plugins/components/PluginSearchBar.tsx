@@ -1,5 +1,6 @@
 // PluginSearchBar — debounced search input + category dropdown for the plugin registry.
 import { useState, useEffect, useRef } from 'react';
+import translations from '../translations/en.json';
 
 interface Props {
   categories: string[];
@@ -44,7 +45,7 @@ const PluginSearchBar = ({
         type="text"
         value={inputValue}
         onChange={handleInputChange}
-        placeholder="Search plugins…"
+        placeholder={translations['plugins.searchBar.placeholder']}
         className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
       />
       <select
@@ -52,7 +53,7 @@ const PluginSearchBar = ({
         onChange={handleCategoryChange}
         className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500"
       >
-        <option value="">All categories</option>
+        <option value="">{translations['plugins.searchBar.allCategories']}</option>
         {categories.map((cat) => (
           <option key={cat} value={cat}>
             {cat}

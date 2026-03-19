@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import translations from '../translations/en.json';
 import type { BoardPlugin } from '../api';
 import PluginAllowedDomainsPanel from '../components/PluginAllowedDomainsPanel';
 
@@ -60,7 +61,7 @@ const PluginModal = ({ modal, onClose }: Props) => {
       onMouseDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-modal="true"
-      aria-label={modal.title || 'Plugin'}
+      aria-label={modal.title || translations['plugins.modal.defaultTitle']}
     >
       {/* Backdrop */}
       {/* [why] stopPropagation prevents the click from bubbling to the card detail
@@ -84,12 +85,12 @@ const PluginModal = ({ modal, onClose }: Props) => {
           style={headerStyle}
         >
           <h2 className="text-slate-100 font-medium text-sm truncate pr-4">
-            {modal.title || 'Plugin'}
+            {modal.title || translations['plugins.modal.defaultTitle']}
           </h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-200 text-lg leading-none flex-shrink-0"
-            aria-label="Close modal"
+            aria-label={translations['plugins.modal.closeAriaLabel']}
           >
             ✕
           </button>
@@ -100,7 +101,7 @@ const PluginModal = ({ modal, onClose }: Props) => {
           ref={iframeRef}
           id={`plugin-modal-iframe-${modal.pluginId}`}
           src={modal.url}
-          title={modal.title || 'Plugin modal'}
+          title={modal.title || translations['plugins.modal.defaultTitle']}
           className="flex-1 w-full border-0 bg-white"
           // [why] allow="payment" is required for the Payment Request API (Google Pay,
           // Apple Pay) to work inside the sandboxed iframe. Without it the browser fires

@@ -10,6 +10,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { apiClient } from '~/common/api/client';
 import { pluginsConfig } from '../config/pluginsConfig';
+import translations from '../translations/en.json';
 import type { BoardPlugin } from '../api';
 
 interface Props {
@@ -58,7 +59,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
       );
       setSaveSuccess(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save domain settings.');
+      setSaveError(err instanceof Error ? err.message : translations['plugins.allowedDomains.saveError']);
     } finally {
       setSaving(false);
     }
@@ -69,11 +70,10 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
   return (
     <div className="border-t border-slate-700 bg-slate-850 px-4 py-3 flex-shrink-0">
       <h3 className="text-slate-300 text-xs font-semibold uppercase tracking-wide mb-2">
-        Allowed Domains
+        {translations['plugins.allowedDomains.heading']}
       </h3>
       <p className="text-slate-400 text-xs mb-3">
-        Restrict which external domains this plugin may open on this board. Unchecked domains will
-        be blocked.
+        {translations['plugins.allowedDomains.description']}
       </p>
 
       <ul className="space-y-1.5 mb-3">
@@ -103,7 +103,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
       )}
       {saveSuccess && (
         <p className="text-green-400 text-xs mb-2" role="status">
-          Domain settings saved.
+          {translations['plugins.allowedDomains.saveSuccess']}
         </p>
       )}
 
@@ -112,7 +112,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
         disabled={isPristine || saving}
         className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded px-3 py-1.5 transition-colors"
       >
-        {saving ? 'Saving…' : 'Save domain settings'}
+        {saving ? translations['plugins.allowedDomains.saving'] : translations['plugins.allowedDomains.save']}
       </button>
     </div>
   );

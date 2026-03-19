@@ -4,6 +4,7 @@
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import translations from '../translations/en.json';
 
 export interface PluginPopupState {
   open: boolean;
@@ -75,17 +76,17 @@ const PluginPopup = ({ popup, onClose }: Props) => {
       style={{ left, top, width: POPUP_WIDTH, maxHeight: POPUP_MAX_HEIGHT }}
       role="dialog"
       aria-modal="true"
-      aria-label={popup.title || 'Plugin popup'}
+      aria-label={popup.title || translations['plugins.popup.defaultTitle']}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700 flex-shrink-0">
         <span className="text-slate-100 text-xs font-medium truncate pr-3">
-          {popup.title || 'Plugin'}
+          {popup.title || translations['plugins.popup.defaultTitle']}
         </span>
         <button
           onClick={onClose}
           className="text-slate-400 hover:text-slate-200 text-sm leading-none flex-shrink-0"
-          aria-label="Close popup"
+          aria-label={translations['plugins.popup.closeAriaLabel']}
         >
           ✕
         </button>
@@ -95,7 +96,7 @@ const PluginPopup = ({ popup, onClose }: Props) => {
       <iframe
         id={`plugin-popup-iframe-${popup.pluginId}`}
         src={iframeSrc}
-        title={popup.title || 'Plugin popup'}
+        title={popup.title || translations['plugins.popup.defaultTitle']}
         className="flex-1 w-full border-0 bg-white"
         style={{ minHeight: 120 }}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
