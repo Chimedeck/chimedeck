@@ -2,6 +2,7 @@
 // Accepts a 0–100 progress value; shows an indeterminate stripe when progress
 // is unavailable (null/undefined).
 import React from 'react';
+import translations from '../translations/en.json';
 
 interface Props {
   /** 0–100. Pass null/undefined for indeterminate (striped animation). */
@@ -10,7 +11,7 @@ interface Props {
   label?: string;
 }
 
-export function UploadProgressBar({ progress, label = 'Uploading…' }: Props): React.ReactElement {
+export function UploadProgressBar({ progress, label = translations['attachments.progressBar.label'] }: Props): React.ReactElement {
   const isIndeterminate = progress == null;
 
   return (

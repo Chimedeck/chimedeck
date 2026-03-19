@@ -2,6 +2,7 @@
 // Progress is tracked via XMLHttpRequest's progress event (no third-party library).
 import React, { useRef, useState } from 'react';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
+import translations from '../translations/en.json';
 
 interface Props {
   cardId: string;
@@ -43,11 +44,11 @@ export function AttachmentUploader({ cardId, onUploadComplete }: Props): React.R
       />
       {progress !== null ? (
         <div>
-          <div style={{ marginBottom: 8 }}>Uploading… {progress}%</div>
+          <div style={{ marginBottom: 8 }}>{translations['attachment.uploader.uploading'].replace('{progress}', String(progress))}</div>
           <progress value={progress} max={100} style={{ width: '100%' }} />
         </div>
       ) : (
-        <span>Drop a file here or click to browse</span>
+        <span>{translations['attachment.uploader.dropOrBrowse']}</span>
       )}
       {error && <div style={{ color: '#ef4444', marginTop: 8 }}>{error}</div>}
     </div>

@@ -1,5 +1,6 @@
 // AttachmentStatusBadge — displays the scan status of a FILE attachment.
 import React from 'react';
+import translations from '../translations/en.json';
 
 type AttachmentStatus = 'PENDING' | 'READY' | 'REJECTED';
 
@@ -14,9 +15,9 @@ const BADGE_STYLES: Record<AttachmentStatus, React.CSSProperties> = {
 };
 
 const BADGE_LABELS: Record<AttachmentStatus, string> = {
-  PENDING: 'Scanning…',
-  READY: 'Ready',
-  REJECTED: 'Rejected',
+  PENDING: translations['attachment.item.status.scanning'],
+  READY: translations['attachment.item.status.ready'],
+  REJECTED: translations['attachment.item.status.rejected'],
 };
 
 export function AttachmentStatusBadge({ status }: Props): React.ReactElement {

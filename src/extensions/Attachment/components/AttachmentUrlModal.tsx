@@ -1,5 +1,6 @@
 // AttachmentUrlModal — form for adding an external URL attachment.
 import React, { useState } from 'react';
+import translations from '../translations/en.json';
 
 interface Props {
   cardId: string;
@@ -17,7 +18,7 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
     e.preventDefault();
     setError(null);
     if (!name.trim() || !url.trim()) {
-      setError('Both name and URL are required.');
+      setError(translations['attachment.urlModal.error.required']);
       return;
     }
     setSubmitting(true);
@@ -25,7 +26,7 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
       await onAdd(name.trim(), url.trim());
       onClose();
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to add URL.');
+      setError(err?.message ?? translations['attachment.urlModal.error.failed']);
     } finally {
       setSubmitting(false);
     }
@@ -37,9 +38,9 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
         onSubmit={handleSubmit}
         style={{ background: '#fff', borderRadius: 8, padding: 24, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 12 }}
       >
-        <h3 style={{ margin: 0, fontSize: 16 }}>Add URL attachment</h3>
+        <h3 style={{ margin: 0, fontSize: 16 }}>{translations['attachment.urlModal.title']}</h3>
         <label style={{ fontSize: 13 }}>
-          Label
+          {translations['attachment.urlModal.label']}
           <input
             type="text"
             value={name}
@@ -48,7 +49,7 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
           />
         </label>
         <label style={{ fontSize: 13 }}>
-          URL
+          {translations['attachment.urlModal.url']}
           <input
             type="url"
             value={url}
@@ -58,8 +59,8 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
         </label>
         {error && <span style={{ color: '#ef4444', fontSize: 13 }}>{error}</span>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} disabled={submitting}>Cancel</button>
-          <button type="submit" disabled={submitting}>{submitting ? 'Adding…' : 'Add'}</button>
+          <button type="button" onClick={onClose} disabled={submitting}>{translations['attachment.urlModal.cancel']}</button>
+          <button type="submit" disabled={submitting}>{submitting ? translations['attachment.urlModal.submitting'] : translations['attachment.urlModal.submit']}</button>
         </div>
       </form>
     </div>

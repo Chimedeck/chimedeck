@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { AttachmentItem } from './AttachmentItem';
 import { AttachmentUploader } from './AttachmentUploader';
 import { AttachmentUrlModal } from './AttachmentUrlModal';
+import translations from '../translations/en.json';
 
 interface Attachment {
   id: string;
@@ -64,7 +65,7 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
 
   return (
     <section style={{ marginTop: 16 }}>
-      <h4 style={{ fontSize: 14, marginBottom: 8 }}>Attachments</h4>
+      <h4 style={{ fontSize: 14, marginBottom: 8 }}>{translations['attachment.section.title']}</h4>
       {attachments.map((a) => (
         <AttachmentItem key={a.id} attachment={a} onDelete={handleDelete} onDownload={handleDownload} />
       ))}
@@ -73,7 +74,7 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
         onClick={() => setShowUrlModal(true)}
         style={{ marginTop: 8, fontSize: 12, cursor: 'pointer' }}
       >
-        + Add URL
+        {translations['attachment.section.addUrl']}
       </button>
       {showUrlModal && (
         <AttachmentUrlModal cardId={cardId} onAdd={handleAddUrl} onClose={() => setShowUrlModal(false)} />
