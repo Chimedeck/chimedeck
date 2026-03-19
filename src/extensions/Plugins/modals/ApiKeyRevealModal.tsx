@@ -40,7 +40,7 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
         <div className="px-5 py-5 flex flex-col gap-4">
           <div className="bg-yellow-900/30 border border-yellow-600 rounded p-3 text-yellow-300 text-sm flex gap-2">
             <span>{translations['plugins.apiKeyModal.warningPrefix']}</span>
-            <span>This API key will <strong>never be shown again</strong>. Copy it now and store it securely.</span>
+            <span>{translations['plugins.apiKeyModal.warning']}</span>
           </div>
 
           <div className="flex gap-2 items-stretch">
