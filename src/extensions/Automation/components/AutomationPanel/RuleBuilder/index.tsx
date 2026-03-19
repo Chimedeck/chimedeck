@@ -11,6 +11,7 @@ import ActionList from './ActionList';
 import { hasConfigFields } from './configFieldRenderer';
 import RuleBuilderFooter from './RuleBuilderFooter';
 import type { ActionItemData } from './ActionItem';
+import translations from '../../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -100,7 +101,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
       }
       onSaved();
     } catch {
-      setError('Failed to save rule. Please try again.');
+      setError(translations['automation.ruleBuilder.error.saveFailed']);
     } finally {
       setSaving(false);
     }
@@ -114,12 +115,12 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
           type="button"
           className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
           onClick={onCancel}
-          aria-label="Back to rules list"
+          aria-label={translations['automation.ruleBuilder.backAriaLabel']}
         >
           <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
         </button>
         <h3 className="text-sm font-semibold text-slate-200">
-          {initialAutomation ? 'Edit rule' : 'New rule'}
+          {initialAutomation ? translations['automation.ruleBuilder.editTitle'] : translations['automation.ruleBuilder.newTitle']}
         </h3>
       </div>
 

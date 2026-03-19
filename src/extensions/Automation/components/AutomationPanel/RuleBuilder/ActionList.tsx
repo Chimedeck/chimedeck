@@ -22,6 +22,7 @@ import ActionPicker from './ActionPicker';
 import ActionConfig from './ActionConfig';
 import { hasConfigFields } from './configFieldRenderer';
 import type { ActionType } from '../../../types';
+import translations from '../../../translations/en.json';
 
 interface Props {
   actions: ActionItemData[];
@@ -81,7 +82,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
       <div className="flex items-center gap-2">
         <PlayIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
         <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-          Then do… ({actions.length})
+          {translations['automation.actionList.label']} ({actions.length})
         </span>
       </div>
 
@@ -119,7 +120,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
                         setConfiguringId((prev) => (prev === action.id ? null : action.id))
                       }
                     >
-                      {configuringId === action.id ? 'Hide config' : 'Configure…'}
+                      {configuringId === action.id ? translations['automation.actionList.hideConfig'] : translations['automation.actionList.configure']}
                     </button>
                   );
                 })()}
@@ -143,7 +144,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
           onClick={() => setShowPicker(true)}
         >
           <PlusIcon className="h-4 w-4" aria-hidden="true" />
-          Add action
+          {translations['automation.actionList.addAction']}
         </button>
       )}
     </div>

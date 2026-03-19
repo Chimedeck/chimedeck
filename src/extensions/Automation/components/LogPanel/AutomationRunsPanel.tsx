@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { AutomationRunLog, PaginatedRunLogs } from '../../types';
 import { getAutomationRuns } from '../../api';
 import RunLogTable from './RunLogTable';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -36,7 +37,7 @@ const AutomationRunsPanel: FC<Props> = ({
         if (!cancelled) setResult(res);
       })
       .catch(() => {
-        if (!cancelled) setError('Failed to load run history.');
+        if (!cancelled) setError(translations['automation.runsPanel.error.loadFailed']);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -50,12 +51,12 @@ const AutomationRunsPanel: FC<Props> = ({
         <button
           className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
           onClick={onBack}
-          aria-label="Back"
+          aria-label={translations['automation.runsPanel.backAriaLabel']}
         >
           <ArrowLeftIcon className="h-4 w-4" />
         </button>
         <span className="text-sm text-slate-200 font-medium truncate">{automationName}</span>
-        <span className="ml-auto text-xs text-slate-500">Run history</span>
+        <span className="ml-auto text-xs text-slate-500">{translations['automation.runsPanel.runHistory']}</span>
       </div>
 
       <RunLogTable

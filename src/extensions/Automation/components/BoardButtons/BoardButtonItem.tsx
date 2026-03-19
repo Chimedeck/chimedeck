@@ -3,6 +3,7 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { ButtonIcon } from '../shared/IconPicker';
 import type { FC } from 'react';
 import type { Automation } from '../../types';
+import translations from '../../translations/en.json';
 
 export type RunState = 'idle' | 'running' | 'success' | 'error';
 
@@ -48,7 +49,7 @@ const BoardButtonItem: FC<Props> = ({ automation, runState, onRun }) => {
         role="tooltip"
       >
         <div className="whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs text-slate-100 shadow-lg">
-          {isRunning ? 'Running…' : automation.name}
+          {isRunning ? translations['automation.boardButtonItem.running'] : automation.name}
         </div>
         <div className="mx-auto h-1.5 w-1.5 rotate-45 bg-slate-700 translate-y-[-3px]" />
       </div>

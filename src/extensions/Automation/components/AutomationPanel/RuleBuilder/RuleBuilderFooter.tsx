@@ -1,5 +1,6 @@
 // RuleBuilderFooter — Save / Cancel bar at the bottom of the RuleBuilder.
 import { useState } from 'react';
+import translations from '../../../translations/en.json';
 
 interface Props {
   ruleName: string;
@@ -25,13 +26,13 @@ const RuleBuilderFooter = ({
         htmlFor="rule-name"
         className="mb-1 block text-xs font-medium text-slate-400"
       >
-        Rule name
+        {translations['automation.ruleBuilderFooter.ruleNameLabel']}
       </label>
       <input
         id="rule-name"
         type="text"
         className="w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="My automation rule"
+        placeholder={translations['automation.ruleBuilderFooter.ruleNamePlaceholder']}
         value={ruleName}
         onChange={(e) => onRuleNameChange(e.target.value)}
         maxLength={100}
@@ -46,7 +47,7 @@ const RuleBuilderFooter = ({
         onClick={onCancel}
         disabled={saving}
       >
-        Cancel
+        {translations['automation.ruleBuilderFooter.cancel']}
       </button>
       <button
         type="button"
@@ -59,7 +60,7 @@ const RuleBuilderFooter = ({
         disabled={!canSave || saving}
         aria-busy={saving}
       >
-        {saving ? 'Saving…' : 'Save rule'}
+        {saving ? translations['automation.ruleBuilderFooter.saving'] : translations['automation.ruleBuilderFooter.save']}
       </button>
     </div>
   </div>

@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectLists } from '~/extensions/Board/slices/boardSlice';
+import translations from '../../../translations/en.json';
 
 export interface ActionItemData {
   id: string; // local id (stable across re-renders)
@@ -60,7 +61,7 @@ const ActionItem = ({ item, onDelete }: Props) => {
       <button
         type="button"
         className="shrink-0 cursor-grab text-slate-500 hover:text-slate-300 focus:outline-none"
-        aria-label="Drag to reorder"
+        aria-label={translations['automation.actionItem.dragAriaLabel']}
         {...attributes}
         {...listeners}
       >

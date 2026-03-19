@@ -4,6 +4,7 @@ import { ArrowPathIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicon
 import { ButtonIcon } from '../shared/IconPicker';
 import type { FC } from 'react';
 import type { Automation } from '../../types';
+import translations from '../../translations/en.json';
 
 export type RunState = 'idle' | 'running' | 'success' | 'error';
 
@@ -52,7 +53,7 @@ const CardButtonItem: FC<Props> = ({ automation, runState, onRun, disabled = fal
       <span className="flex-1 text-left truncate">{automation.name}</span>
 
       {isRunning && (
-        <span className="text-xs text-slate-500 flex-shrink-0">Running…</span>
+        <span className="text-xs text-slate-500 flex-shrink-0">{translations['automation.cardButtonItem.running']}</span>
       )}
     </button>
   );

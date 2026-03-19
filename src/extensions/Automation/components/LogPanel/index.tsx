@@ -7,6 +7,7 @@ import type { AutomationRunLog, PaginatedRunLogs, Automation } from '../../types
 import { getBoardRuns } from '../../api';
 import { socket } from '~/extensions/Realtime/client/socket';
 import RunLogTable from './RunLogTable';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -30,7 +31,7 @@ const LogPanel: FC<Props> = ({ boardId, automations = [], onOpenCard }) => {
     setRunsError(null);
     getBoardRuns({ boardId, params: { page: targetPage, perPage: 50 } })
       .then((res) => { if (!cancelled) setRunsResult(res); })
-      .catch(() => { if (!cancelled) setRunsError('Failed to load run history.'); })
+      .catch(() => { if (!cancelled) setRunsError(translations['automation.runsPanel.error.loadFailed']); })
       .finally(() => { if (!cancelled) setRunsLoading(false); });
     return () => { cancelled = true; };
   }, [boardId]);

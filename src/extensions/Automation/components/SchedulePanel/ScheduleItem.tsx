@@ -16,6 +16,7 @@ import type { ScheduleConfig, DueDateConfig } from '../../utils/scheduleSummary'
 import { updateAutomation, deleteAutomation } from '../../api';
 import RunCountChip from '../LogPanel/RunCountChip';
 import { socket } from '~/extensions/Realtime/client/socket';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -107,7 +108,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-slate-200">{automation.name}</p>
         <p className="mt-0.5 truncate text-xs text-slate-400">
-          {summary} · {automation.actions.length} action{automation.actions.length !== 1 ? 's' : ''}
+          {summary} · {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.scheduleItem.actions'] : translations['automation.scheduleItem.action']}
         </p>
       </div>
 
@@ -121,8 +122,8 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           onClick={handleToggle}
           disabled={toggling}
           className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors disabled:opacity-50"
-          aria-label={automation.isEnabled ? 'Disable' : 'Enable'}
-          title={automation.isEnabled ? 'Disable' : 'Enable'}
+          aria-label={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
+          title={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
         >
           {automation.isEnabled ? (
             <CheckCircleIcon className="h-4 w-4 text-green-400" aria-hidden="true" />
@@ -135,8 +136,8 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
         <button
           onClick={onEdit}
           className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors"
-          aria-label="Edit"
-          title="Edit"
+          aria-label={translations['automation.scheduleItem.editAriaLabel']}
+          title={translations['automation.scheduleItem.editAriaLabel']}
         >
           <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -150,8 +151,8 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
               ? 'bg-red-700 text-white hover:bg-red-600'
               : 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
           }`}
-          aria-label={confirmDelete ? 'Confirm delete' : 'Delete'}
-          title={confirmDelete ? 'Click again to confirm' : 'Delete'}
+          aria-label={confirmDelete ? translations['automation.scheduleItem.confirmDeleteAriaLabel'] : translations['automation.scheduleItem.deleteAriaLabel']}
+          title={confirmDelete ? translations['automation.scheduleItem.confirmDeleteTitle'] : translations['automation.scheduleItem.deleteTitle']}
         >
           <TrashIcon className="h-4 w-4" aria-hidden="true" />
         </button>
