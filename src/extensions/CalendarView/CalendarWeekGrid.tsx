@@ -2,6 +2,7 @@
 // Each column represents one day of the week (Sun–Sat).
 // Navigation moves forward/back by 7 days. Cards are rendered as draggable chips.
 import CalendarDayCell from './CalendarDayCell';
+import translations from './translations/en.json';
 import type { Card } from '../Card/api';
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -71,7 +72,7 @@ const CalendarWeekGrid = ({
       <div className="flex items-center justify-between">
         <button
           onClick={onPrev}
-          aria-label="Previous week"
+          aria-label={translations['CalendarView.ariaPrevWeek']}
           data-testid="calendar-week-prev"
           className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
         >
@@ -82,7 +83,7 @@ const CalendarWeekGrid = ({
         </h2>
         <button
           onClick={onNext}
-          aria-label="Next week"
+          aria-label={translations['CalendarView.ariaNextWeek']}
           data-testid="calendar-week-next"
           className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
         >

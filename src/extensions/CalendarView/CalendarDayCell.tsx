@@ -3,6 +3,7 @@
 // Accepts drag-drop events from CalendarCardChip (HTML5 drag API).
 import { useState } from 'react';
 import CalendarCardChip from './CalendarCardChip';
+import translations from './translations/en.json';
 import { MAX_CHIPS_PER_DAY } from './types';
 import type { CalendarDayCellProps } from './types';
 import type { Card } from '../Card/api';
@@ -76,7 +77,7 @@ const CalendarDayCell = ({
           'mb-1 self-end rounded-full px-1.5 py-0.5 text-xs font-semibold leading-none',
           isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-slate-300' : 'text-slate-600',
         ].join(' ')}
-        aria-label={isToday ? 'Today' : undefined}
+        aria-label={isToday ? translations['CalendarView.todayButton'] : undefined}
       >
         {date.getDate()}
       </span>
@@ -92,7 +93,7 @@ const CalendarDayCell = ({
             className="w-full rounded bg-slate-800 px-1.5 py-0.5 text-left text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200 focus:outline-none"
             data-testid={`calendar-day-overflow-${toIsoDate(date)}`}
           >
-            +{overflow} more
+            +{overflow} {translations['CalendarView.overflowMore']}
           </button>
         )}
         {expanded && overflow > 0 && (
@@ -100,7 +101,7 @@ const CalendarDayCell = ({
             onClick={() => setExpanded(false)}
             className="w-full rounded bg-slate-800 px-1.5 py-0.5 text-left text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200 focus:outline-none"
           >
-            Show less
+            {translations['CalendarView.showLess']}
           </button>
         )}
       </div>
