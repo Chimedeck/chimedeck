@@ -3,8 +3,13 @@ import { handleListNotifications } from './list';
 import { handleMarkRead } from './markRead';
 import { handleMarkAllRead } from './markAllRead';
 import { handleDeleteNotification } from './delete';
+import { preferencesRouter } from './preferences';
 
 export async function notificationsRouter(req: Request, pathname: string): Promise<Response | null> {
+  // /api/v1/notifications/preferences — GET and PATCH
+  const preferencesResponse = await preferencesRouter(req, pathname);
+  if (preferencesResponse !== null) return preferencesResponse;
+
   // GET /api/v1/notifications
   if (pathname === '/api/v1/notifications' && req.method === 'GET') {
     return handleListNotifications(req);

@@ -48,6 +48,10 @@ export const env = {
   // Optional — omit to run without Redis
   REDIS_URL: Bun.env['REDIS_URL'] ?? undefined,
 
+  // Attachment uploads
+  /** Maximum single-file upload size in MB. Default: 250. */
+  MAX_ATTACHMENT_SIZE_MB: Number.parseInt(Bun.env['MAX_ATTACHMENT_SIZE_MB'] ?? '250', 10),
+
   // Feature gates
   VIRUS_SCAN_ENABLED: Bun.env['VIRUS_SCAN_ENABLED'] === 'true',
   VIRUS_SCAN_API_KEY: Bun.env['VIRUS_SCAN_API_KEY'] ?? '',
@@ -105,4 +109,11 @@ export const env = {
   // for other flows (e.g. email verification, password reset) without
   // automatically enabling admin invite emails.
   ADMIN_INVITE_EMAIL_ENABLED: Bun.env['ADMIN_INVITE_EMAIL_ENABLED'] === 'true',
+
+  // Notification preferences — when false, GET/PATCH /preferences return 501
+  // and all channels remain enabled for all users.
+  NOTIFICATION_PREFERENCES_ENABLED: Bun.env['NOTIFICATION_PREFERENCES_ENABLED'] !== 'false',
+
+  // Email notifications — both SES_ENABLED and this flag must be true for notification emails to send.
+  EMAIL_NOTIFICATIONS_ENABLED: Bun.env['EMAIL_NOTIFICATIONS_ENABLED'] === 'true',
 } as const;

@@ -1,13 +1,13 @@
 {
-  "name": "agentic-trello-replacement",
+  "name": "horiflow",
   "version": "0.1.0",
-  "description": "Vello — server",
+  "description": "horiflow — server",
   "module": "server/index.ts",
   "type": "module",
   "scripts": {
     "dev": "bun run --hot server/index.ts",
     "dev:client": "vite",
-    "dev:full": "concurrently \"bun run dev\" \"bun run dev:client\"",
+    "dev:local": "concurrently \"bun run dev\" \"bun run dev:client\"",
     "build": "bun run build:client && bun run build:server",
     "build:client": "vite build",
     "build:server": "bun run typecheck",
@@ -28,8 +28,8 @@
     "docker:dev": "docker compose -f docker-compose.yml up --build",
     "docker:dev:redis": "docker compose -f docker-compose.yml --profile redis up --build",
     "docker:prod": "docker compose -f docker-compose.prod.yml up",
-    "docker:build": "docker build -t vello-app:latest .",
-    "docker:build:nc": "docker build --no-cache -t vello-app:latest .",
+    "docker:build": "docker build -t horiflow-app:latest .",
+    "docker:build:nc": "docker build --no-cache -t horiflow-app:latest .",
     "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
     "clean": "rm -rf dist .vite node_modules/.cache"
   },
@@ -54,6 +54,12 @@
     "@radix-ui/react-dropdown-menu": "^2",
     "@radix-ui/react-tooltip": "^1",
     "@reduxjs/toolkit": "^2.11.2",
+    "@tiptap/extension-image": "^3.20.3",
+    "@tiptap/extension-mention": "^3.20.4",
+    "@tiptap/markdown": "^3.20.2",
+    "@tiptap/pm": "^3.20.2",
+    "@tiptap/react": "^3.20.2",
+    "@tiptap/starter-kit": "^3.20.2",
     "@types/marked": "^6.0.0",
     "@types/sanitize-html": "^2.16.1",
     "axios": "^1",
@@ -74,7 +80,9 @@
     "sanitize-html": "^2.17.1",
     "sharp": "^0.34.5",
     "tailwind-merge": "^2",
-    "uuid": "^13.0.0"
+    "tippy.js": "^6.3.7",
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

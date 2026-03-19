@@ -1,13 +1,13 @@
 // PATCH /api/v1/cards/:id — update title, description, due_date, amount, or currency; min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { syncMentions } from '../../../common/mentions/sync';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
@@ -30,7 +30,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { title?: string; description?: string; due_date?: string | null; start_date?: string | null; amount?: number | null; currency?: string | null };
@@ -150,6 +150,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         sourceId: cardId,
         cardId,
         boardId: board.id,
+        cardTitle: rows[0]?.title,
+        boardName: board.title,
       });
     }
 
@@ -157,7 +159,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   });
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
-  await writeEvent({ type: 'card_updated', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0] } });
+  await dispatchEvent({ type: 'card.updated', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0] } });
 
   // Emit activity event when money fields change
   if (body.amount !== undefined || (body.currency !== undefined && body.amount !== null)) {

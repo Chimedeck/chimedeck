@@ -10,6 +10,20 @@ export interface SearchResult {
   boardId?: string;
   archived?: boolean;
   rank?: number;
+  /** Background image URL — only present for board results */
+  background?: string | null;
+}
+
+export interface BoardSearchResult {
+  type: 'card' | 'list';
+  id: string;
+  title: string;
+  /** Present for card results; absent for list results */
+  listId?: string;
+}
+
+export interface BoardSearchResponse {
+  data: BoardSearchResult[];
 }
 
 export interface SearchResponse {
@@ -46,4 +60,30 @@ export async function searchWorkspace({
   }
 
   return res.json() as Promise<SearchResponse>;
+}
+
+export async function searchBoard({
+  boardId,
+  q,
+  limit = 20,
+  token,
+}: {
+  boardId: string;
+  q: string;
+  limit?: number;
+  token: string;
+}): Promise<BoardSearchResponse> {
+  const params = new URLSearchParams({ q, limit: String(limit) });
+
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`/api/v1/boards/${boardId}/search?${params.toString()}`, { headers });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw err?.error ?? err;
+  }
+
+  return res.json() as Promise<BoardSearchResponse>;
 }

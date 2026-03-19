@@ -2,14 +2,17 @@
 // Only shows fields with show_on_card=true that have a non-null value.
 // [why] Kept separate from CardItem to avoid adding hooks to a memoized component
 //       unnecessarily; if boardId is absent the component tree is skipped entirely.
-import { useCustomFields, useCardCustomFieldValues } from '../../CustomFields/api';
+import { useCustomFields } from '../../CustomFields/api';
 import CustomFieldBadge from '../../CustomFields/CustomFieldBadge';
 import type { CustomField } from '../../CustomFields/types';
 import type { CustomFieldValue } from '../../CustomFields/types';
 
 interface Props {
-  cardId: string;
   boardId: string;
+  /** Pre-fetched values from a board-level batch request. When provided the
+   *  per-card hook fetch is skipped entirely, preventing N individual requests
+   *  when every card tile on a board renders this component. */
+  values?: CustomFieldValue[];
 }
 
 function hasNonNullValue(v: CustomFieldValue): boolean {
@@ -44,9 +47,11 @@ function resolveDisplayValue(
   }
 }
 
-const CardCustomFieldBadges = ({ cardId, boardId }: Props) => {
+const CardCustomFieldBadges = ({ boardId, values: valuesFromProps }: Props) => {
   const { fields } = useCustomFields(boardId);
-  const { values } = useCardCustomFieldValues(cardId);
+  // [why] Values are always batch-fetched at board level; no per-card hook here.
+  //       While the batch is loading, valuesFromProps is undefined → render nothing.
+  const values = valuesFromProps ?? [];
 
   const badgeFields = fields.filter(
     (f) =>

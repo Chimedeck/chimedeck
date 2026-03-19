@@ -9,6 +9,15 @@ import { socket } from './extensions/Realtime/client/socket';
 import App from './App';
 import './index.css';
 
+// Apply saved theme before React renders to prevent flash of wrong theme.
+// Default to dark when no preference is stored.
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+  document.documentElement.classList.remove('dark');
+} else {
+  document.documentElement.classList.add('dark');
+}
+
 // Wire up the API client with store access — done here to avoid circular deps
 // between the client and the store modules
 setTokenGetter(

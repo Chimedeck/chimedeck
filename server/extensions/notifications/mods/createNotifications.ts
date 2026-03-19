@@ -1,8 +1,15 @@
 // server/extensions/notifications/mods/createNotifications.ts
 // Creates notification rows for each newly-mentioned user and broadcasts
 // a real-time event to their personal WS channel.
+// Respects notification preferences — skips insertion and WS publish when
+// in_app_enabled is false for the recipient (opt-out model).
+// Also dispatches mention email notifications (fire-and-forget) after in-app creation.
 import { db } from '../../../common/db';
 import { publishToUser } from '../../realtime/userChannel';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { preferenceGuard } from './preferenceGuard';
+import { dispatchNotificationEmail } from './emailDispatch';
+import { env } from '../../../config/env';
 import type { Knex } from 'knex';
 
 interface CreateNotificationsParams {
@@ -13,6 +20,9 @@ interface CreateNotificationsParams {
   sourceId: string;
   cardId: string | null;
   boardId: string;
+  // Optional context for mention email dispatch
+  cardTitle?: string;
+  boardName?: string;
 }
 
 export async function createNotificationsForMentions({
@@ -23,6 +33,8 @@ export async function createNotificationsForMentions({
   sourceId,
   cardId,
   boardId,
+  cardTitle,
+  boardName,
 }: CreateNotificationsParams): Promise<void> {
   if (addedUserIds.length === 0) return;
 
@@ -30,36 +42,77 @@ export async function createNotificationsForMentions({
   const recipients = addedUserIds.filter((id) => id !== actorId);
   if (recipients.length === 0) return;
 
-  const now = new Date().toISOString();
-  const rows = recipients.map((userId) => ({
-    user_id: userId,
-    type: 'mention',
-    source_type: sourceType,
-    source_id: sourceId,
-    card_id: cardId,
-    board_id: boardId,
-    actor_id: actorId,
-    read: false,
-    created_at: now,
-  }));
-
-  const inserted = await trx('notifications').insert(rows, ['*']);
-
-  // Fetch actor details for the WS payload (outside transaction is fine — read-only)
+  // Fetch actor details once for the WS payload (read-only, outside transaction is fine)
   const actor = await db('users')
     .where({ id: actorId })
     .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
     .first();
 
-  for (const notification of inserted) {
-    publishToUser(notification.user_id, {
+  const actorPayload = actor
+    ? {
+        ...actor,
+        avatar_url: await resolveAvatarUrl({ avatarUrl: actor.avatar_url ?? null }),
+      }
+    : { id: actorId, nickname: null, name: null, avatar_url: null };
+
+  const now = new Date().toISOString();
+
+  for (const userId of recipients) {
+    // Check preferences before inserting or publishing.
+    // When the feature flag is off, treat all channels as enabled (fail-open fallback).
+    let inAppEnabled = true;
+    if (env.NOTIFICATION_PREFERENCES_ENABLED) {
+      try {
+        const pref = await preferenceGuard({ userId, type: 'mention' });
+        inAppEnabled = pref.in_app_enabled;
+      } catch {
+        // Guard failure → fail open: deliver notification as if enabled
+        inAppEnabled = true;
+      }
+    }
+
+    if (!inAppEnabled) continue;
+
+    const [inserted] = await trx('notifications').insert(
+      {
+        user_id: userId,
+        type: 'mention',
+        source_type: sourceType,
+        source_id: sourceId,
+        card_id: cardId,
+        board_id: boardId,
+        actor_id: actorId,
+        read: false,
+        created_at: now,
+      },
+      ['*'],
+    );
+
+    publishToUser(userId, {
       type: 'notification_created',
       payload: {
         notification: {
-          ...notification,
-          actor: actor ?? { id: actorId, nickname: null, name: null, avatar_url: null },
+          ...inserted,
+          actor: actorPayload,
         },
       },
     });
+
+    // Fire-and-forget mention email notification — must not block the transaction.
+    if (cardId) {
+      const cardUrl = `/boards/${boardId}/cards/${cardId}`;
+      dispatchNotificationEmail({
+        recipientId: userId,
+        type: 'mention',
+        templateData: {
+          actorName: (actorPayload.name as string | null) ?? 'Someone',
+          cardTitle: cardTitle ?? '',
+          boardName: boardName ?? '',
+          cardUrl,
+        },
+      }).catch(() => {
+        // Email dispatch failures must never break the notification flow.
+      });
+    }
   }
 }

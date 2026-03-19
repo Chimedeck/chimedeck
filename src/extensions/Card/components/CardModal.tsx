@@ -1,22 +1,22 @@
 // CardModal — full detail Radix Dialog modal for viewing and editing a card.
 // URL-driven: ?card=:id opens the modal; closing clears the query param.
+// Two-column layout: left = content, right = ActivityFeed (ResizablePanels).
+import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { Card, Label, CardMember, ChecklistItem } from '../api';
 import CardTitle from './CardTitle';
-import CardDescription from './CardDescription';
+import CardDescriptionTiptap from './CardDescriptionTiptap';
 import CardChecklist from './CardChecklist';
-import CardLabels from './CardLabels';
-import CardMembers from './CardMembers';
-import CardDueDate from './CardDueDate';
-import CardActionMenu from './CardActionMenu';
-import CardSidebarSection from './CardSidebarSection';
+import CardMetaStrip from './CardMetaStrip';
+import CardModalBottomBar from './CardModalBottomBar';
+import ResizablePanels from './ResizablePanels';
 import CardValue from './CardValue';
 import ActivityFeed from '../containers/CardModal/ActivityFeed';
 import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginBadges';
 import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
-import CardPluginButtons from '../../Plugins/uiInjections/CardPluginButtons';
 import CustomFieldsSection from '../../CustomFields/CustomFieldsSection';
+import { AttachmentPanel } from '../../Attachments/components/AttachmentPanel';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -62,6 +62,8 @@ interface Props {
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
   onMoneySave: (amount: string | null, currency: string) => Promise<void>;
+  /** True when the current user is a VIEWER guest — hides write-action controls. */
+  isViewerGuest?: boolean;
 }
 
 const CardModal = ({
@@ -99,8 +101,11 @@ const CardModal = ({
   onEditComment,
   onDeleteComment,
   onMoneySave,
+  isViewerGuest = false,
 }: Props) => {
   const isReadOnly = card.archived;
+  // Activity panel visibility — toggled from the bottom bar
+  const [activityVisible, setActivityVisible] = useState(true);
 
   return (
     <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -112,10 +117,11 @@ const CardModal = ({
         <Dialog.Content
           className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8"
           aria-label={`Card: ${card.title}`}
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
             {/* Header */}
             <div className="flex items-start gap-2 p-5 pb-2">
               <div className="flex-1 min-w-0">
@@ -124,17 +130,39 @@ const CardModal = ({
                   onSave={onTitleSave}
                   disabled={isReadOnly}
                 />
-                <p className="mt-1 text-xs text-slate-500 px-2">
-                  in list <span className="text-slate-400 font-medium">{listTitle}</span>{' '}
+                <p className="mt-1 text-xs text-gray-400 dark:text-slate-500 px-2">
+                  in list <span className="text-gray-500 dark:text-slate-400 font-medium">{listTitle}</span>{' '}
                   · {boardTitle}
                 </p>
               </div>
               <Dialog.Close
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors flex-shrink-0"
+                className="rounded-lg p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
                 aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" aria-hidden="true" />
               </Dialog.Close>
+            </div>
+
+            {/* Metadata strip — labels, members, dates */}
+            <div className="px-5 pb-2">
+              <CardMetaStrip
+                labels={labels}
+                allLabels={allLabels}
+                members={members}
+                boardMembers={boardMembers}
+                cardId={card.id}
+                currentUserId={currentUserId}
+                startDate={card.start_date}
+                dueDate={card.due_date}
+                disabled={isReadOnly}
+                onLabelAttach={onLabelAttach}
+                onLabelDetach={onLabelDetach}
+                onLabelCreate={onLabelCreate}
+                onMemberAssign={onMemberAssign}
+                onMemberRemove={onMemberRemove}
+                onStartDateChange={onStartDateChange}
+                onDueDateChange={onDueDateChange}
+              />
             </div>
 
             {isReadOnly && (
@@ -143,131 +171,152 @@ const CardModal = ({
               </div>
             )}
 
-            {/* Body: main + sidebar */}
-            <div className="flex flex-col md:flex-row gap-4 p-5 pt-3 min-h-0 flex-1">
-              {/* Main column — scrolls independently */}
-              <div className="flex-1 min-w-0 min-h-0 space-y-6 overflow-y-auto pr-1">
-                <CardDescription
-                  boardId={boardId}
-                  description={card.description ?? ''}
-                  onSave={onDescriptionSave}
-                  disabled={isReadOnly}
-                />
+            {/* Body: ResizablePanels when activity visible, single column otherwise */}
+            {activityVisible ? (
+              <ResizablePanels
+                className="flex-1 min-h-0"
+                left={
+                  <div className="h-full min-h-0 p-5 pt-3 pr-3 space-y-6">
+                    <CardDescriptionTiptap
+                      boardId={boardId}
+                      cardId={card.id}
+                      description={card.description ?? ''}
+                      onSave={onDescriptionSave}
+                      disabled={isReadOnly}
+                    />
 
-                <CustomFieldsSection
-                  boardId={boardId}
-                  cardId={card.id}
-                  disabled={isReadOnly}
-                />
+                    <CustomFieldsSection
+                      boardId={boardId}
+                      cardId={card.id}
+                      disabled={isReadOnly}
+                    />
 
-                <CardChecklist
-                  items={checklistItems}
-                  onAdd={onChecklistAdd}
-                  onToggle={onChecklistToggle}
-                  onRename={onChecklistRename}
-                  onDelete={onChecklistDelete}
-                  disabled={isReadOnly}
-                />
+                    <CardChecklist
+                      items={checklistItems}
+                      onAdd={onChecklistAdd}
+                      onToggle={onChecklistToggle}
+                      onRename={onChecklistRename}
+                      onDelete={onChecklistDelete}
+                      disabled={isReadOnly}
+                    />
 
-                <CardPluginSection
-                  cardId={card.id}
-                  listId={card.list_id}
-                  boardId={boardId}
-                />
+                    <CardPluginSection
+                      cardId={card.id}
+                      listId={card.list_id}
+                      boardId={boardId}
+                    />
 
-                <ActivityFeed
-                  boardId={boardId}
-                  comments={comments}
-                  activities={activities}
-                  currentUserId={currentUserId}
-                  onAddComment={onAddComment}
-                  onEditComment={onEditComment}
-                  onDeleteComment={onDeleteComment}
-                />
-              </div>
+                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
 
-              {/* Sidebar — scrolls independently */}
-              <aside className="w-full md:w-52 flex-shrink-0 space-y-5 overflow-y-auto min-h-0">
-                <CardSidebarSection title="Members">
-                  <CardMembers
-                    members={members}
-                    boardMembers={boardMembers}
+                    {/* Plugin detail badges and value inline */}
+                    <div className="flex flex-wrap gap-3">
+                      <CardValue
+                        amount={card.amount ?? null}
+                        currency={card.currency ?? null}
+                        onSave={onMoneySave}
+                        disabled={isReadOnly}
+                      />
+                      <CardDetailPluginBadges
+                        cardId={card.id}
+                        listId={card.list_id}
+                        boardId={boardId}
+                        cardTitle={card.title}
+                        listTitle={listTitle}
+                        boardTitle={boardTitle}
+                      />
+                    </div>
+                  </div>
+                }
+                right={
+                  <div className="h-full min-h-0 p-5 pt-3 pl-3 border-l border-gray-100 dark:border-slate-800">
+                    <ActivityFeed
+                      boardId={boardId}
+                      cardId={card.id}
+                      comments={comments}
+                      activities={activities}
+                      currentUserId={currentUserId}
+                      boardMembers={boardMembers}
+                      onAddComment={onAddComment}
+                      onEditComment={onEditComment}
+                      onDeleteComment={onDeleteComment}
+                      canAddComment={!isViewerGuest}
+                    />
+                  </div>
+                }
+              />
+            ) : (
+              <div className="flex-1 min-h-0 p-5 pt-3 overflow-y-auto">
+                <div className="space-y-6">
+                  <CardDescriptionTiptap
+                    boardId={boardId}
                     cardId={card.id}
-                    currentUserId={currentUserId}
-                    onAssign={onMemberAssign}
-                    onRemove={onMemberRemove}
+                    description={card.description ?? ''}
+                    onSave={onDescriptionSave}
                     disabled={isReadOnly}
                   />
-                </CardSidebarSection>
 
-                {/* Plugin detail badges — only renders when active plugins return badges */}
-                <CardDetailPluginBadges
-                  cardId={card.id}
-                  listId={card.list_id}
-                  boardId={boardId}
-                  cardTitle={card.title}
-                  listTitle={listTitle}
-                  boardTitle={boardTitle}
-                />
-
-                <CardSidebarSection title="Labels">
-                  <CardLabels
-                    assignedLabels={labels}
-                    allLabels={allLabels}
-                    onAttach={onLabelAttach}
-                    onDetach={onLabelDetach}
-                    onCreateAndAttach={onLabelCreate}
+                  <CustomFieldsSection
+                    boardId={boardId}
+                    cardId={card.id}
                     disabled={isReadOnly}
                   />
-                </CardSidebarSection>
 
-                <CardSidebarSection title="Start Date">
-                  <CardDueDate
-                    dueDate={card.start_date}
-                    onChange={onStartDateChange}
-                    disabled={isReadOnly}
-                    label="Start date"
-                  />
-                </CardSidebarSection>
-
-                <CardSidebarSection title="Due Date">
-                  <CardDueDate
-                    dueDate={card.due_date}
-                    onChange={onDueDateChange}
+                  <CardChecklist
+                    items={checklistItems}
+                    onAdd={onChecklistAdd}
+                    onToggle={onChecklistToggle}
+                    onRename={onChecklistRename}
+                    onDelete={onChecklistDelete}
                     disabled={isReadOnly}
                   />
-                </CardSidebarSection>
 
-                <CardSidebarSection title="Value">
-                  <CardValue
-                    amount={card.amount ?? null}
-                    currency={card.currency ?? null}
-                    onSave={onMoneySave}
-                    disabled={isReadOnly}
-                  />
-                </CardSidebarSection>
-
-                <CardSidebarSection title="Actions">
-                  <CardPluginButtons
+                  <CardPluginSection
                     cardId={card.id}
                     listId={card.list_id}
-                    cardTitle={card.title}
-                    listTitle={listTitle}
-                    boardTitle={boardTitle}
-                    cardAmount={card.amount ?? null}
-                    cardCurrency={card.currency ?? null}
-                    variant="sidebar"
+                    boardId={boardId}
                   />
-                  <CardActionMenu
-                    cardId={card.id}
-                    archived={card.archived}
-                    onArchive={onArchive}
-                    onDelete={onDelete}
-                    onCopyLink={onCopyLink}
-                  />
-                </CardSidebarSection>
-              </aside>
-            </div>
+
+                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
+
+                  {/* Plugin detail badges and value inline */}
+                  <div className="flex flex-wrap gap-3">
+                    <CardValue
+                      amount={card.amount ?? null}
+                      currency={card.currency ?? null}
+                      onSave={onMoneySave}
+                      disabled={isReadOnly}
+                    />
+                    <CardDetailPluginBadges
+                      cardId={card.id}
+                      listId={card.list_id}
+                      boardId={boardId}
+                      cardTitle={card.title}
+                      listTitle={listTitle}
+                      boardTitle={boardTitle}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sticky bottom action bar */}
+            <CardModalBottomBar
+              boardId={boardId}
+              cardId={card.id}
+              listId={card.list_id}
+              cardTitle={card.title}
+              listTitle={listTitle}
+              boardTitle={boardTitle}
+              cardAmount={card.amount ?? null}
+              cardCurrency={card.currency ?? null}
+              archived={card.archived}
+              disabled={isReadOnly}
+              activityVisible={activityVisible}
+              onToggleActivity={() => setActivityVisible((v) => !v)}
+              onArchive={onArchive}
+              onDelete={onDelete}
+              onCopyLink={onCopyLink}
+            />
           </div>
         </Dialog.Content>
       </Dialog.Portal>

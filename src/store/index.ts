@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, adminInviteReducer, viewPreferenceReducer } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 import { featureFlagsReducer } from '../slices/featureFlagsSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
@@ -31,13 +31,17 @@ export const store = configureStore({
     adminInvite: adminInviteReducer,
     viewPreference: viewPreferenceReducer,
     featureFlags: featureFlagsReducer,
+    [notificationPreferencesApi.reducerPath]: notificationPreferencesApi.reducer,
+    [boardMembersApi.reducerPath]: boardMembersApi.reducer,
+    [boardGuestsApi.reducerPath]: boardGuestsApi.reducer,
+    search: searchReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       // Inject the API client so async thunks can use `extra.api` without
       // importing the client directly (avoids circular dep at module level)
       thunk: { extraArgument: { api: apiClient } },
-    }).concat(wsMiddleware),
+    }).concat(wsMiddleware, notificationPreferencesApi.middleware, boardMembersApi.middleware, boardGuestsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

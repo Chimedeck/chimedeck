@@ -1,27 +1,41 @@
 // GET /api/v1/boards/:id — get a single board with shallow lists and cards.
 // PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import {
-  requireRole,
-} from '../../../middlewares/permissionManager';
+import { requireRole } from '../../../middlewares/permissionManager';
 import {
   applyBoardVisibility,
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
+import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { searchLog } from '../../search/common/searchLogger';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
-  if (visibilityError) return visibilityError;
+  if (visibilityError) {
+    const scopedForLog = req as Partial<BoardVisibilityScopedRequest>;
+    searchLog.boardAccessChecked({
+      boardId,
+      userId: (scopedForLog.currentUser as { id?: string } | undefined)?.id,
+      visibility: 'unknown',
+      callerRole: scopedForLog.callerRole,
+      result: 'denied',
+      statusCode: visibilityError.status,
+    });
+    return visibilityError;
+  }
 
   const scopedReq = req as BoardVisibilityScopedRequest;
   const board = scopedReq.board!;
 
-  // Non-public boards require at least VIEWER role.
-  if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
-  }
+  searchLog.boardAccessChecked({
+    boardId,
+    userId: (scopedReq.currentUser as { id?: string } | undefined)?.id,
+    visibility: board.visibility,
+    callerRole: scopedReq.callerRole,
+    result: 'allowed',
+    statusCode: 200,
+  });
 
   // Load active lists now that the lists table exists (sprint 06)
   const lists = await db('lists')
@@ -29,23 +43,49 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
     .orderBy('position', 'asc');
 
   const listIds = lists.map((l: { id: string }) => l.id);
-  const cards = listIds.length > 0
-    ? await db('cards as c')
-        .whereIn('c.list_id', listIds)
-        .where({ 'c.archived': false })
-        .orderBy('c.position', 'asc')
-        .select(
-          'c.id', 'c.list_id', 'c.title', 'c.description', 'c.position',
-          'c.archived', 'c.due_date', 'c.start_date', 'c.amount', 'c.currency', 'c.created_at', 'c.updated_at',
-          db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color)) FILTER (WHERE l.id IS NOT NULL), '[]'::json) as labels`),
-          db.raw(`COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`),
-        )
-        .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
-        .leftJoin('labels as l', 'l.id', 'cl.label_id')
-        .leftJoin('card_members as cm', 'cm.card_id', 'c.id')
-        .leftJoin('users as u', 'u.id', 'cm.user_id')
-        .groupBy('c.id')
-    : [];
+  const cards =
+    listIds.length > 0
+      ? await db('cards as c')
+          .whereIn('c.list_id', listIds)
+          .where({ 'c.archived': false })
+          .orderBy('c.position', 'asc')
+          .select(
+            'c.id',
+            'c.list_id',
+            'c.title',
+            'c.description',
+            'c.position',
+            'c.archived',
+            'c.due_date',
+            'c.start_date',
+            'c.amount',
+            'c.currency',
+            'c.created_at',
+            'c.updated_at',
+            db.raw(
+              `COALESCE(json_agg(DISTINCT jsonb_build_object('id', l.id, 'name', l.name, 'color', l.color)) FILTER (WHERE l.id IS NOT NULL), '[]'::json) as labels`
+            ),
+            db.raw(
+              `COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`
+            )
+          )
+          .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
+          .leftJoin('labels as l', 'l.id', 'cl.label_id')
+          .leftJoin('card_members as cm', 'cm.card_id', 'c.id')
+          .leftJoin('users as u', 'u.id', 'cm.user_id')
+          .groupBy('c.id')
+      : [];
+
+  const cardsWithResolvedMembers = await Promise.all(
+    cards.map(async (card) => ({
+      ...card,
+      members: await resolveAvatarUrlsInCollection(
+        Array.isArray(card.members)
+          ? (card.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+          : []
+      ),
+    }))
+  );
 
   const url = new URL(req.url);
   const includes = url.searchParams.get('include')?.split(',') ?? [];
@@ -61,8 +101,12 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
     }
   }
 
+  // [why] Expose the caller's guest sub-type so the client can conditionally
+  // render write-action controls without a second round-trip.
+  const callerGuestType = (scopedReq.guestType as string | undefined) ?? null;
+
   return Response.json({
-    data: board,
-    includes: { lists, cards, activities },
+    data: { ...board, callerGuestType },
+    includes: { lists, cards: cardsWithResolvedMembers, activities },
   });
 }

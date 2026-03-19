@@ -63,8 +63,8 @@ class RealtimeSocket {
 
   // ---------- Public API ----------
 
-  connect({ boardId, token }: { boardId: string; token: string }) {
-    this.boardId = boardId;
+  connect({ boardId, token }: { boardId?: string; token: string }) {
+    this.boardId = boardId ?? null;
     this.token = token;
     this.intentionalClose = false;
     this._open();
@@ -107,7 +107,7 @@ class RealtimeSocket {
   // ---------- Internal ----------
 
   private _open() {
-    if (!this.boardId || !this.token) return;
+    if (!this.token) return;
 
     const url = `${this._wsBase()}/api/v1/ws?token=${encodeURIComponent(this.token)}`;
     this.ws = new WebSocket(url);
@@ -116,8 +116,10 @@ class RealtimeSocket {
       const wasPolling = this.failedAttempts >= POLLING_FALLBACK_THRESHOLD;
       this.backoffMs = 1_000;
       this.failedAttempts = 0;
-      // Subscribe to the board room after authentication handshake
-      this.send({ type: 'subscribe', board_id: this.boardId });
+      // Subscribe to the board room after authentication handshake (only when boardId is set)
+      if (this.boardId) {
+        this.send({ type: 'subscribe', board_id: this.boardId });
+      }
       this.openHandlers.forEach((h) => h());
       // Notify that polling is no longer needed now that WS is back
       if (wasPolling) {

@@ -6,6 +6,8 @@ import { searchWorkspace, type SearchResult } from '../api';
 interface UseSearchOptions {
   workspaceId: string;
   token: string;
+  /** Optional type filter — forwarded to the search API as the `type` query param */
+  type?: 'board' | 'card';
 }
 
 interface UseSearchResult {
@@ -18,7 +20,7 @@ interface UseSearchResult {
 
 const DEBOUNCE_MS = 300;
 
-export function useSearch({ workspaceId, token }: UseSearchOptions): UseSearchResult {
+export function useSearch({ workspaceId, token, type }: UseSearchOptions): UseSearchResult {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,12 @@ export function useSearch({ workspaceId, token }: UseSearchOptions): UseSearchRe
       setLoading(true);
       setError(null);
       try {
-        const res = await searchWorkspace({ workspaceId, q, token });
+        const res = await searchWorkspace({
+          workspaceId,
+          q,
+          token,
+          ...(type !== undefined ? { type } : {}),
+        });
         setResults(res.data);
       } catch (err: unknown) {
         const e = err as { name?: string };
@@ -44,15 +51,16 @@ export function useSearch({ workspaceId, token }: UseSearchOptions): UseSearchRe
         setLoading(false);
       }
     },
-    [workspaceId, token],
+    [workspaceId, token, type],
   );
 
+  // Re-run search when query or type changes
   useEffect(() => {
     const timer = setTimeout(() => {
       doSearch(query).catch(() => {});
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [query, doSearch]);
+  }, [query, type, doSearch]);
 
   return { query, setQuery, results, loading, error };
 }

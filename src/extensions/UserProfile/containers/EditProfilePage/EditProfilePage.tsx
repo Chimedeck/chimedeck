@@ -1,16 +1,20 @@
 // EditProfilePage — profile settings page.
 // Sprint 28: Navigated to when clicking "Edit profile info" in the member popover.
 // Sprint 40: Includes ChangeEmailForm for email address changes with optional re-verification flow.
+// Sprint 71: Includes NotificationPreferencesPanel gated by NOTIFICATION_PREFERENCES_ENABLED.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import ChangeEmailForm from '~/extensions/Auth/components/ChangeEmailForm';
+import { selectNotificationPreferencesEnabled } from '~/slices/featureFlagsSlice';
+import NotificationPreferencesPanel from '~/extensions/Notifications/NotificationPreferences/NotificationPreferencesPanel';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
   const user = useAppSelector(selectAuthUser);
   const [displayEmail, setDisplayEmail] = useState(user?.email ?? '');
+  const notificationPreferencesEnabled = useAppSelector(selectNotificationPreferencesEnabled);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-slate-100 p-8">
@@ -41,6 +45,21 @@ const EditProfilePage = () => {
             onSuccess={(newEmail) => setDisplayEmail(newEmail)}
           />
         </section>
+
+        {notificationPreferencesEnabled && (
+          <>
+            {/* Divider */}
+            <hr className="border-slate-800" />
+
+            {/* Notification preferences section */}
+            <section>
+              <h2 className="text-base font-semibold text-slate-100 mb-4">
+                Notification Preferences
+              </h2>
+              <NotificationPreferencesPanel />
+            </section>
+          </>
+        )}
       </div>
     </div>
   );

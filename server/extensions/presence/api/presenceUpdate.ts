@@ -3,6 +3,7 @@
 // Called on subscribe, unsubscribe/disconnect, and from the expiry job.
 import { db } from '../../../common/db';
 import { broadcast } from '../../realtime/mods/rooms/broadcast';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function broadcastPresenceUpdate({
   boardId,
@@ -15,6 +16,7 @@ export async function broadcastPresenceUpdate({
 }): Promise<void> {
   const user = await db('users').where({ id: userId }).select('id', 'name', 'avatar_url').first();
   if (!user) return;
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
 
   const payload = {
     type: 'presence_update',
@@ -23,7 +25,7 @@ export async function broadcastPresenceUpdate({
     user: {
       userId: user.id,
       displayName: user.name,
-      avatarUrl: user.avatar_url ?? undefined,
+      avatarUrl: avatarUrl ?? undefined,
     },
     action,
   };

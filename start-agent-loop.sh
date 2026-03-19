@@ -45,7 +45,7 @@ done
 # ---------------------------------------------------------------------------
 # Config – edit these before running
 # ---------------------------------------------------------------------------
-MAX_ITERATIONS=10
+MAX_ITERATIONS=60
 TASK_DESCRIPTION="${POSITIONAL_ARGS[0]:-"Build features according to spec.md"}"
 WORKFLOW_FILE=".github/copilot-instructions.md"
 SAMPLE_PROJECT_DIR="sample-project"  # read-only reference repo cloned by setup.sh

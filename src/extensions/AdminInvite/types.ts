@@ -5,6 +5,7 @@ export interface AdminCreateUserRequest {
   displayName: string;
   password?: string;
   sendEmail?: boolean;
+  autoVerifyEmail?: boolean;
 }
 
 export interface AdminCreateUserResponse {
@@ -12,12 +13,14 @@ export interface AdminCreateUserResponse {
     id: string;
     email: string;
     displayName: string;
+    email_verified_at: string | null;
   };
   credentials: {
     email: string;
     plainPassword: string;
   };
   emailSent: boolean;
+  emailVerifiedAt: string | null;
 }
 
 export type PasswordMode = 'auto' | 'manual';
@@ -27,4 +30,5 @@ export interface AdminInviteState {
   // Set after a successful account creation
   credentials: AdminCreateUserResponse['credentials'] | null;
   emailSent: boolean;
+  emailVerifiedAt: string | null;
 }

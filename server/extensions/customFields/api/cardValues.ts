@@ -1,6 +1,7 @@
 // server/extensions/customFields/api/cardValues.ts
 // GET/PUT/DELETE handlers for card-scoped custom field values.
 // Routes:
+//   GET  /api/v1/boards/:boardId/custom-field-values?cardIds=id1,id2,... — batch fetch for board
 //   GET  /api/v1/cards/:cardId/custom-field-values          — list all values for card
 //   GET  /api/v1/cards/:cardId/custom-field-values/:fieldId — get single value
 //   PUT  /api/v1/cards/:cardId/custom-field-values/:fieldId — upsert value
@@ -319,4 +320,48 @@ function buildValuePayload(
     default:
       return { error: { name: 'bad-request', data: { message: 'Unknown field type' } } };
   }
+}
+
+// GET /api/v1/boards/:boardId/custom-field-values?cardIds=id1,id2,...
+// [why] Fetches values for multiple cards in a single DB query instead of N
+//       individual requests — prevents the board page from DDoSing the server
+//       when every card tile independently calls the single-card endpoint.
+export async function handleBatchCardFieldValues(req: Request, boardId: string): Promise<Response> {
+  const authError = await authenticate(req as AuthenticatedRequest);
+  if (authError) return authError;
+
+  const board = await db('boards').where({ id: boardId }).first();
+  if (!board) {
+    return Response.json(
+      { error: { name: 'board-not-found', data: { message: 'Board not found' } } },
+      { status: 404 },
+    );
+  }
+
+  const scopedReq = req as WorkspaceScopedRequest;
+  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id as string);
+  if (membershipError) return membershipError;
+
+  const url = new URL(req.url);
+  const cardIdsParam = url.searchParams.get('cardIds') ?? '';
+  const requestedIds = cardIdsParam.split(',').map((id) => id.trim()).filter(Boolean);
+
+  if (requestedIds.length === 0) {
+    return Response.json({ data: [] });
+  }
+
+  // [security] Only return values for cards that actually belong to this board,
+  // preventing an authenticated member from probing cards from other boards.
+  const boardCardIds: string[] = await db('cards')
+    .join('lists', 'cards.list_id', 'lists.id')
+    .where('lists.board_id', boardId)
+    .whereIn('cards.id', requestedIds)
+    .pluck('cards.id');
+
+  if (boardCardIds.length === 0) {
+    return Response.json({ data: [] });
+  }
+
+  const values = await db('card_custom_field_values').whereIn('card_id', boardCardIds);
+  return Response.json({ data: values });
 }

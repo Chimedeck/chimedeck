@@ -15,7 +15,7 @@ const CardActionMenu = ({ archived, onArchive, onDelete, onCopyLink, disabled }:
     <div className="space-y-1">
       <button
         type="button"
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-40"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-40"
         onClick={onArchive}
         disabled={disabled}
       >
@@ -25,7 +25,7 @@ const CardActionMenu = ({ archived, onArchive, onDelete, onCopyLink, disabled }:
       </button>
       <button
         type="button"
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
         onClick={onCopyLink}
       >
         <LinkIcon className="w-4 h-4 shrink-0" /> Copy link

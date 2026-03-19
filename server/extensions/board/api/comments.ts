@@ -1,9 +1,7 @@
 // GET /api/v1/boards/:id/comments — paginated comments across all cards in a board.
 // PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import {
-  requireRole,
-} from '../../../middlewares/permissionManager';
+import { requireWorkspaceMembership } from '../../../middlewares/permissionManager';
 import {
   applyBoardVisibility,
   type BoardVisibilityScopedRequest,
@@ -20,14 +18,17 @@ export async function handleGetBoardComments(req: Request, boardId: string): Pro
   const board = scopedReq.board!;
 
   if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
+    const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+    if (membershipError) return membershipError;
   }
 
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;
   const limitParam = parseInt(url.searchParams.get('limit') ?? `${DEFAULT_LIMIT}`, 10);
-  const limit = Math.min(isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam, MAX_LIMIT);
+  const limit = Math.min(
+    isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam,
+    MAX_LIMIT
+  );
 
   // Scope to cards that belong to lists in this board
   let query = db('comments as c')
@@ -47,9 +48,9 @@ export async function handleGetBoardComments(req: Request, boardId: string): Pro
       'c.deleted',
       'c.created_at',
       'c.updated_at',
-      db.raw("COALESCE(users.name, users.email) as author_name"),
+      db.raw('COALESCE(users.name, users.email) as author_name'),
       'users.email as author_email',
-      'cards.title as card_title',
+      'cards.title as card_title'
     );
 
   if (cursor) {
@@ -66,7 +67,8 @@ export async function handleGetBoardComments(req: Request, boardId: string): Pro
   const rows = await query;
   const hasMore = rows.length > limit;
   const data = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore && data.length > 0 ? (data[data.length - 1] as { id: string }).id : null;
+  const nextCursor =
+    hasMore && data.length > 0 ? (data[data.length - 1] as { id: string }).id : null;
 
   return Response.json({
     data,

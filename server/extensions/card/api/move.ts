@@ -1,16 +1,17 @@
 // PATCH /api/v1/cards/:id/move — move card to another list (or reorder within same list); min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { publisher } from '../../../mods/pubsub/publisher';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { recordConflict } from '../../realtime/mods/conflictHandler';
+import { emitCardMoved } from '../../activity/mods/createActivityEvent';
 
 export async function handleMoveCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -27,7 +28,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { targetListId: string; afterCardId?: string | null };
@@ -112,7 +113,24 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
 
   // Client expects { card, fromListId } to update both card slice and board slice
   const fromListId = card.list_id;
-  await writeEvent({ type: 'card_moved', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card: updated[0], fromListId } });
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+
+  await Promise.all([
+    dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updated[0], fromListId, toListId: updated[0].list_id } }),
+    emitCardMoved({
+      actorId,
+      cardId,
+      cardTitle: updated[0].title,
+      fromListId,
+      fromListName: sourceList!.title ?? null,
+      toListId: updated[0].list_id,
+      toListName: targetList.title ?? null,
+      boardId: board.id,
+      workspaceId: board.workspace_id,
+      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+    }),
+  ]);
 
   // Broadcast to all other board subscribers so their kanban updates in real time
   publisher.publish(

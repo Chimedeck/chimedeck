@@ -5,6 +5,7 @@
 // Sprint 48: tabbed view adds Activity, Comments, and Archived Cards panels.
 // Sprint 52: BoardViewSwitcher mounted above canvas for Kanban/Table/Calendar/Timeline.
 // Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
+// Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -20,6 +21,7 @@ import {
   selectBoardStatus,
 } from '../../slices/boardSlice';import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
+import { useBoardCardFieldValues } from '../../../CustomFields/api';
 import CardModalContainer from '../../../Card/containers/CardModal';
 import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
@@ -44,6 +46,13 @@ import CalendarView from '../../../CalendarView/CalendarView';
 import TimelineView from '../../../TimelineView/TimelineView';
 import BoardDeleteDialog from '../../components/BoardDeleteDialog';
 import ListDeleteDialog from '../../../List/components/ListDeleteDialog';
+import AutomationPanel from '../../../Automation/components/AutomationPanel';
+import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel';
+import BoardMembersPanel from '../../components/BoardMembersPanel';
+import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
+import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import { canBoardGuestWrite } from '../../mods/guestPermissions';
+import type { BoardSearchResult } from '~/extensions/Search/api';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -57,7 +66,11 @@ const BoardPage = () => {
   const dispatch = useAppDispatch();
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── Board-scoped search state ─────────────────────────────────────────────
+  // Restore search query from URL on mount; reset when boardId changes.
+  const initialBoardSearch = searchParams.get('boardSearch') ?? '';
 
   const board = useAppSelector(selectBoard);
   const listOrder = useAppSelector(selectListOrder);
@@ -68,6 +81,16 @@ const BoardPage = () => {
   const accessToken = useAppSelector(selectAuthToken);
   // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
   const activeView = useAppSelector(selectActiveView);
+  // [why] GUEST workspace members can view boards but not manage settings or members.
+  const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
+  // [why] VIEWER guests have read-only access; MEMBER guests can write.
+  // Non-guests always get full write access (canBoardGuestWrite returns true for null).
+  const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
+
+  // Batch-fetch custom field values for all cards on the board in a single request.
+  // [why] Prevents N individual requests (one per card tile) when the board renders.
+  const allCardIds = Object.keys(cards);
+  const customFieldValuesMap = useBoardCardFieldValues(boardId, allCardIds);
 
   // Use the shared axios client instead of a globalThis reference
   const api = apiClient;
@@ -88,6 +111,13 @@ const BoardPage = () => {
 
   // ── Board settings panel ─────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // ── Board members panel ───────────────────────────────────────────────────
+  const [membersOpen, setMembersOpen] = useState(false);
+  const { data: boardMembers = [] } = useGetBoardMembersQuery(boardId ?? '', { skip: !boardId });
+
+  // ── Automation panel (Sprint 65) ─────────────────────────────────────────
+  const automationPanel = useAutomationPanel();
 
   // ── Delete confirmation dialogs (Sprint 56) ───────────────────────────────
   // Board delete: open when server returns 409 delete-requires-confirmation.
@@ -138,6 +168,42 @@ const BoardPage = () => {
         next.set('card', cardId);
         return next;
       });
+    },
+    [setSearchParams],
+  );
+
+  // ── Board search result selection ────────────────────────────────────────
+  // Card results: open the card modal via the ?card= URL param.
+  // List results: scroll the list column into view.
+  const handleSearchResultSelect = useCallback(
+    (result: BoardSearchResult) => {
+      if (result.type === 'card') {
+        handleCardClick(result.id);
+      } else {
+        const el = document.getElementById(`board-list-${result.id}`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        el?.focus({ preventScroll: true });
+      }
+    },
+    [handleCardClick],
+  );
+
+  // Sync the active search query into the URL as ?boardSearch= so it survives refresh.
+  // An empty string removes the param entirely to keep URLs clean.
+  const handleSearchQueryChange = useCallback(
+    (query: string) => {
+      setSearchParams(
+        (p) => {
+          const next = new URLSearchParams(p);
+          if (query) {
+            next.set('boardSearch', query);
+          } else {
+            next.delete('boardSearch');
+          }
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setSearchParams],
   );
@@ -290,7 +356,13 @@ const BoardPage = () => {
     if (!boardId) return;
     try {
       await deleteBoard({ api, boardId });
-      navigate('/workspaces');
+      // Close all open panels before navigating away so they don't flash on unmount.
+      setSettingsOpen(false);
+      setMembersOpen(false);
+      automationPanel.closePanel();
+      navigate(`/workspace/${board?.workspaceId}/boards`, {
+        state: { successToast: 'Board deleted' },
+      });
     } catch (err: unknown) {
       // 409 means the board has lists/cards — open confirmation dialog.
       const resp = (err as { response?: { status?: number; data?: { name?: string; data?: { listCount?: number; cardCount?: number } } } }).response;
@@ -303,7 +375,7 @@ const BoardPage = () => {
         addToast('Failed to delete board.', 'error');
       }
     }
-  }, [api, boardId, navigate, addToast]);
+  }, [api, boardId, board, navigate, addToast, automationPanel]);
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -333,15 +405,34 @@ const BoardPage = () => {
   ];
 
   return (
-    <div className="flex flex-col bg-slate-950 text-slate-100 h-full overflow-hidden">
+    <div
+      className="flex flex-col text-slate-900 dark:text-slate-100 h-full overflow-hidden relative bg-slate-50 dark:bg-slate-950 bg-cover bg-center"
+      style={board.background ? { backgroundImage: `url(${board.background})` } : undefined}
+    >
+      {/* Dark scrim over background image so text stays legible */}
+      {board.background && (
+        <div className="absolute inset-0 bg-black/50 pointer-events-none z-0" aria-hidden="true" />
+      )}
+      {/* All content above the scrim */}
+      <div className="relative z-10 flex flex-col h-full overflow-hidden">
       <BoardHeader
         board={board}
+        members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email, avatar_url: m.avatar_url }))}
         connectionState={connectionState}
         pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
-        onArchive={handleBoardArchive}
-        onDelete={handleBoardDelete}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAutomation={automationPanel.openPanel}
+        isGuest={isGuest}
+        {...(accessToken ? { searchToken: accessToken } : {})}
+        {...(initialBoardSearch ? { initialSearchQuery: initialBoardSearch } : {})}
+        onSearchResultSelect={handleSearchResultSelect}
+        onSearchQueryChange={handleSearchQueryChange}
+        {...(!isGuest && {
+          onArchive: handleBoardArchive,
+          onDelete: handleBoardDelete,
+          onOpenSettings: () => setSettingsOpen(true),
+          onOpenMembers: () => setMembersOpen(true),
+        })}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
@@ -350,15 +441,15 @@ const BoardPage = () => {
       )}
 
       {/* Tab bar */}
-      <div className="flex gap-1 border-b border-slate-700 px-4 pt-2">
+      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700 px-4 pt-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`rounded-t px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'border-b-2 border-blue-500 text-blue-400'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             {tab.label}
@@ -395,6 +486,8 @@ const BoardPage = () => {
               onDeleteList={handleDeleteList}
               onCardClick={handleCardClick}
               isReadOnly={board.state === 'ARCHIVED'}
+              isViewerGuest={isViewerGuest}
+              customFieldValuesMap={customFieldValuesMap}
             />
           ) : activeView === 'TABLE' ? (
             <TableView
@@ -423,8 +516,21 @@ const BoardPage = () => {
           {settingsOpen && (
             <BoardSettings
               onClose={() => setSettingsOpen(false)}
+              isGuest={isGuest}
             />
           )}
+          {/* Board members panel (Sprint 79) */}
+          {membersOpen && (
+            <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
+          )}
+          {/* Automation panel (Sprint 65) */}
+          <AutomationPanel
+            boardId={boardId ?? ''}
+            isOpen={automationPanel.isOpen}
+            activeTab={automationPanel.activeTab}
+            onClose={automationPanel.closePanel}
+            onTabChange={automationPanel.setActiveTab}
+          />
           {/* Toast notifications (rollback errors, conflicts) */}
           <ToastRegion toasts={toasts} onDismiss={dismissToast} />
         </PluginIframeContainer>
@@ -457,8 +563,17 @@ const BoardPage = () => {
           cardCount={boardDeleteDialog.cardCount}
           onConfirm={async () => {
             setBoardDeleteDialog(null);
-            await deleteBoard({ api, boardId: boardId!, confirm: true });
-            navigate('/workspaces');
+            try {
+              await deleteBoard({ api, boardId: boardId!, confirm: true });
+              setSettingsOpen(false);
+              setMembersOpen(false);
+              automationPanel.closePanel();
+              navigate(`/workspace/${board.workspaceId}/boards`, {
+                state: { successToast: 'Board deleted' },
+              });
+            } catch {
+              addToast('Failed to delete board.', 'error');
+            }
           }}
           onCancel={() => setBoardDeleteDialog(null)}
         />
@@ -478,6 +593,7 @@ const BoardPage = () => {
           onCancel={() => setListDeleteDialog(null)}
         />
       )}
+    </div>
     </div>
   );
 };

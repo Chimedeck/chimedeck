@@ -28,7 +28,7 @@ export default function WorkspaceListPage() {
   if (status === 'loading' && workspaces.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <p className="text-slate-400">{translations['WorkspaceListPage.loading']}</p>
+        <p className="text-slate-500 dark:text-slate-400">{translations['WorkspaceListPage.loading']}</p>
       </div>
     );
   }
@@ -36,7 +36,7 @@ export default function WorkspaceListPage() {
   return (
     <div className="min-h-full p-6 md:p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
           {translations['WorkspaceListPage.title']}
         </h1>
         <button
@@ -50,11 +50,11 @@ export default function WorkspaceListPage() {
       {workspaces.length === 0 ? (
         /* Empty state */
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <BuildingOfficeIcon className="mb-4 h-16 w-16 text-slate-600" aria-hidden="true" />
-          <h2 className="mb-2 text-lg font-semibold text-slate-200">
+          <BuildingOfficeIcon className="mb-4 h-16 w-16 text-slate-400 dark:text-slate-600" aria-hidden="true" />
+          <h2 className="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-200">
             {translations['WorkspaceListPage.emptyTitle']}
           </h2>
-          <p className="mb-6 max-w-xs text-sm text-slate-400">
+          <p className="mb-6 max-w-xs text-sm text-slate-500 dark:text-slate-400">
             {translations['WorkspaceListPage.emptyBody']}
           </p>
           <button
@@ -70,17 +70,17 @@ export default function WorkspaceListPage() {
             <div
               key={ws.id}
               onClick={() => handleOpen(ws.id)}
-              className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900 p-5 transition-colors hover:border-slate-600"
+              className="cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 transition-colors hover:border-slate-400 dark:hover:border-slate-600"
             >
-              <BuildingOfficeIcon className="mb-3 h-8 w-8 text-slate-500" aria-hidden="true" />
-              <h2 className="mb-1 text-base font-semibold text-slate-100">{ws.name}</h2>
-              <p className="text-xs text-slate-500">
+              <BuildingOfficeIcon className="mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+              <h2 className="mb-1 text-base font-semibold text-slate-900 dark:text-slate-100">{ws.name}</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
                 {translations['WorkspaceListPage.createdAt']}{' '}
                 {new Date(ws.createdAt).toLocaleDateString()}
               </p>
               <button
                 onClick={(e) => { e.stopPropagation(); handleOpen(ws.id); }}
-                className="mt-4 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+                className="mt-4 rounded-lg bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 {translations['WorkspaceListPage.openButton']}
               </button>

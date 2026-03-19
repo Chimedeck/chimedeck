@@ -1,5 +1,6 @@
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { apiClient } from './client';
+import { shouldAttemptAuthRecovery } from './requestPolicy';
 
 // clearAuth callback set from main.tsx to avoid circular dep with store
 let clearAuthCallback: (() => void) | null = null;
@@ -14,17 +15,21 @@ let isRefreshing = false;
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: unknown) => {
-    if (!isAxiosErrorLike(error)) return Promise.reject(error);
+    if (!isAxiosErrorLike(error)) {
+      throw error;
+    }
 
     const status = error.response?.status;
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
 
-    // Never retry or redirect for the refresh endpoint itself — would cause an infinite loop
-    const isRefreshEndpoint = originalRequest.url?.includes('/auth/refresh');
-
-    if (status === 401 && !originalRequest._retry && !isRefreshing && !isRefreshEndpoint) {
+    if (
+      status === 401
+      && !originalRequest._retry
+      && !isRefreshing
+      && shouldAttemptAuthRecovery({ url: originalRequest.url, method: originalRequest.method })
+    ) {
       originalRequest._retry = true;
       isRefreshing = true;
       try {
@@ -35,14 +40,14 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
         clearAuthCallback?.();
         // Redirect to login with reason so the login page can show a message
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login?reason=session_expired';
+        if (globalThis.window !== undefined) {
+          globalThis.window.location.href = '/login?reason=session_expired';
         }
-        return Promise.reject(error);
+        throw error;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

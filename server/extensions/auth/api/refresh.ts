@@ -3,10 +3,11 @@ import { db } from '../../../common/db';
 import { rotateRefreshToken } from '../mods/token/refresh';
 import { issueAccessToken } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
-  const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  const match = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`).exec(header);
   return match ? decodeURIComponent(match[1]!) : null;
 }
 
@@ -46,11 +47,13 @@ export async function handleRefresh(req: Request): Promise<Response> {
     `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
 
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
   return new Response(
     JSON.stringify({
       data: {
         accessToken,
-        user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatar_url ?? null },
+        user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
     { status: 200, headers: responseHeaders },

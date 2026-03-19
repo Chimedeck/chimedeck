@@ -10,8 +10,14 @@ interface FeatureFlagsState {
   adminEmailDomains: string;
   // Whether admin invite email sending is enabled
   adminInviteEmailEnabled: boolean;
-  // Whether SES is enabled (required for invite emails)
+  // Whether SES is enabled (required for invite emails and email notifications)
   sesEnabled: boolean;
+  // Whether the notification preferences panel is shown in profile settings
+  notificationPreferencesEnabled: boolean;
+  // Whether email notification dispatch is enabled (Sprint 72)
+  emailNotificationsEnabled: boolean;
+  // Whether email address verification is required on registration (Sprint 74)
+  emailVerificationEnabled: boolean;
   status: 'idle' | 'loading' | 'ready' | 'error';
 }
 
@@ -19,6 +25,9 @@ const initialState: FeatureFlagsState = {
   adminEmailDomains: '',
   adminInviteEmailEnabled: false,
   sesEnabled: false,
+  notificationPreferencesEnabled: false,
+  emailNotificationsEnabled: false,
+  emailVerificationEnabled: false,
   status: 'idle',
 };
 
@@ -31,6 +40,9 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
           adminEmailDomains?: string;
           adminInviteEmailEnabled?: boolean;
           sesEnabled?: boolean;
+          notificationPreferencesEnabled?: boolean;
+          emailNotificationsEnabled?: boolean;
+          emailVerificationEnabled?: boolean;
         };
       }>('/flags');
       return response.data;
@@ -53,6 +65,9 @@ const featureFlagsSlice = createSlice({
         state.adminEmailDomains = action.payload.adminEmailDomains ?? '';
         state.adminInviteEmailEnabled = action.payload.adminInviteEmailEnabled ?? false;
         state.sesEnabled = action.payload.sesEnabled ?? false;
+        state.notificationPreferencesEnabled = action.payload.notificationPreferencesEnabled ?? false;
+        state.emailNotificationsEnabled = action.payload.emailNotificationsEnabled ?? false;
+        state.emailVerificationEnabled = action.payload.emailVerificationEnabled ?? false;
         state.status = 'ready';
       })
       .addCase(fetchFeatureFlagsThunk.rejected, (state) => {
@@ -70,3 +85,9 @@ export const selectAdminInviteEmailEnabled = (state: RootState) =>
 export const selectSesEnabled = (state: RootState) => state.featureFlags.sesEnabled;
 export const selectShowEmailToggle = (state: RootState) =>
   state.featureFlags.sesEnabled && state.featureFlags.adminInviteEmailEnabled;
+export const selectNotificationPreferencesEnabled = (state: RootState) =>
+  state.featureFlags.notificationPreferencesEnabled;
+export const selectEmailNotificationsEnabled = (state: RootState) =>
+  state.featureFlags.emailNotificationsEnabled;
+export const selectEmailVerificationEnabled = (state: RootState) =>
+  state.featureFlags.emailVerificationEnabled;

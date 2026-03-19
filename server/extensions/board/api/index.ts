@@ -1,4 +1,5 @@
 // Board API router — mounts all board routes.
+import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 import { handleCreateBoard } from './create';
 import { handleListBoards } from './list';
 import { handleGetBoard } from './get';
@@ -10,7 +11,7 @@ import { handleDuplicateBoard } from './duplicate';
 import { handleGetBoardEvents } from '../../realtime/api/events';
 import { handleGetPresence } from '../../realtime/api/presence';
 import { handleGetBoardLabels, handleCreateBoardLabel } from './labels';
-import { handleGetBoardMembers } from './members';
+import { handleGetBoardMembers, handleAddBoardMember, handleUpdateBoardMember, handleRemoveBoardMember } from './members';
 import { handleGetMemberSuggestions } from './members/suggestions';
 import { handleStarBoard, handleUnstarBoard } from './star';
 import { handleFollowBoard, handleUnfollowBoard } from './follow';
@@ -18,7 +19,10 @@ import { handleGetMeStarredBoards } from './me-starred-boards';
 import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
 import { handleGetArchivedCards } from './archived-cards';
-import { handleInviteGuest, handleRevokeGuest, handleListGuests } from './guests/index';
+import { handleInviteGuest, handleRevokeGuest, handleListGuests, handleUpdateGuestType } from './guests/index';
+import { handleGetWorkspaceBoards } from './workspaceBoards';
+import { handleUploadBackground } from './uploadBackground';
+import { handleDeleteBackground } from './deleteBackground';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -41,6 +45,11 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
   if (boardMatch) {
     const boardId = boardMatch[1] as string;
     const sub = boardMatch[2] ?? '';
+
+    // Enforce board visibility before dispatching to any board-scoped handler.
+    // Populates req.board (and req.currentUser, req.workspaceId, req.callerRole for non-public boards).
+    const visibilityError = await applyBoardVisibility(req, boardId);
+    if (visibilityError) return visibilityError;
 
     // GET /api/v1/boards/:id
     if (sub === '' && req.method === 'GET') return handleGetBoard(req, boardId);
@@ -69,11 +78,22 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     // POST /api/v1/boards/:id/labels — create a label in the board's workspace
     if (sub === '/labels' && req.method === 'POST') return handleCreateBoardLabel(req, boardId);
 
-    // GET /api/v1/boards/:id/members — list workspace members
+    // GET /api/v1/boards/:id/members — list explicit board members
     if (sub === '/members' && req.method === 'GET') return handleGetBoardMembers(req, boardId);
+
+    // POST /api/v1/boards/:id/members — add a workspace member to the board
+    if (sub === '/members' && req.method === 'POST') return handleAddBoardMember(req, boardId);
 
     // GET /api/v1/boards/:id/members/suggestions?q=
     if (sub === '/members/suggestions' && req.method === 'GET') return handleGetMemberSuggestions(req, boardId);
+
+    // Member sub-routes: PATCH/DELETE /api/v1/boards/:id/members/:userId
+    const boardMemberMatch = sub.match(/^\/members\/([^/]+)$/);
+    if (boardMemberMatch) {
+      const targetUserId = boardMemberMatch[1] as string;
+      if (req.method === 'PATCH') return handleUpdateBoardMember(req, boardId, targetUserId);
+      if (req.method === 'DELETE') return handleRemoveBoardMember(req, boardId, targetUserId);
+    }
 
     // POST /api/v1/boards/:id/star — star a board (idempotent)
     if (sub === '/star' && req.method === 'POST') return handleStarBoard(req, boardId);
@@ -103,10 +123,22 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     if (sub === '/guests' && req.method === 'GET') return handleListGuests(req, boardId);
 
     // DELETE /api/v1/boards/:id/guests/:userId — revoke guest access
-    const guestRevokeMatch = sub.match(/^\/guests\/([^/]+)$/);
-    if (guestRevokeMatch && req.method === 'DELETE') {
-      return handleRevokeGuest(req, boardId, guestRevokeMatch[1] as string);
+    // PATCH /api/v1/boards/:id/guests/:userId — update guest type (ADMIN+ only)
+    const guestUserMatch = sub.match(/^\/guests\/([^/]+)$/);
+    if (guestUserMatch) {
+      const targetUserId = guestUserMatch[1] as string;
+      if (req.method === 'DELETE') return handleRevokeGuest(req, boardId, targetUserId);
+      if (req.method === 'PATCH') return handleUpdateGuestType(req, boardId, targetUserId);
     }
+
+    // GET /api/v1/boards/:id/workspace/boards — list all ACTIVE boards in the same workspace
+    if (sub === '/workspace/boards' && req.method === 'GET') return handleGetWorkspaceBoards(req, boardId);
+
+    // POST /api/v1/boards/:id/background — upload a background image (Owner/Admin only)
+    if (sub === '/background' && req.method === 'POST') return handleUploadBackground(req, boardId);
+
+    // DELETE /api/v1/boards/:id/background — remove the background image (Owner/Admin only)
+    if (sub === '/background' && req.method === 'DELETE') return handleDeleteBackground(req, boardId);
   }
 
   return null;

@@ -1,6 +1,7 @@
 // PATCH /api/v1/users/me — update nickname and/or display name.
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { resolveAvatarUrl } from '../../../../common/avatar/resolveAvatarUrl';
 
 const NICKNAME_PATTERN = /^[a-zA-Z0-9_-]{1,50}$/;
 
@@ -78,13 +79,15 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
     );
   }
 
+  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+
   return Response.json({
     data: {
       id: user.id,
       email: user.email,
       name: user.name,
       nickname: user.nickname ?? null,
-      avatar_url: user.avatar_url ?? null,
+      avatar_url: avatarUrl,
       email_verified: user.email_verified ?? false,
       created_at: user.created_at,
     },

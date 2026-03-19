@@ -2,15 +2,16 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
+import { emitCardCreated } from '../../activity/mods/createActivityEvent';
 
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -34,7 +35,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { title?: string; description?: string; start_date?: string | null };
@@ -92,8 +93,23 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
 
   const card = await db('cards').where({ id }).first();
 
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+
   // Broadcast the full card object so clients can update their local state immediately
-  await writeEvent({ type: 'card_created', boardId: list.board_id, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { card } });
+  await Promise.all([
+    dispatchEvent({ type: 'card.created', boardId: list.board_id, entityId: id, actorId, payload: { card, listId } }),
+    emitCardCreated({
+      actorId,
+      cardId: id,
+      cardTitle: card.title,
+      listId,
+      listName: list.title ?? null,
+      boardId: board.id,
+      workspaceId: board.workspace_id,
+      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+    }),
+  ]);
 
   return Response.json({ data: card }, { status: 201 });
 }

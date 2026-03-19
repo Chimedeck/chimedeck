@@ -4,13 +4,14 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { headObject } from '../mods/s3/headObject';
 import { enqueueScan } from '../mods/virusScan/enqueue';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
+import { writeActivity } from '../../activity/mods/write';
 
 export async function handleConfirmUpload(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -30,7 +31,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { attachmentId?: string };
@@ -81,7 +82,16 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     boardId: board.id,
     entityId: cardId,
     actorId,
-    payload: { attachmentId: attachment.id, cardId },
+    payload: { attachmentId: attachment.id, cardId, name: attachment.name },
+  });
+
+  await writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: 'attachment_added',
+    actorId,
+    payload: { attachmentId: attachment.id, cardId, name: attachment.name },
   });
 
   publisher

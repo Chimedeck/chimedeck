@@ -15,6 +15,8 @@ import CardMoneyBadge from './CardMoneyBadge';
 import CardPluginBadges from '../../Plugins/uiInjections/CardPluginBadges';
 import CardCustomFieldBadges from './CardCustomFieldBadges';
 
+import type { CustomFieldValue } from '../../CustomFields/types';
+
 export interface CardItemProps {
   card: Card;
   isOverlay?: boolean;
@@ -24,6 +26,8 @@ export interface CardItemProps {
   listTitle?: string;
   boardTitle?: string;
   boardId?: string;
+  /** Pre-fetched custom field values for this card from a board-level batch request. */
+  customFieldValues?: CustomFieldValue[];
 }
 
 const CardItem = ({
@@ -35,6 +39,7 @@ const CardItem = ({
   listTitle,
   boardTitle,
   boardId,
+  customFieldValues,
 }: CardItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -72,7 +77,7 @@ const CardItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-slate-800 hover:bg-slate-700 border border-slate-700/50 rounded-lg p-2.5 cursor-pointer transition-colors${
+      className={`bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700/50 rounded-lg p-2.5 cursor-pointer transition-colors${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90' : ''
       }`}
       role="button"
@@ -90,9 +95,9 @@ const CardItem = ({
           onToggle={onToggleLabels ?? (() => {})}
         />
       )}
-      <p className="text-slate-200 text-sm leading-snug break-words">{card.title}</p>
+      <p className="text-gray-800 dark:text-slate-200 text-sm leading-snug break-words">{card.title}</p>
       {card.due_date && (
-        <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
+        <p className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
           <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
           {new Date(card.due_date).toLocaleDateString()}
         </p>
@@ -120,7 +125,7 @@ const CardItem = ({
         boardTitle={boardTitle}
       />
       {boardId && (
-        <CardCustomFieldBadges cardId={card.id} boardId={boardId} />
+        <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
       )}
     </div>
   );

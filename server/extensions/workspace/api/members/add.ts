@@ -1,15 +1,17 @@
-// POST /api/v1/workspaces/:id/members — directly add an existing user by email; min role: ADMIN.
+// POST /api/v1/workspaces/:id/members — directly add an existing user by email; min role: MEMBER.
+// Members may only assign roles equal to or less privileged than their own.
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   requireRole,
+  roleRank,
   type WorkspaceScopedRequest,
+  type Role,
 } from '../../../../middlewares/permissionManager';
-import type { Role } from '../../../../middlewares/permissionManager';
 import { writeEvent } from '../../../../mods/events/index';
 
-const VALID_ROLES: Role[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'];
+const VALID_ROLES = new Set<Role>(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']);
 
 export async function handleAddMember(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -39,7 +41,16 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
     );
   }
 
-  const role: Role = (VALID_ROLES.includes(body.role as Role) ? body.role : 'MEMBER') as Role;
+  const role: Role = (VALID_ROLES.has(body.role as Role) ? body.role : 'MEMBER') as Role;
+
+  // Members can only assign roles that are equal to or less privileged than their own.
+  const callerRole = scopedReq.callerRole!;
+  if (roleRank(role) > roleRank(callerRole)) {
+    return Response.json(
+      { error: { code: 'role-exceeds-caller-privilege', message: `You cannot assign a role higher than your own (${callerRole})` } },
+      { status: 403 },
+    );
+  }
   const email = body.email.trim().toLowerCase();
 
   // Look up the target user by email

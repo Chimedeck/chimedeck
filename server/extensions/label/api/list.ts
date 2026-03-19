@@ -23,9 +23,6 @@ export async function handleListLabels(req: Request, workspaceId: string): Promi
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
-
   const labels = await db('labels').where({ workspace_id: workspaceId }).orderBy('name', 'asc');
   return Response.json({ data: labels });
 }

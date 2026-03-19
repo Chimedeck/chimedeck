@@ -1,4 +1,4 @@
-# Vello
+# HoriFlow
 
 A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.  
 This repo also contains the agent loop that builds it sprint by sprint.
@@ -19,14 +19,18 @@ bun install
 # 2. Copy environment config and edit as needed
 cp .env.example .env
 
-# 3. Start Postgres + LocalStack S3 (Redis is optional)
+# 3. Build + start Postgres (pg_cron image built on first run, ~20 s) + LocalStack S3
 docker compose up -d postgres localstack
 
 # 4. Run database migrations
 bun run db:migrate
 
+# Optionally, when you have the seeds file to test
+# Put this files in db/all_trello_cards.json
+bun run db:seed:trello 
+
 # 5. Start the dev server (hot-reload)
-bun run dev:full
+bun run dev:local
 ```
 
 > `curl http://localhost:3000/health` → `{ "status": "ok" }`
@@ -54,6 +58,9 @@ FLAG_USE_REDIS=false bun run dev
 
 # Run without virus scanning
 FLAG_VIRUS_SCAN_ENABLED=false bun run dev
+
+# Use Bun Worker scheduler instead of pg_cron (default for local dev)
+AUTOMATION_USE_PGCRON=false bun run dev
 ```
 
 ### Available scripts
@@ -68,6 +75,32 @@ FLAG_VIRUS_SCAN_ENABLED=false bun run dev
 | `bun run db:migrate` | Run database migrations |
 | `bun run db:seed:trello` | Seed database from Trello export |
 | `bun test` | Run all tests |
+| `bun run docker:build` | Build the production Docker image |
+| `bun run docker:prod` | Run the production image via docker-compose |
+
+### Running production mode locally
+
+**Option A — native Bun (no Docker):**
+
+```bash
+# Build Vite client bundle + typecheck
+bun run build
+
+# Start server in production mode
+bun run start
+```
+
+**Option B — Docker (closest to real production):**
+
+```bash
+# Build the production image (multi-stage: deps → build → runtime)
+bun run docker:build
+
+# Run with the prod compose file (uses .env for config)
+bun run docker:prod
+```
+
+> Make sure `.env` contains all required variables (see `.env.example`) before running either option.
 
 ---
 
@@ -89,11 +122,11 @@ aws ecr get-login-password --region <region> \
   | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
 
 # Build — typecheck + Vite bundle happen inside the multi-stage Dockerfile
-docker build -t vello-app:${IMAGE_TAG} .
+docker build -t horiflow-app:${IMAGE_TAG} .
 
 # Tag and push
-docker tag vello-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG}
-docker push <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG}
+docker tag horiflow-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/horiflow-app:${IMAGE_TAG}
+docker push <account>.dkr.ecr.<region>.amazonaws.com/horiflow-app:${IMAGE_TAG}
 ```
 
 ### CD pipeline (host machine)
@@ -114,17 +147,24 @@ aws ecr get-login-password --region <region> \
 
 # 2. Run database migrations (one-off container — Compose pulls the image here)
 docker run --rm --env-file .env.production \
-  <account>.dkr.ecr.<region>.amazonaws.com/vello-app:${IMAGE_TAG} \
+  <account>.dkr.ecr.<region>.amazonaws.com/horiflow-app:${IMAGE_TAG} \
   bun run db:migrate
 
-# 3. Start the app (Compose reuses the already-pulled image)
+# 3. (One-time, local-db profile only) Activate pg_cron after the first migration
+#    Skip this step when using external RDS — configure pg_cron there separately.
+docker compose -f docker-compose.prod.yml --profile local-db exec postgres \
+  psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
+  -c "CREATE EXTENSION IF NOT EXISTS pg_cron;" \
+  -c "SELECT cron.schedule('automation-tick','* * * * *',\$\$SELECT automation_scheduler_tick()\$\$);"
+
+# 4. Start the app (Compose reuses the already-pulled image)
 #
 # Default — external RDS + S3 (AWS managed):
-DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/vello-app \
+DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/horiflow-app \
 IMAGE_TAG=${IMAGE_TAG} \
 docker compose -f docker-compose.prod.yml up -d
 
-# With internal Postgres instead of RDS:
+# With internal Postgres instead of RDS (builds Dockerfile.postgres on first run, ~20 s):
 docker compose -f docker-compose.prod.yml --profile local-db up -d
 
 # With LocalStack instead of AWS S3:
@@ -161,6 +201,7 @@ Key production-only variables:
 | Variable | Default | Effect |
 |---|---|---|
 | `SEED_TRELLO` | `false` | Runs `bun run db:seed:trello` before the server starts |
+| `AUTOMATION_USE_PGCRON` | `false` | `true` enables pg_cron scheduling; `false` uses Bun Worker (setInterval) fallback — the fallback does not survive restarts so use `true` in production |
 
 Set `SEED_TRELLO=true` in `.env.production` for the first deployment to import Trello data, then set it back to `false`.
 

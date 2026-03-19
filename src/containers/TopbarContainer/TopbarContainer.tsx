@@ -16,7 +16,7 @@ export default function TopbarContainer() {
 
   return (
     <div className="flex h-12 items-center justify-between border-b border-white/10 bg-gray-900 px-4">
-      <span className="font-semibold text-white">Kanban</span>
+      <span className="font-semibold text-white">HoriFlow</span>
       {user && (
         <button
           onClick={handleLogout}

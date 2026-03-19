@@ -1,12 +1,12 @@
-// POST /api/v1/boards/:boardId/plugins — enable a plugin for a board (board admin only).
+// POST /api/v1/boards/:boardId/plugins — enable a plugin for a board (board member or higher).
 // Creates a board_plugins row (or re-enables a previously disabled one).
 // Returns plugin metadata. Errors if plugin not active in registry or already enabled.
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
-import { boardAdminGuard, type BoardAdminRequest } from '../../middlewares/board-admin-guard';
+import { boardMemberGuard, type BoardAdminRequest } from '../../middlewares/board-admin-guard';
 
 export async function handleEnableBoardPlugin(req: Request, boardId: string): Promise<Response> {
-  const guardError = await boardAdminGuard(req as BoardAdminRequest, boardId);
+  const guardError = await boardMemberGuard(req as BoardAdminRequest, boardId);
   if (guardError) return guardError;
 
   let body: { pluginId?: string };

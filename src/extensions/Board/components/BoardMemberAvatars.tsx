@@ -3,6 +3,7 @@ interface Member {
   id: string;
   display_name: string | null;
   email: string;
+  avatar_url?: string | null;
 }
 
 interface Props {
@@ -30,27 +31,38 @@ const BoardMemberAvatars = ({ members, max = 5 }: Props) => {
   const overflow = members.length - visible.length;
 
   return (
-    <div className="flex items-center" role="list" aria-label="Board members">
+    <ul className="flex items-center list-none m-0 p-0" aria-label="Board members">
       {visible.map((member, i) => (
-        <div
+        <li
           key={member.id}
-          role="listitem"
           title={member.display_name ?? member.email}
-          className={`relative -ml-2 first:ml-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 text-xs font-semibold text-white ${COLORS[i % COLORS.length]}`}
+          className={`relative -ml-2 first:ml-0 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 text-xs font-semibold text-white overflow-hidden ${member.avatar_url ? '' : COLORS[i % COLORS.length]}`}
           style={{ zIndex: visible.length - i }}
         >
-          {initials(member)}
-        </div>
+          {member.avatar_url ? (
+            <img
+              src={member.avatar_url}
+              alt={member.display_name ?? member.email}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                // Hide broken image and let the initials text show through the parent bg
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            initials(member)
+          )}
+        </li>
       ))}
       {overflow > 0 && (
-        <div
-          className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-slate-900 bg-slate-600 text-xs font-semibold text-white"
+        <li
+          className="-ml-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-gray-400 dark:bg-slate-600 text-xs font-semibold text-white"
           title={`${overflow} more member${overflow > 1 ? 's' : ''}`}
         >
           +{overflow}
-        </div>
+        </li>
       )}
-    </div>
+    </ul>
   );
 };
 

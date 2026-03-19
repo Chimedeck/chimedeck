@@ -60,7 +60,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           min="0"
           step="any"
           placeholder="0.00"
-          className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="flex-1 min-w-0 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
           value={amountInput}
           onChange={(e) => setAmountInput(e.target.value)}
           disabled={disabled || saving}
@@ -70,7 +70,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           type="text"
           maxLength={3}
           placeholder="USD"
-          className="w-14 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-300 uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="w-14 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
           value={currencyInput}
           onChange={(e) => setCurrencyInput(e.target.value.toUpperCase())}
           disabled={disabled || saving}

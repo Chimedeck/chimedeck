@@ -1,5 +1,5 @@
 # Dockerfile.dev — used only by docker-compose.yml for local development
-FROM oven/bun:1.2-alpine
+FROM oven/bun:1.3.5-slim
 WORKDIR /app
 
 COPY package.json bun.lock* ./

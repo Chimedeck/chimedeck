@@ -157,8 +157,12 @@ export async function getBoardMembers({
   api: ApiClient;
   boardId: string;
 }): Promise<Array<{ id: string; email: string; name: string | null }>> {
-  const res = await api.get<{ data: Array<{ id: string; email: string; name: string | null }> }>(`/boards/${boardId}/members`);
-  return (res as unknown as { data: Array<{ id: string; email: string; name: string | null }> }).data;
+  const res = await api.get<{ data: Array<{ user_id: string; email: string; display_name: string | null }> }>(`/boards/${boardId}/members`);
+  return (res as unknown as { data: Array<{ user_id: string; email: string; display_name: string | null }> }).data.map((m) => ({
+    id: m.user_id,
+    email: m.email,
+    name: m.display_name,
+  }));
 }
 
 // ── Comment API ────────────────────────────────────────────────────────────────
@@ -172,6 +176,9 @@ export interface CommentData {
   deleted: boolean;
   created_at: string;
   updated_at: string;
+  author_name?: string | null;
+  author_email?: string | null;
+  author_avatar_url?: string | null;
 }
 
 export async function getCardComments({

@@ -7,7 +7,7 @@
 // Provided via PluginBridgeContext so any component can call bridge.resolve()
 // without prop-drilling.
 
-import { createContext, useContext, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { BoardPlugin } from '../api';
 import { apiClient } from '~/common/api/client';
 import type { PluginModalState } from '../modals/PluginModal';
@@ -582,5 +582,9 @@ export function usePluginBridge({
     [plugins, sendToPlugin],
   );
 
-  return { resolve, sendToPlugin };
+  // WHY: memoize the returned object so its reference is stable across renders.
+  // Without this, every render creates a new { resolve, sendToPlugin } object,
+  // which propagates a new `bridge` value through PluginBridgeContext and triggers
+  // every CardPluginBadges useEffect → setBadges → re-render → infinite loop.
+  return useMemo(() => ({ resolve, sendToPlugin }), [resolve, sendToPlugin]);
 }

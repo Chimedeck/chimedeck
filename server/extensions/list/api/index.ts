@@ -1,4 +1,5 @@
 // List API router — mounts all list routes.
+import { applyBoardVisibility, applyBoardVisibilityFromList } from '../../../middlewares/boardVisibility';
 import { handleCreateList } from './create';
 import { handleListLists } from './list';
 import { handleUpdateList } from './update';
@@ -13,6 +14,10 @@ export async function listRouter(req: Request, pathname: string): Promise<Respon
   if (boardListsMatch) {
     const boardId = boardListsMatch[1] as string;
     const sub = boardListsMatch[2] ?? '';
+
+    // Enforce board visibility before dispatching to any board-scoped list handler.
+    const visibilityError = await applyBoardVisibility(req, boardId);
+    if (visibilityError) return visibilityError;
 
     // POST /api/v1/boards/:boardId/lists
     if (sub === '' && req.method === 'POST') return handleCreateList(req, boardId);
@@ -29,6 +34,10 @@ export async function listRouter(req: Request, pathname: string): Promise<Respon
   if (listMatch) {
     const listId = listMatch[1] as string;
     const sub = listMatch[2] ?? '';
+
+    // Enforce board visibility by resolving the board from the list.
+    const visibilityError = await applyBoardVisibilityFromList(req, listId);
+    if (visibilityError) return visibilityError;
 
     // PATCH /api/v1/lists/:id
     if (sub === '' && req.method === 'PATCH') return handleUpdateList(req, listId);

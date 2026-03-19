@@ -30,11 +30,11 @@ export const ChecklistSection = ({ items, onAdd, onToggle, onRename, onDelete, d
   return (
     <section aria-label="Checklist">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-200">Checklist</h3>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200">Checklist</h3>
         {!disabled && (
           <button
             type="button"
-            className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-200 hover:bg-slate-600"
+            className="rounded bg-gray-200 dark:bg-slate-700 px-2 py-0.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-300 dark:hover:bg-slate-600"
             onClick={() => setAdding((v) => !v)}
           >
             + Add item
@@ -57,7 +57,7 @@ export const ChecklistSection = ({ items, onAdd, onToggle, onRename, onDelete, d
       {adding && (
         <div className="mt-2 flex gap-2">
           <input
-            className="flex-1 rounded border border-slate-600 px-2 py-1 text-sm text-slate-200 placeholder-slate-500 bg-slate-800 focus:border-blue-400 focus:outline-none"
+            className="flex-1 rounded border border-gray-300 dark:border-slate-600 px-2 py-1 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 bg-white dark:bg-slate-800 focus:border-blue-400 focus:outline-none"
             placeholder="Add an item…"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
@@ -74,7 +74,7 @@ export const ChecklistSection = ({ items, onAdd, onToggle, onRename, onDelete, d
           </button>
           <button
             type="button"
-            className="text-sm text-slate-400 hover:text-slate-200"
+            className="text-sm text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
             onClick={() => setAdding(false)}
           >
             Cancel

@@ -1,13 +1,14 @@
 // POST /api/v1/cards/:id/comments — add a comment; min role: MEMBER.
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
+import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { syncMentions } from '../../../common/mentions/sync';
@@ -22,7 +23,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -31,14 +32,19 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -46,30 +52,73 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
-  let body: { content?: string };
+  let body: { content?: string; idempotency_key?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.content || typeof body.content !== 'string' || body.content.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'content is required' } },
-      { status: 400 },
+      { status: 400 }
     );
+  }
+
+  // [why] If the client provided an idempotency_key (e.g. during offline replay), check
+  //        whether this user already created a comment with this key for this card.
+  //        If found, return the existing comment to the client without inserting a duplicate.
+  if (body.idempotency_key !== undefined) {
+    if (typeof body.idempotency_key !== 'string' || body.idempotency_key.trim() === '') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'idempotency_key must be a non-empty string' } },
+        { status: 400 }
+      );
+    }
+
+    const existing = await db('comments')
+      .leftJoin('users', 'comments.user_id', 'users.id')
+      .where('comments.user_id', actorId)
+      .where('comments.idempotency_key', body.idempotency_key.trim())
+      .select(
+        'comments.id',
+        'comments.card_id',
+        'comments.user_id',
+        'comments.content',
+        'comments.version',
+        'comments.deleted',
+        'comments.created_at',
+        'comments.updated_at',
+        db.raw('COALESCE(users.name, users.email) as author_name'),
+        'users.email as author_email',
+        'users.avatar_url as author_avatar_url'
+      )
+      .first();
+
+    if (existing) {
+      const authorAvatarUrl = await resolveAvatarUrl({
+        avatarUrl:
+          ((existing as Record<string, unknown>).author_avatar_url as string | null) ?? null,
+      });
+      return Response.json(
+        { data: { ...existing, author_avatar_url: authorAvatarUrl } },
+        { status: 201 }
+      );
+    }
   }
 
   const id = randomUUID();
   const trimmedContent = sanitizeRichText(body.content.trim());
+  const idempotencyKey = body.idempotency_key?.trim() ?? null;
 
   await db.transaction(async (trx) => {
     await trx('comments').insert({
@@ -77,6 +126,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       card_id: cardId,
       user_id: actorId,
       content: trimmedContent,
+      idempotency_key: idempotencyKey,
       version: 1,
       deleted: false,
       created_at: new Date().toISOString(),
@@ -100,6 +150,8 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       sourceId: id,
       cardId,
       boardId: board.id,
+      cardTitle: card.title,
+      boardName: board.title,
     });
   });
 
@@ -115,13 +167,19 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       'comments.deleted',
       'comments.created_at',
       'comments.updated_at',
-      db.raw("COALESCE(users.name, users.email) as author_name"),
+      db.raw('COALESCE(users.name, users.email) as author_name'),
       'users.email as author_email',
+      'users.avatar_url as author_avatar_url'
     )
     .first();
 
+  const authorAvatarUrl = await resolveAvatarUrl({
+    avatarUrl: ((comment as Record<string, unknown>).author_avatar_url as string | null) ?? null,
+  });
+  const commentData = { ...comment, author_avatar_url: authorAvatarUrl };
+
   await Promise.all([
-    writeEvent({
+    dispatchEvent({
       type: 'comment_added',
       boardId: board.id,
       entityId: cardId,
@@ -139,10 +197,9 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   ]);
 
   // Broadcast WS event to board subscribers
-  publisher.publish(
-    board.id,
-    JSON.stringify({ type: 'comment_added', payload: { comment } }),
-  ).catch(() => {});
+  publisher
+    .publish(board.id, JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }))
+    .catch(() => {});
 
-  return Response.json({ data: comment }, { status: 201 });
+  return Response.json({ data: commentData }, { status: 201 });
 }

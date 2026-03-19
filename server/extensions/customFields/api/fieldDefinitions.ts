@@ -23,8 +23,8 @@ export async function handleListCustomFields(req: Request, boardId: string): Pro
   const board = scopedReq.board!;
 
   if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
+    const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+  if (membershipError) return membershipError;
   }
 
   const fields = await db('custom_fields')

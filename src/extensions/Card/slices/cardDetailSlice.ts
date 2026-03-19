@@ -13,6 +13,9 @@ export interface ActivityData {
   board_id: string | null;
   action: string;
   actor_id: string;
+  actor_name: string | null;
+  actor_email: string | null;
+  actor_avatar_url: string | null;
   payload: Record<string, unknown>;
   created_at: string;
 }
@@ -118,6 +121,15 @@ const cardDetailSlice = createSlice({
       // Mark as deleted (soft delete per schema) rather than removing
       const comment = state.comments.find((c) => c.id === action.payload.commentId);
       if (comment) comment.deleted = true;
+    },
+
+    // ── Realtime activity events ─────────────────────────────────────────────
+    addActivity(state, action: PayloadAction<ActivityData>) {
+      // Only append if this activity belongs to the currently open card.
+      if (state.openCardId !== action.payload.entity_id) return;
+      // Deduplicate: skip if already present (initial fetch + realtime can both deliver the same row).
+      if (state.activities.some((a) => a.id === action.payload.id)) return;
+      state.activities.push(action.payload);
     },
 
 

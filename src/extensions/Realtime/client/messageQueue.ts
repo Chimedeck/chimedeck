@@ -18,6 +18,18 @@ export interface QueuedMutation {
   url: string;
   body?: unknown;
   enqueuedAt: number; // Date.now()
+  /**
+   * Optional metadata for offline replay handlers.
+   * [why] Replay consumers (e.g. draft cleanup after card PATCH) need to know
+   * whether a queued mutation originated from an offline draft save so they
+   * can delete the local/server draft on success and update status UI.
+   */
+  meta?: {
+    draftType?: 'description' | 'comment';
+    cardId?: string;
+    userId?: string;
+    workspaceId?: string;
+  };
 }
 
 type OnOverflow = (boardId: string) => void;

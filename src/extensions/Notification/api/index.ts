@@ -8,15 +8,19 @@ export interface NotificationActor {
   avatar_url: string | null;
 }
 
+export type NotificationType = 'mention' | 'card_created' | 'card_moved' | 'card_commented';
+
 export interface Notification {
   id: string;
-  type: string;
-  source_type: 'card_description' | 'comment';
+  type: NotificationType | string;
+  source_type: 'card_description' | 'comment' | 'board_activity';
   source_id: string;
   card_id: string | null;
   card_title: string | null;
   board_id: string | null;
   board_title: string | null;
+  /** Destination list name — populated for card_moved notifications */
+  list_title: string | null;
   actor: NotificationActor;
   read: boolean;
   created_at: string;

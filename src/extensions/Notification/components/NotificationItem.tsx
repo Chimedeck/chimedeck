@@ -1,17 +1,70 @@
 // NotificationItem — renders a single notification row in the panel.
-import type { FC } from 'react';
+// Each notification type gets a distinct icon and copy so the user can
+// understand the event at a glance without opening the card.
+import type { FC, ComponentType, SVGProps } from 'react';
+import {
+  AtSymbolIcon,
+  RectangleStackIcon,
+  ArrowRightIcon,
+  ChatBubbleLeftEllipsisIcon,
+  UserPlusIcon,
+  UserMinusIcon,
+} from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { markReadThunk, deleteNotificationThunk } from '../slices/notificationSlice';
-import type { Notification } from '../api';
+import type { Notification, NotificationType } from '../api';
 
 interface Props {
   notification: Notification;
   onNavigate: (notification: Notification) => void;
 }
 
+type HeroIcon = ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
+
+// Icon + accent colour per notification type
+const TYPE_ICON: Record<string, HeroIcon> = {
+  mention: AtSymbolIcon as HeroIcon,
+  card_created: RectangleStackIcon as HeroIcon,
+  card_moved: ArrowRightIcon as HeroIcon,
+  card_commented: ChatBubbleLeftEllipsisIcon as HeroIcon,
+  card_member_assigned: UserPlusIcon as HeroIcon,
+  card_member_unassigned: UserMinusIcon as HeroIcon,
+};
+
+const TYPE_ACCENT: Record<string, string> = {
+  mention: 'text-indigo-400',
+  card_created: 'text-emerald-400',
+  card_moved: 'text-sky-400',
+  card_commented: 'text-amber-400',
+  card_member_assigned: 'text-violet-400',
+  card_member_unassigned: 'text-rose-400',
+};
+
+function buildCopy(notification: Notification): string {
+  const actor = notification.actor.nickname ?? notification.actor.name ?? 'Someone';
+  const card = notification.card_title ?? 'a card';
+
+  switch (notification.type as NotificationType | string) {
+    case 'card_created':
+      return `${actor} created "${card}" in ${notification.board_title ?? 'a board'}`;
+    case 'card_moved':
+      return notification.list_title
+        ? `${actor} moved "${card}" to ${notification.list_title}`
+        : `${actor} moved "${card}"`;
+    case 'card_commented':
+      return `${actor} commented on "${card}"`;
+    case 'card_member_assigned':
+      return `${actor} was assigned to "${card}"`;
+    case 'card_member_unassigned':
+      return `${actor} was removed from "${card}"`;
+    case 'mention':
+    default:
+      return `${actor} mentioned you in "${card}"`;
+  }
+}
+
 const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
   const dispatch = useAppDispatch();
-  const actorLabel = notification.actor.nickname ?? notification.actor.name ?? 'Someone';
 
   const handleClick = () => {
     if (!notification.read) {
@@ -25,6 +78,10 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
     dispatch(deleteNotificationThunk({ id: notification.id }));
   };
 
+  const Icon = TYPE_ICON[notification.type] ?? AtSymbolIcon;
+  const iconAccent = TYPE_ACCENT[notification.type] ?? 'text-indigo-400';
+  const copy = buildCopy(notification);
+
   return (
     <div
       className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors ${
@@ -35,20 +92,18 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
     >
-      {/* Unread indicator dot */}
-      <div className="mt-1 shrink-0">
-        {notification.read ? (
-          <div className="w-2 h-2" />
-        ) : (
-          <div className="w-2 h-2 rounded-full bg-indigo-400" aria-hidden="true" />
-        )}
+      {/* Type icon */}
+      <div className="mt-0.5 shrink-0">
+        <Icon className={`w-4 h-4 ${iconAccent}`} aria-hidden="true" />
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-200 leading-snug">
-          <span className="font-medium">{actorLabel}</span>
-          {' mentioned you in '}
-          <span className="font-medium">&ldquo;{notification.card_title ?? 'a card'}&rdquo;</span>
+        {/* Unread indicator dot */}
+        {!notification.read && (
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 mr-1.5 mb-0.5 align-middle" aria-hidden="true" />
+        )}
+        <p className="text-sm text-slate-200 leading-snug inline">
+          {copy}
         </p>
         {notification.board_title && (
           <p className="text-xs text-slate-400 mt-0.5">{notification.board_title}</p>

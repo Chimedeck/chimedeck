@@ -1,6 +1,11 @@
-// POST /api/v1/boards/:id/guests   — invite a user as a guest to a specific board (ADMIN+ only).
+// Barrel export for board guest handlers.
+// POST /api/v1/boards/:id/guests   — invite a user as a guest (ADMIN+ only) via email.
 // DELETE /api/v1/boards/:id/guests/:userId — revoke guest access.
 // GET  /api/v1/boards/:id/guests   — list current board guests.
+// PATCH /api/v1/boards/:id/guests/:userId — update guest type (ADMIN+ only).
+export { handleInviteGuestByEmail as handleInviteGuest } from './create';
+export { handleUpdateGuestType } from './updateGuest';
+
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
@@ -11,12 +16,10 @@ import {
 } from '../../../../middlewares/permissionManager';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { writeEvent } from '../../../../mods/events/index';
+import type { GuestType } from '../../types';
 
-// POST /api/v1/boards/:id/guests
-// Body: { userId: string }
-// Requires ADMIN+ role. Creates a membership row with role=GUEST (if none exists)
-// and a board_guest_access row granting access to the specific board.
-export async function handleInviteGuest(req: Request, boardId: string): Promise<Response> {
+// Legacy userId-based handler kept for internal use.
+async function handleInviteGuestById(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -32,7 +35,7 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  let body: { userId?: string };
+  let body: { userId?: string; guestType?: string };
   try {
     body = await req.json();
   } catch {
@@ -49,6 +52,15 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
       { status: 400 },
     );
   }
+
+  const rawGuestType = body.guestType;
+  if (rawGuestType !== undefined && rawGuestType !== 'VIEWER' && rawGuestType !== 'MEMBER') {
+    return Response.json(
+      { error: { code: 'invalid-guest-type', message: 'guestType must be VIEWER or MEMBER' } },
+      { status: 400 },
+    );
+  }
+  const guestType: GuestType = (rawGuestType as GuestType | undefined) ?? 'VIEWER';
 
   const targetUser = await db('users').where({ id: userId }).first();
   if (!targetUser) {
@@ -86,6 +98,7 @@ export async function handleInviteGuest(req: Request, boardId: string): Promise<
         id: randomUUID(),
         user_id: userId,
         board_id: boardId,
+        guest_type: guestType,
         granted_by: (req as AuthenticatedRequest).currentUser!.id,
       })
       .onConflict(['user_id', 'board_id'])
@@ -184,9 +197,6 @@ export async function handleListGuests(req: Request, boardId: string): Promise<R
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'VIEWER');
-  if (roleError) return roleError;
-
   const guests = await db('board_guest_access')
     .join('users', 'board_guest_access.user_id', 'users.id')
     .where('board_guest_access.board_id', boardId)
@@ -194,8 +204,9 @@ export async function handleListGuests(req: Request, boardId: string): Promise<R
       db.raw('users.id as id'),
       'users.email',
       db.raw('COALESCE(users.name, users.email) as name'),
-      'board_guest_access.granted_at',
-      'board_guest_access.granted_by',
+      'board_guest_access.guest_type as guestType',
+      'board_guest_access.granted_at as grantedAt',
+      'board_guest_access.granted_by as grantedBy',
     );
 
   return Response.json({ data: guests });

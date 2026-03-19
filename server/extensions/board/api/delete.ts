@@ -2,7 +2,7 @@
 // Requires confirm:true in the request body when the board contains lists or cards.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { publishBoardDeleted } from '../../events/mods/publishBoardDeleted';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -62,8 +62,12 @@ export async function handleDeleteBoard(req: Request, boardId: string): Promise<
 
   await db('boards').where({ id: boardId }).del();
 
-  // Stub event emission.
-  await writeEvent({ type: 'board_deleted', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: {} });
+  // Publish board_deleted event and notify all workspace members in real-time.
+  await publishBoardDeleted({
+    boardId,
+    workspaceId: board.workspace_id,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+  });
 
   return new Response(null, { status: 204 });
 }

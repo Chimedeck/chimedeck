@@ -95,6 +95,127 @@ export async function deleteCardFieldValue({
   return api.delete(`/cards/${cardId}/custom-field-values/${fieldId}`);
 }
 
+// ─── Board-level Batch Card Values Cache ─────────────────────────────────────
+// [why] On a board page every card tile needs its custom field values. Without
+//       batching, each CardCustomFieldBadges fires one request → N requests for
+//       N cards. The batch fetch hits a single endpoint returning values for
+//       all requested cards, then stores them in a per-board map for lookups.
+
+const BATCH_CF_TTL_MS = 30_000;
+
+const _batchCfCache = new Map<string, { data: Record<string, CustomFieldValue[]>; expiresAt: number }>();
+const _batchCfInflight = new Map<string, Promise<Record<string, CustomFieldValue[]>>>();
+
+export function invalidateBoardCardFieldValuesCache(boardId: string): void {
+  _batchCfCache.delete(boardId);
+  _batchCfInflight.delete(boardId);
+}
+
+function _fetchBoardCardFieldValues(
+  boardId: string,
+  cardIds: string[],
+): Promise<Record<string, CustomFieldValue[]>> {
+  const cached = _batchCfCache.get(boardId);
+  if (cached && Date.now() < cached.expiresAt) return Promise.resolve(cached.data);
+
+  const inflight = _batchCfInflight.get(boardId);
+  if (inflight) return inflight;
+
+  const qs = cardIds.join(',');
+  const promise = apiClient
+    .get<{ data: CustomFieldValue[] }>(`/boards/${boardId}/custom-field-values?cardIds=${qs}`)
+    .then((res) => {
+      const flat = (res as unknown as { data: CustomFieldValue[] }).data ?? [];
+      const map: Record<string, CustomFieldValue[]> = {};
+      for (const v of flat) {
+        const arr = map[v.card_id] ?? [];
+        map[v.card_id] = arr;
+        arr.push(v);
+      }
+      _batchCfCache.set(boardId, { data: map, expiresAt: Date.now() + BATCH_CF_TTL_MS });
+      _batchCfInflight.delete(boardId);
+      return map;
+    })
+    .catch((err) => {
+      _batchCfInflight.delete(boardId);
+      throw err;
+    });
+
+  _batchCfInflight.set(boardId, promise);
+  return promise;
+}
+
+/**
+ * Fetch custom field values for all cards on a board in a single request.
+ * Returns a stable map `{ [cardId]: CustomFieldValue[] }`.
+ * The cardIdsKey param is used only to re-trigger when the set of cards changes.
+ */
+export function useBoardCardFieldValues(
+  boardId: string | undefined,
+  cardIds: string[],
+): Record<string, CustomFieldValue[]> | null {
+  // [why] null = not yet fetched; {} = fetched but no values. This distinction
+  //       lets consumers skip the per-card fallback hook while loading.
+  const [valuesMap, setValuesMap] = useState<Record<string, CustomFieldValue[]> | null>(null);
+  // [why] Serialize cardIds to a string so useEffect can detect actual set changes
+  //       without needing a stable array reference.
+  const cardIdsKey = cardIds.slice().sort((a, b) => a.localeCompare(b)).join(',');
+
+  useEffect(() => {
+    if (!boardId || cardIds.length === 0) return;
+    let cancelled = false;
+    _fetchBoardCardFieldValues(boardId, cardIds)
+      .then((map) => { if (!cancelled) setValuesMap(map); })
+      .catch(() => { /* silently degrade — card badges just won't show */ });
+    return () => { cancelled = true; };
+  }, [boardId, cardIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return valuesMap;
+}
+
+// ─── Custom Fields Request Cache ─────────────────────────────────────────────
+// [why] Multiple components on the same board page (e.g. CardModal per card,
+//       BoardCustomFieldsPanel) all call useCustomFields(boardId). Without
+//       deduplication every mount fires a separate HTTP request, effectively
+//       DDoSing the server when a board has many cards open. The cache here:
+//   1. Deduplicates concurrent in-flight requests (all callers share 1 promise)
+//   2. Re-uses the result for CACHE_TTL_MS so remounts don't re-fetch needlessly
+
+const CACHE_TTL_MS = 30_000; // 30 s — fresh enough for UI, prevents request storms
+
+const _cfCache = new Map<string, { data: CustomField[]; expiresAt: number }>();
+const _cfInflight = new Map<string, Promise<CustomField[]>>();
+
+function _fetchCustomFields(boardId: string): Promise<CustomField[]> {
+  const cached = _cfCache.get(boardId);
+  if (cached && Date.now() < cached.expiresAt) {
+    return Promise.resolve(cached.data);
+  }
+
+  const inflight = _cfInflight.get(boardId);
+  if (inflight) return inflight;
+
+  const promise = listCustomFields({ api: apiClient, boardId })
+    .then((res) => {
+      _cfCache.set(boardId, { data: res.data, expiresAt: Date.now() + CACHE_TTL_MS });
+      _cfInflight.delete(boardId);
+      return res.data;
+    })
+    .catch((err) => {
+      _cfInflight.delete(boardId);
+      throw err;
+    });
+
+  _cfInflight.set(boardId, promise);
+  return promise;
+}
+
+/** Bust the in-memory cache for a board — call after any mutation. */
+export function invalidateCustomFieldsCache(boardId: string): void {
+  _cfCache.delete(boardId);
+  _cfInflight.delete(boardId);
+}
+
 // ─── React Hooks ─────────────────────────────────────────────────────────────
 
 interface UseCustomFieldsResult {
@@ -111,16 +232,20 @@ export function useCustomFields(boardId: string | undefined): UseCustomFieldsRes
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
-  const refetch = useCallback(() => setTick((t) => t + 1), []);
+  // Bust cache so refetch always gets fresh data from server
+  const refetch = useCallback(() => {
+    if (boardId) invalidateCustomFieldsCache(boardId);
+    setTick((t) => t + 1);
+  }, [boardId]);
 
   useEffect(() => {
     if (!boardId) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    listCustomFields({ api: apiClient, boardId })
-      .then((res) => {
-        if (!cancelled) setFields(res.data);
+    _fetchCustomFields(boardId)
+      .then((data) => {
+        if (!cancelled) setFields(data);
       })
       .catch((err: unknown) => {
         if (!cancelled) setError((err as Error)?.message ?? 'Failed to load custom fields');

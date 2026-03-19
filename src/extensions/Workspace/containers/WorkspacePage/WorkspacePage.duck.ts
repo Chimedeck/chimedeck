@@ -114,6 +114,14 @@ export const fetchWorkspace = createAppAsyncThunk(
   }
 );
 
+export const fetchWorkspaceMembersThunk = createAppAsyncThunk(
+  'WorkspacePage/fetchWorkspaceMembers',
+  async ({ workspaceId }: { workspaceId: string }, { extra: { api } }) => {
+    const response = await listMembers({ api, workspaceId });
+    return response.data;
+  }
+);
+
 export const createWorkspaceThunk = createAppAsyncThunk(
   'WorkspacePage/createWorkspace',
   async ({ name }: { name: string }, { extra: { api } }) => {
@@ -265,6 +273,21 @@ const WorkspacePageSlice = createSlice({
       .addCase(fetchWorkspace.rejected, (state, action) => {
         state.fetchWorkspaceInProgress = false;
         state.fetchWorkspaceError = action.error;
+      });
+
+    // fetchWorkspaceMembers (members only — used by BoardMembersPanel when workspace wasn't pre-loaded)
+    builder
+      .addCase(fetchWorkspaceMembersThunk.pending, (state) => {
+        state.fetchMembersInProgress = true;
+        state.fetchMembersError = null;
+      })
+      .addCase(fetchWorkspaceMembersThunk.fulfilled, (state, action) => {
+        state.fetchMembersInProgress = false;
+        state.members = action.payload;
+      })
+      .addCase(fetchWorkspaceMembersThunk.rejected, (state, action) => {
+        state.fetchMembersInProgress = false;
+        state.fetchMembersError = action.error;
       });
 
     // createWorkspace

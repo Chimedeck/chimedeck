@@ -47,9 +47,9 @@ if (await envFile.exists()) {
 }
 
 const DATABASE_URL =
-  Bun.env['DATABASE_URL'] ?? 'postgresql://vello:vello@localhost:5432/vello_dev';
+  Bun.env['DATABASE_URL'] ?? 'postgresql://horiflow:horiflow@localhost:5432/horiflow_dev';
 
-const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'vello';
+const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'horiflow';
 const S3_REGION    = Bun.env['S3_REGION'] ?? 'us-east-1';
 const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || undefined;
 const S3_BASE_URL  = S3_ENDPOINT
@@ -80,7 +80,7 @@ const BATCH_SIZE = 500; // rows per INSERT batch
 // ---------------------------------------------------------------------------
 
 const mapperPath = resolve(ROOT, 'db/trello-import-member-ids-mapper.json');
-const mapperRaw: { id: string; username: string; email?: string }[] =
+const mapperRaw: { id: string; username: string; email?: string; role?: string }[] =
   await Bun.file(mapperPath).json();
 const memberMapper = new Map(
   mapperRaw.map((entry) => [entry.id, entry]),
@@ -263,12 +263,46 @@ interface TrelloCard {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const jsonPath = resolve(ROOT, 'db/all_trello_cards.json');
-  const jsonFile = Bun.file(jsonPath);
+  const defaultJsonPath = resolve(ROOT, 'db/all_trello_cards.json');
+  let jsonPath = defaultJsonPath;
+  let jsonFile = Bun.file(jsonPath);
 
   if (!(await jsonFile.exists())) {
-    console.error(`❌  File not found: ${jsonPath}`);
-    process.exit(1);
+    const seedFileUrl = Bun.env['SEED_FILE_URL'];
+    if (!seedFileUrl) {
+      console.error(`❌  File not found: ${jsonPath}`);
+      console.error(`    Set SEED_FILE_URL to an S3 URL to download it automatically.`);
+      process.exit(1);
+    }
+
+    console.log(`📥  ${jsonPath} not found — downloading from SEED_FILE_URL…`);
+    const response = await fetch(seedFileUrl);
+    if (!response.ok) {
+      console.error(`❌  Failed to download seed file: ${response.status} ${response.statusText}`);
+      process.exit(1);
+    }
+
+    const seedBuffer = await response.arrayBuffer();
+    const fallbackJsonPath = resolve(tmpdir(), 'all_trello_cards.json');
+    let writeError: unknown = null;
+
+    try {
+      await Bun.write(defaultJsonPath, seedBuffer);
+      jsonPath = defaultJsonPath;
+    } catch (err) {
+      writeError = err;
+      // Docker production runs as non-root user and /app/db may be read-only.
+      // Fall back to a temp location so seeding can still proceed.
+      await Bun.write(fallbackJsonPath, seedBuffer);
+      jsonPath = fallbackJsonPath;
+      console.warn(`⚠️   Could not write seed file to ${defaultJsonPath}; using ${fallbackJsonPath} instead.`);
+    }
+
+    console.log(`✅  Downloaded seed file to ${jsonPath}`);
+    if (writeError) {
+      console.warn(`    Original write error: ${toErrorMessage(writeError)}`);
+    }
+    jsonFile = Bun.file(jsonPath);
   }
 
   const bytes = jsonFile.size;
@@ -282,23 +316,31 @@ async function main() {
   // 1. Collect unique entities from all cards
   // -------------------------------------------------------------------------
 
-  // workspaces / boards keyed by idBoard (we use the Trello board ID as both)
+  // Single Journeyhorizon workspace — all Trello boards belong to this one org
+  const JOURNEYHORIZON_WORKSPACE_ID = 'journeyhorizon';
+  const JOURNEYHORIZON_WORKSPACE_NAME = 'Journeyhorizon';
+
+  // workspaces — single org; boards are keyed by their Trello board ID
   const workspaceSet = new Map<string, { id: string; name: string }>();
+  workspaceSet.set(JOURNEYHORIZON_WORKSPACE_ID, { id: JOURNEYHORIZON_WORKSPACE_ID, name: JOURNEYHORIZON_WORKSPACE_NAME });
   const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
+  // [why] Trello gives every board its own label IDs even for identical name+color combos.
+  // We deduplicate by name|color so workspace-scoped labels aren't duplicated per-board.
+  const labelKeyToId = new Map<string, string>(); // "name|color" → canonical Trello ID
+  const labelIdRemap = new Map<string, string>(); // duplicate Trello ID → canonical Trello ID
   const memberSet = new Map<string, string>(); // trelloId → email
   // Rich member data (fullName, username, avatarUrl) when available
   const memberDataMap = new Map<string, TrelloMember>();
 
   for (const card of cards) {
-    // Board / workspace — prefer the name from card.board if present
-    if (!workspaceSet.has(card.idBoard)) {
+    // Board — prefer the name from card.board if present; all boards belong to the single workspace
+    if (!boardSet.has(card.idBoard)) {
       const boardName = card.board?.name ?? card.idBoard;
-      workspaceSet.set(card.idBoard, { id: card.idBoard, name: boardName });
       boardSet.set(card.idBoard, {
         id: card.idBoard,
-        workspace_id: card.idBoard,
+        workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
         title: boardName,
         state: 'ACTIVE',
       });
@@ -315,15 +357,23 @@ async function main() {
       });
     }
 
-    // Labels
+    // Labels — deduplicate by name+color so boards sharing the same label name/colour
+    // don't produce separate rows in the workspace-scoped labels table.
     for (const label of card.labels ?? []) {
-      if (!labelSet.has(label.id)) {
+      const canonicalKey = `${label.name ?? ''}|${label.color ?? ''}`;
+      if (!labelKeyToId.has(canonicalKey)) {
+        labelKeyToId.set(canonicalKey, label.id);
         labelSet.set(label.id, {
           id: label.id,
-          workspace_id: label.idBoard,
+          workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
           name: label.name || 'Label',
           color: trelloColor(label.color),
         });
+      } else {
+        const canonicalId = labelKeyToId.get(canonicalKey)!;
+        if (canonicalId !== label.id) {
+          labelIdRemap.set(label.id, canonicalId);
+        }
       }
     }
 
@@ -358,18 +408,29 @@ async function main() {
     }
   }
 
+  // [why] Guarantee all mapper users exist in memberSet even if they never appear
+  // on any card or comment. Without this, mapper users who are missing from the
+  // Trello export data would get memberships rows with no corresponding users row,
+  // causing a FK violation.
+  for (const entry of mapperRaw) {
+    if (!memberSet.has(entry.id)) {
+      memberSet.set(entry.id, memberEmail(entry.id, entry.username));
+    }
+  }
+
   console.log(`\n📊  Unique entities:`);
-  console.log(`    Workspaces / Boards : ${workspaceSet.size}`);
+  console.log(`    Workspaces          : ${workspaceSet.size}`);
+  console.log(`    Boards              : ${boardSet.size}`);
   console.log(`    Lists               : ${listSet.size}`);
-  console.log(`    Labels              : ${labelSet.size}`);
+  console.log(`    Labels              : ${labelSet.size} (${labelIdRemap.size} duplicates merged)`);  
   console.log(`    Members             : ${memberSet.size}`);
 
   // -------------------------------------------------------------------------
   // 2. System owner user — owns all workspaces
   // -------------------------------------------------------------------------
 
-  const SYSTEM_USER_ID = 'system-trello-import';
-  const SYSTEM_USER_EMAIL = 'system@trello-import.local';
+  const SYSTEM_USER_ID = '58ce49cc971aa59ff0ef284c'; // tam.vu@journeyh.io
+  const SYSTEM_USER_EMAIL = 'tam.vu@journeyh.io';
   const DEFAULT_PASSWORD = '12345678';
 
   console.log('\n👤  Hashing passwords…');
@@ -384,7 +445,7 @@ async function main() {
       {
         id: SYSTEM_USER_ID,
         email: SYSTEM_USER_EMAIL,
-        name: 'System (Trello Import)',
+        name: 'Tam Vu',
         password_hash: systemPasswordHash,
       },
     ],
@@ -458,6 +519,9 @@ async function main() {
         nickname: richData?.username || trelloId,
         avatar_url: avatarUrlMap.get(trelloId) ?? null,
         password_hash: hashes[j],
+        // [why] Seeded accounts are trusted imports — skip the email verification
+        // flow so they can log in immediately even when FLAG_EMAIL_VERIFICATION_ENABLED=true.
+        email_verified: true,
       });
     }
     if ((i / HASH_CONCURRENCY) % 5 === 0) {
@@ -469,7 +533,8 @@ async function main() {
   console.log('');
 
   // email and password_hash are excluded — preserve any changes the user made.
-  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'avatar_url']);
+  // email_verified is included so re-seeding fixes previously imported users.
+  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'avatar_url', 'email_verified']);
 
   // -------------------------------------------------------------------------
   // 4. Workspaces
@@ -546,11 +611,12 @@ async function main() {
     });
 
     for (const labelId of card.idLabels ?? []) {
-      if (labelSet.has(labelId)) {
-        const key = `${card.id}:${labelId}`;
+      const resolvedId = labelIdRemap.get(labelId) ?? labelId;
+      if (labelSet.has(resolvedId)) {
+        const key = `${card.id}:${resolvedId}`;
         if (!cardLabelSeen.has(key)) {
           cardLabelSeen.add(key);
-          allCardLabelRows.push({ card_id: card.id, label_id: labelId });
+          allCardLabelRows.push({ card_id: card.id, label_id: resolvedId });
         }
       }
     }
@@ -651,40 +717,136 @@ async function main() {
   await batchUpsert('comments', commentRows, 'id', ['content', 'updated_at']);
 
   // -------------------------------------------------------------------------
-  // 9. Workspace memberships for member users
-  //    Add every member user as MEMBER of every workspace (board).
-  //    This is a cross-product; we do it after cards so we know who's who.
+  // 9. Workspace memberships + board_members (mapper users) + board_guest_access (non-mapper)
+  //
+  // Users listed in trello-import-member-ids-mapper.json are organisation
+  // members — they get a `memberships` row with their mapped role and a
+  // `board_members` row for each board they appear on.
+  //
+  // All other Trello members are external guests: they receive a GUEST
+  // `memberships` row, a `board_guest_access` row for each board, and are
+  // NOT added to `board_members` (so they appear in the Guests tab, not Members).
   // -------------------------------------------------------------------------
 
-  // Build workspace→member mapping from cards
-  const workspaceMemberMap = new Map<string, Set<string>>();
+  // Set of Trello IDs that have an explicit mapper entry (org members)
+  const mapperIds = new Set(mapperRaw.map((e) => e.id));
+
+  // Map mapper roles (lowercase) to DB workspace roles
+  function resolveWorkspaceRole(trelloId: string): string {
+    const mapperRole = memberMapper.get(trelloId)?.role?.toLowerCase();
+    if (mapperRole === 'owner') return 'OWNER';
+    if (mapperRole === 'admin') return 'ADMIN';
+    return 'MEMBER';
+  }
+
+  // Map a user's workspace role to a board-level role (ADMIN | MEMBER only)
+  function resolveBoardRole(trelloId: string): 'ADMIN' | 'MEMBER' {
+    const wsRole = resolveWorkspaceRole(trelloId);
+    return wsRole === 'OWNER' || wsRole === 'ADMIN' ? 'ADMIN' : 'MEMBER';
+  }
+
+  // Collect per-board memberships from all card member references
+  const boardMemberMap = new Map<string, Set<string>>(); // boardId → Set<userId>
   for (const card of cards) {
-    if (!workspaceMemberMap.has(card.idBoard)) {
-      workspaceMemberMap.set(card.idBoard, new Set());
-    }
     for (const mid of card.idMembers ?? []) {
-      workspaceMemberMap.get(card.idBoard)!.add(memberId(mid));
+      const userId = memberId(mid);
+      if (!boardMemberMap.has(card.idBoard)) {
+        boardMemberMap.set(card.idBoard, new Set());
+      }
+      boardMemberMap.get(card.idBoard)!.add(userId);
     }
   }
 
+  // Workspace memberships — mapper users only (all of them, even if not on any card).
+  // Deduplicate by user_id in case the JSON file has repeated entries.
   const membershipRows: object[] = [];
-  for (const [workspaceId, userIds] of workspaceMemberMap.entries()) {
-    for (const userId of userIds) {
-      membershipRows.push({ user_id: userId, workspace_id: workspaceId, role: 'MEMBER' });
-    }
+  const membershipUsersSeen = new Set<string>();
+  for (const entry of mapperRaw) {
+    if (membershipUsersSeen.has(entry.id)) continue;
+    membershipUsersSeen.add(entry.id);
+    membershipRows.push({
+      user_id: entry.id,
+      workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+      role: resolveWorkspaceRole(entry.id),
+    });
   }
 
-  // System user is OWNER
-  for (const workspaceId of workspaceSet.keys()) {
+  // Ensure the system user is present as OWNER even if absent from the mapper
+  if (!mapperIds.has(SYSTEM_USER_ID)) {
     membershipRows.push({
       user_id: SYSTEM_USER_ID,
-      workspace_id: workspaceId,
+      workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
       role: 'OWNER',
     });
   }
 
-  console.log(`🔗  Creating ${membershipRows.length.toLocaleString()} workspace memberships…`);
-  await batchInsert('memberships', membershipRows, ['user_id', 'workspace_id']);
+  // GUEST workspace memberships for non-mapper users (external guests).
+  const guestMembershipSeen = new Set<string>();
+  for (const userIds of boardMemberMap.values()) {
+    for (const userId of userIds) {
+      // Derive the original Trello ID to check against mapperIds.
+      // memberId() maps trelloId → userId; we need the inverse lookup.
+      // We stored trelloId as the userId for non-mapper users, so check directly.
+      if (mapperIds.has(userId) || membershipUsersSeen.has(userId)) continue;
+      if (guestMembershipSeen.has(userId)) continue;
+      guestMembershipSeen.add(userId);
+      membershipRows.push({
+        user_id: userId,
+        workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+        role: 'GUEST',
+      });
+    }
+  }
+
+  console.log(`🔗  Creating/updating ${membershipRows.length.toLocaleString()} workspace memberships…`);
+  await batchUpsert('memberships', membershipRows, ['user_id', 'workspace_id'], ['role']);
+
+  // board_members — mapper (org) users only, carrying their workspace role.
+  const boardMemberRows: object[] = [];
+  const boardMemberSeen = new Set<string>(); // dedup: boardId:userId
+
+  // board_guest_access — non-mapper users only.
+  const boardGuestRows: object[] = [];
+  const boardGuestSeen = new Set<string>(); // dedup: boardId:userId
+
+  for (const [boardId, userIds] of boardMemberMap) {
+    for (const userId of userIds) {
+      const key = `${boardId}:${userId}`;
+      if (mapperIds.has(userId)) {
+        // Org member → board_members
+        if (boardMemberSeen.has(key)) continue;
+        boardMemberSeen.add(key);
+        boardMemberRows.push({
+          // [why] Stable deterministic PK — avoids re-generating UUIDs on re-runs
+          id: `${boardId}:${userId}`,
+          board_id: boardId,
+          user_id: userId,
+          role: resolveBoardRole(userId),
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      } else {
+        // External guest → board_guest_access
+        if (boardGuestSeen.has(key)) continue;
+        boardGuestSeen.add(key);
+        boardGuestRows.push({
+          // [why] Stable deterministic PK for idempotent re-runs
+          id: `${boardId}:${userId}`,
+          board_id: boardId,
+          user_id: userId,
+          guest_type: 'MEMBER', // [why] Imported Trello board members were active participants
+          granted_by: SYSTEM_USER_ID,
+          granted_at: new Date(),
+        });
+      }
+    }
+  }
+
+  console.log(`📋  Creating/updating ${boardMemberRows.length.toLocaleString()} board memberships…`);
+  await batchUpsert('board_members', boardMemberRows, ['board_id', 'user_id'], ['role', 'updated_at']);
+
+  console.log(`👥  Creating/updating ${boardGuestRows.length.toLocaleString()} board guest access rows…`);
+  await batchUpsert('board_guest_access', boardGuestRows, ['user_id', 'board_id'], ['granted_by', 'guest_type']);
 
   // -------------------------------------------------------------------------
   // 10. Summary output
@@ -709,15 +871,19 @@ async function main() {
 
   // Also write them to files for easy scripting
   const outDir = resolve(ROOT, 'db');
-  await Bun.write(
-    resolve(outDir, 'trello-import-workspace-ids.json'),
-    JSON.stringify(workspaceIds, null, 2),
-  );
-  await Bun.write(
-    resolve(outDir, 'trello-import-member-ids.json'),
-    JSON.stringify(memberRecords, null, 2),
-  );
-  console.log('\n📄  Written to db/trello-import-workspace-ids.json and db/trello-import-member-ids.json');
+  const workspaceIdsPath = await writeOutputJsonWithFallback({
+    preferredPath: resolve(outDir, 'trello-import-workspace-ids.json'),
+    fallbackPath: resolve(tmpdir(), 'trello-import-workspace-ids.json'),
+    body: JSON.stringify(workspaceIds, null, 2),
+  });
+  const memberIdsPath = await writeOutputJsonWithFallback({
+    preferredPath: resolve(outDir, 'trello-import-member-ids.json'),
+    fallbackPath: resolve(tmpdir(), 'trello-import-member-ids.json'),
+    body: JSON.stringify(memberRecords, null, 2),
+  });
+
+  console.log(`\n📄  Written workspace IDs to ${workspaceIdsPath}`);
+  console.log(`📄  Written member IDs to ${memberIdsPath}`);
 
   await db.destroy();
 }
@@ -763,6 +929,40 @@ async function downloadAndUploadAvatar(member: TrelloMember): Promise<string | n
   } finally {
     // Always clean up the temp file
     try { await unlink(tmpPath); } catch { /* ignore — file may not exist */ }
+  }
+}
+
+async function writeOutputJsonWithFallback({
+  preferredPath,
+  fallbackPath,
+  body,
+}: {
+  preferredPath: string;
+  fallbackPath: string;
+  body: string;
+}): Promise<string> {
+  try {
+    await Bun.write(preferredPath, body);
+    return preferredPath;
+  } catch (err) {
+    await Bun.write(fallbackPath, body);
+    console.warn(`⚠️   Could not write ${preferredPath}; wrote ${fallbackPath} instead.`);
+    console.warn(`    Original write error: ${toErrorMessage(err)}`);
+    return fallbackPath;
+  }
+}
+
+function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (typeof err === 'number' || typeof err === 'boolean' || typeof err === 'bigint') {
+    return `${err}`;
+  }
+  try {
+    const parsed = JSON.stringify(err);
+    return parsed ?? 'unknown-error';
+  } catch {
+    return 'unknown-error';
   }
 }
 

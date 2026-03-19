@@ -2,10 +2,10 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
@@ -26,7 +26,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   // Insert copy immediately after the source card
@@ -51,7 +51,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
 
   const duplicate = await db('cards').where({ id: newId }).first();
 
-  await writeEvent({ type: 'card_duplicated', boardId: board.id, entityId: newId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { sourceId: cardId } });
+  await dispatchEvent({ type: 'card.duplicated', boardId: board.id, entityId: newId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { sourceId: cardId } });
 
   return Response.json({ data: duplicate }, { status: 201 });
 }

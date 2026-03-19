@@ -5,11 +5,12 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
+import { writeActivity } from '../../activity/mods/write';
 
 // Private/internal IP ranges that must not be targeted (SSRF prevention).
 const FORBIDDEN_RANGES = [
@@ -55,7 +56,7 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
   let body: { name?: string; url?: string };
@@ -100,7 +101,16 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     boardId: board.id,
     entityId: cardId,
     actorId,
-    payload: { attachmentId, cardId },
+    payload: { attachmentId, cardId, name: body.name },
+  });
+
+  await writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: 'attachment_added',
+    actorId,
+    payload: { attachmentId, cardId, name: body.name },
   });
 
   publisher

@@ -1,9 +1,7 @@
 // GET /api/v1/boards/:id/activity — paginated board activity feed.
 // PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import {
-  requireRole,
-} from '../../../middlewares/permissionManager';
+import { requireWorkspaceMembership } from '../../../middlewares/permissionManager';
 import {
   applyBoardVisibility,
   type BoardVisibilityScopedRequest,
@@ -21,14 +19,17 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
   const board = scopedReq.board!;
 
   if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq, 'VIEWER');
-    if (roleError) return roleError;
+    const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
+    if (membershipError) return membershipError;
   }
 
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;
   const limitParam = parseInt(url.searchParams.get('limit') ?? `${DEFAULT_LIMIT}`, 10);
-  const limit = Math.min(isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam, MAX_LIMIT);
+  const limit = Math.min(
+    isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam,
+    MAX_LIMIT
+  );
 
   let query = db('activities')
     .leftJoin('users', 'activities.actor_id', 'users.id')
@@ -44,7 +45,11 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
     if (cursorRow) {
       query = query.where(function () {
         this.where('activities.created_at', '<', cursorRow.created_at).orWhere(function () {
-          this.where('activities.created_at', '=', cursorRow.created_at).andWhere('activities.id', '<', cursor);
+          this.where('activities.created_at', '=', cursorRow.created_at).andWhere(
+            'activities.id',
+            '<',
+            cursor
+          );
         });
       });
     }
@@ -53,7 +58,8 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
   const rows = await query;
   const hasMore = rows.length > limit;
   const data = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore && data.length > 0 ? (data[data.length - 1] as { id: string }).id : null;
+  const nextCursor =
+    hasMore && data.length > 0 ? (data[data.length - 1] as { id: string }).id : null;
 
   return Response.json({
     data,

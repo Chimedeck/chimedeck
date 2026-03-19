@@ -11,6 +11,7 @@ import {
 import { deleteObject } from '../mods/s3/deleteObject';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
+import { writeActivity } from '../../activity/mods/write';
 
 export async function handleDeleteAttachment(req: Request, attachmentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -63,6 +64,15 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
     entityId: attachment.card_id,
     actorId,
     payload: { attachmentId },
+  });
+
+  await writeActivity({
+    entityType: 'card',
+    entityId: attachment.card_id,
+    boardId: board.id,
+    action: 'attachment_removed',
+    actorId,
+    payload: { attachmentId, name: attachment.name },
   });
 
   publisher

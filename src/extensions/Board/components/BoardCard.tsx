@@ -1,6 +1,7 @@
 // BoardCard — summary tile for a single board in the board list.
 import type { Board } from '../api';
 import BoardStateChip from './BoardStateChip';
+import VisibilityBadge from './VisibilityBadge';
 
 interface Props {
   board: Board;
@@ -42,44 +43,62 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
 
   return (
     <div
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md"
+      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md overflow-hidden"
       onClick={onClick}
     >
-      <div className="flex items-center justify-between">
-        <h3 className="truncate text-base font-semibold text-gray-900">{board.title}</h3>
-        <div className="flex items-center gap-2">
-          <BoardStateChip state={board.state} />
+      {/* Background thumbnail — shown when board has a background image */}
+      {board.background ? (
+        <div className="relative h-20 w-full overflow-hidden">
+          <img
+            src={board.background}
+            alt=""
+            className="h-full w-full object-cover"
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-black/20" aria-hidden="true" />
+        </div>
+      ) : (
+        <div className="h-20 w-full bg-gradient-to-br from-indigo-500/20 to-blue-600/20 dark:from-slate-700 dark:to-slate-600" />
+      )}
+
+      <div className="flex flex-col gap-2 p-4 pt-2">
+        <div className="flex items-center justify-between">
+          <h3 className="truncate text-base font-semibold text-gray-900 dark:text-slate-100">{board.title}</h3>
+          <div className="flex items-center gap-2">
+            <VisibilityBadge visibility={board.visibility} />
+            <BoardStateChip state={board.state} />
+            <button
+              aria-label={board.isStarred ? 'Unstar board' : 'Star board'}
+              onClick={handleStarClick}
+              className={`rounded p-0.5 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700 ${
+                board.isStarred ? 'text-yellow-500' : 'text-gray-400 dark:text-slate-500'
+              }`}
+            >
+              <StarIcon filled={!!board.isStarred} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <button
-            aria-label={board.isStarred ? 'Unstar board' : 'Star board'}
-            onClick={handleStarClick}
-            className={`rounded p-0.5 transition-colors hover:bg-gray-100 ${
-              board.isStarred ? 'text-yellow-500' : 'text-gray-400'
-            }`}
+            className="text-xs text-blue-600 hover:underline"
+            onClick={onDuplicate}
           >
-            <StarIcon filled={!!board.isStarred} />
+            Duplicate
+          </button>
+          <button
+            className="text-xs text-yellow-600 hover:underline"
+            onClick={onArchive}
+          >
+            {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
+          </button>
+          <button
+            className="text-xs text-red-600 hover:underline"
+            onClick={onDelete}
+          >
+            Delete
           </button>
         </div>
-      </div>
-
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="text-xs text-blue-600 hover:underline"
-          onClick={onDuplicate}
-        >
-          Duplicate
-        </button>
-        <button
-          className="text-xs text-yellow-600 hover:underline"
-          onClick={onArchive}
-        >
-          {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
-        </button>
-        <button
-          className="text-xs text-red-600 hover:underline"
-          onClick={onDelete}
-        >
-          Delete
-        </button>
       </div>
     </div>
   );

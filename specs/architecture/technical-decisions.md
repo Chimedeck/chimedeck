@@ -537,6 +537,8 @@ server/mods/flags/
 | `RATE_LIMIT_ENABLED` | `true` | Enforce rate limits (sprint 13) |
 | `OTEL_ENABLED` | `true` | Emit OTEL traces/metrics (sprint 13) |
 | `BOARD_SNAPSHOT_ENABLED` | `true` | Use board snapshots for fast load (sprint 08) |
+| `AUTOMATION_ENABLED` | `true` | Gate all automation routes and event-pipeline hook (sprint 61) |
+| `AUTOMATION_SCHEDULER_ENABLED` | `true` | Start calendar + due-date scheduler workers on boot (sprint 64) |
 
 ### Usage Pattern
 
@@ -586,3 +588,290 @@ Only flags explicitly allow-listed for client exposure are returned (server cont
 - **FeatBit:** use the FeatBit server SDK, streaming updates
 - Both providers are optional — the system operates fully without them using ENV/JSON sources
 - SDK initialisation failure on startup: log warning, continue with local sources only
+
+---
+
+## 18. Automation System
+
+**Decision:** In-process evaluation engine wired into the card event pipeline; no separate automation microservice.
+
+**Rationale:**
+- Trello's Butler automation model maps cleanly onto an event-driven rule engine without extra infrastructure
+- Running the engine inside the same Bun process avoids network hops and keeps latency sub-millisecond for simple rules
+- The engine is isolated enough (single `evaluate()` entry point, its own DB tables) to be extracted into a worker process later if throughput requires it
+- Scheduled workers (`setInterval`) are lightweight and sufficient at the expected concurrency; a proper cron library (e.g. `node-cron`) can replace them without touching the action handlers
+
+---
+
+### 18.1 Automation Types
+
+| Type | Triggered by | Key constraint |
+|------|-------------|----------------|
+| `RULE` | Board event | One trigger, N actions; evaluated synchronously after each card mutation |
+| `CARD_BUTTON` | User click on card back | No trigger row; `POST .../run` endpoint calls executor directly |
+| `BOARD_BUTTON` | User click in board header | Same as card button; operates on a filtered set of cards (max 50 per run) |
+| `SCHEDULED` | Calendar interval (daily / weekly / monthly / yearly) | Schedule encoded in `automations.config` (JSON); `last_run_at` prevents double-fire |
+| `DUE_DATE` | Offset relative to `cards.due_date` | `automation_triggers.config` holds `{ offsetDays, offsetUnit, triggerMoment }`; `automation_run_log` checked to prevent re-fire within window |
+
+---
+
+### 18.2 Evaluation Lifecycle (RULE type)
+
+```
+1. Card mutation handler calls evaluate({ boardId, event, context })
+2. engine/matcher.ts loads all enabled RULE automations for boardId (per-request cache)
+3. For each automation: triggers/[type].matches(event, trigger.config)
+4. Matching automations collected (synchronous — no I/O in matcher)
+5. For each match (async, max 5 parallel):
+     a. engine/executor.ts begins a single Knex transaction
+     b. Iterates actions in position order; calls ACTION_REGISTRY[action.action_type].execute(ctx)
+     c. Per-action errors are caught; execution continues; status → PARTIAL on any failure
+     d. Transaction committed (or rolled back on unrecoverable error)
+     e. engine/logger.ts inserts into automation_run_log
+     f. automation.run_count incremented; automation.last_run_at updated
+6. PubSub broadcasts automation_ran event to board WS channel
+```
+
+evaluate() wraps steps 2–6 in a top-level try/catch — automation failures are never propagated to the originating HTTP response.
+
+---
+
+### 18.3 Trigger Registry Design
+
+- `server/extensions/automation/engine/triggers/index.ts` exports `TRIGGER_REGISTRY: Record<string, TriggerHandler>`
+- Each trigger module exports `{ type, configSchema (Zod), matches(event, config) }`
+- `matches()` is a **pure synchronous predicate** — no DB calls — keeping evaluation O(triggers) with no I/O
+- Config is validated against the Zod schema at automation save time, not at evaluation time
+- New trigger types are added by dropping a new file in `triggers/card/` or `triggers/board/` and registering it in `index.ts`
+
+**Available trigger types (15 total):**
+`card.created`, `card.moved_to_list`, `card.moved_from_list`, `card.label_added`, `card.label_removed`, `card.member_added`, `card.member_removed`, `card.due_date_set`, `card.due_date_removed`, `card.checklist_completed`, `card.all_checklists_completed`, `card.archived`, `card.comment_added`, `board.member_added`, `list.card_added`
+
+---
+
+### 18.4 Action Registry Design
+
+- `server/extensions/automation/engine/actions/index.ts` exports `ACTION_REGISTRY: Record<string, ActionHandler>`
+- Each action module exports `{ type, configSchema (Zod), execute(ActionContext) }`
+- `execute()` receives `{ cardId, boardId, actorId, config, tx }` — the Knex transaction is passed through so all actions share atomicity
+- Variable substitution (`{cardName}`, `{boardName}`, `{listName}`, `{date}`, `{dueDate}`, `{triggerMember}`) is resolved via `actions/variables.ts` before passing to action handlers
+- New action types are added by dropping a new file in `actions/card/` or `actions/list/` and registering it
+
+**Available action types (18 total):**
+`card.move_to_list`, `card.move_to_top`, `card.move_to_bottom`, `card.add_label`, `card.remove_label`, `card.add_member`, `card.remove_member`, `card.set_due_date`, `card.remove_due_date`, `card.mark_due_complete`, `card.add_comment`, `card.archive`, `card.add_checklist`, `card.mention_members`, `list.sort_by_due_date`, `list.sort_by_name`, `list.archive_all_cards`, `list.move_all_cards`
+
+---
+
+### 18.5 Scheduler Workers
+
+**Decision:** `pg_cron` (PostgreSQL extension) for time-based scheduling + `pg_notify` / `LISTEN` for async push-back to the application server. No `setInterval` on the JS thread.
+
+#### Why not `setInterval`
+
+`setInterval` on the Bun main thread has three fundamental problems:
+
+1. **Event-loop contention** — the callback runs on the same thread as HTTP requests; a slow iteration (many boards) delays request handling
+2. **Multi-replica double-fire** — every replica runs its own timer, so the same automation fires N times per period with N replicas
+3. **Restart gaps** — if the server restarts between ticks, missed windows are silently skipped with no retry guarantee
+
+#### Why `pg_cron` + `pg_notify` / `LISTEN`
+
+PostgreSQL already manages our data and guarantees ordering. Using it as the scheduler eliminates all three problems above:
+
+| Requirement | How PostgreSQL solves it |
+|-------------|--------------------------|
+| Non-blocking | `pg_notify` is fire-and-forget inside a trigger/function; the Bun server receives it via async `LISTEN` (event-driven I/O, no polling) |
+| Single-fire across replicas | `pg_cron` runs inside the database — exactly once regardless of how many app server replicas are running |
+| Restart safety | Missed `pg_cron` ticks are re-evaluated on the next run because `last_run_at` is persisted in the DB |
+
+#### Architecture
+
+```
+┌─────────────────── PostgreSQL ───────────────────────────┐
+│                                                           │
+│  pg_cron job (every 1 min)                                │
+│    └─► automation_scheduler_tick() stored procedure       │
+│          ├─ queries automations WHERE next_run_at <= NOW() │
+│          ├─ queries cards WHERE due_date in target window  │
+│          └─► pg_notify('automation_tick', payload::text)  │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+                           │  NOTIFY
+                           ▼
+┌──────────────── Bun server ─────────────────────────────┐
+│                                                          │
+│  PgListenClient (dedicated pg connection)                │
+│    LISTEN automation_tick                                 │
+│    .on('notification', ({ payload }) => {                │
+│        const { automationId, boardId, cardId } =        │
+│              JSON.parse(payload);                        │
+│        automation/engine.execute(...)  // fully async    │
+│    })                                                    │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### `pg_cron` setup
+
+`pg_cron` is available natively on AWS RDS PostgreSQL, Supabase, Neon, and most managed providers. For local dev it is included in the `postgres` Docker image via a custom `Dockerfile.postgres`.
+
+```sql
+-- Enable extension (run once in migration or separately)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Schedule the tick function every minute
+SELECT cron.schedule(
+  'automation-tick',        -- job name
+  '* * * * *',              -- every minute
+  $$SELECT automation_scheduler_tick()$$
+);
+```
+
+The tick function is defined in migration `0035_automation_scheduler.ts`:
+
+```sql
+CREATE OR REPLACE FUNCTION automation_scheduler_tick() RETURNS void AS $$
+DECLARE
+  rec RECORD;
+BEGIN
+  -- ── SCHEDULED automations ──────────────────────────────────────
+  FOR rec IN
+    SELECT id, board_id
+    FROM automations
+    WHERE automation_type = 'SCHEDULED'
+      AND is_enabled = TRUE
+      AND (last_run_at IS NULL
+           OR last_run_at < date_trunc('minute', NOW() - INTERVAL '58 seconds'))
+  LOOP
+    IF automation_should_run_now(rec.id) THEN
+      PERFORM pg_notify(
+        'automation_tick',
+        json_build_object(
+          'type',         'SCHEDULED',
+          'automationId', rec.id,
+          'boardId',      rec.board_id
+        )::text
+      );
+      UPDATE automations SET last_run_at = NOW() WHERE id = rec.id;
+    END IF;
+  END LOOP;
+
+  -- ── DUE_DATE automations ────────────────────────────────────────
+  FOR rec IN
+    SELECT a.id AS automation_id, a.board_id, c.id AS card_id,
+           t.config AS trigger_config
+    FROM   automations a
+    JOIN   automation_triggers t ON t.automation_id = a.id
+    JOIN   cards c ON c.board_id = a.board_id
+    WHERE  a.automation_type  = 'DUE_DATE'
+      AND  a.is_enabled       = TRUE
+      AND  c.due_date         IS NOT NULL
+      AND  automation_due_date_in_window(c.due_date, t.config)
+      -- exclude already-run (card, automation) pairs within this window
+      AND  NOT EXISTS (
+             SELECT 1 FROM automation_run_log l
+             WHERE l.automation_id = a.id
+               AND l.card_id       = c.id
+               AND l.ran_at >= NOW() - INTERVAL '10 minutes'
+           )
+  LOOP
+    PERFORM pg_notify(
+      'automation_tick',
+      json_build_object(
+        'type',         'DUE_DATE',
+        'automationId', rec.automation_id,
+        'boardId',      rec.board_id,
+        'cardId',       rec.card_id
+      )::text
+    );
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Two additional helper functions (`automation_should_run_now`, `automation_due_date_in_window`) encapsulate the schedule-matching logic in SQL, making them independently testable with `SELECT` assertions.
+
+#### Bun `LISTEN` client
+
+`server/extensions/automation/scheduler/listener.ts`:
+
+```ts
+import pg from 'pg';
+import { env } from '../../config';
+import { execute } from '../engine';
+
+// Dedicated connection — never used for regular queries
+const client = new pg.Client({ connectionString: env.DATABASE_URL });
+
+export async function startAutomationListener(): Promise<void> {
+  await client.connect();
+  await client.query('LISTEN automation_tick');
+
+  client.on('notification', async (msg) => {
+    if (msg.channel !== 'automation_tick') return;
+
+    try {
+      const payload = JSON.parse(msg.payload ?? '{}');
+      await execute({
+        automationId: payload.automationId,
+        boardId:      payload.boardId,
+        cardId:       payload.cardId ?? null,
+        actorId:      null,             // system actor
+      });
+    } catch (err) {
+      // log but never crash the listener
+      console.error('[automation-listener] execution error', err);
+    }
+  });
+
+  // Reconnect on unexpected disconnect
+  client.on('error', async () => {
+    await client.end().catch(() => {});
+    setTimeout(startAutomationListener, 5_000);
+  });
+}
+```
+
+Called once from `server/index.ts` when `AUTOMATION_SCHEDULER_ENABLED` is `true`.
+
+#### Local dev without `pg_cron`
+
+`pg_cron` requires a superuser `CREATE EXTENSION` step. For local dev:
+
+- The `postgres` service in `docker-compose.yml` uses `ankane/pgvector` (or a custom image) that includes `pg_cron`
+- **Fallback**: if `pg_cron` is not available, a minimal Bun `Worker` thread (not the main thread) runs every 60 s and calls `automation_scheduler_tick()` directly via a plain SQL `SELECT` statement — same stored procedure, no code duplication
+- The fallback is controlled by `AUTOMATION_USE_PGCRON` flag (`true` by default in prod, `false` in test environments)
+
+**Rejected:**
+- `setInterval` on the main thread — blocks event loop, fires on every replica, no restart-safety
+- `node-cron` / `bun-cron` packages — same multi-replica problem as `setInterval`; adds a dependency to solve a problem PostgreSQL already solves natively
+- Separate cron pod / Lambda — adds infrastructure complexity before scale requires it; pg_cron covers the same ground inside the existing database
+
+---
+
+### 18.6 Run Log & Quota
+
+- `automation_run_log` is append-only and **capped at 1 000 rows per automation** — the insert trigger (or application-level check on each insert) deletes the oldest row when the cap is exceeded
+- Monthly quota is tracked by counting `automation_run_log` rows with `ran_at >= start_of_month` for all automations on a board
+- Quota ceiling is configurable via `AUTOMATION_MONTHLY_QUOTA` env var (default 1000); soft limit only — no hard block at MVP
+- At ≥ 80% quota a `quota_warning` event is published to the board WS channel so the client can show a banner
+
+---
+
+### 18.7 UI Architecture
+
+**Decision:** Single `BoltIcon` entry point in the board header; feature-gated iframe-free panel (no plugin bridge needed).
+
+Key UI decisions:
+
+| Decision | Rationale |
+|----------|-----------|
+| `BoltIcon` left of `...` menu | Consistent with Trello; immediately discoverable without cluttering the header |
+| Slide-in drawer (not modal) | Allows builder and board to be visible simultaneously for context |
+| Trigger + action types fetched from API (`GET /automation/trigger-types`, `GET /automation/action-types`) | UI never hardcodes type lists; adding a backend trigger/action automatically surfaces it in the builder |
+| DnD reorder for actions (`@dnd-kit/core`) | Already in project; consistent with card/list drag UX |
+| 24 pre-selected Heroicons for button customisation | Sufficient variety without an unbounded icon picker |
+
+**Rejected:**
+- Embedding automation in the plugin system — automation is a first-class feature; plugin iframe overhead is unnecessary overhead for an internal capability
+- Separate `/automation` route — the panel is board-scoped; a route change loses board context

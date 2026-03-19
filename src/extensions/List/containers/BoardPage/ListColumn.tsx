@@ -8,6 +8,7 @@ import type { List } from '../../api';
 import type { Card } from '../../../Card/api';
 import ListHeader from '../../components/ListHeader';
 import CardItem from '../../../Card/components/CardItem';
+import type { CustomFieldValue } from '../../../CustomFields/types';
 import AddCardForm from '../../../Card/components/AddCardForm';
 
 interface Props {
@@ -23,6 +24,11 @@ interface Props {
   onCardClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
   onToggleLabels?: () => void;
+  /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
+   *  null = batch not yet loaded — tiles render no badges rather than firing per-card requests. */
+  customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
+  /** True when the current user is a VIEWER guest — hides the Add card button. */
+  isViewerGuest?: boolean;
 }
 
 const SortableListColumn = ({
@@ -38,6 +44,8 @@ const SortableListColumn = ({
   onCardClick,
   labelsExpanded,
   onToggleLabels,
+  customFieldValuesMap,
+  isViewerGuest = false,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -72,8 +80,9 @@ const SortableListColumn = ({
   return (
     <div
       ref={setNodeRef}
+      id={`board-list-${list.id}`}
       style={style}
-      className="w-72 shrink-0 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-xl flex flex-col h-full"
+      className="w-72 shrink-0 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm border border-gray-200 dark:border-slate-800 rounded-xl flex flex-col h-full"
       role="listitem"
       aria-label={`List: ${list.title}`}
     >
@@ -101,14 +110,15 @@ const SortableListColumn = ({
               labelsExpanded={labelsExpanded ?? false}
               onToggleLabels={stableToggleLabels}
               {...(onCardClick ? { onClick: onCardClick } : {})}
+              {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? [] } : {})}
             />
           ))}
         </SortableContext>
       </div>
 
-      {/* Add card footer */}
+      {/* Add card footer — hidden for VIEWER guests */}
       <div className="px-1 pb-2">
-        {addingCard ? (
+        {!isViewerGuest && (addingCard ? (
           <AddCardForm
             listId={list.id}
             onSubmit={async (listId, title) => {
@@ -119,13 +129,13 @@ const SortableListColumn = ({
           />
         ) : (
           <button
-            className="text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-sm rounded-lg px-2 py-1.5 w-full text-left transition-colors"
+            className="text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-sm rounded-lg px-2 py-1.5 w-full text-left transition-colors"
             onClick={() => setAddingCard(true)}
             aria-label={`Add a card to ${list.title}`}
           >
             + Add a card
           </button>
-        )}
+        ))}
       </div>
     </div>
   );

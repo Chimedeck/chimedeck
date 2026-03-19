@@ -31,6 +31,11 @@ import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
 import { boardViewRouter } from './extensions/boardView/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
+import { automationRouter } from './extensions/automation/api/index';
+import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
+// Register all automation trigger handlers at startup.
+import './extensions/automation/engine/triggers/index';
+import { startAutomationScheduler } from './extensions/automation/scheduler/index';
 import { initObservability } from './mods/observability/index';
 
 // Initialise OTel tracing + metrics (no-op when OTEL_ENABLED=false)
@@ -44,6 +49,9 @@ await ensureBucketExists();
 
 // Start presence expiry background job — fires every 10 s
 startExpiryJob(() => new Set(rooms.keys()));
+
+// Start automation scheduler (pg LISTEN or Bun Worker fallback depending on config)
+await startAutomationScheduler();
 
 // Serve a static file from the dist/ folder (production SPA assets)
 async function serveStatic(filePath: string): Promise<Response | null> {
@@ -62,11 +70,17 @@ async function router(req: Request): Promise<Response> {
 
   if (path === '/api/v1/flags' && req.method === 'GET') {
     const sesEnabled = await flags.isEnabled('SES_ENABLED');
+    const notificationPreferencesEnabled = await flags.isEnabled('NOTIFICATION_PREFERENCES_ENABLED');
+    const emailNotificationsEnabled = await flags.isEnabled('EMAIL_NOTIFICATIONS_ENABLED');
+    const emailVerificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
     return Response.json({
       data: {
         sesEnabled,
         adminInviteEmailEnabled: env.ADMIN_INVITE_EMAIL_ENABLED,
         adminEmailDomains: env.ADMIN_EMAIL_DOMAINS,
+        notificationPreferencesEnabled,
+        emailNotificationsEnabled,
+        emailVerificationEnabled,
       },
     });
   }
@@ -122,6 +136,12 @@ async function router(req: Request): Promise<Response> {
 
   const pluginsResponse = await pluginsRouter(req, path);
   if (pluginsResponse) return pluginsResponse;
+
+  const automationResponse = await automationRouter(req, path);
+  if (automationResponse) return automationResponse;
+
+  const offlineDraftsResponse = await offlineDraftsRouter(req, path);
+  if (offlineDraftsResponse) return offlineDraftsResponse;
 
   // Serve the SDK static bundle at /sdk/jh-instance.js
   if (path === pluginsConfig.sdkServePath && req.method === 'GET') {
@@ -190,9 +210,17 @@ Bun.serve({
     const res = await router(req);
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();
+
+    // S3 origin for avatar/attachment images — LocalStack uses S3_ENDPOINT directly,
+    // production uses the virtual-hosted bucket URL.
+    const s3ImgOrigin = env.S3_ENDPOINT
+      ? env.S3_ENDPOINT
+      : `https://${env.S3_BUCKET}.s3.${env.S3_REGION}.amazonaws.com`;
+
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
-      extraConnectSrc: pluginOrigins.connectSrc,
+      extraConnectSrc: [s3ImgOrigin, ...pluginOrigins.connectSrc],
+      extraImgSrc: [s3ImgOrigin, 'https://horiflow.jhorizon.io'],
     });
     const response = new Response(res.body, {
       status: res.status,

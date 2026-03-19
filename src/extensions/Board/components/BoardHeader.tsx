@@ -1,15 +1,20 @@
 // BoardHeader — sticky top bar with editable title, member avatars, share button and ⋯ menu.
 import { useState, useRef, useEffect } from 'react';
 import type { Board } from '../api';
-import BoardMemberAvatars from './BoardMemberAvatars';
+import MemberAvatarStack from './MemberAvatarStack';
 import ConnectionBadge from '~/common/components/ConnectionBadge';
 import type { ConnectionState } from '~/common/components/ConnectionBadge';
 import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
+import AutomationHeaderButton from '~/extensions/Automation/components/AutomationHeaderButton';
+import BoardButtonsBar from '~/extensions/Automation/components/BoardButtons/BoardButtonsBar';
+import BoardSearchBar from './BoardSearchBar';
+import type { BoardSearchResult } from '~/extensions/Search/api';
 
 interface Member {
   id: string;
   display_name: string | null;
   email: string;
+  avatar_url?: string | null;
 }
 
 interface Props {
@@ -25,6 +30,19 @@ interface Props {
   onArchive?: () => void;
   onDelete?: () => void;
   onOpenSettings?: () => void;
+  onOpenAutomation?: () => void;
+  onOpenMembers?: () => void;
+  activeAutomationCount?: number;
+  /** When true, hides member avatar stack and board settings menu (GUEST workspace role). */
+  isGuest?: boolean;
+  /** Auth token for board-scoped search requests */
+  searchToken?: string;
+  /** Initial query to pre-fill (restored from URL) */
+  initialSearchQuery?: string;
+  /** Called when the user selects a result from the board search bar */
+  onSearchResultSelect?: (result: BoardSearchResult) => void;
+  /** Called when the active search query changes (for URL sync) */
+  onSearchQueryChange?: (query: string) => void;
 }
 
 const BoardHeader = ({
@@ -37,6 +55,14 @@ const BoardHeader = ({
   onArchive,
   onDelete,
   onOpenSettings,
+  onOpenAutomation,
+  onOpenMembers,
+  activeAutomationCount = 0,
+  isGuest = false,
+  searchToken,
+  initialSearchQuery,
+  onSearchResultSelect,
+  onSearchQueryChange,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -89,7 +115,7 @@ const BoardHeader = ({
   };
 
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-3 bg-slate-900/80 backdrop-blur-sm px-4 py-2 border-b border-slate-800">
+    <header className="sticky top-0 z-10 flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-4 py-2 border-b border-gray-200 dark:border-slate-800">
       {/* Editable board title */}
       {editing ? (
         <input
@@ -100,12 +126,12 @@ const BoardHeader = ({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleSave}
           onKeyDown={handleKeyDown}
-          className="bg-slate-800 text-slate-100 font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 max-w-xs"
+          className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 max-w-xs"
           aria-label="Edit board title"
         />
       ) : (
         <button
-          className="text-slate-100 font-semibold text-lg hover:bg-slate-800 rounded px-2 py-0.5 transition-colors"
+          className="text-gray-900 dark:text-slate-100 font-semibold text-lg hover:bg-gray-100 dark:hover:bg-slate-800 rounded px-2 py-0.5 transition-colors"
           onClick={handleTitleClick}
           aria-label="Click to edit board title"
         >
@@ -117,14 +143,55 @@ const BoardHeader = ({
       <ConnectionBadge state={resolvedState} />
       <PollingIndicator active={pollingActive} />
 
-      <div className="ml-auto flex items-center gap-2">
-        {/* Member avatars */}
-        {members.length > 0 && <BoardMemberAvatars members={members} />}
+      {/* Board-scoped search — renders when a valid auth token is available */}
+      {searchToken && (
+        <BoardSearchBar
+          boardId={board.id}
+          token={searchToken}
+          {...(initialSearchQuery ? { initialQuery: initialSearchQuery } : {})}
+          {...(onSearchQueryChange ? { onQueryChange: onSearchQueryChange } : {})}
+          {...(onSearchResultSelect ? { onSelectResult: onSearchResultSelect } : {})}
+        />
+      )}
 
-        {/* Settings menu */}
+      <div className="ml-auto flex items-center gap-2">
+        {/* Member avatar stack + Share button — hidden for workspace GUESTs */}
+        {!isGuest && (
+          <>
+            <MemberAvatarStack
+              members={members}
+              onOpenMembers={onOpenMembers ?? (() => {})}
+            />
+            <button
+              type="button"
+              onClick={onOpenMembers}
+              className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              aria-label="Share board — invite members"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
+                <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .793l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.475l6.733-3.367A2.52 2.52 0 0 1 13 4.5z" />
+              </svg>
+              Share
+            </button>
+          </>
+        )}
+
+        {/* Board buttons bar — left of automation header button */}
+        {onOpenAutomation && <BoardButtonsBar boardId={board.id} />}
+
+        {/* Automation button — left of the ··· settings menu */}
+        {onOpenAutomation && (
+          <AutomationHeaderButton
+            activeCount={activeAutomationCount}
+            onClick={onOpenAutomation}
+          />
+        )}
+
+        {/* Settings menu — hidden for workspace GUESTs */}
+        {!isGuest && (
         <div className="relative" ref={menuContainerRef}>
           <button
-            className="rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
+            className="rounded p-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Board settings"
             aria-haspopup="true"
@@ -133,10 +200,10 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-48 rounded-md border border-slate-700 bg-slate-800 py-1 shadow-xl z-20">
+            <div className="absolute right-0 mt-1 w-48 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl z-20">
               {onOpenSettings && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                   onClick={() => { setMenuOpen(false); onOpenSettings(); }}
                 >
                   Board settings
@@ -144,7 +211,7 @@ const BoardHeader = ({
               )}
               {onArchive && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                   onClick={() => { setMenuOpen(false); onArchive(); }}
                 >
                   {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
@@ -152,7 +219,7 @@ const BoardHeader = ({
               )}
               {onDelete && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700"
                   onClick={() => { setMenuOpen(false); onDelete(); }}
                 >
                   Delete board
@@ -161,6 +228,7 @@ const BoardHeader = ({
             </div>
           )}
         </div>
+        )}
       </div>
     </header>
   );

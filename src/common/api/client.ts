@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { shouldAttachAccessToken } from './requestPolicy';
 
 // Token getter is set lazily from main.tsx after the store is created.
 // This avoids a circular dependency between the API client and the Redux store.
@@ -18,9 +19,11 @@ export const apiClient = axios.create({
 // Attach Bearer token from Redux on every request.
 // [why] If a caller already sets Authorization (e.g. plugin JWT for plugin-data endpoints)
 // we must not overwrite it — their explicitly-passed token takes precedence.
+// Public endpoints must also stay header-free so stale client auth state does not
+// make them behave like protected routes.
 apiClient.interceptors.request.use((config) => {
   const token = tokenGetter?.() ?? null;
-  if (token && !config.headers.Authorization) {
+  if (token && !config.headers.Authorization && shouldAttachAccessToken({ url: config.url, method: config.method })) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

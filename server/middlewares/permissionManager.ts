@@ -72,3 +72,34 @@ export function requireRole(
   }
   return null;
 }
+
+// Like requireRole(req, 'MEMBER') but also allows GUEST users whose board-level
+// sub-type is 'MEMBER' (i.e. they were invited as a member guest, not a viewer guest).
+// Must be called after requireWorkspaceMembership() has populated req.callerRole and req.currentUser.
+export async function requireMemberOrBoardGuestMember(
+  req: WorkspaceScopedRequest,
+  boardId: string,
+): Promise<Response | null> {
+  if (!req.callerRole) {
+    return Response.json(
+      { error: { code: 'insufficient-role', message: 'Requires at least MEMBER role' } },
+      { status: 403 },
+    );
+  }
+
+  // Workspace MEMBER / ADMIN / OWNER pass through as before.
+  if (hasRole(req.callerRole, 'MEMBER')) return null;
+
+  // GUESTs: allow only those with a MEMBER sub-type on this specific board.
+  if (req.callerRole === 'GUEST' && req.currentUser) {
+    const guestAccess = await db('board_guest_access')
+      .where({ user_id: req.currentUser.id, board_id: boardId })
+      .first();
+    if (guestAccess?.guest_type === 'MEMBER') return null;
+  }
+
+  return Response.json(
+    { error: { code: 'insufficient-role', message: 'Requires at least MEMBER role' } },
+    { status: 403 },
+  );
+}

@@ -11,6 +11,7 @@ import { flags } from '../../../mods/flags';
 import { send } from '../../email';
 import { adminInviteEmail } from '../../email/templates/adminInvite';
 import { env } from '../../../config/env';
+import type { AdminCreateUserBody } from '../types';
 
 // Basic email format check — not exhaustive, but covers obvious invalids.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,9 +30,9 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
     return Response.json({ name: 'admin-access-required' }, { status: 403 });
   }
 
-  let body: { email?: string; displayName?: string; password?: string; sendEmail?: boolean };
+  let body: AdminCreateUserBody;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as AdminCreateUserBody;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
@@ -39,7 +40,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
     );
   }
 
-  const { email, displayName, password: providedPassword, sendEmail } = body;
+  const { email, displayName, password: providedPassword, sendEmail, autoVerifyEmail } = body;
 
   if (!email || !EMAIL_RE.test(email)) {
     return Response.json({ name: 'invalid-email' }, { status: 422 });
@@ -71,12 +72,16 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
   const userId = generateId();
   const now = new Date();
 
+  // When autoVerifyEmail is true, stamp email_verified_at immediately and skip verification flow.
+  const emailVerifiedAt = autoVerifyEmail === true ? now : null;
+
   await db('users').insert({
     id: userId,
     name: displayName.trim(),
     email: normalizedEmail,
     password_hash: passwordHash,
-    email_verified: true,
+    email_verified: autoVerifyEmail === true,
+    email_verified_at: emailVerifiedAt,
     verification_token: null,
     verification_token_expires_at: null,
     created_at: now,
@@ -109,6 +114,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
         id: userId,
         email: normalizedEmail,
         displayName: displayName.trim(),
+        email_verified_at: emailVerifiedAt ? emailVerifiedAt.toISOString() : null,
       },
       credentials: {
         email: normalizedEmail,

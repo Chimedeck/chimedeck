@@ -12,6 +12,10 @@ export interface Board {
   visibility: BoardVisibility;
   createdAt: string;
   isStarred?: boolean;
+  background?: string | null;
+  /** Sub-type of the caller's GUEST role on this board. null when caller is a
+   *  regular workspace member (OWNER/ADMIN/MEMBER/VIEWER). */
+  callerGuestType?: 'VIEWER' | 'MEMBER' | null;
 }
 
 // ---------- Board CRUD ----------
@@ -70,6 +74,12 @@ export async function archiveBoard({
   return api.patch<{ data: Board }>(`/boards/${boardId}/archive`);
 }
 
+// 409 Conflict payload returned when deleting a non-empty board without `confirm: true`.
+export interface BoardDeleteConflictError {
+  name: 'delete-requires-confirmation';
+  data: { listCount: number; cardCount: number };
+}
+
 export async function deleteBoard({
   api,
   boardId,
@@ -110,6 +120,51 @@ export async function unstarBoard({
   boardId: string;
 }): Promise<void> {
   await api.delete(`/boards/${boardId}/star`);
+}
+
+// POST /api/v1/boards/:id/background — upload a background image (multipart).
+// Only JPEG/PNG, max 10 MB; caller must be Owner/Admin.
+export async function uploadBoardBackground({
+  boardId,
+  file,
+  token,
+}: {
+  boardId: string;
+  file: File;
+  token: string;
+}): Promise<{ data: Board }> {
+  const formData = new FormData();
+  formData.append('background', file);
+  const res = await fetch(`/api/v1/boards/${boardId}/background`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw err;
+  }
+  return res.json() as Promise<{ data: Board }>;
+}
+
+// DELETE /api/v1/boards/:id/background — remove board background.
+// Caller must be Owner/Admin.
+export async function deleteBoardBackground({
+  boardId,
+  token,
+}: {
+  boardId: string;
+  token: string;
+}): Promise<{ data: Board }> {
+  const res = await fetch(`/api/v1/boards/${boardId}/background`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw err;
+  }
+  return res.json() as Promise<{ data: Board }>;
 }
 
 // PATCH /api/v1/boards/:id — update board visibility field; min role: ADMIN.

@@ -1,4 +1,4 @@
-name: vello-staging
+name: horiflow-staging
 
 # By default only the app container runs.
 # External managed services (AWS RDS + S3) are used via env vars.
@@ -31,8 +31,13 @@ services:
 
   postgres:
     profiles: [local-db]
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     env_file: .env.staging
+    command: >
+      postgres -c shared_preload_libraries=pg_cron
+               -c cron.database_name=${POSTGRES_DB:-horiflow}
     ports:
       - "6403:5432"
     volumes:
@@ -52,7 +57,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-vello}
+      S3_BUCKET: ${S3_BUCKET:-horiflow}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

@@ -8,6 +8,7 @@ const initialState: AdminInviteState = {
   isOpen: false,
   credentials: null,
   emailSent: false,
+  emailVerifiedAt: null,
 };
 
 const adminInviteSlice = createSlice({
@@ -19,18 +20,21 @@ const adminInviteSlice = createSlice({
       // Reset credential state each time the modal is opened fresh
       state.credentials = null;
       state.emailSent = false;
+      state.emailVerifiedAt = null;
     },
     closeInviteModal(state) {
       state.isOpen = false;
       state.credentials = null;
       state.emailSent = false;
+      state.emailVerifiedAt = null;
     },
     setInviteCredentials(
       state,
-      action: PayloadAction<Pick<AdminCreateUserResponse, 'credentials' | 'emailSent'>>,
+      action: PayloadAction<Pick<AdminCreateUserResponse, 'credentials' | 'emailSent' | 'emailVerifiedAt'>>,
     ) {
       state.credentials = action.payload.credentials;
       state.emailSent = action.payload.emailSent;
+      state.emailVerifiedAt = action.payload.emailVerifiedAt;
     },
   },
 });
@@ -43,3 +47,4 @@ export const adminInviteReducer = adminInviteSlice.reducer;
 export const selectInviteModalOpen = (state: RootState) => state.adminInvite.isOpen;
 export const selectInviteCredentials = (state: RootState) => state.adminInvite.credentials;
 export const selectInviteEmailSent = (state: RootState) => state.adminInvite.emailSent;
+export const selectInviteEmailVerifiedAt = (state: RootState) => state.adminInvite.emailVerifiedAt;
