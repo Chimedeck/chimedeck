@@ -73,9 +73,9 @@ const PluginDashboardPage = () => {
       const result = await enablePluginRaw(plugin);
       if (result?.error) {
         if (result.error === 'not-board-member' || result.error === 'not-board-admin' || result.error.includes('403')) {
-          addToast('You do not have permission to enable plugins on this board.', 'error');
+          addToast(translations['plugins.dashboard.toast.noPermissionEnable'], 'error');
         } else {
-          addToast('Failed to enable plugin. Please try again.', 'error');
+          addToast(translations['plugins.dashboard.toast.failedEnable'], 'error');
         }
       }
     },
@@ -123,7 +123,7 @@ const PluginDashboardPage = () => {
   useEffect(() => {
     if (updateStatus === 'success') {
       setEditPlugin(null);
-      addToast('Plugin updated.', 'info');
+      addToast(translations['plugins.dashboard.toast.pluginUpdated'], 'info');
       dispatch(clearUpdateState());
     }
   }, [updateStatus, addToast, dispatch]);

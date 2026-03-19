@@ -125,6 +125,10 @@
   "plugins.apiKeyModal.copy": "Copy",
   "plugins.apiKeyModal.done": "I've saved the key — Done",
 
+  "plugins.dashboard.toast.noPermissionEnable": "You do not have permission to enable plugins on this board.",
+  "plugins.dashboard.toast.failedEnable": "Failed to enable plugin. Please try again.",
+  "plugins.dashboard.toast.pluginUpdated": "Plugin updated.",
+
   "plugins.modal.defaultTitle": "Plugin",
   "plugins.modal.closeAriaLabel": "Close modal",
 
