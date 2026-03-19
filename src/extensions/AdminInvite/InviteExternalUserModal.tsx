@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
+import translations from './translations/en.json';
 import {
   closeInviteModal,
   selectInviteModalOpen,
@@ -32,7 +33,12 @@ function strengthScore(pwd: string): number {
   return score;
 }
 
-const STRENGTH_LABELS = ['Very weak', 'Weak', 'Fair', 'Strong'] as const;
+const STRENGTH_LABELS = [
+  translations['AdminInvite.strengthVeryWeak'],
+  translations['AdminInvite.strengthWeak'],
+  translations['AdminInvite.strengthFair'],
+  translations['AdminInvite.strengthStrong'],
+] as const;
 const STRENGTH_COLORS = [
   'bg-red-500',
   'bg-orange-400',
@@ -92,13 +98,13 @@ export default function InviteExternalUserModal() {
 
     const errors: FieldErrors = {};
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Please enter a valid email address.';
+      errors.email = translations['AdminInvite.errorInvalidEmail'];
     }
     if (!displayName.trim()) {
-      errors.displayName = 'Display name is required.';
+      errors.displayName = translations['AdminInvite.errorDisplayNameRequired'];
     }
     if (passwordMode === 'manual' && !isStrongPassword(password)) {
-      errors.password = 'Password must be at least 8 characters with a letter and a number.';
+      errors.password = translations['AdminInvite.errorPasswordTooWeak'];
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -130,15 +136,15 @@ export default function InviteExternalUserModal() {
       const errorName = data?.name ?? name;
 
       if (errorName === 'invalid-email') {
-        setFieldErrors({ email: 'Invalid email address.' });
+        setFieldErrors({ email: translations['AdminInvite.errorInvalidEmailServer'] });
       } else if (errorName === 'display-name-required') {
-        setFieldErrors({ displayName: 'Display name is required.' });
+        setFieldErrors({ displayName: translations['AdminInvite.errorDisplayNameRequiredServer'] });
       } else if (errorName === 'password-too-weak') {
-        setFieldErrors({ password: 'Password is too weak.' });
+        setFieldErrors({ password: translations['AdminInvite.errorPasswordTooWeakServer'] });
       } else if (errorName === 'email-already-in-use') {
-        setServerError('An account with this email address already exists.');
+        setServerError(translations['AdminInvite.errorEmailInUse']);
       } else {
-        setServerError('Something went wrong. Please try again.');
+        setServerError(translations['AdminInvite.errorGeneric']);
       }
     } finally {
       setLoading(false);
@@ -161,7 +167,7 @@ export default function InviteExternalUserModal() {
           <Dialog.Close asChild>
             <button
               className="absolute right-4 top-4 rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-              aria-label="Close"
+              aria-label={translations['AdminInvite.closeButton']}
             >
               <XMarkIcon className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -181,13 +187,13 @@ export default function InviteExternalUserModal() {
             // ── Invite form ─────────────────────────────────────────────────
             <>
               <Dialog.Title className="mb-1 text-lg font-bold text-white">
-                Invite External User
+                {translations['AdminInvite.modalTitle']}
               </Dialog.Title>
               <p
                 id="invite-modal-description"
                 className="mb-5 text-sm text-slate-400"
               >
-                Create an account for someone outside your organisation.
+                {translations['AdminInvite.modalDescription']}
               </p>
 
               <form onSubmit={handleSubmit} noValidate>
@@ -197,14 +203,14 @@ export default function InviteExternalUserModal() {
                     htmlFor="invite-email"
                     className="mb-1.5 block text-sm font-medium text-slate-300"
                   >
-                    Email address
+                    {translations['AdminInvite.emailLabel']}
                   </label>
                   <input
                     id="invite-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="contractor@example.com"
+                    placeholder={translations['AdminInvite.emailPlaceholder']}
                     required
                     autoFocus
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -223,14 +229,14 @@ export default function InviteExternalUserModal() {
                     htmlFor="invite-display-name"
                     className="mb-1.5 block text-sm font-medium text-slate-300"
                   >
-                    Display name
+                    {translations['AdminInvite.displayNameLabel']}
                   </label>
                   <input
                     id="invite-display-name"
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Jane Smith"
+                    placeholder={translations['AdminInvite.displayNamePlaceholder']}
                     required
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     aria-describedby={
@@ -247,7 +253,7 @@ export default function InviteExternalUserModal() {
                 {/* Password mode */}
                 <fieldset className="mb-4">
                   <legend className="mb-1.5 text-sm font-medium text-slate-300">
-                    Password
+                    {translations['AdminInvite.passwordModeLabel']}
                   </legend>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
@@ -259,7 +265,7 @@ export default function InviteExternalUserModal() {
                         onChange={() => setPasswordMode('auto')}
                         className="accent-indigo-500"
                       />
-                      Generate automatically
+                      {translations['AdminInvite.passwordModeAuto']}
                     </label>
                     <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
                       <input
@@ -270,7 +276,7 @@ export default function InviteExternalUserModal() {
                         onChange={() => setPasswordMode('manual')}
                         className="accent-indigo-500"
                       />
-                      Set manually
+                      {translations['AdminInvite.passwordModeManual']}
                     </label>
                   </div>
                 </fieldset>
@@ -282,7 +288,7 @@ export default function InviteExternalUserModal() {
                       htmlFor="invite-password"
                       className="mb-1.5 block text-sm font-medium text-slate-300"
                     >
-                      Password
+                      {translations['AdminInvite.passwordLabel']}
                     </label>
                     <input
                       id="invite-password"
@@ -327,7 +333,7 @@ export default function InviteExternalUserModal() {
                         onChange={(e) => setSendEmail(e.target.checked)}
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                       />
-                      Send login credentials to the user by email
+                      {translations['AdminInvite.sendEmailToggle']}
                     </label>
                   </div>
                 )}
@@ -343,7 +349,7 @@ export default function InviteExternalUserModal() {
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                         data-testid="auto-verify-email-checkbox"
                       />
-                      Mark email as verified
+                      {translations['AdminInvite.autoVerifyToggle']}
                     </label>
                   </div>
                 )}
@@ -361,7 +367,7 @@ export default function InviteExternalUserModal() {
                       type="button"
                       className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
                     >
-                      Cancel
+                      {translations['AdminInvite.cancelButton']}
                     </button>
                   </Dialog.Close>
                   <button
@@ -372,7 +378,7 @@ export default function InviteExternalUserModal() {
                     }
                     className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                   >
-                    {loading ? 'Creating…' : 'Create account'}
+                    {loading ? translations['AdminInvite.creatingButton'] : translations['AdminInvite.submitButton']}
                   </button>
                 </div>
               </form>

@@ -4,6 +4,7 @@
 // Sprint 71: Includes NotificationPreferencesPanel gated by NOTIFICATION_PREFERENCES_ENABLED.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import translations from '../../translations/en.json';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import ChangeEmailForm from '~/extensions/Auth/components/ChangeEmailForm';
@@ -24,14 +25,14 @@ const EditProfilePage = () => {
             className="text-slate-400 hover:text-slate-200 transition-colors text-sm"
             onClick={() => navigate(-1)}
           >
-            ← Back
+            {translations['UserProfile.backButton']}
           </button>
-          <h1 className="text-2xl font-bold">Profile Settings</h1>
+          <h1 className="text-2xl font-bold">{translations['UserProfile.pageTitle']}</h1>
         </div>
 
         {/* Current account info */}
         <div className="space-y-1">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Signed in as</p>
+          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">{translations['UserProfile.signedInAs']}</p>
           <p className="text-sm text-slate-300">{displayEmail}</p>
         </div>
 
@@ -54,7 +55,7 @@ const EditProfilePage = () => {
             {/* Notification preferences section */}
             <section>
               <h2 className="text-base font-semibold text-slate-100 mb-4">
-                Notification Preferences
+                {translations['UserProfile.notificationPreferences']}
               </h2>
               <NotificationPreferencesPanel />
             </section>

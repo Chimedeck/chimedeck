@@ -1,0 +1,13 @@
+{
+  "UserProfile.backButton": "← Back",
+  "UserProfile.pageTitle": "Profile Settings",
+  "UserProfile.signedInAs": "Signed in as",
+  "UserProfile.notificationPreferences": "Notification Preferences",
+  "UserProfile.avatarAlt": "Profile avatar",
+  "UserProfile.changeAvatarButton": "Change photo",
+  "UserProfile.removeAvatarButton": "Remove photo",
+  "UserProfile.saveButton": "Save Changes",
+  "UserProfile.cancelButton": "Cancel",
+  "UserProfile.successMessage": "Profile updated",
+  "UserProfile.errorMessage": "Failed to save changes. Please try again."
+}

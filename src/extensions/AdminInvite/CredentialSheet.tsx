@@ -2,6 +2,7 @@
 // account creation. Displays the new user's credentials in a copyable block.
 import { useState } from 'react';
 import { CheckIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
+import translations from './translations/en.json';
 
 interface CredentialSheetProps {
   email: string;
@@ -24,9 +25,9 @@ export default function CredentialSheet({
   const [copied, setCopied] = useState(false);
 
   const clipboardText = [
-    `Email:     ${email}`,
-    `Password:  ${plainPassword}`,
-    `Login URL: ${loginUrl}`,
+    `${translations['AdminInvite.credentialFieldEmail']}     ${email}`,
+    `${translations['AdminInvite.credentialFieldPassword']}  ${plainPassword}`,
+    `${translations['AdminInvite.credentialFieldLoginUrl']} ${loginUrl}`,
   ].join('\n');
 
   const handleCopy = async () => {
@@ -41,11 +42,11 @@ export default function CredentialSheet({
 
   return (
     <div aria-live="polite">
-      <h3 className="text-lg font-semibold text-white mb-4">New account created</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">{translations['AdminInvite.credentialSheetTitle']}</h3>
 
       {emailSent && (
         <p className="mb-4 rounded-md bg-indigo-900/40 px-3 py-2 text-sm text-indigo-300">
-          Credentials have also been sent to the user&apos;s email address.
+          {translations['AdminInvite.credentialSheetEmailSent']}
         </p>
       )}
 
@@ -59,21 +60,21 @@ export default function CredentialSheet({
           }`}
           data-testid="email-verification-status"
         >
-          {emailVerifiedAt ? 'Email verified' : 'Email not verified'}
+          {emailVerifiedAt ? translations['AdminInvite.credentialEmailVerified'] : translations['AdminInvite.credentialEmailNotVerified']}
         </p>
       )}
 
       <div className="rounded-lg border border-slate-700 bg-slate-950 p-4 font-mono text-sm text-slate-200 space-y-1 mb-6">
         <p>
-          <span className="text-slate-500">Email:&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <span className="text-slate-500">{translations['AdminInvite.credentialFieldEmail']}&nbsp;&nbsp;&nbsp;&nbsp;</span>
           {email}
         </p>
         <p>
-          <span className="text-slate-500">Password:&nbsp;</span>
+          <span className="text-slate-500">{translations['AdminInvite.credentialFieldPassword']}&nbsp;</span>
           {plainPassword}
         </p>
         <p>
-          <span className="text-slate-500">Login URL:&nbsp;</span>
+          <span className="text-slate-500">{translations['AdminInvite.credentialFieldLoginUrl']}&nbsp;</span>
           {loginUrl}
         </p>
       </div>
@@ -83,17 +84,17 @@ export default function CredentialSheet({
           type="button"
           onClick={handleCopy}
           className="flex items-center gap-1.5 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 transition-colors"
-          aria-label="Copy credentials to clipboard"
+          aria-label={translations['AdminInvite.copyAriaLabel']}
         >
           {copied ? (
             <>
               <CheckIcon className="h-4 w-4 text-green-400" aria-hidden="true" />
-              Copied!
+              {translations['AdminInvite.copiedStatus']}
             </>
           ) : (
             <>
               <ClipboardDocumentIcon className="h-4 w-4" aria-hidden="true" />
-              Copy to clipboard
+              {translations['AdminInvite.copyButton']}
             </>
           )}
         </button>
@@ -103,7 +104,7 @@ export default function CredentialSheet({
           onClick={onDone}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
         >
-          Done
+          {translations['AdminInvite.doneButton']}
         </button>
       </div>
     </div>
