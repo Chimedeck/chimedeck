@@ -3,6 +3,7 @@
 // [why] Each field type needs a different input; this component encapsulates the
 //       type-dispatch so callers only pass the field definition and current value.
 import { useState, useEffect, useCallback } from 'react';
+import translations from './translations/en.json';
 import type { CustomField, CustomFieldValue, DropdownOption } from './types';
 import { apiClient } from '~/common/api/client';
 import { upsertCardFieldValue, deleteCardFieldValue } from './api';
@@ -98,7 +99,7 @@ const CustomFieldValueEditor = ({
           type="text"
           className={inputClass}
           value={draft}
-          placeholder="Enter text…"
+          placeholder={translations['CustomFieldValue.textPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
           onChange={(e) => setDraft(e.target.value)}
@@ -134,7 +135,7 @@ const CustomFieldValueEditor = ({
           type="number"
           className={inputClass}
           value={draft}
-          placeholder="0"
+          placeholder={translations['CustomFieldValue.numberPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
           onChange={(e) => setDraft(e.target.value)}
@@ -189,7 +190,7 @@ const CustomFieldValueEditor = ({
             className="text-xs text-slate-500 hover:text-red-400 transition-colors"
             onClick={handleClear}
           >
-            Clear
+            {translations['CustomFieldValue.clearDate']}
           </button>
         )}
       </div>
@@ -210,7 +211,7 @@ const CustomFieldValueEditor = ({
             save({ value_checkbox: e.target.checked });
           }}
         />
-        <span className="text-sm text-slate-300">{checked ? 'Yes' : 'No'}</span>
+        <span className="text-sm text-slate-300">{checked ? translations['CustomFieldValue.checkboxYes'] : translations['CustomFieldValue.checkboxNo']}</span>
       </label>
     );
   }
@@ -245,7 +246,7 @@ const CustomFieldValueEditor = ({
               }
             }}
           >
-            <option value="">— none —</option>
+            <option value="">{translations['CustomFieldValue.dropdownNone']}</option>
             {options.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.label}

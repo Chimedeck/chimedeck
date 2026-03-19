@@ -3,6 +3,7 @@
 // [why] Self-contained so no changes are needed to the parent Redux container;
 //       the section manages its own field + value state via hooks.
 import { useCallback } from 'react';
+import translations from './translations/en.json';
 import { useCustomFields, useCardCustomFieldValues } from './api';
 import { upsertCardFieldValue, deleteCardFieldValue } from './api';
 import { apiClient } from '~/common/api/client';
@@ -36,7 +37,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
   if (fieldsLoading || valuesLoading) {
     return (
       <div className="text-xs text-slate-500 animate-pulse py-2">
-        Loading custom fields…
+        {translations['CustomFields.loadingCustomFields']}
       </div>
     );
   }
@@ -44,9 +45,9 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
   if (fields.length === 0) return null;
 
   return (
-    <section aria-label="Custom fields">
+    <section aria-label={translations['CustomFields.sectionLabel']}>
       <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-        Custom Fields
+        {translations['CustomFields.panelTitle']}
       </h3>
       <div className="space-y-3">
         {fields.map((field) => {
