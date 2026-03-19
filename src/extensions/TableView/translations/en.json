@@ -1,0 +1,17 @@
+{
+  "TableView.title": "Table",
+  "TableView.noCards": "No cards in this board",
+  "TableView.columnTitle": "Title",
+  "TableView.columnList": "List",
+  "TableView.columnLabels": "Labels",
+  "TableView.columnMembers": "Members",
+  "TableView.columnDueDate": "Due Date",
+  "TableView.columnStartDate": "Start Date",
+  "TableView.columnMoney": "Value",
+  "TableView.ariaSort": "Sort by",
+  "TableView.ariaSortAsc": "Sort ascending",
+  "TableView.ariaSortDesc": "Sort descending",
+  "TableView.filterPlaceholder": "Filter cards…",
+  "TableView.exportCsvButton": "Export CSV",
+  "TableView.ariaOpenCard": "Open card:"
+}
