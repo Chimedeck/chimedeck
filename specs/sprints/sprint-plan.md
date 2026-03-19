@@ -124,6 +124,12 @@
 | [87](./sprint-87.md) | Board Deletion Auto-Refresh | Remove deleted boards from UI without reload; redirect when current board deleted; workspace-wide real-time deletion sync | ⬜ Needs 05 + 17 + 20 |
 | [88](./sprint-88.md) | Expanded Card Activity Tracking | Track `card_created`, `card_moved`, `card_member_assigned` and unassign events in activity feed with real-time updates | ⬜ Needs 07 + 11 + 29 + 73 |
 | [89](./sprint-89.md) | Guest Role Split: VIEWER vs MEMBER | Split board GUEST into read-only VIEWER and write-capable MEMBER (board-scoped only); `guest_type` column on `board_guest_access`; API + UI updates | ⬜ Needs 49 + 80 |
+| **— Internationalisation (i18n) —** | | | |
+| [90](./sprint-90.md) | i18n Phase 1: Comment, Activity & Attachment | Extract all hardcoded strings in Comment, Activity, Attachment/Attachments extensions into `translations/en.json`; bracket-notation access; no library | ⬜ Needs 11 + 21 |
+| [91](./sprint-91.md) | i18n Phase 2: Automation | Extract ~20-component Automation extension (rules, buttons, schedules, run log) into `Automation/translations/en.json` | ⬜ Needs 90 + 61–68 |
+| [92](./sprint-92.md) | i18n Phase 3: Plugins | Extract ~15-component Plugins extension (search bar, register/edit modals, board panel, domain allowlist) into `Plugins/translations/en.json` | ⬜ Needs 90 + 34–39 |
+| [93](./sprint-93.md) | i18n Phase 4: CustomFields, CalendarView, TimelineView & TableView | Create `translations/en.json` for four view/data extensions; extract all labels, aria-labels, and empty-state strings | ⬜ Needs 90 + 52–55 |
+| [94](./sprint-94.md) | i18n Phase 5: Remaining Extensions & Common/Layout | Finish i18n coverage: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, `src/common/`, `src/layout/`; zero hardcoded strings across all of `src/` | ⬜ Needs 91–93 |
 
 ---
 
@@ -255,6 +261,13 @@ Sprint 85 ──────────── Collapsible sidebar drawer using 
 Sprint 86 ──────────── Search permission filtering to hide inaccessible boards
 Sprint 87 ──────────── Auto-refresh board lists after board deletion
 Sprint 88 ──────────── Card activity tracking: create, move, assign/unassign
+Sprint 89 ──────────── Guest role split: VIEWER (read-only) vs MEMBER (board-scoped write)
+──── Internationalisation (i18n) ──────────────────────────────────────────────────
+Sprint 90 ──────────── i18n Phase 1: Comment, Activity, Attachment/Attachments extensions
+Sprint 91 ──────────── i18n Phase 2: Automation extension (rules, buttons, schedules, run log)
+Sprint 92 ──────────── i18n Phase 3: Plugins extension (modals, search bar, board panel)
+Sprint 93 ──────────── i18n Phase 4: CustomFields, CalendarView, TimelineView, TableView
+Sprint 94 ──────────── i18n Phase 5: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, common/layout — zero hardcoded strings
 ```
 
 ---
