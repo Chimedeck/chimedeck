@@ -30,6 +30,7 @@ import {
 } from '~/extensions/OfflineDrafts/hooks/useOfflineCommentDraft';
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import translations from '../translations/en.json';
 
 interface Props {
   boardId?: string;
@@ -45,12 +46,12 @@ interface Props {
 // Map draft status to a human-readable footer label — mirrors description editor.
 function draftStatusLabel(status: DraftStatus): string | null {
   switch (status) {
-    case 'saving_local': return 'Saving draft…';
-    case 'saved_local':  return 'Draft saved locally';
-    case 'syncing':      return 'Syncing draft…';
-    case 'synced':       return 'Synced draft';
-    case 'will_sync_when_online': return 'Will post when back online';
-    case 'sync_failed':  return 'Sync failed';
+    case 'saving_local': return translations['comment.draft.saving'];
+    case 'saved_local':  return translations['comment.draft.savedLocal'];
+    case 'syncing':      return translations['comment.draft.syncing'];
+    case 'synced':       return translations['comment.draft.synced'];
+    case 'will_sync_when_online': return translations['comment.draft.willSync'];
+    case 'sync_failed':  return translations['comment.draft.syncFailed'];
     default:             return null;
   }
 }
@@ -167,10 +168,10 @@ const CommentEditor = ({
   cardId,
   availableAttachments = [],
   initialValue = '',
-  placeholder = 'Write a comment…',
+  placeholder = translations['comment.editor.placeholder'],
   onSubmit,
   onCancel,
-  submitLabel = 'Save',
+  submitLabel = translations['comment.editor.submit'],
 }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -337,7 +338,7 @@ const CommentEditor = ({
     if (!editor) return;
     const trimmed = buildCommentMarkdown(editor, cardAttachmentsRef.current).trim();
     if (!trimmed) {
-      setError('Comment cannot be empty');
+      setError(translations['comment.editor.error.empty']);
       return;
     }
     setError(null);
@@ -357,7 +358,7 @@ const CommentEditor = ({
       editor.commands.clearContent();
       clearDraft();
     } catch {
-      setError('Failed to save comment');
+      setError(translations['comment.editor.error.saveFailed']);
     } finally {
       setSubmitting(false);
     }
@@ -411,7 +412,7 @@ const CommentEditor = ({
         // the insert-attachment picker without waiting for comment submit.
         void flushUploads()
           .then(() => loadCardAttachments())
-          .catch(() => setError('Failed to upload attachment'));
+          .catch(() => setError(translations['comment.editor.error.uploadFailed']));
       }
       e.target.value = '';
     },
@@ -441,8 +442,8 @@ const CommentEditor = ({
         >
           <span>
             {draftStatus === 'will_sync_when_online'
-              ? 'Unsaved comment (will post when back online)'
-              : 'Unsaved comment draft restored'}
+              ? translations['comment.draft.unsavedOffline']
+              : translations['comment.draft.unsaved']}
           </span>
           <button
             type="button"
@@ -450,7 +451,7 @@ const CommentEditor = ({
             onClick={discardDraft}
             data-testid="comment-draft-discard"
           >
-            Discard
+            {translations['comment.draft.discard']}
           </button>
         </div>
       )}
@@ -479,7 +480,7 @@ const CommentEditor = ({
         </div>
         <EditorContent
           editor={editor}
-          aria-label="Comment text"
+          aria-label={translations['comment.editor.ariaLabel']}
           aria-placeholder={placeholder}
           className="px-3 py-2 text-sm [&_.ProseMirror]:min-h-[72px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert [&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0"
         />
@@ -487,7 +488,7 @@ const CommentEditor = ({
         {/* Inline upload previews — shown while files are in-flight */}
         {uploads.length > 0 && (
           <div
-            aria-label="File uploads"
+            aria-label={translations['comment.editor.uploads.ariaLabel']}
             className="flex flex-col gap-1 border-t border-gray-300 dark:border-slate-700 p-2"
           >
             {uploads.map((entry) => (
@@ -512,7 +513,7 @@ const CommentEditor = ({
           {draftStatus === 'sync_failed' ? (
             <>
               <span className="text-red-500 dark:text-red-400">
-                {isSubmitPending ? 'Post failed' : 'Sync failed'}
+                {isSubmitPending ? translations['comment.draft.postFailed'] : translations['comment.draft.syncFailed']}
               </span>
               <button
                 type="button"
@@ -521,7 +522,7 @@ const CommentEditor = ({
                 data-testid="comment-draft-retry-sync"
               >
                 {/* [why] "Retry Post" clarifies the user's pending action vs a background sync retry */}
-                {isSubmitPending ? 'Retry Post' : 'Retry'}
+                {isSubmitPending ? translations['comment.draft.retryPost'] : translations['comment.draft.retry']}
               </button>
               <button
                 type="button"
@@ -529,13 +530,13 @@ const CommentEditor = ({
                 onClick={discardDraft}
                 data-testid="comment-draft-discard-footer"
               >
-                Discard draft
+                {translations['comment.draft.discardFooter']}
               </button>
             </>
           ) : (
             <span className={getDraftStatusClass(draftStatus)}>
               {isSubmitPending && draftStatus === 'will_sync_when_online'
-                ? 'Will post when back online'
+                ? translations['comment.draft.willSync']
                 : draftStatusLabel(draftStatus)}
             </span>
           )}
@@ -548,7 +549,7 @@ const CommentEditor = ({
           disabled={submitting}
           className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {submitting ? 'Saving…' : submitLabel}
+          {submitting ? translations['comment.editor.submitting'] : submitLabel}
         </button>
         {onCancel && (
           <button
@@ -556,7 +557,7 @@ const CommentEditor = ({
             disabled={submitting}
             className="rounded px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100"
           >
-            Cancel
+            {translations['comment.editor.cancel']}
           </button>
         )}
       </div>

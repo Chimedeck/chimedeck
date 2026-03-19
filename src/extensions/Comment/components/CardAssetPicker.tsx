@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Attachment } from '~/extensions/Attachments/types';
 import { getMimeIcon } from '~/extensions/Attachments/utils/mimeIcon';
+import translations from '../translations/en.json';
 
 interface Props {
   /** Already-loaded card attachments passed down from CommentEditor */
@@ -50,11 +51,11 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 px-3 py-2">
         <span className="text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase tracking-wide">
-          Insert attachment
+          {translations['comment.assetPicker.title']}
         </span>
         <button
           type="button"
-          aria-label="Close picker"
+          aria-label={translations['comment.assetPicker.close']}
           onClick={onClose}
           className="rounded p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
         >
@@ -71,19 +72,19 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
           className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
         >
           <ArrowUpTrayIcon className="h-4 w-4 text-gray-400 dark:text-slate-400 flex-shrink-0" />
-          <span>Upload from computer</span>
+          <span>{translations['comment.assetPicker.uploadNew']}</span>
         </button>
       </div>
 
       {/* Existing card assets */}
       <div className="p-2">
         <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500">
-          Card attachments
+          {translations['comment.assetPicker.existingTitle']}
         </p>
 
         {attachments.length === 0 && (
           <p className="px-1 py-3 text-center text-xs text-gray-400 dark:text-slate-500">
-            No attachments yet
+            {translations['comment.assetPicker.empty']}
           </p>
         )}
 
@@ -139,7 +140,7 @@ function AssetRow({ attachment, onInsert }: Readonly<AssetRowProps>) {
 
         {/* Insert label */}
         <span className="flex-shrink-0 text-[10px] text-indigo-500 dark:text-indigo-400 font-medium">
-          Insert
+          {translations['comment.assetPicker.insert']}
         </span>
       </button>
     </li>

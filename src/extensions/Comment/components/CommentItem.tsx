@@ -8,6 +8,7 @@ import {
 } from '~/extensions/Comment/utils/attachmentMarkdown';
 import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
+import translations from '../translations/en.json';
 
 // Configure marked: soft line breaks become <br>, no mangling
 marked.setOptions({ breaks: true, gfm: true });
@@ -65,9 +66,9 @@ function buildBoardProps(boardId?: string): { boardId: string } | Record<string,
 /** Render a relative time string. */
 function relativeTime(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  if (diff < 60) return translations['comment.relativeTime.justNow'];
+  if (diff < 3600) return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']}`;
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -98,7 +99,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const canEdit = isOwner;
   const canDelete = isOwner || isAdmin;
 
-  const displayName = comment.author_name || comment.author_email || 'Unknown';
+  const displayName = comment.author_name || comment.author_email || translations['comment.author.unknown'];
   const initials = getInitials(comment.author_name, comment.author_email);
   const color = avatarColor(comment.user_id);
   const avatarUrl = comment.author_avatar_url ?? null;
@@ -109,7 +110,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this comment?')) return;
+    if (!confirm(translations['comment.confirm.delete'])) return;
     setDeleting(true);
     try {
       await onDelete(comment.id);
@@ -138,7 +139,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
           <span className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</span>
           <span className="text-xs text-gray-500 dark:text-gray-400">{relativeTime(comment.created_at)}</span>
           {comment.version > 1 && (
-            <span className="text-xs italic text-gray-400">(edited)</span>
+            <span className="text-xs italic text-gray-400">{translations['comment.edited']}</span>
           )}
         </div>
 
@@ -151,7 +152,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             initialValue={comment.content}
             onSubmit={handleEdit}
             onCancel={() => setEditing(false)}
-            submitLabel="Update"
+            submitLabel={translations['comment.editor.update']}
           />
         ) : (
           <div
@@ -183,7 +184,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 onClick={() => setEditing(true)}
                 className="hover:text-gray-800 dark:hover:text-gray-200 hover:underline"
               >
-                Edit
+                {translations['comment.action.edit']}
               </button>
             )}
             {canEdit && canDelete && <span>·</span>}
@@ -193,7 +194,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 disabled={deleting}
                 className="hover:text-red-500 hover:underline disabled:opacity-50"
               >
-                {deleting ? '…' : 'Delete'}
+                {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
               </button>
             )}
           </div>
