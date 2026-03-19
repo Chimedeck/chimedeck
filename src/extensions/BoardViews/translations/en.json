@@ -1,0 +1,21 @@
+{
+  "BoardViews.ariaViewSwitcher": "Switch board view",
+  "BoardViews.kanban": "Kanban",
+  "BoardViews.table": "Table",
+  "BoardViews.calendar": "Calendar",
+  "BoardViews.timeline": "Timeline",
+  "BoardViews.commentsHeading": "Comments",
+  "BoardViews.noComments": "No comments yet.",
+  "BoardViews.loadingComments": "Loading…",
+  "BoardViews.loadMoreComments": "Load more",
+  "BoardViews.errorLoadComments": "Failed to load comments.",
+  "BoardViews.archivedCardsHeading": "Archived Cards",
+  "BoardViews.loadingArchivedCards": "Loading…",
+  "BoardViews.noArchivedCards": "No archived cards.",
+  "BoardViews.errorLoadArchivedCards": "Failed to load archived cards.",
+  "BoardViews.errorLoadActivity": "Failed to load activity.",
+  "BoardViews.restoreButton": "Restore",
+  "BoardViews.restoringButton": "Restoring…",
+  "BoardViews.errorRestoreCard": "Failed to restore card.",
+  "BoardViews.inList": "in"
+}

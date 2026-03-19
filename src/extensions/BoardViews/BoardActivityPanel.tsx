@@ -4,6 +4,7 @@ import { getBoardActivity } from './api';
 import type { BoardActivityEntry } from './types';
 import ActivityFeed from '~/extensions/Activity/components/ActivityFeed';
 import type { Activity } from '~/extensions/Activity/components/ActivityItem';
+import translations from './translations/en.json';
 
 interface Props {
   boardId: string;
@@ -40,7 +41,7 @@ const BoardActivityPanel = ({ boardId }: Props) => {
         setCursor(res.metadata.cursor);
         setHasMore(res.metadata.hasMore);
       } catch {
-        setError('Failed to load activity.');
+        setError(translations['BoardViews.errorLoadActivity']);
       } finally {
         setLoading(false);
       }

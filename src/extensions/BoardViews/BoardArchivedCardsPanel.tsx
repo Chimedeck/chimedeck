@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { getArchivedCards } from './api';
 import { apiClient } from '~/common/api/client';
 import type { ArchivedCard } from './types';
+import translations from './translations/en.json';
 
 interface Props {
   boardId: string;
@@ -23,7 +24,7 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
       const res = await getArchivedCards({ boardId });
       setCards(res.data);
     } catch {
-      setError('Failed to load archived cards.');
+      setError(translations['BoardViews.errorLoadArchivedCards']);
     } finally {
       setLoading(false);
     }
@@ -41,7 +42,7 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
       setCards((prev) => prev.filter((c) => c.id !== cardId));
       onCardUnarchived?.();
     } catch {
-      setError('Failed to restore card.');
+      setError(translations['BoardViews.errorRestoreCard']);
     } finally {
       setRestoringId(null);
     }
@@ -53,12 +54,12 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
 
   return (
     <div className="p-4 space-y-2">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">Archived Cards</h3>
+      <h3 className="text-xs font-semibold uppercase text-gray-500">{translations['BoardViews.archivedCardsHeading']}</h3>
 
-      {loading && <p className="text-sm text-gray-400">Loading…</p>}
+      {loading && <p className="text-sm text-gray-400">{translations['BoardViews.loadingArchivedCards']}</p>}
 
       {!loading && cards.length === 0 && (
-        <p className="text-sm italic text-gray-400">No archived cards.</p>
+        <p className="text-sm italic text-gray-400">{translations['BoardViews.noArchivedCards']}</p>
       )}
 
       {cards.map((card) => (
@@ -68,14 +69,14 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
         >
           <div>
             <p className="font-medium text-gray-200">{card.title}</p>
-            <p className="text-xs text-gray-500">in {card.list_title}</p>
+            <p className="text-xs text-gray-500">{translations['BoardViews.inList']} {card.list_title}</p>
           </div>
           <button
             disabled={restoringId === card.id}
             onClick={() => handleRestore(card.id)}
             className="ml-4 rounded px-2 py-1 text-xs text-blue-400 hover:bg-slate-700 disabled:opacity-50"
           >
-            {restoringId === card.id ? 'Restoring…' : 'Restore'}
+            {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
           </button>
         </div>
       ))}
