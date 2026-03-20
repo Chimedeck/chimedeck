@@ -22,7 +22,7 @@ export async function patchCard({
   api: ApiClient;
   cardId: string;
   // amount is number | null at the API boundary (server enforces numeric)
-  fields: Partial<Omit<Pick<Card, 'title' | 'description' | 'due_date' | 'due_complete' | 'start_date' | 'archived' | 'amount' | 'currency'>, 'amount'>> & { amount?: number | null };
+  fields: Partial<Omit<Pick<Card, 'title' | 'description' | 'due_date' | 'due_complete' | 'start_date' | 'archived' | 'amount' | 'currency' | 'cover_attachment_id' | 'cover_color' | 'cover_size'>, 'amount'>> & { amount?: number | null };
 }): Promise<Card> {
   const res = await api.patch<{ data: Card }>(`/cards/${cardId}`, fields);
   // interceptor returns { data: Card } as the resolved value

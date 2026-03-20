@@ -1,9 +1,9 @@
 // CardModal — full detail Radix Dialog modal for viewing and editing a card.
 // URL-driven: ?card=:id opens the modal; closing clears the query param.
 // Two-column layout: left = content, right = ActivityFeed (ResizablePanels).
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Card, Label, CardMember, Checklist } from '../api';
 import CardTitle from './CardTitle';
 import CardDescriptionTiptap from './CardDescriptionTiptap';
@@ -16,6 +16,7 @@ import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginB
 import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
 import CustomFieldsSection from '../../CustomFields/CustomFieldsSection';
 import { AttachmentPanel } from '../../Attachments/components/AttachmentPanel';
+import { useAttachmentUpload } from '../../Attachments/hooks/useAttachmentUpload';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -65,9 +66,25 @@ interface Props {
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
   onMoneySave: (amount: string | null, currency: string) => Promise<void>;
+  onCoverColorChange: (color: string | null) => void;
+  onCoverSizeChange: (size: 'SMALL' | 'FULL') => void;
+  onCoverAttachmentChange: (attachmentId: string | null) => void;
   /** True when the current user is a VIEWER guest — hides write-action controls. */
   isViewerGuest?: boolean;
 }
+
+const COVER_COLORS = [
+  '#22C55E',
+  '#EAB308',
+  '#EA580C',
+  '#EF4444',
+  '#A855F7',
+  '#2563EB',
+  '#0891B2',
+  '#4D7C0F',
+  '#DB2777',
+  '#6B7280',
+];
 
 const CardModal = ({
   boardId,
@@ -108,11 +125,68 @@ const CardModal = ({
   onEditComment,
   onDeleteComment,
   onMoneySave,
+  onCoverColorChange,
+  onCoverSizeChange,
+  onCoverAttachmentChange,
   isViewerGuest = false,
 }: Props) => {
   const isReadOnly = card.archived;
+  const canEditCover = !isReadOnly && !isViewerGuest;
   // Activity panel visibility — toggled from the bottom bar
   const [activityVisible, setActivityVisible] = useState(true);
+  const [coverMenuOpen, setCoverMenuOpen] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const coverMenuRef = useRef<HTMLDivElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploads: coverUploads, upload: uploadCover } = useAttachmentUpload({
+    cardId: card.id,
+    onSuccess: (attachment) => {
+      onCoverAttachmentChange(attachment.id);
+      setCoverUploadError(null);
+    },
+    onError: (_clientId, message) => {
+      setCoverUploadError(message);
+    },
+  });
+
+  const coverUploading = coverUploads.some((entry) =>
+    entry.phase === 'requesting-url' || entry.phase === 'uploading' || entry.phase === 'confirming',
+  );
+
+  useEffect(() => {
+    if (!coverMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setCoverMenuOpen(false);
+    };
+    const onMouseDown = (event: MouseEvent) => {
+      if (coverMenuRef.current && !coverMenuRef.current.contains(event.target as Node)) {
+        setCoverMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [coverMenuOpen]);
+
+  const hasCover = Boolean(card.cover_image_url || card.cover_color);
+
+  const handlePickCoverFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setCoverUploadError('Only image files can be used as a card cover.');
+      event.target.value = '';
+      return;
+    }
+    setCoverUploadError(null);
+    uploadCover([file]);
+    event.target.value = '';
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -129,6 +203,30 @@ const CardModal = ({
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePickCoverFile}
+            />
+
+            {hasCover && (
+              <div
+                className={`w-full overflow-hidden rounded-t-2xl ${(card.cover_size ?? 'SMALL') === 'FULL' ? 'h-44' : 'h-28'}`}
+                style={card.cover_image_url
+                  ? {
+                    backgroundImage: `url(${card.cover_image_url})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                  }
+                  : { backgroundColor: card.cover_color ?? '#334155' }}
+              >
+                {card.cover_image_url && <span className="sr-only">Card cover</span>}
+              </div>
+            )}
+
             {/* Header */}
             <div className="flex items-start gap-2 p-5 pb-2">
               <div className="flex-1 min-w-0">
@@ -141,6 +239,89 @@ const CardModal = ({
                   in list <span className="text-gray-500 dark:text-slate-400 font-medium">{listTitle}</span>{' '}
                   · {boardTitle}
                 </p>
+              </div>
+              <div className="relative" ref={coverMenuRef}>
+                <button
+                  type="button"
+                  className="rounded-lg px-2.5 py-2 text-sm text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors disabled:opacity-40"
+                  onClick={() => setCoverMenuOpen((openState) => !openState)}
+                  disabled={!canEditCover}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <PhotoIcon className="h-4 w-4" aria-hidden="true" />
+                    Cover
+                  </span>
+                </button>
+
+                {coverMenuOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                      Size
+                    </p>
+                    <div className="mb-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onCoverSizeChange('SMALL')}
+                        className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'SMALL'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                      >
+                        Compact
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onCoverSizeChange('FULL')}
+                        className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'FULL'
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                      >
+                        Large
+                      </button>
+                    </div>
+
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                      Colors
+                    </p>
+                    <div className="mb-3 grid grid-cols-5 gap-2">
+                      {COVER_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => onCoverColorChange(color)}
+                          className={`h-7 w-full rounded ${card.cover_color === color ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : ''}`}
+                          style={{ backgroundColor: color }}
+                          aria-label={`Set card cover color ${color}`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={coverUploading}
+                      className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      {coverUploading ? 'Uploading cover...' : 'Upload a cover image'}
+                    </button>
+
+                    {(card.cover_attachment_id || card.cover_color) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onCoverAttachmentChange(null);
+                          onCoverColorChange(null);
+                        }}
+                        className="w-full rounded-md px-3 py-1.5 text-xs text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                      >
+                        Remove cover
+                      </button>
+                    )}
+
+                    {coverUploadError && (
+                      <p className="mt-2 text-xs text-red-500">{coverUploadError}</p>
+                    )}
+                  </div>
+                )}
               </div>
               <Dialog.Close
                 className="rounded-lg p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"

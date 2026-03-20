@@ -56,6 +56,9 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
     }
   }
 
+  // Ensure card cover does not point to a removed attachment.
+  await db('cards').where({ cover_attachment_id: attachmentId }).update({ cover_attachment_id: null });
+
   await db('attachments').where({ id: attachmentId }).delete();
 
   await writeEvent({

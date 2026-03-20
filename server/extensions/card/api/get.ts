@@ -7,6 +7,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
 import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
 export async function handleGetCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -102,8 +103,10 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
 
   const customFieldValues = await db('card_custom_field_values').where({ card_id: cardId });
 
+  const cardWithCover = await resolveCoverImageUrl(card as { id: string; cover_attachment_id?: string | null });
+
   return Response.json({
-    data: card,
+    data: cardWithCover,
     includes: {
       list,
       board: { id: board.id, title: board.title },

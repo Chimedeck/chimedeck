@@ -6,6 +6,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { resolveCoverImageUrls } from '../../../common/cards/cover';
 
 export async function handleListCards(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -44,6 +45,13 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
       'c.position',
       'c.archived',
       'c.due_date',
+      'c.due_complete',
+      'c.start_date',
+      'c.amount',
+      'c.currency',
+      'c.cover_attachment_id',
+      'c.cover_color',
+      'c.cover_size',
       'c.created_at',
       'c.updated_at',
       db.raw(`
@@ -78,5 +86,9 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
     })),
   );
 
-  return Response.json({ data });
+  const cardsWithCovers = await resolveCoverImageUrls(
+    data as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
+  );
+
+  return Response.json({ data: cardsWithCovers });
 }

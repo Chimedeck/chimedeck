@@ -77,6 +77,8 @@ const CardItem = ({
 
   const labels = card.labels ?? [];
   const members = card.members ?? [];
+  const hasCover = Boolean(card.cover_image_url || card.cover_color);
+  const coverHeightClass = card.cover_size === 'FULL' ? 'h-28' : 'h-20';
 
   return (
     <div
@@ -84,7 +86,7 @@ const CardItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700/50 rounded-lg p-2.5 cursor-pointer transition-colors${
+      className={`bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700/50 rounded-lg overflow-hidden cursor-pointer transition-colors${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90' : ''
       }`}
       role="button"
@@ -95,53 +97,73 @@ const CardItem = ({
         if (e.key === 'Enter' || e.key === ' ') onClick?.(card.id);
       }}
     >
-      {labels.length > 0 && (
-        <CardLabelChips
-          labels={labels}
-          expanded={labelsExpanded}
-          onToggle={onToggleLabels ?? (() => {})}
-        />
-      )}
-      <p className="text-gray-800 dark:text-slate-200 text-sm leading-snug break-words">{card.title}</p>
-      {card.due_date && (() => {
-        const now = Date.now();
-        const due = new Date(card.due_date).getTime();
-        const done = card.due_complete;
-        const overdue = !done && due < now;
-        const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
-        const pillColor = getDuePillClass(done, overdue, dueSoon);
-        return (
-          <p className={`mt-1 inline-flex items-center gap-1 rounded px-1 text-xs ${pillColor}`}>
-            <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-            {new Date(card.due_date).toLocaleDateString()}
-          </p>
-        );
-      })()}
-      {card.amount && (
-        <div className="mt-1">
-          <CardMoneyBadge amount={card.amount} currency={card.currency} />
+      {hasCover && (
+        <div
+          className={`w-full ${coverHeightClass}`}
+          style={card.cover_image_url
+            ? undefined
+            : { backgroundColor: card.cover_color ?? '#334155' }}
+        >
+          {card.cover_image_url && (
+            <img
+              src={card.cover_image_url}
+              alt="Card cover"
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          )}
         </div>
       )}
-      {members.length > 0 && (
-        <div className="mt-1.5">
-          <CardMemberAvatars
-            members={members}
-            cardId={card.id}
-            currentUserId={currentUser?.id ?? ''}
-            onRemoveMember={handleRemoveMember}
+
+      <div className="p-2.5">
+        {labels.length > 0 && (
+          <CardLabelChips
+            labels={labels}
+            expanded={labelsExpanded}
+            onToggle={onToggleLabels ?? (() => {})}
           />
-        </div>
-      )}
-      <CardPluginBadges
-        cardId={card.id}
-        listId={card.list_id}
-        cardTitle={card.title}
-        listTitle={listTitle}
-        boardTitle={boardTitle}
-      />
-      {boardId && (
-        <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
-      )}
+        )}
+        <p className="text-gray-800 dark:text-slate-200 text-sm leading-snug break-words">{card.title}</p>
+        {card.due_date && (() => {
+          const now = Date.now();
+          const due = new Date(card.due_date).getTime();
+          const done = card.due_complete;
+          const overdue = !done && due < now;
+          const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
+          const pillColor = getDuePillClass(done, overdue, dueSoon);
+          return (
+            <p className={`mt-1 inline-flex items-center gap-1 rounded px-1 text-xs ${pillColor}`}>
+              <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+              {new Date(card.due_date).toLocaleDateString()}
+            </p>
+          );
+        })()}
+        {card.amount && (
+          <div className="mt-1">
+            <CardMoneyBadge amount={card.amount} currency={card.currency} />
+          </div>
+        )}
+        {members.length > 0 && (
+          <div className="mt-1.5">
+            <CardMemberAvatars
+              members={members}
+              cardId={card.id}
+              currentUserId={currentUser?.id ?? ''}
+              onRemoveMember={handleRemoveMember}
+            />
+          </div>
+        )}
+        <CardPluginBadges
+          cardId={card.id}
+          listId={card.list_id}
+          cardTitle={card.title}
+          {...(typeof listTitle === 'string' ? { listTitle } : {})}
+          {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+        />
+        {boardId && customFieldValues && (
+          <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
+        )}
+      </div>
     </div>
   );
 };

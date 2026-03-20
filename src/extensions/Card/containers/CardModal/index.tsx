@@ -216,7 +216,11 @@ const CardModalContainer = () => {
       };
       dispatch(cardDetailSliceActions.applyOptimisticChecklistAdd({ mutationId: tempId, checklist: tempChecklist }));
       try {
-        const checklist = await createChecklist({ api, cardId: card.id, title });
+        const checklist = await createChecklist({
+          api,
+          cardId: card.id,
+          ...(typeof title === 'string' ? { title } : {}),
+        });
         dispatch(cardDetailSliceActions.confirmChecklistAdd({ mutationId: tempId, checklist }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId: tempId }));
@@ -416,6 +420,61 @@ const CardModalContainer = () => {
     [api, card, dispatch],
   );
 
+  const handleCoverColorChange = useCallback(
+    (cover_color: string | null) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({
+        mutationId,
+        fields: { cover_color, cover_attachment_id: null, cover_image_url: null },
+      }));
+      patchCard({ api, cardId: card.id, fields: { cover_color, cover_attachment_id: null } })
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
+  const handleCoverSizeChange = useCallback(
+    (cover_size: 'SMALL' | 'FULL') => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { cover_size } }));
+      patchCard({ api, cardId: card.id, fields: { cover_size } })
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
+  const handleCoverAttachmentChange = useCallback(
+    (cover_attachment_id: string | null) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      const optimisticFields = cover_attachment_id
+        ? { cover_attachment_id, cover_color: null, cover_image_url: null }
+        : { cover_attachment_id: null, cover_image_url: null };
+      const apiFields = cover_attachment_id
+        ? { cover_attachment_id, cover_color: null }
+        : { cover_attachment_id: null };
+
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: optimisticFields }));
+      patchCard({ api, cardId: card.id, fields: apiFields })
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
   // ── Comments ───────────────────────────────────────────────────────────
   const handleAddComment = useCallback(
     async (content: string) => {
@@ -508,6 +567,9 @@ const CardModalContainer = () => {
       onEditComment={handleEditComment}
       onDeleteComment={handleDeleteComment}
       onMoneySave={handleMoneySave}
+      onCoverColorChange={handleCoverColorChange}
+      onCoverSizeChange={handleCoverSizeChange}
+      onCoverAttachmentChange={handleCoverAttachmentChange}
       isViewerGuest={isViewerGuest}
     />
   );

@@ -12,6 +12,10 @@ export interface Card {
   start_date: string | null;
   amount: string | null;
   currency: string | null;
+  cover_attachment_id?: string | null;
+  cover_color?: string | null;
+  cover_size?: 'SMALL' | 'FULL';
+  cover_image_url?: string | null;
   created_at: string;
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;
@@ -105,14 +109,27 @@ export async function updateCard({
   title,
   description,
   due_date,
+  cover_attachment_id,
+  cover_color,
+  cover_size,
 }: {
   api: { patch: <T>(url: string, data: unknown) => Promise<T> };
   cardId: string;
   title?: string;
   description?: string;
   due_date?: string | null;
+  cover_attachment_id?: string | null;
+  cover_color?: string | null;
+  cover_size?: 'SMALL' | 'FULL';
 }): Promise<{ data: Card }> {
-  return api.patch<{ data: Card }>(`/cards/${cardId}`, { title, description, due_date });
+  return api.patch<{ data: Card }>(`/cards/${cardId}`, {
+    title,
+    description,
+    due_date,
+    cover_attachment_id,
+    cover_color,
+    cover_size,
+  });
 }
 
 export async function archiveCard({
