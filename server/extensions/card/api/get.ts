@@ -49,9 +49,33 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     memberRows as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
   );
 
+  const checklistRows = await db('checklists')
+    .where({ card_id: cardId })
+    .orderBy('position', 'asc');
+
   const checklistItems = await db('checklist_items')
     .where({ card_id: cardId })
     .orderBy('position', 'asc');
+
+  // Group items under their parent checklist; fall back to a virtual
+  // default checklist for items that pre-date the migration.
+  const itemsByChecklistId = new Map<string, typeof checklistItems>();
+  for (const item of checklistItems) {
+    const key = item.checklist_id ?? '__ungrouped__';
+    if (!itemsByChecklistId.has(key)) itemsByChecklistId.set(key, []);
+    itemsByChecklistId.get(key)!.push(item);
+  }
+
+  const checklists = checklistRows.map((cl) => ({
+    ...cl,
+    items: itemsByChecklistId.get(cl.id) ?? [],
+  }));
+
+  // Append any ungrouped items as a fallback checklist so old data is never lost
+  const ungrouped = itemsByChecklistId.get('__ungrouped__') ?? [];
+  if (ungrouped.length > 0) {
+    checklists.push({ id: '__ungrouped__', card_id: cardId, title: 'Checklist', position: 'z', items: ungrouped });
+  }
 
   const url = new URL(req.url);
   const includes = url.searchParams.get('include')?.split(',') ?? [];
@@ -85,6 +109,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
       board: { id: board.id, title: board.title },
       labels: labelRows,
       members,
+      checklists,
       checklistItems,
       comments: [],
       attachments: [],

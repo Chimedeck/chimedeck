@@ -3,6 +3,7 @@ import {
   applyBoardVisibilityFromList,
   applyBoardVisibilityFromCard,
   applyBoardVisibilityFromChecklistItem,
+  applyBoardVisibilityFromChecklist,
 } from '../../../middlewares/boardVisibility';
 import { handleCreateCard } from './create';
 import { handleListCards } from './list';
@@ -15,6 +16,12 @@ import { handleDeleteCard } from './delete';
 import { handleAttachLabel, handleDetachLabel } from './labels';
 import { handleAssignMember, handleRemoveMember } from './members';
 import { handleCreateChecklistItem, handleUpdateChecklistItem, handleDeleteChecklistItem } from './checklist';
+import {
+  handleCreateChecklist,
+  handleUpdateChecklist,
+  handleDeleteChecklist,
+  handleCreateChecklistItemInGroup,
+} from './checklistGroup';
 import { handleListDueCards } from './dueDate';
 import { handlePatchCardDescription } from './patch';
 
@@ -51,6 +58,23 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
 
     if (req.method === 'PATCH') return handleUpdateChecklistItem(req, itemId);
     if (req.method === 'DELETE') return handleDeleteChecklistItem(req, itemId);
+  }
+
+  // Checklist group routes: /api/v1/checklists/:id[/...]
+  const checklistGroupMatch = pathname.match(/^\/api\/v1\/checklists\/([^/]+)(\/.*)?$/);
+  if (checklistGroupMatch) {
+    const checklistId = checklistGroupMatch[1] as string;
+    const sub = checklistGroupMatch[2] ?? '';
+
+    const visibilityError = await applyBoardVisibilityFromChecklist(req, checklistId);
+    if (visibilityError) return visibilityError;
+
+    // PATCH /api/v1/checklists/:id
+    if (sub === '' && req.method === 'PATCH') return handleUpdateChecklist(req, checklistId);
+    // DELETE /api/v1/checklists/:id
+    if (sub === '' && req.method === 'DELETE') return handleDeleteChecklist(req, checklistId);
+    // POST /api/v1/checklists/:id/items
+    if (sub === '/items' && req.method === 'POST') return handleCreateChecklistItemInGroup(req, checklistId);
   }
 
   // Card-scoped routes: /api/v1/cards/:id[/...]
@@ -102,8 +126,11 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
       return handleRemoveMember(req, cardId, removeMemberMatch[1] as string);
     }
 
-    // POST /api/v1/cards/:id/checklist — add checklist item
+    // POST /api/v1/cards/:id/checklist — add checklist item (legacy; adds to first checklist)
     if (sub === '/checklist' && req.method === 'POST') return handleCreateChecklistItem(req, cardId);
+
+    // POST /api/v1/cards/:id/checklists — create a new named checklist
+    if (sub === '/checklists' && req.method === 'POST') return handleCreateChecklist(req, cardId);
   }
 
   return null;

@@ -34,9 +34,18 @@ export interface CardMember {
 export interface ChecklistItem {
   id: string;
   card_id: string;
+  checklist_id: string | null;
   title: string;
   checked: boolean;
   position: string;
+}
+
+export interface Checklist {
+  id: string;
+  card_id: string;
+  title: string;
+  position: string;
+  items: ChecklistItem[];
 }
 
 export interface CardDetail extends Card {
@@ -45,6 +54,7 @@ export interface CardDetail extends Card {
     board: { id: string; title: string };
     labels: Label[];
     members: CardMember[];
+    checklists: Checklist[];
     checklistItems: ChecklistItem[];
     comments: unknown[];
     attachments: unknown[];

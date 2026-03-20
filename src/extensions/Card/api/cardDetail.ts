@@ -9,7 +9,7 @@ export type ApiClient = {
   delete: <T>(url: string) => Promise<T>;
 };
 
-import type { Card, ChecklistItem, Label } from '../api';
+import type { Card, ChecklistItem, Checklist, Label } from '../api';
 
 // NOTE: The apiClient interceptor auto-unwraps response.data, so all API calls
 // return the inner payload directly (e.g. Card, not { data: Card }).
@@ -74,6 +74,55 @@ export async function deleteChecklistItemById({
   itemId: string;
 }): Promise<void> {
   return api.delete(`/checklist-items/${itemId}`);
+}
+
+export async function createChecklist({
+  api,
+  cardId,
+  title,
+}: {
+  api: ApiClient;
+  cardId: string;
+  title?: string;
+}): Promise<Checklist> {
+  const res = await api.post<{ data: Checklist }>(`/cards/${cardId}/checklists`, { title: title || 'Checklist' });
+  return (res as unknown as { data: Checklist }).data;
+}
+
+export async function patchChecklist({
+  api,
+  checklistId,
+  title,
+}: {
+  api: ApiClient;
+  checklistId: string;
+  title: string;
+}): Promise<Checklist> {
+  const res = await api.patch<{ data: Checklist }>(`/checklists/${checklistId}`, { title });
+  return (res as unknown as { data: Checklist }).data;
+}
+
+export async function deleteChecklistById({
+  api,
+  checklistId,
+}: {
+  api: ApiClient;
+  checklistId: string;
+}): Promise<void> {
+  return api.delete(`/checklists/${checklistId}`);
+}
+
+export async function postChecklistItemInGroup({
+  api,
+  checklistId,
+  title,
+}: {
+  api: ApiClient;
+  checklistId: string;
+  title: string;
+}): Promise<ChecklistItem> {
+  const res = await api.post<{ data: ChecklistItem }>(`/checklists/${checklistId}/items`, { title });
+  return (res as unknown as { data: ChecklistItem }).data;
 }
 
 export async function postLabelAssign({

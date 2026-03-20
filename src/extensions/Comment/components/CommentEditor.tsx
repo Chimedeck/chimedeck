@@ -295,6 +295,13 @@ const CommentEditor = ({
       notifyDraftChange(buildCommentMarkdown(editor, cardAttachmentsRef.current));
     },
     editorProps: {
+      // [why] Apply prose classes directly on ProseMirror so Tailwind Typography
+      // descendant selectors (.prose ul, .prose blockquote, etc.) work correctly.
+      // Using [&_.ProseMirror]:prose variant only applies the root .prose properties,
+      // not the child-element selectors that list/blockquote/heading styling depends on.
+      attributes: {
+        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-gray-900 dark:text-slate-100',
+      },
       // [why] Intercept file drops directly onto the editor so images dropped
       // anywhere in the text area are uploaded and inserted at the drop position.
       handleDrop(view, event, _slice, moved) {
@@ -482,7 +489,7 @@ const CommentEditor = ({
           editor={editor}
           aria-label={translations['comment.editor.ariaLabel']}
           aria-placeholder={placeholder}
-          className="px-3 py-2 text-sm [&_.ProseMirror]:min-h-[72px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert [&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0"
+          className="px-3 py-2 text-sm [&_.ProseMirror]:min-h-[72px] [&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0"
         />
 
         {/* Inline upload previews — shown while files are in-flight */}

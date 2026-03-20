@@ -73,6 +73,33 @@ const COMMANDS: CommandDef[] = [
       editor.chain().focus().toggleOrderedList().run();
     },
   },
+  {
+    id: 'heading-1',
+    label: 'Heading 1',
+    keywords: ['heading', 'h1', 'title', '#'],
+    icon: <span className="text-xs font-bold shrink-0 w-3.5 text-center">H1</span>,
+    execute: (editor) => {
+      editor.chain().focus().toggleHeading({ level: 1 }).run();
+    },
+  },
+  {
+    id: 'heading-2',
+    label: 'Heading 2',
+    keywords: ['heading', 'h2', 'subtitle', '##'],
+    icon: <span className="text-xs font-bold shrink-0 w-3.5 text-center">H2</span>,
+    execute: (editor) => {
+      editor.chain().focus().toggleHeading({ level: 2 }).run();
+    },
+  },
+  {
+    id: 'heading-3',
+    label: 'Heading 3',
+    keywords: ['heading', 'h3', '###'],
+    icon: <span className="text-xs font-semibold shrink-0 w-3.5 text-center">H3</span>,
+    execute: (editor) => {
+      editor.chain().focus().toggleHeading({ level: 3 }).run();
+    },
+  },
 ];
 
 const matchesQuery = (cmd: CommandDef, query: string): boolean => {
@@ -143,7 +170,10 @@ const CommandMenu = ({ editor, onClose }: Props) => {
   const isActive = (cmd: CommandDef) =>
     (cmd.id === 'code-snippet' && editor?.isActive('codeBlock')) ||
     (cmd.id === 'quote' && editor?.isActive('blockquote')) ||
-    (cmd.id === 'numbered-list' && editor?.isActive('orderedList'));
+    (cmd.id === 'numbered-list' && editor?.isActive('orderedList')) ||
+    (cmd.id === 'heading-1' && editor?.isActive('heading', { level: 1 })) ||
+    (cmd.id === 'heading-2' && editor?.isActive('heading', { level: 2 })) ||
+    (cmd.id === 'heading-3' && editor?.isActive('heading', { level: 3 }));
 
   return (
     <div

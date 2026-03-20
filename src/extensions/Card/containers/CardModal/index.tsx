@@ -10,7 +10,7 @@ import {
   selectCardDetail,
   selectCardDetailLabels,
   selectCardDetailMembers,
-  selectCardDetailChecklist,
+  selectCardDetailChecklists,
   selectCardDetailComments,
   selectCardDetailActivities,
   selectCardDetailStatus,
@@ -20,9 +20,12 @@ import CardModal from '../../components/CardModal';
 import {
   patchCard,
   archiveCardToggle,
-  postChecklistItem,
   patchChecklistItem,
   deleteChecklistItemById,
+  createChecklist,
+  patchChecklist,
+  deleteChecklistById,
+  postChecklistItemInGroup,
   postLabelAssign,
   deleteLabelAssign,
   postMemberAssign,
@@ -35,7 +38,7 @@ import {
   patchComment,
   deleteComment,
 } from '../../api/cardDetail';
-import type { Label } from '../../api';
+import type { Label, Checklist, ChecklistItem } from '../../api';
 import { boardSliceActions, selectBoard } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
@@ -53,7 +56,7 @@ const CardModalContainer = () => {
   const card = useAppSelector(selectCardDetail);
   const labels = useAppSelector(selectCardDetailLabels);
   const members = useAppSelector(selectCardDetailMembers);
-  const checklistItems = useAppSelector(selectCardDetailChecklist);
+  const checklists = useAppSelector(selectCardDetailChecklists);
   const comments = useAppSelector(selectCardDetailComments);
   const activities = useAppSelector(selectCardDetailActivities);
   const status = useAppSelector(selectCardDetailStatus);
@@ -181,42 +184,39 @@ const CardModalContainer = () => {
   }, [api, card, dispatch, handleClose]);
 
   const handleCopyLink = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).catch(() => {});
+    globalThis.navigator.clipboard.writeText(globalThis.location.href).catch(() => {});
   }, []);
 
-  // ── Checklist ───────────────────────────────────────────────────────────
-  const handleChecklistAdd = useCallback(
-    async (title: string) => {
+  // ── Checklist group CRUD ────────────────────────────────────────────────
+  const handleCreateChecklist = useCallback(
+    async (title?: string) => {
       if (!card) return;
-      const tempId = `temp-${nextMutationId()}`;
-      const mutationId = tempId;
-      const tempItem = {
+      const tempId = `temp-cl-${nextMutationId()}`;
+      const tempChecklist: Checklist = {
         id: tempId,
         card_id: card.id,
-        title,
-        checked: false,
+        title: title ?? 'Checklist',
         position: String(Date.now()),
+        items: [],
       };
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistAdd({ mutationId, item: tempItem }));
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistAdd({ mutationId: tempId, checklist: tempChecklist }));
       try {
-        const item = await postChecklistItem({ api, cardId: card.id, title });
-        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, item }));
+        const checklist = await createChecklist({ api, cardId: card.id, title });
+        dispatch(cardDetailSliceActions.confirmChecklistAdd({ mutationId: tempId, checklist }));
       } catch {
-        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId: tempId }));
       }
     },
     [api, card, dispatch],
   );
 
-  const handleChecklistToggle = useCallback(
-    async (itemId: string, checked: boolean) => {
+  const handleRenameChecklist = useCallback(
+    async (checklistId: string, title: string) => {
       const mutationId = nextMutationId();
-      dispatch(
-        cardDetailSliceActions.applyOptimisticChecklistToggle({ mutationId, itemId, checked }),
-      );
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistRename({ mutationId, checklistId, title }));
       try {
-        const item = await patchChecklistItem({ api, itemId, fields: { checked } });
-        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, item }));
+        await patchChecklist({ api, checklistId, title });
+        dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
@@ -224,25 +224,75 @@ const CardModalContainer = () => {
     [api, dispatch],
   );
 
-  const handleChecklistRename = useCallback(
-    async (itemId: string, title: string) => {
+  const handleDeleteChecklist = useCallback(
+    async (checklistId: string) => {
       const mutationId = nextMutationId();
-      // No optimistic rename — just fire and refetch on error
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistDelete({ mutationId, checklistId }));
       try {
-        const item = await patchChecklistItem({ api, itemId, fields: { title } });
-        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, item }));
+        await deleteChecklistById({ api, checklistId });
+        dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
       } catch {
-        // Revert by re-fetching
-        if (card) dispatch(fetchCardDetailThunk({ cardId: card.id }));
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  // ── Checklist item CRUD ─────────────────────────────────────────────────
+  const handleItemAdd = useCallback(
+    async (checklistId: string, title: string) => {
+      const tempId = `temp-item-${nextMutationId()}`;
+      const tempItem: ChecklistItem = {
+        id: tempId,
+        card_id: card?.id ?? '',
+        checklist_id: checklistId,
+        title,
+        checked: false,
+        position: String(Date.now()),
+      };
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemAdd({ mutationId: tempId, checklistId, item: tempItem }));
+      try {
+        const item = await postChecklistItemInGroup({ api, checklistId, title });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId: tempId, checklistId, item }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId: tempId }));
       }
     },
     [api, card, dispatch],
   );
 
-  const handleChecklistDelete = useCallback(
-    async (itemId: string) => {
+  const handleItemToggle = useCallback(
+    async (checklistId: string, itemId: string, checked: boolean) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistDelete({ mutationId, itemId }));
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistToggle({ mutationId, checklistId, itemId, checked }));
+      try {
+        const item = await patchChecklistItem({ api, itemId, fields: { checked } });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  const handleItemRename = useCallback(
+    async (checklistId: string, itemId: string, title: string) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemRename({ mutationId, checklistId, itemId, title }));
+      try {
+        const item = await patchChecklistItem({ api, itemId, fields: { title } });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  const handleItemDelete = useCallback(
+    async (checklistId: string, itemId: string) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemDelete({ mutationId, checklistId, itemId }));
       try {
         await deleteChecklistItemById({ api, itemId });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
@@ -339,7 +389,7 @@ const CardModalContainer = () => {
       if (!card) return;
       const mutationId = nextMutationId();
       // Convert string amount to number before sending — server enforces numeric type
-      const numericAmount = amount !== null ? parseFloat(amount) : null;
+      const numericAmount = amount === null ? null : Number.parseFloat(amount);
       dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { amount: amount ?? null, currency } }));
       patchCard({ api, cardId: card.id, fields: { amount: numericAmount, currency } })
         .then((updatedCard) => {
@@ -414,7 +464,7 @@ const CardModalContainer = () => {
       allLabels={allLabelsRef.current}
       members={members}
       boardMembers={boardMembersRef.current}
-      checklistItems={checklistItems}
+      checklists={checklists}
       comments={comments}
       activities={activities}
       currentUserId={currentUser?.id ?? ''}
@@ -426,10 +476,13 @@ const CardModalContainer = () => {
       onArchive={handleArchive}
       onDelete={handleDelete}
       onCopyLink={handleCopyLink}
-      onChecklistAdd={handleChecklistAdd}
-      onChecklistToggle={handleChecklistToggle}
-      onChecklistRename={handleChecklistRename}
-      onChecklistDelete={handleChecklistDelete}
+      onCreateChecklist={handleCreateChecklist}
+      onRenameChecklist={handleRenameChecklist}
+      onDeleteChecklist={handleDeleteChecklist}
+      onItemAdd={handleItemAdd}
+      onItemToggle={handleItemToggle}
+      onItemRename={handleItemRename}
+      onItemDelete={handleItemDelete}
       onLabelAttach={handleLabelAttach}
       onLabelDetach={handleLabelDetach}
       onLabelCreate={handleLabelCreate}

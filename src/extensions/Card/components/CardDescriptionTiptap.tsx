@@ -304,6 +304,11 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       notifyDraftChange(markdown);
     },
     editorProps: {
+      // [why] Apply prose classes directly on ProseMirror so Tailwind Typography
+      // descendant selectors (.prose ul, .prose blockquote, etc.) work correctly.
+      attributes: {
+        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-gray-900 dark:text-slate-100',
+      },
       handleDrop(view, event, _slice, moved) {
         if (moved || !event.dataTransfer) return false;
         const files = Array.from(event.dataTransfer.files);
@@ -553,7 +558,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900" />
                 <EditorContent
                   editor={editor}
-                  className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:text-gray-900 dark:[&_.ProseMirror]:text-slate-100 [&_.ProseMirror]:prose [&_.ProseMirror]:prose-sm [&_.ProseMirror]:max-w-none dark:[&_.ProseMirror]:prose-invert [&_.ProseMirror>*:first-child]:mt-0"
+                  className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror>*:first-child]:mt-0"
                 />
               </div>
 

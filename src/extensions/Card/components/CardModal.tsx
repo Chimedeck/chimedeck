@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import type { Card, Label, CardMember, ChecklistItem } from '../api';
+import type { Card, Label, CardMember, Checklist } from '../api';
 import CardTitle from './CardTitle';
 import CardDescriptionTiptap from './CardDescriptionTiptap';
 import CardChecklist from './CardChecklist';
@@ -37,7 +37,7 @@ interface Props {
   allLabels: Label[];
   members: CardMember[];
   boardMembers: BoardMember[];
-  checklistItems: ChecklistItem[];
+  checklists: Checklist[];
   comments: CommentData[];
   activities: ActivityData[];
   currentUserId: string;
@@ -49,10 +49,13 @@ interface Props {
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
-  onChecklistAdd: (title: string) => Promise<void>;
-  onChecklistToggle: (itemId: string, checked: boolean) => Promise<void>;
-  onChecklistRename: (itemId: string, title: string) => Promise<void>;
-  onChecklistDelete: (itemId: string) => Promise<void>;
+  onCreateChecklist: (title?: string) => Promise<void>;
+  onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
+  onDeleteChecklist: (checklistId: string) => Promise<void>;
+  onItemAdd: (checklistId: string, title: string) => Promise<void>;
+  onItemToggle: (checklistId: string, itemId: string, checked: boolean) => Promise<void>;
+  onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
+  onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
@@ -76,7 +79,7 @@ const CardModal = ({
   allLabels,
   members,
   boardMembers,
-  checklistItems,
+  checklists,
   comments,
   activities,
   currentUserId,
@@ -88,10 +91,13 @@ const CardModal = ({
   onArchive,
   onDelete,
   onCopyLink,
-  onChecklistAdd,
-  onChecklistToggle,
-  onChecklistRename,
-  onChecklistDelete,
+  onCreateChecklist,
+  onRenameChecklist,
+  onDeleteChecklist,
+  onItemAdd,
+  onItemToggle,
+  onItemRename,
+  onItemDelete,
   onLabelAttach,
   onLabelDetach,
   onLabelCreate,
@@ -192,11 +198,14 @@ const CardModal = ({
                     />
 
                     <CardChecklist
-                      items={checklistItems}
-                      onAdd={onChecklistAdd}
-                      onToggle={onChecklistToggle}
-                      onRename={onChecklistRename}
-                      onDelete={onChecklistDelete}
+                      checklists={checklists}
+                      onCreateChecklist={onCreateChecklist}
+                      onRenameChecklist={onRenameChecklist}
+                      onDeleteChecklist={onDeleteChecklist}
+                      onItemAdd={onItemAdd}
+                      onItemToggle={onItemToggle}
+                      onItemRename={onItemRename}
+                      onItemDelete={onItemDelete}
                       disabled={isReadOnly}
                     />
 
@@ -262,11 +271,14 @@ const CardModal = ({
                   />
 
                   <CardChecklist
-                    items={checklistItems}
-                    onAdd={onChecklistAdd}
-                    onToggle={onChecklistToggle}
-                    onRename={onChecklistRename}
-                    onDelete={onChecklistDelete}
+                    checklists={checklists}
+                    onCreateChecklist={onCreateChecklist}
+                    onRenameChecklist={onRenameChecklist}
+                    onDeleteChecklist={onDeleteChecklist}
+                    onItemAdd={onItemAdd}
+                    onItemToggle={onItemToggle}
+                    onItemRename={onItemRename}
+                    onItemDelete={onItemDelete}
                     disabled={isReadOnly}
                   />
 

@@ -1,51 +1,108 @@
-// CardChecklist — checklist widget with progress bar, item list, and inline add.
-// Wraps ChecklistSection + ChecklistProgress per sprint-19 spec.
-// All mutations are optimistic (handled in parent container via callbacks).
+// CardChecklist — renders all named checklist groups + "Add checklist" button.
+// Each group is a ChecklistSection. Optimistic mutations handled in parent container.
+import { useState } from 'react';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { ChecklistSection } from './ChecklistSection';
-import type { ChecklistItem } from '../api';
+import type { Checklist } from '../api';
 
 interface Props {
-  items: ChecklistItem[];
-  onAdd: (title: string) => Promise<void>;
-  onToggle: (itemId: string, checked: boolean) => Promise<void>;
-  onRename: (itemId: string, title: string) => Promise<void>;
-  onDelete: (itemId: string) => Promise<void>;
+  checklists: Checklist[];
+  onCreateChecklist: (title?: string) => Promise<void>;
+  onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
+  onDeleteChecklist: (checklistId: string) => Promise<void>;
+  onItemAdd: (checklistId: string, title: string) => Promise<void>;
+  onItemToggle: (checklistId: string, itemId: string, checked: boolean) => Promise<void>;
+  onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
+  onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
   disabled?: boolean;
 }
 
-const CardChecklist = ({ items, onAdd, onToggle, onRename, onDelete, disabled }: Props) => {
-  const checked = items.filter((i) => i.checked).length;
-  const total = items.length;
-  const pct = total === 0 ? 0 : Math.round((checked / total) * 100);
+const CardChecklist = ({
+  checklists,
+  onCreateChecklist,
+  onRenameChecklist,
+  onDeleteChecklist,
+  onItemAdd,
+  onItemToggle,
+  onItemRename,
+  onItemDelete,
+  disabled,
+}: Props) => {
+  const [addingChecklist, setAddingChecklist] = useState(false);
+  const [newChecklistTitle, setNewChecklistTitle] = useState('');
+
+  const handleCreateChecklist = async () => {
+    const trimmed = newChecklistTitle.trim() || undefined;
+    setAddingChecklist(false);
+    setNewChecklistTitle('');
+    await onCreateChecklist(trimmed);
+  };
+
+  if (checklists.length === 0 && disabled) return null;
 
   return (
-    <section aria-label="Checklist">
-      <div className="flex items-center justify-between mb-2">
+    <section aria-label="Checklists">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-          Checklist
+          Checklists
         </h3>
-        <span className="text-xs text-gray-400 dark:text-slate-500">{checked}/{total}</span>
+        {!disabled && (
+          <button
+            type="button"
+            className="flex items-center gap-1 rounded bg-gray-200 dark:bg-slate-700 px-2 py-0.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-300 dark:hover:bg-slate-600"
+            onClick={() => setAddingChecklist((v) => !v)}
+          >
+            <PlusIcon className="h-3 w-3" />
+            Add checklist
+          </button>
+        )}
       </div>
 
-      {total > 0 && (
-        <div className="mb-3" aria-label={`Checklist progress: ${pct}%`}>
-          <div className="h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+      {addingChecklist && (
+        <div className="mb-4 flex gap-2">
+          <input
+            className="flex-1 rounded border border-gray-300 dark:border-slate-600 px-2 py-1 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 bg-white dark:bg-slate-800 focus:border-blue-400 focus:outline-none"
+            placeholder="Checklist title (optional)"
+            value={newChecklistTitle}
+            onChange={(e) => setNewChecklistTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreateChecklist();
+              if (e.key === 'Escape') { setAddingChecklist(false); setNewChecklistTitle(''); }
+            }}
+            autoFocus
+          />
+          <button
+            type="button"
+            className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600"
+            onClick={handleCreateChecklist}
+          >
+            Create
+          </button>
+          <button
+            type="button"
+            className="text-sm text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+            onClick={() => { setAddingChecklist(false); setNewChecklistTitle(''); }}
+          >
+            Cancel
+          </button>
         </div>
       )}
 
-      <ChecklistSection
-        items={items}
-        onAdd={onAdd}
-        onToggle={onToggle}
-        onRename={onRename}
-        onDelete={onDelete}
-        disabled={disabled}
-      />
+      <div className="space-y-6">
+        {checklists.map((cl) => (
+          <ChecklistSection
+            key={cl.id}
+            checklist={cl}
+            onRename={(title) => onRenameChecklist(cl.id, title)}
+            onDelete={() => onDeleteChecklist(cl.id)}
+            onItemAdd={(title) => onItemAdd(cl.id, title)}
+            onItemToggle={(itemId, checked) => onItemToggle(cl.id, itemId, checked)}
+            onItemRename={(itemId, title) => onItemRename(cl.id, itemId, title)}
+            onItemDelete={(itemId) => onItemDelete(cl.id, itemId)}
+            disabled={disabled}
+          />
+        ))}
+      </div>
     </section>
   );
 };

@@ -3,7 +3,7 @@
 // Sprint 29: activities sideloaded via ?include=activities.
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
-import type { Card, Label, CardMember, ChecklistItem, CardDetail } from '../api';
+import type { Card, Label, CardMember, ChecklistItem, Checklist, CardDetail } from '../api';
 import type { CommentData } from '../api/cardDetail';
 
 export interface ActivityData {
@@ -30,7 +30,7 @@ export interface CardDetailState {
   boardId: string;
   labels: Label[];
   members: CardMember[];
-  checklistItems: ChecklistItem[];
+  checklists: Checklist[];
   comments: CommentData[];
   activities: ActivityData[];
   status: 'idle' | 'loading' | 'error';
@@ -41,7 +41,7 @@ export interface CardDetailState {
       card: Card | null;
       labels: Label[];
       members: CardMember[];
-      checklistItems: ChecklistItem[];
+      checklists: Checklist[];
     }
   >;
 }
@@ -54,7 +54,7 @@ const initialState: CardDetailState = {
   boardId: '',
   labels: [],
   members: [],
-  checklistItems: [],
+  checklists: [],
   comments: [],
   activities: [],
   status: 'idle',
@@ -93,7 +93,7 @@ const cardDetailSlice = createSlice({
       state.boardId = '';
       state.labels = [];
       state.members = [];
-      state.checklistItems = [];
+      state.checklists = [];
       state.comments = [];
       state.activities = [];
       state.status = 'idle';
@@ -132,7 +132,6 @@ const cardDetailSlice = createSlice({
       state.activities.push(action.payload);
     },
 
-
     // ── Optimistic card field update ────────────────────────────────────────
     applyOptimisticCardUpdate(
       state,
@@ -162,61 +161,119 @@ const cardDetailSlice = createSlice({
     /** Apply a remote (WS) update to the open card — skipped if card ID doesn't match */
     remoteUpdate(state, action: PayloadAction<{ card: Card }>) {
       const { card } = action.payload;
-      if (state.card && state.card.id === card.id) {
+      if (state.card?.id === card.id) {
         state.card = { ...state.card, ...card };
       }
     },
 
-    // ── Optimistic checklist ────────────────────────────────────────────────
-    applyOptimisticChecklistToggle(
-      state,
-      action: PayloadAction<{ mutationId: string; itemId: string; checked: boolean }>,
-    ) {
-      const { mutationId, itemId, checked } = action.payload;
-      state.snapshots[mutationId] = snapshot(state);
-      const item = state.checklistItems.find((i) => i.id === itemId);
-      if (item) item.checked = checked;
-    },
-
+    // ── Optimistic checklist group actions ─────────────────────────────────
     applyOptimisticChecklistAdd(
       state,
-      action: PayloadAction<{ mutationId: string; item: ChecklistItem }>,
+      action: PayloadAction<{ mutationId: string; checklist: Checklist }>,
     ) {
-      const { mutationId, item } = action.payload;
+      const { mutationId, checklist } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
-      state.checklistItems.push(item);
+      state.checklists.push(checklist);
     },
 
-    confirmChecklistItem(
+    confirmChecklistAdd(
       state,
-      action: PayloadAction<{ mutationId: string; item: ChecklistItem }>,
+      action: PayloadAction<{ mutationId: string; checklist: Checklist }>,
     ) {
-      const { mutationId, item } = action.payload;
+      const { mutationId, checklist } = action.payload;
       delete state.snapshots[mutationId];
-      // Replace temp/confirmed item
-      const idx = state.checklistItems.findIndex((i) => i.id === item.id || i.id === mutationId);
-      if (idx !== -1) {
-        state.checklistItems[idx] = item;
+      const idx = state.checklists.findIndex((c) => c.id === checklist.id || c.id === mutationId);
+      if (idx >= 0) {
+        state.checklists[idx] = checklist;
       } else {
-        state.checklistItems.push(item);
+        state.checklists.push(checklist);
       }
+    },
+
+    applyOptimisticChecklistDelete(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string }>,
+    ) {
+      const { mutationId, checklistId } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      state.checklists = state.checklists.filter((c) => c.id !== checklistId);
+    },
+
+    applyOptimisticChecklistRename(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; title: string }>,
+    ) {
+      const { mutationId, checklistId, title } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      if (cl) cl.title = title;
     },
 
     confirmChecklist(state, action: PayloadAction<{ mutationId: string }>) {
       delete state.snapshots[action.payload.mutationId];
     },
 
-    applyOptimisticChecklistDelete(
-      state,
-      action: PayloadAction<{ mutationId: string; itemId: string }>,
-    ) {
-      const { mutationId, itemId } = action.payload;
-      state.snapshots[mutationId] = snapshot(state);
-      state.checklistItems = state.checklistItems.filter((i) => i.id !== itemId);
-    },
-
     rollbackChecklist(state, action: PayloadAction<{ mutationId: string }>) {
       rollback(state, action.payload.mutationId);
+    },
+
+    // ── Optimistic checklist item actions ───────────────────────────────────
+    applyOptimisticChecklistToggle(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string; checked: boolean }>,
+    ) {
+      const { mutationId, checklistId, itemId, checked } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      const item = cl?.items.find((i) => i.id === itemId);
+      if (item) item.checked = checked;
+    },
+
+    applyOptimisticChecklistItemAdd(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; item: ChecklistItem }>,
+    ) {
+      const { mutationId, checklistId, item } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      if (cl) cl.items.push(item);
+    },
+
+    confirmChecklistItem(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; item: ChecklistItem }>,
+    ) {
+      const { mutationId, checklistId, item } = action.payload;
+      delete state.snapshots[mutationId];
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      if (!cl) return;
+      const idx = cl.items.findIndex((i) => i.id === item.id || i.id === mutationId);
+      if (idx >= 0) {
+        cl.items[idx] = item;
+      } else {
+        cl.items.push(item);
+      }
+    },
+
+    applyOptimisticChecklistItemDelete(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string }>,
+    ) {
+      const { mutationId, checklistId, itemId } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      if (cl) cl.items = cl.items.filter((i) => i.id !== itemId);
+    },
+
+    applyOptimisticChecklistItemRename(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string; title: string }>,
+    ) {
+      const { mutationId, checklistId, itemId, title } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      const item = cl?.items.find((i) => i.id === itemId);
+      if (item) item.title = title;
     },
 
     // ── Optimistic label assign/unassign ────────────────────────────────────
@@ -226,7 +283,7 @@ const cardDetailSlice = createSlice({
     ) {
       const { mutationId, label } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
-      if (!state.labels.find((l) => l.id === label.id)) {
+      if (!state.labels.some((l) => l.id === label.id)) {
         state.labels.push(label);
       }
     },
@@ -255,7 +312,7 @@ const cardDetailSlice = createSlice({
     ) {
       const { mutationId, member } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
-      if (!state.members.find((m) => m.id === member.id)) {
+      if (!state.members.some((m) => m.id === member.id)) {
         state.members.push(member);
       }
     },
@@ -298,7 +355,9 @@ const cardDetailSlice = createSlice({
         state.boardId = includes.board.id;
         state.labels = includes.labels;
         state.members = includes.members;
-        state.checklistItems = includes.checklistItems;
+        // [why] Server returns checklists with nested items. Fall back to empty array for
+        // old clients that don't have the migration applied yet.
+        state.checklists = (includes.checklists ?? []) as Checklist[];
         state.activities = (includes.activities ?? []) as ActivityData[];
         state.status = 'idle';
       })
@@ -315,7 +374,7 @@ function snapshot(state: CardDetailState) {
     card: state.card ? { ...state.card } : null,
     labels: [...state.labels],
     members: [...state.members],
-    checklistItems: state.checklistItems.map((i) => ({ ...i })),
+    checklists: state.checklists.map((cl) => ({ ...cl, items: [...cl.items] })),
   };
 }
 
@@ -325,7 +384,7 @@ function rollback(state: CardDetailState, mutationId: string) {
     if (snap.card) state.card = snap.card;
     state.labels = snap.labels;
     state.members = snap.members;
-    state.checklistItems = snap.checklistItems;
+    state.checklists = snap.checklists;
     delete state.snapshots[mutationId];
   }
 }
@@ -336,8 +395,10 @@ export const selectOpenCardId = (s: { cardDetail: CardDetailState }) => s.cardDe
 export const selectCardDetail = (s: { cardDetail: CardDetailState }) => s.cardDetail.card;
 export const selectCardDetailLabels = (s: { cardDetail: CardDetailState }) => s.cardDetail.labels;
 export const selectCardDetailMembers = (s: { cardDetail: CardDetailState }) => s.cardDetail.members;
+export const selectCardDetailChecklists = (s: { cardDetail: CardDetailState }) => s.cardDetail.checklists;
+/** @deprecated Use selectCardDetailChecklists — kept for any callers that haven't migrated */
 export const selectCardDetailChecklist = (s: { cardDetail: CardDetailState }) =>
-  s.cardDetail.checklistItems;
+  s.cardDetail.checklists.flatMap((cl) => cl.items);
 export const selectCardDetailComments = (s: { cardDetail: CardDetailState }) => s.cardDetail.comments;
 export const selectCardDetailActivities = (s: { cardDetail: CardDetailState }) => s.cardDetail.activities;
 export const selectCardDetailStatus = (s: { cardDetail: CardDetailState }) => s.cardDetail.status;
