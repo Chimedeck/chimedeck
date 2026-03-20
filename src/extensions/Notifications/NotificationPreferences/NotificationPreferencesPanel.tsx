@@ -13,6 +13,7 @@ import { NOTIFICATION_TYPES, NOTIFICATION_TYPE_LABELS } from './types';
 import type { NotificationType } from './types';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
+import translations from '../translations/en.json';
 
 // Pill-shaped accessible toggle switch.
 const ToggleSwitch = ({
@@ -84,14 +85,14 @@ const NotificationPreferencesPanel = () => {
     try {
       await updatePreference({ type, [channel]: next }).unwrap();
     } catch {
-      addErrorToast(`Failed to save preference. Please try again.`);
+      addErrorToast(translations['NotificationPreferences.updateError']);
     }
   };
 
   if (isLoading) {
     return (
       <div className="py-4 text-sm text-gray-400 dark:text-slate-500 animate-pulse">
-        Loading notification preferences…
+        {translations['NotificationPreferences.loading']}
       </div>
     );
   }
@@ -102,9 +103,9 @@ const NotificationPreferencesPanel = () => {
         <table className="w-full text-sm text-gray-700 dark:text-slate-300">
           <thead>
             <tr className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">
-              <th className="pb-3 text-left font-medium">Notification</th>
-              <th className="pb-3 text-center font-medium w-24">In-App</th>
-              <th className="pb-3 text-center font-medium w-24">Email</th>
+              <th className="pb-3 text-left font-medium">{translations['NotificationPreferences.columnNotification']}</th>
+              <th className="pb-3 text-center font-medium w-24">{translations['NotificationPreferences.columnInApp']}</th>
+              <th className="pb-3 text-center font-medium w-24">{translations['NotificationPreferences.columnEmail']}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
@@ -123,7 +124,7 @@ const NotificationPreferencesPanel = () => {
                     <ToggleSwitch
                       enabled={inAppChecked}
                       onChange={(next) => handleToggle(type, 'in_app_enabled', next)}
-                      ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — In-App`}
+                      ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — ${translations['NotificationPreferences.columnInApp']}`}
                     />
                   </td>
                   <td className="py-3 text-center">
@@ -131,8 +132,8 @@ const NotificationPreferencesPanel = () => {
                       enabled={emailChecked && emailEnabled}
                       onChange={(next) => handleToggle(type, 'email_enabled', next)}
                       disabled={!emailEnabled}
-                      ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — Email`}
-                      disabledTooltip="Email notifications are disabled on this server"
+                      ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — ${translations['NotificationPreferences.columnEmail']}`}
+                      disabledTooltip={translations['NotificationPreferences.emailDisabledTooltip']}
                     />
                   </td>
                 </tr>

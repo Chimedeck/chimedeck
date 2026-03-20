@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import translations from '~/common/translations/en.json';
 
 interface Props {
   children: ReactNode;
@@ -25,7 +26,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         this.props.fallback ?? (
           <div className="flex h-screen items-center justify-center text-red-400">
-            Something went wrong. Please reload.
+            {translations['Common.errorBoundaryFallback']}
           </div>
         )
       );

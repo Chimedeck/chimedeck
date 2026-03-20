@@ -5,6 +5,7 @@
 import { useMemo } from 'react';
 import TimelineBar, { ROW_SLOT_HEIGHT } from './TimelineBar';
 import { useTimelineDrag } from './useTimelineDrag';
+import translations from './translations/en.json';
 import type { TimelineRowProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -109,7 +110,7 @@ const TimelineRow = ({
           </span>
           {swimlane.scheduledCards.length > 0 && (
             <span className="text-xs text-slate-500">
-              {swimlane.scheduledCards.length} scheduled
+              {swimlane.scheduledCards.length} {translations['TimelineView.scheduledCount']}
             </span>
           )}
         </div>
@@ -149,7 +150,7 @@ const TimelineRow = ({
             className="sticky left-0 z-10 shrink-0 border-r border-slate-700 bg-slate-900 px-3 py-1"
             style={{ width: labelWidth }}
           >
-            <span className="text-xs italic text-slate-500">unscheduled</span>
+            <span className="text-xs italic text-slate-500">{translations['TimelineView.unscheduledLabel']}</span>
           </div>
 
           {/* Chips */}

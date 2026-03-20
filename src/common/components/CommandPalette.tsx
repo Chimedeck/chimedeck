@@ -7,6 +7,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useSearch } from '~/extensions/Search/hooks/useSearch';
 import SearchResultItem from '~/extensions/Search/components/SearchResultItem';
 import type { SearchResult } from '~/extensions/Search/api';
+import translations from '~/common/translations/en.json';
 
 // --------------------------------------------------------------------------
 // Types & constants
@@ -26,21 +27,21 @@ interface ScopeMeta {
 const SCOPES: ScopeMeta[] = [
   {
     value: 'all',
-    label: 'All',
-    placeholder: 'Search boards and cards…',
-    emptyText: 'No results found.',
+    label: translations['CommandPalette.allScopeLabel'],
+    placeholder: translations['CommandPalette.allScopePlaceholder'],
+    emptyText: translations['CommandPalette.allScopeEmpty'],
   },
   {
     value: 'board',
-    label: 'Boards',
-    placeholder: 'Search boards…',
-    emptyText: 'No boards found.',
+    label: translations['CommandPalette.boardScopeLabel'],
+    placeholder: translations['CommandPalette.boardScopePlaceholder'],
+    emptyText: translations['CommandPalette.boardScopeEmpty'],
   },
   {
     value: 'card',
-    label: 'Cards',
-    placeholder: 'Search cards…',
-    emptyText: 'No cards found.',
+    label: translations['CommandPalette.cardScopeLabel'],
+    placeholder: translations['CommandPalette.cardScopePlaceholder'],
+    emptyText: translations['CommandPalette.cardScopeEmpty'],
   },
 ];
 
@@ -235,7 +236,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Search"
+      aria-label={translations['CommandPalette.ariaLabel']}
     >
       {/* Panel */}
       <div
@@ -253,8 +254,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             onKeyDown={handleInputKeyDown}
             placeholder={scopeMeta.placeholder}
             className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-slate-100 dark:placeholder-slate-500"
-            aria-label="Search"
-            autoComplete="off"
+            aria-label={translations['CommandPalette.inputAriaLabel']}
           />
         </div>
 
@@ -262,7 +262,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div
           className="flex gap-1 border-b border-gray-200 px-3 py-2 dark:border-slate-700"
           role="tablist"
-          aria-label="Search scope"
+          aria-label={translations['CommandPalette.scopeTabsAriaLabel']}
         >
           {SCOPES.map((s, idx) => (
             <button
@@ -292,19 +292,19 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
           {/* Too short */}
           {tooShort && (
             <p className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">
-              Type at least 2 characters to search.
+              {translations['CommandPalette.tooShort']}
             </p>
           )}
 
           {/* Loading */}
           {!tooShort && query.length >= 2 && loading && (
-            <p className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">Searching…</p>
+            <p className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">{translations['CommandPalette.searching']}</p>
           )}
 
           {/* Error */}
           {!loading && error && (
             <p className="px-3 py-2 text-sm text-red-500 dark:text-red-400">
-              Search failed. Please try again.
+              {translations['CommandPalette.error']}
             </p>
           )}
 
@@ -319,9 +319,9 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
           {!loading && !error && scope === 'all' && (
             <>
               {boards.length > 0 && (
-                <section aria-label="Boards">
+                <section aria-label={translations['CommandPalette.boardsHeader']}>
                   <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
-                    Boards
+                    {translations['CommandPalette.boardsHeader']}
                   </p>
                   {boards.map((r, globalIdx) => {
                     const flatIdx = globalIdx;
@@ -338,9 +338,9 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                 </section>
               )}
               {cards.length > 0 && (
-                <section aria-label="Cards">
+                <section aria-label={translations['CommandPalette.cardsHeader']}>
                   <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
-                    Cards
+                    {translations['CommandPalette.cardsHeader']}
                   </p>
                   {cards.map((r, i) => {
                     const flatIdx = boards.length + i;
@@ -379,13 +379,13 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="flex items-center justify-between border-t border-gray-100 px-4 py-2 text-xs text-gray-400 dark:border-slate-700 dark:text-slate-500">
           <span>
             <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">↑↓</kbd>
-            {' '}navigate
+            {' '}{translations['CommandPalette.footerNavigate']}
             {' · '}
             <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">↵</kbd>
-            {' '}open
+            {' '}{translations['CommandPalette.footerOpen']}
           </span>
           <span>
-            Press <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">Esc</kbd> to close
+            {translations['CommandPalette.footerEscPrefix']} <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">Esc</kbd> {translations['CommandPalette.footerEscClose']}
           </span>
         </div>
       </div>

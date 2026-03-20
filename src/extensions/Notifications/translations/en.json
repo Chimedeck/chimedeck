@@ -1,0 +1,8 @@
+{
+  "NotificationPreferences.columnNotification": "Notification",
+  "NotificationPreferences.columnInApp": "In-App",
+  "NotificationPreferences.columnEmail": "Email",
+  "NotificationPreferences.loading": "Loading notification preferences…",
+  "NotificationPreferences.emailDisabledTooltip": "Email notifications are disabled on this server",
+  "NotificationPreferences.updateError": "Failed to save preference. Please try again."
+}

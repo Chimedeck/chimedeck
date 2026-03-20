@@ -1,0 +1,15 @@
+{
+  "TimelineView.title": "Timeline",
+  "TimelineView.noCards": "No cards with date ranges",
+  "TimelineView.unscheduledLabel": "Unscheduled",
+  "TimelineView.zoomLabel": "Timeline zoom level",
+  "TimelineView.zoomDay": "Day",
+  "TimelineView.zoomWeek": "Week",
+  "TimelineView.zoomMonth": "Month",
+  "TimelineView.zoomQuarter": "Quarter",
+  "TimelineView.ariaResizeStart": "Resize start date",
+  "TimelineView.ariaResizeDue": "Resize due date",
+  "TimelineView.todayMarkerLabel": "Today",
+  "TimelineView.addDateRange": "Add date range",
+  "TimelineView.scheduledCount": "scheduled"
+}

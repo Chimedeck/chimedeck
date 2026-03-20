@@ -13,6 +13,7 @@ import {
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { markReadThunk, deleteNotificationThunk } from '../slices/notificationSlice';
 import type { Notification, NotificationType } from '../api';
+import translations from '../translations/en.json';
 
 interface Props {
   notification: Notification;
@@ -116,7 +117,7 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
       <button
         onClick={handleDelete}
         className="shrink-0 text-slate-500 hover:text-slate-300 transition-colors ml-1"
-        aria-label="Dismiss notification"
+        aria-label={translations['Notifications.deleteAriaLabel']}
         tabIndex={0}
       >
         ×

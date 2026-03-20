@@ -4,6 +4,7 @@ import type { FC } from 'react';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectUnreadCount } from '../slices/notificationSlice';
+import translations from '../translations/en.json';
 
 interface Props {
   onClick: () => void;
@@ -18,7 +19,7 @@ const NotificationBell: FC<Props> = ({ onClick }) => {
     <button
       onClick={onClick}
       className="relative p-2 rounded-full hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
-      aria-label={hasUnread ? `Notifications — ${label} unread` : 'Notifications'}
+      aria-label={hasUnread ? translations['Notifications.ariaUnread'].replace('{count}', label) : translations['Notifications.ariaOpenPanel']}
     >
       <BellIcon className="h-5 w-5" aria-hidden="true" />
       {hasUnread && (

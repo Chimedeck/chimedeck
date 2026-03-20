@@ -1,8 +1,16 @@
 {
   "Notifications.title": "Notifications",
-  "Notifications.markAllRead": "Mark all read",
+  "Notifications.markAllRead": "Mark all as read",
+  "Notifications.clearAll": "Clear all",
+  "Notifications.settingsLink": "Notification settings",
+  "Notifications.ariaOpenPanel": "Open notifications",
+  "Notifications.ariaClosePanel": "Close notifications",
+  "Notifications.ariaUnread": "Notifications — {count} unread",
   "Notifications.empty": "You have no notifications.",
   "Notifications.mention": "{actor} mentioned you in \"{cardTitle}\"",
   "Notifications.loadMore": "Load more",
+  "Notifications.loading": "Loading…",
+  "Notifications.today": "Today",
+  "Notifications.earlier": "Earlier",
   "Notifications.deleteAriaLabel": "Dismiss notification"
 }

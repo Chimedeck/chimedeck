@@ -1,11 +1,12 @@
 // TimelineZoomControl — toggle between Day, Week, and Month zoom levels.
 // Rendered in the TimelineView toolbar.
+import translations from './translations/en.json';
 import type { TimelineZoomControlProps, ZoomLevel } from './types';
 
 const ZOOM_LABELS: Record<ZoomLevel, string> = {
-  day: 'Day',
-  week: 'Week',
-  month: 'Month',
+  day: translations['TimelineView.zoomDay'],
+  week: translations['TimelineView.zoomWeek'],
+  month: translations['TimelineView.zoomMonth'],
 };
 
 const ZOOM_LEVELS: ZoomLevel[] = ['day', 'week', 'month'];
@@ -15,7 +16,7 @@ const TimelineZoomControl = ({ zoom, onZoomChange }: TimelineZoomControlProps) =
     <div
       className="flex rounded border border-slate-700"
       role="group"
-      aria-label="Timeline zoom level"
+      aria-label={translations['TimelineView.zoomLabel']}
       data-testid="timeline-zoom-control"
     >
       {ZOOM_LEVELS.map((level, i) => (

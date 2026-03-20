@@ -4,6 +4,7 @@
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import { ThemeToggle } from '~/common/components/ThemeToggle';
 import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
+import translations from '~/common/translations/en.json';
 
 interface TopBarProps {
   /** Called when the mobile hamburger button is clicked. */
@@ -20,7 +21,7 @@ export default function TopBar({ onOpenDrawer, drawerOpen }: TopBarProps) {
         <button
           onClick={onOpenDrawer}
           className="mr-3 rounded p-1 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
-          aria-label="Open sidebar"
+          aria-label={translations['Layout.openSidebarAriaLabel']}
           aria-expanded={drawerOpen}
           aria-controls="mobile-sidebar"
           data-testid="mobile-sidebar-toggle"

@@ -30,6 +30,7 @@ import { selectAdminEmailDomains } from '~/slices/featureFlagsSlice';
 import { openInviteModal } from '~/extensions/AdminInvite/adminInvite.slice';
 import CreateWorkspaceModal from '~/extensions/Workspace/components/CreateWorkspaceModal';
 import translations from '~/extensions/Workspace/translations/en.json';
+import layoutTranslations from '~/common/translations/en.json';
 import { useSidebarState } from '~/layout/hooks/useSidebarState';
 
 // Tooltip that only renders when the sidebar is collapsed.
@@ -180,7 +181,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
 
   const guestBadge = (
     <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-      guest
+      {layoutTranslations['Sidebar.guestBadge']}
     </span>
   );
 
@@ -191,7 +192,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
         className={`flex h-full flex-col border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden transition-[width] duration-300 ease-in-out ${
           collapsed ? 'w-16' : 'w-64'
         }`}
-        aria-label="Sidebar"
+        aria-label={layoutTranslations['Layout.sidebarAriaLabel']}
         data-testid="sidebar"
         data-collapsed={collapsed}
       >
@@ -212,7 +213,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <button
               onClick={toggle}
               className="mr-1.5 flex shrink-0 items-center justify-center rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? layoutTranslations['Sidebar.expandAriaLabel'] : layoutTranslations['Sidebar.collapseAriaLabel']}
               data-testid="sidebar-toggle"
             >
               {collapsed ? (
@@ -232,7 +233,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               <button
                 onClick={() => setSwitcherOpen((o) => !o)}
                 className="flex w-full items-center justify-center rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                aria-label="Switch workspace"
+                aria-label={translations['WorkspaceSwitcher.label']}
                 aria-expanded={switcherOpen}
               >
                 <span
@@ -315,9 +316,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 )
               }
               icon={<MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />}
-              label="Search"
+              label={layoutTranslations['Sidebar.searchLabel']}
               collapsed={collapsed}
-              aria-label="Search (⌘K)"
+              aria-label={layoutTranslations['Sidebar.searchAriaLabel']}
               onNavigate={onClose}
               badge={
                 !collapsed ? (
@@ -360,7 +361,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               <NavItem
                 to="/developer/plugins"
                 icon={<PuzzlePieceIcon className="h-5 w-5" />}
-                label="Plugin Docs"
+                label={layoutTranslations['Sidebar.pluginDocsLabel']}
                 collapsed={collapsed}
                 onNavigate={onClose}
               />
@@ -368,9 +369,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 <NavButton
                   onClick={() => dispatch(openInviteModal())}
                   icon={<UserPlusIcon className="h-5 w-5" />}
-                  label="Invite External User"
+                  label={layoutTranslations['Sidebar.inviteExternalUser']}
                   collapsed={collapsed}
-                  aria-label="Invite External User"
+                  aria-label={layoutTranslations['Sidebar.inviteExternalUser']}
                   onNavigate={onClose}
                 />
               )}
@@ -403,7 +404,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   {profile?.avatar_url ? (
                     <img
                       src={profile.avatar_url}
-                      alt="Avatar"
+                      alt={layoutTranslations['Common.avatarAlt']}
                       className="h-7 w-7 rounded-full object-cover"
                       aria-hidden="true"
                     />
@@ -429,7 +430,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 {profile?.avatar_url ? (
                   <img
                     src={profile.avatar_url}
-                    alt="Avatar"
+                    alt={layoutTranslations['Common.avatarAlt']}
                     className="h-7 w-7 shrink-0 rounded-full object-cover"
                     aria-hidden="true"
                   />

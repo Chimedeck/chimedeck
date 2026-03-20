@@ -2,6 +2,7 @@
 // Renders the active toast stack and forwards dismiss callbacks to each item.
 import Toast from './Toast';
 import type { ToastItem } from './Toast';
+import translations from '~/common/translations/en.json';
 
 interface Props {
   toasts: ToastItem[];
@@ -15,7 +16,7 @@ const ToastRegion = ({ toasts, onDismiss }: Props) => {
     <div
       className="fixed bottom-6 right-6 z-50 flex w-80 flex-col gap-2"
       aria-live="polite"
-      aria-label="Notifications"
+      aria-label={translations['Common.toastRegionAriaLabel']}
     >
       {toasts.map((t) => (
         <Toast key={t.id} toast={t} onDismiss={onDismiss} />
