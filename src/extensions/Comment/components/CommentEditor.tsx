@@ -136,10 +136,10 @@ function getInitialEditorContent(initialValue: string, attachments: Attachment[]
   return hydrateCommentAttachmentMarkdown(normalized, attachments);
 }
 
-function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): void {
+function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): boolean {
   const isImage = attachment.content_type?.startsWith('image/') ?? false;
   const url = resolveAttachmentMarkdownUrl(attachment, isImage);
-  if (!url) return;
+  if (!url) return false;
 
   if (isImage) {
     editor
@@ -160,7 +160,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
       ])
       .setTextSelection(pos + 2)
       .run();
-    return;
+    return true;
   }
 
   const snippet = buildAttachmentSnippet({
@@ -169,6 +169,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
     isImage,
   });
   insertSnippetAt(editor, pos, snippet);
+  return true;
 }
 
 const CommentEditor = ({
@@ -205,6 +206,7 @@ const CommentEditor = ({
   const uploadFilesRef = useRef<((files: File[]) => string[]) | null>(null);
   const cardAttachmentsRef = useRef<Attachment[]>(availableAttachments);
   const pendingHydratedContentRef = useRef<string | null>(initialValue || null);
+  const pendingAttachmentInsertRef = useRef<Map<string, number>>(new Map());
 
   const replaceCardAttachments = useCallback((attachments: Attachment[]) => {
     cardAttachmentsRef.current = attachments;
@@ -239,7 +241,10 @@ const CommentEditor = ({
       const docSize = ed.state.doc.content.size;
       // Clamp to valid range in case the document shrank while uploading
       const insertAt = savedPos === undefined ? ed.state.selection.anchor : Math.min(savedPos, docSize);
-      insertAttachmentAt(ed, attachment, insertAt);
+      if (insertAttachmentAt(ed, attachment, insertAt)) return;
+      // [why] Fresh upload responses can temporarily miss usable URLs for images.
+      // Retry once the next attachment list fetch hydrates those URLs.
+      pendingAttachmentInsertRef.current.set(attachment.id, insertAt);
     },
   });
   // Keep the ref current so the async onSuccess always reads the live editor
@@ -253,7 +258,7 @@ const CommentEditor = ({
       const sorted = [...res.data].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
-      setCardAttachments(sorted);
+      replaceCardAttachments(sorted);
     } catch {
       // non-critical — picker will show empty list
     }
@@ -340,6 +345,18 @@ const CommentEditor = ({
     editor.commands.setContent(hydratedContent, { contentType: 'markdown' });
     pendingHydratedContentRef.current = null;
   }, [editor, cardAttachments, restoredDraft]);
+
+  useEffect(() => {
+    const ed = editorRef.current;
+    if (!ed || ed.isDestroyed || pendingAttachmentInsertRef.current.size === 0) return;
+
+    pendingAttachmentInsertRef.current.forEach((pos, attachmentId) => {
+      const attachment = cardAttachmentsRef.current.find((entry) => entry.id === attachmentId);
+      if (!attachment) return;
+      if (!insertAttachmentAt(ed, attachment, Math.min(pos, ed.state.doc.content.size))) return;
+      pendingAttachmentInsertRef.current.delete(attachmentId);
+    });
+  }, [cardAttachments]);
 
   // Restore offline draft into editor once it's loaded (async, after initial render)
   useEffect(() => {
