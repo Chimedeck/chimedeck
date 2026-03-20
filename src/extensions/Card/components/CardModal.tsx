@@ -46,6 +46,7 @@ interface Props {
   onDescriptionSave: (description: string) => void;
   onStartDateChange: (date: string | null) => void;
   onDueDateChange: (date: string | null) => void;
+  onDueCompleteChange: (done: boolean) => void;
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
@@ -88,6 +89,7 @@ const CardModal = ({
   onDescriptionSave,
   onStartDateChange,
   onDueDateChange,
+  onDueCompleteChange,
   onArchive,
   onDelete,
   onCopyLink,
@@ -160,6 +162,7 @@ const CardModal = ({
                 currentUserId={currentUserId}
                 startDate={card.start_date}
                 dueDate={card.due_date}
+                dueComplete={card.due_complete}
                 disabled={isReadOnly}
                 onLabelAttach={onLabelAttach}
                 onLabelDetach={onLabelDetach}
@@ -168,6 +171,7 @@ const CardModal = ({
                 onMemberRemove={onMemberRemove}
                 onStartDateChange={onStartDateChange}
                 onDueDateChange={onDueDateChange}
+                onDueCompleteChange={onDueCompleteChange}
               />
             </div>
 

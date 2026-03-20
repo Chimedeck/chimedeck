@@ -1,9 +1,11 @@
 // CardMetaStrip — compact horizontal strip below the card title showing labels, members, and dates.
 // Replaces the sidebar sections for Labels, Members, Start Date, and Due Date (sprint-81 §4).
 import { useEffect, useRef, useState } from 'react';
-import { CalendarIcon, PlusIcon, UserIcon, TagIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, UserIcon, TagIcon } from '@heroicons/react/24/outline';
+import { CheckIcon } from '@heroicons/react/24/solid';
 import type { Label, CardMember } from '../api';
 import { LabelChip } from './LabelChip';
+import { CardDatesPicker } from './CardDatesPicker';
 
 const PRESET_COLORS = [
   { name: 'Slate', hex: '#64748b' },
@@ -33,6 +35,7 @@ export interface CardMetaStripProps {
   currentUserId: string;
   startDate: string | null;
   dueDate: string | null;
+  dueComplete: boolean;
   disabled?: boolean;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
@@ -41,6 +44,7 @@ export interface CardMetaStripProps {
   onMemberRemove: (userId: string) => Promise<void>;
   onStartDateChange: (date: string | null) => void;
   onDueDateChange: (date: string | null) => void;
+  onDueCompleteChange: (done: boolean) => void;
 }
 
 // ------------------------------------------------------------------
@@ -342,61 +346,113 @@ const MemberSection = ({
 };
 
 // ------------------------------------------------------------------
-// Date button (start or due)
+// Dates button — single pill opening the combined CardDatesPicker
 // ------------------------------------------------------------------
-const DateButton = ({
-  label,
-  date,
-  onChange,
+type DueDateStatus = 'done' | 'overdue' | 'due-soon' | 'normal';
+
+function getDueDateStatus(dueDate: string, dueComplete: boolean): DueDateStatus {
+  if (dueComplete) return 'done';
+  const now = Date.now();
+  const due = new Date(dueDate).getTime();
+  if (due < now) return 'overdue';
+  if (due - now < 24 * 60 * 60 * 1000) return 'due-soon';
+  return 'normal';
+}
+
+function getDuePillClass(status: DueDateStatus, hasDate: boolean): string {
+  if (status === 'done') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700';
+  if (status === 'overdue') return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700';
+  if (status === 'due-soon') return 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-700';
+  if (hasDate) return 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600';
+  return 'border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
+}
+
+function getDueCheckboxClass(status: DueDateStatus): string {
+  if (status === 'done') return 'bg-emerald-500 border-emerald-500';
+  if (status === 'overdue') return 'bg-red-500 border-red-500';
+  if (status === 'due-soon') return 'bg-orange-400 border-orange-400';
+  return 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800';
+}
+
+const DatesButton = ({
+  startDate,
+  dueDate,
+  dueComplete,
+  onStartDateChange,
+  onDueDateChange,
+  onDueCompleteChange,
   disabled,
 }: {
-  label: string;
-  date: string | null;
-  onChange: (date: string | null) => void;
+  startDate: string | null;
+  dueDate: string | null;
+  dueComplete: boolean;
+  onStartDateChange: (date: string | null) => void;
+  onDueDateChange: (date: string | null) => void;
+  onDueCompleteChange: (done: boolean) => void;
   disabled?: boolean;
 }) => {
   const { open, setOpen, ref } = usePopover();
+  const status = dueDate ? getDueDateStatus(dueDate, dueComplete) : 'normal';
+  const pillClass = getDuePillClass(status, !!(dueDate ?? startDate));
+  const checkboxClass = getDueCheckboxClass(status);
+
+  const pillLabel = (() => {
+    if (dueDate && startDate) return `${formatDate(startDate)} → ${formatDate(dueDate)}`;
+    if (dueDate) return formatDate(dueDate);
+    if (startDate) return `${formatDate(startDate)} →`;
+    return '+ Dates';
+  })();
+
+  const handleSave = (start: string | null, due: string | null) => {
+    onStartDateChange(start);
+    onDueDateChange(due);
+    setOpen(false);
+  };
+
+  const handleRemove = () => {
+    onStartDateChange(null);
+    onDueDateChange(null);
+    setOpen(false);
+  };
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative flex items-center gap-1" ref={ref}>
+      {dueDate && (
+        <button
+          type="button"
+          className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-colors ${checkboxClass} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onDueCompleteChange(!dueComplete); }}
+          aria-label={dueComplete ? 'Mark as not done' : 'Mark as done'}
+          disabled={disabled}
+        >
+          {dueComplete && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />}
+        </button>
+      )}
       <button
         type="button"
-        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${
-          date
-            ? 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600'
-            : 'border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
-        }`}
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${pillClass}`}
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
-        aria-label={label}
+        aria-label="Dates"
         aria-expanded={open}
         aria-haspopup="dialog"
       >
         <CalendarIcon className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
-        {date ? formatDate(date) : label}
+        {pillLabel}
       </button>
 
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute left-0 top-full mt-1 z-20 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-3 space-y-2 min-w-[180px]">
-            <p className="text-xs font-medium text-gray-500 dark:text-slate-400">{label}</p>
-            <input
-              type="date"
-              className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 [color-scheme:light] dark:[color-scheme:dark]"
-              value={date ? date.slice(0, 10) : ''}
-              onChange={(e) => onChange(e.target.value || null)}
-              autoFocus
+          <div className="absolute left-0 top-full mt-1 z-20">
+            <CardDatesPicker
+              startDate={startDate}
+              dueDate={dueDate}
+              disabled={disabled}
+              onSave={handleSave}
+              onRemove={handleRemove}
+              onClose={() => setOpen(false)}
             />
-            {date && (
-              <button
-                type="button"
-                className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
-                onClick={() => { onChange(null); setOpen(false); }}
-              >
-                Clear
-              </button>
-            )}
           </div>
         </>
       )}
@@ -414,6 +470,7 @@ const CardMetaStrip = ({
   boardMembers,
   startDate,
   dueDate,
+  dueComplete,
   disabled,
   onLabelAttach,
   onLabelDetach,
@@ -422,6 +479,7 @@ const CardMetaStrip = ({
   onMemberRemove,
   onStartDateChange,
   onDueDateChange,
+  onDueCompleteChange,
 }: CardMetaStripProps) => {
   return (
     <div
@@ -455,16 +513,13 @@ const CardMetaStrip = ({
       <span className="h-4 w-px bg-gray-200 dark:bg-slate-700 flex-shrink-0" aria-hidden="true" />
 
       {/* Dates */}
-      <DateButton
-        label="Start date"
-        date={startDate}
-        onChange={onStartDateChange}
-        {...(disabled && { disabled })}
-      />
-      <DateButton
-        label="Due date"
-        date={dueDate}
-        onChange={onDueDateChange}
+      <DatesButton
+        startDate={startDate}
+        dueDate={dueDate}
+        dueComplete={dueComplete}
+        onStartDateChange={onStartDateChange}
+        onDueDateChange={onDueDateChange}
+        onDueCompleteChange={onDueCompleteChange}
         {...(disabled && { disabled })}
       />
     </div>

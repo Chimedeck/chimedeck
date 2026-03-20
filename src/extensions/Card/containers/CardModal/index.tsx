@@ -167,6 +167,21 @@ const CardModalContainer = () => {
     [api, card, dispatch],
   );
 
+  const handleDueCompleteChange = useCallback(
+    (due_complete: boolean) => {
+      if (!card) return;
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { due_complete } }));
+      patchCard({ api, cardId: card.id, fields: { due_complete } })
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
+        .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+    },
+    [api, card, dispatch],
+  );
+
   // ── Archive / Delete ────────────────────────────────────────────────────
   const handleArchive = useCallback(async () => {
     if (!card) return;
@@ -472,6 +487,7 @@ const CardModalContainer = () => {
       onTitleSave={handleTitleSave}
       onDescriptionSave={handleDescriptionSave}
       onDueDateChange={handleDueDateChange}
+      onDueCompleteChange={handleDueCompleteChange}
       onStartDateChange={handleStartDateChange}
       onArchive={handleArchive}
       onDelete={handleDelete}

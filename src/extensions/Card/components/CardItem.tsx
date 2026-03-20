@@ -30,6 +30,13 @@ export interface CardItemProps {
   customFieldValues?: CustomFieldValue[];
 }
 
+function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): string {
+  if (done) return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30';
+  if (overdue) return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30';
+  if (dueSoon) return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30';
+  return 'text-gray-400 dark:text-slate-500';
+}
+
 const CardItem = ({
   card,
   isOverlay = false,
@@ -96,12 +103,20 @@ const CardItem = ({
         />
       )}
       <p className="text-gray-800 dark:text-slate-200 text-sm leading-snug break-words">{card.title}</p>
-      {card.due_date && (
-        <p className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500">
-          <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-          {new Date(card.due_date).toLocaleDateString()}
-        </p>
-      )}
+      {card.due_date && (() => {
+        const now = Date.now();
+        const due = new Date(card.due_date).getTime();
+        const done = card.due_complete;
+        const overdue = !done && due < now;
+        const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
+        const pillColor = getDuePillClass(done, overdue, dueSoon);
+        return (
+          <p className={`mt-1 inline-flex items-center gap-1 rounded px-1 text-xs ${pillColor}`}>
+            <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+            {new Date(card.due_date).toLocaleDateString()}
+          </p>
+        );
+      })()}
       {card.amount && (
         <div className="mt-1">
           <CardMoneyBadge amount={card.amount} currency={card.currency} />

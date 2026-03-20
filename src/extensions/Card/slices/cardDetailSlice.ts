@@ -137,7 +137,7 @@ const cardDetailSlice = createSlice({
       state,
       action: PayloadAction<{
         mutationId: string;
-        fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'start_date' | 'amount' | 'currency'>>;
+        fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'due_complete' | 'start_date' | 'amount' | 'currency'>>;
       }>,
     ) {
       const { mutationId, fields } = action.payload;

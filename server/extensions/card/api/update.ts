@@ -33,7 +33,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
-  let body: { title?: string; description?: string; due_date?: string | null; start_date?: string | null; amount?: number | null; currency?: string | null };
+  let body: { title?: string; description?: string; due_date?: string | null; due_complete?: boolean; start_date?: string | null; amount?: number | null; currency?: string | null };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -67,6 +67,18 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   if (body.due_date !== undefined) {
     updates.due_date = body.due_date;
+    // Clearing the due date also resets the done flag
+    if (body.due_date === null) updates.due_complete = false;
+  }
+
+  if (body.due_complete !== undefined) {
+    if (typeof body.due_complete !== 'boolean') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'due_complete must be a boolean' } },
+        { status: 400 },
+      );
+    }
+    updates.due_complete = body.due_complete;
   }
 
   if (body.start_date !== undefined) {

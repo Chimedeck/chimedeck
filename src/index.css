@@ -98,3 +98,26 @@
   margin-top: 0.125em;
   margin-bottom: 0.125em;
 }
+
+/* Link styles — blue, underlined, pointer cursor (Trello-like) */
+.ProseMirror a,
+.prose a {
+  color: #3b82f6; /* blue-500 */
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ProseMirror a:hover,
+.prose a:hover {
+  color: #2563eb; /* blue-600 */
+}
+
+.dark .ProseMirror a,
+.dark .prose a {
+  color: #60a5fa; /* blue-400 */
+}
+
+.dark .ProseMirror a:hover,
+.dark .prose a:hover {
+  color: #93c5fd; /* blue-300 */
+}

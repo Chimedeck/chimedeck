@@ -97,9 +97,11 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
     editor,
     selector: (ctx) => ({
       activeLevel:
-        ([1, 2, 3, 4, 5, 6] as HeadingLevel[]).find((l) =>
-          ctx.editor.isActive('heading', { level: l }),
-        ) ?? null,
+        ctx.editor
+          ? (([1, 2, 3, 4, 5, 6] as HeadingLevel[]).find((l) =>
+              ctx.editor!.isActive('heading', { level: l }),
+            ) ?? null)
+          : null,
     }),
   }) ?? { activeLevel: null };
 

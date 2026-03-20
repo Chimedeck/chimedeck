@@ -74,6 +74,7 @@
     "node-cache": "^5.1.2",
     "pg": "^8.13.0",
     "react": "^18",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^18",
     "react-redux": "^9",
     "react-router-dom": "^6",

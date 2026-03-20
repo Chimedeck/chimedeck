@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
 import { Markdown } from '@tiptap/markdown';
 import type { Editor } from '@tiptap/react';
 import { marked } from 'marked';
@@ -293,7 +294,18 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   // Tiptap editor instance
   const editor = useEditor({
-    extensions: [StarterKit, Markdown, InlineImage, buildMentionExtension(boardId)],
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
+      }),
+      Markdown,
+      InlineImage,
+      buildMentionExtension(boardId),
+    ],
     content: buildEditorContentHtml(description || '', cardAttachmentsRef.current),
     editable: editing && !disabled,
     immediatelyRender: false,
