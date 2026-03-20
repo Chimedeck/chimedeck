@@ -115,17 +115,25 @@ function getDraftStatusClass(status: DraftStatus): string {
   return 'text-gray-400 dark:text-slate-500';
 }
 
+function normalizeEscapedBlockquoteMarkers(markdown: string): string {
+  return markdown
+    .replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>')
+    .replaceAll(/^(\s*)&amp;gt;(?=\s|$)/gm, '$1>');
+}
+
 function resolvePendingHydratedContent(pendingContent: string | null, attachments: Attachment[]): string | null {
   if (!pendingContent) return null;
-  if (hasAttachmentPlaceholder(pendingContent) && attachments.length === 0) return null;
-  return hydrateCommentAttachmentMarkdown(pendingContent, attachments);
+  const normalized = normalizeEscapedBlockquoteMarkers(pendingContent);
+  if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) return null;
+  return hydrateCommentAttachmentMarkdown(normalized, attachments);
 }
 
 function getInitialEditorContent(initialValue: string, attachments: Attachment[]): string {
-  if (hasAttachmentPlaceholder(initialValue) && attachments.length === 0) {
-    return stripCommentAttachmentPlaceholders(initialValue);
+  const normalized = normalizeEscapedBlockquoteMarkers(initialValue);
+  if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) {
+    return stripCommentAttachmentPlaceholders(normalized);
   }
-  return hydrateCommentAttachmentMarkdown(initialValue, attachments);
+  return hydrateCommentAttachmentMarkdown(normalized, attachments);
 }
 
 function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): void {
