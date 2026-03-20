@@ -2,6 +2,7 @@
 // Sprint 28: Navigated to when clicking "Edit profile info" in the member popover.
 // Sprint 40: Includes ChangeEmailForm for email address changes with optional re-verification flow.
 // Sprint 71: Includes NotificationPreferencesPanel gated by NOTIFICATION_PREFERENCES_ENABLED.
+// Sprint 95: Includes GlobalNotificationToggle for master notification opt-out.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import translations from '../../translations/en.json';
@@ -10,6 +11,7 @@ import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import ChangeEmailForm from '~/extensions/Auth/components/ChangeEmailForm';
 import { selectNotificationPreferencesEnabled } from '~/slices/featureFlagsSlice';
 import NotificationPreferencesPanel from '~/extensions/Notifications/NotificationPreferences/NotificationPreferencesPanel';
+import GlobalNotificationToggle from './GlobalNotificationToggle';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
@@ -45,6 +47,17 @@ const EditProfilePage = () => {
             currentEmail={displayEmail}
             onSuccess={(newEmail) => setDisplayEmail(newEmail)}
           />
+        </section>
+
+        {/* Divider */}
+        <hr className="border-slate-800" />
+
+        {/* Global notifications section */}
+        <section>
+          <h2 className="text-base font-semibold text-slate-100 mb-4">
+            {translations['UserProfile.notifications']}
+          </h2>
+          <GlobalNotificationToggle />
         </section>
 
         {notificationPreferencesEnabled && (
