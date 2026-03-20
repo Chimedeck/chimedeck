@@ -215,15 +215,20 @@ const CardModal = ({
               <div
                 className={`w-full overflow-hidden rounded-t-2xl ${(card.cover_size ?? 'SMALL') === 'FULL' ? 'h-44' : 'h-28'}`}
                 style={card.cover_image_url
-                  ? {
-                    backgroundImage: `url(${card.cover_image_url})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                  }
+                  ? undefined
                   : { backgroundColor: card.cover_color ?? '#334155' }}
               >
-                {card.cover_image_url && <span className="sr-only">Card cover</span>}
+                {card.cover_image_url
+                  ? (
+                    <img
+                      src={card.cover_image_url}
+                      alt="Card cover"
+                      className="h-full w-full bg-slate-900/60 object-contain"
+                      loading="eager"
+                      draggable={false}
+                    />
+                    )
+                  : <span className="sr-only">Card cover color</span>}
               </div>
             )}
 
