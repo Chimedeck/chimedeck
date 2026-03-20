@@ -15,5 +15,9 @@
     "stateActive": "Active",
     "stateArchived": "Archived",
     "boardArchivedNotice": "This board is archived and read-only."
-  }
+  },
+  "BoardSettings.notificationsLabel": "Notifications for this board",
+  "BoardSettings.notificationsAriaLabel": "Toggle notifications for this board",
+  "BoardSettings.notificationsLoadError": "Failed to load notification preference.",
+  "BoardSettings.notificationsUpdateError": "Failed to update notification preference."
 }
