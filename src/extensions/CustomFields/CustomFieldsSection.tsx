@@ -4,9 +4,7 @@
 //       the section manages its own field + value state via hooks.
 import { useCallback } from 'react';
 import translations from './translations/en.json';
-import { useCustomFields, useCardCustomFieldValues } from './api';
-import { upsertCardFieldValue, deleteCardFieldValue } from './api';
-import { apiClient } from '~/common/api/client';
+import { useCustomFields, useCardCustomFieldValues, invalidateBoardCardFieldValuesCache } from './api';
 import CustomFieldValueEditor from './CustomFieldValueEditor';
 import type { CustomFieldValue } from './types';
 
@@ -22,16 +20,21 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 
   const handleValueChange = useCallback(
     (fieldId: string, updated: CustomFieldValue | null) => {
-      setValues(
-        updated
-          ? // Replace existing entry or add new one
-            values.some((v) => v.custom_field_id === fieldId)
-            ? values.map((v) => (v.custom_field_id === fieldId ? updated : v))
-            : [...values, updated]
-          : values.filter((v) => v.custom_field_id !== fieldId),
-      );
+      let nextValues: CustomFieldValue[];
+      if (updated) {
+        // Replace existing entry or add new one.
+        const hasExisting = values.some((v) => v.custom_field_id === fieldId);
+        nextValues = hasExisting
+          ? values.map((v) => (v.custom_field_id === fieldId ? updated : v))
+          : [...values, updated];
+      } else {
+        nextValues = values.filter((v) => v.custom_field_id !== fieldId);
+      }
+
+      setValues(nextValues);
+      invalidateBoardCardFieldValuesCache(boardId);
     },
-    [values, setValues],
+    [boardId, values, setValues],
   );
 
   if (fieldsLoading || valuesLoading) {
@@ -71,5 +74,6 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 };
 
 // Re-export so consumers can also access badge values for tile rendering.
-export { useCustomFields, useCardCustomFieldValues, upsertCardFieldValue, deleteCardFieldValue, apiClient };
+export { useCustomFields, useCardCustomFieldValues, upsertCardFieldValue, deleteCardFieldValue } from './api';
+export { apiClient } from '~/common/api/client';
 export default CustomFieldsSection;
