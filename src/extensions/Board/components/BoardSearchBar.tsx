@@ -164,7 +164,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
           onFocus={() => {
             if (inputValue.trim().length >= MIN_CHARS) setPanelOpen(true);
           }}
-          placeholder="Search board…"
+          placeholder="Search a card name or description..."
           className="min-w-0 flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
         />
         {inputValue && (

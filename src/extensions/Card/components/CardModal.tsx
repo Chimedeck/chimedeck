@@ -11,7 +11,6 @@ import CardChecklist from './CardChecklist';
 import CardMetaStrip from './CardMetaStrip';
 import CardModalBottomBar from './CardModalBottomBar';
 import ResizablePanels from './ResizablePanels';
-import CardValue from './CardValue';
 import ActivityFeed from '../containers/CardModal/ActivityFeed';
 import CardDetailPluginBadges from '../../Plugins/uiInjections/CardDetailPluginBadges';
 import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
@@ -160,6 +159,8 @@ const CardModal = ({
                 boardMembers={boardMembers}
                 cardId={card.id}
                 currentUserId={currentUserId}
+                amount={card.amount ?? null}
+                currency={card.currency ?? null}
                 startDate={card.start_date}
                 dueDate={card.due_date}
                 dueComplete={card.due_complete}
@@ -169,6 +170,7 @@ const CardModal = ({
                 onLabelCreate={onLabelCreate}
                 onMemberAssign={onMemberAssign}
                 onMemberRemove={onMemberRemove}
+                onMoneySave={onMoneySave}
                 onStartDateChange={onStartDateChange}
                 onDueDateChange={onDueDateChange}
                 onDueCompleteChange={onDueCompleteChange}
@@ -221,14 +223,8 @@ const CardModal = ({
 
                     <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
 
-                    {/* Plugin detail badges and value inline */}
+                    {/* Plugin detail badges */}
                     <div className="flex flex-wrap gap-3">
-                      <CardValue
-                        amount={card.amount ?? null}
-                        currency={card.currency ?? null}
-                        onSave={onMoneySave}
-                        disabled={isReadOnly}
-                      />
                       <CardDetailPluginBadges
                         cardId={card.id}
                         listId={card.list_id}
@@ -294,14 +290,8 @@ const CardModal = ({
 
                   <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
 
-                  {/* Plugin detail badges and value inline */}
+                  {/* Plugin detail badges */}
                   <div className="flex flex-wrap gap-3">
-                    <CardValue
-                      amount={card.amount ?? null}
-                      currency={card.currency ?? null}
-                      onSave={onMoneySave}
-                      disabled={isReadOnly}
-                    />
                     <CardDetailPluginBadges
                       cardId={card.id}
                       listId={card.list_id}

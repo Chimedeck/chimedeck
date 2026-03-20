@@ -6,6 +6,7 @@ import { CheckIcon } from '@heroicons/react/24/solid';
 import type { Label, CardMember } from '../api';
 import { LabelChip } from './LabelChip';
 import { CardDatesPicker } from './CardDatesPicker';
+import CardValue from './CardValue';
 
 const PRESET_COLORS = [
   { name: 'Slate', hex: '#64748b' },
@@ -36,12 +37,15 @@ export interface CardMetaStripProps {
   startDate: string | null;
   dueDate: string | null;
   dueComplete: boolean;
+  amount: string | null;
+  currency: string | null;
   disabled?: boolean;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
   onMemberAssign: (userId: string) => Promise<void>;
   onMemberRemove: (userId: string) => Promise<void>;
+  onMoneySave: (amount: string | null, currency: string) => Promise<void>;
   onStartDateChange: (date: string | null) => void;
   onDueDateChange: (date: string | null) => void;
   onDueCompleteChange: (done: boolean) => void;
@@ -160,7 +164,7 @@ const LabelSection = ({
         <LabelChip
           key={label.id}
           label={label}
-          {...(!disabled && { onRemove: () => onDetach(label.id) })}
+          {...(!disabled && { onRemove: () => { void onDetach(label.id); } })}
         />
       ))}
       {overflow > 0 && (
@@ -461,6 +465,75 @@ const DatesButton = ({
 };
 
 // ------------------------------------------------------------------
+// Money button + popover editor
+// ------------------------------------------------------------------
+function formatMoney(amount: string, currency: string | null): string {
+  const numericAmount = Number.parseFloat(amount);
+  if (Number.isNaN(numericAmount)) return '$';
+
+  const currencyCode = currency || 'USD';
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: numericAmount % 1 === 0 ? 0 : 2,
+    }).format(numericAmount);
+  } catch {
+    return `${currencyCode} ${numericAmount}`;
+  }
+}
+
+const MoneyButton = ({
+  amount,
+  currency,
+  disabled,
+  onMoneySave,
+}: {
+  amount: string | null;
+  currency: string | null;
+  disabled?: boolean;
+  onMoneySave: (amount: string | null, currency: string) => Promise<void>;
+}) => {
+  const { open, setOpen, ref } = usePopover();
+
+  const pillText = amount ? formatMoney(amount, currency) : '$';
+  const pillClass = amount
+    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-900/60'
+    : 'border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
+
+  return (
+    <div className="relative flex items-center gap-1" ref={ref}>
+      <button
+        type="button"
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${pillClass}`}
+        onClick={() => setOpen((v) => !v)}
+        disabled={disabled}
+        aria-label="Card pricing"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+      >
+        <span className="text-xs font-semibold leading-none">$</span>
+        {amount && <span>{pillText}</span>}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-3">
+            <CardValue
+              amount={amount}
+              currency={currency}
+              onSave={onMoneySave}
+              disabled={disabled}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ------------------------------------------------------------------
 // Main CardMetaStrip
 // ------------------------------------------------------------------
 const CardMetaStrip = ({
@@ -468,6 +541,8 @@ const CardMetaStrip = ({
   allLabels,
   members,
   boardMembers,
+  amount,
+  currency,
   startDate,
   dueDate,
   dueComplete,
@@ -477,6 +552,7 @@ const CardMetaStrip = ({
   onLabelCreate,
   onMemberAssign,
   onMemberRemove,
+  onMoneySave,
   onStartDateChange,
   onDueDateChange,
   onDueCompleteChange,
@@ -484,8 +560,7 @@ const CardMetaStrip = ({
   return (
     <div
       className="flex flex-wrap items-center gap-x-3 gap-y-2 px-2 py-1.5"
-      role="group"
-      aria-label="Card metadata: labels, members, and dates"
+      aria-label="Card metadata: labels, members, pricing, and dates"
     >
       {/* Labels */}
       <LabelSection
@@ -507,6 +582,17 @@ const CardMetaStrip = ({
         {...(disabled && { disabled })}
         onAssign={onMemberAssign}
         onRemove={onMemberRemove}
+      />
+
+      {/* Divider */}
+      <span className="h-4 w-px bg-gray-200 dark:bg-slate-700 flex-shrink-0" aria-hidden="true" />
+
+      {/* Pricing */}
+      <MoneyButton
+        amount={amount}
+        currency={currency}
+        onMoneySave={onMoneySave}
+        {...(disabled && { disabled })}
       />
 
       {/* Divider */}
