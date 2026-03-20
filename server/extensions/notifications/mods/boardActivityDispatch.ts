@@ -1,11 +1,13 @@
 // boardActivityDispatch.ts — Fire-and-forget notification dispatch for board-level events.
 // Handles both email and in-app channels for card_created, card_moved, card_commented events.
-// Called from the events pipeline after event persistence. Fetches board members
-// and dispatches notifications via emailDispatch and direct DB insert + WS publish.
+// Called from the events pipeline after event persistence. Fetches actual board members
+// (board_members table) and filters out users who opted out at the board or global level.
 // Failures are logged and never propagate — this must not block mutations.
 import { db } from '../../../common/db';
 import { dispatchNotificationEmail } from './emailDispatch';
 import { preferenceGuard } from './preferenceGuard';
+import { boardPreferenceGuard } from './boardPreferenceGuard';
+import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
 import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { env } from '../../../config/env';
@@ -30,9 +32,9 @@ export async function handleBoardActivityNotification({
     const board = await db('boards').where({ id: boardId }).select('id', 'title', 'workspace_id').first();
     if (!board) return;
 
-    // Fetch all workspace members excluding the actor (board access is workspace-scoped)
-    const members = await db('memberships')
-      .where({ workspace_id: board.workspace_id })
+    // Fetch board members only — notifications are scoped to board membership, not workspace
+    const members = await db('board_members')
+      .where({ board_id: boardId })
       .whereNot({ user_id: actorId })
       .select('user_id');
 
@@ -81,6 +83,18 @@ export async function handleBoardActivityNotification({
 
     // Fire-and-forget per recipient — failures never block the mutation path
     for (const recipientId of recipientIds) {
+      // --- Board-scoped and global opt-out guards (Sprint 95) ---
+      // Both checks use opt-out model: missing row = enabled.
+      try {
+        const [globalEnabled, boardEnabled] = await Promise.all([
+          globalPreferenceGuard({ userId: recipientId }),
+          boardPreferenceGuard({ userId: recipientId, boardId }),
+        ]);
+        if (!globalEnabled || !boardEnabled) continue;
+      } catch {
+        // Fail open: if guard lookup fails, proceed with notification
+      }
+
       // --- In-app channel ---
       let inAppEnabled = true;
       if (env.NOTIFICATION_PREFERENCES_ENABLED) {
