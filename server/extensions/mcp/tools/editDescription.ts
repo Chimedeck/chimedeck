@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
-export function registerEditDescription(server: McpServer): void {
+export function registerEditDescription(server: McpServer, token: string): void {
   server.tool(
     'edit_card_description',
     'Update the description of an existing card.',
@@ -15,6 +15,7 @@ export function registerEditDescription(server: McpServer): void {
         method: 'PATCH',
         path: `/api/v1/cards/${cardId}/description`,
         body: { description },
+        token,
       });
 
       if ('error' in result) {

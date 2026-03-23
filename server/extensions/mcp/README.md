@@ -226,6 +226,9 @@ Returns `204 No Content` on success.
 | `edit_card_description` | Update the description of a card | `PATCH /api/v1/cards/:cardId/description` |
 | `set_card_price` | Set or clear the price on a card | `PATCH /api/v1/cards/:cardId/money` |
 | `invite_to_board` | Invite a user to a board by email (requires board admin) | `POST /api/v1/boards/:boardId/members` |
+| `search_cards` | Full-text search over cards within a workspace | `GET /api/v1/workspaces/:workspaceId/search` |
+| `search_board` | Full-text search over cards and lists scoped to a single board | `GET /api/v1/boards/:boardId/search` |
+| `get_card` | Retrieve the full details of a single card by its ID | `GET /api/v1/cards/:cardId` |
 
 ### Tool Parameters
 
@@ -271,3 +274,22 @@ Returns `204 No Content` on success.
 | `role` | `"member"` \| `"observer"` | No | Role to assign (defaults to `"member"`) |
 
 > **Note:** `invite_to_board` requires the token holder to be a board admin. If they are not, the tool returns a structured error (`current-user-is-not-admin`) instead of crashing.
+
+#### `search_cards`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `workspaceId` | string | ✅ | ID of the workspace to search within |
+| `q` | string | ✅ | Full-text search query |
+| `limit` | number | No | Maximum number of results to return (default: 20) |
+
+#### `search_board`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board to search within |
+| `q` | string | ✅ | Full-text search query |
+| `limit` | number | No | Maximum number of results to return |
+
+#### `get_card`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `cardId` | string | ✅ | ID of the card to retrieve |

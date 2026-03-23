@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
-export function registerWriteComment(server: McpServer): void {
+export function registerWriteComment(server: McpServer, token: string): void {
   server.tool(
     'write_comment',
     'Post a comment on a card.',
@@ -15,6 +15,7 @@ export function registerWriteComment(server: McpServer): void {
         method: 'POST',
         path: `/api/v1/cards/${cardId}/comments`,
         body: { text },
+        token,
       });
 
       if ('error' in result) {

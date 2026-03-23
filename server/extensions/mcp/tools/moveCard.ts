@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
-export function registerMoveCard(server: McpServer): void {
+export function registerMoveCard(server: McpServer, token: string): void {
   server.tool(
     'move_card',
     'Move a card to a different list, optionally at a specific position.',
@@ -16,6 +16,7 @@ export function registerMoveCard(server: McpServer): void {
         method: 'PATCH',
         path: `/api/v1/cards/${cardId}/move`,
         body: { targetListId, position },
+        token,
       });
 
       if ('error' in result) {

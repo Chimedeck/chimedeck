@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
-export function registerInviteToBoard(server: McpServer): void {
+export function registerInviteToBoard(server: McpServer, token: string): void {
   server.tool(
     'invite_to_board',
     'Invite a user to a board by email. Requires the token holder to be a board admin.',
@@ -19,6 +19,7 @@ export function registerInviteToBoard(server: McpServer): void {
         method: 'POST',
         path: `/api/v1/boards/${boardId}/members`,
         body: { email, role },
+        token,
       });
 
       if ('error' in result) {

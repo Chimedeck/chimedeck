@@ -2,20 +2,17 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
-export function registerCreateCard(server: McpServer, token: string): void {
+export function registerGetCard(server: McpServer, token: string): void {
   server.tool(
-    'create_card',
-    'Create a new card in a specified list.',
+    'get_card',
+    'Retrieve the full details of a single card by its ID.',
     {
-      listId: z.string().describe('ID of the list to create the card in'),
-      title: z.string().describe('Title of the new card'),
-      description: z.string().optional().describe('Optional description for the new card'),
+      cardId: z.string().describe('ID of the card to retrieve'),
     },
-    async ({ listId, title, description }) => {
+    async ({ cardId }) => {
       const result = await apiCall<{ data: unknown }>({
-        method: 'POST',
-        path: `/api/v1/lists/${listId}/cards`,
-        body: { title, description },
+        method: 'GET',
+        path: `/api/v1/cards/${cardId}`,
         token,
       });
 

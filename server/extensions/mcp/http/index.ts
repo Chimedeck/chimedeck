@@ -14,13 +14,15 @@ export async function mcpHttpHandler(req: Request): Promise<Response | null> {
   if (authError) return authError;
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
+  // Extract the raw token so tools can make API calls as this user.
+  const token = req.headers.get('Authorization')!.slice(7);
   const method = req.method.toUpperCase();
 
   // --- Initialize (POST, no session yet) ---
   if (method === 'POST' && !req.headers.get('mcp-session-id')) {
     const sessionId = randomUUID();
     const server = new McpServer({ name: 'horiflow', version: '1.0.0' });
-    registerMcpTools(server);
+    registerMcpTools(server, token);
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: () => sessionId,

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
-export function registerSetCardPrice(server: McpServer): void {
+export function registerSetCardPrice(server: McpServer, token: string): void {
   server.tool(
     'set_card_price',
     'Set or clear the price on a card. Pass amount=null to remove the price.',
@@ -18,6 +18,7 @@ export function registerSetCardPrice(server: McpServer): void {
         method: 'PATCH',
         path: `/api/v1/cards/${cardId}/money`,
         body: { amount, currency, label },
+        token,
       });
 
       if ('error' in result) {
