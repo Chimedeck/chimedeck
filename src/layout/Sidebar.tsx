@@ -466,6 +466,16 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     {translations['Sidebar.settings']}
                   </NavLink>
                 </li>
+                <li role="none">
+                  <NavLink
+                    to="/settings/api-tokens"
+                    role="menuitem"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="block w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    {translations['Sidebar.apiTokens']}
+                  </NavLink>
+                </li>
                 <li role="separator" className="my-1 border-t border-slate-200 dark:border-slate-700" />
                 <li role="none">
                   <button
