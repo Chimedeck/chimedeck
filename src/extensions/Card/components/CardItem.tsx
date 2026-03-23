@@ -86,7 +86,7 @@ const CardItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700/50 rounded-lg overflow-hidden cursor-pointer transition-colors${
+      className={`bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700/50 rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90' : ''
       }`}
       role="button"
