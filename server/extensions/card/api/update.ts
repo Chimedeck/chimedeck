@@ -13,6 +13,7 @@ import {
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
+import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 
 // ISO 4217 3-letter currency code regex
 const CURRENCY_RE = /^[A-Z]{3}$/;
@@ -234,10 +235,20 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     return rows;
   });
 
+  const cardRow = updated[0] as Record<string, unknown>;
   const cardWithCover = await resolveCoverImageUrl(updated[0] as { id: string; cover_attachment_id?: string | null });
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
   await dispatchEvent({ type: 'card.updated', boardId: board.id, entityId: cardId, actorId, payload: { card: cardWithCover } });
+
+  // Fire-and-forget board activity notification for card_updated
+  const changedFields = Object.keys(updates).filter((k) => k !== 'updated_at');
+  dispatchDirectCardNotification({
+    payload: { type: 'card_updated', cardTitle: (cardRow.title as string) ?? '', changedFields },
+    boardId: board.id,
+    cardId,
+    actorId,
+  }).catch(() => {});
 
   // Emit activity event when money fields change
   if (body.amount !== undefined || (body.currency !== undefined && body.amount !== null)) {

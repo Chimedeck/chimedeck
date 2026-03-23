@@ -77,7 +77,10 @@ const GlobalNotificationToggle = () => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      <h2 className="text-base font-semibold text-slate-100">
+        {translations['GlobalNotificationToggle.heading']}
+      </h2>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-slate-200">
           {enabled ? (

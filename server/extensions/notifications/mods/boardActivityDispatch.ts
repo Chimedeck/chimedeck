@@ -1,5 +1,6 @@
 // boardActivityDispatch.ts — Fire-and-forget notification dispatch for board-level events.
-// Handles both email and in-app channels for card_created, card_moved, card_commented events.
+// Handles both email and in-app channels for card_created, card_moved events (events pipeline).
+// card_commented and direct card mutations are dispatched via dispatchDirectCardNotification.
 // Called from the events pipeline after event persistence. Fetches actual board members
 // (board_members table) and filters out users who opted out at the board or global level.
 // Failures are logged and never propagate — this must not block mutations.
@@ -13,9 +14,18 @@ import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { env } from '../../../config/env';
 import type { WrittenEvent } from '../../../mods/events/index';
 
-type SupportedEventType = 'card.created' | 'card.moved' | 'comment_added';
+type SupportedEventType = 'card.created' | 'card.moved';
 
-const SUPPORTED_EVENTS = new Set<string>(['card.created', 'card.moved', 'comment_added']);
+// Direct-dispatch payload union for card mutation and comment events.
+// These are fired from card/comment endpoints directly rather than via the events pipeline.
+// card_commented stores commentId in source_id so recipients can navigate to the exact comment.
+export type DirectCardNotificationPayload =
+  | { type: 'card_updated'; cardTitle: string; changedFields: string[] }
+  | { type: 'card_deleted'; cardTitle: string }
+  | { type: 'card_archived'; cardTitle: string; archived: boolean }
+  | { type: 'card_commented'; cardTitle: string; commentPreview: string; commentId: string };
+
+const SUPPORTED_EVENTS = new Set<string>(['card.created', 'card.moved']);
 
 export async function handleBoardActivityNotification({
   event,
@@ -156,7 +166,6 @@ function eventTypeToNotificationType(eventType: SupportedEventType) {
   switch (eventType) {
     case 'card.created': return 'card_created' as const;
     case 'card.moved': return 'card_moved' as const;
-    case 'comment_added': return 'card_commented' as const;
   }
 }
 
@@ -204,35 +213,123 @@ async function buildTemplateData({
     };
   }
 
-  if (eventType === 'comment_added') {
-    const cardId = payload.cardId as string | undefined;
-    const cardTitle = payload.cardTitle as string | undefined;
-    if (!cardId) return null;
+  return null;
+}
+
+// Dispatches in-app notifications to all board members (except actor) for direct card mutations.
+// Also dispatches email for card_commented.
+// Fire-and-forget — callers must not await this; failures are swallowed internally.
+export async function dispatchDirectCardNotification({
+  payload,
+  boardId,
+  cardId,
+  actorId,
+}: {
+  payload: DirectCardNotificationPayload;
+  boardId: string;
+  cardId: string;
+  actorId: string;
+}): Promise<void> {
+  try {
+    const members = await db('board_members')
+      .where({ board_id: boardId })
+      .whereNot({ user_id: actorId })
+      .select('user_id');
+
+    if (members.length === 0) return;
 
     const actor = await db('users')
       .where({ id: actorId })
-      .select(db.raw("COALESCE(name, email) as name"))
+      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
       .first();
-
-    const comment = await db('comments')
-      .where({ card_id: cardId })
-      .orderBy('created_at', 'desc')
-      .select('content')
-      .first();
-
-    const cardUrl = `/boards/${event.board_id}/cards/${cardId}`;
-    // Provide a short preview of the comment (strip HTML tags, max 120 chars)
-    const commentText = (comment?.content ?? '').replace(/<[^>]+>/g, '');
-    const commentPreview = commentText.length > 120 ? commentText.slice(0, 117) + '…' : commentText;
-
-    return {
-      actorName: actor?.name ?? 'Someone',
-      cardTitle: cardTitle ?? '',
-      boardName,
-      commentPreview,
-      cardUrl,
+    const actorAvatarUrl = actor?.avatar_url
+      ? await resolveAvatarUrl({ avatarUrl: actor.avatar_url })
+      : null;
+    const actorPayloadData = {
+      id: actorId,
+      nickname: actor?.nickname ?? null,
+      name: actor?.name ?? null,
+      avatar_url: actorAvatarUrl,
     };
-  }
 
-  return null;
+    const notificationType = payload.type;
+    const now = new Date().toISOString();
+
+    // For card_commented: resolve email template data and store commentId in source_id
+    let emailTemplateData: Record<string, string> | null = null;
+    let sourceId: string | null = null;
+    if (payload.type === 'card_commented') {
+      sourceId = payload.commentId;
+      const board = await db('boards').where({ id: boardId }).select('title').first();
+      emailTemplateData = {
+        actorName: actor?.name ?? 'Someone',
+        cardTitle: payload.cardTitle,
+        boardName: board?.title ?? '',
+        commentPreview: payload.commentPreview,
+        cardUrl: `/boards/${boardId}/cards/${cardId}`,
+      };
+    }
+
+    for (const { user_id: recipientId } of members) {
+      try {
+        const [globalEnabled, boardEnabled] = await Promise.all([
+          globalPreferenceGuard({ userId: recipientId }),
+          boardPreferenceGuard({ userId: recipientId, boardId }),
+        ]);
+        if (!globalEnabled || !boardEnabled) continue;
+      } catch {
+        // Fail open
+      }
+
+      let inAppEnabled = true;
+      if (env.NOTIFICATION_PREFERENCES_ENABLED) {
+        try {
+          const pref = await preferenceGuard({ userId: recipientId, type: notificationType });
+          inAppEnabled = pref.in_app_enabled;
+        } catch {
+          inAppEnabled = true;
+        }
+      }
+
+      if (inAppEnabled) {
+        db('notifications')
+          .insert({
+            user_id: recipientId,
+            type: notificationType,
+            source_type: 'board_activity',
+            source_id: sourceId,
+            card_id: cardId,
+            board_id: boardId,
+            actor_id: actorId,
+            read: false,
+            created_at: now,
+          }, ['*'])
+          .then(([inserted]) => {
+            if (inserted) {
+              publishToUser(recipientId, {
+                type: 'notification_created',
+                payload: {
+                  notification: {
+                    ...inserted,
+                    actor: actorPayloadData,
+                  },
+                },
+              });
+            }
+          })
+          .catch(() => {});
+      }
+
+      // Dispatch email for card_commented
+      if (emailTemplateData) {
+        dispatchNotificationEmail({
+          recipientId,
+          type: notificationType,
+          templateData: emailTemplateData,
+        }).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn('[boardActivityDispatch] dispatchDirectCardNotification failed:', err);
+  }
 }

@@ -14,6 +14,7 @@ import { publisher } from '../../../mods/pubsub/publisher';
 import { syncMentions } from '../../../common/mentions/sync';
 import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
+import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -200,6 +201,17 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   publisher
     .publish(board.id, JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }))
     .catch(() => {});
+
+  // Fire-and-forget card_commented notification for all board members (except commenter).
+  // commentPreview strips HTML tags and truncates to 120 chars.
+  const rawPreview = trimmedContent.replace(/<[^>]+>/g, '');
+  const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
+  dispatchDirectCardNotification({
+    payload: { type: 'card_commented', cardTitle: card.title, commentPreview, commentId: id },
+    boardId: board.id,
+    cardId,
+    actorId,
+  }).catch(() => {});
 
   return Response.json({ data: commentData }, { status: 201 });
 }

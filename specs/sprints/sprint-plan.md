@@ -104,6 +104,12 @@
 | [71](./sprint-71.md) | Notification Preferences UI | Toggle matrix in Profile Settings (4 types × 2 channels); optimistic PATCH; email column disabled when SES off | ⬜ Needs 70 + 24 |
 | [72](./sprint-72.md) | Email Notifications (Mentions + Board Activity) | SES email templates for mention/card_created/card_moved/card_commented; `boardActivityDispatch`; `EMAIL_NOTIFICATIONS_ENABLED` flag; fire-and-forget | ⬜ Needs 70 + 23 + 26 |
 | [73](./sprint-73.md) | In-App Notifications for Board Activity | Extend in-app notifications to card_created/card_moved/card_commented; WS push to board members; new icons + copy in notification panel; `type` filter on list API | ⬜ Needs 70 + 26 + 72 |
+| [95](./sprint-95.md) | Board-scoped Notification Preferences (Global) | `board_notification_preferences` table; per-board global on/off toggle in board settings "User settings"; `user_notification_settings` master toggle; guard in `boardActivityDispatch` | ⬜ Needs 70 + 73 |
+| [96](./sprint-96.md) | Profile Settings: Notifications Tab | Refactor `EditProfilePage` into tab layout (Profile / Notifications); URL-driven tab state (`?tab=notifications`); master toggle + preference matrix on Notifications tab | ⬜ Needs 71 + 95 |
+| [97](./sprint-97.md) | New Notification Types: card_updated, card_deleted, card_archived | DB constraint extended; server dispatch wired on card PATCH/DELETE/archive; client types + labels + icons for 3 new types; preference panel shows all 9 types | ⬜ Needs 73 + 88 + 96 |
+| [98](./sprint-98.md) | card_commented Notification Dispatch | Wire comment creation to `boardActivityDispatch`; in-app + WS push; email via SES for `card_commented`; self-exclusion guard | ⬜ Needs 72 + 73 |
+| [99](./sprint-99.md) | Email Templates for New Notification Types | SES templates for card_updated / card_deleted / card_archived; fix `shared.ts` deep-link to `?tab=notifications`; verify card_commented end-to-end | ⬜ Needs 72 + 97 + 98 |
+| [100](./sprint-100.md) | Board-Level Per-Type Notification Preferences | `board_notification_type_preferences` table; GET/PATCH/DELETE API; override cascade (board-type → user-type → default); `BoardNotificationTypePreferences` toggle matrix in board settings | ⬜ Needs 95 + 96 + 97 |
 | **— Admin Enhancements —** | | | |
 | [74](./sprint-74.md) | Admin: Auto-Verify External User Email | `autoVerifyEmail` param on `POST /api/v1/admin/users`; sets `email_verified_at` at creation; checkbox in invite modal (default: checked); verification status in credential sheet | ⬜ Needs 44 + 45 |
 | **— UI / UX Polish —** | | | |
@@ -242,6 +248,12 @@ Sprint 70 ──────────── NotificationPreference (per user,
 Sprint 71 ──────────── Notification preferences settings UI
 Sprint 72 ──────────── Email notification dispatch (mention, card_created, card_moved, card_commented)
 Sprint 73 ──────────── In-app board activity notifications; extend notification panel
+Sprint 95 ──────────── Board-scoped global notification toggle; user global master toggle
+Sprint 96 ──────────── Profile settings tab layout: Profile tab + Notifications tab
+Sprint 97 ──────────── New notification types: card_updated, card_deleted, card_archived; dispatch + client
+Sprint 98 ──────────── card_commented dispatch: comment creation triggers in-app + email notification
+Sprint 99 ──────────── Email templates for card_updated / card_deleted / card_archived
+Sprint 100 ─────────── Board-level per-type notification overrides; `board_notification_type_preferences`
 ──── Admin Enhancements ─────────────────────────────────────────────────────────────────────────
 Sprint 74 ──────────── Admin auto-verify external user email on invite
 ──── UI / UX Polish ─────────────────────────────────────────────────────────────────────────────

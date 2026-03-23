@@ -8,6 +8,9 @@ export const NOTIFICATION_TYPES = [
   'card_commented',
   'card_member_assigned',
   'card_member_unassigned',
+  'card_updated',
+  'card_deleted',
+  'card_archived',
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -19,6 +22,9 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   card_commented: 'Card commented',
   card_member_assigned: 'Member assigned',
   card_member_unassigned: 'Member removed',
+  card_updated: 'Card updated',
+  card_deleted: 'Card deleted',
+  card_archived: 'Card archived',
 };
 
 export interface NotificationPreference {

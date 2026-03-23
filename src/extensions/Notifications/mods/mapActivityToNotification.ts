@@ -15,15 +15,23 @@ import type { NotificationType } from '~/extensions/Notification/api';
 export type ActivityAction =
   | 'card_created'
   | 'card_moved'
+  | 'card_commented'
   | 'card_member_assigned'
-  | 'card_member_unassigned';
+  | 'card_member_unassigned'
+  | 'card_updated'
+  | 'card_deleted'
+  | 'card_archived';
 
 // Map activity actions to notification types. Preference lookups use this key.
 const ACTION_TO_NOTIFICATION_TYPE: Record<ActivityAction, NotificationType | string> = {
   card_created: 'card_created',
   card_moved: 'card_moved',
+  card_commented: 'card_commented',
   card_member_assigned: 'card_member_assigned',
   card_member_unassigned: 'card_member_unassigned',
+  card_updated: 'card_updated',
+  card_deleted: 'card_deleted',
+  card_archived: 'card_archived',
 };
 
 export interface ActivityPayload {
@@ -38,6 +46,10 @@ export interface ActivityPayload {
   toListName?: string | null;
   userId?: string | null;
   workspaceId?: string | null;
+  changedFields?: string[] | null;
+  archived?: boolean | null;
+  commentPreview?: string | null;
+  commentId?: string | null;
 }
 
 export interface ActivityNotificationDisplay {
@@ -104,6 +116,11 @@ function buildCopy({
         ? `${actorName} created ${card} in ${payload.listName}`
         : `${actorName} created ${card}`;
 
+    case 'card_commented':
+      return payload.commentPreview
+        ? `${actorName} commented on ${card}: "${payload.commentPreview}"`
+        : `${actorName} commented on ${card}`;
+
     case 'card_moved':
       if (payload.fromListName && payload.toListName) {
         return `${actorName} moved ${card} from ${payload.fromListName} to ${payload.toListName}`;
@@ -117,5 +134,18 @@ function buildCopy({
 
     case 'card_member_unassigned':
       return `${actorName} was removed from ${card}`;
+
+    case 'card_updated': {
+      const fields = payload.changedFields?.join(', ');
+      return fields ? `${actorName} updated ${card} (${fields})` : `${actorName} updated ${card}`;
+    }
+
+    case 'card_deleted':
+      return `${actorName} deleted ${card}`;
+
+    case 'card_archived':
+      return payload.archived === false
+        ? `${actorName} unarchived ${card}`
+        : `${actorName} archived ${card}`;
   }
 }

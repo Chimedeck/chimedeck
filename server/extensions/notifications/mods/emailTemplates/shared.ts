@@ -7,7 +7,7 @@ export interface EmailTemplateOutput {
   text: string;
 }
 
-const PREFERENCES_URL = '/settings/profile#notifications';
+const PREFERENCES_URL = '/settings/profile?tab=notifications';
 
 export function wrapInBaseTemplate({
   subject,
