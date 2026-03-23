@@ -24,6 +24,7 @@ import {
 } from './checklistGroup';
 import { handleListDueCards } from './dueDate';
 import { handlePatchCardDescription } from './patch';
+import { handlePatchCardMoney } from './money';
 
 // Returns a Response if the path matches a card route, otherwise null.
 export async function cardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -101,6 +102,9 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
 
     // PATCH /api/v1/cards/:id/description — idempotent offline-replay description save
     if (sub === '/description' && req.method === 'PATCH') return handlePatchCardDescription(req, cardId);
+
+    // PATCH /api/v1/cards/:id/money — update amount, currency, label
+    if (sub === '/money' && req.method === 'PATCH') return handlePatchCardMoney(req, cardId);
 
     // PATCH /api/v1/cards/:id/move
     if (sub === '/move' && req.method === 'PATCH') return handleMoveCard(req, cardId);
