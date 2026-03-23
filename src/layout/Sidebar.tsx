@@ -14,6 +14,7 @@ import {
   BuildingOfficeIcon,
   PuzzlePieceIcon,
   UserPlusIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -362,6 +363,13 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 to="/developer/plugins"
                 icon={<PuzzlePieceIcon className="h-5 w-5" />}
                 label={layoutTranslations['Sidebar.pluginDocsLabel']}
+                collapsed={collapsed}
+                onNavigate={onClose}
+              />
+              <NavItem
+                to="/developer/mcp"
+                icon={<CommandLineIcon className="h-5 w-5" />}
+                label={layoutTranslations['Sidebar.mcpDocsLabel']}
                 collapsed={collapsed}
                 onNavigate={onClose}
               />

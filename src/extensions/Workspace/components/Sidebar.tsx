@@ -12,6 +12,7 @@ import {
   BuildingOfficeIcon,
   PuzzlePieceIcon,
   UserPlusIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -29,6 +30,7 @@ import { selectAdminEmailDomains } from '~/slices/featureFlagsSlice';
 import { openInviteModal } from '~/extensions/AdminInvite/adminInvite.slice';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
 import translations from '../translations/en.json';
+import commonTranslations from '~/common/translations/en.json';
 
 export default function Sidebar() {
   const dispatch = useAppDispatch();
@@ -218,7 +220,22 @@ export default function Sidebar() {
                   }
                 >
                   <PuzzlePieceIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                  Plugin Docs
+                  {commonTranslations['Sidebar.pluginDocsLabel']}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/developer/mcp"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
+                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                    }`
+                  }
+                >
+                  <CommandLineIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  {commonTranslations['Sidebar.mcpDocsLabel']}
                 </NavLink>
               </li>
               {/* Invite External User — visible only to admin-domain users */}

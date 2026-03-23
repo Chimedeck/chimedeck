@@ -41,6 +41,7 @@
   "Sidebar.searchLabel": "Search",
   "Sidebar.searchAriaLabel": "Search (⌘K)",
   "Sidebar.pluginDocsLabel": "Plugin Docs",
+  "Sidebar.mcpDocsLabel": "MCP Docs",
   "Sidebar.inviteExternalUser": "Invite External User",
   "Sidebar.expandAriaLabel": "Expand sidebar",
   "Sidebar.collapseAriaLabel": "Collapse sidebar",
