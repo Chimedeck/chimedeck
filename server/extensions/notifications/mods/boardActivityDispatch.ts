@@ -6,8 +6,7 @@
 // Failures are logged and never propagate — this must not block mutations.
 import { db } from '../../../common/db';
 import { dispatchNotificationEmail } from './emailDispatch';
-import { preferenceGuard } from './preferenceGuard';
-import { boardPreferenceGuard } from './boardPreferenceGuard';
+import { boardPreferenceGuard, resolveNotificationChannels } from './boardPreferenceGuard';
 import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
 import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
@@ -105,14 +104,20 @@ export async function handleBoardActivityNotification({
         // Fail open: if guard lookup fails, proceed with notification
       }
 
-      // --- In-app channel ---
+      // --- In-app and email channel resolution (Sprint 100: board-type cascade) ---
       let inAppEnabled = true;
+      let emailEnabled = true;
       if (env.NOTIFICATION_PREFERENCES_ENABLED) {
         try {
-          const pref = await preferenceGuard({ userId: recipientId, type: notificationType });
-          inAppEnabled = pref.in_app_enabled;
+          const channels = await resolveNotificationChannels({
+            userId: recipientId,
+            boardId,
+            type: notificationType,
+          });
+          inAppEnabled = channels.inApp;
+          emailEnabled = channels.email;
         } catch {
-          inAppEnabled = true; // fail open
+          // Fail open
         }
       }
 
@@ -153,6 +158,7 @@ export async function handleBoardActivityNotification({
         recipientId,
         type: notificationType,
         templateData,
+        emailEnabled,
       }).catch(() => {
         // Per-recipient email failures are silently swallowed
       });
@@ -311,12 +317,18 @@ export async function dispatchDirectCardNotification({
       }
 
       let inAppEnabled = true;
+      let emailEnabled = true;
       if (env.NOTIFICATION_PREFERENCES_ENABLED) {
         try {
-          const pref = await preferenceGuard({ userId: recipientId, type: notificationType });
-          inAppEnabled = pref.in_app_enabled;
+          const channels = await resolveNotificationChannels({
+            userId: recipientId,
+            boardId,
+            type: notificationType,
+          });
+          inAppEnabled = channels.inApp;
+          emailEnabled = channels.email;
         } catch {
-          inAppEnabled = true;
+          // Fail open
         }
       }
 
@@ -355,6 +367,7 @@ export async function dispatchDirectCardNotification({
           recipientId,
           type: notificationType,
           templateData: emailTemplateData,
+          emailEnabled,
         }).catch(() => {});
       }
     }
