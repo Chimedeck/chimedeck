@@ -110,6 +110,12 @@
 | [98](./sprint-98.md) | card_commented Notification Dispatch | Wire comment creation to `boardActivityDispatch`; in-app + WS push; email via SES for `card_commented`; self-exclusion guard | ⬜ Needs 72 + 73 |
 | [99](./sprint-99.md) | Email Templates for New Notification Types | SES templates for card_updated / card_deleted / card_archived; fix `shared.ts` deep-link to `?tab=notifications`; verify card_commented end-to-end | ⬜ Needs 72 + 97 + 98 |
 | [100](./sprint-100.md) | Board-Level Per-Type Notification Preferences | `board_notification_type_preferences` table; GET/PATCH/DELETE API; override cascade (board-type → user-type → default); `BoardNotificationTypePreferences` toggle matrix in board settings | ⬜ Needs 95 + 96 + 97 |
+| **— External API, MCP & CLI —** | | | |
+| [101](./sprint-101.md) | API Token Infrastructure | `api_tokens` DB table; `POST/GET/DELETE /api/v1/tokens`; SHA-256 hashed storage; token prefix for display; extend `authenticate` middleware to accept `hf_...` tokens alongside JWT | ⬜ Needs 03 + 15 |
+| [102](./sprint-102.md) | API Token UI (User Settings) | "API Tokens" settings page; generate modal (name + expiry); one-time copy modal; token list with revoke; RTK Query slice | ⬜ Needs 101 + 96 |
+| [103](./sprint-103.md) | External API Surface Audit & Card Money Endpoint | Audit all 6 external operations; add `PATCH /api/v1/cards/:id/money`; add `POST /api/v1/cards/:id/comments` if missing; verify permission guard on board invite; `docs/api-reference.md` | ⬜ Needs 101 |
+| [104](./sprint-104.md) | MCP Server | `server/extensions/mcp/` — MCP stdio server with 6 tools (move_card, write_comment, create_card, edit_card_description, set_card_price, invite_to_board); token auth; Claude Desktop + Cursor setup README | ⬜ Needs 101 + 103 |
+| [105](./sprint-105.md) | CLI | `cli/` — `horiflow` Bun CLI with 6 sub-commands; `--token` flag + `HORIFLOW_TOKEN` env; `--json` mode; `cli/README.md` | ⬜ Needs 101 + 103 |
 | **— Admin Enhancements —** | | | |
 | [74](./sprint-74.md) | Admin: Auto-Verify External User Email | `autoVerifyEmail` param on `POST /api/v1/admin/users`; sets `email_verified_at` at creation; checkbox in invite modal (default: checked); verification status in credential sheet | ⬜ Needs 44 + 45 |
 | **— UI / UX Polish —** | | | |
@@ -254,6 +260,12 @@ Sprint 97 ──────────── New notification types: card_upda
 Sprint 98 ──────────── card_commented dispatch: comment creation triggers in-app + email notification
 Sprint 99 ──────────── Email templates for card_updated / card_deleted / card_archived
 Sprint 100 ─────────── Board-level per-type notification overrides; `board_notification_type_preferences`
+──── External API, MCP & CLI ────────────────────────────────────────────────────────────────────
+Sprint 101 ─────────── API Token infrastructure: DB table, CRUD endpoints, extend authenticate middleware
+Sprint 102 ─────────── API Token UI: generate/list/revoke tokens in User Settings
+Sprint 103 ─────────── External API surface audit: card money endpoint, comments endpoint, API reference doc
+Sprint 104 ─────────── MCP server: 6 tools over stdio transport; Claude Desktop + Cursor setup
+Sprint 105 ─────────── CLI: horiflow CLI with 6 commands, token auth, --json mode
 ──── Admin Enhancements ─────────────────────────────────────────────────────────────────────────
 Sprint 74 ──────────── Admin auto-verify external user email on invite
 ──── UI / UX Polish ─────────────────────────────────────────────────────────────────────────────
