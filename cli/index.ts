@@ -11,6 +11,8 @@ import { runMoveCard } from './commands/moveCard';
 import { runComment } from './commands/comment';
 import { runCreateCard } from './commands/createCard';
 import { runEditDescription } from './commands/editDescription';
+import { runSetPrice } from './commands/setPrice';
+import { runInvite } from './commands/invite';
 
 const VERSION = '0.1.0';
 
@@ -78,6 +80,12 @@ async function main() {
       break;
     case 'edit-description':
       await runEditDescription({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'set-price':
+      await runSetPrice({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'invite':
+      await runInvite({ argv: argv as Record<string, unknown>, config, jsonMode });
       break;
     // Future subcommands are wired in here in subsequent iterations.
     default:
