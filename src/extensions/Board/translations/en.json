@@ -19,5 +19,11 @@
   "BoardSettings.notificationsLabel": "Notifications for this board",
   "BoardSettings.notificationsAriaLabel": "Toggle notifications for this board",
   "BoardSettings.notificationsLoadError": "Failed to load notification preference.",
-  "BoardSettings.notificationsUpdateError": "Failed to update notification preference."
+  "BoardSettings.notificationsUpdateError": "Failed to update notification preference.",
+  "BoardSettings.notificationTypePreferences": "Board notification preferences",
+  "BoardSettings.notificationTypePreferencesReset": "Reset to defaults",
+  "BoardSettings.notificationTypePreferencesResetConfirm": "Reset board overrides?",
+  "BoardSettings.notificationTypePreferencesSource.board": "Board override",
+  "BoardSettings.notificationTypePreferencesSource.user": "From master config",
+  "BoardSettings.notificationTypePreferencesSource.default": "Default (enabled)"
 }
