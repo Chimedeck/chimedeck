@@ -7,6 +7,10 @@
 import minimist from 'minimist';
 import { resolveConfig } from './config';
 import { print } from './output';
+import { runMoveCard } from './commands/moveCard';
+import { runComment } from './commands/comment';
+import { runCreateCard } from './commands/createCard';
+import { runEditDescription } from './commands/editDescription';
 
 const VERSION = '0.1.0';
 
@@ -49,7 +53,8 @@ async function main() {
 
   const [command] = argv._;
 
-  if (argv.help || !command) {
+  // Show global help only when no command is given, or when --help is given without a command.
+  if (!command || (argv.help && !command)) {
     console.log(USAGE);
     process.exit(0);
   }
@@ -62,6 +67,18 @@ async function main() {
   });
 
   switch (command) {
+    case 'move-card':
+      await runMoveCard({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'comment':
+      await runComment({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'create-card':
+      await runCreateCard({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'edit-description':
+      await runEditDescription({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
     // Future subcommands are wired in here in subsequent iterations.
     default:
       console.error(`Unknown command: ${command}\nRun 'horiflow --help' for usage.`);
