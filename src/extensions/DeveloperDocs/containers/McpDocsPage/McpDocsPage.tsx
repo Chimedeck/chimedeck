@@ -243,6 +243,11 @@ const McpDocsPage = () => {
               <BoltIcon className="mr-2 inline h-5 w-5 text-indigo-400" />
               Connecting
             </H2>
+            <P>
+              The Horiflow MCP server runs as a remote HTTP endpoint — you do not need to install
+              anything locally. Point your AI client at the server URL and supply your API token
+              as a bearer header.
+            </P>
 
             <H3>Claude Desktop</H3>
             <P>
@@ -252,63 +257,42 @@ const McpDocsPage = () => {
             <Pre>{`{
   "mcpServers": {
     "horiflow": {
-      "command": "bun",
-      "args": ["run", "/absolute/path/to/server/extensions/mcp/index.ts"],
-      "env": {
-        "HORIFLOW_TOKEN": "hf_your_token_here",
-        "HORIFLOW_API_URL": "http://localhost:3000"
+      "type": "http",
+      "url": "https://your-horiflow-instance.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer hf_your_token_here"
       }
     }
   }
 }`}</Pre>
             <P>
-              Replace <Code>/absolute/path/to</Code> with the actual path to this repository.
+              Replace <Code>your-horiflow-instance.com</Code> with your actual Horiflow host.
               Restart Claude Desktop to pick up the change.
             </P>
 
             <H3>Cursor</H3>
             <P>
-              Create or edit <Code>.cursor/mcp.json</Code> in your home directory (or at the
-              project root for project-scoped config):
+              Create or edit <Code>~/.cursor/mcp.json</Code> (or <Code>.cursor/mcp.json</Code> at
+              the project root for project-scoped config):
             </P>
             <Pre>{`{
   "mcpServers": {
     "horiflow": {
-      "command": "bun",
-      "args": ["run", "/absolute/path/to/server/extensions/mcp/index.ts"],
-      "env": {
-        "HORIFLOW_TOKEN": "hf_your_token_here",
-        "HORIFLOW_API_URL": "http://localhost:3000"
+      "url": "https://your-horiflow-instance.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer hf_your_token_here"
       }
     }
   }
 }`}</Pre>
             <P>Reload Cursor after saving the file.</P>
 
-            <H3>Environment variables</H3>
-            <Table
-              headers={['Variable', 'Required', 'Default', 'Description']}
-              rows={[
-                {
-                  rowId: 'env-token',
-                  cells: [
-                    { key: 'var', content: <Code>HORIFLOW_TOKEN</Code> },
-                    { key: 'req', content: <Badge color="bg-green-900/60 text-green-300">Yes</Badge> },
-                    { key: 'def', content: '—' },
-                    { key: 'desc', content: 'API token generated in User Settings' },
-                  ],
-                },
-                {
-                  rowId: 'env-url',
-                  cells: [
-                    { key: 'var', content: <Code>HORIFLOW_API_URL</Code> },
-                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">No</Badge> },
-                    { key: 'def', content: <Code>http://localhost:3000</Code> },
-                    { key: 'desc', content: 'Base URL of the Horiflow API' },
-                  ],
-                },
-              ]}
-            />
+            <H3>Other MCP clients</H3>
+            <P>
+              Any MCP-compatible client that supports remote HTTP / SSE transport can connect.
+              Configure the endpoint URL to <Code>https://your-horiflow-instance.com/api/mcp</Code>{' '}
+              and pass <Code>Authorization: Bearer hf_your_token_here</Code> as a request header.
+            </P>
           </Section>
 
           <Divider />
