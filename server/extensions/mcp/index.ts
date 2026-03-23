@@ -8,21 +8,11 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 // Import config early so startup validation runs before anything else.
 import './config';
-import { registerMoveCard } from './tools/moveCard';
-import { registerWriteComment } from './tools/writeComment';
-import { registerCreateCard } from './tools/createCard';
-import { registerEditDescription } from './tools/editDescription';
-import { registerSetCardPrice } from './tools/setCardPrice';
-import { registerInviteToBoard } from './tools/inviteToBoard';
+import { registerMcpTools } from './registerTools';
 
 const server = new McpServer({ name: 'horiflow', version: '1.0.0' });
 
-registerMoveCard(server);
-registerWriteComment(server);
-registerCreateCard(server);
-registerEditDescription(server);
-registerSetCardPrice(server);
-registerInviteToBoard(server);
+registerMcpTools(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

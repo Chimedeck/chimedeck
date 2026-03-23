@@ -34,6 +34,7 @@ import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 import { apiTokenRouter } from './extensions/apiToken/api/index';
+import { mcpHttpHandler } from './extensions/mcp/http/index';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -146,6 +147,9 @@ async function router(req: Request): Promise<Response> {
 
   const apiTokenResponse = await apiTokenRouter(req, path);
   if (apiTokenResponse) return apiTokenResponse;
+
+  const mcpResponse = await mcpHttpHandler(req);
+  if (mcpResponse) return mcpResponse;
 
   // Serve the SDK static bundle at /sdk/jh-instance.js
   if (path === pluginsConfig.sdkServePath && req.method === 'GET') {

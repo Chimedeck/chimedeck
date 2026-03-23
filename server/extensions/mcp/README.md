@@ -94,6 +94,128 @@ The server listens on **stdin/stdout** (MCP stdio transport) and is not intended
 
 ---
 
+## Remote HTTP Transport
+
+In addition to the local stdio subprocess, Horiflow exposes a persistent HTTP endpoint for MCP clients that cannot run a local subprocess (e.g., remote agents, CI environments, or web-based AI assistants).
+
+### Endpoint
+
+```
+/api/mcp
+```
+
+Served on the **same port as the main Horiflow server** (default `3000`). No additional ports or environment variables are required.
+
+### Authentication
+
+Every request must include a valid `hf_` API token in the `Authorization` header:
+
+```
+Authorization: Bearer hf_your_token_here
+```
+
+Requests without a valid token are rejected with `401 Unauthorized` before any MCP logic runs.
+
+### Session Lifecycle
+
+1. **Initialize** — `POST /api/mcp` (no `mcp-session-id` header) creates a new isolated session and returns an `mcp-session-id` in the response headers.
+2. **Interact** — subsequent `POST` requests (tool calls / notifications) or `GET` requests (SSE stream) must include the `mcp-session-id` header returned in step 1.
+3. **Terminate** — `DELETE /api/mcp` with the session ID tears down the session immediately.
+
+Sessions expire automatically after **30 minutes of inactivity**.
+
+### curl Examples
+
+#### 1. Initialize a session
+
+```bash
+curl -i -X POST http://localhost:3000/api/mcp \
+  -H "Authorization: Bearer hf_your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": { "name": "my-agent", "version": "1.0.0" }
+    }
+  }'
+```
+
+The response headers will contain:
+
+```
+mcp-session-id: <uuid>
+```
+
+Copy this value for subsequent requests.
+
+#### 2. Call a tool
+
+```bash
+SESSION_ID="<uuid-from-step-1>"
+
+curl -X POST http://localhost:3000/api/mcp \
+  -H "Authorization: Bearer hf_your_token_here" \
+  -H "Content-Type: application/json" \
+  -H "mcp-session-id: $SESSION_ID" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "write_comment",
+      "arguments": { "cardId": "123", "text": "Done!" }
+    }
+  }'
+```
+
+#### 3. Open an SSE stream (server-sent events)
+
+```bash
+curl -N -X GET http://localhost:3000/api/mcp \
+  -H "Authorization: Bearer hf_your_token_here" \
+  -H "mcp-session-id: $SESSION_ID"
+```
+
+The connection stays open and the server pushes events as they occur.
+
+#### 4. Terminate a session
+
+```bash
+curl -X DELETE http://localhost:3000/api/mcp \
+  -H "Authorization: Bearer hf_your_token_here" \
+  -H "mcp-session-id: $SESSION_ID"
+```
+
+Returns `204 No Content` on success.
+
+### Error Responses
+
+| Status | `name` | Meaning |
+|---|---|---|
+| `400` | `bad-request` | `mcp-session-id` header missing on a non-initialize request |
+| `401` | `unauthorized` | Token absent or invalid |
+| `403` | `forbidden` | Token belongs to a different user than the session owner |
+| `404` | `session-not-found` | Session expired or never existed — re-initialize |
+
+### stdio vs HTTP Transport Comparison
+
+| Feature | stdio | Remote HTTP |
+|---|---|---|
+| **Transport** | stdin/stdout subprocess | HTTP/SSE (`/api/mcp`) |
+| **Session scope** | One session per process | Many isolated sessions per server |
+| **Authentication** | `HORIFLOW_TOKEN` env var | `Authorization: Bearer hf_…` header |
+| **Requires local install** | ✅ Yes (Bun + repo) | ❌ No — any HTTP client works |
+| **Streaming (SSE)** | Via stdio protocol | Via `GET /api/mcp` SSE stream |
+| **Session TTL** | Process lifetime | 30 min idle; explicit `DELETE` |
+| **Multi-user** | One user per process | Each session is user-isolated |
+| **Best for** | Claude Desktop, Cursor | Remote agents, CI, web UIs |
+
+---
+
 ## Available Tools
 
 | Tool | Description | Endpoint |
