@@ -10,6 +10,7 @@ import VisibilitySelector, { type BoardVisibility } from './VisibilitySelector';
 import BoardCustomFieldsPanel from '~/extensions/CustomFields/BoardCustomFieldsPanel';
 import BackgroundPicker from './BackgroundPicker';
 import BoardNotificationToggle from './BoardNotificationToggle';
+import BoardNotificationTypePreferences from './BoardNotificationTypePreferences';
 
 interface Props {
   onClose: () => void;
@@ -117,7 +118,14 @@ const BoardSettings = ({ onClose, isGuest = false }: Props) => {
                 User settings
               </h3>
             </div>
-            {boardId && <BoardNotificationToggle boardId={boardId} />}
+            {boardId && (
+              <>
+                <BoardNotificationToggle boardId={boardId} />
+                <div className="mt-4">
+                  <BoardNotificationTypePreferences boardId={boardId} />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
