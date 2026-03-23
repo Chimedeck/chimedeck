@@ -258,6 +258,7 @@ export async function dispatchDirectCardNotification({
     // For card_commented: resolve email template data and store commentId in source_id
     let emailTemplateData: Record<string, string> | null = null;
     let sourceId: string | null = null;
+
     if (payload.type === 'card_commented') {
       sourceId = payload.commentId;
       const board = await db('boards').where({ id: boardId }).select('title').first();
@@ -266,6 +267,34 @@ export async function dispatchDirectCardNotification({
         cardTitle: payload.cardTitle,
         boardName: board?.title ?? '',
         commentPreview: payload.commentPreview,
+        cardUrl: `/boards/${boardId}/cards/${cardId}`,
+      };
+    } else if (payload.type === 'card_updated') {
+      const board = await db('boards').where({ id: boardId }).select('title').first();
+      emailTemplateData = {
+        actorName: actor?.name ?? 'Someone',
+        cardTitle: payload.cardTitle,
+        boardName: board?.title ?? '',
+        // Serialise changedFields as JSON so emailDispatch can parse the array
+        changedFields: JSON.stringify(payload.changedFields),
+        cardUrl: `/boards/${boardId}/cards/${cardId}`,
+      };
+    } else if (payload.type === 'card_deleted') {
+      const board = await db('boards').where({ id: boardId }).select('title').first();
+      emailTemplateData = {
+        actorName: actor?.name ?? 'Someone',
+        cardTitle: payload.cardTitle,
+        boardName: board?.title ?? '',
+        boardUrl: `/boards/${boardId}`,
+      };
+    } else if (payload.type === 'card_archived') {
+      const board = await db('boards').where({ id: boardId }).select('title').first();
+      emailTemplateData = {
+        actorName: actor?.name ?? 'Someone',
+        cardTitle: payload.cardTitle,
+        boardName: board?.title ?? '',
+        // Serialise boolean as string; emailDispatch uses !== 'false' to parse
+        archived: String(payload.archived),
         cardUrl: `/boards/${boardId}/cards/${cardId}`,
       };
     }
