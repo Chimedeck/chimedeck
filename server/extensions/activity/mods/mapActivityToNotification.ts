@@ -9,6 +9,8 @@
 //   card_member_unassigned → card_member_unassigned (unassigned user, excl. actor)
 import { db } from '../../../common/db';
 import { preferenceGuard } from '../../notifications/mods/preferenceGuard';
+import { boardPreferenceGuard } from '../../notifications/mods/boardPreferenceGuard';
+import { globalPreferenceGuard } from '../../notifications/mods/globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
 import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { dispatchNotificationEmail } from '../../notifications/mods/emailDispatch';
@@ -114,6 +116,17 @@ export async function mapActivityToNotification({
     });
 
     for (const recipientId of recipientIds) {
+      // Board-scoped and global opt-out guards — mirrors boardActivityDispatch.
+      try {
+        const [globalEnabled, boardEnabled] = await Promise.all([
+          globalPreferenceGuard({ userId: recipientId }),
+          boardPreferenceGuard({ userId: recipientId, boardId }),
+        ]);
+        if (!globalEnabled || !boardEnabled) continue;
+      } catch {
+        // Fail open: if guard lookup fails, proceed with notification
+      }
+
       // Preference check — fail-open when the feature flag is off or guard throws.
       let inAppEnabled = true;
       if (env.NOTIFICATION_PREFERENCES_ENABLED) {

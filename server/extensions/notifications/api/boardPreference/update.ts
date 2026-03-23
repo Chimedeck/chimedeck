@@ -1,7 +1,9 @@
 // PATCH /api/v1/boards/:boardId/notification-preference
 // Upserts the board-scoped notification preference for the authenticated user.
+import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
-import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
+import { applyBoardVisibility } from '../../../../middlewares/boardVisibility';
 
 interface PatchBody {
   notifications_enabled?: unknown;
@@ -11,19 +13,10 @@ export async function handleUpdateBoardNotificationPreference(
   req: Request,
   boardId: string,
 ): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
+  const visibilityError = await applyBoardVisibility(req, boardId);
+  if (visibilityError) return visibilityError;
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
-
-  // Verify the user is a board member.
-  const membership = await db('board_members').where({ board_id: boardId, user_id: userId }).first();
-  if (!membership) {
-    return Response.json(
-      { error: { name: 'not-a-board-member', data: { message: 'You are not a member of this board' } } },
-      { status: 403 },
-    );
-  }
 
   let body: PatchBody;
   try {
@@ -63,7 +56,7 @@ export async function handleUpdateBoardNotificationPreference(
     row = updated;
   } else {
     const [inserted] = await db('board_notification_preferences').insert(
-      { user_id: userId, board_id: boardId, notifications_enabled, updated_at: now },
+      { id: randomUUID(), user_id: userId, board_id: boardId, notifications_enabled, updated_at: now },
       ['notifications_enabled', 'updated_at'],
     );
     row = inserted;
