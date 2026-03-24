@@ -4,8 +4,8 @@
 Call the `invite_to_board` MCP tool as a board admin to verify a user is successfully invited.
 
 ## Preconditions
-- Horiflow is running at `http://localhost:3000`
-- A valid `HORIFLOW_TOKEN` for a **board admin** user is set
+- Taskinate is running at `http://localhost:3000`
+- A valid `TASKINATE_TOKEN` for a **board admin** user is set
 - A board exists; record the board's ID as `BOARD_ID`
 - A target user exists with email `invitee@example.com` who is not yet a member
 

@@ -206,7 +206,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
           ) : (
             <div className="flex flex-1 items-center gap-2 px-4 overflow-hidden">
               <Squares2X2Icon className="h-6 w-6 shrink-0 text-indigo-400" aria-hidden="true" />
-              <span className="text-base font-bold text-slate-900 dark:text-white truncate">HoriFlow</span>
+              <span className="text-base font-bold text-slate-900 dark:text-white truncate">{layoutTranslations['App.name']}</span>
             </div>
           )}
           {/* Toggle collapse/expand button — desktop only */}

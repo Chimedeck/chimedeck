@@ -1,4 +1,4 @@
-// McpDocsPage — developer reference for the Horiflow MCP server.
+// McpDocsPage — developer reference for the Taskinate MCP server.
 // Route: /developer/mcp (private, within AppShell)
 import { useNavigate } from 'react-router-dom';
 import {
@@ -142,7 +142,7 @@ const McpDocsPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-white">MCP Server Developer Guide</h1>
               <p className="text-sm text-slate-400">
-                Connect AI assistants to Horiflow using the{' '}
+                Connect AI assistants to Taskinate using the{' '}
                 <Code>Model Context Protocol</Code> (MCP).
               </p>
             </div>
@@ -155,9 +155,9 @@ const McpDocsPage = () => {
           <Section id="overview">
             <div className="mb-6 rounded-lg border border-indigo-700/40 bg-indigo-900/20 px-5 py-4">
               <p className="text-sm text-indigo-200">
-                The Horiflow MCP server lets AI assistants — Claude, Cursor, and any
-                MCP-compatible client — take actions inside Horiflow on your behalf. It bridges
-                MCP tool calls to Horiflow's REST API using your personal API token.
+                The Taskinate MCP server lets AI assistants — Claude, Cursor, and any
+                MCP-compatible client — take actions inside Taskinate on your behalf. It bridges
+                MCP tool calls to Taskinate's REST API using your personal API token.
               </p>
             </div>
             <P>
@@ -166,7 +166,7 @@ const McpDocsPage = () => {
             <ol className="mb-4 space-y-2 text-sm text-slate-300">
               {[
                 '<strong>stdio</strong> — a local Bun subprocess that communicates over stdin/stdout. Best for Claude Desktop and Cursor.',
-                '<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">/api/mcp</code>) served on the same port as Horiflow. Best for remote agents, CI, and web-based AI assistants.',
+                '<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">/api/mcp</code>) served on the same port as Taskinate. Best for remote agents, CI, and web-based AI assistants.',
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
@@ -195,7 +195,7 @@ const McpDocsPage = () => {
             <H3>Generate a token</H3>
             <ol className="mb-4 space-y-2 text-sm text-slate-300">
               {[
-                'Open Horiflow in your browser and sign in.',
+                'Open Taskinate in your browser and sign in.',
                 'Go to <strong>User Settings → API Tokens</strong>.',
                 'Click <strong>Generate new token</strong> and copy the value.',
               ].map((step, i) => (
@@ -221,7 +221,7 @@ const McpDocsPage = () => {
                   rowId: 'auth-stdio',
                   cells: [
                     { key: 'transport', content: <Badge color="bg-slate-700 text-slate-200">stdio</Badge> },
-                    { key: 'how', content: <><Code>HORIFLOW_TOKEN</Code> environment variable</> },
+                    { key: 'how', content: <><Code>TASKINATE_TOKEN</Code> environment variable</> },
                   ],
                 },
                 {
@@ -244,7 +244,7 @@ const McpDocsPage = () => {
               Connecting
             </H2>
             <P>
-              The Horiflow MCP server runs as a remote HTTP endpoint — you do not need to install
+              The Taskinate MCP server runs as a remote HTTP endpoint — you do not need to install
               anything locally. Point your AI client at the server URL and supply your API token
               as a bearer header.
             </P>
@@ -252,13 +252,13 @@ const McpDocsPage = () => {
             <H3>Claude Desktop</H3>
             <P>
               Edit <Code>~/.claude/claude_desktop_config.json</Code> (create it if it does not
-              exist) and add the <Code>horiflow</Code> entry under <Code>mcpServers</Code>:
+              exist) and add the <Code>taskinate</Code> entry under <Code>mcpServers</Code>:
             </P>
             <Pre>{`{
   "mcpServers": {
-    "horiflow": {
+    "taskinate": {
       "type": "http",
-      "url": "https://your-horiflow-instance.com/api/mcp",
+      "url": "https://your-taskinate-instance.com/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
       }
@@ -266,7 +266,7 @@ const McpDocsPage = () => {
   }
 }`}</Pre>
             <P>
-              Replace <Code>your-horiflow-instance.com</Code> with your actual Horiflow host.
+              Replace <Code>your-taskinate-instance.com</Code> with your actual Taskinate host.
               Restart Claude Desktop to pick up the change.
             </P>
 
@@ -277,8 +277,8 @@ const McpDocsPage = () => {
             </P>
             <Pre>{`{
   "mcpServers": {
-    "horiflow": {
-      "url": "https://your-horiflow-instance.com/api/mcp",
+    "taskinate": {
+      "url": "https://your-taskinate-instance.com/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
       }
@@ -290,7 +290,7 @@ const McpDocsPage = () => {
             <H3>Other MCP clients</H3>
             <P>
               Any MCP-compatible client that supports remote HTTP / SSE transport can connect.
-              Configure the endpoint URL to <Code>https://your-horiflow-instance.com/api/mcp</Code>{' '}
+              Configure the endpoint URL to <Code>https://your-taskinate-instance.com/api/mcp</Code>{' '}
               and pass <Code>Authorization: Bearer hf_your_token_here</Code> as a request header.
             </P>
           </Section>
@@ -305,7 +305,7 @@ const McpDocsPage = () => {
             </H2>
             <P>
               The HTTP MCP endpoint is served at <Code>/api/mcp</Code> on the same port as
-              Horiflow (default <Code>3000</Code>). No additional ports or env vars are required.
+              Taskinate (default <Code>3000</Code>). No additional ports or env vars are required.
             </P>
 
             <H3>Session lifecycle</H3>
@@ -419,7 +419,7 @@ curl -X POST http://localhost:3000/api/mcp \\
           <Section id="available-tools">
             <H2>Available Tools</H2>
             <P>
-              Horiflow exposes 9 MCP tools. Each tool maps to a specific REST API endpoint.
+              Taskinate exposes 9 MCP tools. Each tool maps to a specific REST API endpoint.
             </P>
             <Table
               headers={['Tool', 'Description', 'Endpoint']}

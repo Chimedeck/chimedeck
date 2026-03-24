@@ -28,7 +28,7 @@ export default function TopBar({ onOpenDrawer, drawerOpen }: TopBarProps) {
         >
           <Bars3Icon className="h-5 w-5" aria-hidden="true" />
         </button>
-        <span className="text-base font-bold text-slate-900 dark:text-white">HoriFlow</span>
+        <span className="text-base font-bold text-slate-900 dark:text-white">{translations['App.name']}</span>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
           <NotificationContainer />

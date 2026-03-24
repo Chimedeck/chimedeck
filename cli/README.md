@@ -1,6 +1,6 @@
-# horiflow CLI
+# taskinate CLI
 
-A command-line interface for [Horiflow](https://app.horiflow.com) that lets developers and power users perform core board operations directly from a terminal. Every command is a thin wrapper around the Horiflow REST API.
+A command-line interface for [Taskinate](https://app.taskinate.com) that lets developers and power users perform core board operations directly from a terminal. Every command is a thin wrapper around the Taskinate REST API.
 
 ---
 
@@ -12,7 +12,7 @@ A command-line interface for [Horiflow](https://app.horiflow.com) that lets deve
 bun install --global
 ```
 
-After installation, the `horiflow` binary is available on your `$PATH`.
+After installation, the `taskinate` binary is available on your `$PATH`.
 
 ### Run without installing
 
@@ -30,12 +30,12 @@ All commands require an API token.
 
 ### 1. Generate a token
 
-Open Horiflow → **Settings → API Tokens** → create a new token. Copy the `hf_...` value.
+Open Taskinate → **Settings → API Tokens** → create a new token. Copy the `hf_...` value.
 
 ### 2. Export the token
 
 ```sh
-export HORIFLOW_TOKEN=hf_your_token_here
+export TASKINATE_TOKEN=hf_your_token_here
 ```
 
 Add that line to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist it across sessions.
@@ -45,7 +45,7 @@ Add that line to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist i
 Pass `--token` directly when you need a different token for a single command:
 
 ```sh
-horiflow --token hf_other_token move-card --card abc123 --list xyz789
+taskinate --token hf_other_token move-card --card abc123 --list xyz789
 ```
 
 The `--token` flag takes precedence over the environment variable.
@@ -54,7 +54,7 @@ The `--token` flag takes precedence over the environment variable.
 
 ```
 Error: No API token provided.
-  Set HORIFLOW_TOKEN or use --token <value>.
+  Set TASKINATE_TOKEN or use --token <value>.
   Generate a token at: Settings → API Tokens
 ```
 
@@ -65,10 +65,10 @@ The process exits with code **1**.
 ## Pointing at a local dev server
 
 ```sh
-export HORIFLOW_API_URL=http://localhost:3000
+export TASKINATE_API_URL=http://localhost:3000
 ```
 
-The default is `https://app.horiflow.com`. The `--api-url` flag overrides this per command.
+The default is `https://app.taskinate.com`. The `--api-url` flag overrides this per command.
 
 ---
 
@@ -76,8 +76,8 @@ The default is `https://app.horiflow.com`. The `--api-url` flag overrides this p
 
 | Flag | Description |
 |------|-------------|
-| `--token <value>` | API token (overrides `HORIFLOW_TOKEN`) |
-| `--api-url <value>` | API base URL (overrides `HORIFLOW_API_URL`) |
+| `--token <value>` | API token (overrides `TASKINATE_TOKEN`) |
+| `--api-url <value>` | API base URL (overrides `TASKINATE_API_URL`) |
 | `--json` | Output raw JSON (useful for scripting with `jq`) |
 | `--help`, `-h` | Print help |
 | `--version`, `-v` | Print version |
@@ -91,7 +91,7 @@ The default is `https://app.horiflow.com`. The `--api-url` flag overrides this p
 Move a card to a different list.
 
 ```sh
-horiflow move-card --card <cardId> --list <listId> [--position <number>]
+taskinate move-card --card <cardId> --list <listId> [--position <number>]
 ```
 
 | Flag | Required | Description |
@@ -103,7 +103,7 @@ horiflow move-card --card <cardId> --list <listId> [--position <number>]
 **Example:**
 
 ```sh
-horiflow move-card --card card_abc123 --list list_xyz789 --position 0
+taskinate move-card --card card_abc123 --list list_xyz789 --position 0
 # ✓ Card card_abc123 moved to list list_xyz789
 ```
 
@@ -114,7 +114,7 @@ horiflow move-card --card card_abc123 --list list_xyz789 --position 0
 Add a comment to a card.
 
 ```sh
-horiflow comment --card <cardId> --text <text>
+taskinate comment --card <cardId> --text <text>
 ```
 
 | Flag | Required | Description |
@@ -125,7 +125,7 @@ horiflow comment --card <cardId> --text <text>
 **Example:**
 
 ```sh
-horiflow comment --card card_abc123 --text "Great progress!"
+taskinate comment --card card_abc123 --text "Great progress!"
 # ✓ Comment added to card card_abc123
 ```
 
@@ -136,7 +136,7 @@ horiflow comment --card card_abc123 --text "Great progress!"
 Create a new card in a list.
 
 ```sh
-horiflow create-card --list <listId> --title <title> [--description <text>]
+taskinate create-card --list <listId> --title <title> [--description <text>]
 ```
 
 | Flag | Required | Description |
@@ -148,7 +148,7 @@ horiflow create-card --list <listId> --title <title> [--description <text>]
 **Example:**
 
 ```sh
-horiflow create-card --list list_xyz789 --title "Add OAuth login" --description "Support Google and GitHub"
+taskinate create-card --list list_xyz789 --title "Add OAuth login" --description "Support Google and GitHub"
 # ✓ Card created: card_new456
 ```
 
@@ -159,7 +159,7 @@ horiflow create-card --list list_xyz789 --title "Add OAuth login" --description 
 Update a card's description.
 
 ```sh
-horiflow edit-description --card <cardId> --description <text>
+taskinate edit-description --card <cardId> --description <text>
 ```
 
 | Flag | Required | Description |
@@ -170,7 +170,7 @@ horiflow edit-description --card <cardId> --description <text>
 **Example:**
 
 ```sh
-horiflow edit-description --card card_abc123 --description "Updated scope: add GitHub OAuth only"
+taskinate edit-description --card card_abc123 --description "Updated scope: add GitHub OAuth only"
 # ✓ Description updated for card card_abc123
 ```
 
@@ -181,8 +181,8 @@ horiflow edit-description --card card_abc123 --description "Updated scope: add G
 Set or clear a card's price.
 
 ```sh
-horiflow set-price --card <cardId> --amount <number> --currency <code> [--label <text>]
-horiflow set-price --card <cardId> --clear
+taskinate set-price --card <cardId> --amount <number> --currency <code> [--label <text>]
+taskinate set-price --card <cardId> --clear
 ```
 
 | Flag | Required | Description |
@@ -197,11 +197,11 @@ horiflow set-price --card <cardId> --clear
 
 ```sh
 # Set a price
-horiflow set-price --card card_abc123 --amount 9900 --currency USD --label Price
+taskinate set-price --card card_abc123 --amount 9900 --currency USD --label Price
 # ✓ Price set to 9900 USD for card card_abc123
 
 # Clear the price
-horiflow set-price --card card_abc123 --clear
+taskinate set-price --card card_abc123 --clear
 # ✓ Price cleared for card card_abc123
 ```
 
@@ -212,7 +212,7 @@ horiflow set-price --card card_abc123 --clear
 Invite a user to a board. Requires admin permission on the board.
 
 ```sh
-horiflow invite --board <boardId> --email <email> [--role <role>]
+taskinate invite --board <boardId> --email <email> [--role <role>]
 ```
 
 | Flag | Required | Description |
@@ -224,7 +224,7 @@ horiflow invite --board <boardId> --email <email> [--role <role>]
 **Example:**
 
 ```sh
-horiflow invite --board board_def456 --email alice@example.com --role member
+taskinate invite --board board_def456 --email alice@example.com --role member
 # ✓ Invited alice@example.com to board board_def456 as member
 ```
 
@@ -238,15 +238,15 @@ Pass `--json` to any command to receive raw JSON output, then pipe it into `jq` 
 
 ```sh
 # Get the new card's ID after creation
-CARD_ID=$(horiflow create-card --list list_xyz789 --title "Fix bug" --json | jq -r '.data.id')
+CARD_ID=$(taskinate create-card --list list_xyz789 --title "Fix bug" --json | jq -r '.data.id')
 
 # Use the ID in a follow-up command
-horiflow set-price --card "$CARD_ID" --amount 500 --currency EUR
+taskinate set-price --card "$CARD_ID" --amount 500 --currency EUR
 ```
 
 ```sh
 # Move a card and inspect the full response
-horiflow move-card --card card_abc123 --list list_xyz789 --json | jq '.data'
+taskinate move-card --card card_abc123 --list list_xyz789 --json | jq '.data'
 ```
 
 ---
@@ -254,7 +254,7 @@ horiflow move-card --card card_abc123 --list list_xyz789 --json | jq '.data'
 ## Getting help
 
 ```sh
-horiflow --help                  # global usage
-horiflow move-card --help        # command-specific usage
-horiflow --version               # print version
+taskinate --help                  # global usage
+taskinate move-card --help        # command-specific usage
+taskinate --version               # print version
 ```

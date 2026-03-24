@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-horiflow edit-description — Update a card's description
+taskinate edit-description — Update a card's description
 
 Usage:
-  horiflow edit-description --card <cardId> --description <text>
+  taskinate edit-description --card <cardId> --description <text>
 
 Options:
   --card <cardId>        ID of the card to update (required)
@@ -32,11 +32,11 @@ export async function runEditDescription({
   const description = argv.description as string | undefined;
 
   if (!cardId) {
-    console.error('Error: --card <cardId> is required.\nRun \'horiflow edit-description --help\' for usage.');
+    console.error('Error: --card <cardId> is required.\nRun \'taskinate edit-description --help\' for usage.');
     process.exit(1);
   }
   if (description === undefined) {
-    console.error('Error: --description <text> is required.\nRun \'horiflow edit-description --help\' for usage.');
+    console.error('Error: --description <text> is required.\nRun \'taskinate edit-description --help\' for usage.');
     process.exit(1);
   }
 

@@ -1,4 +1,4 @@
-// Centralised config for the horiflow CLI.
+// Centralised config for the taskinate CLI.
 // All env vars are read here — never access Bun.env outside this module.
 
 export interface CliConfig {
@@ -13,13 +13,13 @@ export function resolveConfig({
   tokenFlag?: string;
   apiUrlFlag?: string;
 }): CliConfig {
-  const token = tokenFlag ?? Bun.env.HORIFLOW_TOKEN ?? '';
-  const apiUrl = apiUrlFlag ?? Bun.env.HORIFLOW_API_URL ?? 'https://app.horiflow.com';
+  const token = tokenFlag ?? Bun.env.TASKINATE_TOKEN ?? '';
+  const apiUrl = apiUrlFlag ?? Bun.env.TASKINATE_API_URL ?? 'https://app.taskinate.com';
 
   if (!token) {
     console.error(
       'Error: No API token provided.\n' +
-        '  Set HORIFLOW_TOKEN or use --token <value>.\n' +
+        '  Set TASKINATE_TOKEN or use --token <value>.\n' +
         '  Generate a token at: Settings → API Tokens'
     );
     process.exit(1);

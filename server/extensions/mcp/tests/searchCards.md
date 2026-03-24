@@ -4,8 +4,8 @@
 Call the `search_cards` MCP tool with a valid `workspaceId` and query string to verify matching cards are returned.
 
 ## Preconditions
-- Horiflow is running at `http://localhost:3000`
-- A valid `HORIFLOW_TOKEN` is set
+- Taskinate is running at `http://localhost:3000`
+- A valid `TASKINATE_TOKEN` is set
 - A workspace exists with at least two cards; one card's title contains the word `"Alpha"` and another contains `"Beta"`. Record the workspace ID as `WORKSPACE_ID`.
 
 ## Steps

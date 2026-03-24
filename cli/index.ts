@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * horiflow CLI — calls the Horiflow REST API on behalf of the user.
- * Usage: horiflow [--token <token>] [--api-url <url>] [--json] <command> [options]
+ * taskinate CLI — calls the Taskinate REST API on behalf of the user.
+ * Usage: taskinate [--token <token>] [--api-url <url>] [--json] <command> [options]
  */
 
 import minimist from 'minimist';
@@ -17,14 +17,14 @@ import { runInvite } from './commands/invite';
 const VERSION = '0.1.0';
 
 const USAGE = `
-horiflow — Horiflow CLI
+taskinate — Taskinate CLI
 
 Usage:
-  horiflow [global options] <command> [command options]
+  taskinate [global options] <command> [command options]
 
 Global options:
-  --token <value>    API token (overrides HORIFLOW_TOKEN env var)
-  --api-url <value>  API base URL (overrides HORIFLOW_API_URL env var)
+  --token <value>    API token (overrides TASKINATE_TOKEN env var)
+  --api-url <value>  API base URL (overrides TASKINATE_API_URL env var)
   --json             Output raw JSON (useful for scripting with jq)
   --help, -h         Print this help message
   --version, -v      Print version
@@ -37,7 +37,7 @@ Commands:
   set-price          Set or clear a card's price
   invite             Invite a user to a board
 
-Run 'horiflow <command> --help' for command-specific usage.
+Run 'taskinate <command> --help' for command-specific usage.
 `.trim();
 
 async function main() {
@@ -49,7 +49,7 @@ async function main() {
   });
 
   if (argv.version) {
-    console.log(`horiflow v${VERSION}`);
+    console.log(`taskinate v${VERSION}`);
     process.exit(0);
   }
 
@@ -89,7 +89,7 @@ async function main() {
       break;
     // Future subcommands are wired in here in subsequent iterations.
     default:
-      console.error(`Unknown command: ${command}\nRun 'horiflow --help' for usage.`);
+      console.error(`Unknown command: ${command}\nRun 'taskinate --help' for usage.`);
       process.exit(1);
   }
 }

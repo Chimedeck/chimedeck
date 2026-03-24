@@ -1,22 +1,22 @@
-# Horiflow MCP Server
+# Taskinate MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that lets AI assistants — Claude, Cursor, and any other MCP-compatible client — take actions inside Horiflow on your behalf.
+A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that lets AI assistants — Claude, Cursor, and any other MCP-compatible client — take actions inside Taskinate on your behalf.
 
-The server is a lightweight Bun subprocess (`server/extensions/mcp/index.ts`) that bridges MCP tool calls to Horiflow's REST API using your personal API token.
+The server is a lightweight Bun subprocess (`server/extensions/mcp/index.ts`) that bridges MCP tool calls to Taskinate's REST API using your personal API token.
 
 ---
 
 ## Prerequisites
 
 - [Bun](https://bun.sh/) ≥ 1.0 installed on the machine that will run the MCP server
-- A running Horiflow instance (local or remote)
+- A running Taskinate instance (local or remote)
 - Dependencies installed: `bun install` from the project root
 
 ---
 
 ## Generate an API Token
 
-1. Open Horiflow in your browser and sign in.
+1. Open Taskinate in your browser and sign in.
 2. Go to **User Settings → API Tokens**.
 3. Click **Generate new token** and copy the value — it starts with `hf_`.
 
@@ -26,17 +26,17 @@ The server is a lightweight Bun subprocess (`server/extensions/mcp/index.ts`) th
 
 ## Register in Claude Desktop
 
-Edit `~/.claude/claude_desktop_config.json` (create it if it does not exist) and add the `horiflow` entry under `mcpServers`:
+Edit `~/.claude/claude_desktop_config.json` (create it if it does not exist) and add the `taskinate` entry under `mcpServers`:
 
 ```json
 {
   "mcpServers": {
-    "horiflow": {
+    "taskinate": {
       "command": "bun",
       "args": ["run", "/absolute/path/to/server/extensions/mcp/index.ts"],
       "env": {
-        "HORIFLOW_TOKEN": "hf_your_token_here",
-        "HORIFLOW_API_URL": "http://localhost:3000"
+        "TASKINATE_TOKEN": "hf_your_token_here",
+        "TASKINATE_API_URL": "http://localhost:3000"
       }
     }
   }
@@ -44,9 +44,9 @@ Edit `~/.claude/claude_desktop_config.json` (create it if it does not exist) and
 ```
 
 Replace `/absolute/path/to` with the actual path to this repository on your machine.
-`HORIFLOW_API_URL` defaults to `http://localhost:3000` — change it if your Horiflow instance is hosted elsewhere.
+`TASKINATE_API_URL` defaults to `http://localhost:3000` — change it if your Taskinate instance is hosted elsewhere.
 
-Restart Claude Desktop to pick up the change. The `horiflow` tools will appear in Claude's tool list.
+Restart Claude Desktop to pick up the change. The `taskinate` tools will appear in Claude's tool list.
 
 ---
 
@@ -57,12 +57,12 @@ Create or edit `.cursor/mcp.json` in your home directory (or at the project root
 ```json
 {
   "mcpServers": {
-    "horiflow": {
+    "taskinate": {
       "command": "bun",
       "args": ["run", "/absolute/path/to/server/extensions/mcp/index.ts"],
       "env": {
-        "HORIFLOW_TOKEN": "hf_your_token_here",
-        "HORIFLOW_API_URL": "http://localhost:3000"
+        "TASKINATE_TOKEN": "hf_your_token_here",
+        "TASKINATE_API_URL": "http://localhost:3000"
       }
     }
   }
@@ -77,17 +77,17 @@ Reload Cursor after saving the file.
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `HORIFLOW_TOKEN` | ✅ Yes | — | API token generated in User Settings |
-| `HORIFLOW_API_URL` | No | `http://localhost:3000` | Base URL of the Horiflow API |
+| `TASKINATE_TOKEN` | ✅ Yes | — | API token generated in User Settings |
+| `TASKINATE_API_URL` | No | `http://localhost:3000` | Base URL of the Taskinate API |
 
-The server exits immediately with a clear error message if `HORIFLOW_TOKEN` is not set.
+The server exits immediately with a clear error message if `TASKINATE_TOKEN` is not set.
 
 ---
 
 ## Run Manually (for testing)
 
 ```bash
-HORIFLOW_TOKEN=hf_... bun run server/extensions/mcp/index.ts
+TASKINATE_TOKEN=hf_... bun run server/extensions/mcp/index.ts
 ```
 
 The server listens on **stdin/stdout** (MCP stdio transport) and is not intended to be run as a standalone HTTP server.
@@ -96,7 +96,7 @@ The server listens on **stdin/stdout** (MCP stdio transport) and is not intended
 
 ## Remote HTTP Transport
 
-In addition to the local stdio subprocess, Horiflow exposes a persistent HTTP endpoint for MCP clients that cannot run a local subprocess (e.g., remote agents, CI environments, or web-based AI assistants).
+In addition to the local stdio subprocess, Taskinate exposes a persistent HTTP endpoint for MCP clients that cannot run a local subprocess (e.g., remote agents, CI environments, or web-based AI assistants).
 
 ### Endpoint
 
@@ -104,7 +104,7 @@ In addition to the local stdio subprocess, Horiflow exposes a persistent HTTP en
 /api/mcp
 ```
 
-Served on the **same port as the main Horiflow server** (default `3000`). No additional ports or environment variables are required.
+Served on the **same port as the main Taskinate server** (default `3000`). No additional ports or environment variables are required.
 
 ### Authentication
 
@@ -207,7 +207,7 @@ Returns `204 No Content` on success.
 |---|---|---|
 | **Transport** | stdin/stdout subprocess | HTTP/SSE (`/api/mcp`) |
 | **Session scope** | One session per process | Many isolated sessions per server |
-| **Authentication** | `HORIFLOW_TOKEN` env var | `Authorization: Bearer hf_…` header |
+| **Authentication** | `TASKINATE_TOKEN` env var | `Authorization: Bearer hf_…` header |
 | **Requires local install** | ✅ Yes (Bun + repo) | ❌ No — any HTTP client works |
 | **Streaming (SSE)** | Via stdio protocol | Via `GET /api/mcp` SSE stream |
 | **Session TTL** | Process lifetime | 30 min idle; explicit `DELETE` |

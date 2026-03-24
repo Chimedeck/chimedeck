@@ -1,4 +1,6 @@
 {
+  "App.name": "Taskinate",
+
   "Common.loadingLabel": "Loading…",
   "Common.errorGeneric": "Something went wrong. Please try again.",
   "Common.errorBoundaryFallback": "Something went wrong. Please reload.",

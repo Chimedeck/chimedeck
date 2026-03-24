@@ -1,4 +1,4 @@
-// Output formatting for the horiflow CLI.
+// Output formatting for the taskinate CLI.
 // --json mode prints raw JSON; default mode prints a human-readable summary.
 
 export function print(data: unknown, jsonMode: boolean): void {

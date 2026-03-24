@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-horiflow move-card — Move a card to a different list
+taskinate move-card — Move a card to a different list
 
 Usage:
-  horiflow move-card --card <cardId> --list <listId> [--position <number>]
+  taskinate move-card --card <cardId> --list <listId> [--position <number>]
 
 Options:
   --card <cardId>      ID of the card to move (required)
@@ -34,11 +34,11 @@ export async function runMoveCard({
   const position = argv.position as number | undefined;
 
   if (!cardId) {
-    console.error('Error: --card <cardId> is required.\nRun \'horiflow move-card --help\' for usage.');
+    console.error('Error: --card <cardId> is required.\nRun \'taskinate move-card --help\' for usage.');
     process.exit(1);
   }
   if (!listId) {
-    console.error('Error: --list <listId> is required.\nRun \'horiflow move-card --help\' for usage.');
+    console.error('Error: --list <listId> is required.\nRun \'taskinate move-card --help\' for usage.');
     process.exit(1);
   }
 

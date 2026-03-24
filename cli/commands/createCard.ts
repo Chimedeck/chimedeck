@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-horiflow create-card — Create a new card in a list
+taskinate create-card — Create a new card in a list
 
 Usage:
-  horiflow create-card --list <listId> --title <title> [--description <text>]
+  taskinate create-card --list <listId> --title <title> [--description <text>]
 
 Options:
   --list <listId>        ID of the list to create the card in (required)
@@ -34,11 +34,11 @@ export async function runCreateCard({
   const description = argv.description as string | undefined;
 
   if (!listId) {
-    console.error('Error: --list <listId> is required.\nRun \'horiflow create-card --help\' for usage.');
+    console.error('Error: --list <listId> is required.\nRun \'taskinate create-card --help\' for usage.');
     process.exit(1);
   }
   if (!title) {
-    console.error('Error: --title <title> is required.\nRun \'horiflow create-card --help\' for usage.');
+    console.error('Error: --title <title> is required.\nRun \'taskinate create-card --help\' for usage.');
     process.exit(1);
   }
 

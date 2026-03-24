@@ -4,8 +4,8 @@
 Call the `search_board` MCP tool with a valid `boardId` and query string to verify matching cards and lists scoped to that board are returned.
 
 ## Preconditions
-- Horiflow is running at `http://localhost:3000`
-- A valid `HORIFLOW_TOKEN` is set
+- Taskinate is running at `http://localhost:3000`
+- A valid `TASKINATE_TOKEN` is set
 - A board exists with at least two cards; one card's title contains the word `"Feature"`. Record the board ID as `BOARD_ID`.
 
 ## Steps

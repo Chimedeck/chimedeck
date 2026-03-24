@@ -1,4 +1,5 @@
 {
+  "appName": "Taskinate",
   "fields": {
     "email": "Email",
     "password": "Password",

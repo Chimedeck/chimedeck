@@ -21,7 +21,7 @@ export async function mcpHttpHandler(req: Request): Promise<Response | null> {
   // --- Initialize (POST, no session yet) ---
   if (method === 'POST' && !req.headers.get('mcp-session-id')) {
     const sessionId = randomUUID();
-    const server = new McpServer({ name: 'horiflow', version: '1.0.0' });
+    const server = new McpServer({ name: 'taskinate', version: '1.0.0' });
     registerMcpTools(server, token);
 
     const transport = new WebStandardStreamableHTTPServerTransport({

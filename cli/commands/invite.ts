@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-horiflow invite — Invite a user to a board
+taskinate invite — Invite a user to a board
 
 Usage:
-  horiflow invite --board <boardId> --email <email> [--role <role>]
+  taskinate invite --board <boardId> --email <email> [--role <role>]
 
 Options:
   --board <boardId>   ID of the board (required)
@@ -37,11 +37,11 @@ export async function runInvite({
   const role = (argv.role as string | undefined) ?? 'member';
 
   if (!boardId) {
-    console.error("Error: --board <boardId> is required.\nRun 'horiflow invite --help' for usage.");
+    console.error("Error: --board <boardId> is required.\nRun 'taskinate invite --help' for usage.");
     process.exit(1);
   }
   if (!email) {
-    console.error("Error: --email <email> is required.\nRun 'horiflow invite --help' for usage.");
+    console.error("Error: --email <email> is required.\nRun 'taskinate invite --help' for usage.");
     process.exit(1);
   }
 

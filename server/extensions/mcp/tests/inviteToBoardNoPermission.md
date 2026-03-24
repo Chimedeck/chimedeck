@@ -4,8 +4,8 @@
 Call the `invite_to_board` MCP tool with a token that lacks board admin permission to verify a structured error is returned without crashing.
 
 ## Preconditions
-- Horiflow is running at `http://localhost:3000`
-- A valid `HORIFLOW_TOKEN` for a **non-admin** board member is set
+- Taskinate is running at `http://localhost:3000`
+- A valid `TASKINATE_TOKEN` for a **non-admin** board member is set
 - A board exists; record the board's ID as `BOARD_ID`
 
 ## Steps

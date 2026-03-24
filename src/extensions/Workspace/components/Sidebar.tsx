@@ -79,7 +79,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 dark:border-slate-800 px-4">
           <Squares2X2Icon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
-          <span className="text-base font-bold text-slate-900 dark:text-white">HoriFlow</span>
+          <span className="text-base font-bold text-slate-900 dark:text-white">{commonTranslations['App.name']}</span>
         </div>
 
         {/* Workspace switcher */}

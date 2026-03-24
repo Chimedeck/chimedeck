@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
 
-  document.title = 'Forgot Password — HoriFlow';
+  document.title = `Forgot Password — ${translations.appName}`;
 
   const validate = () => {
     if (!email) {
@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">HoriFlow</span>
+          <span className="text-xl font-bold text-white">{translations.appName}</span>
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-1">{translations.forgotPassword.title}</h1>
