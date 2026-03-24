@@ -1,0 +1,44 @@
+[
+  {
+    "key": "stripe-api",
+    "name": "Stripe API",
+    "description": "Stripe payment processing API status",
+    "url": "https://api.stripe.com/",
+    "category": "payments"
+  },
+  {
+    "key": "sendgrid-api",
+    "name": "SendGrid API",
+    "description": "Email delivery via SendGrid",
+    "url": "https://api.sendgrid.com/",
+    "category": "email"
+  },
+  {
+    "key": "aws-s3-us-east-1",
+    "name": "AWS S3 (us-east-1)",
+    "description": "Amazon S3 object storage — US East 1 region",
+    "url": "https://s3.amazonaws.com/",
+    "category": "infrastructure"
+  },
+  {
+    "key": "aws-ses",
+    "name": "AWS SES",
+    "description": "Amazon Simple Email Service",
+    "url": "https://email.us-east-1.amazonaws.com/",
+    "category": "email"
+  },
+  {
+    "key": "github-api",
+    "name": "GitHub API",
+    "description": "GitHub REST API availability",
+    "url": "https://api.github.com/",
+    "category": "developer-tools"
+  },
+  {
+    "key": "cloudflare",
+    "name": "Cloudflare",
+    "description": "Cloudflare CDN and DNS",
+    "url": "https://www.cloudflarestatus.com/api/v2/status.json",
+    "category": "infrastructure"
+  }
+]

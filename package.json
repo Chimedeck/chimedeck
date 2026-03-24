@@ -102,6 +102,9 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@tailwindcss/typography": "^0.5.19",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/minimist": "^1.2.5",
     "@types/pg": "^8.11.0",
     "@types/react": "^18",

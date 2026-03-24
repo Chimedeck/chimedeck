@@ -34,6 +34,7 @@ import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
 import { updatePlugin } from '../../api';
 import type { Plugin, UpdatePluginBody, RegisterPluginBody } from '../../api';
 import translations from '../../translations/en.json';
+import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 
 const PluginRegistryPage = () => {
   const dispatch = useAppDispatch();
@@ -65,9 +66,7 @@ const PluginRegistryPage = () => {
   const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   // Derive unique categories from the loaded plugins
-  const categories = Array.from(
-    new Set(plugins.flatMap((p) => p.categories ?? [])),
-  ).sort();
+  const categories = Array.from(new Set(plugins.flatMap((p) => p.categories ?? []))).sort();
 
   // [why] Admin guard: deny-first, redirect non-admins immediately.
   useEffect(() => {
@@ -101,7 +100,7 @@ const PluginRegistryPage = () => {
       if (category) params.category = category;
       dispatch(fetchPluginsThunk(params));
     },
-    [dispatch, statusFilter],
+    [dispatch, statusFilter]
   );
 
   const handleSearchChange = (q: string) => {
@@ -183,8 +182,7 @@ const PluginRegistryPage = () => {
       dispatch(updatePluginInList(result.data));
       setEditingPlugin(null);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to update plugin. Please try again.';
+      const msg = err instanceof Error ? err.message : 'Failed to update plugin. Please try again.';
       setEditServerError(msg);
     } finally {
       setIsSubmittingEdit(false);
@@ -250,7 +248,6 @@ const PluginRegistryPage = () => {
       {/* Empty state */}
       {status === 'idle' && plugins.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <span className="text-4xl mb-4" aria-hidden="true">🧩</span>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             {translations['plugins.registry.empty']}
           </p>

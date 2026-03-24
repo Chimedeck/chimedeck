@@ -116,4 +116,11 @@ export const env = {
 
   // Email notifications — both SES_ENABLED and this flag must be true for notification emails to send.
   EMAIL_NOTIFICATIONS_ENABLED: Bun.env['EMAIL_NOTIFICATIONS_ENABLED'] === 'true',
+
+  // Health Check feature — when false, all /health-checks routes return 404
+  HEALTH_CHECK_ENABLED: Bun.env['HEALTH_CHECK_ENABLED'] === 'true',
+  /** HTTP probe timeout in milliseconds. Default: 10 000 ms. */
+  HEALTH_CHECK_TIMEOUT_MS: parseInt(Bun.env['HEALTH_CHECK_TIMEOUT_MS'] ?? '10000', 10),
+  /** Response time threshold (ms) above which a 2xx response is classified amber. Default: 1 000 ms. */
+  HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000', 10),
 } as const;

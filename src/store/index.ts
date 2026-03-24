@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, pluginRegistryReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer, boardNotificationTypePreferencesApi, apiTokenApi } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, pluginRegistryReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer, boardNotificationTypePreferencesApi, apiTokenApi, healthCheckTabReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 import { featureFlagsReducer } from '../slices/featureFlagsSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
@@ -38,6 +38,7 @@ export const store = configureStore({
     [boardNotificationTypePreferencesApi.reducerPath]: boardNotificationTypePreferencesApi.reducer,
     [apiTokenApi.reducerPath]: apiTokenApi.reducer,
     search: searchReducer,
+    healthCheckTab: healthCheckTabReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

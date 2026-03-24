@@ -6,6 +6,7 @@
 // Sprint 52: BoardViewSwitcher mounted above canvas for Kanban/Table/Calendar/Timeline.
 // Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
 // Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
+// Sprint 116: Health Check fifth tab (HEALTH_CHECK_ENABLED flag).
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -53,6 +54,8 @@ import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { canBoardGuestWrite } from '../../mods/guestPermissions';
 import type { BoardSearchResult } from '~/extensions/Search/api';
+import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
+import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthCheckConfig';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -106,7 +109,7 @@ const BoardPage = () => {
   }, []);
 
   // ── Active tab ────────────────────────────────────────────────────────────
-  type BoardTab = 'board' | 'activity' | 'comments' | 'archived-cards';
+  type BoardTab = 'board' | 'activity' | 'comments' | 'archived-cards' | 'health-check';
   const [activeTab, setActiveTab] = useState<BoardTab>('board');
 
   // ── Board settings panel ─────────────────────────────────────────────────
@@ -402,6 +405,8 @@ const BoardPage = () => {
     { id: 'activity' as const, label: 'Activity' },
     { id: 'comments' as const, label: 'Comments' },
     { id: 'archived-cards' as const, label: 'Archived Cards' },
+    // Health Check tab — only visible when feature flag is enabled (Sprint 116)
+    ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
   ];
 
   return (
@@ -543,6 +548,8 @@ const BoardPage = () => {
         <div className="flex-1 overflow-y-auto">
           <BoardCommentsPanel boardId={boardId ?? ''} />
         </div>
+      ) : activeTab === 'health-check' ? (
+        <HealthCheckTab boardId={boardId ?? ''} />
       ) : (
         <div className="flex-1 overflow-y-auto">
           <BoardArchivedCardsPanel
