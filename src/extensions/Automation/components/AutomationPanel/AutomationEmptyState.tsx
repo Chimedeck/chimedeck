@@ -1,5 +1,6 @@
 // AutomationEmptyState — shown in the Rules tab when the board has no automations.
 import { BoltIcon, PlusIcon } from '@heroicons/react/24/outline';
+import translations from '../../translations/en.json';
 
 interface Props {
   onCreateRule: () => void;
@@ -11,9 +12,9 @@ const AutomationEmptyState = ({ onCreateRule }: Props) => (
       <BoltIcon className="h-8 w-8 text-slate-500" aria-hidden="true" />
     </div>
     <div>
-      <p className="text-slate-200 font-medium">No automation rules yet</p>
+      <p className="text-slate-200 font-medium">{translations['automation.emptyState.title']}</p>
       <p className="mt-1 text-sm text-slate-400">
-        Create a rule to automatically act on cards when something happens on this board.
+        {translations['automation.emptyState.description']}
       </p>
     </div>
     <button
@@ -21,7 +22,7 @@ const AutomationEmptyState = ({ onCreateRule }: Props) => (
       onClick={onCreateRule}
     >
       <PlusIcon className="h-4 w-4" aria-hidden="true" />
-      Create rule
+      {translations['automation.emptyState.createRule']}
     </button>
   </div>
 );

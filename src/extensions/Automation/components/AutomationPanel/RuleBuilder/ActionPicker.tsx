@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { PlayIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import type { ActionType } from '../../../types';
 import { getActionTypes } from '../../../api';
+import translations from '../../../translations/en.json';
 
 interface Props {
   onSelect: (type: ActionType) => void;
@@ -19,7 +20,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
   useEffect(() => {
     getActionTypes()
       .then((res) => setActionTypes(res.data))
-      .catch(() => setError('Failed to load action types.'))
+      .catch(() => setError(translations['automation.actionPicker.error.loadFailed']))
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,7 +47,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
         <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
         <input
           className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
-          placeholder="Search actions…"
+          placeholder={translations['automation.actionPicker.searchPlaceholder']}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
@@ -54,7 +55,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
       </div>
 
       {loading && (
-        <p className="px-3 py-4 text-center text-sm text-slate-400">Loading…</p>
+        <p className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.actionPicker.loading']}</p>
       )}
       {error && (
         <p className="px-3 py-4 text-center text-sm text-red-400">{error}</p>
@@ -83,7 +84,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
             </li>
           ))}
           {Object.keys(grouped).length === 0 && (
-            <li className="px-3 py-4 text-center text-sm text-slate-400">No results</li>
+            <li className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.actionPicker.noResults']}</li>
           )}
         </ul>
       )}
@@ -94,7 +95,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
           className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
           onClick={onCancel}
         >
-          Cancel
+          {translations['automation.actionPicker.cancel']}
         </button>
       </div>
     </div>

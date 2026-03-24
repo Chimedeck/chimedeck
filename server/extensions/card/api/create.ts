@@ -1,5 +1,5 @@
 // POST /api/v1/lists/:listId/cards — create a new card; min role: MEMBER.
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
@@ -12,6 +12,7 @@ import { requireBoardWritable, type BoardScopedRequest } from '../../board/middl
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { emitCardCreated } from '../../activity/mods/createActivityEvent';
+import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -64,7 +65,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
 
   if (body.start_date !== undefined && body.start_date !== null) {
     const parsed = new Date(body.start_date);
-    if (isNaN(parsed.getTime())) {
+    if (Number.isNaN(parsed.getTime())) {
       return Response.json(
         { error: { code: 'bad-request', message: 'start_date must be a valid ISO 8601 date string or null' } },
         { status: 400 },
@@ -92,16 +93,17 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   });
 
   const card = await db('cards').where({ id }).first();
+  const cardWithCover = await resolveCoverImageUrl(card as { id: string; cover_attachment_id?: string | null });
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 
   // Broadcast the full card object so clients can update their local state immediately
   await Promise.all([
-    dispatchEvent({ type: 'card.created', boardId: list.board_id, entityId: id, actorId, payload: { card, listId } }),
+    dispatchEvent({ type: 'card.created', boardId: list.board_id, entityId: id, actorId, payload: { card: cardWithCover, listId } }),
     emitCardCreated({
       actorId,
       cardId: id,
-      cardTitle: card.title,
+      cardTitle: cardWithCover.title,
       listId,
       listName: list.title ?? null,
       boardId: board.id,
@@ -111,5 +113,5 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     }),
   ]);
 
-  return Response.json({ data: card }, { status: 201 });
+  return Response.json({ data: cardWithCover }, { status: 201 });
 }

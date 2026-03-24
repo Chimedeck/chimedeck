@@ -3,7 +3,7 @@
 > **Status:** Ready for development
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 32 (Custom Fields), Sprint 11 (Comments & Activity), Sprint 33 (Attachments)
-> **References:** Design screenshots attached to [HoriFlow] Feature improvement card
+> **References:** Design screenshots attached to [Taskinate] Feature improvement card
 
 ---
 

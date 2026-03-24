@@ -1,5 +1,6 @@
 // Floating dropdown showing filtered member suggestions triggered by @.
 import MentionChipRow from './MentionChip';
+import translations from '~/extensions/Mention/translations/en.json';
 
 interface Suggestion {
   id: string;
@@ -26,7 +27,7 @@ const MentionSuggestions = ({
   return (
     <ul
       role="listbox"
-      aria-label="Mention suggestions"
+      aria-label={translations['Mention.ariaList']}
       className="absolute z-50 top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
     >
       {suggestions.map((s, i) => (

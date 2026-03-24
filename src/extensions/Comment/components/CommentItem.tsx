@@ -8,6 +8,7 @@ import {
 } from '~/extensions/Comment/utils/attachmentMarkdown';
 import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
+import translations from '../translations/en.json';
 
 // Configure marked: soft line breaks become <br>, no mangling
 marked.setOptions({ breaks: true, gfm: true });
@@ -65,9 +66,9 @@ function buildBoardProps(boardId?: string): { boardId: string } | Record<string,
 /** Render a relative time string. */
 function relativeTime(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  if (diff < 60) return translations['comment.relativeTime.justNow'];
+  if (diff < 3600) return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']}`;
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -77,8 +78,11 @@ function renderContent(text: string, attachments: Attachment[]): string {
   const hydrated = attachments.length > 0
     ? hydrateCommentAttachmentMarkdown(text, attachments)
     : stripCommentAttachmentPlaceholders(text);
+  // [why] Legacy/server-sanitized comments may store blockquote markers as
+  // "&gt;". Convert marker positions back to markdown so rendering matches editor.
+  const normalized = hydrated.replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>');
   // Convert markdown → HTML
-  const html = marked.parse(hydrated) as string;
+  const html = marked.parse(normalized) as string;
   // Wrap @mentions in a styled chip
   return html.replaceAll(
     /(@\w[\w.+-]*)/g,
@@ -98,7 +102,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const canEdit = isOwner;
   const canDelete = isOwner || isAdmin;
 
-  const displayName = comment.author_name || comment.author_email || 'Unknown';
+  const displayName = comment.author_name || comment.author_email || translations['comment.author.unknown'];
   const initials = getInitials(comment.author_name, comment.author_email);
   const color = avatarColor(comment.user_id);
   const avatarUrl = comment.author_avatar_url ?? null;
@@ -109,7 +113,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this comment?')) return;
+    if (!confirm(translations['comment.confirm.delete'])) return;
     setDeleting(true);
     try {
       await onDelete(comment.id);
@@ -138,7 +142,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
           <span className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</span>
           <span className="text-xs text-gray-500 dark:text-gray-400">{relativeTime(comment.created_at)}</span>
           {comment.version > 1 && (
-            <span className="text-xs italic text-gray-400">(edited)</span>
+            <span className="text-xs italic text-gray-400">{translations['comment.edited']}</span>
           )}
         </div>
 
@@ -151,24 +155,12 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             initialValue={comment.content}
             onSubmit={handleEdit}
             onCancel={() => setEditing(false)}
-            submitLabel="Update"
+            submitLabel={translations['comment.editor.update']}
           />
         ) : (
           <div
-            className="comment-markdown text-sm text-gray-800 dark:text-gray-100 leading-relaxed
-              [&_p]:mb-2 [&_p:last-child]:mb-0
-              [&_a]:text-blue-600 dark:[&_a]:text-blue-400 [&_a]:underline [&_a:hover]:text-blue-800 dark:[&_a:hover]:text-blue-300
-              [&_strong]:font-semibold [&_em]:italic
-              [&_code]:bg-gray-100 dark:[&_code]:bg-slate-700 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_code]:font-mono [&_code]:text-green-700 dark:[&_code]:text-green-300
-              [&_pre]:bg-gray-100 dark:[&_pre]:bg-slate-700 [&_pre]:rounded [&_pre]:p-3 [&_pre]:overflow-x-auto [&_pre]:text-xs [&_pre]:font-mono [&_pre]:text-green-700 dark:[&_pre]:text-green-300 [&_pre]:mb-2
-              [&_pre_code]:bg-transparent [&_pre_code]:p-0
-              [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:mb-2
-              [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:mb-2
-              [&_li]:mb-0.5
-              [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 dark:[&_blockquote]:border-slate-500 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-gray-500 dark:[&_blockquote]:text-gray-400 [&_blockquote]:mb-2
-              [&_h1]:text-base [&_h1]:font-bold [&_h1]:mb-1
-              [&_h2]:text-sm [&_h2]:font-bold [&_h2]:mb-1
-              [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1"
+            className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-100
+              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
             // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
             // Input is from authenticated users only (internal tool), so XSS risk is accepted.
             dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
@@ -183,7 +175,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 onClick={() => setEditing(true)}
                 className="hover:text-gray-800 dark:hover:text-gray-200 hover:underline"
               >
-                Edit
+                {translations['comment.action.edit']}
               </button>
             )}
             {canEdit && canDelete && <span>·</span>}
@@ -193,7 +185,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 disabled={deleting}
                 className="hover:text-red-500 hover:underline disabled:opacity-50"
               >
-                {deleting ? '…' : 'Delete'}
+                {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
               </button>
             )}
           </div>

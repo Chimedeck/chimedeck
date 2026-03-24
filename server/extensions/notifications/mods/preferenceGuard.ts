@@ -9,6 +9,9 @@ export const NOTIFICATION_TYPES = [
   'card_commented',
   'card_member_assigned',
   'card_member_unassigned',
+  'card_updated',
+  'card_deleted',
+  'card_archived',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

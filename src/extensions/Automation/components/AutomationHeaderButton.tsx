@@ -1,6 +1,7 @@
 // AutomationHeaderButton — BoltIcon button with active-automation count badge.
 // Placed immediately to the left of the board ··· menu button.
 import { BoltIcon } from '@heroicons/react/24/solid';
+import translations from '../translations/en.json';
 
 interface Props {
   /** Number of currently enabled automations on this board. */
@@ -12,8 +13,8 @@ const AutomationHeaderButton = ({ activeCount, onClick }: Props) => (
   <button
     className="relative rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
     onClick={onClick}
-    aria-label="Open automation panel"
-    title="Automation"
+    aria-label={translations['automation.headerButton.ariaLabel']}
+    title={translations['automation.panel.title']}
   >
     <BoltIcon className="h-5 w-5" aria-hidden="true" />
     {activeCount > 0 && (

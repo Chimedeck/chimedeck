@@ -11,6 +11,7 @@ import type { Automation } from '../../types';
 import { updateAutomation, deleteAutomation } from '../../api';
 import RunCountChip from '../LogPanel/RunCountChip';
 import { socket } from '~/extensions/Realtime/client/socket';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -80,7 +81,7 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
 
   const triggerLabel = automation.trigger?.triggerType
     ? automation.trigger.triggerType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    : 'No trigger';
+    : translations['automation.list.noTrigger'];
 
   return (
     <li className="group flex items-start gap-3 rounded-md border border-slate-700 bg-slate-800 px-3 py-3">
@@ -93,7 +94,7 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-slate-200">{automation.name}</p>
         <p className="mt-0.5 truncate text-xs text-slate-400">
-          {triggerLabel} · {automation.actions.length} action{automation.actions.length !== 1 ? 's' : ''}
+          {triggerLabel} · {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.list.actions'] : translations['automation.list.action']}
         </p>
       </div>
 
@@ -109,8 +110,8 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
           } ${automation.isEnabled ? 'text-emerald-400' : 'text-slate-500'}`}
           onClick={handleToggle}
           disabled={toggling}
-          aria-label={automation.isEnabled ? 'Disable rule' : 'Enable rule'}
-          title={automation.isEnabled ? 'Disable' : 'Enable'}
+          aria-label={automation.isEnabled ? translations['automation.list.row.disableAriaLabel'] : translations['automation.list.row.enableAriaLabel']}
+          title={automation.isEnabled ? translations['automation.list.row.disableTitle'] : translations['automation.list.row.enableTitle']}
         >
           {automation.isEnabled ? (
             <CheckCircleIcon className="h-4 w-4" aria-hidden="true" />
@@ -123,8 +124,8 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
         <button
           className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
           onClick={onEdit}
-          aria-label="Edit rule"
-          title="Edit"
+          aria-label={translations['automation.list.row.editAriaLabel']}
+          title={translations['automation.list.row.editTitle']}
         >
           <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -138,8 +139,8 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
           } ${deleting ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleDelete}
           disabled={deleting}
-          aria-label={confirmDelete ? 'Confirm delete' : 'Delete rule'}
-          title={confirmDelete ? 'Click again to confirm' : 'Delete'}
+          aria-label={confirmDelete ? translations['automation.list.row.confirmDeleteAriaLabel'] : translations['automation.list.row.deleteAriaLabel']}
+          title={confirmDelete ? translations['automation.list.row.confirmDeleteTitle'] : translations['automation.list.row.deleteTitle']}
           onBlur={() => setConfirmDelete(false)}
         >
           <TrashIcon className="h-4 w-4" aria-hidden="true" />
@@ -156,13 +157,13 @@ const AutomationList = ({ boardId, automations, onCreateRule, onEditRule, onChan
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-          Rules ({rules.length})
+          {translations['automation.list.sectionLabel']} ({rules.length})
         </p>
         <button
           className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
           onClick={onCreateRule}
         >
-          + Create rule
+          {translations['automation.list.createRule']}
         </button>
       </div>
 

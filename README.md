@@ -1,4 +1,4 @@
-# HoriFlow
+# Taskinate
 
 A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.  
 This repo also contains the agent loop that builds it sprint by sprint.
@@ -122,11 +122,11 @@ aws ecr get-login-password --region <region> \
   | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
 
 # Build — typecheck + Vite bundle happen inside the multi-stage Dockerfile
-docker build -t horiflow-app:${IMAGE_TAG} .
+docker build -t taskinate-app:${IMAGE_TAG} .
 
 # Tag and push
-docker tag horiflow-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/horiflow-app:${IMAGE_TAG}
-docker push <account>.dkr.ecr.<region>.amazonaws.com/horiflow-app:${IMAGE_TAG}
+docker tag taskinate-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/taskinate-app:${IMAGE_TAG}
+docker push <account>.dkr.ecr.<region>.amazonaws.com/taskinate-app:${IMAGE_TAG}
 ```
 
 ### CD pipeline (host machine)
@@ -147,7 +147,7 @@ aws ecr get-login-password --region <region> \
 
 # 2. Run database migrations (one-off container — Compose pulls the image here)
 docker run --rm --env-file .env.production \
-  <account>.dkr.ecr.<region>.amazonaws.com/horiflow-app:${IMAGE_TAG} \
+  <account>.dkr.ecr.<region>.amazonaws.com/taskinate-app:${IMAGE_TAG} \
   bun run db:migrate
 
 # 3. (One-time, local-db profile only) Activate pg_cron after the first migration
@@ -160,7 +160,7 @@ docker compose -f docker-compose.prod.yml --profile local-db exec postgres \
 # 4. Start the app (Compose reuses the already-pulled image)
 #
 # Default — external RDS + S3 (AWS managed):
-DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/horiflow-app \
+DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/taskinate-app \
 IMAGE_TAG=${IMAGE_TAG} \
 docker compose -f docker-compose.prod.yml up -d
 

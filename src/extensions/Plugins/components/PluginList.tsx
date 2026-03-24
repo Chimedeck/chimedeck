@@ -1,4 +1,5 @@
 // PluginList — renders "Active on this board" and "Available plugins" sections.
+import translations from '../translations/en.json';
 import PluginCard from './PluginCard';
 import type { Plugin, BoardPlugin } from '../api';
 
@@ -17,10 +18,10 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSet
       {/* Active section */}
       <section>
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-          Active on this board
+          {translations['plugins.list.activeHeading']}
         </h3>
         {boardPlugins.length === 0 ? (
-          <p className="text-slate-500 text-sm">No plugins enabled on this board yet.</p>
+          <p className="text-slate-500 text-sm">{translations['plugins.list.activeEmpty']}</p>
         ) : (
           <div className="space-y-2">
             {boardPlugins.map((bp) => (
@@ -40,10 +41,10 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSet
       {/* Available section */}
       <section>
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-          Available plugins
+          {translations['plugins.list.availableHeading']}
         </h3>
         {availablePlugins.length === 0 ? (
-          <p className="text-slate-500 text-sm">No additional plugins available.</p>
+          <p className="text-slate-500 text-sm">{translations['plugins.list.availableEmpty']}</p>
         ) : (
           <div className="space-y-2">
             {availablePlugins.map((plugin) => (

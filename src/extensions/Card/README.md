@@ -9,7 +9,7 @@ Card is the primary unit of work in the Collaborative Kanban board. Each card be
 | `POST` | `/api/v1/lists/:id/cards` | MEMBER | Create card |
 | `GET` | `/api/v1/lists/:id/cards` | VIEWER | List active cards in a list |
 | `GET` | `/api/v1/cards/:id` | VIEWER | Get full card detail |
-| `PATCH` | `/api/v1/cards/:id` | MEMBER | Update title / description / due date |
+| `PATCH` | `/api/v1/cards/:id` | MEMBER | Update card fields (title, description, dates, money, cover) |
 | `PATCH` | `/api/v1/cards/:id/archive` | MEMBER | Toggle archive |
 | `POST` | `/api/v1/cards/:id/move` | MEMBER | Move to another list |
 | `POST` | `/api/v1/cards/:id/duplicate` | MEMBER | Duplicate within same list |
@@ -26,6 +26,9 @@ cards (
   position    TEXT NOT NULL,         -- fractional lexicographic index
   archived    BOOLEAN NOT NULL DEFAULT false,
   due_date    TIMESTAMP,
+  cover_attachment_id TEXT NULL REFERENCES attachments(id) ON DELETE SET NULL,
+  cover_color TEXT NULL,
+  cover_size TEXT NOT NULL DEFAULT 'SMALL',
   created_at  TIMESTAMP,
   updated_at  TIMESTAMP
 )

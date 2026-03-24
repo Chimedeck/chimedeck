@@ -1,7 +1,7 @@
 // ActivityFeed — unified timeline of comments and system activity events for a card.
 // Renders comments as full bubbles and system events as compact single-line rows.
 // Feed is sorted descending by created_at (newest first).
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CommentItem, { type Comment } from '~/extensions/Comment/components/CommentItem';
 import CommentEditor from '~/extensions/Comment/components/CommentEditor';
 import { getActivityEventMeta, type ActivityEventContext } from '../../config/activityEventLabels';
@@ -80,13 +80,32 @@ const ActivityFeed = ({
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
-  useEffect(() => {
-    listAttachments({ cardId })
-      .then(({ data }) => {
-        setAttachments(data);
-      })
-      .catch(() => {});
+  const loadAttachments = useCallback(async () => {
+    try {
+      const { data } = await listAttachments({ cardId });
+      setAttachments(data);
+    } catch {
+      // non-critical; comment rendering will recover on the next successful refresh
+    }
   }, [cardId]);
+
+  useEffect(() => {
+    void loadAttachments();
+  }, [loadAttachments]);
+
+  const handleAddComment = useCallback(async (content: string) => {
+    await Promise.all([
+      onAddComment(content),
+      loadAttachments(),
+    ]);
+  }, [onAddComment, loadAttachments]);
+
+  const handleEditComment = useCallback(async (commentId: string, content: string) => {
+    await Promise.all([
+      onEditComment(commentId, content),
+      loadAttachments(),
+    ]);
+  }, [onEditComment, loadAttachments]);
 
   const attachmentMap = new Map(
     attachments.map((attachment) => [
@@ -127,7 +146,7 @@ const ActivityFeed = ({
           cardId={cardId}
           availableAttachments={attachments}
           placeholder="Add a comment…"
-          onSubmit={onAddComment}
+          onSubmit={handleAddComment}
           submitLabel="Comment"
         />
       )}
@@ -146,7 +165,7 @@ const ActivityFeed = ({
                 {...buildBoardProps(boardId)}
                 attachments={attachments}
                 currentUserId={currentUserId}
-                onEdit={onEditComment}
+                onEdit={handleEditComment}
                 onDelete={onDeleteComment}
               />
             );

@@ -36,7 +36,7 @@ export async function dispatchEvent(input: WriteEventInput): Promise<WrittenEven
   }
 
   // Fire-and-forget board activity email notifications.
-  // Handles card.created, card.moved, and comment_added events.
+  // Handles card.created and card.moved events (comment_added is dispatched directly from create.ts).
   if (event.board_id && event.actor_id) {
     handleBoardActivityNotification({
       event,

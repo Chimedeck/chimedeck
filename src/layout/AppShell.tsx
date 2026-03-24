@@ -12,6 +12,7 @@ import TopBar from '~/layout/TopBar';
 import CommandPalette from '~/common/components/CommandPalette';
 import InviteExternalUserModal from '~/extensions/AdminInvite/InviteExternalUserModal';
 import type { SearchResult } from '~/extensions/Search/api';
+import translations from '~/common/translations/en.json';
 
 export default function AppShell() {
   const dispatch = useAppDispatch();
@@ -124,7 +125,7 @@ export default function AppShell() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation"
+          aria-label={translations['Layout.mobileDrawerAriaLabel']}
           id="mobile-sidebar"
           ref={drawerRef}
           className={`relative z-40 flex h-full transition-transform duration-300 ease-in-out ${

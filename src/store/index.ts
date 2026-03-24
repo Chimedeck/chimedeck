@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer, boardNotificationTypePreferencesApi, apiTokenApi } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 import { featureFlagsReducer } from '../slices/featureFlagsSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
@@ -34,6 +34,8 @@ export const store = configureStore({
     [notificationPreferencesApi.reducerPath]: notificationPreferencesApi.reducer,
     [boardMembersApi.reducerPath]: boardMembersApi.reducer,
     [boardGuestsApi.reducerPath]: boardGuestsApi.reducer,
+    [boardNotificationTypePreferencesApi.reducerPath]: boardNotificationTypePreferencesApi.reducer,
+    [apiTokenApi.reducerPath]: apiTokenApi.reducer,
     search: searchReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -41,7 +43,7 @@ export const store = configureStore({
       // Inject the API client so async thunks can use `extra.api` without
       // importing the client directly (avoids circular dep at module level)
       thunk: { extraArgument: { api: apiClient } },
-    }).concat(wsMiddleware, notificationPreferencesApi.middleware, boardMembersApi.middleware, boardGuestsApi.middleware),
+    }).concat(wsMiddleware, notificationPreferencesApi.middleware, boardMembersApi.middleware, boardGuestsApi.middleware, boardNotificationTypePreferencesApi.middleware, apiTokenApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

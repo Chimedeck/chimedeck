@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({ password: '', confirmPassword: '' });
 
-  document.title = 'Reset Password — HoriFlow';
+  document.title = `Reset Password — ${translations.appName}`;
 
   useEffect(() => {
     if (status === 'success') {
@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-8">
             <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-            <span className="text-xl font-bold text-white">HoriFlow</span>
+            <span className="text-xl font-bold text-white">{translations.appName}</span>
           </div>
           <p className="text-red-400 mb-4">{translations.resetPassword.invalidToken}</p>
           <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 text-sm underline">
@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">HoriFlow</span>
+          <span className="text-xl font-bold text-white">{translations.appName}</span>
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-6">{translations.resetPassword.title}</h1>

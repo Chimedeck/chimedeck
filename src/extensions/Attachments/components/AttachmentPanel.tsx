@@ -11,6 +11,7 @@ import { AttachmentThumbnail, VideoThumbnail } from './AttachmentThumbnail';
 import { PasteListener } from './PasteListener';
 import type { Attachment } from '../types';
 import { useEffect } from 'react';
+import translations from '../translations/en.json';
 
 interface Props {
   cardId: string;
@@ -143,7 +144,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
           <PaperClipIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
-          Attachments
+          {translations['attachments.panel.title']}
         </h3>
         {canWrite && (
           <button
@@ -153,7 +154,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
             data-testid="attach-file-button"
           >
             <PaperClipIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Attach file
+            {translations['attachments.panel.attachFile']}
           </button>
         )}
       </div>
@@ -197,7 +198,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
       )}
 
       {attachments.length === 0 && uploads.filter((u) => u.phase !== 'done').length === 0 && (
-        <p className="text-xs text-slate-500 italic mt-1">No attachments yet. Drop a file or click "Attach file".</p>
+        <p className="text-xs text-slate-500 italic mt-1">{translations['attachments.panel.empty']}</p>
       )}
 
       <div className="space-y-0" data-testid="attachment-list">
@@ -214,7 +215,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
       {/* Thumbnail grid — image/* READY attachments */}
       {imageAttachments.length > 0 && (
         <div className="mt-3" data-testid="attachment-thumbnail-grid">
-          <p className="text-xs text-slate-400 mb-2">Images</p>
+          <p className="text-xs text-slate-400 mb-2">{translations['attachments.panel.imagesSection']}</p>
           <div className="flex flex-wrap gap-2">
             {imageAttachments.map((a) => (
               <AttachmentThumbnail key={a.id} attachment={a} />
@@ -226,7 +227,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
       {/* Thumbnail grid — video/* READY attachments */}
       {videoAttachments.length > 0 && (
         <div className="mt-3" data-testid="attachment-video-grid">
-          <p className="text-xs text-slate-400 mb-2">Videos</p>
+          <p className="text-xs text-slate-400 mb-2">{translations['attachments.panel.videosSection']}</p>
           <div className="flex flex-wrap gap-2">
             {videoAttachments.map((a) => (
               <VideoThumbnail key={a.id} attachment={a} />
@@ -246,7 +247,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
             >
               <input
                 type="url"
-                placeholder="https://…"
+                placeholder={translations['attachments.panel.link.urlPlaceholder']}
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 required
@@ -256,7 +257,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
               />
               <input
                 type="text"
-                placeholder="Display name (optional)"
+                placeholder={translations['attachments.panel.link.namePlaceholder']}
                 value={linkName}
                 onChange={(e) => setLinkName(e.target.value)}
                 className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -269,7 +270,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
                   className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
                   data-testid="link-submit-button"
                 >
-                  Attach
+                  {translations['attachments.panel.link.attach']}
                 </button>
                 <button
                   type="button"
@@ -280,7 +281,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
                   }}
                   className="text-xs text-slate-400 hover:text-slate-200 rounded px-3 py-1.5 border border-slate-600 hover:border-slate-400"
                 >
-                  Cancel
+                  {translations['attachments.panel.link.cancel']}
                 </button>
               </div>
             </form>
@@ -292,7 +293,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
               data-testid="attach-link-button"
             >
               <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
-              Attach a link
+              {translations['attachments.panel.link.attachLink']}
             </button>
           )}
         </div>

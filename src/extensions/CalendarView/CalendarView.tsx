@@ -7,6 +7,7 @@ import { useState, useCallback, useMemo } from 'react';
 import CalendarMonthGrid from './CalendarMonthGrid';
 import CalendarWeekGrid from './CalendarWeekGrid';
 import { useCalendarDrag } from './useCalendarDrag';
+import translations from './translations/en.json';
 import type { CalendarMode, CalendarViewProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -88,14 +89,14 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
       {/* Toolbar */}
       <div className="flex items-center gap-3 border-b border-slate-700 px-4 py-2 text-sm text-slate-400">
         {/* Mode toggle */}
-        <div className="flex rounded border border-slate-700" role="group" aria-label="Calendar mode">
+        <div className="flex rounded border border-slate-700" role="group" aria-label={translations['CalendarView.ariaMode']}>
           <button
             onClick={() => setMode('month')}
             className={`px-3 py-1 text-xs rounded-l ${mode === 'month' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
             aria-pressed={mode === 'month'}
             data-testid="calendar-mode-month"
           >
-            Month
+            {translations['CalendarView.monthView']}
           </button>
           <button
             onClick={() => setMode('week')}
@@ -103,13 +104,13 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
             aria-pressed={mode === 'week'}
             data-testid="calendar-mode-week"
           >
-            Week
+            {translations['CalendarView.weekView']}
           </button>
         </div>
 
         {/* Cards-without-due-date note (always shown) */}
         <span className="text-xs text-slate-500" data-testid="calendar-no-due-date-note">
-          Cards without a due date are not shown.
+          {translations['CalendarView.noDueDateNote']}
           {hasUnscheduled && (
             <> ({cards.length - scheduledCards.length} hidden)</>
           )}

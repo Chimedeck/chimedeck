@@ -1,5 +1,6 @@
 // CreateWorkspaceModal — Radix Dialog for creating a new workspace.
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -17,6 +18,7 @@ interface CreateWorkspaceModalProps {
 
 export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorkspaceModalProps) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const inProgress = useAppSelector(selectCreateWorkspaceInProgress);
   const error = useAppSelector(selectCreateWorkspaceError);
 
@@ -29,6 +31,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
     if (createWorkspaceThunk.fulfilled.match(result)) {
       setName('');
       onOpenChange(false);
+      navigate(`/workspaces/${result.payload.id}/boards`);
     }
   };
 

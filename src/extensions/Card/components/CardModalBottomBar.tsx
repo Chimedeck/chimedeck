@@ -154,9 +154,8 @@ const CardModalBottomBar = ({
             <div className="absolute bottom-full left-0 mb-1 z-10 w-52 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-lg p-2">
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-40"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                 onClick={() => { actions.setOpen(false); onArchive(); }}
-                disabled={disabled}
               >
                 {archived
                   ? <><ArchiveBoxXMarkIcon className="w-4 h-4 shrink-0" /> Unarchive card</>

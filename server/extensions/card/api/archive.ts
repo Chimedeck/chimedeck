@@ -2,6 +2,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
+import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 import {
   requireWorkspaceMembership,
   requireMemberOrBoardGuestMember,
@@ -52,6 +53,15 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
 
   // Client expects { cardId, listId } to remove card from board state
   await dispatchEvent({ type: 'card.archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { cardId, listId: card.list_id } });
+
+  // Fire-and-forget card_archived notification with the new archived state
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+  dispatchDirectCardNotification({
+    payload: { type: 'card_archived', cardTitle: card.title, archived: newArchived },
+    boardId: board.id,
+    cardId,
+    actorId,
+  }).catch(() => {});
 
   return Response.json({ data: updated[0] });
 }

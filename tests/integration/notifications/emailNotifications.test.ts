@@ -238,6 +238,6 @@ describe('email templates — renderable without throwing', () => {
       cardUrl: '/boards/b1/cards/c5',
     });
     expect(result.html).toContain('/boards/b1/cards/c5');
-    expect(result.html).toContain('/settings/profile#notifications');
+    expect(result.html).toContain('/settings/profile?tab=notifications');
   });
 });

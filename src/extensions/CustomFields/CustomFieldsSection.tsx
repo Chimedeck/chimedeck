@@ -3,9 +3,8 @@
 // [why] Self-contained so no changes are needed to the parent Redux container;
 //       the section manages its own field + value state via hooks.
 import { useCallback } from 'react';
-import { useCustomFields, useCardCustomFieldValues } from './api';
-import { upsertCardFieldValue, deleteCardFieldValue } from './api';
-import { apiClient } from '~/common/api/client';
+import translations from './translations/en.json';
+import { useCustomFields, useCardCustomFieldValues, invalidateBoardCardFieldValuesCache } from './api';
 import CustomFieldValueEditor from './CustomFieldValueEditor';
 import type { CustomFieldValue } from './types';
 
@@ -21,22 +20,27 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 
   const handleValueChange = useCallback(
     (fieldId: string, updated: CustomFieldValue | null) => {
-      setValues(
-        updated
-          ? // Replace existing entry or add new one
-            values.some((v) => v.custom_field_id === fieldId)
-            ? values.map((v) => (v.custom_field_id === fieldId ? updated : v))
-            : [...values, updated]
-          : values.filter((v) => v.custom_field_id !== fieldId),
-      );
+      let nextValues: CustomFieldValue[];
+      if (updated) {
+        // Replace existing entry or add new one.
+        const hasExisting = values.some((v) => v.custom_field_id === fieldId);
+        nextValues = hasExisting
+          ? values.map((v) => (v.custom_field_id === fieldId ? updated : v))
+          : [...values, updated];
+      } else {
+        nextValues = values.filter((v) => v.custom_field_id !== fieldId);
+      }
+
+      setValues(nextValues);
+      invalidateBoardCardFieldValuesCache(boardId);
     },
-    [values, setValues],
+    [boardId, values, setValues],
   );
 
   if (fieldsLoading || valuesLoading) {
     return (
       <div className="text-xs text-slate-500 animate-pulse py-2">
-        Loading custom fields…
+        {translations['CustomFields.loadingCustomFields']}
       </div>
     );
   }
@@ -44,9 +48,9 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
   if (fields.length === 0) return null;
 
   return (
-    <section aria-label="Custom fields">
+    <section aria-label={translations['CustomFields.sectionLabel']}>
       <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-        Custom Fields
+        {translations['CustomFields.panelTitle']}
       </h3>
       <div className="space-y-3">
         {fields.map((field) => {
@@ -70,5 +74,6 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 };
 
 // Re-export so consumers can also access badge values for tile rendering.
-export { useCustomFields, useCardCustomFieldValues, upsertCardFieldValue, deleteCardFieldValue, apiClient };
+export { useCustomFields, useCardCustomFieldValues, upsertCardFieldValue, deleteCardFieldValue } from './api';
+export { apiClient } from '~/common/api/client';
 export default CustomFieldsSection;

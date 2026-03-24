@@ -10,6 +10,7 @@ import RuleBuilder from './RuleBuilder';
 import ButtonsTab from './ButtonsTab';
 import SchedulePanel from '../SchedulePanel';
 import LogPanel from '../LogPanel';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -20,10 +21,10 @@ interface Props {
 }
 
 const TABS: { id: AutomationTab; label: string }[] = [
-  { id: 'rules', label: 'Rules' },
-  { id: 'buttons', label: 'Buttons' },
-  { id: 'schedule', label: 'Schedule' },
-  { id: 'log', label: 'Log' },
+  { id: 'rules', label: translations['automation.panel.tab.rules'] },
+  { id: 'buttons', label: translations['automation.panel.tab.buttons'] },
+  { id: 'schedule', label: translations['automation.panel.tab.schedule'] },
+  { id: 'log', label: translations['automation.panel.tab.log'] },
 ];
 
 const ComingSoon = ({ tab }: { tab: string }) => (
@@ -47,7 +48,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
       const res = await getAutomations({ boardId });
       setAutomations(res.data);
     } catch {
-      setError('Failed to load automations.');
+      setError(translations['automation.panel.error.loadFailed']);
     } finally {
       setLoading(false);
     }
@@ -86,18 +87,18 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
         className="absolute right-0 top-0 h-full w-96 bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-40"
         role="dialog"
         aria-modal="true"
-        aria-label="Automation panel"
+        aria-label={translations['automation.panel.title']}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-slate-300" aria-hidden="true" />
-            <h2 className="text-slate-100 font-semibold text-sm">Automation</h2>
+            <h2 className="text-slate-100 font-semibold text-sm">{translations['automation.panel.title']}</h2>
           </div>
           <button
             className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
             onClick={onClose}
-            aria-label="Close automation panel"
+            aria-label={translations['automation.panel.close']}
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -128,7 +129,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
             <>
               {loading && (
                 <div className="flex items-center justify-center py-12">
-                  <p className="text-sm text-slate-400">Loading…</p>
+                  <p className="text-sm text-slate-400">{translations['automation.panel.loading']}</p>
                 </div>
               )}
               {!loading && error && (
@@ -138,7 +139,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                     className="mt-2 text-xs text-blue-400 hover:underline"
                     onClick={loadAutomations}
                   >
-                    Retry
+                    {translations['automation.panel.retry']}
                   </button>
                 </div>
               )}

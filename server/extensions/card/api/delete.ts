@@ -2,6 +2,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
+import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 import {
   requireWorkspaceMembership,
   requireRole,
@@ -44,9 +45,19 @@ export async function handleDeleteCard(req: Request, cardId: string): Promise<Re
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+
+  // Fire-and-forget card_deleted notification before row removal so card data is still accessible
+  dispatchDirectCardNotification({
+    payload: { type: 'card_deleted', cardTitle: card.title },
+    boardId: board.id,
+    cardId,
+    actorId,
+  }).catch(() => {});
+
   await db('cards').where({ id: cardId }).del();
 
-  await dispatchEvent({ type: 'card.deleted', boardId: list.board_id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId: card.list_id } });
+  await dispatchEvent({ type: 'card.deleted', boardId: list.board_id, entityId: cardId, actorId, payload: { listId: card.list_id } });
 
   return new Response(null, { status: 204 });
 }

@@ -1,4 +1,6 @@
 // Human-readable description for a single activity event.
+import translations from '../translations/en.json';
+
 export interface Activity {
   id: string;
   entity_type: string;
@@ -15,46 +17,21 @@ interface Props {
   actorName?: string; // display name for actor_id if available
 }
 
+// Replaces {placeholders} in a translation template with values from a record.
+function interpolate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+}
+
 function describeAction(action: string, payload: Record<string, unknown>, actorName: string): string {
-  const actor = actorName;
-  switch (action) {
-    case 'card_created':
-      return `${actor} created card "${payload.title ?? payload.cardTitle ?? ''}"`;
-    case 'card_moved':
-      return `${actor} moved "${payload.title ?? payload.cardTitle ?? ''}" from ${payload.fromList ?? 'unknown'} to ${payload.toList ?? 'unknown'}`;
-    case 'card_archived':
-      return `${actor} archived card "${payload.title ?? payload.cardTitle ?? ''}"`;
-    case 'card_updated':
-      return `${actor} updated card "${payload.title ?? payload.cardTitle ?? ''}"`;
-    case 'card_deleted':
-      return `${actor} deleted a card`;
-    case 'comment_added':
-      return `${actor} commented on card "${payload.cardTitle ?? ''}"`;
-    case 'comment_edited':
-      return `${actor} edited a comment`;
-    case 'comment_deleted':
-      return `${actor} deleted a comment`;
-    case 'list_created':
-      return `${actor} created list "${payload.title ?? ''}"`;
-    case 'list_updated':
-      return `${actor} updated list "${payload.title ?? ''}"`;
-    case 'list_archived':
-      return `${actor} archived list "${payload.title ?? ''}"`;
-    case 'board_created':
-      return `${actor} created board "${payload.title ?? ''}"`;
-    case 'board_updated':
-      return `${actor} updated board settings`;
-    case 'member_assigned':
-      return `${actor} assigned a member to the card`;
-    case 'member_removed':
-      return `${actor} removed a member from the card`;
-    case 'label_attached':
-      return `${actor} added a label to the card`;
-    case 'label_detached':
-      return `${actor} removed a label from the card`;
-    default:
-      return `${actor} performed ${action}`;
-  }
+  const title = String(payload.title ?? payload.cardTitle ?? '');
+  const cardTitle = String(payload.cardTitle ?? '');
+  const fromList = String(payload.fromList ?? translations['activity.fromList.unknown']);
+  const toList = String(payload.toList ?? translations['activity.toList.unknown']);
+
+  const key = `activity.action.${action}` as keyof typeof translations;
+  const template = translations[key] ?? translations['activity.action.unknown'];
+
+  return interpolate(template, { actor: actorName, title, cardTitle, fromList, toList, action });
 }
 
 const ActivityItem = ({ activity, actorName }: Props) => {

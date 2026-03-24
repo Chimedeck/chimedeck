@@ -1,7 +1,6 @@
 // GET /api/v1/boards/:id — get a single board with shallow lists and cards.
 // PUBLIC boards: no auth required. WORKSPACE/PRIVATE: min role VIEWER.
 import { db } from '../../../common/db';
-import { requireRole } from '../../../middlewares/permissionManager';
 import {
   applyBoardVisibility,
   type BoardVisibilityScopedRequest,
@@ -9,6 +8,7 @@ import {
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
 import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { searchLog } from '../../search/common/searchLogger';
+import { resolveCoverImageUrls } from '../../../common/cards/cover';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -57,9 +57,13 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
             'c.position',
             'c.archived',
             'c.due_date',
+            'c.due_complete',
             'c.start_date',
             'c.amount',
             'c.currency',
+            'c.cover_attachment_id',
+            'c.cover_color',
+            'c.cover_size',
             'c.created_at',
             'c.updated_at',
             db.raw(
@@ -87,6 +91,10 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
     }))
   );
 
+  const cardsWithResolvedCovers = await resolveCoverImageUrls(
+    cardsWithResolvedMembers as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
+  );
+
   const url = new URL(req.url);
   const includes = url.searchParams.get('include')?.split(',') ?? [];
 
@@ -107,6 +115,6 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
 
   return Response.json({
     data: { ...board, callerGuestType },
-    includes: { lists, cards: cardsWithResolvedMembers, activities },
+    includes: { lists, cards: cardsWithResolvedCovers, activities },
   });
 }

@@ -3,6 +3,7 @@
 import { ChartBarIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import type { FC } from 'react';
 import type { AutomationQuota } from '../../types';
+import translations from '../../translations/en.json';
 
 interface Props {
   quota: AutomationQuota;
@@ -37,7 +38,7 @@ const QuotaBar: FC<Props> = ({ quota }) => {
         {isWarning && (
           <ExclamationTriangleIcon
             className={`h-4 w-4 shrink-0 ${pct >= 95 ? 'text-red-400' : 'text-amber-400'}`}
-            aria-label="Quota warning"
+            aria-label={translations['automation.quotaBar.warningAriaLabel']}
           />
         )}
       </div>

@@ -2,6 +2,7 @@
 // Renders a list of existing options with inline label/colour editing, plus an
 // "Add option" button.
 import { useState } from 'react';
+import translations from './translations/en.json';
 import type { DropdownOption } from './types';
 
 // Preset colour palette for quick selection.
@@ -47,9 +48,9 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
   };
 
   return (
-    <div className="space-y-2" aria-label="Dropdown options editor">
+    <div className="space-y-2" aria-label={translations['CustomFields.dropdownEditorLabel']}>
       {options.length === 0 && (
-        <p className="text-xs text-slate-500 italic">No options yet. Add one below.</p>
+        <p className="text-xs text-slate-500 italic">{translations['CustomFields.dropdownNoOptions']}</p>
       )}
 
       {options.map((option) => (
@@ -86,7 +87,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
             type="text"
             value={option.label}
             onChange={(e) => handleLabelChange(option.id, e.target.value)}
-            placeholder="Option label"
+            placeholder={translations['CustomFields.dropdownOptionPlaceholder']}
             className="flex-1 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             aria-label={`Label for dropdown option`}
           />
@@ -108,7 +109,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
         onClick={handleAddOption}
         className="w-full text-left text-xs text-blue-400 hover:text-blue-300 transition-colors py-1"
       >
-        + Add option
+        {translations['CustomFields.dropdownAddOption']}
       </button>
     </div>
   );

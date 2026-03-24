@@ -13,15 +13,21 @@ import { renderCardMovedEmail } from './emailTemplates/cardMoved';
 import { renderCardCommentedEmail } from './emailTemplates/cardCommented';
 import { renderCardMemberAssignedEmail } from './emailTemplates/cardMemberAssigned';
 import { renderCardMemberUnassignedEmail } from './emailTemplates/cardMemberUnassigned';
+import { renderCardUpdatedEmail } from './emailTemplates/cardUpdated';
+import { renderCardDeletedEmail } from './emailTemplates/cardDeleted';
+import { renderCardArchivedEmail } from './emailTemplates/cardArchived';
 
 export async function dispatchNotificationEmail({
   recipientId,
   type,
   templateData,
+  emailEnabled,
 }: {
   recipientId: string;
   type: NotificationType;
   templateData: Record<string, string>;
+  // When provided by the caller (e.g. after resolveNotificationChannels), skip Gate 2.
+  emailEnabled?: boolean;
 }): Promise<void> {
   try {
     // Gate 1: server feature flags — both must be on
@@ -31,8 +37,10 @@ export async function dispatchNotificationEmail({
     ]);
     if (!sesEnabled || !emailNotificationsEnabled) return;
 
-    // Gate 2: user preference — return early if email_enabled is false for this type
-    if (env.NOTIFICATION_PREFERENCES_ENABLED) {
+    // Gate 2: per-type email preference — skip when the caller already resolved it.
+    if (emailEnabled !== undefined) {
+      if (!emailEnabled) return;
+    } else if (env.NOTIFICATION_PREFERENCES_ENABLED) {
       const pref = await preferenceGuard({ userId: recipientId, type });
       if (!pref.email_enabled) return;
     }
@@ -98,6 +106,34 @@ function renderTemplate(type: NotificationType, data: Record<string, string>) {
         actorName: data.actorName ?? '',
         cardTitle: data.cardTitle ?? '',
         boardName: data.boardName ?? '',
+        cardUrl: data.cardUrl ?? '',
+      });
+    case 'card_updated': {
+      // changedFields is serialised as a JSON array string by the dispatch layer
+      let changedFields: string[] = [];
+      try { changedFields = JSON.parse(data.changedFields ?? '[]'); } catch { /* ignore */ }
+      return renderCardUpdatedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
+        changedFields,
+        cardUrl: data.cardUrl ?? '',
+      });
+    }
+    case 'card_deleted':
+      return renderCardDeletedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
+        boardUrl: data.boardUrl ?? '',
+      });
+    case 'card_archived':
+      return renderCardArchivedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
+        // archived is serialised as the string 'true' or 'false'
+        archived: data.archived !== 'false',
         cardUrl: data.cardUrl ?? '',
       });
   }

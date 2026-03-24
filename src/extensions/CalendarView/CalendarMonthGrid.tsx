@@ -2,6 +2,7 @@
 // Always shows 6 weeks for layout consistency (days outside the current month
 // are greyed out). Prev/next navigation is handled by the parent CalendarView.
 import CalendarDayCell from './CalendarDayCell';
+import translations from './translations/en.json';
 import type { CalendarMonthGridProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -53,7 +54,7 @@ const CalendarMonthGrid = ({
       <div className="flex items-center justify-between">
         <button
           onClick={onPrev}
-          aria-label="Previous month"
+          aria-label={translations['CalendarView.ariaPrevMonth']}
           data-testid="calendar-prev"
           className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
         >
@@ -64,7 +65,7 @@ const CalendarMonthGrid = ({
         </h2>
         <button
           onClick={onNext}
-          aria-label="Next month"
+          aria-label={translations['CalendarView.ariaNextMonth']}
           data-testid="calendar-next"
           className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
         >

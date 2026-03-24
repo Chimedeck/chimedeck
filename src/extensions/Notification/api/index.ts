@@ -8,7 +8,16 @@ export interface NotificationActor {
   avatar_url: string | null;
 }
 
-export type NotificationType = 'mention' | 'card_created' | 'card_moved' | 'card_commented';
+export type NotificationType =
+  | 'mention'
+  | 'card_created'
+  | 'card_moved'
+  | 'card_commented'
+  | 'card_member_assigned'
+  | 'card_member_unassigned'
+  | 'card_updated'
+  | 'card_deleted'
+  | 'card_archived';
 
 export interface Notification {
   id: string;

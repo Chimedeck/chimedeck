@@ -7,6 +7,7 @@ import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import TimelineHeader from './TimelineHeader';
 import TimelineRow from './TimelineRow';
 import TimelineZoomControl from './TimelineZoomControl';
+import translations from './translations/en.json';
 import type { TimelineViewProps, ZoomLevel, Swimlane } from './types';
 
 /** Days to render before today — determines the origin of the date axis. */
@@ -83,7 +84,7 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
           className="rounded border border-slate-600 px-3 py-1 text-xs text-slate-300 hover:bg-slate-700"
           data-testid="timeline-today-button"
         >
-          Today
+          {translations['TimelineView.todayMarkerLabel']}
         </button>
         <TimelineZoomControl zoom={zoom} onZoomChange={setZoom} />
       </div>

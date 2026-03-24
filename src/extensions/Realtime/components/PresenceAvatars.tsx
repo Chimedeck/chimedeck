@@ -5,6 +5,7 @@
 // WHY local state: presence is ephemeral and doesn't need Redux persistence.
 import { useEffect, useState, useCallback } from 'react';
 import type { RealtimeEvent } from '../client/socket';
+import translations from '../translations/en.json';
 
 export interface PresenceUser {
   userId: string;
@@ -84,7 +85,7 @@ const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({
   const overflow = users.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center gap-1" aria-label="Active board members">
+    <div className="flex items-center gap-1" aria-label={translations['Realtime.ariaActiveBoardMembers']}>
       {visible.map((user) => (
         <div
           key={user.userId}

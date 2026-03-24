@@ -1,0 +1,8 @@
+{
+  "Realtime.statusLive": "Live",
+  "Realtime.statusReconnecting": "Reconnecting…",
+  "Realtime.statusOffline": "Offline",
+  "Realtime.statusPolling": "Polling",
+  "Realtime.statusPollingTitle": "WebSocket unavailable — board events are being received via HTTP polling",
+  "Realtime.ariaActiveBoardMembers": "Active board members"
+}

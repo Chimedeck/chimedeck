@@ -4,6 +4,8 @@ import { CalendarDaysIcon, ExclamationCircleIcon, ArchiveBoxIcon } from '@heroic
 import type { FC } from 'react';
 import type { CreateAutomationPayload } from '../../types';
 
+import translations from '../../translations/en.json';
+
 export interface QuickStartTemplate {
   id: string;
   title: string;
@@ -92,7 +94,7 @@ interface Props {
 const QuickStartTemplates: FC<Props> = ({ onUseTemplate }) => (
   <div className="px-4 pt-4 pb-2">
     <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-      Quick-start templates
+      {translations['automation.quickStartTemplates.heading']}
     </p>
     <div className="flex flex-col gap-2">
       {QUICK_START_TEMPLATES.map((tpl) => {

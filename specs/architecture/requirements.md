@@ -1,4 +1,4 @@
-# HoriFlow Application Requirements
+# Taskinate Application Requirements
 
 ## 1. Goal and Scope
 

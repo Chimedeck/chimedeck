@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Deploy script for HoriFlow — runs on the host machine alongside docker-compose.horiflow.prod.yml
+# Deploy script for Taskinate — runs on the host machine alongside docker-compose.taskinate.prod.yml
 # Required env vars:
-#   IMAGE_URL        — full image URI, e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/horiflow-app:abc1234
+#   IMAGE_URL        — full image URI, e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/taskinate-app:abc1234
 #   AWS_REGION       — AWS region for ECR login (default: ap-southeast-1)
 # Optional env vars:
 #   COMPOSE_PROFILES — comma-separated list of profiles to activate (default: local-db,local-s3,redis)
@@ -10,16 +10,16 @@
 #                      redis     → start Redis sidecar
 #                      e.g. COMPOSE_PROFILES="" to use all external AWS services
 
-COMPOSE_FILE=docker-compose.horiflow.stag.yml
+COMPOSE_FILE=docker-compose.taskinate.stag.yml
 AWS_REGION=${AWS_REGION:-ap-southeast-1}
 export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db}
 
 # Main deployment config
-MAIN_CONTAINER_NAME=horiflow-stag
+MAIN_CONTAINER_NAME=taskinate-stag
 MAIN_APP_PORT=6405
 
 # Fallback deployment config
-FALLBACK_CONTAINER_NAME=horiflow-stag-fallback
+FALLBACK_CONTAINER_NAME=taskinate-stag-fallback
 FALLBACK_APP_PORT=6415
 
 echo "Begin deploy process"
@@ -46,7 +46,7 @@ echo "Ensuring infra services (postgres, localstack or redis) are running"
 # If COMPOSE_PROFILES is unset (using AWS RDS/S3), no infra containers are started.
 if [[ -n "${COMPOSE_PROFILES}" ]]; then
   CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
-  POSTGRES_USER=horiflow POSTGRES_PASSWORD=horiflow POSTGRES_DB=horiflow_dev \
+  POSTGRES_USER=taskinate POSTGRES_PASSWORD=taskinate POSTGRES_DB=taskinate_dev \
     docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
 else
   echo "No local infra profiles active — using external AWS services"
@@ -62,8 +62,8 @@ sleep 5
 
 echo "____________________"
 echo "Working on NGINX to use fallback server"
-sudo rm -f /etc/nginx/conf.d/main-horiflow.conf
-sudo cp ./fallback-horiflow.conf /etc/nginx/conf.d/
+sudo rm -f /etc/nginx/conf.d/main-taskinate.conf
+sudo cp ./fallback-taskinate.conf /etc/nginx/conf.d/
 sudo systemctl restart nginx
 echo "____________________"
 
@@ -80,8 +80,8 @@ sleep 5
 
 echo "____________________"
 echo "Switch NGINX to use main server"
-sudo rm -f /etc/nginx/conf.d/fallback-horiflow.conf
-sudo cp ./main-horiflow.conf /etc/nginx/conf.d/
+sudo rm -f /etc/nginx/conf.d/fallback-taskinate.conf
+sudo cp ./main-taskinate.conf /etc/nginx/conf.d/
 sudo systemctl restart nginx
 echo "____________________"
 

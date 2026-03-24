@@ -1,6 +1,7 @@
 // Threaded list of comments for a card.
 import CommentItem, { type Comment } from './CommentItem';
 import CommentEditor from './CommentEditor';
+import translations from '../translations/en.json';
 
 interface Props {
   boardId?: string;
@@ -23,11 +24,11 @@ const CommentThread = ({
 }: Props) => {
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">Comments</h3>
+      <h3 className="text-xs font-semibold uppercase text-gray-500">{translations['comment.section.title']}</h3>
 
       <div className="flex flex-col gap-4">
         {comments.length === 0 && (
-          <p className="text-sm text-gray-400 italic">No comments yet.</p>
+          <p className="text-sm text-gray-400 italic">{translations['comment.empty']}</p>
         )}
         {comments.filter(Boolean).map((comment) => (
           <CommentItem
@@ -44,9 +45,9 @@ const CommentThread = ({
 
       <CommentEditor
         {...(boardId !== undefined ? { boardId } : {})}
-        placeholder="Add a comment…"
+        placeholder={translations['comment.placeholder']}
         onSubmit={onAddComment}
-        submitLabel="Comment"
+        submitLabel={translations['comment.submit']}
       />
     </div>
   );

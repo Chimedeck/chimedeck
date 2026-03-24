@@ -2,6 +2,7 @@
 // The key is never shown again once this modal is dismissed.
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import translations from '../translations/en.json';
 
 interface Props {
   apiKey: string;
@@ -26,20 +27,20 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-label="API Key"
+      aria-label={translations['plugins.apiKeyModal.ariaLabel']}
     >
       <div className="absolute inset-0 bg-black/60" />
       <div className="relative w-full max-w-md bg-slate-900 rounded-lg shadow-2xl mx-4 overflow-hidden">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-700">
-          <h2 className="text-slate-100 font-semibold text-base">Plugin API Key</h2>
+          <h2 className="text-slate-100 font-semibold text-base">{translations['plugins.apiKeyModal.title']}</h2>
         </div>
 
         {/* Body */}
         <div className="px-5 py-5 flex flex-col gap-4">
           <div className="bg-yellow-900/30 border border-yellow-600 rounded p-3 text-yellow-300 text-sm flex gap-2">
-            <span>⚠️</span>
-            <span>This API key will <strong>never be shown again</strong>. Copy it now and store it securely.</span>
+            <span>{translations['plugins.apiKeyModal.warningPrefix']}</span>
+            <span>{translations['plugins.apiKeyModal.warning']}</span>
           </div>
 
           <div className="flex gap-2 items-stretch">
@@ -49,9 +50,9 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
             <button
               onClick={handleCopy}
               className="flex-shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm rounded px-3 py-2"
-              aria-label="Copy API key"
+              aria-label={translations['plugins.apiKeyModal.copyAriaLabel']}
             >
-              {copied ? '✓ Copied' : 'Copy'}
+              {copied ? translations['plugins.apiKeyModal.copied'] : translations['plugins.apiKeyModal.copy']}
             </button>
           </div>
         </div>
@@ -62,7 +63,7 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
             onClick={onClose}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-4 py-2"
           >
-            I've saved the key — Done
+            {translations['plugins.apiKeyModal.done']}
           </button>
         </div>
       </div>

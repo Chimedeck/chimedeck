@@ -13,7 +13,7 @@ import type {
 } from './types';
 
 // Re-export types so consumers can import from the single entry point.
-export type { CustomField, CustomFieldValue };
+export type { CustomField, CustomFieldValue } from './types';
 
 // ─── Field Definition API ────────────────────────────────────────────────────
 
@@ -105,10 +105,31 @@ const BATCH_CF_TTL_MS = 30_000;
 
 const _batchCfCache = new Map<string, { data: Record<string, CustomFieldValue[]>; expiresAt: number }>();
 const _batchCfInflight = new Map<string, Promise<Record<string, CustomFieldValue[]>>>();
+const _batchCfInvalidationListeners = new Map<string, Set<() => void>>();
+
+function _subscribeBoardCardFieldValuesInvalidation(boardId: string, listener: () => void): () => void {
+  const listeners = _batchCfInvalidationListeners.get(boardId) ?? new Set<() => void>();
+  listeners.add(listener);
+  _batchCfInvalidationListeners.set(boardId, listeners);
+
+  return () => {
+    const current = _batchCfInvalidationListeners.get(boardId);
+    if (!current) return;
+    current.delete(listener);
+    if (current.size === 0) _batchCfInvalidationListeners.delete(boardId);
+  };
+}
+
+function _notifyBoardCardFieldValuesInvalidated(boardId: string): void {
+  const listeners = _batchCfInvalidationListeners.get(boardId);
+  if (!listeners) return;
+  for (const listener of listeners) listener();
+}
 
 export function invalidateBoardCardFieldValuesCache(boardId: string): void {
   _batchCfCache.delete(boardId);
   _batchCfInflight.delete(boardId);
+  _notifyBoardCardFieldValuesInvalidated(boardId);
 }
 
 function _fetchBoardCardFieldValues(
@@ -157,9 +178,17 @@ export function useBoardCardFieldValues(
   // [why] null = not yet fetched; {} = fetched but no values. This distinction
   //       lets consumers skip the per-card fallback hook while loading.
   const [valuesMap, setValuesMap] = useState<Record<string, CustomFieldValue[]> | null>(null);
+  const [tick, setTick] = useState(0);
   // [why] Serialize cardIds to a string so useEffect can detect actual set changes
   //       without needing a stable array reference.
   const cardIdsKey = cardIds.slice().sort((a, b) => a.localeCompare(b)).join(',');
+
+  useEffect(() => {
+    if (!boardId) return;
+    return _subscribeBoardCardFieldValuesInvalidation(boardId, () => {
+      setTick((t) => t + 1);
+    });
+  }, [boardId]);
 
   useEffect(() => {
     if (!boardId || cardIds.length === 0) return;
@@ -168,7 +197,7 @@ export function useBoardCardFieldValues(
       .then((map) => { if (!cancelled) setValuesMap(map); })
       .catch(() => { /* silently degrade — card badges just won't show */ });
     return () => { cancelled = true; };
-  }, [boardId, cardIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [boardId, cardIdsKey, tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return valuesMap;
 }
@@ -185,6 +214,26 @@ const CACHE_TTL_MS = 30_000; // 30 s — fresh enough for UI, prevents request s
 
 const _cfCache = new Map<string, { data: CustomField[]; expiresAt: number }>();
 const _cfInflight = new Map<string, Promise<CustomField[]>>();
+const _cfInvalidationListeners = new Map<string, Set<() => void>>();
+
+function _subscribeCustomFieldsInvalidation(boardId: string, listener: () => void): () => void {
+  const listeners = _cfInvalidationListeners.get(boardId) ?? new Set<() => void>();
+  listeners.add(listener);
+  _cfInvalidationListeners.set(boardId, listeners);
+
+  return () => {
+    const current = _cfInvalidationListeners.get(boardId);
+    if (!current) return;
+    current.delete(listener);
+    if (current.size === 0) _cfInvalidationListeners.delete(boardId);
+  };
+}
+
+function _notifyCustomFieldsInvalidated(boardId: string): void {
+  const listeners = _cfInvalidationListeners.get(boardId);
+  if (!listeners) return;
+  for (const listener of listeners) listener();
+}
 
 function _fetchCustomFields(boardId: string): Promise<CustomField[]> {
   const cached = _cfCache.get(boardId);
@@ -214,6 +263,7 @@ function _fetchCustomFields(boardId: string): Promise<CustomField[]> {
 export function invalidateCustomFieldsCache(boardId: string): void {
   _cfCache.delete(boardId);
   _cfInflight.delete(boardId);
+  _notifyCustomFieldsInvalidated(boardId);
 }
 
 // ─── React Hooks ─────────────────────────────────────────────────────────────
@@ -232,10 +282,16 @@ export function useCustomFields(boardId: string | undefined): UseCustomFieldsRes
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
-  // Bust cache so refetch always gets fresh data from server
+  // Bust cache so all mounted consumers on this board refetch fresh data.
   const refetch = useCallback(() => {
     if (boardId) invalidateCustomFieldsCache(boardId);
-    setTick((t) => t + 1);
+  }, [boardId]);
+
+  useEffect(() => {
+    if (!boardId) return;
+    return _subscribeCustomFieldsInvalidation(boardId, () => {
+      setTick((t) => t + 1);
+    });
   }, [boardId]);
 
   useEffect(() => {

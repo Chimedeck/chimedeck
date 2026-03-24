@@ -6,6 +6,7 @@ import type { FC } from 'react';
 import { getAutomations, runBoardButton } from '../../api';
 import type { Automation } from '../../types';
 import BoardButtonItem, { type RunState } from './BoardButtonItem';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -52,7 +53,7 @@ const BoardButtonsBar: FC<Props> = ({ boardId }) => {
   const overflowCount = buttons.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center gap-0.5" aria-label="Board automation buttons">
+    <div className="flex items-center gap-0.5" aria-label={translations['automation.boardButtonsBar.ariaLabel']}>
       {visible.map((btn) => (
         <BoardButtonItem
           key={btn.id}

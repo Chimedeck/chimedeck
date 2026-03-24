@@ -1,4 +1,4 @@
-name: horiflow-prod
+name: taskinate-prod
 
 # By default only the app container runs.
 # External managed services (AWS RDS + S3) are used via env vars.
@@ -32,18 +32,18 @@ services:
     profiles: [local-db]
     build:
       context: .
-      dockerfile: Dockerfile.horiflow.postgres
+      dockerfile: Dockerfile.taskinate.postgres
     environment:
-      POSTGRES_USER: "${POSTGRES_USER:-horiflow}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-horiflow}"
-      POSTGRES_DB: "${POSTGRES_DB:-horiflow}"
+      POSTGRES_USER: "${POSTGRES_USER:-taskinate}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-taskinate}"
+      POSTGRES_DB: "${POSTGRES_DB:-taskinate}"
     command: >
       postgres -c shared_preload_libraries=pg_cron
-               -c cron.database_name=${POSTGRES_DB:-horiflow}
+               -c cron.database_name=${POSTGRES_DB:-taskinate}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-horiflow}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taskinate}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -57,7 +57,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-horiflow}
+      S3_BUCKET: ${S3_BUCKET:-taskinate}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

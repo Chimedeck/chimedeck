@@ -1,4 +1,5 @@
 import { cn } from '../utils/cn';
+import translations from '~/common/translations/en.json';
 
 interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -11,7 +12,7 @@ export default function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <div
       role="status"
-      aria-label="Loading"
+      aria-label={translations['Common.loadingLabel']}
       className={cn(
         'animate-spin rounded-full border-2 border-current border-t-transparent',
         sizeMap[size],

@@ -19,6 +19,7 @@ import {
   type ScheduleType,
   type ScheduleConfig,
 } from '../../../utils/scheduleSummary';
+import translations from '../../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -156,27 +157,27 @@ const ScheduledCommandBuilder: FC<Props> = ({
   // --- Render helpers ---
 
   const stepLabel = (n: 1 | 2 | 3) =>
-    (['Schedule', 'Actions', 'Save'] as const)[n - 1];
+    ([translations['automation.scheduledBuilder.step.schedule'], translations['automation.scheduledBuilder.step.actions'], translations['automation.scheduledBuilder.step.save']] as const)[n - 1];
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
       role="dialog"
       aria-modal="true"
-      aria-label={existing ? 'Edit scheduled command' : 'New scheduled command'}
+      aria-label={existing ? translations['automation.scheduledBuilder.ariaEdit'] : translations['automation.scheduledBuilder.ariaCreate']}
     >
       <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-slate-700 px-5 py-4">
           <CalendarDaysIcon className="h-5 w-5 text-blue-400 flex-shrink-0" aria-hidden="true" />
           <h2 className="flex-1 text-base font-semibold text-slate-100">
-            {existing ? 'Edit Scheduled Command' : 'New Scheduled Command'}
+            {existing ? translations['automation.scheduledBuilder.titleEdit'] : translations['automation.scheduledBuilder.titleCreate']}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
-            aria-label="Close"
+            aria-label={translations['automation.scheduledBuilder.close']}
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -216,7 +217,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               <div className="flex flex-col gap-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-medium text-slate-400 uppercase tracking-wide">
                   <ArrowPathIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                  Frequency
+                  {translations['automation.scheduledBuilder.frequencyLabel']}
                 </label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {(['daily', 'weekly', 'monthly', 'yearly'] as ScheduleType[]).map((f) => (
@@ -240,7 +241,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               {frequency === 'weekly' && (
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                    Day
+                    {translations['automation.scheduledBuilder.dayLabel']}
                   </label>
                   <div className="grid grid-cols-7 gap-1">
                     {DAYS_OF_WEEK.map((d, i) => (
@@ -266,7 +267,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               {(frequency === 'monthly' || frequency === 'yearly') && (
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                    Day of month
+                    {translations['automation.scheduledBuilder.dayOfMonthLabel']}
                   </label>
                   <div className="flex gap-2 flex-wrap">
                     <select
@@ -281,7 +282,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                           {d}
                         </option>
                       ))}
-                      <option value="last">Last day</option>
+                      <option value="last">{translations['automation.scheduledBuilder.lastDay']}</option>
                     </select>
                   </div>
                 </div>
@@ -291,7 +292,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               {frequency === 'yearly' && (
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                    Month
+                    {translations['automation.scheduledBuilder.monthLabel']}
                   </label>
                   <select
                     value={month}
@@ -314,14 +315,14 @@ const ScheduledCommandBuilder: FC<Props> = ({
               <div className="flex flex-col gap-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-medium text-slate-400 uppercase tracking-wide">
                   <ClockIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                  Time (your browser timezone)
+                  {translations['automation.scheduledBuilder.timeLabel']}
                 </label>
                 <div className="flex items-center gap-2">
                   <select
                     value={hour}
                     onChange={(e) => setHour(Number(e.target.value))}
                     className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="Hour"
+                    aria-label={translations['automation.scheduledBuilder.hourAriaLabel']}
                   >
                     {Array.from({ length: 24 }, (_, i) => i).map((h) => (
                       <option key={h} value={h}>
@@ -334,7 +335,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                     value={minute}
                     onChange={(e) => setMinute(Number(e.target.value))}
                     className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label="Minute"
+                    aria-label={translations['automation.scheduledBuilder.minuteAriaLabel']}
                   >
                     {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
                       <option key={m} value={m}>
@@ -347,7 +348,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
 
               {/* Live preview */}
               <p className="text-xs text-slate-400 italic">
-                Preview: <span className="text-slate-200">{autoSummary}</span>
+                {translations['automation.scheduledBuilder.previewLabel']}: <span className="text-slate-200">{autoSummary}</span>
               </p>
             </>
           )}
@@ -356,11 +357,11 @@ const ScheduledCommandBuilder: FC<Props> = ({
           {step === 2 && (
             <div className="flex flex-col gap-3">
               <p className="text-xs text-slate-400">
-                These actions run for the entire board (or a specific list). Only list and board-scoped actions are available here.
+                {translations['automation.scheduledBuilder.actionsHint']}
               </p>
               <ActionList actions={actions} onChange={setActions} />
               {actions.length === 0 && (
-                <p className="text-xs text-amber-400">Add at least one action to continue.</p>
+                <p className="text-xs text-amber-400">{translations['automation.scheduledBuilder.actionsWarning']}</p>
               )}
             </div>
           )}
@@ -369,13 +370,13 @@ const ScheduledCommandBuilder: FC<Props> = ({
           {step === 3 && (
             <div className="flex flex-col gap-4">
               <div className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-300">
-                <span className="text-xs text-slate-500 block mb-1">Schedule summary</span>
+                <span className="text-xs text-slate-500 block mb-1">{translations['automation.scheduledBuilder.scheduleSummaryLabel']}</span>
                 {autoSummary}
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="schedule-name" className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-                  Command name
+                  {translations['automation.scheduledBuilder.commandNameLabel']}
                 </label>
                 <input
                   id="schedule-name"
@@ -384,10 +385,10 @@ const ScheduledCommandBuilder: FC<Props> = ({
                   onChange={(e) => setNameOverride(e.target.value)}
                   maxLength={120}
                   className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Auto-generated name"
+                  placeholder={translations['automation.scheduledBuilder.commandNamePlaceholder']}
                 />
                 <p className="text-xs text-slate-500">
-                  You can customise the name or leave it as the auto-generated summary.
+                  {translations['automation.scheduledBuilder.commandNameHint']}
                 </p>
               </div>
 
@@ -408,11 +409,11 @@ const ScheduledCommandBuilder: FC<Props> = ({
             className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
           >
             {step === 1 ? (
-              'Cancel'
+              translations['automation.scheduledBuilder.cancel']
             ) : (
               <>
                 <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
-                Back
+                {translations['automation.scheduledBuilder.back']}
               </>
             )}
           </button>
@@ -424,7 +425,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               onClick={() => setStep((s) => (s + 1) as 2 | 3)}
               className="flex items-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Next
+              {translations['automation.scheduledBuilder.next']}
               <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
             </button>
           ) : (
@@ -434,7 +435,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               onClick={handleSave}
               className="rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {saving ? 'Saving…' : existing ? 'Save changes' : 'Create command'}
+              {saving ? translations['automation.scheduledBuilder.saving'] : existing ? translations['automation.scheduledBuilder.saveChanges'] : translations['automation.scheduledBuilder.create']}
             </button>
           )}
         </div>

@@ -1,0 +1,17 @@
+{
+  "CalendarView.ariaMode": "Calendar mode",
+  "CalendarView.todayButton": "Today",
+  "CalendarView.monthView": "Month",
+  "CalendarView.weekView": "Week",
+  "CalendarView.ariaPrevMonth": "Previous month",
+  "CalendarView.ariaNextMonth": "Next month",
+  "CalendarView.ariaPrevWeek": "Previous week",
+  "CalendarView.ariaNextWeek": "Next week",
+  "CalendarView.noCards": "No cards due this month",
+  "CalendarView.unscheduled": "Unscheduled",
+  "CalendarView.allDayLabel": "All day",
+  "CalendarView.noDueDateNote": "Cards without a due date are not shown.",
+  "CalendarView.overflowMore": "more",
+  "CalendarView.showLess": "Show less",
+  "CalendarView.cardAriaPrefix": "Card:"
+}

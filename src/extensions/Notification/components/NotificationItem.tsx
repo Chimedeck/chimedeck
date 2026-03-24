@@ -7,12 +7,17 @@ import {
   RectangleStackIcon,
   ArrowRightIcon,
   ChatBubbleLeftEllipsisIcon,
+  ChatBubbleLeftIcon,
   UserPlusIcon,
   UserMinusIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { markReadThunk, deleteNotificationThunk } from '../slices/notificationSlice';
 import type { Notification, NotificationType } from '../api';
+import translations from '../translations/en.json';
 
 interface Props {
   notification: Notification;
@@ -26,18 +31,24 @@ const TYPE_ICON: Record<string, HeroIcon> = {
   mention: AtSymbolIcon as HeroIcon,
   card_created: RectangleStackIcon as HeroIcon,
   card_moved: ArrowRightIcon as HeroIcon,
-  card_commented: ChatBubbleLeftEllipsisIcon as HeroIcon,
+  card_commented: ChatBubbleLeftIcon as HeroIcon,
   card_member_assigned: UserPlusIcon as HeroIcon,
   card_member_unassigned: UserMinusIcon as HeroIcon,
+  card_updated: PencilSquareIcon as HeroIcon,
+  card_deleted: TrashIcon as HeroIcon,
+  card_archived: ArchiveBoxIcon as HeroIcon,
 };
 
 const TYPE_ACCENT: Record<string, string> = {
   mention: 'text-indigo-400',
   card_created: 'text-emerald-400',
   card_moved: 'text-sky-400',
-  card_commented: 'text-amber-400',
+  card_commented: 'text-indigo-400',
   card_member_assigned: 'text-violet-400',
   card_member_unassigned: 'text-rose-400',
+  card_updated: 'text-indigo-400',
+  card_deleted: 'text-red-400',
+  card_archived: 'text-amber-400',
 };
 
 function buildCopy(notification: Notification): string {
@@ -57,6 +68,12 @@ function buildCopy(notification: Notification): string {
       return `${actor} was assigned to "${card}"`;
     case 'card_member_unassigned':
       return `${actor} was removed from "${card}"`;
+    case 'card_updated':
+      return `${actor} updated "${card}"`;
+    case 'card_deleted':
+      return `${actor} deleted "${card}"`;
+    case 'card_archived':
+      return `${actor} archived "${card}"`;
     case 'mention':
     default:
       return `${actor} mentioned you in "${card}"`;
@@ -116,7 +133,7 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
       <button
         onClick={handleDelete}
         className="shrink-0 text-slate-500 hover:text-slate-300 transition-colors ml-1"
-        aria-label="Dismiss notification"
+        aria-label={translations['Notifications.deleteAriaLabel']}
         tabIndex={0}
       >
         ×

@@ -1,5 +1,6 @@
 // Timeline of activity events for a card or board.
 import ActivityItem, { type Activity } from './ActivityItem';
+import translations from '../translations/en.json';
 
 interface Props {
   activities: Activity[];
@@ -12,10 +13,10 @@ interface Props {
 const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore, loading = false }: Props) => {
   return (
     <div className="flex flex-col">
-      <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400">Activity</h3>
+      <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400">{translations['activity.section.title']}</h3>
 
       {activities.length === 0 && !loading && (
-        <p className="text-sm italic text-gray-400">No activity yet.</p>
+        <p className="text-sm italic text-gray-400">{translations['activity.empty']}</p>
       )}
 
       <div className="divide-y divide-gray-700">
@@ -29,7 +30,7 @@ const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore
       </div>
 
       {loading && (
-        <p className="mt-2 text-xs text-gray-400">Loading…</p>
+        <p className="mt-2 text-xs text-gray-400">{translations['activity.loading']}</p>
       )}
 
       {hasMore && !loading && onLoadMore && (
@@ -37,7 +38,7 @@ const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore
           onClick={onLoadMore}
           className="mt-2 rounded px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50"
         >
-          Load more
+          {translations['activity.loadMore']}
         </button>
       )}
     </div>

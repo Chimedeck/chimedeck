@@ -171,3 +171,19 @@ export async function applyBoardVisibilityFromChecklistItem(
   }
   return applyBoardVisibilityFromCard(req, item.card_id);
 }
+
+// Looks up the board from the given checklist ID (via card → list → board),
+// then applies board visibility. Use this for /api/v1/checklists/:id routes.
+export async function applyBoardVisibilityFromChecklist(
+  req: Request,
+  checklistId: string,
+): Promise<Response | null> {
+  const checklist = await db('checklists').where({ id: checklistId }).first();
+  if (!checklist) {
+    return Response.json(
+      { error: { code: 'checklist-not-found', message: 'Checklist not found' } },
+      { status: 404 },
+    );
+  }
+  return applyBoardVisibilityFromCard(req, checklist.card_id);
+}

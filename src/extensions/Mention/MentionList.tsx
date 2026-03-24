@@ -4,6 +4,7 @@
 // arrow/enter/escape keys to this component.
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import MentionChipRow from '~/common/components/MentionInput/MentionChip';
+import translations from './translations/en.json';
 
 export interface MentionSuggestion {
   id: string;
@@ -56,7 +57,7 @@ const MentionList = forwardRef<MentionListHandle, Props>(({ items, command }, re
 
   return (
     <ul
-      aria-label="Mention suggestions"
+      aria-label={translations['Mention.ariaList']}
       className="z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
     >
       {items.map((item, i) => (

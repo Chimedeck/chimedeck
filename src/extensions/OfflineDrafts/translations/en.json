@@ -1,0 +1,8 @@
+{
+  "OfflineDrafts.draftBanner": "You have an unsaved draft",
+  "OfflineDrafts.restoreButton": "Restore draft",
+  "OfflineDrafts.discardButton": "Discard",
+  "OfflineDrafts.savedIndicator": "Draft saved",
+  "OfflineDrafts.syncingIndicator": "Syncing draft…",
+  "OfflineDrafts.ariaClose": "Dismiss draft banner"
+}

@@ -4,6 +4,7 @@
 // onResizeLeft/onResizeRight callbacks (provided by useTimelineDrag).
 //
 // TODO: dependency arrows — deferred to a future sprint.
+import translations from './translations/en.json';
 import type { TimelineBarProps } from './types';
 
 /** Width of each resize handle in pixels. */
@@ -80,7 +81,7 @@ const TimelineBar = ({
         onMouseDown={(e) => { e.stopPropagation(); onResizeLeftStart(card.id, e); }}
         className="flex h-full shrink-0 cursor-ew-resize items-center justify-center hover:bg-black/20"
         style={{ width: HANDLE_WIDTH }}
-        aria-label="Resize start date"
+        aria-label={translations['TimelineView.ariaResizeStart']}
       >
         <div className="h-3 w-px rounded bg-white/60" />
       </div>
@@ -103,7 +104,7 @@ const TimelineBar = ({
         onMouseDown={(e) => { e.stopPropagation(); onResizeRightStart(card.id, e); }}
         className="flex h-full shrink-0 cursor-ew-resize items-center justify-center hover:bg-black/20"
         style={{ width: HANDLE_WIDTH }}
-        aria-label="Resize due date"
+        aria-label={translations['TimelineView.ariaResizeDue']}
       >
         <div className="h-3 w-px rounded bg-white/60" />
       </div>

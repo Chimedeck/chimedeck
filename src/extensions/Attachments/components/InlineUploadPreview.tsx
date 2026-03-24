@@ -8,6 +8,7 @@ import type { UploadEntry } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
 import { UploadProgressBar } from './UploadProgressBar';
+import translations from '../translations/en.json';
 
 interface Props {
   entry: UploadEntry;
@@ -71,24 +72,24 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
             role="alert"
             className="mt-0.5 text-[10px] text-red-600 dark:text-red-400"
           >
-            {entry.error ?? 'Upload failed'}
+            {entry.error ?? translations['attachments.inline.uploadFailed']}
           </p>
         )}
 
         {entry.phase === 'done' && (
-          <p className="mt-0.5 text-[10px] text-green-600 dark:text-green-400">Uploaded</p>
+          <p className="mt-0.5 text-[10px] text-green-600 dark:text-green-400">{translations['attachments.inline.uploaded']}</p>
         )}
 
         {/* [why] 'pending' means the file is queued locally and will upload on submit. */}
         {entry.phase === 'pending' && (
-          <p className="mt-0.5 text-[10px] text-gray-400 dark:text-slate-500">Queued</p>
+          <p className="mt-0.5 text-[10px] text-gray-400 dark:text-slate-500">{translations['attachments.inline.queued']}</p>
         )}
 
         {entry.phase !== 'error' && entry.phase !== 'done' && entry.phase !== 'pending' && (
           <div className="mt-1">
             <UploadProgressBar
               progress={entry.phase === 'uploading' ? entry.progress : null}
-              label={`Uploading ${entry.file.name}`}
+              label={translations['attachments.inline.uploading.label'].replace('{fileName}', entry.file.name)}
             />
           </div>
         )}
@@ -97,8 +98,8 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
       {/* Cancel / dismiss */}
       <button
         type="button"
-        aria-label={`Cancel upload of ${entry.file.name}`}
-        title={entry.phase === 'pending' ? 'Remove' : entry.phase === 'error' || entry.phase === 'done' ? 'Dismiss' : 'Cancel upload'}
+        aria-label={translations['attachments.inline.cancel.ariaLabel'].replace('{fileName}', entry.file.name)}
+        title={entry.phase === 'pending' ? translations['attachments.inline.cancel.remove'] : entry.phase === 'error' || entry.phase === 'done' ? translations['attachments.inline.cancel.dismiss'] : translations['attachments.inline.cancel.cancelUpload']}
         className="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
         onClick={() => onCancel(entry.clientId)}
       >

@@ -7,6 +7,7 @@ import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
 import { UploadProgressBar } from './UploadProgressBar';
 import { VideoLightbox } from './AttachmentThumbnail';
+import translations from '../translations/en.json';
 
 interface Props {
   attachment: Attachment;
@@ -23,10 +24,10 @@ const STATUS_CLASSES: Record<Attachment['status'], string> = {
 };
 
 const STATUS_LABELS: Record<Attachment['status'], string> = {
-  PENDING: 'Uploading',
-  SCANNING: 'Scanning',
-  READY: 'Ready',
-  REJECTED: 'Rejected',
+  PENDING: translations['attachments.item.status.uploading'],
+  SCANNING: translations['attachments.item.status.scanning'],
+  READY: translations['attachments.item.status.ready'],
+  REJECTED: translations['attachments.item.status.rejected'],
 };
 
 export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props): React.ReactElement {
@@ -85,7 +86,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
               <button
                 onClick={handleOpen}
                 className="flex-shrink-0 text-slate-400 hover:text-slate-200"
-                aria-label="Open link"
+                aria-label={translations['attachments.item.action.openLink.ariaLabel']}
               >
                 <LinkIcon className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -96,7 +97,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
               <button
                 onClick={handleOpen}
                 className="flex-shrink-0 text-slate-400 hover:text-slate-200"
-                aria-label="Play video"
+                aria-label={translations['attachments.item.action.playVideo.ariaLabel']}
               >
                 <PlayIcon className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -106,7 +107,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
             <button
               onClick={handleOpen}
               className="flex-shrink-0 text-slate-400 hover:text-slate-200"
-              aria-label="Download file"
+              aria-label={translations['attachments.item.action.downloadFile.ariaLabel']}
             >
               <ArrowDownTrayIcon className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -116,22 +117,22 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
         {/* Delete button / inline confirmation */}
         {confirming ? (
           <span className="flex items-center gap-1 text-xs">
-            <span className="text-slate-300">Delete?</span>
+            <span className="text-slate-300">{translations['attachments.item.delete.confirm']}</span>
             <button
               onClick={handleDeleteConfirm}
               className="text-red-400 hover:text-red-300 font-medium"
             >
-              Yes
+              {translations['attachments.item.delete.yes']}
             </button>
             <button onClick={handleDeleteCancel} className="text-slate-400 hover:text-slate-200">
-              No
+              {translations['attachments.item.delete.no']}
             </button>
           </span>
         ) : (
           <button
             onClick={handleDeleteClick}
             className="flex-shrink-0 text-slate-500 hover:text-red-400 transition-colors"
-            aria-label="Delete attachment"
+            aria-label={translations['attachments.item.action.delete.ariaLabel']}
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />
           </button>

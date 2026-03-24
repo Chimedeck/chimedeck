@@ -33,6 +33,8 @@ import { boardViewRouter } from './extensions/boardView/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
+import { apiTokenRouter } from './extensions/apiToken/api/index';
+import { mcpHttpHandler } from './extensions/mcp/http/index';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -143,6 +145,12 @@ async function router(req: Request): Promise<Response> {
   const offlineDraftsResponse = await offlineDraftsRouter(req, path);
   if (offlineDraftsResponse) return offlineDraftsResponse;
 
+  const apiTokenResponse = await apiTokenRouter(req, path);
+  if (apiTokenResponse) return apiTokenResponse;
+
+  const mcpResponse = await mcpHttpHandler(req);
+  if (mcpResponse) return mcpResponse;
+
   // Serve the SDK static bundle at /sdk/jh-instance.js
   if (path === pluginsConfig.sdkServePath && req.method === 'GET') {
     const sdkFile = Bun.file(pluginsConfig.sdkBundlePath);
@@ -220,7 +228,7 @@ Bun.serve({
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, ...pluginOrigins.connectSrc],
-      extraImgSrc: [s3ImgOrigin, 'https://horiflow.jhorizon.io'],
+      extraImgSrc: [s3ImgOrigin, 'https://taskinate.jhorizon.io'],
     });
     const response = new Response(res.body, {
       status: res.status,

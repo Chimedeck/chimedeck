@@ -30,7 +30,7 @@ export const env = {
   AWS_SECRET_ACCESS_KEY: Bun.env['AWS_SECRET_ACCESS_KEY'] ?? '',
 
   APP_PORT: parseInt(Bun.env['APP_PORT'] ?? '3000', 10),
-  APP_URL: Bun.env['APP_URL'] ?? 'http://localhost:3000',
+  APP_URL: Bun.env['VITE_APP_URL'] ?? 'http://localhost:3000',
   // Base URL used by the CSRF origin guard to validate incoming Origin/Referer headers.
   // Falls back to APP_URL so existing deployments work without extra config.
   APP_BASE_URL: Bun.env['APP_BASE_URL'] ?? Bun.env['APP_URL'] ?? 'http://localhost:3000',

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { BoltSlashIcon, BoltIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import type { TriggerType } from '../../../types';
 import { getTriggerTypes } from '../../../api';
+import translations from '../../../translations/en.json';
 
 interface Props {
   selectedType: string | null;
@@ -20,7 +21,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
   useEffect(() => {
     getTriggerTypes()
       .then((res) => setTriggerTypes(res.data))
-      .catch(() => setError('Failed to load trigger types.'))
+      .catch(() => setError(translations['automation.triggerPicker.error.loadFailed']))
       .finally(() => setLoading(false));
   }, []);
 
@@ -33,7 +34,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
   return (
     <div className="relative">
       <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wide">
-        When…
+        {translations['automation.triggerPicker.label']}
       </label>
 
       <button
@@ -51,7 +52,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
         ) : (
           <>
             <BoltSlashIcon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
-            <span className="flex-1 text-left text-slate-400">Select a trigger…</span>
+            <span className="flex-1 text-left text-slate-400">{translations['automation.triggerPicker.placeholder']}</span>
           </>
         )}
       </button>
@@ -63,7 +64,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
             <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
             <input
               className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
-              placeholder="Search triggers…"
+              placeholder={translations['automation.triggerPicker.searchPlaceholder']}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               autoFocus
@@ -71,7 +72,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           </div>
 
           {loading && (
-            <p className="px-3 py-4 text-center text-sm text-slate-400">Loading…</p>
+            <p className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.triggerPicker.loading']}</p>
           )}
 
           {error && (
@@ -79,7 +80,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           )}
 
           {!loading && !error && filtered.length === 0 && (
-            <p className="px-3 py-4 text-center text-sm text-slate-400">No results</p>
+            <p className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.triggerPicker.noResults']}</p>
           )}
 
           {!loading && !error && filtered.length > 0 && (

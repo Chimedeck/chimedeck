@@ -3,17 +3,18 @@
 // DROPDOWN fields open an inline DropdownFieldEditor for option management.
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import translations from './translations/en.json';
 import { apiClient } from '~/common/api/client';
 import { useCustomFields, createCustomField, updateCustomField, deleteCustomField } from './api';
 import type { CustomField, FieldType, DropdownOption } from './types';
 import DropdownFieldEditor from './DropdownFieldEditor';
 
 const FIELD_TYPE_LABELS: Record<FieldType, string> = {
-  TEXT: 'Text',
-  NUMBER: 'Number',
-  DATE: 'Date',
-  CHECKBOX: 'Checkbox',
-  DROPDOWN: 'Dropdown',
+  TEXT: translations['CustomFields.typeText'],
+  NUMBER: translations['CustomFields.typeNumber'],
+  DATE: translations['CustomFields.typeDate'],
+  CHECKBOX: translations['CustomFields.typeCheckbox'],
+  DROPDOWN: translations['CustomFields.typeDropdown'],
 };
 
 const FIELD_TYPES: FieldType[] = ['TEXT', 'NUMBER', 'DATE', 'CHECKBOX', 'DROPDOWN'];
@@ -153,7 +154,7 @@ const BoardCustomFieldsPanel = () => {
 
   const handleDelete = async (field: CustomField) => {
     if (!boardId) return;
-    if (!window.confirm(`Delete field "${field.name}" and all its values? This cannot be undone.`)) return;
+    if (!window.confirm(translations['CustomFields.deleteConfirm'].replace('{fieldName}', field.name))) return;
     setFieldBusy(field.id, true);
     try {
       await deleteCustomField({ api: apiClient, boardId, fieldId: field.id });
@@ -166,15 +167,15 @@ const BoardCustomFieldsPanel = () => {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-3" aria-label="Custom Fields">
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Custom Fields</p>
+    <div className="space-y-3" aria-label={translations['CustomFields.ariaOpenPanel']}>
+      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{translations['CustomFields.panelTitle']}</p>
 
-      {loading && <p className="text-xs text-slate-500">Loading…</p>}
+      {loading && <p className="text-xs text-slate-500">{translations['CustomFields.loading']}</p>}
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {/* Existing fields list */}
       {!loading && fields.length === 0 && (
-        <p className="text-xs text-slate-500 italic">No custom fields yet.</p>
+        <p className="text-xs text-slate-500 italic">{translations['CustomFields.noFields']}.</p>
       )}
 
       {fields.map((field) => {
@@ -201,7 +202,7 @@ const BoardCustomFieldsPanel = () => {
                     if (e.key === 'Escape') setRenamingId(null);
                   }}
                   className="flex-1 bg-slate-700 border border-blue-500 rounded px-2 py-0.5 text-sm text-slate-200 focus:outline-none"
-                  aria-label="Rename field"
+                  aria-label={translations['CustomFields.renameFieldAriaLabel']}
                 />
               ) : (
                 <button
@@ -239,9 +240,9 @@ const BoardCustomFieldsPanel = () => {
                 onChange={() => handleToggleShowOnCard(field)}
                 disabled={busy}
                 className="accent-blue-500"
-                aria-label="Show on card tile"
+                aria-label={translations['CustomFields.showOnCardLabel']}
               />
-              <span className="text-xs text-slate-400">Show on card tile</span>
+              <span className="text-xs text-slate-400">{translations['CustomFields.showOnCardLabel']}</span>
             </label>
 
             {/* Dropdown options editor toggle */}
@@ -255,7 +256,7 @@ const BoardCustomFieldsPanel = () => {
                   className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                   aria-label={`Edit options for ${field.name}`}
                 >
-                  {expandedOptionsId === field.id ? '▲ Hide options' : '▼ Edit options'}
+                  {expandedOptionsId === field.id ? translations['CustomFields.hideOptions'] : translations['CustomFields.editOptions']}
                 </button>
 
                 {expandedOptionsId === field.id && (
@@ -274,16 +275,16 @@ const BoardCustomFieldsPanel = () => {
 
       {/* Add field form */}
       {showForm ? (
-        <div className="bg-slate-800 rounded p-3 space-y-2" aria-label="New custom field form">
+        <div className="bg-slate-800 rounded p-3 space-y-2" aria-label={translations['CustomFields.newFieldFormLabel']}>
           {/* Name */}
           <input
             type="text"
             value={newField.name}
             onChange={(e) => setNewField((f) => ({ ...f, name: e.target.value }))}
-            placeholder="Field name"
+            placeholder={translations['CustomFields.fieldNamePlaceholder']}
             className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             autoFocus
-            aria-label="New field name"
+            aria-label={translations['CustomFields.fieldNamePlaceholder']}
           />
 
           {/* Type selector */}
@@ -293,7 +294,7 @@ const BoardCustomFieldsPanel = () => {
               setNewField((f) => ({ ...f, field_type: e.target.value as FieldType, options: [] }))
             }
             className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            aria-label="Field type"
+            aria-label={translations['CustomFields.typeLabel']}
           >
             {FIELD_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -317,9 +318,9 @@ const BoardCustomFieldsPanel = () => {
               checked={newField.show_on_card}
               onChange={(e) => setNewField((f) => ({ ...f, show_on_card: e.target.checked }))}
               className="accent-blue-500"
-              aria-label="Show on card tile"
+              aria-label={translations['CustomFields.showOnCardLabel']}
             />
-            <span className="text-xs text-slate-400">Show on card tile</span>
+            <span className="text-xs text-slate-400">{translations['CustomFields.showOnCardLabel']}</span>
           </label>
 
           {createError && <p className="text-xs text-red-400">{createError}</p>}
@@ -331,17 +332,17 @@ const BoardCustomFieldsPanel = () => {
               onClick={handleCreate}
               disabled={creating || !newField.name.trim()}
               className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors"
-              aria-label="Create custom field"
+              aria-label={translations['CustomFields.ariaCreateField']}
             >
-              {creating ? 'Creating…' : 'Create field'}
+              {creating ? translations['CustomFields.creatingButton'] : translations['CustomFields.createFieldButton']}
             </button>
             <button
               type="button"
               onClick={() => { setShowForm(false); setNewField(EMPTY_NEW_FIELD); setCreateError(null); }}
               className="text-slate-400 hover:text-slate-200 text-xs px-2 transition-colors"
-              aria-label="Cancel"
+              aria-label={translations['CustomFields.cancelButton']}
             >
-              Cancel
+              {translations['CustomFields.cancelButton']}
             </button>
           </div>
         </div>
@@ -350,9 +351,9 @@ const BoardCustomFieldsPanel = () => {
           type="button"
           onClick={() => setShowForm(true)}
           className="w-full text-left text-xs text-blue-400 hover:text-blue-300 transition-colors py-1"
-          aria-label="Add custom field"
+          aria-label={translations['CustomFields.ariaCreateField']}
         >
-          + Add custom field
+          {translations['CustomFields.addFieldButton']}
         </button>
       )}
     </div>

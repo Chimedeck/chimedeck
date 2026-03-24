@@ -8,6 +8,7 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { isPlatformAdmin } from '~/extensions/Auth/utils/isPlatformAdmin';
+import translations from '../../translations/en.json';
 import { useBoardPlugins } from '../../hooks/useBoardPlugins';
 import PluginList from '../../components/PluginList';
 import PluginSearchBar from '../../components/PluginSearchBar';
@@ -72,9 +73,9 @@ const PluginDashboardPage = () => {
       const result = await enablePluginRaw(plugin);
       if (result?.error) {
         if (result.error === 'not-board-member' || result.error === 'not-board-admin' || result.error.includes('403')) {
-          addToast('You do not have permission to enable plugins on this board.', 'error');
+          addToast(translations['plugins.dashboard.toast.noPermissionEnable'], 'error');
         } else {
-          addToast('Failed to enable plugin. Please try again.', 'error');
+          addToast(translations['plugins.dashboard.toast.failedEnable'], 'error');
         }
       }
     },
@@ -122,7 +123,7 @@ const PluginDashboardPage = () => {
   useEffect(() => {
     if (updateStatus === 'success') {
       setEditPlugin(null);
-      addToast('Plugin updated.', 'info');
+      addToast(translations['plugins.dashboard.toast.pluginUpdated'], 'info');
       dispatch(clearUpdateState());
     }
   }, [updateStatus, addToast, dispatch]);
@@ -220,16 +221,16 @@ const PluginDashboardPage = () => {
             onClick={() => navigate(`/boards/${boardId}`)}
             className="text-slate-400 hover:text-slate-200 text-sm mb-1 flex items-center gap-1"
           >
-            ← Back to board
+            {translations['plugins.dashboard.backToBoard']}
           </button>
-          <h1 className="text-xl font-semibold">Plugins</h1>
+          <h1 className="text-xl font-semibold">{translations['plugins.dashboard.title']}</h1>
         </div>
         {isAdmin ? (
           <button
             onClick={() => setRegisterOpen(true)}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2"
           >
-            + Register Plugin
+            {translations['plugins.dashboard.registerPlugin']}
           </button>
         ) : null}
       </div>
@@ -237,7 +238,7 @@ const PluginDashboardPage = () => {
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-6">
         {status === 'loading' && (
-          <p className="text-slate-400 text-sm">Loading plugins…</p>
+          <p className="text-slate-400 text-sm">{translations['plugins.dashboard.loading']}</p>
         )}
         {status === 'error' && error && !error.includes('not-board-admin') && (
           <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
@@ -255,12 +256,12 @@ const PluginDashboardPage = () => {
             />
             {availablePlugins.length === 0 && (searchQuery || selectedCategory) ? (
               <div className="mb-4">
-                <p className="text-slate-400 text-sm mb-2">No plugins match your search.</p>
+                <p className="text-slate-400 text-sm mb-2">{translations['plugins.dashboard.noMatch']}</p>
                 <button
                   onClick={handleClearSearch}
                   className="text-xs text-blue-400 hover:text-blue-300 underline"
                 >
-                  Clear search
+                  {translations['plugins.dashboard.clearSearch']}
                 </button>
               </div>
             ) : null}

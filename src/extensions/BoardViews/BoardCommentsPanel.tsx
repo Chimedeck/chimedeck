@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getBoardComments } from './api';
 import type { BoardComment } from './types';
+import translations from './translations/en.json';
 
 interface Props {
   boardId: string;
@@ -24,7 +25,7 @@ const BoardCommentsPanel = ({ boardId }: Props) => {
         setCursor(res.metadata.cursor);
         setHasMore(res.metadata.hasMore);
       } catch {
-        setError('Failed to load comments.');
+        setError(translations['BoardViews.errorLoadComments']);
       } finally {
         setLoading(false);
       }
@@ -42,10 +43,10 @@ const BoardCommentsPanel = ({ boardId }: Props) => {
 
   return (
     <div className="p-4 space-y-3">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">Comments</h3>
+      <h3 className="text-xs font-semibold uppercase text-gray-500">{translations['BoardViews.commentsHeading']}</h3>
 
       {comments.length === 0 && !loading && (
-        <p className="text-sm italic text-gray-400">No comments yet.</p>
+        <p className="text-sm italic text-gray-400">{translations['BoardViews.noComments']}</p>
       )}
 
       {comments.map((comment) => (
@@ -68,14 +69,14 @@ const BoardCommentsPanel = ({ boardId }: Props) => {
         </div>
       ))}
 
-      {loading && <p className="text-xs text-gray-400">Loading…</p>}
+      {loading && <p className="text-xs text-gray-400">{translations['BoardViews.loadingComments']}</p>}
 
       {hasMore && !loading && (
         <button
           onClick={() => loadPage(cursor)}
           className="rounded px-3 py-1.5 text-xs text-blue-400 hover:bg-slate-700"
         >
-          Load more
+          {translations['BoardViews.loadMoreComments']}
         </button>
       )}
     </div>

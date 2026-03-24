@@ -2,6 +2,7 @@
 // that appears while a file is dragged over the card modal, then triggers upload on drop.
 import React, { useCallback, useRef, useState } from 'react';
 import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import translations from '../translations/en.json';
 
 interface Props {
   /** Children to render beneath the drop overlay */
@@ -69,7 +70,7 @@ export function AttachmentDropZone({ children, onFiles, disabled = false }: Prop
           aria-hidden="true"
         >
           <ArrowUpTrayIcon className="h-10 w-10 text-blue-400 mb-2" />
-          <span className="text-sm font-medium text-blue-600">Drop files to attach</span>
+          <span className="text-sm font-medium text-blue-600">{translations['attachments.dropZone.hint']}</span>
         </div>
       )}
     </div>

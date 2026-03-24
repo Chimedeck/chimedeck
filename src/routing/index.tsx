@@ -45,6 +45,11 @@ const PluginDocsPage = lazy(() =>
     default: m.default,
   }))
 );
+const McpDocsPage = lazy(() =>
+  import('~/extensions/DeveloperDocs/containers/McpDocsPage/McpDocsPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const VerifyEmailPage = lazy(() =>
   import('~/extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage').then((m) => ({
     default: m.default,
@@ -77,6 +82,11 @@ const EditProfilePage = lazy(() =>
 );
 const PluginDashboardPage = lazy(() =>
   import('~/extensions/Plugins/containers/PluginDashboardPage/PluginDashboardPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const ApiTokenPage = lazy(() =>
+  import('~/extensions/ApiToken/containers/ApiTokenPage/ApiTokenPage').then((m) => ({
     default: m.default,
   }))
 );
@@ -126,8 +136,10 @@ export default function AppRouter() {
               <Route path="/boards/:boardId" element={<BoardPage />} />
               <Route path="/boards/:boardId/settings/plugins" element={<PluginDashboardPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />
+              <Route path="/settings/api-tokens" element={<ApiTokenPage />} />
               <Route path="/profile/edit" element={<EditProfilePage />} />
               <Route path="/developer/plugins" element={<PluginDocsPage />} />
+              <Route path="/developer/mcp" element={<McpDocsPage />} />
             </Route>
           </Route>
 

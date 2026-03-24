@@ -2,6 +2,7 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { AttachmentStatusBadge } from './AttachmentStatusBadge';
+import translations from '../translations/en.json';
 
 interface Attachment {
   id: string;
@@ -32,13 +33,13 @@ export function AttachmentItem({ attachment, onDelete, onDownload }: Props): Rea
       {attachment.type === 'FILE' && <AttachmentStatusBadge status={attachment.status} />}
       {(attachment.type === 'URL' || attachment.status === 'READY') && (
         <button onClick={handleDownload} style={{ fontSize: 12, cursor: 'pointer' }}>
-          {attachment.type === 'URL' ? 'Open' : 'Download'}
+          {attachment.type === 'URL' ? translations['attachment.item.action.open'] : translations['attachment.item.action.download']}
         </button>
       )}
       <button
         onClick={() => onDelete(attachment.id)}
         style={{ fontSize: 12, color: '#ef4444', cursor: 'pointer', background: 'none', border: 'none' }}
-        aria-label="Delete attachment"
+        aria-label={translations['attachment.item.action.delete.ariaLabel']}
       >
         <XMarkIcon className="h-4 w-4" aria-hidden="true" />
       </button>

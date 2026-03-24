@@ -1,0 +1,21 @@
+{
+  "UserProfile.backButton": "← Back",
+  "UserProfile.pageTitle": "Profile Settings",
+  "UserProfile.tabProfile": "Profile",
+  "UserProfile.tabNotifications": "Notifications",
+  "UserProfile.signedInAs": "Signed in as",
+  "UserProfile.notificationsSubheading": "Notification Settings",
+  "UserProfile.notificationsMasterNote": "Per-board notification preferences can be managed from each board's settings.",
+  "GlobalNotificationToggle.heading": "Master Notifications",
+  "UserProfile.notificationsLabel": "Enable notifications",
+  "UserProfile.notificationsAriaLabel": "Toggle global notifications",
+  "UserProfile.notificationsLoadError": "Failed to load notification settings.",
+  "UserProfile.notificationsUpdateError": "Failed to update notification settings.",
+  "UserProfile.avatarAlt": "Profile avatar",
+  "UserProfile.changeAvatarButton": "Change photo",
+  "UserProfile.removeAvatarButton": "Remove photo",
+  "UserProfile.saveButton": "Save Changes",
+  "UserProfile.cancelButton": "Cancel",
+  "UserProfile.successMessage": "Profile updated",
+  "UserProfile.errorMessage": "Failed to save changes. Please try again."
+}

@@ -1,7 +1,7 @@
 // BoardSettings — slide-in panel for board-level settings.
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PuzzlePieceIcon } from '@heroicons/react/24/outline';
+import { PuzzlePieceIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectBoard } from '../../slices/boardSlice';
 import { apiClient } from '~/common/api/client';
@@ -9,6 +9,8 @@ import { patchBoardVisibility } from '../../api';
 import VisibilitySelector, { type BoardVisibility } from './VisibilitySelector';
 import BoardCustomFieldsPanel from '~/extensions/CustomFields/BoardCustomFieldsPanel';
 import BackgroundPicker from './BackgroundPicker';
+import BoardNotificationToggle from './BoardNotificationToggle';
+import BoardNotificationTypePreferences from './BoardNotificationTypePreferences';
 
 interface Props {
   onClose: () => void;
@@ -106,6 +108,24 @@ const BoardSettings = ({ onClose, isGuest = false }: Props) => {
               <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>Plugins</span>
             </button>
+          </div>
+
+          {/* User settings — per-board preferences for the current user */}
+          <div className="border-t border-slate-700 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <UserCircleIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                User settings
+              </h3>
+            </div>
+            {boardId && (
+              <>
+                <BoardNotificationToggle boardId={boardId} />
+                <div className="mt-4">
+                  <BoardNotificationTypePreferences boardId={boardId} />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

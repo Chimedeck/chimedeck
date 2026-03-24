@@ -14,7 +14,7 @@
 ### 2. Page title
 
 1. Navigate to `http://localhost:5173/login`
-2. Check `document.title` contains "HoriFlow"
+2. Check `document.title` contains "Taskinate"
 
 ### 3. Login page renders
 

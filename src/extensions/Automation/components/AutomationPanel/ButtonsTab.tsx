@@ -16,6 +16,7 @@ import CardButtonBuilder from '../CardButtons/CardButtonBuilder';
 import BoardButtonBuilder from '../BoardButtons/BoardButtonBuilder';
 import RunCountChip from '../LogPanel/RunCountChip';
 import { socket } from '~/extensions/Realtime/client/socket';
+import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -96,7 +97,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
 
         {/* Action count chip */}
         <span className="text-xs text-slate-500 flex-shrink-0">
-          {automation.actions.length} action{automation.actions.length !== 1 ? 's' : ''}
+          {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.buttonsTab.row.actions'] : translations['automation.buttonsTab.row.action']}
         </span>
 
         {/* Run count chip */}
@@ -108,8 +109,8 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
           disabled={toggling}
           onClick={handleToggle}
           className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors"
-          aria-label={automation.isEnabled ? 'Disable button' : 'Enable button'}
-          title={automation.isEnabled ? 'Enabled — click to disable' : 'Disabled — click to enable'}
+          aria-label={automation.isEnabled ? translations['automation.buttonsTab.row.disableAriaLabel'] : translations['automation.buttonsTab.row.enableAriaLabel']}
+          title={automation.isEnabled ? translations['automation.buttonsTab.row.enableTitle'] : translations['automation.buttonsTab.row.disableTitle']}
         >
           {automation.isEnabled ? (
             <CheckCircleIcon className="h-4 w-4 text-emerald-400" aria-hidden="true" />
@@ -123,7 +124,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
           type="button"
           onClick={() => setShowBuilder(true)}
           className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Edit button"
+          aria-label={translations['automation.buttonsTab.row.editAriaLabel']}
         >
           <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -137,14 +138,14 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
               onClick={handleDelete}
               className="text-xs rounded px-2 py-0.5 bg-red-600 text-white hover:bg-red-500 disabled:opacity-50 transition-colors"
             >
-              {deleting ? '…' : 'Delete'}
+              {deleting ? translations['automation.buttonsTab.row.deleting'] : translations['automation.buttonsTab.row.delete']}
             </button>
             <button
               type="button"
               onClick={() => setConfirmDelete(false)}
               className="text-xs rounded px-2 py-0.5 text-slate-400 hover:text-slate-200"
             >
-              Cancel
+              {translations['automation.buttonsTab.row.cancel']}
             </button>
           </div>
         ) : (
@@ -152,7 +153,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
             type="button"
             onClick={() => setConfirmDelete(true)}
             className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Delete button"
+            aria-label={translations['automation.buttonsTab.row.deleteAriaLabel']}
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -199,21 +200,21 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
       <section>
         <div className="flex items-center justify-between px-4 mb-2">
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Card Buttons
+            {translations['automation.buttonsTab.cardButtons.heading']}
           </h3>
           <button
             type="button"
             onClick={() => setShowCardBuilder(true)}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-slate-800 hover:text-blue-300 transition-colors"
-            aria-label="Create card button"
+            aria-label={translations['automation.buttonsTab.cardButtons.addAriaLabel']}
           >
             <PlusIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Add
+            {translations['automation.buttonsTab.add']}
           </button>
         </div>
 
         {cardButtons.length === 0 ? (
-          <p className="px-4 text-xs text-slate-500">No card buttons yet. Add one to appear on every card's back panel.</p>
+          <p className="px-4 text-xs text-slate-500">{translations['automation.buttonsTab.cardButtons.empty']}</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {cardButtons.map((a) => (
@@ -233,21 +234,21 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
       <section>
         <div className="flex items-center justify-between px-4 mb-2">
           <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-            Board Buttons
+            {translations['automation.buttonsTab.boardButtons.heading']}
           </h3>
           <button
             type="button"
             onClick={() => setShowBoardBuilder(true)}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-slate-800 hover:text-blue-300 transition-colors"
-            aria-label="Create board button"
+            aria-label={translations['automation.buttonsTab.boardButtons.addAriaLabel']}
           >
             <PlusIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            Add
+            {translations['automation.buttonsTab.add']}
           </button>
         </div>
 
         {boardButtons.length === 0 ? (
-          <p className="px-4 text-xs text-slate-500">No board buttons yet. Add one to appear in the board header.</p>
+          <p className="px-4 text-xs text-slate-500">{translations['automation.buttonsTab.boardButtons.empty']}</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {boardButtons.map((a) => (

@@ -104,6 +104,18 @@
 | [71](./sprint-71.md) | Notification Preferences UI | Toggle matrix in Profile Settings (4 types × 2 channels); optimistic PATCH; email column disabled when SES off | ⬜ Needs 70 + 24 |
 | [72](./sprint-72.md) | Email Notifications (Mentions + Board Activity) | SES email templates for mention/card_created/card_moved/card_commented; `boardActivityDispatch`; `EMAIL_NOTIFICATIONS_ENABLED` flag; fire-and-forget | ⬜ Needs 70 + 23 + 26 |
 | [73](./sprint-73.md) | In-App Notifications for Board Activity | Extend in-app notifications to card_created/card_moved/card_commented; WS push to board members; new icons + copy in notification panel; `type` filter on list API | ⬜ Needs 70 + 26 + 72 |
+| [95](./sprint-95.md) | Board-scoped Notification Preferences (Global) | `board_notification_preferences` table; per-board global on/off toggle in board settings "User settings"; `user_notification_settings` master toggle; guard in `boardActivityDispatch` | ⬜ Needs 70 + 73 |
+| [96](./sprint-96.md) | Profile Settings: Notifications Tab | Refactor `EditProfilePage` into tab layout (Profile / Notifications); URL-driven tab state (`?tab=notifications`); master toggle + preference matrix on Notifications tab | ⬜ Needs 71 + 95 |
+| [97](./sprint-97.md) | New Notification Types: card_updated, card_deleted, card_archived | DB constraint extended; server dispatch wired on card PATCH/DELETE/archive; client types + labels + icons for 3 new types; preference panel shows all 9 types | ⬜ Needs 73 + 88 + 96 |
+| [98](./sprint-98.md) | card_commented Notification Dispatch | Wire comment creation to `boardActivityDispatch`; in-app + WS push; email via SES for `card_commented`; self-exclusion guard | ⬜ Needs 72 + 73 |
+| [99](./sprint-99.md) | Email Templates for New Notification Types | SES templates for card_updated / card_deleted / card_archived; fix `shared.ts` deep-link to `?tab=notifications`; verify card_commented end-to-end | ⬜ Needs 72 + 97 + 98 |
+| [100](./sprint-100.md) | Board-Level Per-Type Notification Preferences | `board_notification_type_preferences` table; GET/PATCH/DELETE API; override cascade (board-type → user-type → default); `BoardNotificationTypePreferences` toggle matrix in board settings | ⬜ Needs 95 + 96 + 97 |
+| **— External API, MCP & CLI —** | | | |
+| [101](./sprint-101.md) | API Token Infrastructure | `api_tokens` DB table; `POST/GET/DELETE /api/v1/tokens`; SHA-256 hashed storage; token prefix for display; extend `authenticate` middleware to accept `hf_...` tokens alongside JWT | ⬜ Needs 03 + 15 |
+| [102](./sprint-102.md) | API Token UI (User Settings) | "API Tokens" settings page; generate modal (name + expiry); one-time copy modal; token list with revoke; RTK Query slice | ⬜ Needs 101 + 96 |
+| [103](./sprint-103.md) | External API Surface Audit & Card Money Endpoint | Audit all 6 external operations; add `PATCH /api/v1/cards/:id/money`; add `POST /api/v1/cards/:id/comments` if missing; verify permission guard on board invite; `docs/api-reference.md` | ⬜ Needs 101 |
+| [104](./sprint-104.md) | MCP Server | `server/extensions/mcp/` — MCP stdio server with 6 tools (move_card, write_comment, create_card, edit_card_description, set_card_price, invite_to_board); token auth; Claude Desktop + Cursor setup README | ⬜ Needs 101 + 103 |
+| [105](./sprint-105.md) | CLI | `cli/` — `taskinate` Bun CLI with 6 sub-commands; `--token` flag + `TASKINATE_TOKEN` env; `--json` mode; `cli/README.md` | ⬜ Needs 101 + 103 |
 | **— Admin Enhancements —** | | | |
 | [74](./sprint-74.md) | Admin: Auto-Verify External User Email | `autoVerifyEmail` param on `POST /api/v1/admin/users`; sets `email_verified_at` at creation; checkbox in invite modal (default: checked); verification status in credential sheet | ⬜ Needs 44 + 45 |
 | **— UI / UX Polish —** | | | |
@@ -124,6 +136,12 @@
 | [87](./sprint-87.md) | Board Deletion Auto-Refresh | Remove deleted boards from UI without reload; redirect when current board deleted; workspace-wide real-time deletion sync | ⬜ Needs 05 + 17 + 20 |
 | [88](./sprint-88.md) | Expanded Card Activity Tracking | Track `card_created`, `card_moved`, `card_member_assigned` and unassign events in activity feed with real-time updates | ⬜ Needs 07 + 11 + 29 + 73 |
 | [89](./sprint-89.md) | Guest Role Split: VIEWER vs MEMBER | Split board GUEST into read-only VIEWER and write-capable MEMBER (board-scoped only); `guest_type` column on `board_guest_access`; API + UI updates | ⬜ Needs 49 + 80 |
+| **— Internationalisation (i18n) —** | | | |
+| [90](./sprint-90.md) | i18n Phase 1: Comment, Activity & Attachment | Extract all hardcoded strings in Comment, Activity, Attachment/Attachments extensions into `translations/en.json`; bracket-notation access; no library | ⬜ Needs 11 + 21 |
+| [91](./sprint-91.md) | i18n Phase 2: Automation | Extract ~20-component Automation extension (rules, buttons, schedules, run log) into `Automation/translations/en.json` | ⬜ Needs 90 + 61–68 |
+| [92](./sprint-92.md) | i18n Phase 3: Plugins | Extract ~15-component Plugins extension (search bar, register/edit modals, board panel, domain allowlist) into `Plugins/translations/en.json` | ⬜ Needs 90 + 34–39 |
+| [93](./sprint-93.md) | i18n Phase 4: CustomFields, CalendarView, TimelineView & TableView | Create `translations/en.json` for four view/data extensions; extract all labels, aria-labels, and empty-state strings | ⬜ Needs 90 + 52–55 |
+| [94](./sprint-94.md) | i18n Phase 5: Remaining Extensions & Common/Layout | Finish i18n coverage: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, `src/common/`, `src/layout/`; zero hardcoded strings across all of `src/` | ⬜ Needs 91–93 |
 
 ---
 
@@ -236,6 +254,18 @@ Sprint 70 ──────────── NotificationPreference (per user,
 Sprint 71 ──────────── Notification preferences settings UI
 Sprint 72 ──────────── Email notification dispatch (mention, card_created, card_moved, card_commented)
 Sprint 73 ──────────── In-app board activity notifications; extend notification panel
+Sprint 95 ──────────── Board-scoped global notification toggle; user global master toggle
+Sprint 96 ──────────── Profile settings tab layout: Profile tab + Notifications tab
+Sprint 97 ──────────── New notification types: card_updated, card_deleted, card_archived; dispatch + client
+Sprint 98 ──────────── card_commented dispatch: comment creation triggers in-app + email notification
+Sprint 99 ──────────── Email templates for card_updated / card_deleted / card_archived
+Sprint 100 ─────────── Board-level per-type notification overrides; `board_notification_type_preferences`
+──── External API, MCP & CLI ────────────────────────────────────────────────────────────────────
+Sprint 101 ─────────── API Token infrastructure: DB table, CRUD endpoints, extend authenticate middleware
+Sprint 102 ─────────── API Token UI: generate/list/revoke tokens in User Settings
+Sprint 103 ─────────── External API surface audit: card money endpoint, comments endpoint, API reference doc
+Sprint 104 ─────────── MCP server: 6 tools over stdio transport; Claude Desktop + Cursor setup
+Sprint 105 ─────────── CLI: taskinate CLI with 6 commands, token auth, --json mode
 ──── Admin Enhancements ─────────────────────────────────────────────────────────────────────────
 Sprint 74 ──────────── Admin auto-verify external user email on invite
 ──── UI / UX Polish ─────────────────────────────────────────────────────────────────────────────
@@ -255,6 +285,13 @@ Sprint 85 ──────────── Collapsible sidebar drawer using 
 Sprint 86 ──────────── Search permission filtering to hide inaccessible boards
 Sprint 87 ──────────── Auto-refresh board lists after board deletion
 Sprint 88 ──────────── Card activity tracking: create, move, assign/unassign
+Sprint 89 ──────────── Guest role split: VIEWER (read-only) vs MEMBER (board-scoped write)
+──── Internationalisation (i18n) ──────────────────────────────────────────────────
+Sprint 90 ──────────── i18n Phase 1: Comment, Activity, Attachment/Attachments extensions
+Sprint 91 ──────────── i18n Phase 2: Automation extension (rules, buttons, schedules, run log)
+Sprint 92 ──────────── i18n Phase 3: Plugins extension (modals, search bar, board panel)
+Sprint 93 ──────────── i18n Phase 4: CustomFields, CalendarView, TimelineView, TableView
+Sprint 94 ──────────── i18n Phase 5: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, common/layout — zero hardcoded strings
 ```
 
 ---

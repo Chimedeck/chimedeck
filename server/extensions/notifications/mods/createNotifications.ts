@@ -8,6 +8,8 @@ import { db } from '../../../common/db';
 import { publishToUser } from '../../realtime/userChannel';
 import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { preferenceGuard } from './preferenceGuard';
+import { boardPreferenceGuard } from './boardPreferenceGuard';
+import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import type { Knex } from 'knex';
@@ -58,6 +60,18 @@ export async function createNotificationsForMentions({
   const now = new Date().toISOString();
 
   for (const userId of recipients) {
+    // Board-scoped and global opt-out guards — mirrors boardActivityDispatch.
+    // Both use opt-out model: missing row = enabled.
+    try {
+      const [globalEnabled, boardEnabled] = await Promise.all([
+        globalPreferenceGuard({ userId }),
+        boardPreferenceGuard({ userId, boardId }),
+      ]);
+      if (!globalEnabled || !boardEnabled) continue;
+    } catch {
+      // Fail open: if guard lookup fails, proceed with notification
+    }
+
     // Check preferences before inserting or publishing.
     // When the feature flag is off, treat all channels as enabled (fail-open fallback).
     let inAppEnabled = true;

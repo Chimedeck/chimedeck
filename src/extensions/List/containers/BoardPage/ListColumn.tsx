@@ -1,7 +1,6 @@
 // BoardPage/ListColumn — sortable list column using @dnd-kit/sortable.
 // Provides drag handle for list reorder and a SortableContext for card items.
-import { useSortable } from '@dnd-kit/sortable';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useCallback, useRef, useState } from 'react';
 import type { List } from '../../api';
@@ -105,7 +104,7 @@ const SortableListColumn = ({
               key={card.id}
               card={card}
               listTitle={list.title}
-              boardTitle={boardTitle}
+              {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
               {...(boardId ? { boardId } : {})}
               labelsExpanded={labelsExpanded ?? false}
               onToggleLabels={stableToggleLabels}

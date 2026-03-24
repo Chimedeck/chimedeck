@@ -1,0 +1,20 @@
+{
+  "attachment.section.title": "Attachments",
+  "attachment.uploader.dropOrBrowse": "Drop a file here or click to browse",
+  "attachment.uploader.uploading": "Uploading… {progress}%",
+  "attachment.item.action.open": "Open",
+  "attachment.item.action.download": "Download",
+  "attachment.item.action.delete.ariaLabel": "Delete attachment",
+  "attachment.item.status.scanning": "Scanning…",
+  "attachment.item.status.ready": "Ready",
+  "attachment.item.status.rejected": "Rejected",
+  "attachment.section.addUrl": "+ Add URL",
+  "attachment.urlModal.title": "Add URL attachment",
+  "attachment.urlModal.label": "Label",
+  "attachment.urlModal.url": "URL",
+  "attachment.urlModal.error.required": "Both name and URL are required.",
+  "attachment.urlModal.error.failed": "Failed to add URL.",
+  "attachment.urlModal.submit": "Add",
+  "attachment.urlModal.submitting": "Adding…",
+  "attachment.urlModal.cancel": "Cancel"
+}

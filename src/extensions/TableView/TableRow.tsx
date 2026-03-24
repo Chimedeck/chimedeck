@@ -1,6 +1,7 @@
 // TableRow — renders a single card as a table row in the TableView.
 // Columns: Title (clickable → opens card modal), List, Assignees, Labels,
 // Due Date (red if overdue), Start Date, Value.
+import translations from './translations/en.json';
 import type { TableRowData } from './types';
 
 interface Props {
@@ -31,7 +32,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
         <button
           className="text-sm font-medium text-slate-100 hover:text-blue-400 text-left underline-offset-2 hover:underline focus:outline-none"
           onClick={() => onCardClick(row.id)}
-          aria-label={`Open card: ${row.title}`}
+          aria-label={`${translations['TableView.ariaOpenCard']} ${row.title}`}
           data-testid={`table-card-title-${row.id}`}
         >
           {row.title}
