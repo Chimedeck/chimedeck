@@ -53,3 +53,6 @@ public/avatars/
 .task
 
 /plugins/
+test-results/
+test-screenshots-tmp/
+playwright-report/
