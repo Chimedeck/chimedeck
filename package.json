@@ -5,9 +5,14 @@
   "module": "server/index.ts",
   "type": "module",
   "bin": {
-    "taskinate": "cli/index.ts"
+    "taskinate": "dist/cli/index.js"
   },
+  "files": [
+    "dist/cli"
+  ],
   "scripts": {
+    "build:cli": "bun build cli/index.ts --outdir dist/cli --target node && sed -i '' '1{/^#!/d;}' dist/cli/index.js && printf '#!/usr/bin/env node\\n' | cat - dist/cli/index.js > dist/cli/index.tmp && mv dist/cli/index.tmp dist/cli/index.js && chmod +x dist/cli/index.js",
+    "prepublishOnly": "bun run build:cli",
     "dev": "bun run --hot server/index.ts",
     "dev:client": "vite",
     "dev:local": "concurrently \"bun run dev\" \"bun run dev:client\"",

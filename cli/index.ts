@@ -13,6 +13,9 @@ import { runCreateCard } from './commands/createCard';
 import { runEditDescription } from './commands/editDescription';
 import { runSetPrice } from './commands/setPrice';
 import { runInvite } from './commands/invite';
+import { runSearchCards } from './commands/searchCards';
+import { runSearchBoard } from './commands/searchBoard';
+import { runGetCard } from './commands/getCard';
 
 const VERSION = '0.1.0';
 
@@ -36,6 +39,9 @@ Commands:
   edit-description   Update a card's description
   set-price          Set or clear a card's price
   invite             Invite a user to a board
+  search-cards       Full-text search over cards in a workspace
+  search-board       Full-text search over cards in a board
+  get-card           Get full details of a card
 
 Run 'taskinate <command> --help' for command-specific usage.
 `.trim();
@@ -87,7 +93,15 @@ async function main() {
     case 'invite':
       await runInvite({ argv: argv as Record<string, unknown>, config, jsonMode });
       break;
-    // Future subcommands are wired in here in subsequent iterations.
+    case 'search-cards':
+      await runSearchCards({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'search-board':
+      await runSearchBoard({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'get-card':
+      await runGetCard({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
     default:
       console.error(`Unknown command: ${command}\nRun 'taskinate --help' for usage.`);
       process.exit(1);

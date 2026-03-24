@@ -6,13 +6,21 @@ A command-line interface for [Taskinate](https://app.taskinate.com) that lets de
 
 ## Installation
 
+### Global install via npm (recommended)
+
+```sh
+npm install -g taskinate
+```
+
+After installation, the `taskinate` binary is available on your `$PATH`. Requires [Node.js](https://nodejs.org/) v18 or later.
+
 ### Global install via Bun
 
 ```sh
 bun install --global
 ```
 
-After installation, the `taskinate` binary is available on your `$PATH`.
+> **Requirement:** [Bun](https://bun.sh/) v1.0 or later.
 
 ### Run without installing
 
@@ -20,7 +28,48 @@ After installation, the `taskinate` binary is available on your `$PATH`.
 bun cli/index.ts <command> [options]
 ```
 
-> **Requirement:** [Bun](https://bun.sh/) v1.0 or later.
+---
+
+## Local development install
+
+Use this when working on the CLI source itself or testing changes before publishing.
+
+**1. Clone the repo and install dependencies:**
+
+```sh
+git clone https://github.com/your-org/taskinate.git
+cd taskinate
+bun install
+```
+
+**2. Build the CLI:**
+
+```sh
+bun run build:cli
+```
+
+This compiles `cli/index.ts` → `dist/cli/index.js` and adds the correct Node.js shebang.
+
+**3. Link it globally:**
+
+```sh
+npm link
+```
+
+Run this from the **project root** (where `package.json` lives). The `taskinate` command will now resolve to your local `dist/cli/index.js`.
+
+**4. Rebuild after changes:**
+
+```sh
+bun run build:cli
+# No need to re-link — the symlink picks up the new file automatically.
+```
+
+**5. Unlink when done:**
+
+```sh
+npm unlink -g taskinate
+```
 
 ---
 
@@ -232,7 +281,72 @@ If you lack admin permission, the API returns a `403` error and the CLI prints t
 
 ---
 
-## Scripting with `--json` and `jq`
+### `get-card`
+
+Retrieve full details of a card (title, description, list, price, labels, members).
+
+```sh
+taskinate get-card --card <cardId>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--card` | ✓ | ID of the card to retrieve |
+
+**Example:**
+
+```sh
+taskinate get-card --card card_abc123
+taskinate get-card --card card_abc123 --json | jq '.data.title'
+```
+
+---
+
+### `search-cards`
+
+Full-text search over all cards within a workspace.
+
+```sh
+taskinate search-cards --workspace <workspaceId> --query <text> [--limit <number>]
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--workspace` | ✓ | ID of the workspace to search within |
+| `--query` | ✓ | Search query |
+| `--limit` | | Max results to return (default: 20) |
+
+**Example:**
+
+```sh
+taskinate search-cards --workspace ws_123 --query "payment bug" --limit 10
+taskinate search-cards --workspace ws_123 --query "refund" --json | jq '.data[].title'
+```
+
+---
+
+### `search-board`
+
+Full-text search over cards scoped to a single board.
+
+```sh
+taskinate search-board --board <boardId> --query <text> [--limit <number>]
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--board` | ✓ | ID of the board to search within |
+| `--query` | ✓ | Search query |
+| `--limit` | | Max results to return |
+
+**Example:**
+
+```sh
+taskinate search-board --board board_def456 --query "OAuth"
+taskinate search-board --board board_def456 --query "bug" --limit 5 --json | jq '.data'
+```
+
+---
 
 Pass `--json` to any command to receive raw JSON output, then pipe it into `jq` for further processing.
 
