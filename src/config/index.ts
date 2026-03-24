@@ -4,6 +4,8 @@ const config = {
   /** Maximum upload size in bytes. Mirrors MAX_ATTACHMENT_SIZE_MB on the server. Default: 250 MB. */
   maxAttachmentSizeBytes:
     parseInt(import.meta.env['VITE_MAX_ATTACHMENT_SIZE_MB'] ?? '250', 10) * 1024 * 1024,
+  /** Public base URL of this Taskinate instance, e.g. https://app.example.com */
+  appUrl: (import.meta.env['VITE_APP_URL'] as string | undefined) ?? '',
 };
 
 export default config;

@@ -1,6 +1,7 @@
 // McpDocsPage — developer reference for the Taskinate MCP server.
 // Route: /developer/mcp (private, within AppShell)
 import { useNavigate } from 'react-router-dom';
+import config from '~/config';
 import {
   CommandLineIcon,
   ChevronRightIcon,
@@ -98,6 +99,7 @@ const NavItem = ({ href, label }: { href: string; label: string }) => (
 
 const McpDocsPage = () => {
   const navigate = useNavigate();
+  const appUrl = config.appUrl || 'APP_URL';
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100">
@@ -257,7 +259,7 @@ const McpDocsPage = () => {
             <Pre>{`{
   "mcpServers": {
     "taskinate": {
-      "url": "https://your-taskinate-instance.com/api/mcp",
+      "url": "${appUrl}/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
       }
@@ -265,7 +267,7 @@ const McpDocsPage = () => {
   }
 }`}</Pre>
             <P>
-              Replace <Code>your-taskinate-instance.com</Code> with your actual Taskinate host.
+              Restart Claude Desktop to pick up the change.
               Restart Claude Desktop to pick up the change.
             </P>
 
@@ -277,7 +279,7 @@ const McpDocsPage = () => {
             <Pre>{`{
   "mcpServers": {
     "taskinate": {
-      "url": "https://your-taskinate-instance.com/api/mcp",
+      "url": "${appUrl}/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
       }
@@ -289,7 +291,7 @@ const McpDocsPage = () => {
             <H3>Other MCP clients</H3>
             <P>
               Any MCP-compatible client that supports remote HTTP / SSE transport can connect.
-              Configure the endpoint URL to <Code>https://your-taskinate-instance.com/api/mcp</Code>{' '}
+              Configure the endpoint URL to <Code>{appUrl}/api/mcp</Code>{' '}
               and pass <Code>Authorization: Bearer hf_your_token_here</Code> as a request header.
             </P>
           </Section>
