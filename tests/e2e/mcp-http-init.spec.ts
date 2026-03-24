@@ -32,7 +32,7 @@ test.describe('MCP HTTP Init', () => {
     const email = `mcp-test-${Date.now()}@example.com`;
     const password = 'TestPassword1!';
     await request.post(`${BASE_URL}/api/v1/auth/register`, { data: { email, password, name: 'MCP Test' } });
-    const jwt = await loginAndGetJwt(email, password);
+    const jwt = await loginAndGetJwt(request, email, password);
     // Create token
     const tokenRes = await request.post(`${BASE_URL}/api/v1/tokens`, {
       headers: { Authorization: `Bearer ${jwt}` },
