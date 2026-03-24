@@ -129,9 +129,45 @@
   "plugins.dashboard.toast.failedEnable": "Failed to enable plugin. Please try again.",
   "plugins.dashboard.toast.pluginUpdated": "Plugin updated.",
 
+  "plugins.dashboard.enabled.heading": "Enabled on this board",
+  "plugins.dashboard.enabled.empty": "No plugins enabled on this board yet.",
+  "plugins.dashboard.discover.heading": "Discover Plugins",
+  "plugins.dashboard.discover.empty": "No plugins available. Ask your platform administrator to register plugins.",
+  "plugins.dashboard.discover.noMatch": "No plugins match your search.",
+  "plugins.dashboard.discover.clearSearch": "Clear search",
+
   "plugins.modal.defaultTitle": "Plugin",
   "plugins.modal.closeAriaLabel": "Close modal",
 
   "plugins.popup.defaultTitle": "Plugin",
-  "plugins.popup.closeAriaLabel": "Close popup"
+  "plugins.popup.closeAriaLabel": "Close popup",
+
+  "plugins.registry.title": "Plugin Registry",
+  "plugins.registry.subtitle": "Manage the plugins available across all boards.",
+  "plugins.registry.registerPlugin": "+ Register Plugin",
+  "plugins.registry.loading": "Loading plugins…",
+  "plugins.registry.error": "Failed to load plugins. Please try again.",
+  "plugins.registry.empty": "No plugins registered yet. Click \"+ Register Plugin\" to add the first one.",
+  "plugins.registry.noPermission": "You don't have permission to manage plugins.",
+
+  "plugins.registry.table.colIcon": "Icon",
+  "plugins.registry.table.colName": "Name / Author",
+  "plugins.registry.table.colDescription": "Description",
+  "plugins.registry.table.colCategories": "Categories",
+  "plugins.registry.table.colActions": "Actions",
+
+  "plugins.registry.row.edit": "Edit",
+  "plugins.registry.row.deactivate": "Deactivate",
+  "plugins.registry.row.deactivating": "Deactivating…",
+  "plugins.registry.row.confirmDeactivate": "Really deactivate?",
+  "plugins.registry.row.confirmYes": "Yes",
+  "plugins.registry.row.confirmNo": "No",
+  "plugins.registry.row.reactivate": "Reactivate",
+  "plugins.registry.row.reactivating": "Reactivating…",
+  "plugins.registry.row.inactiveBadge": "Inactive",
+
+  "plugins.searchBar.statusLabel": "Status",
+  "plugins.searchBar.statusAll": "All",
+  "plugins.searchBar.statusActive": "Active",
+  "plugins.searchBar.statusInactive": "Inactive"
 }

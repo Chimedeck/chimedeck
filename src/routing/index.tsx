@@ -85,6 +85,11 @@ const PluginDashboardPage = lazy(() =>
     default: m.default,
   }))
 );
+const PluginRegistryPage = lazy(() =>
+  import('~/extensions/Plugins/containers/PluginRegistryPage/PluginRegistryPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const ApiTokenPage = lazy(() =>
   import('~/extensions/ApiToken/containers/ApiTokenPage/ApiTokenPage').then((m) => ({
     default: m.default,
@@ -135,6 +140,7 @@ export default function AppRouter() {
               </Route>
               <Route path="/boards/:boardId" element={<BoardPage />} />
               <Route path="/boards/:boardId/settings/plugins" element={<PluginDashboardPage />} />
+              <Route path="/plugins" element={<PluginRegistryPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />
               <Route path="/settings/api-tokens" element={<ApiTokenPage />} />
               <Route path="/profile/edit" element={<EditProfilePage />} />

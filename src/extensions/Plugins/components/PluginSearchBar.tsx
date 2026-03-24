@@ -1,21 +1,26 @@
-// PluginSearchBar — debounced search input + category dropdown for the plugin registry.
+// PluginSearchBar — debounced search input + category dropdown + status filter for the plugin registry.
 import { useState, useEffect, useRef } from 'react';
 import translations from '../translations/en.json';
+import type { RegistryStatus } from '../containers/PluginRegistryPage/PluginRegistryPage.duck';
 
 interface Props {
   categories: string[];
   onSearchChange: (query: string) => void;
   onCategoryChange: (category: string | null) => void;
+  onStatusChange?: (status: RegistryStatus) => void;
   searchQuery?: string;
   selectedCategory?: string | null;
+  selectedStatus?: RegistryStatus;
 }
 
 const PluginSearchBar = ({
   categories,
   onSearchChange,
   onCategoryChange,
+  onStatusChange,
   searchQuery = '',
   selectedCategory = null,
+  selectedStatus = 'active',
 }: Props) => {
   const [inputValue, setInputValue] = useState(searchQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,19 +44,27 @@ const PluginSearchBar = ({
     onCategoryChange(value === '' ? null : value);
   };
 
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onStatusChange?.(e.target.value as RegistryStatus);
+  };
+
+  const selectClass =
+    'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500';
+
   return (
-    <div className="flex gap-2 mb-4">
+    <div className="flex flex-wrap gap-2 mb-4">
       <input
         type="text"
         value={inputValue}
         onChange={handleInputChange}
         placeholder={translations['plugins.searchBar.placeholder']}
-        className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+        className="flex-1 min-w-[180px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500"
       />
       <select
         value={selectedCategory ?? ''}
         onChange={handleCategoryChange}
-        className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500"
+        className={selectClass}
+        aria-label={translations['plugins.searchBar.allCategories']}
       >
         <option value="">{translations['plugins.searchBar.allCategories']}</option>
         {categories.map((cat) => (
@@ -60,6 +73,18 @@ const PluginSearchBar = ({
           </option>
         ))}
       </select>
+      {onStatusChange && (
+        <select
+          value={selectedStatus}
+          onChange={handleStatusChange}
+          className={selectClass}
+          aria-label={translations['plugins.searchBar.statusLabel']}
+        >
+          <option value="all">{translations['plugins.searchBar.statusAll']}</option>
+          <option value="active">{translations['plugins.searchBar.statusActive']}</option>
+          <option value="inactive">{translations['plugins.searchBar.statusInactive']}</option>
+        </select>
+      )}
     </div>
   );
 };

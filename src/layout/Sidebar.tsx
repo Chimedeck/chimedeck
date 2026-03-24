@@ -26,6 +26,7 @@ import {
 } from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectAuthUser, logoutThunk } from '~/extensions/Auth/duck/authDuck';
+import { isPlatformAdmin } from '~/extensions/Auth/utils/isPlatformAdmin';
 import { selectProfile } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import { selectAdminEmailDomains } from '~/slices/featureFlagsSlice';
 import { openInviteModal } from '~/extensions/AdminInvite/adminInvite.slice';
@@ -159,6 +160,8 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
       .map((d) => d.trim().toLowerCase())
       .filter(Boolean)
       .includes(userDomain);
+  // [why] Platform admin check for the global Plugin Registry — separate from workspace admin.
+  const isPlatformAdminUser = isPlatformAdmin(user?.email);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -382,6 +385,25 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   aria-label={layoutTranslations['Sidebar.inviteExternalUser']}
                   onNavigate={onClose}
                 />
+              )}
+              {/* Administration section — visible to platform admins only */}
+              {isPlatformAdminUser && (
+                <>
+                  {!collapsed && (
+                    <li>
+                      <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        {layoutTranslations['Sidebar.administrationSection']}
+                      </p>
+                    </li>
+                  )}
+                  <NavItem
+                    to="/plugins"
+                    icon={<PuzzlePieceIcon className="h-5 w-5" />}
+                    label={layoutTranslations['Sidebar.pluginsLabel']}
+                    collapsed={collapsed}
+                    onNavigate={onClose}
+                  />
+                </>
               )}
             </ul>
           ) : (

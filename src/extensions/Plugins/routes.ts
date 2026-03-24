@@ -9,6 +9,13 @@ export const routes: RouteConfig[] = [
     name: 'PluginDashboardPage',
     auth: true,
   },
+  {
+    path: '/plugins',
+    component: () =>
+      import('./containers/PluginRegistryPage/PluginRegistryPage').then((m) => m.default),
+    name: 'PluginRegistryPage',
+    auth: true,
+  },
 ];
 
 export default routes;

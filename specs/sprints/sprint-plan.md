@@ -65,6 +65,8 @@
 | [37](./sprint-37.md) | Plugin SDK: Context Queries, Data Fix & Button Callbacks | Fix `CTX_CARD/LIST/BOARD/MEMBER` handlers in bridge, fix `t.get()`/`t.set()` `resourceId`, button callback registry in SDK so `card-badges`/`card-buttons` actually work | 🟢 Ready after 36 |
 | [38](./sprint-38.md) | Plugin Data: Board Isolation & Cross-Board Validation | Add `board_id` to `plugin_data`, use it in GET/SET queries, validate card/list resource belongs to board, isolate member-scoped data per board | 🔵 Needs 37 |
 | [39](./sprint-39.md) | Plugin Domain Whitelisting & Edit Plugin UI | `whitelisted_domains` on plugins table, board-level `allowedDomains` subset in `board_plugins.config`, bridge origin enforcement, Edit Plugin modal (platform admin), Board Domain Allowlist panel | 🔵 Needs 36 + 38 |
+| [113](./sprint-113.md) | Plugin Registration Global Panel | Platform-admin `/plugins` page in sidebar; registry table with edit/deactivate; `Register Plugin` two-step modal (form → one-time API key reveal); search + category + status filters; `GET /api/v1/plugins/:pluginId` | 🔵 Needs 36 + 17 |
+| [114](./sprint-114.md) | Board Plugin Discovery & Enable Flow | `GET /api/v1/boards/:boardId/plugins/available`; Board Plugins panel split into Enabled + Discover sections; one-click Enable/Disable; real-time row transitions; replaces board-by-board creation | 🔵 Needs 113 + 35 |
 | **— Account Management —** | | | |
 | [40](./sprint-40.md) | Change Email | Authenticated email-change request, confirmation link to new address, token invalidation on commit | 🔵 Needs 23 + 24 |
 | [41](./sprint-41.md) | Forgot Password / Password Reset | `POST /auth/forgot-password`, reset email via SES, `/reset-password?token=` page, session invalidation | 🔵 Needs 23 + 16 |
@@ -142,6 +144,9 @@
 | [92](./sprint-92.md) | i18n Phase 3: Plugins | Extract ~15-component Plugins extension (search bar, register/edit modals, board panel, domain allowlist) into `Plugins/translations/en.json` | ⬜ Needs 90 + 34–39 |
 | [93](./sprint-93.md) | i18n Phase 4: CustomFields, CalendarView, TimelineView & TableView | Create `translations/en.json` for four view/data extensions; extract all labels, aria-labels, and empty-state strings | ⬜ Needs 90 + 52–55 |
 | [94](./sprint-94.md) | i18n Phase 5: Remaining Extensions & Common/Layout | Finish i18n coverage: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, `src/common/`, `src/layout/`; zero hardcoded strings across all of `src/` | ⬜ Needs 91–93 |
+| **— Health Check —** | | | |
+| [115](./sprint-115.md) | Health Check Tab: Backend & Config | `board_health_checks` + `board_health_check_results` tables; `server/config/health-check-services.json` presets; `GET /health-check/presets`; board CRUD endpoints (`GET/POST/DELETE`); on-demand `probe` + `probe-all`; probe engine with green/amber/red classification; SSRF prevention; `HEALTH_CHECK_ENABLED` flag | ⬜ Needs 05 + 03 |
+| [116](./sprint-116.md) | Health Check Tab UI | 5th board tab "Health Check"; traffic-light status dots (green/amber/red/gray); one row per endpoint with name, URL, response time; Add Service modal (preset picker + custom URL); manual ↻ Refresh + 60-second auto-refresh with Page Visibility pause; empty state | ⬜ Needs 115 + 18 |
 
 ---
 
@@ -167,6 +172,7 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `AUTOMATION_ENABLED` | Sprint 61 | Disable all automation routes and the event-pipeline evaluation hook |
 | `AUTOMATION_SCHEDULER_ENABLED` | Sprint 64 | Prevent calendar + due-date scheduler workers from starting (useful in read-only replicas) |
 | `AUTOMATION_MONTHLY_QUOTA` | Sprint 68 | Maximum automation runs per board per calendar month (default: `1000`) |
+| `HEALTH_CHECK_ENABLED` | Sprint 115 | Disable all health-check routes and hide the Health Check board tab (default: `false`) |
 
 ---
 
