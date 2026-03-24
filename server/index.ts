@@ -35,6 +35,7 @@ import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
+import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -147,6 +148,9 @@ async function router(req: Request): Promise<Response> {
 
   const apiTokenResponse = await apiTokenRouter(req, path);
   if (apiTokenResponse) return apiTokenResponse;
+
+  const healthCheckResponse = await healthCheckExtensionRouter(req, path);
+  if (healthCheckResponse) return healthCheckResponse;
 
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;
