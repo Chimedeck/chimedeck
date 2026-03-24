@@ -12,6 +12,7 @@ import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/re
 import { s3Client, s3Config } from '../../attachment/common/config/s3';
 import { deleteObject } from '../../attachment/mods/s3/deleteObject';
 import { env } from '../../../config/env';
+import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
 import { writeEvent } from '../../../mods/events/write';
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
@@ -128,5 +129,6 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
     payload: { background: backgroundUrl },
   });
 
-  return Response.json({ data: updated });
+  const resolvedBackground = await resolveBackgroundUrl(updated.background);
+  return Response.json({ data: { ...updated, background: resolvedBackground } });
 }

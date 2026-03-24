@@ -9,6 +9,7 @@ import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
 import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { searchLog } from '../../search/common/searchLogger';
 import { resolveCoverImageUrls } from '../../../common/cards/cover';
+import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -113,8 +114,10 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   // render write-action controls without a second round-trip.
   const callerGuestType = (scopedReq.guestType as string | undefined) ?? null;
 
+  const backgroundUrl = await resolveBackgroundUrl(board.background);
+
   return Response.json({
-    data: { ...board, callerGuestType },
+    data: { ...board, background: backgroundUrl, callerGuestType },
     includes: { lists, cards: cardsWithResolvedCovers, activities },
   });
 }
