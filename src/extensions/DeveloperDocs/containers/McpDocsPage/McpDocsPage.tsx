@@ -257,7 +257,6 @@ const McpDocsPage = () => {
             <Pre>{`{
   "mcpServers": {
     "taskinate": {
-      "type": "http",
       "url": "https://your-taskinate-instance.com/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
