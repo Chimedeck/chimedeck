@@ -8,6 +8,7 @@ import type React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
+import Link from '@tiptap/extension-link';
 import type { Editor } from '@tiptap/react';
 import type { Attachment } from '~/extensions/Attachments/types';
 import InlineImage from '../extensions/InlineImage';
@@ -177,12 +178,22 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
     return true;
   }
 
-  const snippet = buildAttachmentSnippet({
-    name: attachment.name,
-    url,
-    isImage,
-  });
-  insertSnippetAt(editor, pos, snippet);
+  // [why] Insert as a proper link node so the Link extension renders it as a
+  // clickable link rather than raw markdown text.
+  const displayName = attachment.alias ?? attachment.name;
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(pos, [
+      {
+        type: 'text',
+        text: displayName,
+        marks: [{ type: 'link', attrs: { href: url, target: '_blank' } }],
+      },
+      { type: 'text', text: ' ' },
+    ])
+    .setTextSelection(pos + displayName.length + 2)
+    .run();
   return true;
 }
 
@@ -311,6 +322,7 @@ const CommentEditor = ({
     extensions: [
       StarterKit,
       Markdown,
+      Link.configure({ openOnClick: false, autolink: true }),
       // [why] InlineImage now includes markdown parse/render support.
       InlineImage,
       // [why] CardReference converts pasted card URLs into interactive chip nodes.
