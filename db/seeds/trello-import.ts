@@ -266,7 +266,8 @@ interface TrelloCard {
   idMembers: string[];
   idLabels: string[];
   labels: TrelloLabel[];
-  list: TrelloList;
+  // list may be null for archived cards that Trello detaches from their list
+  list: TrelloList | null;
   shortLink: string;
   shortUrl: string;
   dateLastActivity: string;
@@ -362,7 +363,9 @@ async function main() {
       });
     }
 
-    // List — always anchor the board_id to card.idBoard for FK safety
+    // List — always anchor the board_id to card.idBoard for FK safety.
+    // For archived cards the list object may be null; synthesise a minimal
+    // placeholder so the card's FK is satisfied.
     if (card.list && !listSet.has(card.list.id)) {
       listSet.set(card.list.id, {
         id: card.list.id,
@@ -370,6 +373,16 @@ async function main() {
         title: card.list.name,
         position: toPosition(card.list.pos),
         archived: card.list.closed ?? false,
+      });
+    } else if (!card.list && card.idList && !listSet.has(card.idList)) {
+      // [why] Archived cards exported from Trello sometimes have list: null but
+      // still reference an idList. Seed a synthetic archived list so the FK holds.
+      listSet.set(card.idList, {
+        id: card.idList,
+        board_id: card.idBoard,
+        title: '(Archived List)',
+        position: 0,
+        archived: true,
       });
     }
 

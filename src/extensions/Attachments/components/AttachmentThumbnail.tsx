@@ -47,8 +47,11 @@ function ImageLightbox({ src, name, onClose }: { src: string; name: string; onCl
 
 export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const src = attachment.thumbnail_url ?? attachment.url;
-  const fullSrc = attachment.url ?? src;
+  // [why] thumbnail_url is the proxy path to the resized thumbnail (set once
+  // the thumbnail job runs). Fall back to view_url to show the full image
+  // inline when no thumbnail exists yet. Never use the old raw `url` field.
+  const src = attachment.thumbnail_url ?? attachment.view_url;
+  const fullSrc = attachment.view_url ?? src;
 
   if (!src) {
     // Placeholder when thumbnail URL is not yet available
@@ -129,7 +132,7 @@ export function VideoLightbox({
 
 export function VideoThumbnail({ attachment }: Props): React.ReactElement {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const src = attachment.url;
+  const src = attachment.view_url;
 
   if (!src) {
     return (

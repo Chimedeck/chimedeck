@@ -7,7 +7,7 @@ import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
 import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
-import { AttachmentThumbnail, VideoThumbnail } from './AttachmentThumbnail';
+import { AttachmentThumbnail } from './AttachmentThumbnail';
 import { PasteListener } from './PasteListener';
 import type { Attachment } from '../types';
 import { useEffect } from 'react';
@@ -146,11 +146,6 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
     (a) => a.status === 'READY' && a.content_type?.startsWith('image/'),
   );
 
-  // Separate video attachments (READY + video/* content_type) for thumbnail grid
-  const videoAttachments = attachments.filter(
-    (a) => a.status === 'READY' && a.content_type?.startsWith('video/'),
-  );
-
   // Find the progress for a given server attachment id (by matching attachmentId on upload entries)
   const progressForAttachment = (id: string): number | null => {
     const entry = uploads.find((u) => u.attachmentId === id && u.phase === 'uploading');
@@ -262,17 +257,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
         </div>
       )}
 
-      {/* Thumbnail grid — video/* READY attachments */}
-      {videoAttachments.length > 0 && (
-        <div className="mt-3" data-testid="attachment-video-grid">
-          <p className="text-xs text-slate-400 mb-2">{translations['attachments.panel.videosSection']}</p>
-          <div className="flex flex-wrap gap-2">
-            {videoAttachments.map((a) => (
-              <VideoThumbnail key={a.id} attachment={a} />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Video attachments do not show previews — they are listed in the attachment list above. */}
 
       {/* External URL form — hidden for VIEWER guests */}
       {canWrite && (
