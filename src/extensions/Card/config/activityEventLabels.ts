@@ -77,5 +77,22 @@ export function getActivityEventMeta(
     return { label: `removed attachment ${name}`, dotColor: 'bg-slate-500' };
   }
 
+  if (eventType === 'checklist_created') {
+    const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
+    return { label: `added checklist "${title}"`, dotColor: 'bg-emerald-500' };
+  }
+
+  if (eventType === 'checklist_item_checked') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
+    return { label: `completed "${item}"${cl}`, dotColor: 'bg-emerald-500' };
+  }
+
+  if (eventType === 'checklist_item_unchecked') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
+    return { label: `unchecked "${item}"${cl}`, dotColor: 'bg-slate-500' };
+  }
+
   return EVENT_LABELS[eventType] ?? FALLBACK;
 }

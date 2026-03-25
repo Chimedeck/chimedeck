@@ -7,6 +7,7 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import {
   cardDetailSliceActions,
   fetchCardDetailThunk,
+  fetchCardActivitiesThunk,
   selectCardDetail,
   selectCardDetailLabels,
   selectCardDetailMembers,
@@ -289,11 +290,14 @@ const CardModalContainer = () => {
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { checked } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+        // [why] Checklist toggles generate an activity event server-side; re-fetch to keep the feed in sync
+        // since the WebSocket may not be available in all environments.
+        if (card?.id) dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, card, dispatch],
   );
 
   const handleItemRename = useCallback(

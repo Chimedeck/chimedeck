@@ -11,6 +11,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
+import { writeActivity } from '../../activity/mods/write';
 
 interface CardContext { boardId: string; workspaceId: string; }
 
@@ -108,7 +109,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     );
   }
 
-  const { context: updateContext } = await resolveContextFromItem(itemId);
+  const { context: updateContext, cardId: updateCardId } = await resolveContextFromItem(itemId);
   if (!updateContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
@@ -170,6 +171,28 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   }
 
   const updated = await db('checklist_items').where({ id: itemId }).first();
+
+  // Fire activity when an item is checked or unchecked
+  if (updates.checked !== undefined && updateCardId && updateContext) {
+    const actorId = (req as AuthenticatedRequest).currentUser!.id;
+    const card = await db('cards').where({ id: updateCardId }).select('title').first();
+    const checklist = updated?.checklist_id
+      ? await db('checklists').where({ id: updated.checklist_id }).select('title').first()
+      : null;
+    writeActivity({
+      entityType: 'card',
+      entityId: updateCardId,
+      boardId: updateContext.boardId,
+      action: updates.checked ? 'checklist_item_checked' : 'checklist_item_unchecked',
+      actorId,
+      payload: {
+        itemTitle: updated?.title ?? item.title,
+        checklistTitle: checklist?.title ?? '',
+        cardTitle: card?.title ?? '',
+      },
+    }).catch(() => {});
+  }
+
   return Response.json({ data: updated });
 }
 

@@ -12,6 +12,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
+import { writeActivity } from '../../activity/mods/write';
 
 interface CardContext { boardId: string; workspaceId: string; }
 
@@ -97,6 +98,17 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
   });
 
   const result = await checklistWithItems(id);
+
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: context.boardId,
+    action: 'checklist_created',
+    actorId,
+    payload: { checklistTitle: title, cardTitle: card?.title ?? '' },
+  }).catch(() => {});
+
   return Response.json({ data: result }, { status: 201 });
 }
 

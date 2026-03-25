@@ -27,11 +27,13 @@ function describeAction(action: string, payload: Record<string, unknown>, actorN
   const cardTitle = String(payload.cardTitle ?? '');
   const fromList = String(payload.fromList ?? translations['activity.fromList.unknown']);
   const toList = String(payload.toList ?? translations['activity.toList.unknown']);
+  const checklistTitle = String(payload.checklistTitle ?? '');
+  const itemTitle = String(payload.itemTitle ?? '');
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
 
-  return interpolate(template, { actor: actorName, title, cardTitle, fromList, toList, action });
+  return interpolate(template, { actor: actorName, title, cardTitle, fromList, toList, action, checklistTitle, itemTitle });
 }
 
 const ActivityItem = ({ activity, actorName }: Props) => {

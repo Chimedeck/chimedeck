@@ -20,6 +20,9 @@
   "activity.action.member_removed": "{actor} removed a member from the card",
   "activity.action.label_attached": "{actor} added a label to the card",
   "activity.action.label_detached": "{actor} removed a label from the card",
+  "activity.action.checklist_created": "{actor} added checklist \"{checklistTitle}\" to \"{cardTitle}\"",
+  "activity.action.checklist_item_checked": "{actor} completed \"{itemTitle}\" in \"{checklistTitle}\"",
+  "activity.action.checklist_item_unchecked": "{actor} unchecked \"{itemTitle}\" in \"{checklistTitle}\"",
   "activity.action.unknown": "{actor} performed {action}",
   "activity.fromList.unknown": "unknown",
   "activity.toList.unknown": "unknown"

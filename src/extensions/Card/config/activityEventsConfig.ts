@@ -15,4 +15,8 @@ export const VISIBLE_ACTIVITY_EVENT_TYPES: string[] = [
   'card.money.updated',
   'attachment_added',
   'attachment_removed',
+  // Checklist events
+  'checklist_created',
+  'checklist_item_checked',
+  'checklist_item_unchecked',
 ];
