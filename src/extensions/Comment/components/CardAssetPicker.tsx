@@ -122,7 +122,7 @@ function AssetRow({ attachment, onInsert }: Readonly<AssetRowProps>) {
         {/* Thumbnail or icon */}
         {isImage ? (
           <img
-            src={attachment.thumbnail_url ?? attachment.url ?? ''}
+            src={attachment.thumbnail_url ?? attachment.view_url ?? ''}
             alt=""
             aria-hidden="true"
             className="h-8 w-8 flex-shrink-0 rounded object-cover border border-gray-200 dark:border-slate-700"

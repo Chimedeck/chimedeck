@@ -372,6 +372,21 @@ const CommentEditor = ({
       const ed = editorRef.current;
       if (!ed || ed.isDestroyed) return;
       const pos = ed.state.selection.anchor;
+      // [why] Parse [label](url) markdown so it inserts as a proper link node
+      // rather than raw text — the Link extension renders it correctly this way.
+      const linkMatch = /^\[(.+?)\]\((.+?)\)\s*$/.exec(md);
+      if (linkMatch) {
+        const [, text, href] = linkMatch;
+        ed.chain()
+          .focus()
+          .insertContentAt(pos, [
+            { type: 'text', text, marks: [{ type: 'link', attrs: { href, target: '_blank' } }] },
+            { type: 'text', text: ' ' },
+          ])
+          .setTextSelection(pos + text.length + 2)
+          .run();
+        return;
+      }
       insertSnippetAt(ed, pos, md);
     };
     return () => {
