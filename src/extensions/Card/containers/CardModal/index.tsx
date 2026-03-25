@@ -18,6 +18,7 @@ import {
   selectCardDetailMeta,
 } from '../../slices/cardDetailSlice';
 import CardModal from '../../components/CardModal';
+import CopyCardModal from '../../components/CopyCardModal';
 import {
   patchCard,
   archiveCardToggle,
@@ -44,6 +45,7 @@ import type { Label, Checklist, ChecklistItem } from '../../api';
 import { boardSliceActions, selectBoard } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
 
@@ -66,6 +68,7 @@ const CardModalContainer = () => {
   const { boardId } = meta;
   const currentUser = useAppSelector(selectCurrentUser);
   const board = useAppSelector(selectBoard);
+  const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
   // [why] Derive write permission from the board's callerGuestType so VIEWER guests
   // cannot see comment/attachment/edit controls inside the card modal.
@@ -73,6 +76,7 @@ const CardModalContainer = () => {
   const [allLabels, setAllLabels] = useState<Label[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);;
 
   const api = apiClient;
 
@@ -203,6 +207,10 @@ const CardModalContainer = () => {
 
   const handleCopyLink = useCallback(() => {
     globalThis.navigator.clipboard.writeText(globalThis.location.href).catch(() => {});
+  }, []);
+
+  const handleCopyCard = useCallback(() => {
+    setCopyModalOpen(true);
   }, []);
 
   // ── Checklist group CRUD ────────────────────────────────────────────────
@@ -546,7 +554,8 @@ const CardModalContainer = () => {
   if (!card) return null;
 
   return (
-    <CardModal
+    <>
+      <CardModal
       open={!!cardId}
       boardId={boardId ?? ''}
       card={card}
@@ -569,6 +578,7 @@ const CardModalContainer = () => {
       onArchive={handleArchive}
       onDelete={handleDelete}
       onCopyLink={handleCopyLink}
+      onCopyCard={handleCopyCard}
       onCreateChecklist={handleCreateChecklist}
       onRenameChecklist={handleRenameChecklist}
       onDeleteChecklist={handleDeleteChecklist}
@@ -590,7 +600,25 @@ const CardModalContainer = () => {
       onCoverSizeChange={handleCoverSizeChange}
       onCoverAttachmentChange={handleCoverAttachmentChange}
       isViewerGuest={isViewerGuest}
-    />
+      />
+      {copyModalOpen && card && activeWorkspaceId && (
+        <CopyCardModal
+          cardId={card.id}
+          cardTitle={card.title}
+          checklistCount={checklists.length}
+          memberCount={members.length}
+          currentBoardId={boardId}
+          currentListId={card.list_id}
+          workspaceId={activeWorkspaceId}
+          api={api}
+          onClose={() => setCopyModalOpen(false)}
+          onSuccess={(newCard) => {
+            setCopyModalOpen(false);
+            dispatch(boardSliceActions.addCard({ card: newCard }));
+          }}
+        />
+      )}
+    </>
   );
 };
 

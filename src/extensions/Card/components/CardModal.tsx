@@ -50,6 +50,7 @@ interface Props {
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
+  onCopyCard: () => void;
   onCreateChecklist: (title?: string) => Promise<void>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
@@ -110,6 +111,7 @@ const CardModal = ({
   onArchive,
   onDelete,
   onCopyLink,
+  onCopyCard,
   onCreateChecklist,
   onRenameChecklist,
   onDeleteChecklist,
@@ -515,6 +517,7 @@ const CardModal = ({
               onArchive={onArchive}
               onDelete={onDelete}
               onCopyLink={onCopyLink}
+              onCopyCard={onCopyCard}
             />
           </div>
         </Dialog.Content>

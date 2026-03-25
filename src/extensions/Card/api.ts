@@ -171,6 +171,32 @@ export async function duplicateCard({
   return api.post<{ data: Card }>(`/cards/${cardId}/duplicate`, {});
 }
 
+export async function copyCard({
+  api,
+  cardId,
+  targetListId,
+  position,
+  title,
+  keepChecklists,
+  keepMembers,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  cardId: string;
+  targetListId: string;
+  position?: number;
+  title?: string;
+  keepChecklists?: boolean;
+  keepMembers?: boolean;
+}): Promise<{ data: Card }> {
+  return api.post<{ data: Card }>(`/cards/${cardId}/copy`, {
+    targetListId,
+    position,
+    title,
+    keepChecklists,
+    keepMembers,
+  });
+}
+
 export async function deleteCard({
   api,
   cardId,

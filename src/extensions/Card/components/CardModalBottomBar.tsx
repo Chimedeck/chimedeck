@@ -7,6 +7,7 @@ import {
   ArchiveBoxXMarkIcon,
   BoltIcon,
   ChevronUpIcon,
+  DocumentDuplicateIcon,
   LinkIcon,
   PuzzlePieceIcon,
   TrashIcon,
@@ -31,6 +32,7 @@ interface Props {
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
+  onCopyCard: () => void;
 }
 
 // ------------------------------------------------------------------
@@ -79,6 +81,7 @@ const CardModalBottomBar = ({
   onArchive,
   onDelete,
   onCopyLink,
+  onCopyCard,
 }: Props) => {
   const powerUps = usePopover();
   const automations = usePopover();
@@ -167,6 +170,13 @@ const CardModalBottomBar = ({
                 onClick={() => { actions.setOpen(false); onCopyLink(); }}
               >
                 <LinkIcon className="w-4 h-4 shrink-0" /> Copy link
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                onClick={() => { actions.setOpen(false); onCopyCard(); }}
+              >
+                <DocumentDuplicateIcon className="w-4 h-4 shrink-0" /> Copy card
               </button>
               <button
                 type="button"
