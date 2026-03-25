@@ -41,9 +41,6 @@ export async function resolveAvatarUrl({
 }): Promise<string | null> {
   if (!avatarUrl) return null;
 
-  // LocalStack/custom S3 endpoints are typically reachable directly in this project.
-  if (s3Config.endpoint) return avatarUrl;
-
   const s3Key = extractS3KeyFromAvatarUrl({ avatarUrl });
   if (!s3Key) return avatarUrl;
 

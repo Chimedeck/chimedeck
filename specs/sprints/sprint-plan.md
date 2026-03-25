@@ -147,6 +147,7 @@
 | **— Health Check —** | | | |
 | [115](./sprint-115.md) | Health Check Tab: Backend & Config | `board_health_checks` + `board_health_check_results` tables; `server/config/health-check-services.json` presets; `GET /health-check/presets`; board CRUD endpoints (`GET/POST/DELETE`); on-demand `probe` + `probe-all`; probe engine with green/amber/red classification; SSRF prevention; `HEALTH_CHECK_ENABLED` flag | ⬜ Needs 05 + 03 |
 | [116](./sprint-116.md) | Health Check Tab UI | 5th board tab "Health Check"; traffic-light status dots (green/amber/red/gray); one row per endpoint with name, URL, response time; Add Service modal (preset picker + custom URL); manual ↻ Refresh + 60-second auto-refresh with Page Visibility pause; empty state | ⬜ Needs 115 + 18 |
+| [117](./sprint-117.md) | Secure Attachment Proxy + Alias & Comment/Edit Actions | Authenticated proxy endpoints replace raw S3 presigned URLs; `alias` DB column + `PATCH` endpoint for rename; Edit (inline rename) and Comment (insert markdown link) action buttons on attachment rows | ⬜ Needs 12 + 59 + 60 |
 
 ---
 
