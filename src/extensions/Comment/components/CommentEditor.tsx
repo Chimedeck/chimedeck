@@ -11,6 +11,8 @@ import type { Editor } from '@tiptap/react';
 import type { Attachment } from '~/extensions/Attachments/types';
 import InlineImage from '../extensions/InlineImage';
 import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
+import CardReference from '~/extensions/Card/extensions/CardReferenceExtension';
+import CardReferenceBubbleMenu from '~/extensions/Card/components/CardReferenceBubbleMenu';
 import {
   dehydrateCommentAttachmentMarkdown,
   hasAttachmentPlaceholder,
@@ -298,6 +300,8 @@ const CommentEditor = ({
       Markdown,
       // [why] InlineImage now includes markdown parse/render support.
       InlineImage,
+      // [why] CardReference converts pasted card URLs into interactive chip nodes.
+      CardReference,
       // [why] Mention extension auto-loads for boards; skip if no boardId (edge case).
       ...(boardId ? [buildMentionExtension(boardId)] : []),
     ],
@@ -516,6 +520,7 @@ const CommentEditor = ({
           aria-placeholder={placeholder}
           className="px-3 py-2 text-sm [&_.ProseMirror]:min-h-[72px] [&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0"
         />
+        {editor && <CardReferenceBubbleMenu editor={editor} />}
 
         {/* Inline upload previews — shown while files are in-flight */}
         {uploads.length > 0 && (

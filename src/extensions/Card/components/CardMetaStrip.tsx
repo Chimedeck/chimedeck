@@ -43,6 +43,7 @@ export interface CardMetaStripProps {
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
+  onLabelUpdate: (labelId: string, name: string, color: string) => Promise<void>;
   onMemberAssign: (userId: string) => Promise<void>;
   onMemberRemove: (userId: string) => Promise<void>;
   onMoneySave: (amount: string | null, currency: string) => Promise<void>;
@@ -110,6 +111,33 @@ const PillButton = ({
 );
 
 // ------------------------------------------------------------------
+// Colour grid used in create / edit forms
+// ------------------------------------------------------------------
+const ColorGrid = ({
+  selected,
+  onChange,
+}: {
+  selected: string;
+  onChange: (hex: string) => void;
+}) => (
+  <div className="grid grid-cols-4 gap-1.5">
+    {PRESET_COLORS.map((c) => (
+      <button
+        key={c.hex}
+        type="button"
+        title={c.name}
+        className={`h-7 w-full rounded-md transition-transform hover:scale-110 focus:outline-none ${
+          selected === c.hex ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
+        }`}
+        style={{ backgroundColor: c.hex }}
+        onClick={() => onChange(c.hex)}
+        aria-label={c.name}
+      />
+    ))}
+  </div>
+);
+
+// ------------------------------------------------------------------
 // Label section
 // ------------------------------------------------------------------
 const LabelSection = ({
@@ -119,6 +147,7 @@ const LabelSection = ({
   onAttach,
   onDetach,
   onCreate,
+  onUpdate,
 }: {
   labels: Label[];
   allLabels: Label[];
@@ -126,15 +155,31 @@ const LabelSection = ({
   onAttach: (id: string) => Promise<void>;
   onDetach: (id: string) => Promise<void>;
   onCreate: (name: string, color: string) => Promise<void>;
+  onUpdate: (id: string, name: string, color: string) => Promise<void>;
 }) => {
   const { open, setOpen, ref } = usePopover();
-  const [newName, setNewName] = useState('');
-  const [color, setColor] = useState(PRESET_COLORS[6]?.hex ?? '#6366f1');
-  const [creating, setCreating] = useState(false);
+  // View is 'list', 'create', or a label id (edit mode)
+  const [view, setView] = useState<string>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formColor, setFormColor] = useState(PRESET_COLORS[6]?.hex ?? '#6366f1');
+  const [saving, setSaving] = useState(false);
 
   const assignedIds = new Set(labels.map((l) => l.id));
   const visibleLabels = labels.slice(0, MAX_VISIBLE);
   const overflow = labels.length - MAX_VISIBLE;
+
+  const resetToList = () => {
+    setView('list');
+    setFormName('');
+    setFormColor(PRESET_COLORS[6]?.hex ?? '#6366f1');
+  };
+
+  const openEdit = (label: Label) => {
+    setFormName(label.name);
+    setFormColor(label.color);
+    setView(label.id);
+  };
 
   const handleToggle = async (label: Label) => {
     if (assignedIds.has(label.id)) await onDetach(label.id);
@@ -142,21 +187,36 @@ const LabelSection = ({
   };
 
   const handleCreate = async () => {
-    const name = newName.trim();
+    const name = formName.trim();
     if (!name) return;
-    setCreating(true);
+    setSaving(true);
     try {
-      await onCreate(name, color);
-      setNewName('');
-      setOpen(false);
+      await onCreate(name, formColor);
+      resetToList();
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
-  const unassigned = allLabels.filter(
-    (l) => !assignedIds.has(l.id) && l.name.toLowerCase().includes(newName.toLowerCase()),
+  const handleSaveEdit = async () => {
+    if (typeof view !== 'string' || view === 'list' || view === 'create') return;
+    const name = formName.trim();
+    if (!name) return;
+    setSaving(true);
+    try {
+      await onUpdate(view, name, formColor);
+      resetToList();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const filteredLabels = allLabels.filter((l) =>
+    l.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const isEditingLabel = view !== 'list' && view !== 'create';
+  const editingLabel = isEditingLabel ? allLabels.find((l) => l.id === view) : null;
 
   return (
     <div className="relative flex items-center gap-1 flex-wrap" ref={ref}>
@@ -172,7 +232,7 @@ const LabelSection = ({
       )}
       {!disabled && (
         <PillButton
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => { setOpen((v) => !v); resetToList(); setSearchQuery(''); }}
           aria-label="Manage labels"
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -185,72 +245,130 @@ const LabelSection = ({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute left-0 top-full mt-1 z-20 w-64 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-3 space-y-3">
-            <input
-              className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Label name…"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
-              autoFocus
-            />
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 mb-1.5">Colour</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c.hex}
-                    type="button"
-                    title={c.name}
-                    className={`h-7 w-full rounded-md transition-transform hover:scale-110 focus:outline-none ${color === c.hex ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''}`}
-                    style={{ backgroundColor: c.hex }}
-                    onClick={() => setColor(c.hex)}
-                    aria-label={c.name}
-                  />
-                ))}
-              </div>
-            </div>
-            {newName.trim() && (
+          <div
+            className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
+          >
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+              {(view === 'list') ? (
+                <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">Labels</span>
+              ) : (
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
+                  onClick={resetToList}
+                >
+                  ← {view === 'create' ? 'Create label' : `Edit label`}
+                </button>
+              )}
               <button
                 type="button"
-                className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50"
-                onClick={handleCreate}
-                disabled={creating}
+                className="rounded p-0.5 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200"
+                onClick={() => setOpen(false)}
+                aria-label="Close"
               >
-                {creating ? 'Creating…' : `Create "${newName.trim()}"`}
+                ✕
               </button>
-            )}
-            {unassigned.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-gray-400 dark:text-slate-500">Existing labels</p>
-                {unassigned.map((label) => (
-                  <button
-                    key={label.id}
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                    onClick={() => handleToggle(label)}
-                  >
-                    <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }} />
-                    {label.name}
-                  </button>
-                ))}
+            </div>
+
+            {/* ── List view ── */}
+            {view === 'list' && (
+              <div className="p-2 space-y-1 overflow-y-auto flex-1 min-h-0">
+                <input
+                  className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-1"
+                  placeholder="Search labels..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                />
+                {filteredLabels.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-slate-500 px-2 py-1">No labels found</p>
+                )}
+                {filteredLabels.length > 0 && (
+                  <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 px-1 pb-0.5">Labels</p>
+                )}
+                {filteredLabels.map((label) => {
+                  const assigned = assignedIds.has(label.id);
+                  return (
+                    <div key={label.id} className="flex items-center gap-1.5">
+                      <input
+                        type="checkbox"
+                        checked={assigned}
+                        onChange={() => void handleToggle(label)}
+                        className="h-3.5 w-3.5 rounded border-gray-400 dark:border-slate-500 accent-indigo-500 cursor-pointer flex-shrink-0"
+                        aria-label={`Toggle ${label.name}`}
+                      />
+                      <button
+                        type="button"
+                        className="flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 min-w-0 truncate"
+                        style={{ backgroundColor: label.color }}
+                        onClick={() => void handleToggle(label)}
+                        title={label.name}
+                      >
+                        {label.name}
+                      </button>
+                      <button
+                        type="button"
+                        className="flex-shrink-0 rounded p-1 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+                        onClick={() => openEdit(label)}
+                        aria-label={`Edit ${label.name}`}
+                      >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="w-full mt-1 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-sm text-gray-700 dark:text-slate-300 py-1.5 transition-colors"
+                  onClick={() => { setFormName(''); setFormColor(PRESET_COLORS[6]?.hex ?? '#6366f1'); setView('create'); }}
+                >
+                  Create a new label
+                </button>
               </div>
             )}
-            {labels.length > 0 && (
-              <div className="space-y-1 border-t border-gray-200 dark:border-slate-700 pt-2">
-                <p className="text-xs text-gray-400 dark:text-slate-500">Assigned</p>
-                {labels.map((label) => (
-                  <button
-                    key={label.id}
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                    onClick={() => handleToggle(label)}
-                  >
-                    <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: label.color }} />
-                    {label.name}
-                    <span className="ml-auto text-emerald-400">✓</span>
-                  </button>
-                ))}
+
+            {/* ── Create / Edit form ── */}
+            {(view === 'create' || isEditingLabel) && (
+              <div className="p-3 space-y-3">
+                {/* Preview */}
+                <div
+                  className="w-full rounded-md px-3 py-2 text-sm font-semibold text-white text-center truncate"
+                  style={{ backgroundColor: formColor }}
+                >
+                  {formName || (isEditingLabel ? editingLabel?.name : 'Label preview')}
+                </div>
+                {/* Name input */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Title</p>
+                  <input
+                    id="label-form-name"
+                    className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Label name"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { void (view === 'create' ? handleCreate() : handleSaveEdit()); } }}
+                    autoFocus
+                  />
+                </div>
+                {/* Colour grid */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">Colour</p>
+                  <ColorGrid selected={formColor} onChange={setFormColor} />
+                </div>
+                {/* Actions */}
+                <button
+                  type="button"
+                  className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50"
+                  onClick={() => void (view === 'create' ? handleCreate() : handleSaveEdit())}
+                  disabled={saving || !formName.trim()}
+                >
+                  {saving && 'Saving…'}
+                  {!saving && view === 'create' && 'Create'}
+                  {!saving && view !== 'create' && 'Save'}
+                </button>
               </div>
             )}
           </div>
@@ -550,6 +668,7 @@ const CardMetaStrip = ({
   onLabelAttach,
   onLabelDetach,
   onLabelCreate,
+  onLabelUpdate,
   onMemberAssign,
   onMemberRemove,
   onMoneySave,
@@ -570,6 +689,7 @@ const CardMetaStrip = ({
         onAttach={onLabelAttach}
         onDetach={onLabelDetach}
         onCreate={onLabelCreate}
+        onUpdate={onLabelUpdate}
       />
 
       {/* Divider */}

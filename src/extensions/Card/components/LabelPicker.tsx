@@ -38,12 +38,12 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
       </button>
       {open && (
         <div
-          className="absolute z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg"
+          className="absolute z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg max-h-64 overflow-y-auto"
           role="listbox"
           aria-multiselectable="true"
         >
           {allLabels.length === 0 && (
-            <p className="px-3 py-2 text-sm text-gray-400">No labels in workspace</p>
+            <p className="px-3 py-2 text-sm text-gray-400">No labels on this board</p>
           )}
           {allLabels.map((label) => {
             const selected = selectedIds.includes(label.id);

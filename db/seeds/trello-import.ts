@@ -256,6 +256,7 @@ interface TrelloCard {
   members?: TrelloMember[];
   actions?: TrelloAction[];
   board?: TrelloBoard;
+  pluginData?: Array<{ id: string; idPlugin: string; scope: string; idModel: string; value: string; access: string; dateLastUpdated: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -326,10 +327,6 @@ async function main() {
   const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
-  // [why] Trello gives every board its own label IDs even for identical name+color combos.
-  // We deduplicate by name|color so workspace-scoped labels aren't duplicated per-board.
-  const labelKeyToId = new Map<string, string>(); // "name|color" → canonical Trello ID
-  const labelIdRemap = new Map<string, string>(); // duplicate Trello ID → canonical Trello ID
   const memberSet = new Map<string, string>(); // trelloId → email
   // Rich member data (fullName, username, avatarUrl) when available
   const memberDataMap = new Map<string, TrelloMember>();
@@ -357,23 +354,15 @@ async function main() {
       });
     }
 
-    // Labels — deduplicate by name+color so boards sharing the same label name/colour
-    // don't produce separate rows in the workspace-scoped labels table.
+    // Labels — board-scoped; each board has its own label IDs in Trello so no deduplication needed.
     for (const label of card.labels ?? []) {
-      const canonicalKey = `${label.name ?? ''}|${label.color ?? ''}`;
-      if (!labelKeyToId.has(canonicalKey)) {
-        labelKeyToId.set(canonicalKey, label.id);
+      if (!labelSet.has(label.id)) {
         labelSet.set(label.id, {
           id: label.id,
-          workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+          board_id: label.idBoard,
           name: label.name || 'Label',
           color: trelloColor(label.color),
         });
-      } else {
-        const canonicalId = labelKeyToId.get(canonicalKey)!;
-        if (canonicalId !== label.id) {
-          labelIdRemap.set(label.id, canonicalId);
-        }
       }
     }
 
@@ -422,7 +411,7 @@ async function main() {
   console.log(`    Workspaces          : ${workspaceSet.size}`);
   console.log(`    Boards              : ${boardSet.size}`);
   console.log(`    Lists               : ${listSet.size}`);
-  console.log(`    Labels              : ${labelSet.size} (${labelIdRemap.size} duplicates merged)`);  
+  console.log(`    Labels              : ${labelSet.size}`);
   console.log(`    Members             : ${memberSet.size}`);
 
   // -------------------------------------------------------------------------
@@ -596,6 +585,18 @@ async function main() {
 
     trelloCardIds.push(card.id);
 
+    // [why] Extract `size` from pluginData value JSON — used as the card's monetary amount in USD.
+    let cardAmount: number | null = null;
+    for (const pd of card.pluginData ?? []) {
+      try {
+        const parsed = JSON.parse(pd.value) as Record<string, unknown>;
+        if (typeof parsed.size === 'number' && parsed.size > 0) {
+          cardAmount = parsed.size;
+          break;
+        }
+      } catch { /* ignore malformed plugin value */ }
+    }
+
     cardRows.push({
       id: card.id,
       list_id: card.idList,
@@ -606,17 +607,17 @@ async function main() {
       due_date: card.due ? new Date(card.due) : null,
       short_link: card.shortLink ?? null,
       short_url: card.shortUrl ?? null,
+      ...(cardAmount !== null ? { amount: cardAmount, currency: 'USD' } : {}),
       created_at: card.dateLastActivity ? new Date(card.dateLastActivity) : new Date(),
       updated_at: card.dateLastActivity ? new Date(card.dateLastActivity) : new Date(),
     });
 
     for (const labelId of card.idLabels ?? []) {
-      const resolvedId = labelIdRemap.get(labelId) ?? labelId;
-      if (labelSet.has(resolvedId)) {
-        const key = `${card.id}:${resolvedId}`;
+      if (labelSet.has(labelId)) {
+        const key = `${card.id}:${labelId}`;
         if (!cardLabelSeen.has(key)) {
           cardLabelSeen.add(key);
-          allCardLabelRows.push({ card_id: card.id, label_id: resolvedId });
+          allCardLabelRows.push({ card_id: card.id, label_id: labelId });
         }
       }
     }
@@ -635,7 +636,7 @@ async function main() {
     if (cardRows.length >= BATCH_SIZE * 4) {
       await batchUpsert('cards', cardRows, 'id', [
         'list_id', 'title', 'description', 'position', 'archived',
-        'due_date', 'short_link', 'short_url', 'updated_at',
+        'due_date', 'short_link', 'short_url', 'amount', 'currency', 'updated_at',
       ]);
       cardRows.length = 0;
     }
@@ -644,7 +645,7 @@ async function main() {
   // Final flush for remaining card rows
   await batchUpsert('cards', cardRows, 'id', [
     'list_id', 'title', 'description', 'position', 'archived',
-    'due_date', 'short_link', 'short_url', 'updated_at',
+    'due_date', 'short_link', 'short_url', 'amount', 'currency', 'updated_at',
   ]);
 
   // Sync junction tables: delete existing rows only for Trello-sourced cards,

@@ -1,6 +1,6 @@
 // CardModal container — connects Redux cardDetailSlice to the CardModal component.
 // Handles data fetching, optimistic mutations, and URL sync.
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -31,6 +31,7 @@ import {
   postMemberAssign,
   deleteMemberAssign,
   createBoardLabel,
+  updateBoardLabel,
   getBoardLabels,
   getBoardMembers,
   getCardComments,
@@ -68,6 +69,7 @@ const CardModalContainer = () => {
   // [why] Derive write permission from the board's callerGuestType so VIEWER guests
   // cannot see comment/attachment/edit controls inside the card modal.
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
+  const [allLabels, setAllLabels] = useState<Label[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
 
@@ -91,7 +93,7 @@ const CardModalContainer = () => {
   useEffect(() => {
     if (!boardId) return;
     getBoardLabels({ api, boardId })
-      .then((labels) => { allLabelsRef.current = labels; })
+      .then((labels) => { allLabelsRef.current = labels; setAllLabels(labels); })
       .catch(() => {});
     getBoardMembers({ api, boardId })
       .then((members) => { boardMembersRef.current = members; })
@@ -359,10 +361,22 @@ const CardModalContainer = () => {
     async (name: string, color: string) => {
       if (!card || !boardId) return;
       const newLabel = await createBoardLabel({ api, boardId, name, color });
-      allLabelsRef.current = [...allLabelsRef.current, newLabel];
+      const updated = [...allLabelsRef.current, newLabel];
+      allLabelsRef.current = updated;
+      setAllLabels(updated);
       await handleLabelAttach(newLabel.id);
     },
     [api, card, boardId, handleLabelAttach],
+  );
+
+  const handleLabelUpdate = useCallback(
+    async (labelId: string, name: string, color: string) => {
+      const updated = await updateBoardLabel({ api, labelId, name, color });
+      const newList = allLabelsRef.current.map((l) => (l.id === labelId ? updated : l));
+      allLabelsRef.current = newList;
+      setAllLabels(newList);
+    },
+    [api],
   );
 
   // ── Member assign / remove ──────────────────────────────────────────────
@@ -535,7 +549,7 @@ const CardModalContainer = () => {
       listTitle={meta.listTitle}
       boardTitle={meta.boardTitle}
       labels={labels}
-      allLabels={allLabelsRef.current}
+      allLabels={allLabels}
       members={members}
       boardMembers={boardMembersRef.current}
       checklists={checklists}
@@ -561,6 +575,7 @@ const CardModalContainer = () => {
       onLabelAttach={handleLabelAttach}
       onLabelDetach={handleLabelDetach}
       onLabelCreate={handleLabelCreate}
+      onLabelUpdate={handleLabelUpdate}
       onMemberAssign={handleMemberAssign}
       onMemberRemove={handleMemberRemove}
       onAddComment={handleAddComment}

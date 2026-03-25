@@ -15,6 +15,8 @@ import { CardAssetPicker } from '~/extensions/Comment/components/CardAssetPicker
 import { listAttachments } from '~/extensions/Attachments/api';
 import InlineImage from '~/extensions/Comment/extensions/InlineImage';
 import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
+import CardReference from '../extensions/CardReferenceExtension';
+import CardReferenceBubbleMenu from './CardReferenceBubbleMenu';
 import {
   dehydrateCommentAttachmentMarkdown,
   hasAttachmentPlaceholder,
@@ -304,6 +306,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       }),
       Markdown,
       InlineImage,
+      // [why] CardReference must come before buildMentionExtension so its parseHTML
+      // priority (200) beats the Link extension's claim on card URLs.
+      CardReference,
       buildMentionExtension(boardId),
     ],
     content: buildEditorContentHtml(description || '', cardAttachmentsRef.current),
@@ -572,6 +577,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   editor={editor}
                   className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror>*:first-child]:mt-0"
                 />
+                {editor && <CardReferenceBubbleMenu editor={editor} />}
               </div>
 
               {/* Inline upload previews — shown while files are in-flight */}

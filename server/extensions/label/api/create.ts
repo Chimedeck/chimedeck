@@ -1,4 +1,4 @@
-// POST /api/v1/workspaces/:id/labels — create a workspace-scoped label; min role: ADMIN.
+// POST /api/v1/workspaces/:id/labels — create a board-scoped label; requires boardId in body; min role: ADMIN.
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
@@ -27,13 +27,29 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  let body: { name?: string; color?: string };
+  let body: { name?: string; color?: string; boardId?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
       { status: 400 },
+    );
+  }
+
+  if (!body.boardId || typeof body.boardId !== 'string') {
+    return Response.json(
+      { error: { code: 'bad-request', message: 'boardId is required — labels are board-scoped' } },
+      { status: 400 },
+    );
+  }
+
+  // [why] Verify the board belongs to this workspace to prevent cross-workspace label injection.
+  const board = await db('boards').where({ id: body.boardId, workspace_id: workspaceId }).first();
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found in this workspace' } },
+      { status: 404 },
     );
   }
 
@@ -52,7 +68,7 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   }
 
   const id = randomUUID();
-  await db('labels').insert({ id, workspace_id: workspaceId, name: body.name.trim(), color: body.color });
+  await db('labels').insert({ id, board_id: body.boardId, name: body.name.trim(), color: body.color });
 
   const label = await db('labels').where({ id }).first();
   return Response.json({ data: label }, { status: 201 });

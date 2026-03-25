@@ -60,6 +60,7 @@ interface Props {
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
+  onLabelUpdate: (labelId: string, name: string, color: string) => Promise<void>;
   onMemberAssign: (userId: string) => Promise<void>;
   onMemberRemove: (userId: string) => Promise<void>;
   onAddComment: (content: string) => Promise<void>;
@@ -119,6 +120,7 @@ const CardModal = ({
   onLabelAttach,
   onLabelDetach,
   onLabelCreate,
+  onLabelUpdate,
   onMemberAssign,
   onMemberRemove,
   onAddComment,
@@ -354,6 +356,7 @@ const CardModal = ({
                 onLabelAttach={onLabelAttach}
                 onLabelDetach={onLabelDetach}
                 onLabelCreate={onLabelCreate}
+                onLabelUpdate={onLabelUpdate}
                 onMemberAssign={onMemberAssign}
                 onMemberRemove={onMemberRemove}
                 onMoneySave={onMoneySave}

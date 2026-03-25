@@ -1,9 +1,8 @@
-// GET /api/v1/workspaces/:id/labels — list workspace labels; min role: VIEWER.
+// GET /api/v1/workspaces/:id/labels — list all labels across all boards in the workspace; min role: VIEWER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
@@ -23,6 +22,12 @@ export async function handleListLabels(req: Request, workspaceId: string): Promi
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
   if (membershipError) return membershipError;
 
-  const labels = await db('labels').where({ workspace_id: workspaceId }).orderBy('name', 'asc');
+  // [why] Labels are now board-scoped; join through boards to filter by workspace.
+  const labels = await db('labels')
+    .join('boards', 'labels.board_id', 'boards.id')
+    .where('boards.workspace_id', workspaceId)
+    .select('labels.*')
+    .orderBy('labels.name', 'asc');
+
   return Response.json({ data: labels });
 }

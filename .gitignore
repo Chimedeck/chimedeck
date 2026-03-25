@@ -56,3 +56,4 @@ public/avatars/
 test-results/
 test-screenshots-tmp/
 playwright-report/
+.playwright-mcp/
