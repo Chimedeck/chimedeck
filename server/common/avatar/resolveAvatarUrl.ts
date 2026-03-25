@@ -59,6 +59,23 @@ export async function resolveAvatarUrl({
   }
 }
 
+/**
+ * Returns the stable proxy path for a user's avatar.
+ * Use this in API responses instead of resolveAvatarUrl to avoid leaking
+ * short-lived presigned S3 URLs — the browser always hits the proxy endpoint.
+ * Returns null when the user has no avatar stored.
+ */
+export function buildAvatarProxyUrl({
+  userId,
+  avatarUrl,
+}: {
+  userId: string;
+  avatarUrl: string | null | undefined;
+}): string | null {
+  if (!avatarUrl) return null;
+  return `/api/v1/users/${userId}/avatar`;
+}
+
 export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: string | null }>(
   items: T[],
 ): Promise<T[]> {

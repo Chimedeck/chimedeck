@@ -74,6 +74,82 @@ Three tightly coupled improvements to the Attachments feature:
 
 ---
 
+## Presigned URL Migration — Existing Consumers
+
+All places that previously received or displayed raw S3 presigned URLs must be updated to use the new proxy paths. This is a **hard requirement** of the secure proxy — the proxy is worthless if other endpoints still leak raw S3 links.
+
+### Affected areas
+
+#### 1. Avatar in Comments
+- The comment list API (`GET /api/v1/cards/:id/comments`) returns the author's avatar URL.
+- If the avatar is stored in S3, its URL must be proxied through `/api/v1/users/:id/avatar` (or the existing user-profile proxy, if one exists) rather than returned as a raw presigned link.
+- `ActivityFeed.tsx` / comment author avatar components must consume the proxied URL.
+
+#### 2. Avatar in Settings
+- `GET /api/v1/users/me` (and any profile endpoint) returns the authenticated user's avatar URL.
+- Must return a stable proxy path, not a time-limited presigned URL.
+- `ProfileSettings` / `AccountSettings` components must use the proxied URL for the `<img>` src.
+
+#### 3. Attachments
+- Already covered by the Secure Proxy section above (`view_url`, `thumbnail_url`).
+- Ensure the attachment list, attachment item display, and lightbox/preview all use proxy URLs.
+- Remove any lingering references to `url` (raw presigned) in `AttachmentItem.tsx`, `AttachmentPanel.tsx`, and related components.
+
+#### 4. Card Description Images
+- The card description (rich-text / Markdown) may contain inline images that were inserted as raw S3 presigned URLs (e.g. dragged-and-dropped or pasted images stored as attachments).
+- The description renderer must rewrite `![...](https://s3.amazonaws.com/...)` src attributes to the proxy equivalent (`/api/v1/attachments/:id/view`) before rendering.
+- When a user inserts an image from the attachment picker into the description, the inserted URL must be the proxy path, not the presigned URL.
+- `CardDescriptionEditor` and its preview/renderer must apply this rewrite.
+
+#### 5. Comment Images
+- Same as card description: inline images embedded in comment bodies via presigned URLs must be rewritten to proxy URLs before rendering.
+- When a user inserts an attachment image into the comment editor (via the Comment action above), the markdown link already uses `view_url` (proxy) — verify this is consistently applied.
+- The comment renderer must strip / rewrite any legacy raw S3 URLs that may already be stored in comment bodies.
+
+### Acceptance Criteria — URL Migration
+
+- `GET /api/v1/users/me` and `GET /api/v1/cards/:id/comments` — avatar URL fields contain a stable proxy path, not a time-limited S3 presigned URL.
+- `ProfileSettings` and comment author avatars render correctly using proxy URLs.
+- `AttachmentItem` and `AttachmentPanel` contain zero references to raw presigned `url` fields for S3-hosted files.
+- Card description rendered output contains no `https://s3.amazonaws.com/...` (or equivalent bucket hostname) image src values.
+- Comment rendered output same constraint.
+- Inserting an attachment image into a description or comment yields a proxy-path URL in the stored content.
+- All above checks pass for both new and existing (already-stored) content.
+
+### Additional Files
+
+#### Server
+| File | Change |
+|------|--------|
+| `server/extensions/user/api/me.ts` (or profile endpoint) | Return proxied avatar URL instead of presigned |
+| `server/extensions/card/api/comments/list.ts` | Return proxied avatar URL for each comment author |
+| `server/extensions/user/api/avatar.ts` | New (if not exists) — proxy endpoint for user avatar |
+
+#### Client
+| File | Change |
+|------|--------|
+| `src/extensions/User/components/Avatar.tsx` (or equivalent) | Accept and render proxy URL; no local presigned URL generation |
+| `src/containers/ProfileSettings/` (or equivalent) | Use proxied avatar URL from API |
+| `src/extensions/Card/containers/CardModal/ActivityFeed.tsx` | Use proxied avatar URL for comment authors |
+| `src/extensions/Attachments/components/AttachmentItem.tsx` | Use `view_url` exclusively; remove raw `url` usage |
+| `src/extensions/Card/containers/CardModal/CardDescriptionEditor.tsx` | Rewrite S3 URLs → proxy paths on render and on image insert |
+| `src/extensions/Card/containers/CardModal/CommentEditor.tsx` or renderer | Rewrite S3 URLs → proxy paths on render |
+
+### Additional Test Scenarios
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| T11 | `GET /api/v1/users/me` — avatar field | Contains proxy path, no raw S3 hostname |
+| T12 | `GET /api/v1/cards/:id/comments` — author avatar | Contains proxy path, no raw S3 hostname |
+| T13 | Profile settings page renders avatar | Avatar `<img>` src is proxy path |
+| T14 | Comment author avatar renders | `<img>` src is proxy path |
+| T15 | Card description renderer with legacy S3 img src | Output src is rewritten to proxy path |
+| T16 | Comment renderer with legacy S3 img src | Output src is rewritten to proxy path |
+| T17 | Insert attachment image into description | Stored URL is proxy path |
+| T18 | Insert attachment image into comment | Stored URL is proxy path |
+
+---
+
 ## Security Note
 
 The proxy approach eliminates information leakage: a user who copies a `view_url` link from the DOM and shares it with an unauthenticated party will receive a `401`. S3 bucket access remains private (no public-read policy required). The proxy adds latency only for the initial byte stream; for large files, the server may opt to 302-redirect to a very-short-lived (60 s) presigned URL so the client downloads directly from S3 — but the token is generated fresh on every authenticated request and is never persisted.

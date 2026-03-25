@@ -7,6 +7,8 @@ export interface Attachment {
   id: string;
   card_id: string;
   name: string;
+  /** User-defined display name for the attachment (overrides name when set) */
+  alias: string | null;
   type: AttachmentType;
   status: AttachmentStatus;
   /** S3 object key (null for URL type) */
@@ -20,8 +22,8 @@ export interface Attachment {
   /** Image dimensions (set after thumbnail generation) */
   width: number | null;
   height: number | null;
-  /** Pre-signed download URL (expires 1h, included in GET /attachments response) */
-  url: string | null;
+  /** Authenticated proxy view URL — use this instead of any raw S3 URL */
+  view_url: string | null;
   /** Pre-signed thumbnail URL (expires 1h, image/* only) */
   thumbnail_url: string | null;
   /** External URL for URL-type attachments */
@@ -92,6 +94,12 @@ export interface UrlAttachmentRequest {
   type: 'URL';
   url: string;
   name: string;
+}
+
+// ---------- Patch (alias update) ----------
+
+export interface PatchAttachmentRequest {
+  alias: string;
 }
 
 // ---------- In-flight upload state (client-only) ----------

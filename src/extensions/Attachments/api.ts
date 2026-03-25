@@ -12,6 +12,7 @@ import type {
   PartUrlResponse,
   MultipartCompleteRequest,
   UrlAttachmentRequest,
+  PatchAttachmentRequest,
 } from './types';
 
 // ---------- List ----------
@@ -103,4 +104,13 @@ export async function deleteAttachment({
   attachmentId: string;
 }): Promise<void> {
   return apiClient.delete(`/attachments/${attachmentId}`);
+}
+
+// ---------- Patch (alias update) ----------
+
+export async function patchAttachment({
+  attachmentId,
+  alias,
+}: { attachmentId: string } & PatchAttachmentRequest): Promise<{ data: Attachment }> {
+  return apiClient.patch(`/attachments/${attachmentId}`, { alias });
 }

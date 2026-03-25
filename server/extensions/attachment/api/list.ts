@@ -1,6 +1,7 @@
 // GET /api/v1/cards/:id/attachments
-// Returns all attachments for a card with pre-signed download URLs (TTL 1 h).
-// Image attachments with a generated thumbnail also include a thumbnailUrl.
+// Returns all attachments for a card.
+// Raw S3 presigned URLs are NEVER returned; all file access is via the
+// authenticated proxy endpoints (/api/v1/attachments/:id/view and /thumbnail).
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
@@ -8,7 +9,6 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { presignGetUrl } from '../common/presign';
 
 export async function handleListAttachments(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -33,44 +33,37 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
     .where({ card_id: cardId })
     .orderBy('created_at', 'desc');
 
-  const data = await Promise.all(
-    attachments.map(async (attachment) => {
-      let url: string | null = null;
-      let thumbnailUrl: string | null = null;
+  const data = attachments.map((attachment) => {
+    // URL-type attachments expose their external URL directly (user-supplied, not S3).
+    // FILE-type attachments use the authenticated proxy paths — never raw presigned URLs.
+    const view_url =
+      attachment.type === 'URL'
+        ? (attachment.url ?? attachment.external_url ?? null)
+        : `/api/v1/attachments/${attachment.id}/view`;
 
-      if (attachment.type === 'URL') {
-        url = attachment.url ?? null;
-      } else if (attachment.s3_key && attachment.status === 'READY') {
-        const { url: signedUrl } = await presignGetUrl({ s3Key: attachment.s3_key });
-        url = signedUrl;
-      }
+    // thumbnail_url is only set when a thumbnail has been generated for this attachment
+    const thumbnail_url = attachment.thumbnail_key
+      ? `/api/v1/attachments/${attachment.id}/thumbnail`
+      : null;
 
-      // Only include thumbnailUrl when a thumbnail has been generated
-      if (attachment.thumbnail_key) {
-        const { url: thumbUrl } = await presignGetUrl({ s3Key: attachment.thumbnail_key });
-        thumbnailUrl = thumbUrl;
-      }
-
-      return {
-        id: attachment.id,
-        card_id: attachment.card_id,
-        name: attachment.name,
-        type: attachment.type,
-        content_type: attachment.mime_type ?? null,
-        size_bytes: attachment.size_bytes ?? null,
-        status: attachment.status,
-        key: attachment.s3_key ?? null,
-        thumbnail_key: attachment.thumbnail_key ?? null,
-        url,
-        thumbnail_url: thumbnailUrl,
-        external_url: attachment.external_url ?? null,
-        width: attachment.width ?? null,
-        height: attachment.height ?? null,
-        created_at: attachment.created_at,
-        updated_at: attachment.updated_at,
-      };
-    }),
-  );
+    return {
+      id: attachment.id,
+      card_id: attachment.card_id,
+      name: attachment.name,
+      alias: attachment.alias ?? null,
+      type: attachment.type,
+      content_type: attachment.mime_type ?? null,
+      size_bytes: attachment.size_bytes ?? null,
+      status: attachment.status,
+      view_url,
+      thumbnail_url,
+      external_url: attachment.external_url ?? null,
+      width: attachment.width ?? null,
+      height: attachment.height ?? null,
+      created_at: attachment.created_at,
+      updated_at: attachment.updated_at,
+    };
+  });
 
   return Response.json({ data });
 }
