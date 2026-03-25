@@ -12,7 +12,7 @@ import { preferenceGuard } from '../../notifications/mods/preferenceGuard';
 import { boardPreferenceGuard } from '../../notifications/mods/boardPreferenceGuard';
 import { globalPreferenceGuard } from '../../notifications/mods/globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { dispatchNotificationEmail } from '../../notifications/mods/emailDispatch';
 import { env } from '../../../config/env';
 import type { WrittenActivity } from './write';
@@ -89,7 +89,7 @@ export async function mapActivityToNotification({
       .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
-      ? await resolveAvatarUrl({ avatarUrl: actor.avatar_url })
+      ? buildAvatarProxyUrl({ userId: actor.id, avatarUrl: actor.avatar_url })
       : null;
     const actorPayload = {
       id: activity.actor_id,

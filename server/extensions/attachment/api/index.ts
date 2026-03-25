@@ -3,7 +3,6 @@ import { handleRequestUploadUrl } from './requestUploadUrl';
 import { handleConfirmUpload } from './confirmUpload';
 import { handleAddUrl } from './addUrl';
 import { handleDeleteAttachment } from './delete';
-import { handleGetSignedUrl } from './getSignedUrl';
 import { handleListAttachments } from './list';
 import { handleViewAttachment } from './view';
 import { handleThumbnailAttachment } from './thumbnail';
@@ -72,12 +71,6 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   const thumbnailMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/thumbnail$/);
   if (thumbnailMatch && req.method === 'GET') {
     return handleThumbnailAttachment(req, thumbnailMatch[1] as string);
-  }
-
-  // GET /api/v1/attachments/:id/url
-  const signedUrlMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/url$/);
-  if (signedUrlMatch && req.method === 'GET') {
-    return handleGetSignedUrl(req, signedUrlMatch[1] as string);
   }
 
   // PATCH /api/v1/attachments/:id — update alias

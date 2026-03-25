@@ -8,7 +8,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { resolveAvatarUrlsInCollection } from '../../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetMemberSuggestions(req: Request, boardId: string): Promise<Response> {
   const authReq = req as AuthenticatedRequest;
@@ -51,7 +51,7 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
     )
     .limit(10);
 
-  const data = await resolveAvatarUrlsInCollection(
+  const data = buildAvatarProxyUrlsInCollection(
     members as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
   );
 

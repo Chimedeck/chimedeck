@@ -23,6 +23,7 @@ import { handleInviteGuest, handleRevokeGuest, handleListGuests, handleUpdateGue
 import { handleGetWorkspaceBoards } from './workspaceBoards';
 import { handleUploadBackground } from './uploadBackground';
 import { handleDeleteBackground } from './deleteBackground';
+import { handleGetBackground } from './backgroundProxy';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -133,6 +134,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/workspace/boards — list all ACTIVE boards in the same workspace
     if (sub === '/workspace/boards' && req.method === 'GET') return handleGetWorkspaceBoards(req, boardId);
+
+    // GET /api/v1/boards/:id/background — stream S3 background through auth proxy
+    if (sub === '/background' && req.method === 'GET') return handleGetBackground(req, boardId);
 
     // POST /api/v1/boards/:id/background — upload a background image (Owner/Admin only)
     if (sub === '/background' && req.method === 'POST') return handleUploadBackground(req, boardId);

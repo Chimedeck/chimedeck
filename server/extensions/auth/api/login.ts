@@ -10,7 +10,7 @@ import { flags } from '../../../mods/flags';
 import { send } from '../../email';
 import { buildVerificationEmail } from '../../email/templates/verificationEmail';
 import { env } from '../../../config/env';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 // Rate limit: 10 login attempts per IP per minute.
 const RATE_LIMIT_MAX = 10;
@@ -140,7 +140,7 @@ export async function handleLogin(req: Request): Promise<Response> {
     `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
   );
 
-  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+  const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
 
   return new Response(
     JSON.stringify({

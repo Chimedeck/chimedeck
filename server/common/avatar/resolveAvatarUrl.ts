@@ -96,3 +96,21 @@ export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: str
     }),
   );
 }
+
+/**
+ * Maps a collection of user-like objects to use stable proxy avatar paths.
+ * Replaces avatar_url with /api/v1/users/:id/avatar when the user has an avatar stored.
+ * Synchronous — no S3 presigning needed.
+ */
+export function buildAvatarProxyUrlsInCollection<T extends Record<string, unknown>>(
+  items: T[],
+): T[] {
+  return items.map((item) => {
+    const id = item['id'] as string | undefined;
+    const avatarUrl = item['avatar_url'] as string | null | undefined;
+    return {
+      ...item,
+      avatar_url: id ? buildAvatarProxyUrl({ userId: id, avatarUrl: avatarUrl ?? null }) : null,
+    };
+  });
+}

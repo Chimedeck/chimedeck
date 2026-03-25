@@ -9,7 +9,7 @@ import { dispatchNotificationEmail } from './emailDispatch';
 import { boardPreferenceGuard, resolveNotificationChannels } from './boardPreferenceGuard';
 import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { env } from '../../../config/env';
 import type { WrittenEvent } from '../../../mods/events/index';
 
@@ -67,7 +67,7 @@ export async function handleBoardActivityNotification({
       .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
-      ? await resolveAvatarUrl({ avatarUrl: actor.avatar_url })
+      ? buildAvatarProxyUrl({ userId: actorId, avatarUrl: actor.avatar_url })
       : null;
     const actorPayload = {
       id: actorId,
@@ -249,7 +249,7 @@ export async function dispatchDirectCardNotification({
       .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
-      ? await resolveAvatarUrl({ avatarUrl: actor.avatar_url })
+      ? buildAvatarProxyUrl({ userId: actorId, avatarUrl: actor.avatar_url })
       : null;
     const actorPayloadData = {
       id: actorId,

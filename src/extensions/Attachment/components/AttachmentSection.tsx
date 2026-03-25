@@ -39,10 +39,8 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
   };
 
   const handleDownload = async (id: string): Promise<void> => {
-    const resp = await fetch(`${apiBase}/api/v1/attachments/${id}/url`, { headers: authHeaders });
-    if (!resp.ok) return;
-    const { data } = (await resp.json()) as { data: { url: string } };
-    window.open(data.url, '_blank', 'noopener,noreferrer');
+    // [why] Navigate to the authenticated proxy — never expose raw presigned S3 URLs to the client.
+    window.open(`${apiBase}/api/v1/attachments/${id}/view`, '_blank', 'noopener,noreferrer');
   };
 
   const handleAddUrl = async (name: string, url: string): Promise<void> => {

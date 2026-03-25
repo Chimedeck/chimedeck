@@ -3,7 +3,7 @@ import { db } from '../../../common/db';
 import { rotateRefreshToken } from '../mods/token/refresh';
 import { issueAccessToken } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
@@ -52,7 +52,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
     `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
   );
 
-  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+  const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
 
   return new Response(
     JSON.stringify({

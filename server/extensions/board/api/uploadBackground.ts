@@ -129,6 +129,6 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
     payload: { background: backgroundUrl },
   });
 
-  const resolvedBackground = await resolveBackgroundUrl(updated.background);
+  const resolvedBackground = resolveBackgroundUrl({ boardId, backgroundUrl: updated.background });
   return Response.json({ data: { ...updated, background: resolvedBackground } });
 }

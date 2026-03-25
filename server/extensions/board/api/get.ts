@@ -6,7 +6,7 @@ import {
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
-import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { searchLog } from '../../search/common/searchLogger';
 import { resolveCoverImageUrls } from '../../../common/cards/cover';
 import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
@@ -89,7 +89,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   const cardsWithResolvedMembers = await Promise.all(
     cards.map(async (card) => ({
       ...card,
-      members: await resolveAvatarUrlsInCollection(
+      members: buildAvatarProxyUrlsInCollection(
         Array.isArray(card.members)
           ? (card.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
           : []
@@ -119,7 +119,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   // render write-action controls without a second round-trip.
   const callerGuestType = (scopedReq.guestType as string | undefined) ?? null;
 
-  const backgroundUrl = await resolveBackgroundUrl(board.background);
+  const backgroundUrl = resolveBackgroundUrl({ boardId, backgroundUrl: board.background });
 
   return Response.json({
     data: { ...board, background: backgroundUrl, callerGuestType },
