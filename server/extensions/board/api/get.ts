@@ -72,7 +72,12 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
             ),
             db.raw(
               `COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`
-            )
+            ),
+            // [why] Inline sub-counts avoid N+1 queries on subsequent per-card fetches.
+            db.raw(`(SELECT COUNT(*) FROM comments WHERE card_id = c.id AND deleted = false)::int AS comment_count`),
+            db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY')::int AS attachment_count`),
+            db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id)::int AS checklist_total`),
+            db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id AND ci.checked = true)::int AS checklist_done`),
           )
           .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
           .leftJoin('labels as l', 'l.id', 'cl.label_id')

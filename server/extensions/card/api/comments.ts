@@ -32,7 +32,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
-  let body: { text?: string };
+  let body: { text?: string; content?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -42,23 +42,25 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
     );
   }
 
-  if (!body.text || typeof body.text !== 'string' || body.text.trim() === '') {
+  // [why] Accept both `content` (UI) and `text` (MCP/CLI external contract)
+  const rawText = body.content ?? body.text;
+  if (!rawText || typeof rawText !== 'string' || rawText.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'text is required' } },
+      { name: 'bad-request', data: { message: 'content is required' } },
       { status: 400 },
     );
   }
 
-  if (body.text.trim().length > 50000) {
+  if (rawText.trim().length > 50000) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'text must be ≤ 50 000 characters' } },
+      { name: 'bad-request', data: { message: 'content must be ≤ 50 000 characters' } },
       { status: 400 },
     );
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const id = randomUUID();
-  const content = sanitizeRichText(body.text.trim());
+  const content = sanitizeRichText(rawText.trim());
   const now = new Date().toISOString();
 
   await db('comments').insert({

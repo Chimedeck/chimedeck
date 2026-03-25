@@ -219,6 +219,24 @@ interface TrelloMember {
   confirmed?: boolean;
 }
 
+interface TrelloCheckItem {
+  id: string;
+  name: string;
+  pos: number;
+  state: 'complete' | 'incomplete';
+  due: string | null;
+  idChecklist: string;
+  idMember: string | null;
+}
+
+interface TrelloChecklist {
+  id: string;
+  name: string;
+  idCard: string;
+  pos: number;
+  checkItems: TrelloCheckItem[];
+}
+
 interface TrelloAction {
   id: string;
   date: string;
@@ -257,6 +275,7 @@ interface TrelloCard {
   actions?: TrelloAction[];
   board?: TrelloBoard;
   pluginData?: Array<{ id: string; idPlugin: string; scope: string; idModel: string; value: string; access: string; dateLastUpdated: string }>;
+  checklists?: TrelloChecklist[];
 }
 
 // ---------------------------------------------------------------------------
@@ -716,6 +735,63 @@ async function main() {
 
   console.log(`💬  Inserting/updating ${commentRows.length.toLocaleString()} comments…`);
   await batchUpsert('comments', commentRows, 'id', ['content', 'updated_at']);
+
+  // -------------------------------------------------------------------------
+  // 8c. Checklists + checklist items
+  // -------------------------------------------------------------------------
+
+  console.log('✅  Collecting checklists…');
+
+  const checklistRows: object[] = [];
+  const checklistItemRows: object[] = [];
+  const checklistSeen = new Set<string>();
+  const checklistItemSeen = new Set<string>();
+  const allChecklistCardIds: string[] = [];
+
+  for (const card of cards) {
+    if (!listSet.has(card.idList)) continue;
+    if (!card.checklists?.length) continue;
+
+    allChecklistCardIds.push(card.id);
+
+    for (const cl of card.checklists) {
+      if (!checklistSeen.has(cl.id)) {
+        checklistSeen.add(cl.id);
+        checklistRows.push({
+          id: cl.id,
+          card_id: card.id, // [why] use card.id — cl.idCard may be stale in the export
+          title: cl.name.trim() || 'Checklist',
+          position: toPosition(cl.pos),
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      }
+
+      for (const item of cl.checkItems ?? []) {
+        if (!checklistItemSeen.has(item.id)) {
+          checklistItemSeen.add(item.id);
+          checklistItemRows.push({
+            id: item.id,
+            card_id: card.id, // [why] same — keep consistent with parent checklist row
+            checklist_id: cl.id,
+            title: item.name,
+            checked: item.state === 'complete',
+            position: toPosition(item.pos),
+          });
+        }
+      }
+    }
+  }
+
+  console.log(`✅  Inserting/updating ${checklistRows.length.toLocaleString()} checklists and ${checklistItemRows.length.toLocaleString()} checklist items…`);
+
+  // Sync: delete existing checklists for Trello-sourced cards, then re-insert.
+  // CASCADE on checklists → checklist_items handles item cleanup automatically.
+  for (let i = 0; i < allChecklistCardIds.length; i += BATCH_SIZE) {
+    await db('checklists').whereIn('card_id', allChecklistCardIds.slice(i, i + BATCH_SIZE)).delete();
+  }
+  await batchInsert('checklists', checklistRows, 'id');
+  await batchInsert('checklist_items', checklistItemRows, 'id');
 
   // -------------------------------------------------------------------------
   // 9. Workspace memberships + board_members (mapper users) + board_guest_access (non-mapper)

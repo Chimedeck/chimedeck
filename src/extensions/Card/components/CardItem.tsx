@@ -1,7 +1,7 @@
 // CardItem — draggable card chip using @dnd-kit/sortable useSortable.
 // Styled per sprint-18 spec §4.
 import { memo, useCallback, useMemo } from 'react';
-import { CalendarIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon } from '@heroicons/react/24/outline';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSelector } from 'react-redux';
@@ -80,6 +80,18 @@ const CardItem = ({
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
   const coverHeightClass = card.cover_size === 'FULL' ? 'h-28' : 'h-20';
 
+  const hasChecklist = (card.checklist_total ?? 0) > 0;
+  const checklistDone = card.checklist_done ?? 0;
+  const checklistTotal = card.checklist_total ?? 0;
+  const checklistComplete = checklistDone === checklistTotal;
+
+  const hasBadges =
+    card.description ||
+    card.due_date ||
+    (card.comment_count ?? 0) > 0 ||
+    (card.attachment_count ?? 0) > 0 ||
+    hasChecklist;
+
   return (
     <div
       ref={setNodeRef}
@@ -124,23 +136,64 @@ const CardItem = ({
           />
         )}
         <p className="text-gray-800 dark:text-slate-200 text-sm leading-snug break-words">{card.title}</p>
-        {card.due_date && (() => {
-          const now = Date.now();
-          const due = new Date(card.due_date).getTime();
-          const done = card.due_complete;
-          const overdue = !done && due < now;
-          const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
-          const pillColor = getDuePillClass(done, overdue, dueSoon);
-          return (
-            <p className={`mt-1 inline-flex items-center gap-1 rounded px-1 text-xs ${pillColor}`}>
-              <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
-              {new Date(card.due_date).toLocaleDateString()}
-            </p>
-          );
-        })()}
         {card.amount && (
           <div className="mt-1">
             <CardMoneyBadge amount={card.amount} currency={card.currency} />
+          </div>
+        )}
+        {hasBadges && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {/* Due date */}
+            {card.due_date && (() => {
+              const now = Date.now();
+              const due = new Date(card.due_date).getTime();
+              const done = card.due_complete;
+              const overdue = !done && due < now;
+              const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
+              return (
+                <span className={`inline-flex items-center gap-0.5 rounded px-1 text-xs ${getDuePillClass(done, overdue, dueSoon)}`}>
+                  <CalendarIcon className="h-3 w-3 shrink-0" />
+                  {new Date(card.due_date).toLocaleDateString()}
+                </span>
+              );
+            })()}
+
+            {/* Checklist X/Y — green when all done */}
+            {hasChecklist && (
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs ${
+                  checklistComplete
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-gray-500 dark:text-slate-400'
+                }`}
+                title={`Checklist: ${checklistDone}/${checklistTotal}`}
+              >
+                <QueueListIcon className="h-3 w-3 shrink-0" />
+                {checklistDone}/{checklistTotal}
+              </span>
+            )}
+
+            {/* Attachment count */}
+            {(card.attachment_count ?? 0) > 0 && (
+              <span
+                className="inline-flex items-center gap-0.5 text-xs text-gray-500 dark:text-slate-400"
+                title={`${card.attachment_count} attachment${(card.attachment_count ?? 0) > 1 ? 's' : ''}`}
+              >
+                <PaperClipIcon className="h-3 w-3 shrink-0" />
+                {card.attachment_count}
+              </span>
+            )}
+
+            {/* Comment count */}
+            {(card.comment_count ?? 0) > 0 && (
+              <span
+                className="inline-flex items-center gap-0.5 text-xs text-gray-500 dark:text-slate-400"
+                title={`${card.comment_count} comment${(card.comment_count ?? 0) > 1 ? 's' : ''}`}
+              >
+                <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />
+                {card.comment_count}
+              </span>
+            )}
           </div>
         )}
         {members.length > 0 && (

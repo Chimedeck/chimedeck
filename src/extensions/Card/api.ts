@@ -20,6 +20,11 @@ export interface Card {
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;
   members: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  /** Counts returned by the board list endpoint — may be absent on older cached responses. */
+  comment_count?: number;
+  attachment_count?: number;
+  checklist_total?: number;
+  checklist_done?: number;
 }
 
 export interface Label {
