@@ -2,9 +2,12 @@ import { useState, type FormEvent } from 'react';
 import PasswordInput from './PasswordInput';
 import AuthDivider from './AuthDivider';
 import OAuthButton from './OAuthButton';
+import VerificationPending from './VerificationPending';
+import config from '~/config';
 import translations from '../translations/en.json';
 
 // API error codes → user-friendly field messages
+// [why] email-not-verified is handled separately via VerificationPending banner
 const API_ERROR_MAP: Record<string, string> = {
   'invalid-credentials': translations.errors.invalidCredentials,
   'login-failed': translations.errors.loginFailed,
@@ -80,7 +83,8 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
         />
 
         {/* API error shown below form, not on specific field */}
-        {mappedApiError && (
+        {apiError === 'email-not-verified' && <VerificationPending email={email} />}
+        {apiError !== 'email-not-verified' && mappedApiError && (
           <p role="alert" className="text-red-400 text-sm">{mappedApiError}</p>
         )}
 
@@ -93,21 +97,23 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
           {isLoading ? translations.actions.signingIn : translations.actions.signIn}
         </button>
 
-        <AuthDivider />
-
-        {/* OAuth buttons — gated by feature flags (TODO: wire flags) */}
-        <OAuthButton
-          icon={<GoogleIcon />}
-          label={translations.oauth.continueWithGoogle}
-          disabled
-          aria-disabled="true"
-        />
-        <OAuthButton
-          icon={<GitHubIcon />}
-          label={translations.oauth.continueWithGitHub}
-          disabled
-          aria-disabled="true"
-        />
+        {(config.oauthGoogleEnabled || config.oauthGithubEnabled) && (
+          <>
+            <AuthDivider />
+            {config.oauthGoogleEnabled && (
+              <OAuthButton
+                icon={<GoogleIcon />}
+                label={translations.oauth.continueWithGoogle}
+              />
+            )}
+            {config.oauthGithubEnabled && (
+              <OAuthButton
+                icon={<GitHubIcon />}
+                label={translations.oauth.continueWithGitHub}
+              />
+            )}
+          </>
+        )}
       </div>
     </form>
   );

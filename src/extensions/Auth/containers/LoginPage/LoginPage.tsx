@@ -5,6 +5,7 @@ import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { loginThunk, selectAuthStatus, selectAuthError } from '../../duck/authDuck';
 import LoginForm from '../../components/LoginForm';
+import config from '~/config';
 import translations from '../../translations/en.json';
 
 export default function LoginPage() {
@@ -49,7 +50,7 @@ export default function LoginPage() {
         </p>
 
         <p className="text-slate-500 text-sm text-center mt-4">
-          {translations.login.noAccount}{' '}
+          {config.allowPublicAccess ? translations.login.noAccount : 'Belongs to our company?'}{' '}
           <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium">
             {translations.login.signUp}
           </Link>
