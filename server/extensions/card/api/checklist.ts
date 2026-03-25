@@ -12,6 +12,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { writeActivity } from '../../activity/mods/write';
+import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 
 interface CardContext { boardId: string; workspaceId: string; }
 
@@ -190,6 +191,8 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
         checklistTitle: checklist?.title ?? '',
         cardTitle: card?.title ?? '',
       },
+    }).then((activity) => {
+      publishCardActivityEvent({ activity, boardId: updateContext.boardId }).catch(() => {});
     }).catch(() => {});
   }
 

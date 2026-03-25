@@ -17,6 +17,7 @@ export const VISIBLE_ACTIVITY_EVENT_TYPES: string[] = [
   'attachment_removed',
   // Checklist events
   'checklist_created',
+  'checklist_deleted',
   'checklist_item_checked',
   'checklist_item_unchecked',
 ];

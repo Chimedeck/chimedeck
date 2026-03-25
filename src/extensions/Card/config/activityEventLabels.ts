@@ -82,6 +82,11 @@ export function getActivityEventMeta(
     return { label: `added checklist "${title}"`, dotColor: 'bg-emerald-500' };
   }
 
+  if (eventType === 'checklist_deleted') {
+    const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
+    return { label: `deleted checklist "${title}"`, dotColor: 'bg-red-500' };
+  }
+
   if (eventType === 'checklist_item_checked') {
     const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
     const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
