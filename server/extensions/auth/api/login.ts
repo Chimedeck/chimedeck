@@ -132,6 +132,13 @@ export async function handleLogin(req: Request): Promise<Response> {
     'Set-Cookie',
     `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
+  // [why] access_token cookie lets <img> tags and other browser resource
+  // requests authenticate without an Authorization header. HttpOnly prevents
+  // JS from reading it; Path=/ ensures it is sent with all API calls.
+  responseHeaders.append(
+    'Set-Cookie',
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+  );
 
   const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
 

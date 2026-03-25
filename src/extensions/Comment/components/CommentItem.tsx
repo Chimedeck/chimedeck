@@ -1,6 +1,5 @@
 // Single comment with inline edit/delete controls — styled to match the Trello-like mockup.
 import { useState } from 'react';
-import { useAuthenticatedImage } from '~/hooks/useAuthenticatedImage';
 import { marked } from 'marked';
 import type { Attachment } from '~/extensions/Attachments/types';
 import {
@@ -94,10 +93,6 @@ function renderContent(text: string, attachments: Attachment[]): string {
 const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete }: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  // [why] Proxy URLs require Bearer auth; <img> tags can't send headers,
-  // so we fetch the image via JS and hand the component a blob URL instead.
-  // Hook must be called before any early return to satisfy Rules of Hooks.
-  const avatarUrl = useAuthenticatedImage(comment.author_avatar_url ?? null);
 
   if (comment.deleted) {
     return <CommentDeletedItem commentId={comment.id} createdAt={comment.created_at} />;
@@ -110,6 +105,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const displayName = comment.author_name || comment.author_email || translations['comment.author.unknown'];
   const initials = getInitials(comment.author_name, comment.author_email);
   const color = avatarColor(comment.user_id);
+  const avatarUrl = comment.author_avatar_url ?? null;
 
   const handleEdit = async (content: string) => {
     await onEdit(comment.id, content);

@@ -1,4 +1,7 @@
-// Extracts and verifies the Bearer token from Authorization header.
+// Extracts and verifies credentials from the request.
+// Priority: Authorization: Bearer <token>  >  access_token httpOnly cookie.
+// Cookie fallback enables browser resource requests (img tags, downloads) to
+// authenticate without JS intervention.
 // Accepts both RS256 JWT tokens and hf_ API tokens as Bearer credentials.
 // Attaches the decoded user payload to request extensions for downstream handlers.
 // Deny-first: returns 401 immediately on missing or invalid token.
@@ -43,10 +46,20 @@ async function authenticateApiToken(
   return null;
 }
 
+function parseCookieToken(req: Request): string | null {
+  const header = req.headers.get('cookie');
+  if (!header) return null;
+  const match = /(?:^|;\s*)access_token=([^;]+)/.exec(header);
+  return match ? decodeURIComponent(match[1]!) : null;
+}
+
 // Returns null on success (populates req.currentUser), or an error Response on failure.
 export async function authenticate(req: AuthenticatedRequest): Promise<Response | null> {
   const authHeader = req.headers.get('Authorization') ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  // [why] Cookie fallback lets <img> and other browser-initiated requests
+  // authenticate without JS setting an Authorization header.
+  const token = headerToken ?? parseCookieToken(req);
 
   if (!token) return unauthorized('Missing Bearer token');
 

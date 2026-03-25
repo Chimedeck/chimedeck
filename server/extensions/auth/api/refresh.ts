@@ -46,6 +46,11 @@ export async function handleRefresh(req: Request): Promise<Response> {
     'Set-Cookie',
     `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
+  // Rotate the access_token cookie to match the new JWT.
+  responseHeaders.append(
+    'Set-Cookie',
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+  );
 
   const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
 
