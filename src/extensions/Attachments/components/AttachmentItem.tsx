@@ -1,7 +1,7 @@
 // AttachmentItem — single attachment row: type icon, name, size, status chip, progress bar,
-// and delete button with inline confirmation.
-import React, { useState } from 'react';
-import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon } from '@heroicons/react/24/outline';
+// and delete/edit action buttons with inline confirmation and inline rename input.
+import React, { useRef, useState } from 'react';
+import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon, PencilIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import type { Attachment } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
@@ -14,6 +14,13 @@ interface Props {
   /** undefined while the file is still uploading (no server record yet) */
   uploadProgress?: number | null;
   onDelete: (id: string) => void;
+  /** Called with the new alias when the user saves an inline rename. Omit for temp upload rows. */
+  onRename?: (id: string, alias: string) => void;
+  /**
+   * Called with the pre-built markdown string `[alias ?? name](view_url)` when the user clicks
+   * the Comment button. Omit to hide the button (e.g. temp upload rows or viewer guests).
+   */
+  onInsertComment?: (markdown: string) => void;
 }
 
 const STATUS_CLASSES: Record<Attachment['status'], string> = {
@@ -30,9 +37,18 @@ const STATUS_LABELS: Record<Attachment['status'], string> = {
   REJECTED: translations['attachments.item.status.rejected'],
 };
 
-export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props): React.ReactElement {
+export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename, onInsertComment }: Props): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
+
+  // Inline rename state
+  const [editing, setEditing] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Display name: alias takes precedence over original name
+  const displayName = attachment.alias ?? attachment.name;
 
   const Icon = attachment.type === 'URL' ? LinkIcon : getMimeIcon(attachment.content_type);
   const isUploading = attachment.status === 'PENDING' && uploadProgress != null;
@@ -43,7 +59,8 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
       setVideoOpen(true);
       return;
     }
-    const href = attachment.type === 'URL' ? attachment.external_url : attachment.url;
+    // Use proxy view_url for file attachments; external_url for URL-type
+    const href = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
     if (href) window.open(href, '_blank', 'noopener,noreferrer');
   };
 
@@ -54,6 +71,48 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
   };
   const handleDeleteCancel = (): void => setConfirming(false);
 
+  // Begin inline rename: pre-fill with current display name and show input
+  const handleEditClick = (): void => {
+    setRenameValue(displayName);
+    setRenameError(false);
+    setEditing(true);
+    // Focus input on next tick after render
+    setTimeout(() => renameInputRef.current?.select(), 0);
+  };
+
+  const commitRename = (): void => {
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      // Empty value — shake input and keep open
+      setRenameError(true);
+      return;
+    }
+    setEditing(false);
+    setRenameError(false);
+    // Only call onRename when value actually changed
+    if (trimmed !== displayName) {
+      onRename?.(attachment.id, trimmed);
+    }
+  };
+
+  const cancelRename = (): void => {
+    setEditing(false);
+    setRenameError(false);
+  };
+
+  // Build and emit the markdown link for the active comment editor
+  const handleCommentClick = (): void => {
+    const label = attachment.alias ?? attachment.name;
+    const url = attachment.view_url ?? '';
+    if (!url || !onInsertComment) return;
+    onInsertComment(`[${label}](${url})`);
+  };
+
+  const handleRenameKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (ev.key === 'Enter') commitRename();
+    if (ev.key === 'Escape') cancelRename();
+  };
+
   return (
     <div className="flex flex-col gap-1 py-2 border-b border-slate-700 last:border-0">
       <div className="flex items-center gap-2">
@@ -62,10 +121,30 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
           <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
 
-        {/* Name — truncated */}
-        <span className="flex-1 min-w-0 text-sm text-slate-100 truncate" title={attachment.name}>
-          {attachment.name}
-        </span>
+        {/* Name — truncated, or inline rename input when editing */}
+        {editing ? (
+          <input
+            ref={renameInputRef}
+            type="text"
+            value={renameValue}
+            onChange={(e) => { setRenameValue(e.target.value); setRenameError(false); }}
+            onKeyDown={handleRenameKeyDown}
+            onBlur={commitRename}
+            placeholder={translations['attachment.rename.placeholder']}
+            aria-label={translations['attachment.rename.placeholder']}
+            className={`flex-1 min-w-0 text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 ${
+              renameError
+                ? 'border-red-500 focus:ring-red-500 animate-shake'
+                : 'border-slate-600 focus:ring-blue-500'
+            }`}
+            data-testid="attachment-rename-input"
+            autoFocus
+          />
+        ) : (
+          <span className="flex-1 min-w-0 text-sm text-slate-100 truncate" title={displayName}>
+            {displayName}
+          </span>
+        )}
 
         {/* Size */}
         {attachment.size_bytes != null && (
@@ -114,8 +193,46 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
           );
         })()}
 
+        {/* Edit (rename) button — only when onRename is wired and not in upload/delete mode */}
+        {onRename && !confirming && !editing && (
+          <button
+            onClick={handleEditClick}
+            className="flex-shrink-0 text-slate-500 hover:text-slate-200 transition-colors"
+            aria-label={translations['attachment.item.action.edit.ariaLabel']}
+            data-testid="attachment-edit-button"
+          >
+            <PencilIcon className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+
+        {/* Comment button — inserts [alias ?? name](view_url) into the active comment editor */}
+        {onInsertComment && attachment.status === 'READY' && attachment.view_url && !confirming && !editing && (
+          <button
+            onClick={handleCommentClick}
+            className="flex-shrink-0 text-slate-500 hover:text-slate-200 transition-colors"
+            aria-label={translations['attachment.item.action.comment.ariaLabel']}
+            data-testid="attachment-comment-button"
+          >
+            <ChatBubbleLeftIcon className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+
+        {/* Escape button while editing */}
+        {editing && (
+          <button
+            onClick={cancelRename}
+            className="flex-shrink-0 text-xs text-slate-400 hover:text-slate-200"
+            aria-label={translations['attachment.rename.cancel']}
+            data-testid="attachment-rename-cancel"
+            // Prevent onBlur from firing commit before cancel registers
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            {translations['attachment.rename.cancel']}
+          </button>
+        )}
+
         {/* Delete button / inline confirmation */}
-        {confirming ? (
+        {!editing && (confirming ? (
           <span className="flex items-center gap-1 text-xs">
             <span className="text-slate-300">{translations['attachments.item.delete.confirm']}</span>
             <button
@@ -136,15 +253,15 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete }: Props):
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />
           </button>
-        )}
+        ))}
       </div>
 
       {/* Progress bar — only while uploading */}
       {isUploading && <UploadProgressBar progress={uploadProgress!} />}
 
-      {/* Video player overlay */}
-      {videoOpen && isVideo && attachment.url && (
-        <VideoLightbox src={attachment.url} name={attachment.name} onClose={() => setVideoOpen(false)} />
+      {/* Video player overlay — use proxy view_url */}
+      {videoOpen && isVideo && attachment.view_url && (
+        <VideoLightbox src={attachment.view_url} name={attachment.name} onClose={() => setVideoOpen(false)} />
       )}
     </div>
   );

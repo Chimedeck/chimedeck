@@ -140,6 +140,9 @@ const CardModal = ({
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const coverMenuRef = useRef<HTMLDivElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  // [why] Shared ref so AttachmentPanel's Comment action can insert markdown into the
+  // CommentEditor in ActivityFeed without prop-drilling through intermediate components.
+  const insertMarkdownRef = useRef<((md: string) => void) | null>(null);
 
   const { uploads: coverUploads, upload: uploadCover } = useAttachmentUpload({
     cardId: card.id,
@@ -410,7 +413,7 @@ const CardModal = ({
                       boardId={boardId}
                     />
 
-                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
+                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} />
 
                     {/* Plugin detail badges */}
                     <div className="flex flex-wrap gap-3">
@@ -438,6 +441,7 @@ const CardModal = ({
                       onEditComment={onEditComment}
                       onDeleteComment={onDeleteComment}
                       canAddComment={!isViewerGuest}
+                      insertMarkdownRef={insertMarkdownRef}
                     />
                   </div>
                 }
@@ -477,7 +481,7 @@ const CardModal = ({
                     boardId={boardId}
                   />
 
-                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
+                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} />
 
                   {/* Plugin detail badges */}
                   <div className="flex flex-wrap gap-3">

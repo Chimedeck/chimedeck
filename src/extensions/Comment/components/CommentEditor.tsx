@@ -4,6 +4,7 @@
 // background-syncs to server when online, restores draft on card open, and
 // queues the POST with an idempotency key when submitting while offline.
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
@@ -43,6 +44,12 @@ interface Props {
   onSubmit: (content: string) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
+  /**
+   * When provided, the editor will set this ref to an `insertMarkdown(md)` function
+   * once ready. External callers (e.g. AttachmentPanel's Comment action) can use it
+   * to insert markdown at the current cursor position without a network call.
+   */
+  insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
 }
 
 // Map draft status to a human-readable footer label — mirrors description editor.
@@ -183,6 +190,7 @@ const CommentEditor = ({
   onSubmit,
   onCancel,
   submitLabel = translations['comment.editor.submit'],
+  insertMarkdownRef,
 }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -338,6 +346,24 @@ const CommentEditor = ({
   });
   // Keep editorRef current so the async onSuccess always reads the live editor
   editorRef.current = editor;
+
+  // [why] Expose a stable insert function via ref so external callers (e.g. AttachmentPanel
+  // Comment action) can insert markdown at the current cursor without re-rendering.
+  useEffect(() => {
+    if (!insertMarkdownRef) return;
+    insertMarkdownRef.current = (md: string) => {
+      const ed = editorRef.current;
+      if (!ed || ed.isDestroyed) return;
+      const pos = ed.state.selection.anchor;
+      insertSnippetAt(ed, pos, md);
+    };
+    return () => {
+      // Clear on unmount so stale refs don't leak
+      if (insertMarkdownRef.current) insertMarkdownRef.current = null;
+    };
+  // [why] insertMarkdownRef identity is stable (ref object), so this runs once on mount/unmount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insertMarkdownRef]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;

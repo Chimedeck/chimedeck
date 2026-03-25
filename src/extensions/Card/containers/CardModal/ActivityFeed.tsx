@@ -1,7 +1,8 @@
 // ActivityFeed — unified timeline of comments and system activity events for a card.
 // Renders comments as full bubbles and system events as compact single-line rows.
 // Feed is sorted descending by created_at (newest first).
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type React from 'react';
 import CommentItem, { type Comment } from '~/extensions/Comment/components/CommentItem';
 import CommentEditor from '~/extensions/Comment/components/CommentEditor';
 import { getActivityEventMeta, type ActivityEventContext } from '../../config/activityEventLabels';
@@ -29,6 +30,12 @@ interface Props {
   onDeleteComment: (commentId: string) => Promise<void>;
   /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
   canAddComment?: boolean;
+  /**
+   * When provided, ActivityFeed registers an `insertMarkdown(md)` function on this ref
+   * once the CommentEditor mounts. External callers (e.g. AttachmentPanel Comment action)
+   * can then call `insertMarkdownRef.current(md)` to insert text without a network call.
+   */
+  insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
 }
 
 /** Consistent avatar colour based on user id. */
@@ -77,8 +84,14 @@ const ActivityFeed = ({
   onEditComment,
   onDeleteComment,
   canAddComment = true,
+  insertMarkdownRef,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  // [why] Local ref that is passed to CommentEditor so it can register its insert function.
+  // We forward the caller-supplied insertMarkdownRef (if any) so CardModal can wire
+  // AttachmentPanel → CommentEditor without prop-drilling through multiple layers.
+  const localInsertMarkdownRef = useRef<((md: string) => void) | null>(null);
+  const resolvedInsertRef = insertMarkdownRef ?? localInsertMarkdownRef;
 
   const loadAttachments = useCallback(async () => {
     try {
@@ -112,7 +125,8 @@ const ActivityFeed = ({
       attachment.id,
       {
         thumbnail_url: attachment.thumbnail_url,
-        url: attachment.url,
+        // [why] Use proxy view_url exclusively — never expose raw presigned url field.
+        view_url: attachment.view_url,
         content_type: attachment.content_type,
       },
     ]),
@@ -148,6 +162,7 @@ const ActivityFeed = ({
           placeholder="Add a comment…"
           onSubmit={handleAddComment}
           submitLabel="Comment"
+          insertMarkdownRef={resolvedInsertRef}
         />
       )}
 
@@ -189,7 +204,7 @@ const ActivityFeed = ({
           // For attachment events, look up thumbnail from the attachment map
           const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
           const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
-          const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.url);
+          const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
           const actorAvatarUrl = activity.actor_avatar_url ?? null;
 
           // [why] Pass context so label builder can resolve member names and detect self-assignment.
@@ -223,12 +238,12 @@ const ActivityFeed = ({
                 </div>
                 {showThumbnail && (
                   <a
-                    href={(attachmentInfo!.url ?? attachmentInfo!.thumbnail_url)!}
+                    href={(attachmentInfo!.view_url ?? attachmentInfo!.thumbnail_url)!}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <img
-                      src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.url)!}
+                      src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.view_url)!}
                       alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
                       className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
                     />

@@ -4,7 +4,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
-import { listAttachments, deleteAttachment, createUrlAttachment } from '../api';
+import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
 import { AttachmentThumbnail, VideoThumbnail } from './AttachmentThumbnail';
@@ -17,9 +17,15 @@ interface Props {
   cardId: string;
   /** False when the current user is a VIEWER guest — hides upload/attach controls. Defaults to true. */
   canWrite?: boolean;
+  /**
+   * Ref populated by ActivityFeed/CommentEditor with a function that inserts markdown
+   * at the current cursor position. When provided, each AttachmentItem shows a Comment
+   * button that calls `insertMarkdownRef.current(md)` with the formatted link.
+   */
+  insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true }: Props): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: Props): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -70,6 +76,35 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
       }
     },
     [cardId, loadAttachments],
+  );
+
+  // Rename attachment — optimistic alias update, rolls back on server error
+  const handleRename = useCallback(
+    async (id: string, alias: string) => {
+      // Optimistic update
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, alias } : a)),
+      );
+      try {
+        const res = await patchAttachment({ attachmentId: id, alias });
+        // Sync with confirmed server value
+        setAttachments((prev) =>
+          prev.map((a) => (a.id === id ? res.data : a)),
+        );
+      } catch {
+        // Roll back optimistic update on failure
+        void loadAttachments();
+      }
+    },
+    [loadAttachments],
+  );
+
+  // Insert markdown link into the active comment editor — no network call
+  const handleInsertComment = useCallback(
+    (markdown: string) => {
+      insertMarkdownRef?.current?.(markdown);
+    },
+    [insertMarkdownRef],
   );
 
   // Open native file picker
@@ -168,6 +203,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
             id: entry.clientId,
             card_id: cardId,
             name: entry.file.name,
+            alias: null,
             type: 'FILE',
             status: 'PENDING',
             key: null,
@@ -176,7 +212,7 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
             size_bytes: entry.file.size,
             width: null,
             height: null,
-            url: null,
+            view_url: null,
             thumbnail_url: null,
             external_url: null,
             created_at: new Date().toISOString(),
@@ -208,6 +244,8 @@ export function AttachmentPanel({ cardId, canWrite = true }: Props): React.React
             attachment={attachment}
             uploadProgress={progressForAttachment(attachment.id)}
             onDelete={handleDelete}
+            onRename={handleRename}
+            {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
           />
         ))}
       </div>
