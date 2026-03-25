@@ -1,6 +1,7 @@
 // ActionList — ordered, draggable list of actions plus "Add action" control.
 // Uses @dnd-kit/core for drag-and-drop reordering.
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiClient } from '~/common/api/client';
 import {
   DndContext,
   closestCenter,
@@ -32,6 +33,14 @@ interface Props {
 
 const ActionList = ({ actions, onChange, boardId }: Props) => {
   const [showPicker, setShowPicker] = useState(false);
+  const [workspaceBoards, setWorkspaceBoards] = useState<{ id: string; title: string }[]>([]);
+
+  useEffect(() => {
+    apiClient
+      .get(`/boards/${boardId}/workspace/boards`)
+      .then((res: any) => setWorkspaceBoards(res.data ?? []))
+      .catch(() => {});
+  }, [boardId]);
   // Track which action is being configured (by local id).
   const [configuringId, setConfiguringId] = useState<string | null>(null);
   // Store ActionType metadata keyed by local id so ActionConfig can access the schema.
@@ -95,6 +104,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
                   item={action}
                   onDelete={() => handleDelete(action.id)}
                   onConfigChange={(cfg) => handleConfigChange(action.id, cfg)}
+                  workspaceBoards={workspaceBoards}
                 />
                 {/* Inline config panel — toggle by clicking the item label */}
                 {(() => {

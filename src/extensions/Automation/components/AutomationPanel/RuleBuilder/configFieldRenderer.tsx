@@ -25,6 +25,8 @@ interface JsonSchemaProp {
   type?: string;
   enum?: string[];
   format?: string;
+  items?: { type?: string; format?: string };
+  minLength?: number;
 }
 
 interface JsonSchema {
@@ -60,18 +62,23 @@ export function parseConfigSchema(schema: unknown): Array<{ key: string; fieldDe
       };
     }
 
+    // Array of UUIDs whose key ends in "listIds" → multi-select list picker.
+    if (prop.type === 'array' && /listIds$/i.test(key)) {
+      return { key, fieldDef: { type: 'list-multi-select', label, required } satisfies FieldDef };
+    }
+
     // UUID fields whose key is exactly "targetBoardId" → board picker for cross-board actions.
-    if (prop.format === 'uuid' && key === 'targetBoardId') {
+    if ((prop.type === 'string' || prop.format === 'uuid') && key === 'targetBoardId') {
       return { key, fieldDef: { type: 'board-select', label, required } satisfies FieldDef };
     }
 
     // UUID fields whose key ends in "targetListId" → list picker that reads from targetBoardId.
-    if (prop.format === 'uuid' && /targetListId$/i.test(key)) {
+    if ((prop.type === 'string' || prop.format === 'uuid') && /targetListId$/i.test(key)) {
       return { key, fieldDef: { type: 'target-list-select', label, required } satisfies FieldDef };
     }
 
     // UUID fields whose key ends in "listId" reference a board list — render as a list picker.
-    if (prop.format === 'uuid' && /listId$/i.test(key)) {
+    if ((prop.type === 'string' || prop.format === 'uuid') && /listId$/i.test(key)) {
       return { key, fieldDef: { type: 'list-select', label, required } satisfies FieldDef };
     }
 
@@ -120,6 +127,43 @@ function renderListSelect(args: RenderArgs): JSX.Element {
         <option value="">Any list…</option>
         {(boardLists ?? []).map((list) => <option key={list.id} value={list.id}>{list.title}</option>)}
       </select>
+    </div>
+  );
+}
+
+function renderListMultiSelect(args: RenderArgs): JSX.Element {
+  const { key, fieldDef, boardLists } = args;
+  const lists = boardLists ?? [];
+  const selected: string[] = Array.isArray(args.value) ? (args.value as string[]) : [];
+
+  const toggle = (id: string) => {
+    const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id];
+    args.onChange(next.length > 0 ? next : undefined);
+  };
+
+  return (
+    <div key={key}>
+      <span className="block text-xs font-medium text-slate-400 mb-1">
+        {fieldDef.label}
+        <span className="ml-1 text-slate-500">(leave empty for all lists)</span>
+      </span>
+      {lists.length === 0 ? (
+        <p className="text-xs text-slate-500 italic">Loading lists…</p>
+      ) : (
+        <div className="flex flex-col gap-1 max-h-40 overflow-y-auto rounded-md border border-slate-600 bg-slate-700 p-2">
+          {lists.map((list) => (
+            <label key={list.id} className="flex items-center gap-2 cursor-pointer text-sm text-slate-200">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 rounded border-slate-500 bg-slate-600 text-blue-500 focus:ring-1 focus:ring-blue-500"
+                checked={selected.includes(list.id)}
+                onChange={() => toggle(list.id)}
+              />
+              {list.title}
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -204,6 +248,7 @@ type TypeRenderer = (args: RenderArgs) => JSX.Element;
 
 const TYPE_RENDERERS: Record<string, TypeRenderer> = {
   'list-select': renderListSelect,
+  'list-multi-select': renderListMultiSelect,
   'board-select': renderBoardSelect,
   'target-list-select': renderTargetListSelect,
   boolean: renderBoolean,
