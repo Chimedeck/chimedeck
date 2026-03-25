@@ -75,6 +75,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   });
 
   const card = await db('cards').where({ id: cardId }).select('title').first();
+  const author = await db('users').where({ id: actorId }).select('name', 'email', 'avatar_url').first();
 
   await Promise.all([
     dispatchEvent({
@@ -98,10 +99,16 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
     {
       data: {
         id,
-        cardId,
-        userId: actorId,
-        text: body.text.trim(),
-        createdAt: now,
+        card_id: cardId,
+        user_id: actorId,
+        content,
+        version: 1,
+        deleted: false,
+        created_at: now,
+        updated_at: now,
+        author_name: author?.name ?? author?.email ?? null,
+        author_email: author?.email ?? null,
+        author_avatar_url: author?.avatar_url ?? null,
       },
     },
     { status: 201 },
