@@ -29,9 +29,10 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
   const [loading, setLoading] = useState(!storedTitle);
 
   useEffect(() => {
-    // [why] Skip fetch when attrs are already populated — the node was restored
-    // from saved content that already carried a resolved title.
-    if (storedTitle) return;
+    // [why] Skip fetch only when both title AND listName are populated.
+    // After a markdown round-trip the listName is lost (markdown stores only link
+    // text, not the list badge), so we must re-fetch to restore the status badge.
+    if (storedTitle && storedList !== null) return;
 
     const cardId = parseCardIdFromUrl(href);
     if (!cardId) {
