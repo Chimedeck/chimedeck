@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { ActionHandler, ActionContext } from '../../../common/types';
 
 const configSchema = z.object({
-  memberIds: z.array(z.string().uuid()).min(1),
+  memberIds: z.array(z.string().min(1)).min(1),
   // Optional extra text appended after the @mention(s).
   text: z.string().max(10000).optional(),
 });

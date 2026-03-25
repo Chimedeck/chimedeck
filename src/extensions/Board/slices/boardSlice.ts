@@ -133,7 +133,9 @@ const boardSlice = createSlice({
     updateCard(state, action: PayloadAction<{ card: Card }>) {
       const { card } = action.payload;
       if (state.cards[card.id]) {
-        state.cards[card.id] = card;
+        // [why] PATCH responses return raw DB rows without joined labels/members arrays.
+        // Merging preserves those fields so card badges don't vanish after a field update.
+        state.cards[card.id] = { ...state.cards[card.id], ...card };
       }
     },
 

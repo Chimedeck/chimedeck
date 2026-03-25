@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { TriggerHandler } from '../../../common/types';
 
 const configSchema = z.object({
-  checklistId: z.string().uuid().optional(),
+  checklistId: z.string().min(1).optional(),
 });
 
 export const cardChecklistCompletedTrigger: TriggerHandler = {

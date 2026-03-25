@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { ActionHandler, ActionContext } from '../../../common/types';
 
 const configSchema = z.object({
-  labelId: z.string().uuid(),
+  labelId: z.string().min(1),
 });
 
 export const cardAddLabelAction: ActionHandler = {
