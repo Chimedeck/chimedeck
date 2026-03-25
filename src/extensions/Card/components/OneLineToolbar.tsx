@@ -273,6 +273,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
   const btnActive = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200';
 
   return (
+    <>
     <div
       role="toolbar"
       aria-label="Text formatting"
@@ -398,8 +399,9 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
       </div>
     </div>
 
-      {/* Editor help modal */}
+      {/* Editor help modal — rendered via portal outside the toolbar div */}
       {helpOpen && <EditorHelpModal onClose={() => setHelpOpen(false)} />}
+    </>
   );
 };
 
