@@ -86,14 +86,16 @@ export function stripCommentAttachmentPlaceholders(markdown: string): string {
 
 export function resolveAttachmentMarkdownUrl(attachment: Attachment, isImage: boolean): string | null {
   if (attachment.type === 'URL') {
-    return attachment.external_url ?? attachment.url;
+    return attachment.external_url ?? null;
   }
 
+  // [why] For FILE attachments, always prefer the stable authenticated proxy path
+  // (view_url) over any raw presigned S3 URL which may be stale or expose S3 directly.
   if (isImage) {
-    return attachment.thumbnail_url ?? attachment.url;
+    return attachment.thumbnail_url ?? attachment.view_url ?? null;
   }
 
-  return attachment.url ?? attachment.thumbnail_url;
+  return attachment.view_url ?? attachment.thumbnail_url ?? null;
 }
 
 export function hydrateCommentAttachmentMarkdown(markdown: string, attachments: Attachment[]): string {

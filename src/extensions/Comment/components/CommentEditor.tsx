@@ -21,6 +21,7 @@ import {
   resolveAttachmentMarkdownUrl,
   stripCommentAttachmentPlaceholders,
 } from '~/extensions/Comment/utils/attachmentMarkdown';
+import { rewriteS3UrlsToProxy } from '~/common/utils/rewriteS3UrlsToProxy';
 import { CardAssetPicker } from './CardAssetPicker';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
@@ -134,7 +135,9 @@ function resolvePendingHydratedContent(pendingContent: string | null, attachment
   if (!pendingContent) return null;
   const normalized = normalizeEscapedBlockquoteMarkers(pendingContent);
   if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) return null;
-  return hydrateCommentAttachmentMarkdown(normalized, attachments);
+  const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
+  // [why] Rewrite any legacy raw S3 URLs to the authenticated proxy path.
+  return rewriteS3UrlsToProxy(hydrated, attachments);
 }
 
 function getInitialEditorContent(initialValue: string, attachments: Attachment[]): string {
@@ -142,7 +145,9 @@ function getInitialEditorContent(initialValue: string, attachments: Attachment[]
   if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) {
     return stripCommentAttachmentPlaceholders(normalized);
   }
-  return hydrateCommentAttachmentMarkdown(normalized, attachments);
+  const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
+  // [why] Rewrite any legacy raw S3 URLs to the authenticated proxy path.
+  return rewriteS3UrlsToProxy(hydrated, attachments);
 }
 
 function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): boolean {

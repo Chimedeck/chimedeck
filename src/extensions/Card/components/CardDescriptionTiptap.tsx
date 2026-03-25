@@ -24,6 +24,7 @@ import {
   resolveAttachmentMarkdownUrl,
   stripCommentAttachmentPlaceholders,
 } from '~/common/utils/attachmentMarkdown';
+import { rewriteS3UrlsToProxy } from '~/common/utils/rewriteS3UrlsToProxy';
 import {
   useOfflineDescriptionDraft,
   type DraftStatus,
@@ -108,7 +109,10 @@ function getInitialEditorContent(initialValue: string, attachments: Attachment[]
   if (hasAttachmentPlaceholder(initialValue) && attachments.length === 0) {
     return stripCommentAttachmentPlaceholders(initialValue);
   }
-  return hydrateCommentAttachmentMarkdown(initialValue, attachments);
+  const hydrated = hydrateCommentAttachmentMarkdown(initialValue, attachments);
+  // [why] Legacy content may contain raw S3 presigned URLs from before the secure
+  // proxy migration. Rewrite them to the authenticated proxy path before rendering.
+  return rewriteS3UrlsToProxy(hydrated, attachments);
 }
 
 function looksLikeHtmlContent(value: string): boolean {
@@ -187,7 +191,8 @@ function buildDescriptionSaveMarkdown(
 
 function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): string {
   if (attachments.length > 0) {
-    return hydrateCommentAttachmentMarkdown(markdown, attachments);
+    const hydrated = hydrateCommentAttachmentMarkdown(markdown, attachments);
+    return rewriteS3UrlsToProxy(hydrated, attachments);
   }
 
   return stripCommentAttachmentPlaceholders(markdown);
