@@ -1,6 +1,7 @@
 // MemberAvatarPopover — profile popover shown when clicking a member avatar.
 // Sprint 28 spec: anchored to clicked element, context-aware action buttons.
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
 interface Member {
@@ -34,14 +35,32 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
   const popoverRef = useRef<HTMLDivElement>(null);
   const [removing, setRemoving] = useState(false);
 
-  // Position relative to anchor element
+  // Position relative to anchor element, clamped to viewport
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
-    if (anchorRef.current) {
-      const rect = anchorRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 8, left: rect.left });
+    if (!anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    const popoverWidth = popoverRef.current?.offsetWidth ?? 224; // w-56 = 224px fallback
+    const popoverHeight = popoverRef.current?.offsetHeight ?? 200;
+    const margin = 8;
+
+    let top = rect.bottom + margin;
+    let left = rect.left;
+
+    // Clamp right edge
+    if (left + popoverWidth > window.innerWidth - margin) {
+      left = window.innerWidth - popoverWidth - margin;
     }
+    // Clamp left edge
+    if (left < margin) left = margin;
+
+    // Flip above if not enough space below
+    if (top + popoverHeight > window.innerHeight - margin) {
+      top = rect.top - popoverHeight - margin;
+    }
+
+    setPos({ top, left });
   }, [anchorRef]);
 
   // Close on Escape key
@@ -88,7 +107,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
   const initials = getInitials(member.name, member.email);
   const handle = member.nickname ? `@${member.nickname}` : member.email;
 
-  return (
+  return createPortal(
     <div
       ref={popoverRef}
       className="fixed z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl p-4 w-56"
@@ -147,6 +166,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
           Remove from card
         </button>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
