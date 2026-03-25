@@ -217,18 +217,30 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
           </button>
         )}
 
-        {/* Escape button while editing */}
+        {/* Save / Cancel buttons while editing */}
         {editing && (
-          <button
-            onClick={cancelRename}
-            className="flex-shrink-0 text-xs text-slate-400 hover:text-slate-200"
-            aria-label={translations['attachment.rename.cancel']}
-            data-testid="attachment-rename-cancel"
-            // Prevent onBlur from firing commit before cancel registers
-            onMouseDown={(e) => e.preventDefault()}
-          >
-            {translations['attachment.rename.cancel']}
-          </button>
+          <>
+            <button
+              onClick={commitRename}
+              className="flex-shrink-0 text-xs text-blue-400 hover:text-blue-300"
+              aria-label={translations['attachment.rename.save']}
+              data-testid="attachment-rename-save"
+              // Prevent onBlur from firing before click registers
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {translations['attachment.rename.save']}
+            </button>
+            <button
+              onClick={cancelRename}
+              className="flex-shrink-0 text-xs text-slate-400 hover:text-slate-200"
+              aria-label={translations['attachment.rename.cancel']}
+              data-testid="attachment-rename-cancel"
+              // Prevent onBlur from firing commit before cancel registers
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {translations['attachment.rename.cancel']}
+            </button>
+          </>
         )}
 
         {/* Delete button / inline confirmation */}

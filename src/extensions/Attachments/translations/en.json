@@ -37,6 +37,7 @@
   "attachment.edit": "Edit",
   "attachment.item.action.edit.ariaLabel": "Rename attachment",
   "attachment.rename.placeholder": "Enter a display name…",
+  "attachment.rename.save": "Save",
   "attachment.rename.cancel": "Cancel rename",
   "attachment.comment.insert": "Comment",
   "attachment.item.action.comment.ariaLabel": "Insert attachment link into comment"
