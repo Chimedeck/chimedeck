@@ -22,6 +22,7 @@ interface CommandDef {
 interface Props {
   editor: Editor | null;
   onClose: () => void;
+  onOpenEmojiPicker?: () => void;
 }
 
 // Static command definitions — icons are pre-rendered so JSX can live here.
@@ -108,7 +109,7 @@ const matchesQuery = (cmd: CommandDef, query: string): boolean => {
   return cmd.label.toLowerCase().includes(q) || cmd.keywords.some((k) => k.toLowerCase().includes(q));
 };
 
-const CommandMenu = ({ editor, onClose }: Props) => {
+const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -128,10 +129,15 @@ const CommandMenu = ({ editor, onClose }: Props) => {
 
   const executeCommand = useCallback(
     (cmd: CommandDef) => {
+      if (cmd.id === 'emoji') {
+        onClose();
+        onOpenEmojiPicker?.();
+        return;
+      }
       if (editor) cmd.execute(editor);
       onClose();
     },
-    [editor, onClose],
+    [editor, onClose, onOpenEmojiPicker],
   );
 
   const handleKeyDown = useCallback(

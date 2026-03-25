@@ -77,6 +77,9 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   const card = await db('cards').where({ id: cardId }).select('title').first();
   const author = await db('users').where({ id: actorId }).select('name', 'email', 'avatar_url').first();
 
+  const rawPreview = content.replace(/<[^>]+>/g, '');
+  const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
+
   await Promise.all([
     dispatchEvent({
       type: 'comment_added',
@@ -91,7 +94,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
       boardId: board.id,
       action: 'comment_added',
       actorId,
-      payload: { commentId: id, cardId, cardTitle: card?.title ?? '' },
+      payload: { commentId: id, cardId, cardTitle: card?.title ?? '', commentPreview },
     }),
   ]);
 

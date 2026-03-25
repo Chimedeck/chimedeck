@@ -25,15 +25,18 @@ function interpolate(template: string, vars: Record<string, string>): string {
 function describeAction(action: string, payload: Record<string, unknown>, actorName: string): string {
   const title = String(payload.title ?? payload.cardTitle ?? '');
   const cardTitle = String(payload.cardTitle ?? '');
-  const fromList = String(payload.fromList ?? translations['activity.fromList.unknown']);
-  const toList = String(payload.toList ?? translations['activity.toList.unknown']);
+  const fromList = String(payload.fromListName ?? payload.fromList ?? translations['activity.fromList.unknown']);
+  const toList = String(payload.toListName ?? payload.toList ?? translations['activity.toList.unknown']);
   const checklistTitle = String(payload.checklistTitle ?? '');
   const itemTitle = String(payload.itemTitle ?? '');
+  const commentPreview = String(payload.commentPreview ?? '');
+  const name = String(payload.name ?? '');
+  const assigneeName = String(payload.assigneeName ?? '');
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
 
-  return interpolate(template, { actor: actorName, title, cardTitle, fromList, toList, action, checklistTitle, itemTitle });
+  return interpolate(template, { actor: actorName, title, cardTitle, fromList, toList, action, checklistTitle, itemTitle, commentPreview, name, assigneeName });
 }
 
 const ActivityItem = ({ activity, actorName }: Props) => {

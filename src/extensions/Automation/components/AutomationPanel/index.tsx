@@ -23,7 +23,7 @@ interface Props {
 const TABS: { id: AutomationTab; label: string }[] = [
   { id: 'rules', label: translations['automation.panel.tab.rules'] },
   { id: 'buttons', label: translations['automation.panel.tab.buttons'] },
-  { id: 'schedule', label: translations['automation.panel.tab.schedule'] },
+  // TODO: unhide schedule tab when feature is ready
   { id: 'log', label: translations['automation.panel.tab.log'] },
 ];
 

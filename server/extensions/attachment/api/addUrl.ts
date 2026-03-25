@@ -110,7 +110,7 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     boardId: board.id,
     action: 'attachment_added',
     actorId,
-    payload: { attachmentId, cardId, name: body.name },
+    payload: { attachmentId, cardId, name: body.name, cardTitle: card.title },
   });
 
   publisher

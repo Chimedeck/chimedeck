@@ -194,7 +194,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       boardId: board.id,
       action: 'comment_added',
       actorId,
-      payload: { commentId: id, cardId, cardTitle: card.title },
+      payload: { commentId: id, cardId, cardTitle: card.title, commentPreview },
     }),
   ]);
 

@@ -12,8 +12,12 @@ import {
   PlusIcon,
   PaperClipIcon,
   ChevronDownIcon,
+  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
+import EditorHelpModal from './EditorHelpModal';
 import CommandMenu from './CommandMenu';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 
 // ---------------------------------------------------------------------------
 // HeadingDropdown — "Tt" text-styles menu matching the mockup design
@@ -198,6 +202,50 @@ interface Props {
 
 const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Props) => {
   const overflowRef = useRef<HTMLDivElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  // Open help modal with ⌘+/ keyboard shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setHelpOpen((v) => !v);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // Close emoji picker when clicking outside.
+  // [why] The listener is registered in a setTimeout(0) so the same mousedown
+  // event that triggered the picker to open doesn't immediately close it.
+  useEffect(() => {
+    if (!emojiPickerOpen) return;
+    let handler: ((e: MouseEvent) => void) | null = null;
+    const timer = setTimeout(() => {
+      handler = (e: MouseEvent) => {
+        if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+          setEmojiPickerOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handler);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      if (handler) document.removeEventListener('mousedown', handler);
+    };
+  }, [emojiPickerOpen]);
+
+  const handleEmojiSelect = useCallback(
+    (emoji: { native?: string }) => {
+      if (!editor || !emoji.native) return;
+      editor.chain().focus().insertContent(emoji.native).run();
+      setEmojiPickerOpen(false);
+    },
+    [editor],
+  );
 
   // Close overflow menu when clicking outside
   useEffect(() => {
@@ -291,6 +339,21 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
         </button>
       )}
 
+      {/* Help button */}
+      <button
+        type="button"
+        aria-label="Editor help"
+        title="Editor help (⌘+/)"
+        className={btn}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setHelpOpen(true);
+        }}
+      >
+        <QuestionMarkCircleIcon className="h-3.5 w-3.5" />
+      </button>
+
       {/* Overflow + button — secondary controls */}
       <div ref={overflowRef} className="relative ml-auto">
         <button
@@ -310,10 +373,33 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
         </button>
 
         {overflowOpen && (
-          <CommandMenu editor={editor} onClose={onToggleOverflow} />
+            <CommandMenu
+              editor={editor}
+              onClose={onToggleOverflow}
+              onOpenEmojiPicker={() => setEmojiPickerOpen(true)}
+            />
+          )}
+
+        {/* Emoji picker — shown instead of command menu after selecting Emoji */}
+        {emojiPickerOpen && (
+          <div
+            ref={emojiRef}
+            className="absolute right-0 top-full z-50 mt-1"
+          >
+            <Picker
+              data={data}
+              onEmojiSelect={handleEmojiSelect}
+              theme="dark"
+              previewPosition="bottom"
+              skinTonePosition="none"
+            />
+          </div>
         )}
       </div>
     </div>
+
+      {/* Editor help modal */}
+      {helpOpen && <EditorHelpModal onClose={() => setHelpOpen(false)} />}
   );
 };
 
