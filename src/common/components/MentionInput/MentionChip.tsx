@@ -22,7 +22,7 @@ const MentionChipRow = ({ nickname, name, avatarUrl, highlighted, onSelect, onMo
       role="option"
       aria-selected={highlighted}
       className={`flex items-center gap-2 px-3 py-2 cursor-pointer ${
-        highlighted ? 'bg-slate-700' : 'hover:bg-slate-700'
+        highlighted ? 'bg-bg-overlay' : 'hover:bg-bg-overlay'
       }`}
       onMouseDown={(e) => {
         // Prevent blur on textarea before selection
@@ -38,12 +38,12 @@ const MentionChipRow = ({ nickname, name, avatarUrl, highlighted, onSelect, onMo
           className="w-7 h-7 rounded-full object-cover flex-shrink-0"
         />
       ) : (
-        <span className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+        <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-inverse text-xs font-semibold flex-shrink-0">
           {initials}
         </span>
       )}
-      <span className="text-sm font-medium text-slate-200">@{nickname}</span>
-      <span className="text-xs text-slate-400 truncate">{name}</span>
+      <span className="text-sm font-medium text-base">@{nickname}</span>
+      <span className="text-xs text-muted truncate">{name}</span>
     </div>
   );
 };

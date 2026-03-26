@@ -25,7 +25,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div className="flex h-screen items-center justify-center text-red-400">
+          <div className="flex h-screen items-center justify-center text-danger">
             {translations['Common.errorBoundaryFallback']}
           </div>
         )

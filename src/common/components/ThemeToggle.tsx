@@ -9,7 +9,7 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={theme === 'dark' ? translations['Common.switchToLightMode'] : translations['Common.switchToDarkMode']}
-      className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+      className="p-2 rounded-lg text-muted hover:text-base hover:bg-bg-overlay transition-colors"
     >
       {theme === 'dark' ? (
         <SunIcon className="w-5 h-5" />
