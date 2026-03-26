@@ -41,7 +41,7 @@ function CollapseTooltip({ label }: { label: string }) {
   return (
     <span
       role="tooltip"
-      className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap rounded bg-slate-900 dark:bg-slate-700 px-2 py-1 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+      className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap rounded bg-bg-base px-2 py-1 text-xs font-medium text-base opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow border border-border"
     >
       {label}
     </span>
@@ -72,13 +72,13 @@ function NavItem({ to, icon, label, collapsed, end, badge, 'aria-label': ariaLab
             collapsed
               ? `flex items-center justify-center rounded-lg p-2.5 transition-colors ${
                   isActive
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-bg-sunken text-base'
+                    : 'text-muted hover:bg-bg-overlay hover:text-base'
                 }`
               : `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                   isActive
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-bg-sunken text-base font-medium'
+                    : 'text-muted hover:bg-bg-overlay hover:text-base'
                 }`
           }
         >
@@ -115,8 +115,8 @@ function NavButton({ onClick, icon, label, collapsed, badge, 'aria-label': ariaL
           aria-label={collapsed ? (ariaLabel ?? label) : undefined}
           className={
             collapsed
-              ? 'flex w-full items-center justify-center rounded-lg p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors'
-              : 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors'
+              ? 'flex w-full items-center justify-center rounded-lg p-2.5 text-muted hover:bg-bg-overlay hover:text-base transition-colors'
+              : 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors'
           }
         >
           <span className="shrink-0">{icon}</span>
@@ -184,7 +184,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
     : (profile?.name ?? user?.name ?? translations['Sidebar.unknownUser']);
 
   const guestBadge = (
-    <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+    <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"> {/* [theme-exception] amber guest badge is intentional brand colour */}
       {layoutTranslations['Sidebar.guestBadge']}
     </span>
   );
@@ -193,7 +193,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
     <>
       {/* Sidebar panel — transitions width between w-64 (expanded) and w-16 (collapsed) */}
       <nav
-        className={`flex h-full flex-col border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 overflow-hidden transition-[width] duration-300 ease-in-out ${
+        className={`flex h-full flex-col border-r border-border bg-bg-base overflow-hidden transition-[width] duration-300 ease-in-out ${
           collapsed ? 'w-16' : 'w-64'
         }`}
         aria-label={layoutTranslations['Layout.sidebarAriaLabel']}
@@ -201,7 +201,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
         data-collapsed={collapsed}
       >
         {/* Logo row + toggle button */}
-        <div className="flex h-14 shrink-0 items-center border-b border-slate-200 dark:border-slate-800">
+        <div className="flex h-14 shrink-0 items-center border-b border-border">
           {collapsed ? (
             <div className="flex flex-1 items-center justify-center">
               <Squares2X2Icon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
@@ -209,14 +209,14 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
           ) : (
             <div className="flex flex-1 items-center gap-2 px-4 overflow-hidden">
               <Squares2X2Icon className="h-6 w-6 shrink-0 text-indigo-400" aria-hidden="true" />
-              <span className="text-base font-bold text-slate-900 dark:text-white truncate">{layoutTranslations['App.name']}</span>
+              <span className="text-base font-bold truncate">{layoutTranslations['App.name']}</span>
             </div>
           )}
           {/* Toggle collapse/expand button — desktop only */}
           {!isMobile && (
             <button
               onClick={toggle}
-              className="mr-1.5 flex shrink-0 items-center justify-center rounded p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+              className="mr-1.5 flex shrink-0 items-center justify-center rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
               aria-label={collapsed ? layoutTranslations['Sidebar.expandAriaLabel'] : layoutTranslations['Sidebar.collapseAriaLabel']}
               data-testid="sidebar-toggle"
             >
@@ -230,18 +230,19 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
         </div>
 
         {/* Workspace switcher */}
-        <div className="border-b border-slate-200 dark:border-slate-800 px-2 py-2">
+        <div className="border-b border-border px-2 py-2">
           {collapsed ? (
             // Collapsed: show workspace initial as avatar button with tooltip
             <div className="relative group">
               <button
                 onClick={() => setSwitcherOpen((o) => !o)}
-                className="flex w-full items-center justify-center rounded-lg p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="flex w-full items-center justify-center rounded-lg p-2 text-muted hover:bg-bg-overlay transition-colors"
                 aria-label={translations['WorkspaceSwitcher.label']}
                 aria-expanded={switcherOpen}
               >
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/40 text-xs font-bold text-indigo-700 dark:text-indigo-300"
+                  // [theme-exception] indigo workspace avatar is intentional brand colour
                   aria-hidden="true"
                 >
                   {(activeWorkspace?.name ?? '?').charAt(0).toUpperCase()}
@@ -260,7 +261,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <div className="relative">
               <button
                 onClick={() => setSwitcherOpen((o) => !o)}
-                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-base hover:bg-bg-overlay transition-colors"
                 aria-expanded={switcherOpen}
                 aria-haspopup="listbox"
                 aria-label={translations['WorkspaceSwitcher.label']}
@@ -270,34 +271,34 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     ? translations['WorkspaceSwitcher.loading']
                     : (activeWorkspace?.name ?? translations['WorkspaceSwitcher.noWorkspaces'])}
                   {isGuest && (
-                    <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"> {/* [theme-exception] amber guest badge */}
                       guest
                     </span>
                   )}
                 </span>
-                <ChevronDownIcon className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                <ChevronDownIcon className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
               </button>
               {switcherOpen && (
                 <ul
                   role="listbox"
                   aria-label={translations['WorkspaceSwitcher.label']}
-                  className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl"
+                  className="absolute left-0 top-full z-50 mt-1 w-full rounded-lg border border-border bg-bg-surface py-1 shadow-xl"
                 >
                   {workspaces.map((ws) => (
                     <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                       <button
                         onClick={() => handleSwitchWorkspace(ws.id)}
-                        className="w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        className="w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                       >
                         {ws.name}
                       </button>
                     </li>
                   ))}
-                  <li role="separator" className="my-1 border-t border-slate-200 dark:border-slate-700" />
+                  <li role="separator" className="my-1 border-t border-border" />
                   <li>
                     <button
                       onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
-                      className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-bg-overlay transition-colors"
                     >
                       <PlusIcon className="h-4 w-4" aria-hidden="true" />
                       {translations['Sidebar.newWorkspace']}
@@ -326,7 +327,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               onNavigate={onClose}
               badge={
                 !collapsed ? (
-                  <kbd className="ml-auto rounded bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  <kbd className="ml-auto rounded bg-bg-sunken px-1.5 py-0.5 text-xs text-muted">
                     ⌘K
                   </kbd>
                 ) : undefined
@@ -391,7 +392,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 <>
                   {!collapsed && (
                     <li>
-                      <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-subtle">
                         {layoutTranslations['Sidebar.administrationSection']}
                       </p>
                     </li>
@@ -410,7 +411,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             !collapsed && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="mt-2 w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                className="mt-2 w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted hover:border-border-strong hover:text-subtle transition-colors"
               >
                 {translations['Sidebar.createFirst']}
               </button>
@@ -419,14 +420,14 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
         </div>
 
         {/* User menu */}
-        <div className={`border-t border-slate-200 dark:border-slate-800 py-2 ${collapsed ? 'px-1.5' : 'px-3'}`}>
+        <div className={`border-t border-border py-2 ${collapsed ? 'px-1.5' : 'px-3'}`}>
           <div className="relative">
             {collapsed ? (
               // Collapsed: avatar-only button with tooltip
               <div className="relative group">
                 <button
                   onClick={() => setUserMenuOpen((o) => !o)}
-                  className="flex w-full items-center justify-center rounded-lg p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="flex w-full items-center justify-center rounded-lg p-2 text-base hover:bg-bg-overlay transition-colors"
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
                   aria-label={userDisplayName}
@@ -440,7 +441,8 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     />
                   ) : (
                     <span
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-inverse"
+                      // [theme-exception] indigo avatar ring is intentional brand colour
                       aria-hidden="true"
                     >
                       {userInitial}
@@ -453,7 +455,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               // Expanded: full user button
               <button
                 onClick={() => setUserMenuOpen((o) => !o)}
-                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
               >
@@ -466,14 +468,15 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   />
                 ) : (
                   <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-inverse"
+                    // [theme-exception] indigo avatar ring
                     aria-hidden="true"
                   >
                     {userInitial}
                   </span>
                 )}
                 <span className="flex-1 truncate text-left">{userDisplayName}</span>
-                <ChevronDownIcon className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+                <ChevronDownIcon className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
               </button>
             )}
 
@@ -484,14 +487,14 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 // rather than rendering within the clipped overflow-hidden container.
                 className={`absolute ${
                   collapsed ? 'left-full bottom-0 ml-2' : 'bottom-full left-0 mb-1'
-                } w-40 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl z-50`}
+                } w-40 rounded-lg border border-border bg-bg-surface py-1 shadow-xl z-50`}
               >
                 <li role="none">
                   <NavLink
                     to="/settings/profile"
                     role="menuitem"
                     onClick={() => setUserMenuOpen(false)}
-                    className="block w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.settings']}
                   </NavLink>
@@ -501,17 +504,17 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     to="/settings/api-tokens"
                     role="menuitem"
                     onClick={() => setUserMenuOpen(false)}
-                    className="block w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.apiTokens']}
                   </NavLink>
                 </li>
-                <li role="separator" className="my-1 border-t border-slate-200 dark:border-slate-700" />
+                <li role="separator" className="my-1 border-t border-border" />
                 <li role="none">
                   <button
                     role="menuitem"
                     onClick={handleLogout}
-                    className="w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.logout']}
                   </button>
