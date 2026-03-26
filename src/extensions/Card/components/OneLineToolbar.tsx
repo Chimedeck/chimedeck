@@ -13,6 +13,7 @@ import {
   PaperClipIcon,
   ChevronDownIcon,
   QuestionMarkCircleIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
 import EditorHelpModal from './EditorHelpModal';
 import CommandMenu from './CommandMenu';
@@ -198,9 +199,13 @@ interface Props {
   onToggleOverflow: () => void;
   /** When provided, a paperclip button appears in the toolbar to trigger file upload */
   onAttach?: () => void;
+  /** Controlled open state for the link insert popover */
+  linkPopoverOpen?: boolean;
+  /** Called when the link button is clicked — parent controls the open state */
+  onToggleLinkPopover?: () => void;
 }
 
-const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Props) => {
+const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, linkPopoverOpen = false, onToggleLinkPopover }: Props) => {
   const overflowRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
@@ -321,6 +326,27 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
         onMouseDown={runCmd(() => editor?.chain().focus().toggleBulletList().run() ?? false)}
       >
         <ListBulletIcon className="h-3.5 w-3.5" />
+      </button>
+
+      {/* Hyperlink button */}
+      <button
+        type="button"
+        aria-label="Insert link"
+        title="Insert link"
+        className={`${btn} ${linkPopoverOpen || editor?.isActive('link') ? btnActive : ''}`}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!linkPopoverOpen) {
+            // Close internal panels before parent opens the link popover
+            if (overflowOpen) onToggleOverflow();
+            setEmojiPickerOpen(false);
+            setHelpOpen(false);
+          }
+          onToggleLinkPopover?.();
+        }}
+      >
+        <LinkIcon className="h-3.5 w-3.5" />
       </button>
 
       {/* Attach file button — shown when caller provides onAttach handler */}

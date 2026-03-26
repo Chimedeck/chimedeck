@@ -26,6 +26,7 @@ import { rewriteS3UrlsToProxy } from '~/common/utils/rewriteS3UrlsToProxy';
 import { CardAssetPicker } from './CardAssetPicker';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
+import LinkInsertPopover from '~/extensions/Card/components/LinkInsertPopover';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { listAttachments } from '~/extensions/Attachments/api';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
@@ -212,6 +213,7 @@ const CommentEditor = ({
   const [error, setError] = useState<string | null>(null);
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>(availableAttachments);
 
   // Auth + workspace context needed by the offline draft hook
@@ -561,8 +563,19 @@ const CommentEditor = ({
             editor={editor}
             overflowOpen={overflowOpen}
             onToggleOverflow={() => setOverflowOpen((o) => !o)}
+            linkPopoverOpen={linkPopoverOpen}
+            onToggleLinkPopover={() => {
+              setAssetPickerOpen(false);
+              setLinkPopoverOpen((v) => !v);
+            }}
             {...(cardId ? { onAttach: handleAttach } : {})}
           />
+          {linkPopoverOpen && (
+            <LinkInsertPopover
+              editor={editor}
+              onClose={() => setLinkPopoverOpen(false)}
+            />
+          )}
           {assetPickerOpen && cardId && (
             <CardAssetPicker
               attachments={cardAttachments}

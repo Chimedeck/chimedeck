@@ -8,6 +8,7 @@ import type { Editor } from '@tiptap/react';
 import { marked } from 'marked';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from './OneLineToolbar';
+import LinkInsertPopover from './LinkInsertPopover';
 import type { Attachment } from '~/extensions/Attachments/types';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
@@ -205,6 +206,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const [editMode, setEditMode] = useState<'rich' | 'markdown'>('rich');
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
 
   // Auth + workspace context needed by the offline draft hook
@@ -565,8 +567,19 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   editor={editor}
                   overflowOpen={overflowOpen}
                   onToggleOverflow={() => setOverflowOpen((o) => !o)}
+                  linkPopoverOpen={linkPopoverOpen}
+                  onToggleLinkPopover={() => {
+                    setAssetPickerOpen(false);
+                    setLinkPopoverOpen((v) => !v);
+                  }}
                   {...attachProps}
                 />
+                {linkPopoverOpen && (
+                  <LinkInsertPopover
+                    editor={editor}
+                    onClose={() => setLinkPopoverOpen(false)}
+                  />
+                )}
                 {assetPickerOpen && cardId && (
                   <CardAssetPicker
                     attachments={cardAttachments}
