@@ -310,6 +310,7 @@ interface TrelloCard {
   board?: TrelloBoard;
   pluginData?: Array<{ id: string; idPlugin: string; scope: string; idModel: string; value: string; access: string; dateLastUpdated: string }>;
   checklists?: TrelloChecklist[];
+  customFields?: TrelloCustomField[];     // board-scoped field definitions, present on each card
   customFieldItems?: TrelloCustomFieldItem[];
 }
 
@@ -444,8 +445,9 @@ async function main() {
       }
     }
 
-    // Custom fields — defined per board, collected from card.board.customFields
-    for (const cf of card.board?.customFields ?? []) {
+    // Custom fields — defined per board; the export embeds the board's full
+    // customFields array directly on each card (not nested inside card.board).
+    for (const cf of card.customFields ?? []) {
       if (customFieldSet.has(cf.id)) continue;
       const options =
         cf.type === 'list'

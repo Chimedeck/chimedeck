@@ -53,14 +53,23 @@ const CustomFieldBadge = ({ fieldName, fieldType, value, dropdownOption }: Props
       title={`${fieldName}: ${formatted}`}
       aria-label={`${fieldName}: ${formatted}`}
     >
-      {dropdownOption && (
-        <span
-          className="w-2 h-2 rounded-full flex-shrink-0"
-          style={{ backgroundColor: dropdownOption.color }}
-          aria-hidden="true"
-        />
+      {isCheckbox ? (
+        <>
+          <span aria-hidden="true">{isChecked ? '✓' : '✗'}</span>
+          <span className="truncate">{fieldName}</span>
+        </>
+      ) : (
+        <>
+          {dropdownOption && (
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: dropdownOption.color }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="truncate">{formatted}</span>
+        </>
       )}
-      <span className="truncate">{formatted}</span>
     </span>
   );
 };

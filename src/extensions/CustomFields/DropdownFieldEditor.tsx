@@ -1,21 +1,72 @@
 // DropdownFieldEditor — colour-coded options editor for DROPDOWN custom fields.
 // Renders a list of existing options with inline label/colour editing, plus an
 // "Add option" button.
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import translations from './translations/en.json';
 import type { DropdownOption } from './types';
 
-// Preset colour palette for quick selection.
+// Preset colour palette for quick selection (4-column grid = 3 rows of 4).
 const PRESET_COLORS = [
   '#EF4444', // red
+  '#DC2626', // dark red
   '#F97316', // orange
   '#EAB308', // yellow
   '#22C55E', // green
+  '#059669', // emerald
   '#3B82F6', // blue
+  '#1D4ED8', // dark blue
   '#8B5CF6', // violet
   '#EC4899', // pink
   '#6B7280', // gray
+  '#0F172A', // near-black
 ];
+
+interface ColorPickerPopupProps {
+  currentColor: string;
+  onSelect: (color: string) => void;
+  onClose: () => void;
+}
+
+// Standalone popup so it can close itself on outside click without polluting
+// DropdownFieldEditor's event handlers.
+const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-0 top-8 z-20 bg-slate-900 border border-slate-600 rounded-lg p-4 shadow-xl w-48"
+    >
+      <p className="text-xs font-medium text-slate-400 mb-2">Colour</p>
+      <div className="grid grid-cols-4 gap-3">
+        {PRESET_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className="relative w-8 h-8 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white/50 flex items-center justify-center"
+            style={{ backgroundColor: c }}
+            aria-label={`Select colour ${c}`}
+            onClick={() => onSelect(c)}
+          >
+            {c === currentColor && (
+              <span className="text-white text-xs font-bold drop-shadow" aria-hidden="true">✓</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface Props {
   options: DropdownOption[];
@@ -67,18 +118,11 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
               }
             />
             {colorPickerOpenId === option.id && (
-              <div className="absolute left-0 top-8 z-10 bg-slate-800 border border-slate-600 rounded p-2 grid grid-cols-4 gap-1 shadow-lg">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className="w-5 h-5 rounded hover:scale-110 transition-transform focus:outline-none focus:ring-1 focus:ring-white"
-                    style={{ backgroundColor: c }}
-                    aria-label={`Select colour ${c}`}
-                    onClick={() => handleColorChange(option.id, c)}
-                  />
-                ))}
-              </div>
+              <ColorPickerPopup
+                currentColor={option.color}
+                onSelect={(c) => handleColorChange(option.id, c)}
+                onClose={() => setColorPickerOpenId(null)}
+              />
             )}
           </div>
 
