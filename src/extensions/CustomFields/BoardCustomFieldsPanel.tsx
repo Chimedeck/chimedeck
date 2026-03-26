@@ -214,7 +214,7 @@ const BoardCustomFieldsPanel = () => {
                     if (e.key === 'Enter') commitRename(field);
                     if (e.key === 'Escape') setRenamingId(null);
                   }}
-                  className="flex-1 bg-slate-700 border border-blue-500 rounded px-2 py-0.5 text-sm text-slate-200 focus:outline-none"
+                  className="flex-1 bg-bg-overlay border border-border rounded px-2 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
                   aria-label={translations['CustomFields.renameFieldAriaLabel']}
                 />
               ) : (
@@ -316,7 +316,7 @@ const BoardCustomFieldsPanel = () => {
             value={newField.name}
             onChange={(e) => setNewField((f) => ({ ...f, name: e.target.value }))}
             placeholder={translations['CustomFields.fieldNamePlaceholder']}
-            className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             autoFocus
             aria-label={translations['CustomFields.fieldNamePlaceholder']}
           />
@@ -327,7 +327,7 @@ const BoardCustomFieldsPanel = () => {
             onChange={(e) =>
               setNewField((f) => ({ ...f, field_type: e.target.value as FieldType, options: [] }))
             }
-            className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
             aria-label={translations['CustomFields.typeLabel']}
           >
             {FIELD_TYPES.map((t) => (

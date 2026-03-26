@@ -75,21 +75,21 @@ const PluginModal = ({ modal, onClose }: Props) => {
       <div
         className={
           modal.fullscreen
-            ? 'relative w-full h-full flex flex-col bg-slate-900 shadow-2xl'
-            : 'relative w-full max-w-2xl h-[80vh] flex flex-col bg-slate-900 rounded-lg shadow-2xl mx-4'
+            ? 'relative w-full h-full flex flex-col bg-bg-base shadow-2xl'
+            : 'relative w-full max-w-2xl h-[80vh] flex flex-col bg-bg-base rounded-lg shadow-2xl mx-4'
         }
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0"
+          className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0"
           style={headerStyle}
         >
-          <h2 className="text-slate-100 font-medium text-sm truncate pr-4">
+          <h2 className="text-base font-medium text-sm truncate pr-4">
             {modal.title || translations['plugins.modal.defaultTitle']}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-lg leading-none flex-shrink-0"
+            className="text-muted hover:text-subtle text-lg leading-none flex-shrink-0"
             aria-label={translations['plugins.modal.closeAriaLabel']}
           >
             ✕

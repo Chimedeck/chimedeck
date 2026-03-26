@@ -169,3 +169,9 @@
 .dark .prose a:hover {
   color: #93c5fd; /* blue-300 */
 }
+
+/* Themed scrollbars (WebKit) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-overlay); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }

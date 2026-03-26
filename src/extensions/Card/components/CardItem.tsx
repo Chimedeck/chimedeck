@@ -34,7 +34,7 @@ function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): str
   if (done) return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30';
   if (overdue) return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30';
   if (dueSoon) return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30';
-  return 'text-gray-400 dark:text-slate-500';
+  return 'text-muted';
 }
 
 const CardItem = ({
@@ -98,7 +98,7 @@ const CardItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700/50 rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
+      className={`bg-white hover:bg-gray-50 border border-border rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90' : ''
       }`}
       role="button"
@@ -135,7 +135,7 @@ const CardItem = ({
             onToggle={onToggleLabels ?? (() => {})}
           />
         )}
-        <p className="text-gray-800 dark:text-slate-200 text-sm leading-snug break-words">{card.title}</p>
+        <p className="text-gray-800 text-sm leading-snug break-words">{card.title}</p>
         {card.amount && (
           <div className="mt-1">
             <CardMoneyBadge amount={card.amount} currency={card.currency} />
@@ -164,7 +164,7 @@ const CardItem = ({
                 className={`inline-flex items-center gap-0.5 text-xs ${
                   checklistComplete
                     ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-gray-500 dark:text-slate-400'
+                    : 'text-muted'
                 }`}
                 title={`Checklist: ${checklistDone}/${checklistTotal}`}
               >
@@ -176,7 +176,7 @@ const CardItem = ({
             {/* Attachment count */}
             {(card.attachment_count ?? 0) > 0 && (
               <span
-                className="inline-flex items-center gap-0.5 text-xs text-gray-500 dark:text-slate-400"
+                className="inline-flex items-center gap-0.5 text-xs text-muted"
                 title={`${card.attachment_count} attachment${(card.attachment_count ?? 0) > 1 ? 's' : ''}`}
               >
                 <PaperClipIcon className="h-3 w-3 shrink-0" />
@@ -187,7 +187,7 @@ const CardItem = ({
             {/* Comment count */}
             {(card.comment_count ?? 0) > 0 && (
               <span
-                className="inline-flex items-center gap-0.5 text-xs text-gray-500 dark:text-slate-400"
+                className="inline-flex items-center gap-0.5 text-xs text-muted"
                 title={`${card.comment_count} comment${(card.comment_count ?? 0) > 1 ? 's' : ''}`}
               >
                 <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />

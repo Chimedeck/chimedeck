@@ -5,8 +5,8 @@ const LIST_COUNT = 3;
 const CARD_COUNT = 4;
 
 const ListSkeleton = () => (
-  <div className="flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-gray-100 dark:bg-slate-800 p-3">
-    <div className="mb-2 h-5 w-1/2 rounded bg-gray-300 dark:bg-slate-600 animate-pulse" />
+  <div className="flex w-72 shrink-0 flex-col gap-2 rounded-xl bg-bg-surface p-3">
+    <div className="mb-2 h-5 w-1/2 rounded bg-bg-overlay animate-pulse" />
     {Array.from({ length: CARD_COUNT }).map((_, i) => (
       <CardSkeleton key={i} />
     ))}

@@ -8,7 +8,7 @@ interface Props {
 
 const CardSidebarSection = ({ title, children }: Props) => (
   <div>
-    <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
       {title}
     </p>
     {children}

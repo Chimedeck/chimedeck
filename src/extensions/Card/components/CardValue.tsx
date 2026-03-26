@@ -1,5 +1,6 @@
 // CardValue — editable amount + currency sidebar section for the card modal.
 import { useState, useEffect } from 'react';
+import Button from '../../../common/components/Button';
 
 const CURRENCY_REGEX = /^[A-Z]{3}$/;
 
@@ -60,7 +61,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           min="0"
           step="any"
           placeholder="0.00"
-          className="flex-1 min-w-0 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="flex-1 min-w-0 bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           value={amountInput}
           onChange={(e) => setAmountInput(e.target.value)}
           disabled={disabled || saving}
@@ -70,7 +71,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           type="text"
           maxLength={3}
           placeholder="USD"
-          className="w-14 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="w-14 bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base uppercase focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
           value={currencyInput}
           onChange={(e) => setCurrencyInput(e.target.value.toUpperCase())}
           disabled={disabled || saving}
@@ -79,14 +80,15 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
       </div>
       {error && <p className="text-xs text-red-400">{error}</p>}
       {!disabled && (
-        <button
+        <Button
           type="button"
-          className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+          variant="primary"
+          className="w-full text-xs"
           onClick={handleSave}
           disabled={saving}
         >
           {saving ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
       )}
     </div>
   );

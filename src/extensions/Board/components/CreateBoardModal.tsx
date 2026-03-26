@@ -1,5 +1,6 @@
 // Modal for creating a new board within a workspace.
 import { useState } from 'react';
+import Button from '~/common/components/Button';
 
 interface Props {
   onClose: () => void;
@@ -18,8 +19,8 @@ const CreateBoardModal = ({ onClose, onCreate }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Create Board</h2>
+      <div className="w-full max-w-md rounded-lg bg-bg-surface p-6 shadow-xl">
+        <h2 className="mb-4 text-lg font-semibold text-base">Create Board</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             autoFocus
@@ -27,23 +28,15 @@ const CreateBoardModal = ({ onClose, onCreate }: Props) => {
             placeholder="Board title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
-            >
+            <Button type="button" variant="ghost" size="md" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!title.trim()}
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" variant="primary" size="md" disabled={!title.trim()}>
               Create
-            </button>
+            </Button>
           </div>
         </form>
       </div>

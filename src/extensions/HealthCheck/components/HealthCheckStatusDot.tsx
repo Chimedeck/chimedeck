@@ -10,6 +10,7 @@ interface Props {
   errorMessage?: string | null | undefined;
 }
 
+// [theme-exception] Status dots use a fixed semantic traffic-light palette (green/amber/red/gray).
 const DOT_CLASSES: Record<NonNullable<HealthCheckStatus> | 'unknown', string> = {
   green: 'bg-green-500',
   amber: 'bg-amber-400',
@@ -17,6 +18,7 @@ const DOT_CLASSES: Record<NonNullable<HealthCheckStatus> | 'unknown', string> = 
   unknown: 'bg-gray-300',
 };
 
+// [theme-exception] Pulse rings mirror the dot palette for visual consistency.
 const PULSE_CLASSES: Record<NonNullable<HealthCheckStatus> | 'unknown', string> = {
   green: 'animate-ping bg-green-500',
   amber: 'animate-ping bg-amber-400',
@@ -83,11 +85,11 @@ export function HealthCheckStatusDot({ status, httpStatus, responseTimeMs, error
       {showTooltip && (
         <span
           role="tooltip"
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg pointer-events-none"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 whitespace-nowrap rounded bg-bg-base px-2 py-1 text-xs text-inverse shadow-lg pointer-events-none"
         >
           {tooltip}
           {/* Arrow */}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-bg-base" />
         </span>
       )}
     </span>

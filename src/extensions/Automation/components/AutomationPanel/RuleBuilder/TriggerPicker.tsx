@@ -33,13 +33,13 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
 
   return (
     <div className="relative">
-      <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wide">
+      <label className="mb-1 block text-xs font-medium text-muted uppercase tracking-wide">
         {translations['automation.triggerPicker.label']}
       </label>
 
       <button
         type="button"
-        className="flex w-full items-center gap-2 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-200 hover:border-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex w-full items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-subtle hover:border-border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -51,19 +51,19 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           </>
         ) : (
           <>
-            <BoltSlashIcon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
-            <span className="flex-1 text-left text-slate-400">{translations['automation.triggerPicker.placeholder']}</span>
+            <BoltSlashIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+            <span className="flex-1 text-left text-muted">{translations['automation.triggerPicker.placeholder']}</span>
           </>
         )}
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border border-slate-600 bg-slate-800 shadow-xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border border-border bg-bg-surface shadow-xl">
           {/* Search input */}
-          <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2">
-            <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
-              className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-subtle placeholder:text-muted focus:outline-none"
               placeholder={translations['automation.triggerPicker.searchPlaceholder']}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -72,7 +72,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           </div>
 
           {loading && (
-            <p className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.triggerPicker.loading']}</p>
+            <p className="px-3 py-4 text-center text-sm text-muted">{translations['automation.triggerPicker.loading']}</p>
           )}
 
           {error && (
@@ -80,7 +80,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           )}
 
           {!loading && !error && filtered.length === 0 && (
-            <p className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.triggerPicker.noResults']}</p>
+            <p className="px-3 py-4 text-center text-sm text-muted">{translations['automation.triggerPicker.noResults']}</p>
           )}
 
           {!loading && !error && filtered.length > 0 && (
@@ -89,8 +89,8 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
                 <li key={t.type} role="option" aria-selected={t.type === selectedType}>
                   <button
                     type="button"
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-slate-700 ${
-                      t.type === selectedType ? 'bg-slate-700 text-blue-400' : 'text-slate-200'
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-bg-overlay ${
+                      t.type === selectedType ? 'bg-bg-overlay text-blue-400' : 'text-subtle'
                     }`}
                     onClick={() => {
                       onSelect(t);
@@ -98,7 +98,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
                       setQuery('');
                     }}
                   >
-                    <BoltIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                    <BoltIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
                     {t.label}
                   </button>
                 </li>

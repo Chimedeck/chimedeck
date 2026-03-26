@@ -86,7 +86,7 @@ function renderContent(text: string, attachments: Attachment[]): string {
   // Wrap @mentions in a styled chip
   return html.replaceAll(
     /(@\w[\w.+-]*)/g,
-    '<span class="rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">$1</span>',
+    '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>',
   );
 }
 
@@ -139,10 +139,10 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
       <div className="flex-1 min-w-0">
         {/* Header: name + timestamp */}
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{relativeTime(comment.created_at)}</span>
+          <span className="text-sm font-semibold text-base">{displayName}</span>
+          <span className="text-xs text-muted">{relativeTime(comment.created_at)}</span>
           {comment.version > 1 && (
-            <span className="text-xs italic text-gray-400">{translations['comment.edited']}</span>
+            <span className="text-xs italic text-muted">{translations['comment.edited']}</span>
           )}
         </div>
 
@@ -159,7 +159,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
           />
         ) : (
           <div
-            className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-100
+            className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base
               [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
             // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
             // Input is from authenticated users only (internal tool), so XSS risk is accepted.
@@ -169,11 +169,11 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
 
         {/* Inline action links */}
         {!editing && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted">
             {canEdit && (
               <button
                 onClick={() => setEditing(true)}
-                className="hover:text-gray-800 dark:hover:text-gray-200 hover:underline"
+                className="hover:text-subtle hover:underline"
               >
                 {translations['comment.action.edit']}
               </button>

@@ -42,7 +42,7 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commitRename}
           onKeyDown={handleKeyDown}
-          className="bg-transparent text-gray-900 dark:text-slate-100 font-semibold text-sm focus:outline-none focus:bg-gray-100 dark:focus:bg-slate-800 rounded px-1 py-0.5 w-full"
+          className="bg-transparent text-base font-semibold text-sm focus:outline-none focus:bg-bg-overlay rounded px-1 py-0.5 w-full"
           aria-label={`Rename list ${list.title}`}
         />
       ) : (

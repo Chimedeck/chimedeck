@@ -56,7 +56,7 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete }: Props): 
 
   return (
     <div
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-slate-700 bg-slate-800/60 hover:bg-slate-800 transition-colors group"
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-bg-surface/60 hover:bg-bg-surface transition-colors group"
       data-testid="external-link-preview"
     >
       {/* Favicon */}
@@ -69,7 +69,7 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete }: Props): 
             onError={() => setFaviconError(true)}
           />
         ) : (
-          <LinkIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+          <LinkIcon className="h-4 w-4 text-muted" aria-hidden="true" />
         )}
       </div>
 
@@ -89,17 +89,17 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete }: Props): 
           <button
             type="button"
             onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted hover:text-subtle hover:bg-bg-overlay"
             aria-label="Link options"
           >
             <EllipsisHorizontalIcon className="h-4 w-4" aria-hidden="true" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 z-20 min-w-[120px] rounded-lg border border-slate-600 bg-slate-800 shadow-xl py-1">
+            <div className="absolute right-0 top-full mt-1 z-20 min-w-[120px] rounded-lg border border-border bg-bg-surface shadow-xl py-1">
               {confirmDelete ? (
                 <div className="px-3 py-2 space-y-1">
-                  <p className="text-[11px] text-slate-300 mb-1">Remove link?</p>
+                  <p className="text-[11px] text-subtle mb-1">Remove link?</p>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -111,7 +111,7 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete }: Props): 
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(false)}
-                      className="text-[11px] text-slate-400 hover:text-slate-200"
+                      className="text-[11px] text-muted hover:text-subtle"
                     >
                       {translations['attachments.item.delete.no']}
                     </button>
@@ -121,7 +121,7 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete }: Props): 
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(true)}
-                  className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-slate-700 hover:text-red-300"
+                  className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-bg-overlay hover:text-red-300"
                 >
                   {translations['attachments.item.action.delete.ariaLabel']}
                 </button>

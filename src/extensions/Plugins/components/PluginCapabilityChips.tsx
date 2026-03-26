@@ -23,7 +23,8 @@ const PluginCapabilityChips = ({ capabilities }: Props) => {
       {capabilities.map((cap) => (
         <span
           key={cap}
-          className="text-xs bg-slate-700 text-slate-300 rounded px-2 py-0.5"
+          // [theme-exception] capability badge colors are intentional
+          className="text-xs bg-bg-overlay text-subtle rounded px-2 py-0.5"
         >
           {CAPABILITY_LABELS[cap] ?? cap}
         </span>

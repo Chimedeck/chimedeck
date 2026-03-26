@@ -45,19 +45,19 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl focus:outline-none"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-bg-base p-6 shadow-2xl focus:outline-none"
           aria-describedby="create-workspace-description"
         >
-          <Dialog.Title className="mb-1 text-lg font-bold text-white">
+          <Dialog.Title className="mb-1 text-lg font-bold text-base">
             {translations['CreateWorkspaceModal.title']}
           </Dialog.Title>
-          <p id="create-workspace-description" className="mb-5 text-sm text-slate-400">
+          <p id="create-workspace-description" className="mb-5 text-sm text-muted">
             {translations['CreateWorkspaceModal.description']}
           </p>
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="workspace-name" className="mb-1.5 block text-sm font-medium text-slate-300">
+              <label htmlFor="workspace-name" className="mb-1.5 block text-sm font-medium text-subtle">
                 {translations['CreateWorkspaceModal.nameLabel']}
               </label>
               <input
@@ -68,7 +68,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
                 placeholder={translations['CreateWorkspaceModal.namePlaceholder']}
                 required
                 autoFocus
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -82,7 +82,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
               <button
                 type="button"
                 onClick={handleCancel}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-muted hover:bg-bg-surface hover:text-base transition-colors"
               >
                 {translations['CreateWorkspaceModal.cancelButton']}
               </button>

@@ -384,15 +384,15 @@ const BoardPage = () => {
 
   if (status === 'loading' && !board) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <p className="text-slate-400">Loading board…</p>
+      <div className="flex h-screen items-center justify-center bg-bg-base">
+        <p className="text-muted">Loading board…</p>
       </div>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
+      <div className="flex h-screen items-center justify-center bg-bg-base">
         <p className="text-red-400">Failed to load board.</p>
       </div>
     );
@@ -411,7 +411,7 @@ const BoardPage = () => {
 
   return (
     <div
-      className="flex flex-col text-slate-900 dark:text-slate-100 h-full overflow-hidden relative bg-slate-50 dark:bg-slate-950 bg-cover bg-center"
+      className="flex flex-col text-base h-full overflow-hidden relative bg-bg-base bg-cover bg-center"
       style={board.background ? { backgroundImage: `url(${board.background})` } : undefined}
     >
       {/* Dark scrim over background image so text stays legible */}
@@ -446,15 +446,15 @@ const BoardPage = () => {
       )}
 
       {/* Tab bar */}
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700 px-4 pt-2">
+      <div className="flex gap-1 border-b border-border px-4 pt-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`rounded-t px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                ? 'border-b-2 border-blue-500 text-blue-600'
+                : 'text-muted hover:text-subtle'
             }`}
           >
             {tab.label}

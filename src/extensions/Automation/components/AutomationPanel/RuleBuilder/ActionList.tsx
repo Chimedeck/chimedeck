@@ -89,8 +89,8 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <PlayIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
-        <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <PlayIcon className="h-4 w-4 text-muted" aria-hidden="true" />
+        <span className="text-xs font-medium uppercase tracking-wide text-muted">
           {translations['automation.actionList.label']} ({actions.length})
         </span>
       </div>
@@ -150,7 +150,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
       {!showPicker && (
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-md border border-dashed border-slate-600 px-3 py-2 text-sm text-slate-400 transition-colors hover:border-slate-400 hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex items-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted transition-colors hover:border-border hover:text-subtle focus:outline-none focus:ring-2 focus:ring-blue-500"
           onClick={() => setShowPicker(true)}
         >
           <PlusIcon className="h-4 w-4" aria-hidden="true" />

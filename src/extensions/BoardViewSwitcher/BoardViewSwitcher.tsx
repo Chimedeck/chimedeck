@@ -17,7 +17,7 @@ const BoardViewSwitcher = ({ boardId }: Props) => {
     <div
       role="tablist"
       aria-label="Board view"
-      className="flex gap-1 border-b border-slate-200 dark:border-slate-700 px-4"
+      className="flex gap-1 border-b border-border px-4"
       data-testid="board-view-switcher"
     >
       {VIEW_TYPES.map((viewType: ViewType) => (

@@ -82,7 +82,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
       {/* Invite form — only for admins */}
       {isAdmin && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
             Invite guest by email
           </p>
           <form onSubmit={handleInvite} className="flex gap-2">
@@ -92,13 +92,13 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
               onChange={(e) => { setEmail(e.target.value); setError(null); setSuccess(null); }}
               placeholder="guest@example.com"
               disabled={inviting}
-              className="flex-1 rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="flex-1 rounded border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
               aria-label="Guest email address"
             />
             <button
               type="submit"
               disabled={inviting || !email.trim()}
-              className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+              className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-inverse hover:bg-indigo-500 disabled:opacity-50 transition-colors"
             >
               {inviting ? 'Inviting…' : 'Invite'}
             </button>
@@ -106,15 +106,15 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
 
           {/* Guest type toggle — Viewer (read-only) or Member (full write within board) */}
           <div className="mt-2 flex items-center gap-1" role="group" aria-label="Guest type">
-            <span className="mr-1 text-xs text-slate-400">Role:</span>
+            <span className="mr-1 text-xs text-muted">Role:</span>
             <button
               type="button"
               onClick={() => setGuestType('VIEWER')}
               aria-pressed={guestType === 'VIEWER'}
               className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                 guestType === 'VIEWER'
-                  ? 'bg-slate-600 text-slate-100'
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                  ? 'bg-bg-overlay text-base'
+                  : 'text-muted hover:bg-bg-overlay hover:text-subtle'
               }`}
             >
               Viewer
@@ -125,8 +125,8 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
               aria-pressed={guestType === 'MEMBER'}
               className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                 guestType === 'MEMBER'
-                  ? 'bg-indigo-700 text-slate-100'
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                  ? 'bg-indigo-700 text-base'
+                  : 'text-muted hover:bg-bg-overlay hover:text-subtle'
               }`}
             >
               Member
@@ -148,22 +148,22 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
 
       {/* Guest list */}
       <div>
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
           Guests
         </p>
         {isLoading ? (
-          <p className="text-sm text-slate-500">Loading…</p>
+          <p className="text-sm text-muted">Loading…</p>
         ) : guests.length === 0 ? (
-          <p className="text-sm text-slate-500">No guests yet.</p>
+          <p className="text-sm text-muted">No guests yet.</p>
         ) : (
-          <ul className="divide-y divide-slate-800">
+          <ul className="divide-y divide-border">
             {guests.map((guest) => (
               <li key={guest.id} className="flex flex-col gap-1 py-2">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-slate-100">{guest.name}</p>
+                    <p className="truncate text-sm text-base">{guest.name}</p>
                     {guest.name !== guest.email && (
-                      <p className="truncate text-xs text-slate-400">{guest.email}</p>
+                      <p className="truncate text-xs text-muted">{guest.email}</p>
                     )}
                   </div>
                   <div className="ml-2 flex items-center gap-1 shrink-0">
@@ -176,8 +176,8 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                           aria-pressed={guest.guestType === 'VIEWER'}
                           className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
                             guest.guestType === 'VIEWER'
-                              ? 'bg-slate-600 text-slate-100'
-                              : 'text-slate-500 hover:bg-slate-700 hover:text-slate-300'
+                              ? 'bg-bg-overlay text-base'
+                              : 'text-muted hover:bg-bg-overlay hover:text-subtle'
                           }`}
                         >
                           Viewer
@@ -188,8 +188,8 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                           aria-pressed={guest.guestType === 'MEMBER'}
                           className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
                             guest.guestType === 'MEMBER'
-                              ? 'bg-indigo-700 text-slate-100'
-                              : 'text-slate-500 hover:bg-slate-700 hover:text-slate-300'
+                              ? 'bg-indigo-700 text-base'
+                              : 'text-muted hover:bg-bg-overlay hover:text-subtle'
                           }`}
                         >
                           Member
@@ -200,7 +200,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                       <span className={`rounded px-2 py-0.5 text-xs font-medium ${
                         guest.guestType === 'MEMBER'
                           ? 'bg-indigo-900/60 text-indigo-300'
-                          : 'bg-slate-700 text-slate-400'
+                          : 'bg-bg-overlay text-muted'
                       }`}>
                         {guest.guestType === 'MEMBER' ? 'Member' : 'Viewer'}
                       </span>
@@ -209,7 +209,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                       <button
                         type="button"
                         onClick={() => handleRevoke(guest)}
-                        className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-700 hover:text-red-400 transition-colors"
+                        className="rounded px-2 py-1 text-xs text-muted hover:bg-bg-overlay hover:text-red-400 transition-colors"
                         aria-label={`Remove guest ${guest.name ?? guest.email}`}
                       >
                         Remove

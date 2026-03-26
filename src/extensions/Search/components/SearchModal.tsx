@@ -63,22 +63,22 @@ const SearchModal: React.FC<SearchModalProps> = ({
     >
       {/* Panel — stop click from bubbling to backdrop */}
       <div
-        className="w-full max-w-xl rounded-xl bg-white shadow-2xl"
+        className="w-full max-w-xl rounded-xl bg-bg-base shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-gray-200 p-4">
+        <div className="border-b border-border p-4">
           <SearchInput value={query} onChange={setQuery} autoFocus />
         </div>
 
         <div className="max-h-96 overflow-y-auto p-2">
           {tooShort && (
-            <p className="px-3 py-2 text-sm text-gray-500">
+            <p className="px-3 py-2 text-sm text-muted">
               Type at least 2 characters to search.
             </p>
           )}
 
           {!tooShort && query.length >= 2 && loading && (
-            <p className="px-3 py-2 text-sm text-gray-500">Searching…</p>
+            <p className="px-3 py-2 text-sm text-muted">Searching…</p>
           )}
 
           {!loading && error && (
@@ -86,12 +86,12 @@ const SearchModal: React.FC<SearchModalProps> = ({
           )}
 
           {!loading && !error && query.length >= 2 && !hasResults && (
-            <p className="px-3 py-2 text-sm text-gray-500">No results found.</p>
+            <p className="px-3 py-2 text-sm text-muted">No results found.</p>
           )}
 
           {!loading && boards.length > 0 && (
             <section>
-              <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 Boards
               </p>
               {boards.map((r) => (
@@ -102,7 +102,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
 
           {!loading && cards.length > 0 && (
             <section>
-              <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 Cards
               </p>
               {cards.map((r) => (
@@ -112,8 +112,8 @@ const SearchModal: React.FC<SearchModalProps> = ({
           )}
         </div>
 
-        <div className="border-t border-gray-100 px-4 py-2 text-right text-xs text-gray-400">
-          Press <kbd className="rounded bg-gray-100 px-1">Esc</kbd> to close
+        <div className="border-t border-border px-4 py-2 text-right text-xs text-muted">
+          Press <kbd className="rounded bg-bg-surface px-1">Esc</kbd> to close
         </div>
       </div>
     </div>

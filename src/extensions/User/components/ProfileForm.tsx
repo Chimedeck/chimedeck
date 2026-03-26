@@ -7,6 +7,7 @@ import {
   selectProfileStatus,
 } from '../containers/ProfilePage/ProfilePage.duck';
 import NicknameField from './NicknameField';
+import Button from '~/common/components/Button';
 import translations from '../translations/en.json';
 import type { UserProfile } from '../api/user';
 
@@ -56,7 +57,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       {/* Display name */}
       <div className="flex flex-col gap-1">
-        <label htmlFor="display-name" className="text-sm font-medium text-slate-300">
+        <label htmlFor="display-name" className="text-sm font-medium text-subtle">
           {translations['ProfilePage.displayName']}
         </label>
         <input
@@ -66,7 +67,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
           required
-          className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-500 focus:border-indigo-500"
+          className="rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base outline-none placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
@@ -74,13 +75,14 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       <NicknameField value={nickname} onChange={setNickname} error={nicknameError} />
 
       <div className="flex items-center gap-4">
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="md"
           disabled={saving}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
         >
           {saving ? 'Saving…' : translations['ProfilePage.saveChanges']}
-        </button>
+        </Button>
 
         {saved && (
           <span className="text-sm text-green-400" role="status">

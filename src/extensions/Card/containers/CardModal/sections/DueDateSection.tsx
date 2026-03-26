@@ -11,7 +11,7 @@ interface Props {
 
 export const DueDateSection = ({ dueDate, dueComplete, onChange, onDoneChange, disabled }: Props) => (
   <section aria-label="Due date">
-    <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-slate-300">Due date</h3>
+    <h3 className="mb-2 text-sm font-semibold text-gray-700">Due date</h3>
     <CardDueDate
       dueDate={dueDate}
       dueComplete={dueComplete}

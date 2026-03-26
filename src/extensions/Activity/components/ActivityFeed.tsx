@@ -13,13 +13,13 @@ interface Props {
 const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore, loading = false }: Props) => {
   return (
     <div className="flex flex-col">
-      <h3 className="mb-2 text-xs font-semibold uppercase text-gray-400">{translations['activity.section.title']}</h3>
+      <h3 className="mb-2 text-xs font-semibold uppercase text-muted">{translations['activity.section.title']}</h3>
 
       {activities.length === 0 && !loading && (
-        <p className="text-sm italic text-gray-400">{translations['activity.empty']}</p>
+        <p className="text-sm italic text-muted">{translations['activity.empty']}</p>
       )}
 
-      <div className="divide-y divide-gray-700">
+      <div className="divide-y divide-border">
         {activities.map((activity) => (
           <ActivityItem
             key={activity.id}
@@ -30,7 +30,7 @@ const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore
       </div>
 
       {loading && (
-        <p className="mt-2 text-xs text-gray-400">{translations['activity.loading']}</p>
+        <p className="mt-2 text-xs text-muted">{translations['activity.loading']}</p>
       )}
 
       {hasMore && !loading && onLoadMore && (

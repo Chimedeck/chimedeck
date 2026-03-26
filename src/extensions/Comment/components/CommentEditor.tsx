@@ -36,6 +36,7 @@ import {
 } from '~/extensions/OfflineDrafts/hooks/useOfflineCommentDraft';
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import Button from '~/common/components/Button';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -124,9 +125,8 @@ function buildBoardProps(boardId?: string): { boardId: string } | Record<string,
 function getDraftStatusClass(status: DraftStatus): string {
   if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
   if (status === 'synced') return 'text-green-500 dark:text-green-400';
-  return 'text-gray-400 dark:text-slate-500';
+  return 'text-muted';
 }
-
 function normalizeEscapedBlockquoteMarkers(markdown: string): string {
   return markdown
     .replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>')
@@ -344,7 +344,7 @@ const CommentEditor = ({
       // Using [&_.ProseMirror]:prose variant only applies the root .prose properties,
       // not the child-element selectors that list/blockquote/heading styling depends on.
       attributes: {
-        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-gray-900 dark:text-slate-100',
+        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-base',
       },
       // [why] Intercept file drops directly onto the editor so images dropped
       // anywhere in the text area are uploaded and inserted at the drop position.
@@ -543,7 +543,7 @@ const CommentEditor = ({
           </span>
           <button
             type="button"
-            className="ml-4 text-gray-400 hover:text-gray-300 underline transition-colors"
+            className="ml-4 text-muted hover:text-subtle underline transition-colors"
             onClick={discardDraft}
             data-testid="comment-draft-discard"
           >
@@ -553,7 +553,7 @@ const CommentEditor = ({
       )}
 
       <div
-        className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
+        className="rounded-lg border border-border bg-bg-base overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
         onKeyDown={handleKeyDown}
       >
         {/* Single-line toolbar — never wraps */}
@@ -597,7 +597,7 @@ const CommentEditor = ({
         {uploads.length > 0 && (
           <div
             aria-label={translations['comment.editor.uploads.ariaLabel']}
-            className="flex flex-col gap-1 border-t border-gray-300 dark:border-slate-700 p-2"
+            className="flex flex-col gap-1 border-t border-border p-2"
           >
             {uploads.map((entry) => (
               <InlineUploadPreview
@@ -620,7 +620,7 @@ const CommentEditor = ({
         >
           {draftStatus === 'sync_failed' ? (
             <>
-              <span className="text-red-500 dark:text-red-400">
+              <span className="text-red-500">
                 {isSubmitPending ? translations['comment.draft.postFailed'] : translations['comment.draft.syncFailed']}
               </span>
               <button
@@ -634,7 +634,7 @@ const CommentEditor = ({
               </button>
               <button
                 type="button"
-                className="text-gray-400 hover:text-gray-300 underline transition-colors"
+                className="text-muted hover:text-subtle underline transition-colors"
                 onClick={discardDraft}
                 data-testid="comment-draft-discard-footer"
               >
@@ -652,21 +652,23 @@ const CommentEditor = ({
       )}
 
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={handleSubmit}
           disabled={submitting}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {submitting ? translations['comment.editor.submitting'] : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onCancel}
             disabled={submitting}
-            className="rounded px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100"
           >
             {translations['comment.editor.cancel']}
-          </button>
+          </Button>
         )}
       </div>
     </div>

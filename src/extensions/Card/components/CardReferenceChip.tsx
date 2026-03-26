@@ -68,13 +68,13 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
         'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-medium mx-0.5 cursor-default select-none align-middle',
         selected
           ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 dark:border-indigo-500'
-          : 'border-gray-300 bg-gray-100 dark:border-slate-600 dark:bg-slate-800',
+          : 'border-gray-300 bg-gray-100',
       ].join(' ')}
       data-testid="card-reference-chip"
     >
       {/* Card / clipboard icon */}
       <svg
-        className="h-3 w-3 shrink-0 text-gray-500 dark:text-slate-400"
+        className="h-3 w-3 shrink-0 text-gray-500"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth={2}
@@ -88,7 +88,7 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
         />
       </svg>
 
-      <span className="max-w-[220px] truncate text-gray-800 dark:text-slate-200">
+      <span className="max-w-[220px] truncate text-gray-800">
         {displayTitle}
       </span>
 

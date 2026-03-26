@@ -73,21 +73,21 @@ export default function Sidebar() {
   return (
     <>
       <nav
-        className="flex h-full w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900"
+        className="flex h-full w-64 flex-col border-r border-border bg-slate-50"
         aria-label="Sidebar"
       >
         {/* Logo */}
-        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 dark:border-slate-800 px-4">
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
           <Squares2X2Icon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
-          <span className="text-base font-bold text-slate-900 dark:text-white">{commonTranslations['App.name']}</span>
+          <span className="text-base font-bold text-slate-900">{commonTranslations['App.name']}</span>
         </div>
 
         {/* Workspace switcher */}
-        <div className="border-b border-slate-200 dark:border-slate-800 px-3 py-3">
+        <div className="border-b border-border px-3 py-3">
           <div className="relative">
             <button
               onClick={() => setSwitcherOpen((o) => !o)}
-              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-slate-800 hover:bg-slate-100 transition-colors"
               aria-expanded={switcherOpen}
               aria-haspopup="listbox"
               aria-label={translations['WorkspaceSwitcher.label']}
@@ -97,35 +97,35 @@ export default function Sidebar() {
                   ? translations['WorkspaceSwitcher.loading']
                   : (activeWorkspace?.name ?? translations['WorkspaceSwitcher.noWorkspaces'])}
                 {isGuest && (
-                  <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                  <span className="ml-1.5 rounded bg-amber-100 px-1 py-0.5 text-xs font-medium text-amber-700">
                     guest
                   </span>
                 )}
               </span>
-              <ChevronDownIcon className="ml-1 h-4 w-4 text-slate-400 dark:text-slate-400 shrink-0" aria-hidden="true" />
+              <ChevronDownIcon className="ml-1 h-4 w-4 text-muted shrink-0" aria-hidden="true" />
             </button>
 
             {switcherOpen && (
               <ul
                 role="listbox"
                 aria-label={translations['WorkspaceSwitcher.label']}
-                className="absolute left-0 top-full z-10 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl"
+                className="absolute left-0 top-full z-10 mt-1 w-full rounded-lg border border-border bg-white py-1 shadow-xl"
               >
                 {workspaces.map((ws) => (
                   <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                     <button
                       onClick={() => handleSwitchWorkspace(ws.id)}
-                      className="w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      className="w-full px-3 py-1.5 text-left text-sm text-slate-800 hover:bg-slate-100 transition-colors"
                     >
                       {ws.name}
                     </button>
                   </li>
                 ))}
-                <li role="separator" className="my-1 border-t border-slate-200 dark:border-slate-700" />
+                <li role="separator" className="my-1 border-t border-border" />
                 <li>
                   <button
                     onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
-                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-slate-100 transition-colors"
                   >
                     <PlusIcon className="h-4 w-4" aria-hidden="true" />
                     {translations['Sidebar.newWorkspace']}
@@ -140,7 +140,7 @@ export default function Sidebar() {
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {/* Search button — triggers Cmd+K listener in AppShell */}
           <button
-            className="mb-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="mb-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-slate-100 hover:text-slate-900 transition-colors"
             onClick={() =>
               document.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }),
@@ -168,7 +168,7 @@ export default function Sidebar() {
                   <RectangleStackIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {translations['Sidebar.boards']}
                   {isGuest && (
-                    <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <span className="ml-auto rounded bg-amber-100 px-1 py-0.5 text-xs font-medium text-amber-700">
                       guest
                     </span>
                   )}
@@ -310,7 +310,7 @@ export default function Sidebar() {
                     {translations['Sidebar.settings']}
                   </NavLink>
                 </li>
-                <li role="separator" className="my-1 border-t border-slate-200 dark:border-slate-700" />
+                <li role="separator" className="my-1 border-t border-border" />
                 <li role="none">
                   <button
                     role="menuitem"

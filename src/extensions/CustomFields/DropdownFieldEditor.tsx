@@ -132,7 +132,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
             value={option.label}
             onChange={(e) => handleLabelChange(option.id, e.target.value)}
             placeholder={translations['CustomFields.dropdownOptionPlaceholder']}
-            className="flex-1 bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             aria-label={`Label for dropdown option`}
           />
 

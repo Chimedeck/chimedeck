@@ -8,16 +8,18 @@ interface Props {
 const CONFIG: Record<BoardVisibility, { label: string; className: string; icon: string }> = {
   PRIVATE: {
     label: 'Private',
-    className: 'bg-slate-600/80 text-slate-200',
+    className: 'bg-bg-sunken/80 text-subtle',
     icon: '🔒',
   },
   WORKSPACE: {
     label: 'Workspace',
+    // [theme-exception] Workspace badge uses blue brand colour
     className: 'bg-blue-600/80 text-blue-100',
     icon: '👥',
   },
   PUBLIC: {
     label: 'Public',
+    // [theme-exception] Public badge uses green to signal open access
     className: 'bg-green-600/80 text-green-100',
     icon: '🌐',
   },

@@ -28,7 +28,7 @@ const WorkspaceSwitcher = ({ onSwitch }: WorkspaceSwitcherProps) => {
 
   if (loading) {
     return (
-      <span className="text-sm text-gray-500" aria-live="polite">
+      <span className="text-sm text-muted" aria-live="polite">
         Loading…
       </span>
     );
@@ -36,13 +36,13 @@ const WorkspaceSwitcher = ({ onSwitch }: WorkspaceSwitcherProps) => {
 
   if (workspaces.length === 0) {
     return (
-      <span className="text-sm text-gray-400">No workspaces</span>
+      <span className="text-sm text-muted">No workspaces</span>
     );
   }
 
   return (
     <select
-      className="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
       value={current?.id ?? ''}
       onChange={handleChange}
       aria-label="Switch workspace"

@@ -34,7 +34,8 @@ const HighlightedTitle = ({ title, query }: { title: string; query: string }) =>
   return (
     <>
       {title.slice(0, idx)}
-      <mark className="bg-yellow-200 dark:bg-yellow-700 text-inherit rounded-sm px-0.5">
+      {/* [theme-exception] highlight uses yellow to mark matched search text */}
+      <mark className="bg-yellow-200 text-inherit rounded-sm px-0.5">
         {title.slice(idx, idx + query.length)}
       </mark>
       {title.slice(idx + query.length)}
@@ -146,9 +147,9 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
   return (
     <div ref={containerRef} className="relative">
       {/* Search input */}
-      <div className="flex items-center gap-1.5 rounded-md bg-gray-100 dark:bg-slate-800 border border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-slate-900 px-2 py-1 transition-colors w-56">
+      <div className="flex items-center gap-1.5 rounded-md bg-bg-surface border border-transparent focus-within:border-blue-500 focus-within:bg-bg-base px-2 py-1 transition-colors w-56">
         <MagnifyingGlassIcon
-          className="h-4 w-4 flex-shrink-0 text-gray-400 dark:text-slate-500"
+          className="h-4 w-4 flex-shrink-0 text-muted"
           aria-hidden="true"
         />
         <input
@@ -165,14 +166,14 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
             if (inputValue.trim().length >= MIN_CHARS) setPanelOpen(true);
           }}
           placeholder="Search a card name or description..."
-          className="min-w-0 flex-1 bg-transparent text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-sm text-subtle placeholder:text-subtle focus:outline-none"
         />
         {inputValue && (
           <button
             type="button"
             aria-label="Clear search"
             onClick={clearSearch}
-            className="flex-shrink-0 rounded text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-shrink-0 rounded text-muted hover:text-subtle focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <XMarkIcon className="h-3.5 w-3.5" />
           </button>
@@ -185,14 +186,14 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
           id="board-search-panel"
           role="listbox"
           aria-label="Board search results"
-          className="absolute left-0 top-full mt-1 z-30 w-80 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl py-1 max-h-72 overflow-y-auto"
+          className="absolute left-0 top-full mt-1 z-30 w-80 rounded-md border border-border bg-bg-surface shadow-xl py-1 max-h-72 overflow-y-auto"
         >
           {isBelowMinChars ? (
-            <p className="px-3 py-2 text-xs text-gray-400 dark:text-slate-500">
+            <p className="px-3 py-2 text-xs text-muted">
               Type at least {MIN_CHARS} characters to search.
             </p>
           ) : loading ? (
-            <p className="px-3 py-2 text-xs text-gray-400 dark:text-slate-500" aria-live="polite">
+            <p className="px-3 py-2 text-xs text-muted" aria-live="polite">
               Searching…
             </p>
           ) : error ? (
@@ -201,10 +202,10 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
             </p>
           ) : results.length === 0 ? (
             <p
-              className="px-3 py-2 text-xs text-gray-400 dark:text-slate-500"
+              className="px-3 py-2 text-xs text-muted"
               data-testid="board-search-no-results"
             >
-              No results for <span className="font-medium text-gray-600 dark:text-slate-300">"{inputValue.trim()}"</span>
+              No results for <span className="font-medium text-subtle">"{inputValue.trim()}"</span>
             </p>
           ) : (
             results.map((result) => (
@@ -212,7 +213,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
                 key={`${result.type}-${result.id}`}
                 role="option"
                 aria-selected={false}
-                className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 focus:bg-gray-100 dark:focus:bg-slate-700 focus:outline-none"
+                className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-bg-overlay focus:bg-bg-overlay focus:outline-none"
                 onClick={() => handleSelect(result)}
               >
                 <span
@@ -225,10 +226,10 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
                     ? <Bars3Icon className="h-3 w-3" />
                     : <DocumentTextIcon className="h-3 w-3" />}
                 </span>
-                <span className="truncate text-gray-800 dark:text-slate-200">
+                <span className="truncate text-subtle">
                   <HighlightedTitle title={result.title} query={inputValue.trim()} />
                 </span>
-                <span className="ml-auto flex-shrink-0 text-xs text-gray-400 dark:text-slate-500 capitalize">
+                <span className="ml-auto flex-shrink-0 text-xs text-muted capitalize">
                   {result.type}
                 </span>
               </button>

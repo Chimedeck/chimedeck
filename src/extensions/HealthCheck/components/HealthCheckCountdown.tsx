@@ -31,17 +31,17 @@ export function HealthCheckCountdown({
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-xs text-slate-400"
+      className="inline-flex items-center gap-1.5 text-xs text-muted"
       // Polite live region so screen readers announce the countdown without interruption.
       aria-live="polite"
       aria-atomic="true"
       title={paused ? 'Auto-refresh paused' : `Next refresh in ${display}`}
     >
       {/* Thin progress bar */}
-      <span className="relative h-1 w-16 rounded-full bg-slate-700 overflow-hidden" aria-hidden="true">
+      <span className="relative h-1 w-16 rounded-full bg-bg-overlay overflow-hidden" aria-hidden="true">
         <span
           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ${
-            paused ? 'bg-slate-500' : 'bg-blue-500'
+            paused ? 'bg-bg-sunken' : 'bg-blue-500'
           }`}
           style={{ width: widthPct }}
         />

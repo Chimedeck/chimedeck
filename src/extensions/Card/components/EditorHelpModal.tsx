@@ -1,6 +1,7 @@
 // Modal showing keyboard shortcuts and markdown cheat sheet for the rich text editor.
 // Opened via the ? button in OneLineToolbar.
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 
 interface Props {
   onClose: () => void;
@@ -65,15 +66,17 @@ const EditorHelpModal = ({ onClose }: Props) => (
     <div className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-slate-800 shadow-2xl ring-1 ring-slate-700">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
-        <h2 className="text-base font-semibold text-white">Editor help</h2>
-        <button
+        <h2 className="font-semibold text-base">Editor help</h2>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           aria-label="Close editor help"
-          className="rounded p-1 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+          className="text-muted hover:bg-bg-overlay hover:text-base"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5" />
-        </button>
+        </Button>
       </div>
 
       {/* Body */}

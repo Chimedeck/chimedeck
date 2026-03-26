@@ -30,10 +30,10 @@ const ToggleSwitch = ({
   disabledTooltip?: string;
 }) => {
   const track = disabled
-    ? 'bg-gray-200 dark:bg-slate-700 cursor-not-allowed opacity-40'
+    ? 'bg-bg-overlay cursor-not-allowed opacity-40'
     : enabled
       ? 'bg-indigo-600'
-      : 'bg-gray-300 dark:bg-slate-600 hover:bg-gray-400 dark:hover:bg-slate-500';
+      : 'bg-bg-overlay hover:bg-bg-sunken';
 
   return (
     <span title={disabled ? disabledTooltip : undefined}>
@@ -91,7 +91,7 @@ const NotificationPreferencesPanel = () => {
 
   if (isLoading) {
     return (
-      <div className="py-4 text-sm text-gray-400 dark:text-slate-500 animate-pulse">
+      <div className="py-4 text-sm text-muted animate-pulse">
         {translations['NotificationPreferences.loading']}
       </div>
     );
@@ -100,15 +100,15 @@ const NotificationPreferencesPanel = () => {
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-gray-700 dark:text-slate-300">
+        <table className="w-full text-sm text-subtle">
           <thead>
-            <tr className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wide">
+            <tr className="text-xs text-muted uppercase tracking-wide">
               <th className="pb-3 text-left font-medium">{translations['NotificationPreferences.columnNotification']}</th>
               <th className="pb-3 text-center font-medium w-24">{translations['NotificationPreferences.columnInApp']}</th>
               <th className="pb-3 text-center font-medium w-24">{translations['NotificationPreferences.columnEmail']}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-border">
             {NOTIFICATION_TYPES.map((type) => {
               const pref = getPreference(type);
               // Opt-out model: default to enabled when no row exists yet.
@@ -117,7 +117,7 @@ const NotificationPreferencesPanel = () => {
 
               return (
                 <tr key={type} className="py-2">
-                  <td className="py-3 text-gray-800 dark:text-slate-200">
+                  <td className="py-3 text-subtle">
                     {NOTIFICATION_TYPE_LABELS[type]}
                   </td>
                   <td className="py-3 text-center">

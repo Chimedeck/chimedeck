@@ -52,11 +52,11 @@ export default function ProfilePage() {
   return (
     <>
       <div className="mx-auto max-w-lg px-4 py-8">
-        <h1 className="mb-8 text-2xl font-bold text-white">{translations['ProfilePage.title']}</h1>
+        <h1 className="mb-8 text-2xl font-bold text-base">{translations['ProfilePage.title']}</h1>
 
         {/* Avatar section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-400">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">
             {translations['ProfilePage.avatar']}
           </h2>
           <AvatarUploader avatarUrl={profile.avatar_url} name={profile.name} />
@@ -66,7 +66,7 @@ export default function ProfilePage() {
         <ProfileForm user={profile} />
 
         {/* Change email section */}
-        <hr className="my-8 border-slate-800" />
+        <hr className="my-8 border-border" />
         <section>
           <ChangeEmailForm
             currentEmail={displayEmail ?? profile.email}

@@ -45,10 +45,11 @@ const ActivityItem = ({ activity, actorName }: Props) => {
 
   return (
     <div className="flex items-start gap-2 py-1.5 text-sm">
+      // [theme-exception] bg-blue-400 is a semantic activity dot indicator
       <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
       <div className="flex-1">
-        <span className="text-gray-100">{description}</span>
-        <span className="ml-2 text-xs text-gray-400">{new Date(activity.created_at).toLocaleString()}</span>
+        <span className="text-base">{description}</span>
+        <span className="ml-2 text-xs text-muted">{new Date(activity.created_at).toLocaleString()}</span>
       </div>
     </div>
   );

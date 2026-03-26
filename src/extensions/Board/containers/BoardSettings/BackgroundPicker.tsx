@@ -57,13 +57,13 @@ const BackgroundPicker = ({ boardId }: Props) => {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         Background
       </p>
 
       {/* Current background preview */}
       {currentBackground ? (
-        <div className="relative rounded-lg overflow-hidden border border-slate-700">
+        <div className="relative rounded-lg overflow-hidden border border-border">
           <img
             src={currentBackground}
             alt="Board background"
@@ -72,7 +72,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
           <div className="absolute inset-0 bg-black/30" aria-hidden="true" />
         </div>
       ) : (
-        <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-slate-600 text-slate-500 text-xs">
+        <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border text-muted text-xs">
           No background set
         </div>
       )}
@@ -91,7 +91,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
         />
         <label
           htmlFor="bg-upload-input"
-          className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-slate-600 px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700 ${
+          className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-subtle transition-colors hover:bg-bg-overlay ${
             uploading || removing ? 'pointer-events-none opacity-50' : ''
           }`}
         >
@@ -116,7 +116,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
         <p className="text-xs text-red-400">{error}</p>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         JPEG or PNG, max 10 MB
       </p>
     </div>

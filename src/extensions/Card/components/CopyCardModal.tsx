@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { XMarkIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import type { Board } from '../../Board/api';
 import type { List } from '../../List/api';
 import { copyCard, type Card } from '../api';
@@ -155,25 +156,27 @@ const CopyCardModal = ({
           aria-label="Copy card"
         >
           <Dialog.Title className="sr-only">Copy card</Dialog.Title>
-          <div className="relative w-80 rounded-2xl bg-white dark:bg-slate-800 shadow-2xl overflow-hidden pointer-events-auto">
+          <div className="relative w-80 rounded-2xl bg-white shadow-2xl overflow-hidden pointer-events-auto">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Copy card</h2>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h2 className="text-sm font-semibold text-gray-900">Copy card</h2>
               <Dialog.Close asChild>
-                <button
+                <Button
                   type="button"
-                  className="rounded-lg p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-slate-400 transition-colors"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted hover:bg-gray-100"
                   aria-label="Close"
                 >
                   <XMarkIcon className="w-4 h-4" />
-                </button>
+                </Button>
               </Dialog.Close>
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor="copy-card-title" className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+            <label htmlFor="copy-card-title" className="block text-xs font-medium text-gray-600 mb-1">
               Name
             </label>
             <input
@@ -181,26 +184,26 @@ const CopyCardModal = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
               autoFocus
             />
           </div>
 
           {/* Keep... section */}
           <div>
-            <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-2">Keep...</p>
+            <p className="text-xs font-medium text-gray-600 mb-2">Keep...</p>
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={keepChecklists}
                   onChange={(e) => setKeepChecklists(e.target.checked)}
-                  className="rounded border-gray-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-slate-300">
+                <span className="text-sm text-gray-700">
                   Checklists
                   {checklistCount > 0 && (
-                    <span className="ml-1 text-gray-400 dark:text-slate-500">
+                    <span className="ml-1 text-muted">
                       ({checklistCount})
                     </span>
                   )}
@@ -211,12 +214,12 @@ const CopyCardModal = ({
                   type="checkbox"
                   checked={keepMembers}
                   onChange={(e) => setKeepMembers(e.target.checked)}
-                  className="rounded border-gray-300 dark:border-slate-600 text-blue-500 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-slate-300">
+                <span className="text-sm text-gray-700">
                   Members
                   {memberCount > 0 && (
-                    <span className="ml-1 text-gray-400 dark:text-slate-500">({memberCount})</span>
+                    <span className="ml-1 text-muted">({memberCount})</span>
                   )}
                 </span>
               </label>
@@ -225,20 +228,20 @@ const CopyCardModal = ({
 
           {/* Copy to... section */}
           <div>
-            <p className="text-xs font-medium text-gray-600 dark:text-slate-400 mb-2">
+            <p className="text-xs font-medium text-gray-600 mb-2">
               Copy to...
             </p>
             <div className="space-y-2">
               {/* Board */}
               <div>
-                <label htmlFor="copy-card-board" className="block text-xs text-gray-500 dark:text-slate-400 mb-1">
+                <label htmlFor="copy-card-board" className="block text-xs text-muted mb-1">
                   Board
                 </label>
                 <select
                   id="copy-card-board"
                   value={selectedBoardId}
                   onChange={(e) => setSelectedBoardId(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1.5 text-sm text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {boards.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -251,14 +254,14 @@ const CopyCardModal = ({
               {/* List + Position */}
               <div className="flex gap-2">
                 <div className="flex-1 min-w-0">
-                  <label htmlFor="copy-card-list" className="block text-xs text-gray-500 dark:text-slate-400 mb-1">
+                  <label htmlFor="copy-card-list" className="block text-xs text-muted mb-1">
                     List
                   </label>
                   <select
                     id="copy-card-list"
                     value={selectedListId}
                     onChange={(e) => handleListChange(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1.5 text-sm text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {lists.map((l) => (
                       <option key={l.id} value={l.id}>
@@ -269,14 +272,14 @@ const CopyCardModal = ({
                 </div>
 
                 <div className="w-20 flex-shrink-0">
-                  <label htmlFor="copy-card-position" className="block text-xs text-gray-500 dark:text-slate-400 mb-1">
+                  <label htmlFor="copy-card-position" className="block text-xs text-muted mb-1">
                     Position
                   </label>
                   <select
                     id="copy-card-position"
                     value={selectedPosition}
                     onChange={(e) => setSelectedPosition(Number(e.target.value))}
-                    className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1.5 text-sm text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {Array.from({ length: maxPosition }, (_, i) => i + 1).map((pos) => (
                       <option key={pos} value={pos}>
@@ -293,14 +296,15 @@ const CopyCardModal = ({
             <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
           )}
 
-          <button
+          <Button
             type="submit"
+            variant="primary"
             disabled={submitting || !selectedListId}
-            className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2"
           >
             <DocumentDuplicateIcon className="w-4 h-4" />
             {submitting ? 'Creating...' : 'Create card'}
-          </button>
+          </Button>
             </form>
           </div>
         </Dialog.Content>

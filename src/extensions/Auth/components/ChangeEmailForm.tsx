@@ -86,7 +86,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           placeholder={currentEmail}
-          className="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg bg-bg-overlay border border-border text-base px-3 py-2 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
@@ -100,7 +100,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg bg-bg-overlay border border-border text-base px-3 py-2 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 

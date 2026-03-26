@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { ChecklistSection } from './ChecklistSection';
 import type { Checklist } from '../api';
+import Button from '../../../common/components/Button';
 
 interface Props {
   checklists: Checklist[];
@@ -43,13 +44,13 @@ const CardChecklist = ({
   return (
     <section aria-label="Checklists">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">
           Checklists
         </h3>
         {!disabled && (
           <button
             type="button"
-            className="flex items-center gap-1 rounded bg-gray-200 dark:bg-slate-700 px-2 py-0.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-300 dark:hover:bg-slate-600"
+            className="flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-300"
             onClick={() => setAddingChecklist((v) => !v)}
           >
             <PlusIcon className="h-3 w-3" />
@@ -61,7 +62,7 @@ const CardChecklist = ({
       {addingChecklist && (
         <div className="mb-4 flex gap-2">
           <input
-            className="flex-1 rounded border border-gray-300 dark:border-slate-600 px-2 py-1 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 bg-white dark:bg-slate-800 focus:border-blue-400 focus:outline-none"
+            className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="Checklist title (optional)"
             value={newChecklistTitle}
             onChange={(e) => setNewChecklistTitle(e.target.value)}
@@ -71,16 +72,17 @@ const CardChecklist = ({
             }}
             autoFocus
           />
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             type="button"
-            className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600"
             onClick={handleCreateChecklist}
           >
             Create
-          </button>
+          </Button>
           <button
             type="button"
-            className="text-sm text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+            className="text-sm text-muted hover:text-gray-700"
             onClick={() => { setAddingChecklist(false); setNewChecklistTitle(''); }}
           >
             Cancel

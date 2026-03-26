@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 function parseDate(s: string): Date | undefined {
@@ -47,19 +48,19 @@ const DPC: Partial<Record<string, string>> = {
   months: 'flex',
   month: 'w-full',
   month_caption: 'flex items-center justify-center h-8 relative mb-1',
-  caption_label: 'text-sm font-semibold text-slate-200',
+  caption_label: 'text-sm font-semibold text-subtle',
   nav: 'absolute inset-x-0 top-0 flex justify-between items-center pointer-events-none',
   button_previous:
-    'h-8 w-8 flex items-center justify-center rounded text-slate-400 hover:bg-slate-600 hover:text-slate-200 transition-colors pointer-events-auto',
+    'h-8 w-8 flex items-center justify-center rounded text-muted hover:bg-bg-sunken hover:text-subtle transition-colors pointer-events-auto',
   button_next:
-    'h-8 w-8 flex items-center justify-center rounded text-slate-400 hover:bg-slate-600 hover:text-slate-200 transition-colors pointer-events-auto',
+    'h-8 w-8 flex items-center justify-center rounded text-muted hover:bg-bg-sunken hover:text-subtle transition-colors pointer-events-auto',
   month_grid: 'w-full border-collapse',
   weekdays: '',
-  weekday: 'text-center text-[11px] font-medium text-slate-500 pb-1 w-9',
+  weekday: 'text-center text-[11px] font-medium text-muted pb-1 w-9',
   week: '',
   day: 'p-0 w-9 h-8 text-center align-middle',
   day_button:
-    'h-8 w-8 rounded-full text-xs text-slate-300 hover:bg-slate-600 hover:text-white transition-colors focus:outline-none',
+    'h-8 w-8 rounded-full text-xs text-subtle hover:bg-bg-sunken hover:text-base transition-colors focus:outline-none',
   today: '!font-bold !text-blue-400',
   outside: 'opacity-40',
   disabled: 'opacity-25 pointer-events-none',
@@ -180,18 +181,19 @@ export const CardDatesPicker = ({
   const hasAnyDate = !!draftDue || (startEnabled && !!draftStart);
 
   return (
-    <div className="w-72 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl overflow-hidden">
+    <div className="w-72 bg-bg-surface rounded-xl border border-border shadow-2xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700">
-        <span className="text-sm font-semibold text-slate-200">Dates</span>
-        <button
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+        <span className="text-sm font-semibold text-subtle">Dates</span>
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
           onClick={onClose}
-          className="p-1 rounded text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
           aria-label="Close dates picker"
         >
           <XMarkIcon className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Calendar */}
@@ -215,7 +217,7 @@ export const CardDatesPicker = ({
       <div className="px-4 pb-4 space-y-3">
         {/* Start date */}
         <div>
-          <p className="text-xs font-medium text-slate-400 mb-1.5">Start date</p>
+          <p className="text-xs font-medium text-muted mb-1.5">Start date</p>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -226,7 +228,7 @@ export const CardDatesPicker = ({
               }`}
               aria-label="Toggle start date"
             >
-              {startEnabled && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />}
+              {startEnabled && <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />}
             </button>
             <input
               type="text"
@@ -236,14 +238,14 @@ export const CardDatesPicker = ({
               onFocus={() => { setActiveField('start'); setStartEnabled(true); }}
               onBlur={handleStartBlur}
               disabled={disabled}
-              className="flex-1 bg-slate-700 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="flex-1 bg-bg-overlay border border-border rounded px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
         </div>
 
         {/* Due date */}
         <div>
-          <p className="text-xs font-medium text-slate-400 mb-1.5">Due date</p>
+          <p className="text-xs font-medium text-muted mb-1.5">Due date</p>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -254,7 +256,7 @@ export const CardDatesPicker = ({
               }`}
               aria-label="Toggle due date"
             >
-              {draftDue && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />}
+              {draftDue && <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />}
             </button>
             <input
               type="text"
@@ -264,7 +266,7 @@ export const CardDatesPicker = ({
               onFocus={() => setActiveField('due')}
               onBlur={handleDueBlur}
               disabled={disabled}
-              className="flex-1 min-w-0 bg-slate-700 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="flex-1 min-w-0 bg-bg-overlay border border-border rounded px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
             <input
               type="text"
@@ -272,30 +274,32 @@ export const CardDatesPicker = ({
               value={timeInput}
               onChange={(e) => setTimeInput(e.target.value)}
               disabled={!draftDue || disabled}
-              className="w-24 flex-shrink-0 bg-slate-700 border border-slate-600 rounded px-2.5 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+              className="w-24 flex-shrink-0 bg-bg-overlay border border-border rounded px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
         </div>
 
         {/* Actions */}
         <div className="pt-1 space-y-2">
-          <button
+          <Button
+            variant="primary"
             type="button"
             onClick={handleSave}
             disabled={disabled}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full py-2 text-sm font-medium rounded-lg"
           >
             Save
-          </button>
+          </Button>
           {hasAnyDate && (
-            <button
+            <Button
+              variant="secondary"
               type="button"
               onClick={onRemove}
               disabled={disabled}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-2 text-sm font-medium rounded-lg"
             >
               Remove
-            </button>
+            </Button>
           )}
         </div>
       </div>

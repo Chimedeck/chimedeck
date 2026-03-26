@@ -209,7 +209,7 @@ const CardModal = ({
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
             <input
               ref={coverInputRef}
               type="file"
@@ -247,15 +247,15 @@ const CardModal = ({
                   onSave={onTitleSave}
                   disabled={isReadOnly}
                 />
-                <p className="mt-1 text-xs text-gray-400 dark:text-slate-500 px-2">
-                  in list <span className="text-gray-500 dark:text-slate-400 font-medium">{listTitle}</span>{' '}
+                <p className="mt-1 text-xs text-gray-400 px-2">
+                  in list <span className="text-gray-500 font-medium">{listTitle}</span>{' '}
                   · {boardTitle}
                 </p>
               </div>
               <div className="relative" ref={coverMenuRef}>
                 <button
                   type="button"
-                  className="rounded-lg px-2.5 py-2 text-sm text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors disabled:opacity-40"
+                  className="rounded-lg px-2.5 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors disabled:opacity-40"
                   onClick={() => setCoverMenuOpen((openState) => !openState)}
                   disabled={!canEditCover}
                 >
@@ -266,8 +266,8 @@ const CardModal = ({
                 </button>
 
                 {coverMenuOpen && (
-                  <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                  <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-xl">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                       Size
                     </p>
                     <div className="mb-3 grid grid-cols-2 gap-2">
@@ -276,7 +276,7 @@ const CardModal = ({
                         onClick={() => onCoverSizeChange('SMALL')}
                         className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'SMALL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                       >
                         Compact
                       </button>
@@ -285,13 +285,13 @@ const CardModal = ({
                         onClick={() => onCoverSizeChange('FULL')}
                         className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'FULL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                       >
                         Large
                       </button>
                     </div>
 
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                       Colors
                     </p>
                     <div className="mb-3 grid grid-cols-5 gap-2">
@@ -311,7 +311,7 @@ const CardModal = ({
                       type="button"
                       onClick={() => coverInputRef.current?.click()}
                       disabled={coverUploading}
-                      className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-slate-800"
                     >
                       {coverUploading ? 'Uploading cover...' : 'Upload a cover image'}
                     </button>
@@ -336,7 +336,7 @@ const CardModal = ({
                 )}
               </div>
               <Dialog.Close
-                className="rounded-lg p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
                 aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" aria-hidden="true" />
@@ -431,7 +431,7 @@ const CardModal = ({
                   </div>
                 }
                 right={
-                  <div className="h-full min-h-0 p-5 pt-3 pl-3 border-l border-gray-100 dark:border-slate-800">
+                  <div className="h-full min-h-0 p-5 pt-3 pl-3 border-l border-gray-100">
                     <ActivityFeed
                       boardId={boardId}
                       cardId={card.id}

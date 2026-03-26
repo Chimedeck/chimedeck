@@ -22,7 +22,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoFocus={autoFocus}
-      className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+      className="w-full rounded-md border border-border bg-bg-overlay px-4 py-2 text-sm text-base outline-none focus:outline-none focus:ring-2 focus:ring-primary"
       aria-label="Search"
     />
   );

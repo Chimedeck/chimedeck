@@ -24,11 +24,11 @@ const CommentThread = ({
 }: Props) => {
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">{translations['comment.section.title']}</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">{translations['comment.section.title']}</h3>
 
       <div className="flex flex-col gap-4">
         {comments.length === 0 && (
-          <p className="text-sm text-gray-400 italic">{translations['comment.empty']}</p>
+          <p className="text-sm text-muted italic">{translations['comment.empty']}</p>
         )}
         {comments.filter(Boolean).map((comment) => (
           <CommentItem

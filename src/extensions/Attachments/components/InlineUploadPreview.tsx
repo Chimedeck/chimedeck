@@ -39,7 +39,7 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
   return (
     <div
       data-testid="inline-upload-preview"
-      className="flex items-start gap-2 rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/60 p-2"
+      className="flex items-start gap-2 rounded border border-border bg-bg-surface p-2"
     >
       {/* Thumbnail (image) or file-type icon (non-image) */}
       {isImage && objectUrl ? (
@@ -47,42 +47,41 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
           src={objectUrl}
           alt={entry.file.name}
           aria-hidden="true"
-          className="h-10 w-10 flex-shrink-0 rounded object-cover border border-gray-200 dark:border-slate-700"
+          className="h-10 w-10 flex-shrink-0 rounded object-cover border border-border"
         />
       ) : (
-        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-          <Icon className="h-5 w-5 text-gray-400 dark:text-slate-400" aria-hidden="true" />
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded border border-border bg-bg-base">
+          <Icon className="h-5 w-5 text-muted" aria-hidden="true" />
         </span>
       )}
 
       {/* Filename + size + progress / status */}
       <div className="min-w-0 flex-1">
         <p
-          className="truncate text-xs text-gray-700 dark:text-slate-200"
+          className="truncate text-xs text-base"
           title={entry.file.name}
         >
           {entry.file.name}
         </p>
-        <p className="text-[10px] text-gray-400 dark:text-slate-500">
-          {formatBytes(entry.file.size)}
+        <p className="text-[10px] text-muted">
         </p>
 
         {entry.phase === 'error' && (
           <p
             role="alert"
-            className="mt-0.5 text-[10px] text-red-600 dark:text-red-400"
+            className="mt-0.5 text-[10px] text-red-600"
           >
             {entry.error ?? translations['attachments.inline.uploadFailed']}
           </p>
         )}
 
         {entry.phase === 'done' && (
-          <p className="mt-0.5 text-[10px] text-green-600 dark:text-green-400">{translations['attachments.inline.uploaded']}</p>
+          <p className="mt-0.5 text-[10px] text-green-600">{translations['attachments.inline.uploaded']}</p>
         )}
 
         {/* [why] 'pending' means the file is queued locally and will upload on submit. */}
         {entry.phase === 'pending' && (
-          <p className="mt-0.5 text-[10px] text-gray-400 dark:text-slate-500">{translations['attachments.inline.queued']}</p>
+          <p className="mt-0.5 text-[10px] text-muted">{translations['attachments.inline.queued']}</p>
         )}
 
         {entry.phase !== 'error' && entry.phase !== 'done' && entry.phase !== 'pending' && (
@@ -100,7 +99,7 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
         type="button"
         aria-label={translations['attachments.inline.cancel.ariaLabel'].replace('{fileName}', entry.file.name)}
         title={entry.phase === 'pending' ? translations['attachments.inline.cancel.remove'] : entry.phase === 'error' || entry.phase === 'done' ? translations['attachments.inline.cancel.dismiss'] : translations['attachments.inline.cancel.cancelUpload']}
-        className="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
+        className="flex-shrink-0 text-muted hover:text-red-500 transition-colors"
         onClick={() => onCancel(entry.clientId)}
       >
         <XMarkIcon className="h-4 w-4" />

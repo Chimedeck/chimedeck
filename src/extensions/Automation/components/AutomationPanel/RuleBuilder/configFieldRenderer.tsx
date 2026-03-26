@@ -110,12 +110,12 @@ interface RenderArgs {
   targetBoardLists?: ListOption[];
 }
 
-const SELECT_CLASS = 'w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500';
-const INPUT_CLASS = 'w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500';
+const SELECT_CLASS = 'w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary';
+const INPUT_CLASS = 'w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary';
 
 function FieldLabel({ id, label, required }: Readonly<{ id: string; label: string; required?: boolean }>) {
   return (
-    <label htmlFor={id} className="block text-xs font-medium text-slate-400 mb-1">
+    <label htmlFor={id} className="block text-xs font-medium text-muted mb-1">
       {label}
       {required && <span className="ml-1 text-red-400">*</span>}
     </label>
@@ -148,19 +148,19 @@ function renderListMultiSelect(args: RenderArgs): JSX.Element {
 
   return (
     <div key={key}>
-      <span className="block text-xs font-medium text-slate-400 mb-1">
+      <span className="block text-xs font-medium text-muted mb-1">
         {fieldDef.label}
-        <span className="ml-1 text-slate-500">(leave empty for all lists)</span>
+        <span className="ml-1 text-muted">(leave empty for all lists)</span>
       </span>
       {lists.length === 0 ? (
-        <p className="text-xs text-slate-500 italic">Loading lists…</p>
+        <p className="text-xs text-muted italic">Loading lists…</p>
       ) : (
-        <div className="flex flex-col gap-1 max-h-40 overflow-y-auto rounded-md border border-slate-600 bg-slate-700 p-2">
+        <div className="flex flex-col gap-1 max-h-40 overflow-y-auto rounded-md border border-border bg-bg-overlay p-2">
           {lists.map((list) => (
-            <label key={list.id} className="flex items-center gap-2 cursor-pointer text-sm text-slate-200">
+            <label key={list.id} className="flex items-center gap-2 cursor-pointer text-sm text-subtle">
               <input
                 type="checkbox"
-                className="h-3.5 w-3.5 rounded border-slate-500 bg-slate-600 text-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="h-3.5 w-3.5 rounded border-border bg-bg-sunken text-blue-500 focus:ring-1 focus:ring-blue-500"
                 checked={selected.includes(list.id)}
                 onChange={() => toggle(list.id)}
               />
@@ -221,8 +221,8 @@ function renderBoolean(args: RenderArgs): JSX.Element {
   const id = `cfg-${key}`;
   return (
     <div key={key} className="flex items-center gap-2">
-      <input id={id} type="checkbox" className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-2 focus:ring-blue-500" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
-      <label htmlFor={id} className="text-xs font-medium text-slate-400">{fieldDef.label}</label>
+      <input id={id} type="checkbox" className="h-4 w-4 rounded border-border bg-bg-overlay text-blue-500 focus:ring-2 focus:ring-blue-500" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+      <label htmlFor={id} className="text-xs font-medium text-muted">{fieldDef.label}</label>
     </div>
   );
 }
@@ -257,7 +257,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
 
   return (
     <div key={key}>
-      <span className="block text-xs font-medium text-slate-400 mb-1">
+      <span className="block text-xs font-medium text-muted mb-1">
         {fieldDef.label}
         {fieldDef.required && <span className="ml-1 text-red-400">*</span>}
       </span>
@@ -277,7 +277,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
             />
             <button
               type="button"
-              className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition-colors"
+              className="flex-shrink-0 rounded p-1 text-muted hover:text-red-400 hover:bg-bg-overlay transition-colors"
               onClick={() => update(items.filter((_, i) => i !== idx))}
               title="Remove item"
             >
@@ -287,7 +287,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
         ))}
         <button
           type="button"
-          className="mt-0.5 self-start rounded border border-dashed border-slate-600 px-2 py-1 text-xs text-slate-400 hover:border-slate-400 hover:text-slate-200 transition-colors"
+          className="mt-0.5 self-start rounded border border-dashed border-border px-2 py-1 text-xs text-muted hover:border-border hover:text-subtle transition-colors"
           onClick={() => update([...items, ''])}
         >
           + Add item

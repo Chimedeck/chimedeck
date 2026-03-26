@@ -43,7 +43,7 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
 
   return (
     <div
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md overflow-hidden"
+      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-border bg-bg-surface shadow-sm hover:shadow-md overflow-hidden"
       onClick={onClick}
     >
       {/* Background thumbnail — shown when board has a background image */}
@@ -58,20 +58,20 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
           <div className="absolute inset-0 bg-black/20" aria-hidden="true" />
         </div>
       ) : (
-        <div className="h-20 w-full bg-gradient-to-br from-indigo-500/20 to-blue-600/20 dark:from-slate-700 dark:to-slate-600" />
+        <div className="h-20 w-full bg-gradient-to-br from-indigo-500/20 to-blue-600/20" />
       )}
 
       <div className="flex flex-col gap-2 p-4 pt-2">
         <div className="flex items-center justify-between">
-          <h3 className="truncate text-base font-semibold text-gray-900 dark:text-slate-100">{board.title}</h3>
+          <h3 className="truncate text-sm font-semibold text-base">{board.title}</h3>
           <div className="flex items-center gap-2">
             <VisibilityBadge visibility={board.visibility} />
             <BoardStateChip state={board.state} />
             <button
               aria-label={board.isStarred ? 'Unstar board' : 'Star board'}
               onClick={handleStarClick}
-              className={`rounded p-0.5 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700 ${
-                board.isStarred ? 'text-yellow-500' : 'text-gray-400 dark:text-slate-500'
+              className={`rounded p-0.5 transition-colors hover:bg-bg-overlay ${
+                board.isStarred ? 'text-yellow-500' : 'text-muted'
               }`}
             >
               <StarIcon filled={!!board.isStarred} />

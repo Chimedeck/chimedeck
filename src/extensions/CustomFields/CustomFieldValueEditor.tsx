@@ -90,7 +90,7 @@ const CustomFieldValueEditor = ({
   }, [api, cardId, field.id, onValueChange]);
 
   const inputClass =
-    'w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50';
+    'w-full bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50';
 
   if (field.field_type === 'TEXT') {
     return (

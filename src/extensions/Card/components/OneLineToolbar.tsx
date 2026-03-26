@@ -36,43 +36,43 @@ const HEADING_OPTIONS: Array<{
     label: 'Normal text',
     level: null,
     shortcut: '⌘⌥0',
-    labelClass: 'text-sm font-normal text-gray-800 dark:text-slate-200',
+    labelClass: 'text-sm font-normal text-gray-800',
   },
   {
     label: 'Heading 1',
     level: 1,
     shortcut: '⌘⌥1',
-    labelClass: 'text-[1.5rem] font-bold leading-tight text-gray-900 dark:text-white',
+    labelClass: 'text-[1.5rem] font-bold leading-tight text-gray-900',
   },
   {
     label: 'Heading 2',
     level: 2,
     shortcut: '⌘⌥2',
-    labelClass: 'text-[1.25rem] font-bold leading-tight text-gray-900 dark:text-white',
+    labelClass: 'text-[1.25rem] font-bold leading-tight text-gray-900',
   },
   {
     label: 'Heading 3',
     level: 3,
     shortcut: '⌘⌥3',
-    labelClass: 'text-[1.075rem] font-semibold leading-snug text-gray-900 dark:text-slate-100',
+    labelClass: 'text-[1.075rem] font-semibold leading-snug text-gray-900',
   },
   {
     label: 'Heading 4',
     level: 4,
     shortcut: '⌘⌥4',
-    labelClass: 'text-[0.9375rem] font-semibold text-gray-800 dark:text-slate-200',
+    labelClass: 'text-[0.9375rem] font-semibold text-gray-800',
   },
   {
     label: 'Heading 5',
     level: 5,
     shortcut: '⌘⌥5',
-    labelClass: 'text-sm font-semibold text-gray-700 dark:text-slate-300',
+    labelClass: 'text-sm font-semibold text-gray-700',
   },
   {
     label: 'Heading 6',
     level: 6,
     shortcut: '⌘⌥6',
-    labelClass: 'text-sm font-semibold text-gray-400 dark:text-slate-500',
+    labelClass: 'text-sm font-semibold text-gray-400',
   },
 ];
 
@@ -134,7 +134,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
         aria-label="Text styles"
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex items-center gap-0.5 rounded border border-gray-200 px-1.5 py-1 text-xs text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        className="flex items-center gap-0.5 rounded border border-gray-200 px-1.5 py-1 text-xs text-gray-700 transition-colors hover:bg-gray-100 dark:hover:bg-slate-800"
         onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -150,11 +150,11 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
         <div
           role="menu"
           aria-label="Text styles"
-          className="absolute left-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+          className="absolute left-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl"
         >
           {/* Tooltip-style header */}
-          <div className="border-b border-gray-100 px-3 py-1.5 dark:border-slate-800">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
+          <div className="border-b border-gray-100 px-3 py-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
               Text styles
             </span>
           </div>
@@ -180,7 +180,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
                   }}
                 >
                   <span className={opt.labelClass}>{opt.label}</span>
-                  <kbd className="ml-3 shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-400 dark:bg-slate-700 dark:text-slate-400">
+                  <kbd className="ml-3 shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-400">
                     {opt.shortcut}
                   </kbd>
                 </button>
@@ -274,7 +274,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
   );
 
   const btn =
-    'p-1.5 text-xs rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors';
+    'p-1.5 text-xs rounded border border-gray-200 text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors';
   const btnActive = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200';
 
   return (
@@ -282,13 +282,13 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
     <div
       role="toolbar"
       aria-label="Text formatting"
-      className="z-20 flex shrink-0 items-center gap-1 border-b border-gray-200 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900"
+      className="z-20 flex shrink-0 items-center gap-1 border-b border-gray-200 bg-white p-2 shadow-md"
     >
       {/* Text styles (heading) dropdown — always first */}
       <HeadingDropdown editor={editor} />
 
       {/* Divider */}
-      <span className="mx-0.5 h-4 w-px shrink-0 bg-gray-200 dark:bg-slate-700" aria-hidden />
+      <span className="mx-0.5 h-4 w-px shrink-0 bg-gray-200" aria-hidden />
 
       {/* Primary controls — always visible */}
       <button

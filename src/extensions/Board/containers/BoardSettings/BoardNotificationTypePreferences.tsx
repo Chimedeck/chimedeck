@@ -36,14 +36,14 @@ const ToggleSwitch = ({
   disabledTooltip?: string;
 }) => {
   const track = disabled
-    ? 'bg-slate-700 cursor-not-allowed opacity-40'
+    ? 'bg-bg-overlay cursor-not-allowed opacity-40'
     : enabled
       ? 'bg-indigo-600'
-      : 'bg-slate-600 hover:bg-slate-500';
+      : 'bg-bg-sunken hover:bg-bg-overlay';
 
   // [why] Indigo ring visually distinguishes board-level overrides from inherited (user/default) values.
   const ring = isBoardOverride
-    ? 'ring-2 ring-indigo-400 ring-offset-1 ring-offset-slate-900 rounded-full'
+    ? 'ring-2 ring-indigo-400 ring-offset-1 ring-offset-bg-base rounded-full'
     : '';
 
   return (
@@ -54,7 +54,7 @@ const ToggleSwitch = ({
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => !disabled && onChange(!enabled)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${track} ${ring}`}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base ${track} ${ring}`}
       >
         <span
           className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
@@ -107,7 +107,7 @@ const BoardNotificationTypePreferences = ({ boardId }: Props) => {
 
   if (isLoading) {
     return (
-      <div className="py-2 text-xs text-slate-500 animate-pulse">
+      <div className="py-2 text-xs text-muted animate-pulse">
         Loading…
       </div>
     );
@@ -117,13 +117,13 @@ const BoardNotificationTypePreferences = ({ boardId }: Props) => {
     <div className="space-y-3">
       {/* Header row with title and reset button */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-300">
+        <span className="text-xs font-medium text-subtle">
           {translations['BoardSettings.notificationTypePreferences']}
         </span>
         <button
           onClick={handleReset}
           disabled={isResetting}
-          className="text-xs text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+          className="text-xs text-muted hover:text-subtle transition-colors disabled:opacity-50"
         >
           {confirmReset
             ? translations['BoardSettings.notificationTypePreferencesResetConfirm']
@@ -132,9 +132,9 @@ const BoardNotificationTypePreferences = ({ boardId }: Props) => {
       </div>
 
       {/* Toggle matrix table */}
-      <table className="w-full text-xs text-slate-300">
+      <table className="w-full text-xs text-subtle">
         <thead>
-          <tr className="text-slate-500 uppercase tracking-wide">
+          <tr className="text-muted uppercase tracking-wide">
             <th className="pb-2 text-left font-medium">Notification</th>
             <th className="pb-2 text-center font-medium w-16">In-App</th>
             {emailEnabled && (
@@ -142,7 +142,7 @@ const BoardNotificationTypePreferences = ({ boardId }: Props) => {
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-800">
+        <tbody className="divide-y divide-border">
           {NOTIFICATION_TYPES.map((type) => {
             const pref = getPreference(type);
             // Opt-out model: default to enabled when no row exists yet.
@@ -152,7 +152,7 @@ const BoardNotificationTypePreferences = ({ boardId }: Props) => {
 
             return (
               <tr key={type}>
-                <td className="py-2 text-slate-200">{NOTIFICATION_TYPE_LABELS[type]}</td>
+                <td className="py-2 text-subtle">{NOTIFICATION_TYPE_LABELS[type]}</td>
                 <td className="py-2 text-center">
                   <ToggleSwitch
                     enabled={inAppChecked}

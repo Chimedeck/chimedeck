@@ -90,7 +90,8 @@ const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({
         <div
           key={user.userId}
           title={user.displayName}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-white ring-2 ring-white"
+          // [theme-exception] ring-white is a per-user identity ring — intentional
+          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold text-inverse ring-2 ring-white"
           style={{ backgroundColor: user.avatarUrl ? undefined : colorFor(user.userId) }}
         >
           {user.avatarUrl ? (
@@ -106,7 +107,8 @@ const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({
       ))}
       {overflow > 0 && (
         <div
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300 text-xs font-semibold text-gray-700 ring-2 ring-white"
+          // [theme-exception] bg-gray-300/text-gray-700 overflow counter has no direct semantic equivalent — needs design input
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300 text-xs font-semibold text-base ring-2 ring-white"
           title={`${overflow} more active user${overflow > 1 ? 's' : ''}`}
         >
           +{overflow}

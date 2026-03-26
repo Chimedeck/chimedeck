@@ -51,7 +51,7 @@ const DiscoverPluginSearch = ({
           value={localQuery}
           onChange={handleInputChange}
           placeholder={translations['plugins.searchBar.placeholder']}
-          className="w-full pl-9 pr-3 py-2 bg-slate-700 border border-slate-600 rounded text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full pl-9 pr-3 py-2 bg-bg-overlay border border-border rounded text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
@@ -60,7 +60,7 @@ const DiscoverPluginSearch = ({
         <select
           value={selectedCategory ?? ''}
           onChange={(e) => onCategoryChange(e.target.value || null)}
-          className="bg-slate-700 border border-slate-600 text-slate-200 text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-44"
+          className="bg-bg-overlay border border-border text-base text-sm rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary sm:w-44"
         >
           <option value="">{translations['plugins.searchBar.allCategories']}</option>
           {categories.map((cat) => (

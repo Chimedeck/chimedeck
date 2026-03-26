@@ -115,7 +115,7 @@ const BoardHeader = ({
   };
 
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-4 py-2 border-b border-gray-200 dark:border-slate-800">
+    <header className="sticky top-0 z-10 flex items-center gap-3 bg-bg-base/80 backdrop-blur-sm px-4 py-2 border-b border-border">
       {/* Editable board title */}
       {editing ? (
         <input
@@ -126,12 +126,12 @@ const BoardHeader = ({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleSave}
           onKeyDown={handleKeyDown}
-          className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 max-w-xs"
+          className="bg-bg-overlay text-base font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary min-w-0 max-w-xs"
           aria-label="Edit board title"
         />
       ) : (
         <button
-          className="text-gray-900 dark:text-slate-100 font-semibold text-lg hover:bg-gray-100 dark:hover:bg-slate-800 rounded px-2 py-0.5 transition-colors"
+          className="text-base font-semibold text-lg hover:bg-bg-surface rounded px-2 py-0.5 transition-colors"
           onClick={handleTitleClick}
           aria-label="Click to edit board title"
         >
@@ -165,7 +165,7 @@ const BoardHeader = ({
             <button
               type="button"
               onClick={onOpenMembers}
-              className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-inverse transition-colors"
               aria-label="Share board — invite members"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
@@ -191,7 +191,7 @@ const BoardHeader = ({
         {!isGuest && (
         <div className="relative" ref={menuContainerRef}>
           <button
-            className="rounded p-1.5 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+            className="rounded p-1.5 text-muted hover:bg-bg-surface hover:text-subtle transition-colors"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label="Board settings"
             aria-haspopup="true"
@@ -200,10 +200,10 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-48 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl z-20">
+            <div className="absolute right-0 mt-1 w-48 rounded-md border border-border bg-bg-surface py-1 shadow-xl z-20">
               {onOpenSettings && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
                   onClick={() => { setMenuOpen(false); onOpenSettings(); }}
                 >
                   Board settings
@@ -211,7 +211,7 @@ const BoardHeader = ({
               )}
               {onArchive && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
                   onClick={() => { setMenuOpen(false); onArchive(); }}
                 >
                   {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
@@ -219,7 +219,7 @@ const BoardHeader = ({
               )}
               {onDelete && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+                  className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-bg-overlay"
                   onClick={() => { setMenuOpen(false); onDelete(); }}
                 >
                   Delete board

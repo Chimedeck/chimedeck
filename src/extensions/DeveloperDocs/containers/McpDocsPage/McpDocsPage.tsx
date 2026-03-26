@@ -19,30 +19,30 @@ const Section = ({ id, children }: { id: string; children: React.ReactNode }) =>
 );
 
 const H2 = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="mb-4 text-xl font-semibold text-white">{children}</h2>
+  <h2 className="mb-4 text-xl font-semibold text-base">{children}</h2>
 );
 
 const H3 = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="mb-2 mt-5 text-base font-semibold text-slate-100">{children}</h3>
+  <h3 className="mb-2 mt-5 text-base font-semibold text-base">{children}</h3>
 );
 
 const P = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-3 text-sm leading-relaxed text-slate-300">{children}</p>
+  <p className="mb-3 text-sm leading-relaxed text-subtle">{children}</p>
 );
 
 const Code = ({ children }: { children: React.ReactNode }) => (
-  <code className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs text-indigo-300">
+  <code className="rounded bg-bg-surface px-1.5 py-0.5 font-mono text-xs text-indigo-300">
     {children}
   </code>
 );
 
 const Pre = ({ children }: { children: React.ReactNode }) => (
-  <pre className="my-3 overflow-x-auto rounded-lg border border-slate-700 bg-slate-950 px-4 py-4 font-mono text-xs leading-relaxed text-slate-200">
+  <pre className="my-3 overflow-x-auto rounded-lg border border-border bg-bg-base px-4 py-4 font-mono text-xs leading-relaxed text-subtle">
     {children}
   </pre>
 );
 
-const Divider = () => <hr className="my-8 border-slate-700" />;
+const Divider = () => <hr className="my-8 border-border" />;
 
 const Badge = ({ color, children }: { color: string; children: React.ReactNode }) => (
   <span className={`rounded px-2 py-0.5 text-xs font-medium ${color}`}>{children}</span>
@@ -59,12 +59,12 @@ interface TableRow {
 }
 
 const Table = ({ headers, rows }: { headers: string[]; rows: TableRow[] }) => (
-  <div className="my-4 overflow-x-auto rounded-lg border border-slate-700">
+  <div className="my-4 overflow-x-auto rounded-lg border border-border">
     <table className="w-full text-sm">
-      <thead className="bg-slate-800">
+      <thead className="bg-bg-surface">
         <tr>
           {headers.map((h) => (
-            <th key={h} className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <th key={h} className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted">
               {h}
             </th>
           ))}
@@ -72,9 +72,9 @@ const Table = ({ headers, rows }: { headers: string[]; rows: TableRow[] }) => (
       </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={row.rowId} className={i % 2 === 0 ? 'bg-slate-900' : 'bg-slate-900/50'}>
+          <tr key={row.rowId} className={i % 2 === 0 ? 'bg-bg-base' : 'bg-bg-base/50'}>
             {row.cells.map((cell) => (
-              <td key={cell.key} className="border-t border-slate-800 px-4 py-2 text-slate-300">
+              <td key={cell.key} className="border-t border-border px-4 py-2 text-subtle">
                 {cell.content}
               </td>
             ))}
@@ -88,9 +88,9 @@ const Table = ({ headers, rows }: { headers: string[]; rows: TableRow[] }) => (
 const NavItem = ({ href, label }: { href: string; label: string }) => (
   <a
     href={href}
-    className="flex items-center gap-1.5 rounded px-2 py-1 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+    className="flex items-center gap-1.5 rounded px-2 py-1 text-sm text-muted transition-colors hover:bg-bg-surface hover:text-base"
   >
-    <ChevronRightIcon className="h-3 w-3 shrink-0 text-slate-600" />
+    <ChevronRightIcon className="h-3 w-3 shrink-0 text-muted" />
     {label}
   </a>
 );
@@ -102,11 +102,11 @@ const McpDocsPage = () => {
   const appUrl = config.appUrl || 'APP_URL';
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+    <div className="flex min-h-screen bg-bg-base text-base">
       {/* ── Left TOC ─────────────────────────────────────── */}
-      <aside className="hidden w-56 shrink-0 border-r border-slate-800 bg-slate-900 xl:block">
+      <aside className="hidden w-56 shrink-0 border-r border-border bg-bg-base xl:block">
         <div className="sticky top-0 overflow-y-auto py-8 px-3">
-          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-muted">
             On this page
           </p>
           <nav className="space-y-0.5">
@@ -132,18 +132,18 @@ const McpDocsPage = () => {
       {/* ── Main content ─────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-slate-800 bg-slate-900 px-8 py-5">
+        <div className="border-b border-border bg-bg-base px-8 py-5">
           <button
             onClick={() => navigate(-1)}
-            className="mb-2 flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200"
+            className="mb-2 flex items-center gap-1 text-sm text-muted hover:text-subtle"
           >
             ← Back
           </button>
           <div className="flex items-center gap-3">
             <CommandLineIcon className="h-7 w-7 text-indigo-400" />
             <div>
-              <h1 className="text-2xl font-bold text-white">MCP Server Developer Guide</h1>
-              <p className="text-sm text-slate-400">
+              <h1 className="text-2xl font-bold text-base">MCP Server Developer Guide</h1>
+              <p className="text-sm text-muted">
                 Connect AI assistants to Taskinate using the{' '}
                 <Code>Model Context Protocol</Code> (MCP).
               </p>
@@ -165,14 +165,14 @@ const McpDocsPage = () => {
             <P>
               The server supports two transport modes:
             </P>
-            <ol className="mb-4 space-y-2 text-sm text-slate-300">
+            <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 '<strong>stdio</strong> — a local Bun subprocess that communicates over stdin/stdout. Best for Claude Desktop and Cursor.',
-                '<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">/api/mcp</code>) served on the same port as Taskinate. Best for remote agents, CI, and web-based AI assistants.',
+                '<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">/api/mcp</code>) served on the same port as Taskinate. Best for remote agents, CI, and web-based AI assistants.',
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-white">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
                   </span>
                   <span dangerouslySetInnerHTML={{ __html: step }} />
@@ -195,7 +195,7 @@ const McpDocsPage = () => {
             </P>
 
             <H3>Generate a token</H3>
-            <ol className="mb-4 space-y-2 text-sm text-slate-300">
+            <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 'Open Taskinate in your browser and sign in.',
                 'Go to <strong>User Settings → API Tokens</strong>.',
@@ -203,7 +203,7 @@ const McpDocsPage = () => {
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-white">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
                   </span>
                   <span dangerouslySetInnerHTML={{ __html: step }} />
@@ -222,7 +222,7 @@ const McpDocsPage = () => {
                 {
                   rowId: 'auth-stdio',
                   cells: [
-                    { key: 'transport', content: <Badge color="bg-slate-700 text-slate-200">stdio</Badge> },
+                    { key: 'transport', content: <Badge color="bg-bg-overlay text-subtle">stdio</Badge> },
                     { key: 'how', content: <><Code>TASKINATE_TOKEN</Code> environment variable</> },
                   ],
                 },
@@ -310,15 +310,15 @@ const McpDocsPage = () => {
             </P>
 
             <H3>Session lifecycle</H3>
-            <ol className="mb-4 space-y-2 text-sm text-slate-300">
+            <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
-                '<strong>Initialize</strong> — <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">POST /api/mcp</code> (no <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header) creates a new isolated session. The response returns an <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header.',
-                '<strong>Interact</strong> — subsequent <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">POST</code> requests (tool calls / notifications) or <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">GET</code> requests (SSE stream) must include the <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header.',
-                '<strong>Terminate</strong> — <code class="rounded bg-slate-800 px-1 py-0.5 font-mono text-xs text-indigo-300">DELETE /api/mcp</code> with the session ID tears down the session immediately.',
+                '<strong>Initialize</strong> — <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">POST /api/mcp</code> (no <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header) creates a new isolated session. The response returns an <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header.',
+                '<strong>Interact</strong> — subsequent <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">POST</code> requests (tool calls / notifications) or <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">GET</code> requests (SSE stream) must include the <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header.',
+                '<strong>Terminate</strong> — <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">DELETE /api/mcp</code> with the session ID tears down the session immediately.',
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-white">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
                   </span>
                   <span dangerouslySetInnerHTML={{ __html: step }} />
@@ -405,7 +405,7 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-404',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-slate-700 text-slate-300">404</Badge> },
+                    { key: 'status', content: <Badge color="bg-bg-overlay text-subtle">404</Badge> },
                     { key: 'name', content: <Code>session-not-found</Code> },
                     { key: 'meaning', content: 'Session expired or never existed — re-initialize' },
                   ],

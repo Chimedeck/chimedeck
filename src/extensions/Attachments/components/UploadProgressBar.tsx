@@ -21,7 +21,7 @@ export function UploadProgressBar({ progress, label = translations['attachments.
       aria-valuenow={isIndeterminate ? undefined : progress}
       aria-valuemin={0}
       aria-valuemax={100}
-      className="w-full h-1.5 bg-slate-700 rounded overflow-hidden"
+      className="w-full h-1.5 bg-bg-overlay rounded overflow-hidden"
     >
       {isIndeterminate ? (
         // Indeterminate stripe animation via Tailwind animate-pulse substitute

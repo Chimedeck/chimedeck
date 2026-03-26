@@ -5,6 +5,7 @@
 // External links are shown in a separate "Links" section.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
 import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment, fetchCardPreview } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
@@ -249,20 +250,21 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
 
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
-          <PaperClipIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <h3 className="text-sm font-semibold text-subtle flex items-center gap-1.5">
+          <PaperClipIcon className="h-4 w-4 text-muted" aria-hidden="true" />
           {translations['attachments.panel.title']}
         </h3>
         {canWrite && (
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             type="button"
             onClick={handlePickerClick}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 border border-slate-600 hover:border-slate-400 rounded px-2 py-1 transition-colors"
             data-testid="attach-file-button"
           >
             <PaperClipIcon className="h-3.5 w-3.5" aria-hidden="true" />
             {translations['attachments.panel.attachFile']}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -308,7 +310,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
       )}
 
       {attachments.length === 0 && uploads.filter((u) => u.phase !== 'done').length === 0 && (
-        <p className="text-xs text-slate-500 italic mt-1">{translations['attachments.panel.empty']}</p>
+        <p className="text-xs text-muted italic mt-1">{translations['attachments.panel.empty']}</p>
       )}
 
       {/* FILE attachments */}
@@ -328,7 +330,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
       {/* Thumbnail grid — image/* READY attachments */}
       {imageAttachments.length > 0 && (
         <div className="mt-3" data-testid="attachment-thumbnail-grid">
-          <p className="text-xs text-slate-400 mb-2">{translations['attachments.panel.imagesSection']}</p>
+          <p className="text-xs text-muted mb-2">{translations['attachments.panel.imagesSection']}</p>
           <div className="flex flex-wrap gap-2">
             {imageAttachments.map((a) => (
               <AttachmentThumbnail key={a.id} attachment={a} />
@@ -340,7 +342,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
       {/* Trello cards section — internal card-link attachments */}
       {cardLinkAttachments.length > 0 && (
         <div className="mt-4" data-testid="card-attachments-section">
-          <p className="text-xs font-semibold text-slate-400 mb-2">
+          <p className="text-xs font-semibold text-muted mb-2">
             {translations['attachments.panel.cardsSection']}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -363,7 +365,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
       {/* Links section — external URL attachments */}
       {externalLinkAttachments.length > 0 && (
         <div className="mt-4" data-testid="link-attachments-section">
-          <p className="text-xs font-semibold text-slate-400 mb-2">
+          <p className="text-xs font-semibold text-muted mb-2">
             {translations['attachments.panel.linksSection']}
           </p>
           <div className="space-y-2">
@@ -396,23 +398,23 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                 value={linkUrl}
                 onChange={(e) => handleLinkUrlChange(e.target.value)}
                 required
-                className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
                 data-testid="link-url-input"
                 autoFocus
               />
 
               {/* Internal card preview — shown when URL resolves to a card in this workspace */}
               {detectingCard && (
-                <p className="text-xs text-slate-400 italic">{translations['attachments.panel.link.loadingCard']}</p>
+                <p className="text-xs text-muted italic">{translations['attachments.panel.link.loadingCard']}</p>
               )}
               {detectError && !detectingCard && (
                 <p className="text-xs text-amber-400">{translations['attachments.panel.link.cardNotFound']}</p>
               )}
               {detectedCard && !detectingCard && (
-                <div className="rounded-lg border border-slate-600 bg-slate-800/60 px-3 py-2" data-testid="link-card-preview">
-                  <p className="text-[11px] text-slate-400 truncate mb-0.5">
+                <div className="rounded-lg border border-border bg-bg-surface/60 px-3 py-2" data-testid="link-card-preview">
+                  <p className="text-[11px] text-muted truncate mb-0.5">
                     {detectedCard.board_name ?? ''}
-                    {detectedCard.list_name ? <span className="ml-1 text-slate-500">· {detectedCard.list_name}</span> : null}
+                    {detectedCard.list_name ? <span className="ml-1 text-muted">· {detectedCard.list_name}</span> : null}
                   </p>
                   {detectedCard.labels.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-1">
@@ -428,7 +430,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                       ))}
                     </div>
                   )}
-                  <p className="text-sm font-medium text-slate-100 truncate">{detectedCard.title}</p>
+                  <p className="text-sm font-medium text-base truncate">{detectedCard.title}</p>
                 </div>
               )}
 
@@ -439,21 +441,24 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                   placeholder={translations['attachments.panel.link.namePlaceholder']}
                   value={linkName}
                   onChange={(e) => setLinkName(e.target.value)}
-                  className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
                   data-testid="link-name-input"
                 />
               )}
 
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   type="submit"
                   disabled={linkSubmitting || detectingCard}
-                  className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
                   data-testid="link-submit-button"
                 >
                   {translations['attachments.panel.link.attach']}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   type="button"
                   onClick={() => {
                     setShowLinkForm(false);
@@ -462,17 +467,16 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                     setDetectedCard(null);
                     setDetectError(false);
                   }}
-                  className="text-xs text-slate-400 hover:text-slate-200 rounded px-3 py-1.5 border border-slate-600 hover:border-slate-400"
                 >
                   {translations['attachments.panel.link.cancel']}
-                </button>
+                </Button>
               </div>
             </form>
           ) : (
             <button
               type="button"
               onClick={() => setShowLinkForm(true)}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1 text-xs text-muted hover:text-subtle transition-colors"
               data-testid="attach-link-button"
             >
               <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />

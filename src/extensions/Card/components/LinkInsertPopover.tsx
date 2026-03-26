@@ -4,6 +4,7 @@
 // Cancel / Insert buttons.
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
+import Button from '../../../common/components/Button';
 
 interface Props {
   editor: Editor | null;
@@ -104,17 +105,17 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
   };
 
   const inputCls =
-    'w-full rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500';
+    'w-full rounded-md border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle outline-none focus:outline-none focus:ring-2 focus:ring-primary';
 
   return (
     <div
       ref={containerRef}
-      className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-slate-700 bg-slate-900 p-4 shadow-2xl"
+      className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-border bg-bg-base p-4 shadow-2xl"
       // [why] Prevent mousedown inside the popover from blurring the editor
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="mb-3">
-        <label htmlFor="link-insert-url" className="mb-1 block text-xs font-semibold text-slate-200">
+        <label htmlFor="link-insert-url" className="mb-1 block text-xs font-semibold text-subtle">
           Link <span className="text-red-400">*</span>
         </label>
         <input
@@ -130,8 +131,8 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
       </div>
 
       <div className="mb-1">
-        <label htmlFor="link-insert-display" className="mb-1 block text-xs font-semibold text-slate-200">
-          Display text <span className="text-slate-500 font-normal">(optional)</span>
+        <label htmlFor="link-insert-display" className="mb-1 block text-xs font-semibold text-subtle">
+          Display text <span className="text-muted font-normal">(optional)</span>
         </label>
         <input
           id="link-insert-display"
@@ -142,25 +143,27 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           placeholder="Text to display"
           className={inputCls}
         />
-        <p className="mt-1 text-[11px] text-slate-500">Give this link a title or description</p>
+        <p className="mt-1 text-[11px] text-muted">Give this link a title or description</p>
       </div>
 
       <div className="mt-4 flex justify-end gap-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onMouseDown={(e) => { e.preventDefault(); onClose(); }}
-          className="rounded-lg px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-200"
+          className="px-3 py-1.5 text-sm text-muted hover:text-subtle"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="primary"
           onMouseDown={(e) => { e.preventDefault(); handleInsert(); }}
           disabled={!url.trim()}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+          className="px-3 py-1.5 text-sm"
         >
           Insert
-        </button>
+        </Button>
       </div>
     </div>
   );

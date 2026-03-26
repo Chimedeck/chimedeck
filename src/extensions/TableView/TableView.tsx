@@ -24,7 +24,7 @@ const TableView = ({ cards, lists, onCardClick }: TableViewProps) => {
   if (cards.length === 0) {
     return (
       <div
-        className="flex flex-1 items-center justify-center py-24 text-slate-500"
+        className="flex flex-1 items-center justify-center py-24 text-muted"
         data-testid="table-view-empty"
       >
         {translations['TableView.noCards']}

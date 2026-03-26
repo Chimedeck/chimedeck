@@ -12,6 +12,7 @@ import GenerateTokenModal from './GenerateTokenModal';
 import TokenCreatedModal from './TokenCreatedModal';
 import RevokeTokenDialog from './RevokeTokenDialog';
 import Spinner from '~/common/components/Spinner';
+import Button from '~/common/components/Button';
 
 export default function ApiTokenPage() {
   const { data: tokens, isLoading } = useListTokensQuery();
@@ -47,15 +48,16 @@ export default function ApiTokenPage() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">{translations['ApiTokenPage.title']}</h1>
-          <p className="mt-1 text-sm text-slate-400">{translations['ApiTokenPage.description']}</p>
+          <h1 className="text-2xl font-bold text-base">{translations['ApiTokenPage.title']}</h1>
+          <p className="mt-1 text-sm text-muted">{translations['ApiTokenPage.description']}</p>
         </div>
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={() => setShowGenerate(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
         >
           {translations['ApiTokenPage.generateButton']}
-        </button>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -63,25 +65,25 @@ export default function ApiTokenPage() {
           <Spinner size="lg" className="text-blue-500" />
         </div>
       ) : !tokens || tokens.length === 0 ? (
-        <p className="text-sm text-slate-400">{translations['ApiTokenPage.emptyState']}</p>
+        <p className="text-sm text-muted">{translations['ApiTokenPage.emptyState']}</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-700">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700 bg-slate-800/60">
-                <th className="px-4 py-3 text-left font-medium text-slate-400">
+              <tr className="border-b border-border bg-bg-surface/60">
+                <th className="px-4 py-3 text-left font-medium text-muted">
                   {translations['ApiTokenPage.tableNameCol']}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-slate-400">
+                <th className="px-4 py-3 text-left font-medium text-muted">
                   {translations['ApiTokenPage.tablePrefixCol']}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-slate-400">
+                <th className="px-4 py-3 text-left font-medium text-muted">
                   {translations['ApiTokenPage.tableCreatedCol']}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-slate-400">
+                <th className="px-4 py-3 text-left font-medium text-muted">
                   {translations['ApiTokenPage.tableLastUsedCol']}
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-slate-400">
+                <th className="px-4 py-3 text-left font-medium text-muted">
                   {translations['ApiTokenPage.tableExpiresCol']}
                 </th>
                 <th className="px-4 py-3" />
@@ -89,16 +91,16 @@ export default function ApiTokenPage() {
             </thead>
             <tbody>
               {tokens.map((token) => (
-                <tr key={token.id} className="border-b border-slate-700/50 hover:bg-slate-800/30">
-                  <td className="px-4 py-3 font-medium text-white">{token.name}</td>
-                  <td className="px-4 py-3 font-mono text-slate-300">{token.prefix}…</td>
-                  <td className="px-4 py-3 text-slate-400">{formatDate(token.createdAt)}</td>
-                  <td className="px-4 py-3 text-slate-400">
+                <tr key={token.id} className="border-b border-border/50 hover:bg-bg-surface/30">
+                  <td className="px-4 py-3 font-medium text-base">{token.name}</td>
+                  <td className="px-4 py-3 font-mono text-subtle">{token.prefix}…</td>
+                  <td className="px-4 py-3 text-muted">{formatDate(token.createdAt)}</td>
+                  <td className="px-4 py-3 text-muted">
                     {token.lastUsedAt
                       ? formatDate(token.lastUsedAt)
                       : translations['ApiTokenPage.noLastUsed']}
                   </td>
-                  <td className="px-4 py-3 text-slate-400">
+                  <td className="px-4 py-3 text-muted">
                     {token.expiresAt
                       ? formatDate(token.expiresAt)
                       : translations['ApiTokenPage.neverExpires']}

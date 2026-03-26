@@ -45,7 +45,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
 
   return (
     <div
-      className="flex flex-col rounded-lg border border-slate-700 bg-slate-800/60 hover:bg-slate-800 transition-colors overflow-hidden"
+      className="flex flex-col rounded-lg border border-border bg-bg-surface/60 hover:bg-bg-surface transition-colors overflow-hidden"
       style={{ width: 'calc(50% - 4px)' }}
       data-testid="card-attachment-preview"
     >
@@ -58,15 +58,15 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
         {/* Board avatar + board name + list name */}
         <div className="flex items-center gap-1.5 mb-2">
           <div
-            className="flex-shrink-0 h-5 w-5 rounded-sm flex items-center justify-center text-[9px] font-bold text-white"
+            className="flex-shrink-0 h-5 w-5 rounded-sm flex items-center justify-center text-[9px] font-bold text-inverse"
             style={{ backgroundColor: bgColor }}
           >
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold text-slate-300 truncate leading-tight">{card.board_name ?? ''}</p>
+            <p className="text-[10px] font-semibold text-subtle truncate leading-tight">{card.board_name ?? ''}</p>
             {card.list_name && (
-              <p className="text-[10px] text-slate-500 truncate leading-tight">{card.list_name}</p>
+              <p className="text-[10px] text-muted truncate leading-tight">{card.list_name}</p>
             )}
           </div>
         </div>
@@ -88,7 +88,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
         )}
 
         {/* Card title — allow wrapping (matches mockup multi-line titles) */}
-        <p className="text-xs font-medium text-slate-100 leading-snug line-clamp-3">{card.title}</p>
+        <p className="text-xs font-medium text-base leading-snug line-clamp-3">{card.title}</p>
       </button>
 
       {/* Footer: ··· menu */}
@@ -98,17 +98,17 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
             <button
               type="button"
               onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
-              className="flex items-center gap-0.5 text-slate-500 hover:text-slate-300 rounded px-1 py-0.5 hover:bg-slate-700 transition-colors"
+              className="flex items-center gap-0.5 text-muted hover:text-subtle rounded px-1 py-0.5 hover:bg-bg-overlay transition-colors"
               aria-label="Card attachment options"
             >
               <EllipsisHorizontalIcon className="h-4 w-4" aria-hidden="true" />
             </button>
 
             {menuOpen && (
-              <div className="absolute left-0 bottom-full mb-1 z-20 min-w-[140px] rounded-lg border border-slate-600 bg-slate-800 shadow-xl py-1">
+              <div className="absolute left-0 bottom-full mb-1 z-20 min-w-[140px] rounded-lg border border-border bg-bg-surface shadow-xl py-1">
                 {confirmDelete ? (
                   <div className="px-3 py-2 space-y-1">
-                    <p className="text-[11px] text-slate-300 mb-1">Remove attachment?</p>
+                    <p className="text-[11px] text-subtle mb-1">Remove attachment?</p>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -120,7 +120,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
                       <button
                         type="button"
                         onClick={() => setConfirmDelete(false)}
-                        className="text-[11px] text-slate-400 hover:text-slate-200"
+                        className="text-[11px] text-muted hover:text-subtle"
                       >
                         {translations['attachments.item.delete.no']}
                       </button>
@@ -130,7 +130,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(true)}
-                    className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-slate-700 hover:text-red-300"
+                    className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-bg-overlay hover:text-red-300"
                   >
                     Remove
                   </button>

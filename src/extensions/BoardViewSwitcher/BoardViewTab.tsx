@@ -26,8 +26,8 @@ const BoardViewTab = ({ viewType, isActive, onClick }: Props) => {
       data-testid={`board-view-tab-${viewType}`}
       className={`flex items-center gap-1.5 rounded-t px-3 py-2 text-sm font-medium transition-colors ${
         isActive
-          ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+          ? 'border-b-2 border-blue-500 text-blue-600'
+          : 'text-muted hover:text-base'
       }`}
     >
       <Icon className="h-4 w-4" />

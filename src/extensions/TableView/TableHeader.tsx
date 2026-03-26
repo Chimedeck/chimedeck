@@ -18,12 +18,12 @@ const SortIcon = ({ direction }: { direction: 'asc' | 'desc' | 'none' }) => {
 const TableHeader = ({ columns, sortState, onSort }: Props) => {
   return (
     <thead>
-      <tr className="border-b border-slate-700">
+      <tr className="border-b border-border">
         {columns.map((col) => (
           <th
             key={col.key}
             scope="col"
-            className={`px-3 py-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide select-none${col.sortable ? ' cursor-pointer hover:text-slate-200' : ''}`}
+            className={`px-3 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wide select-none${col.sortable ? ' cursor-pointer hover:text-subtle' : ''}`}
             style={col.width ? { width: col.width } : undefined}
             onClick={col.sortable ? () => onSort(col.key) : undefined}
             aria-sort={

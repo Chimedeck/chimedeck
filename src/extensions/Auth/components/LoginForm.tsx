@@ -65,7 +65,7 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
             placeholder="you@example.com"
-            className={`w-full bg-slate-800 border ${errors.email ? 'border-red-500' : 'border-slate-700'} text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
           {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
         </div>

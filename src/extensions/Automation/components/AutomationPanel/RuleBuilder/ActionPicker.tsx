@@ -41,12 +41,12 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
   }, {});
 
   return (
-    <div className="rounded-md border border-slate-600 bg-slate-800 shadow-xl">
+    <div className="rounded-md border border-border bg-bg-surface shadow-xl">
       {/* Search */}
-      <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2">
-        <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+        <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
         <input
-          className="flex-1 bg-transparent text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-subtle placeholder:text-muted focus:outline-none"
           placeholder={translations['automation.actionPicker.searchPlaceholder']}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -55,7 +55,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
       </div>
 
       {loading && (
-        <p className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.actionPicker.loading']}</p>
+        <p className="px-3 py-4 text-center text-sm text-muted">{translations['automation.actionPicker.loading']}</p>
       )}
       {error && (
         <p className="px-3 py-4 text-center text-sm text-red-400">{error}</p>
@@ -65,7 +65,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
         <ul className="max-h-64 overflow-y-auto py-1" role="listbox">
           {Object.entries(grouped).map(([category, types]) => (
             <li key={category}>
-              <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <p className="px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted">
                 {category}
               </p>
               {types.map((t) => (
@@ -74,25 +74,25 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
                   type="button"
                   role="option"
                   aria-selected={false}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-slate-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-subtle transition-colors hover:bg-bg-overlay"
                   onClick={() => onSelect(t)}
                 >
-                  <PlayIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                  <PlayIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
                   {t.label}
                 </button>
               ))}
             </li>
           ))}
           {Object.keys(grouped).length === 0 && (
-            <li className="px-3 py-4 text-center text-sm text-slate-400">{translations['automation.actionPicker.noResults']}</li>
+            <li className="px-3 py-4 text-center text-sm text-muted">{translations['automation.actionPicker.noResults']}</li>
           )}
         </ul>
       )}
 
-      <div className="border-t border-slate-700 px-3 py-2">
+      <div className="border-t border-border px-3 py-2">
         <button
           type="button"
-          className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          className="text-xs text-muted hover:text-subtle transition-colors"
           onClick={onCancel}
         >
           {translations['automation.actionPicker.cancel']}

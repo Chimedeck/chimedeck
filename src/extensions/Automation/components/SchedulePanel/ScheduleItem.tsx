@@ -98,16 +98,16 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
   const summary = getSummary(automation);
 
   return (
-    <li className="group flex items-start gap-3 rounded-md border border-slate-700 bg-slate-800 px-3 py-3">
+    <li className="group flex items-start gap-3 rounded-md border border-border bg-bg-surface px-3 py-3">
       {/* Icon */}
       <div className="mt-0.5 shrink-0">
-        <Icon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <Icon className="h-4 w-4 text-muted" aria-hidden="true" />
       </div>
 
       {/* Body */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-200">{automation.name}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-400">
+        <p className="truncate text-sm font-medium text-subtle">{automation.name}</p>
+        <p className="mt-0.5 truncate text-xs text-muted">
           {summary} · {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.scheduleItem.actions'] : translations['automation.scheduleItem.action']}
         </p>
       </div>
@@ -121,7 +121,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
         <button
           onClick={handleToggle}
           disabled={toggling}
-          className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors disabled:opacity-50"
+          className="rounded p-1 text-muted hover:text-subtle hover:bg-bg-overlay transition-colors disabled:opacity-50"
           aria-label={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
           title={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
         >
@@ -135,7 +135,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
         {/* Edit */}
         <button
           onClick={onEdit}
-          className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-700 transition-colors"
+          className="rounded p-1 text-muted hover:text-subtle hover:bg-bg-overlay transition-colors"
           aria-label={translations['automation.scheduleItem.editAriaLabel']}
           title={translations['automation.scheduleItem.editAriaLabel']}
         >
@@ -149,7 +149,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           className={`rounded p-1 transition-colors disabled:opacity-50 ${
             confirmDelete
               ? 'bg-red-700 text-white hover:bg-red-600'
-              : 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
+              : 'text-muted hover:text-red-400 hover:bg-bg-overlay'
           }`}
           aria-label={confirmDelete ? translations['automation.scheduleItem.confirmDeleteAriaLabel'] : translations['automation.scheduleItem.deleteAriaLabel']}
           title={confirmDelete ? translations['automation.scheduleItem.confirmDeleteTitle'] : translations['automation.scheduleItem.deleteTitle']}

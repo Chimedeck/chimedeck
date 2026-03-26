@@ -31,7 +31,7 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
     return (
       <input
         ref={inputRef}
-        className="text-xl font-bold text-gray-900 dark:text-slate-100 bg-gray-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded px-2 py-1 w-full"
+        className="text-xl font-bold text-base bg-bg-overlay focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1 w-full"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -48,7 +48,7 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
 
   return (
     <h1
-      className={`text-xl font-bold text-gray-900 dark:text-slate-100 rounded px-2 py-1 w-full cursor-text hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-colors${
+      className={`text-xl font-bold text-gray-900 rounded px-2 py-1 w-full cursor-text hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-colors${
         disabled ? ' cursor-default pointer-events-none' : ''
       }`}
       onClick={() => !disabled && setEditing(true)}

@@ -85,12 +85,12 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [] }: Props) => {
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-2"
+      className="flex items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2"
     >
       {/* Drag handle */}
       <button
         type="button"
-        className="shrink-0 cursor-grab text-slate-500 hover:text-slate-300 focus:outline-none"
+        className="shrink-0 cursor-grab text-muted hover:text-subtle focus:outline-none"
         aria-label={translations['automation.actionItem.dragAriaLabel']}
         {...attributes}
         {...listeners}
@@ -100,16 +100,16 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [] }: Props) => {
 
       {/* Label + summary */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-200">{item.label}</p>
+        <p className="truncate text-sm font-medium text-subtle">{item.label}</p>
         {configSummary && (
-          <p className="truncate text-xs text-slate-400">{configSummary}</p>
+          <p className="truncate text-xs text-muted">{configSummary}</p>
         )}
       </div>
 
       {/* Delete */}
       <button
         type="button"
-        className="shrink-0 rounded p-1 text-slate-400 transition-colors hover:bg-slate-700 hover:text-red-400"
+        className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-red-400"
         onClick={onDelete}
         aria-label={`Remove ${item.label} action`}
       >

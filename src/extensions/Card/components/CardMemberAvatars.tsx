@@ -65,7 +65,7 @@ export const CardMemberAvatars = ({
       })}
       {overflow > 0 && (
         <span
-          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 dark:bg-slate-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-800"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-[10px] font-bold text-white ring-2 ring-white"
           title={`${overflow} more`}
         >
           +{overflow}

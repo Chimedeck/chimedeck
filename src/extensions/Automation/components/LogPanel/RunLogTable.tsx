@@ -46,11 +46,11 @@ const RunLogTable: FC<Props> = ({
       <div className="overflow-x-auto flex-1">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-700">
+            <tr className="border-b border-border">
               {COLUMN_HEADERS.map((col) => (
                 <th
                   key={col.key}
-                  className={`py-2 text-[10px] uppercase tracking-wide text-slate-500 font-semibold ${col.className}`}
+                  className={`py-2 text-[10px] uppercase tracking-wide text-muted font-semibold ${col.className}`}
                 >
                   {col.label}
                 </th>
@@ -60,7 +60,7 @@ const RunLogTable: FC<Props> = ({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-sm text-slate-400">
+                <td colSpan={6} className="py-12 text-center text-sm text-muted">
                   {translations['automation.runLogTable.loading']}
                 </td>
               </tr>
@@ -74,7 +74,7 @@ const RunLogTable: FC<Props> = ({
             )}
             {!loading && !error && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-sm text-slate-500">
+                <td colSpan={6} className="py-12 text-center text-sm text-muted">
                   {translations['automation.runLogTable.empty']}
                 </td>
               </tr>
@@ -88,20 +88,20 @@ const RunLogTable: FC<Props> = ({
 
       {/* Pagination */}
       {totalPage > 1 && (
-        <div className="flex items-center justify-end gap-2 px-4 py-2 border-t border-slate-700 shrink-0">
+        <div className="flex items-center justify-end gap-2 px-4 py-2 border-t border-border shrink-0">
           <button
-            className="px-2 py-1 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-40"
+            className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
             aria-label={translations['automation.runLogTable.prevAriaLabel']}
           >
             {translations['automation.runLogTable.prev']}
           </button>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted">
             {page} / {totalPage}
           </span>
           <button
-            className="px-2 py-1 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-40"
+            className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page >= totalPage}
             onClick={() => onPageChange(page + 1)}
             aria-label={translations['automation.runLogTable.nextAriaLabel']}

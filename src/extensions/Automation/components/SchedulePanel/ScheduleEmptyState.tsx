@@ -1,5 +1,6 @@
 // ScheduleEmptyState — shown when no SCHEDULED or DUE_DATE automations exist.
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
+import Button from '../../../../common/components/Button';
 import translations from '../../translations/en.json';
 
 interface Props {
@@ -9,26 +10,28 @@ interface Props {
 
 const ScheduleEmptyState = ({ onCreateScheduled, onCreateDueDate }: Props) => (
   <div className="flex flex-col items-center justify-center gap-4 px-6 py-12 text-center">
-    <CalendarDaysIcon className="h-10 w-10 text-slate-500" aria-hidden="true" />
+    <CalendarDaysIcon className="h-10 w-10 text-muted" aria-hidden="true" />
     <div>
-      <p className="text-sm font-medium text-slate-200">{translations['automation.scheduleEmptyState.title']}</p>
-      <p className="mt-1 text-xs text-slate-400">
+      <p className="text-sm font-medium text-subtle">{translations['automation.scheduleEmptyState.title']}</p>
+      <p className="mt-1 text-xs text-muted">
         {translations['automation.scheduleEmptyState.description']}
       </p>
     </div>
     <div className="flex flex-col gap-2 w-full max-w-xs">
-      <button
+      <Button
+        variant="primary"
         onClick={onCreateScheduled}
-        className="rounded-md bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+        className="w-full"
       >
         {translations['automation.scheduleEmptyState.createScheduled']}
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="secondary"
         onClick={onCreateDueDate}
-        className="rounded-md border border-slate-600 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+        className="w-full"
       >
         {translations['automation.scheduleEmptyState.createDueDate']}
-      </button>
+      </Button>
     </div>
   </div>
 );

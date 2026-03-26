@@ -2,6 +2,7 @@
 // Commands are filtered by label/keywords as the user types; selecting one
 // executes immediately and closes the menu via onClose.
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Button from '../../../common/components/Button';
 import type { Editor } from '@tiptap/react';
 import {
   AtSymbolIcon,
@@ -185,11 +186,11 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
     <div
       role="menu"
       aria-label="Command menu"
-      className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
+      className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-border bg-white shadow-lg"
       onKeyDown={handleKeyDown}
     >
       {/* Search input */}
-      <div className="border-b border-gray-100 px-2 py-1.5 dark:border-slate-700">
+      <div className="border-b border-gray-100 px-2 py-1.5 ">
         <input
           ref={searchRef}
           type="text"
@@ -198,30 +199,31 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
           placeholder="Search commands…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none dark:text-slate-200 dark:placeholder-slate-500"
+          className="w-full bg-transparent text-xs text-base placeholder:text-subtle outline-none"
         />
       </div>
 
       {/* Command list */}
       <div ref={listRef} className="max-h-48 overflow-y-auto py-1">
         {filtered.length === 0 ? (
-          <p className="px-3 py-2 text-xs text-gray-400 dark:text-slate-500">No matching commands</p>
+          <p className="px-3 py-2 text-xs text-muted">No matching commands</p>
         ) : (
           filtered.map((cmd, idx) => (
-            <button
+            <Button
               key={cmd.id}
               type="button"
+              variant="ghost"
               role="menuitem"
               data-index={idx}
               aria-selected={idx === activeIndex}
               className={[
                 'flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors',
                 idx === activeIndex
-                  ? 'bg-gray-100 dark:bg-slate-800'
-                  : 'hover:bg-gray-50 dark:hover:bg-slate-800/50',
+                  ? 'bg-gray-100'
+                  : 'hover:bg-gray-50',
                 isActive(cmd)
                   ? 'font-semibold text-indigo-600 dark:text-indigo-300'
-                  : 'text-gray-700 dark:text-slate-200',
+                  : 'text-gray-700',
               ].join(' ')}
               onMouseEnter={() => setActiveIndex(idx)}
               onMouseDown={(e) => {
@@ -232,7 +234,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
             >
               {cmd.icon}
               {cmd.label}
-            </button>
+            </Button>
           ))
         )}
       </div>

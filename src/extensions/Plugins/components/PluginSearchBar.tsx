@@ -49,7 +49,7 @@ const PluginSearchBar = ({
   };
 
   const selectClass =
-    'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500';
+    'bg-bg-overlay border border-border rounded px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary';
 
   return (
     <div className="flex flex-wrap gap-2 mb-4">
@@ -58,7 +58,7 @@ const PluginSearchBar = ({
         value={inputValue}
         onChange={handleInputChange}
         placeholder={translations['plugins.searchBar.placeholder']}
-        className="flex-1 min-w-[180px] bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+        className="flex-1 min-w-[180px] bg-bg-overlay border border-border rounded px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
       />
       <select
         value={selectedCategory ?? ''}

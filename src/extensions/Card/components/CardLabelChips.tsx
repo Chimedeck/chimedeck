@@ -34,6 +34,7 @@ const CardLabelChips = ({ labels, expanded, onToggle }: Props) => {
       tabIndex={0}
       title={expanded ? 'Collapse labels' : 'Expand labels'}
     >
+      {/* [theme-exception] text-white on arbitrary label background color */}
       {labels.map((label) =>
         expanded ? (
           <span

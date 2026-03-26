@@ -25,13 +25,13 @@ const CardButtonItem: FC<Props> = ({ automation, runState, onRun, disabled = fal
       onClick={onRun}
       className={[
         'flex items-center gap-2 w-full rounded-md px-3 py-2 text-sm font-medium transition-colors',
-        'border border-slate-700 bg-slate-800',
+        'border border-border bg-bg-surface',
         isRunning
           ? 'cursor-not-allowed opacity-60'
-          : 'hover:bg-slate-700 hover:border-slate-600 hover:text-slate-100',
+          : 'hover:bg-bg-overlay hover:border-border hover:text-base',
         runState === 'success' ? 'border-emerald-700 bg-emerald-900/20 text-emerald-300' : '',
         runState === 'error' ? 'border-red-700 bg-red-900/20 text-red-300' : '',
-        'text-slate-300',
+        'text-subtle',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -46,14 +46,14 @@ const CardButtonItem: FC<Props> = ({ automation, runState, onRun, disabled = fal
         ) : runState === 'error' ? (
           <ExclamationCircleIcon className="h-4 w-4 text-red-400" aria-hidden="true" />
         ) : (
-          <ButtonIcon name={automation.icon} className="h-4 w-4 text-slate-400" />
+          <ButtonIcon name={automation.icon} className="h-4 w-4 text-muted" />
         )}
       </span>
 
       <span className="flex-1 text-left truncate">{automation.name}</span>
 
       {isRunning && (
-        <span className="text-xs text-slate-500 flex-shrink-0">{translations['automation.cardButtonItem.running']}</span>
+        <span className="text-xs text-muted flex-shrink-0">{translations['automation.cardButtonItem.running']}</span>
       )}
     </button>
   );

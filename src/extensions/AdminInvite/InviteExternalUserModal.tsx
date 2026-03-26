@@ -160,13 +160,13 @@ export default function InviteExternalUserModal() {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl focus:outline-none"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-bg-base p-6 shadow-2xl focus:outline-none"
           aria-describedby="invite-modal-description"
         >
           {/* Close button */}
           <Dialog.Close asChild>
             <button
-              className="absolute right-4 top-4 rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              className="absolute right-4 top-4 rounded p-1 text-muted hover:bg-bg-surface hover:text-base transition-colors"
               aria-label={translations['AdminInvite.closeButton']}
             >
               <XMarkIcon className="h-5 w-5" aria-hidden="true" />
@@ -186,12 +186,12 @@ export default function InviteExternalUserModal() {
           ) : (
             // ── Invite form ─────────────────────────────────────────────────
             <>
-              <Dialog.Title className="mb-1 text-lg font-bold text-white">
+              <Dialog.Title className="mb-1 text-lg font-bold text-base">
                 {translations['AdminInvite.modalTitle']}
               </Dialog.Title>
               <p
                 id="invite-modal-description"
-                className="mb-5 text-sm text-slate-400"
+                className="mb-5 text-sm text-muted"
               >
                 {translations['AdminInvite.modalDescription']}
               </p>
@@ -213,7 +213,7 @@ export default function InviteExternalUserModal() {
                     placeholder={translations['AdminInvite.emailPlaceholder']}
                     required
                     autoFocus
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                   className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-describedby={fieldErrors.email ? 'invite-email-error' : undefined}
                   />
                   {fieldErrors.email && (
@@ -238,7 +238,7 @@ export default function InviteExternalUserModal() {
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder={translations['AdminInvite.displayNamePlaceholder']}
                     required
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-describedby={
                       fieldErrors.displayName ? 'invite-display-name-error' : undefined
                     }
@@ -296,7 +296,7 @@ export default function InviteExternalUserModal() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                       aria-describedby="invite-password-strength"
                     />
                     {/* Strength bar */}

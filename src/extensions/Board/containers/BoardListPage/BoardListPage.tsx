@@ -13,6 +13,7 @@ import BoardCard from '../../components/BoardCard';
 import CreateBoardModal from '../../components/CreateBoardModal';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
+import Button from '~/common/components/Button';
 import {
   visibleBoardsSelector,
   showStarredOnlySelector,
@@ -92,11 +93,11 @@ const BoardListPage = () => {
   const handleUnstar = (boardId: string) => dispatch(unstarBoardThunk({ boardId }));
 
   const pageContent = (() => {
-    if (loading) return <p className="text-slate-500 dark:text-slate-400">Loading boards…</p>;
+    if (loading) return <p className="text-muted">Loading boards…</p>;
     if (error) return <p className="text-red-400">Failed to load boards.</p>;
     if (!boards.length) {
       return (
-        <p className="text-slate-500 dark:text-slate-400">
+        <p className="text-muted">
           {showStarredOnly
             ? 'No starred boards. Star a board to add it here.'
             : 'No boards yet. Create your first board to get started.'}
@@ -124,24 +125,21 @@ const BoardListPage = () => {
   return (
     <div className="px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Boards</h1>
-        <button
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          onClick={() => setShowCreateModal(true)}
-        >
+        <h1 className="text-2xl font-bold text-base">Boards</h1>
+        <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
           Create Board
-        </button>
+        </Button>
       </div>
 
       {/* Filter chips — radio-group style so current state is always explicit */}
       <div className="mb-4 flex items-center gap-2">
-        <span className="text-xs text-slate-400 dark:text-slate-500">Show:</span>
+        <span className="text-xs text-muted">Show:</span>
         <button
           onClick={() => showStarredOnly && dispatch(toggleStarredFilter())}
           className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
             !showStarredOnly
-              ? 'border-slate-500 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-              : 'border-slate-200 dark:border-slate-700 bg-transparent text-slate-400 dark:text-slate-500 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+              ? 'border-border bg-bg-overlay text-base'
+              : 'border-border bg-transparent text-muted hover:border-border hover:text-subtle'
           }`}
         >
           All boards
@@ -151,7 +149,7 @@ const BoardListPage = () => {
           className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
             showStarredOnly
               ? 'border-yellow-500 bg-yellow-500/10 text-yellow-400'
-              : 'border-slate-200 dark:border-slate-700 bg-transparent text-slate-400 dark:text-slate-500 hover:border-yellow-500 hover:text-yellow-400'
+              : 'border-border bg-transparent text-muted hover:border-yellow-500 hover:text-yellow-400'
           }`}
         >
           <StarIcon className="h-3.5 w-3.5" aria-hidden="true" />

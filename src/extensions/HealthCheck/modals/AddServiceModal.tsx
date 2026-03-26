@@ -14,6 +14,7 @@ import {
   fetchPresetsThunk,
   addHealthCheckThunk,
 } from '../containers/HealthCheckTab/HealthCheckTab.duck';
+import Button from '../../../common/components/Button';
 import type { HealthCheckPreset } from '../api';
 
 type Mode = 'preset' | 'custom';
@@ -143,23 +144,24 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-md rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-6">
+      <div className="relative w-full max-w-md rounded-xl bg-bg-surface border border-border shadow-2xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2
             id="add-service-modal-title"
-            className="text-base font-semibold text-slate-100"
+            className="text-base font-semibold text-base"
           >
             Add Health Check Service
           </h2>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-slate-100 hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500"
             aria-label="Close modal"
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
 
         {/* Mode toggle */}
@@ -170,7 +172,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               mode === 'preset'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                : 'bg-bg-overlay text-subtle hover:bg-bg-sunken'
             }`}
             aria-pressed={mode === 'preset'}
           >
@@ -182,7 +184,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               mode === 'custom'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                : 'bg-bg-overlay text-subtle hover:bg-bg-sunken'
             }`}
             aria-pressed={mode === 'custom'}
           >
@@ -195,12 +197,12 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             <div className="mb-4">
               <label
                 htmlFor="preset-select"
-                className="block text-sm font-medium text-slate-300 mb-1.5"
+                className="block text-sm font-medium text-subtle mb-1.5"
               >
                 Select a preset service
               </label>
               {presetsStatus === 'loading' && (
-                <p className="text-sm text-slate-400">Loading presets…</p>
+                <p className="text-sm text-muted">Loading presets…</p>
               )}
               {presetsStatus === 'failed' && (
                 <p className="text-sm text-red-400">Failed to load presets. Please close and try again.</p>
@@ -211,7 +213,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   value={selectedPresetKey}
                   onChange={(e) => setSelectedPresetKey(e.target.value)}
                   disabled={submitting}
-                  className="w-full rounded-md bg-slate-700 border border-slate-600 text-slate-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 >
                   <option value="">— Choose a service —</option>
                   {presets.map((p: HealthCheckPreset) => (
@@ -226,7 +228,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
               {selectedPresetKey && (() => {
                 const p = presets.find((x: HealthCheckPreset) => x.key === selectedPresetKey);
                 return p?.description ? (
-                  <p className="mt-1.5 text-xs text-slate-400">{p.description}</p>
+                  <p className="mt-1.5 text-xs text-muted">{p.description}</p>
                 ) : null;
               })()}
             </div>
@@ -235,7 +237,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
               <div className="mb-4">
                 <label
                   htmlFor="custom-name"
-                  className="block text-sm font-medium text-slate-300 mb-1.5"
+                  className="block text-sm font-medium text-subtle mb-1.5"
                 >
                   Service name
                 </label>
@@ -247,13 +249,13 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   placeholder="e.g. My API"
                   disabled={submitting}
                   maxLength={100}
-                  className="w-full rounded-md bg-slate-700 border border-slate-600 text-slate-100 text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
               </div>
               <div className="mb-4">
                 <label
                   htmlFor="custom-url"
-                  className="block text-sm font-medium text-slate-300 mb-1.5"
+                  className="block text-sm font-medium text-subtle mb-1.5"
                 >
                   URL
                 </label>
@@ -264,7 +266,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   onChange={(e) => setCustom((prev) => ({ ...prev, url: e.target.value }))}
                   placeholder="https://example.com/health"
                   disabled={submitting}
-                  className="w-full rounded-md bg-slate-700 border border-slate-600 text-slate-100 text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
               </div>
             </>
@@ -282,21 +284,23 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={submitting || presetsStatus === 'loading'}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Adding…' : 'Add Service'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

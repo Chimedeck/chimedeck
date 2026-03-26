@@ -3,6 +3,7 @@
 // that triggers the plugin's settings modal.
 // When onEdit is provided (platform admins only), shows a pencil edit button.
 import { PuzzlePieceIcon, PencilIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import translations from '../translations/en.json';
 import PluginCapabilityChips from './PluginCapabilityChips';
 import type { Plugin, BoardPlugin } from '../api';
@@ -42,26 +43,26 @@ const PluginCard = (props: Props) => {
     props.mode === 'disable' && plugin.capabilities?.includes('show-settings');
 
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-600 transition-colors">
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-bg-surface border border-border hover:border-border transition-colors">
       {/* Icon */}
-      <div className="flex-shrink-0 w-10 h-10 rounded-md bg-slate-700 flex items-center justify-center overflow-hidden">
+      <div className="flex-shrink-0 w-10 h-10 rounded-md bg-bg-overlay flex items-center justify-center overflow-hidden">
         {plugin.iconUrl ? (
           <img src={plugin.iconUrl} alt={plugin.name} className="w-full h-full object-cover" />
         ) : (
-          <PuzzlePieceIcon className="h-5 w-5 text-slate-400" aria-hidden="true" />
+          <PuzzlePieceIcon className="h-5 w-5 text-muted" aria-hidden="true" />
         )}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-slate-100 font-medium text-sm truncate">{plugin.name}</span>
+          <span className="text-base font-medium text-sm truncate">{plugin.name}</span>
           {plugin.author && (
-            <span className="text-slate-500 text-xs">{translations['plugins.card.by']} {plugin.author}</span>
+            <span className="text-muted text-xs">{translations['plugins.card.by']} {plugin.author}</span>
           )}
         </div>
         {plugin.description && (
-          <p className="text-slate-400 text-xs mt-0.5 line-clamp-2">{plugin.description}</p>
+          <p className="text-muted text-xs mt-0.5 line-clamp-2">{plugin.description}</p>
         )}
         <PluginCapabilityChips capabilities={plugin.capabilities ?? []} />
         {plugin.categories?.length > 0 && (
@@ -82,7 +83,7 @@ const PluginCard = (props: Props) => {
           <button
             onClick={() => props.onEdit!(plugin)}
             title={translations['plugins.card.editTitle']}
-            className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
+            className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.editAriaLabel']}
           >
             <PencilIcon className="h-4 w-4" aria-hidden="true" />
@@ -94,7 +95,7 @@ const PluginCard = (props: Props) => {
           <button
             onClick={() => (props as DisableCardProps).onSettings?.((props as DisableCardProps).boardPlugin)}
             title={translations['plugins.card.settingsTitle']}
-            className="text-slate-400 hover:text-slate-200 p-1 rounded transition-colors"
+            className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.settingsAriaLabel']}
           >
             <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
@@ -102,18 +103,19 @@ const PluginCard = (props: Props) => {
         )}
 
         {props.mode === 'enable' ? (
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleAction}
             disabled={loading}
-            className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded px-3 py-1.5 transition-colors"
           >
             {loading ? translations['plugins.card.enabling'] : translations['plugins.card.enable']}
-          </button>
+          </Button>
         ) : (
           <button
             onClick={handleAction}
             disabled={loading}
-            className="text-xs bg-slate-600 hover:bg-red-700 disabled:opacity-50 text-slate-200 hover:text-white rounded px-3 py-1.5 transition-colors"
+            className="text-xs bg-bg-sunken hover:bg-red-700 disabled:opacity-50 text-subtle hover:text-base rounded px-3 py-1.5 transition-colors"
           >
             {loading ? translations['plugins.card.disabling'] : translations['plugins.card.disable']}
           </button>

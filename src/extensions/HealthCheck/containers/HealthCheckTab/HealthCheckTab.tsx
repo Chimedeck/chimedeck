@@ -22,6 +22,7 @@ import { AddServiceModal } from '../../modals/AddServiceModal';
 import { useHealthCheckAutoRefresh } from '../../hooks/useHealthCheckAutoRefresh';
 import { useHealthCheckProbe } from '../../hooks/useHealthCheckProbe';
 import { HEALTH_CHECK_POLL_INTERVAL_MS } from '../../config/healthCheckConfig';
+import Button from '../../../../common/components/Button';
 
 const TOTAL_COUNTDOWN_SECONDS = Math.round(HEALTH_CHECK_POLL_INTERVAL_MS / 1000);
 
@@ -90,14 +91,14 @@ export function HealthCheckTab({ boardId }: Props) {
   const isLoading = status === 'loading';
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden bg-slate-900">
+    <div className="flex flex-col flex-1 overflow-hidden bg-bg-base">
       {/* Header row */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <div>
-          <h2 className="text-base font-semibold text-slate-100">Health Check</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h2 className="text-base font-semibold text-base">Health Check</h2>
+          <p className="text-xs text-muted mt-0.5">
             Last checked:{' '}
-            <span className="text-slate-300">{formatLastChecked(lastCheckedAt)}</span>
+            <span className="text-subtle">{formatLastChecked(lastCheckedAt)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -108,11 +109,13 @@ export function HealthCheckTab({ boardId }: Props) {
           />
 
           {/* Manual refresh button */}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={handleManualRefresh}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Refresh health checks"
             title="Refresh all services now"
           >
@@ -121,35 +124,37 @@ export function HealthCheckTab({ boardId }: Props) {
               aria-hidden="true"
             />
             Refresh
-          </button>
+          </Button>
 
           {/* Add service button */}
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={() => setAddModalOpen(true)}
-            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center gap-1.5"
             aria-label="Add service to monitor"
           >
             <PlusIcon className="h-4 w-4" aria-hidden="true" />
             Add
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Table header — only visible when there are entries */}
       {!isEmpty && (
-        <div className="hidden sm:flex items-center gap-3 px-4 py-2 border-b border-slate-700/50 bg-slate-900/50">
+        <div className="hidden sm:flex items-center gap-3 px-4 py-2 border-b border-border/50 bg-bg-base/50">
           <div className="flex-shrink-0 w-5" aria-hidden="true" />
-          <span className="flex-shrink-0 w-40 text-xs font-medium text-slate-500 uppercase tracking-wide">
+          <span className="flex-shrink-0 w-40 text-xs font-medium text-muted uppercase tracking-wide">
             Name
           </span>
-          <span className="flex-1 text-xs font-medium text-slate-500 uppercase tracking-wide">
+          <span className="flex-1 text-xs font-medium text-muted uppercase tracking-wide">
             URL
           </span>
-          <span className="flex-shrink-0 w-24 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">
+          <span className="flex-shrink-0 w-24 text-right text-xs font-medium text-muted uppercase tracking-wide">
             Response
           </span>
-          <span className="flex-shrink-0 w-24 text-right text-xs font-medium text-slate-500 uppercase tracking-wide">
+          <span className="flex-shrink-0 w-24 text-right text-xs font-medium text-muted uppercase tracking-wide">
             Last checked
           </span>
           {/* spacer for remove button */}
@@ -162,7 +167,7 @@ export function HealthCheckTab({ boardId }: Props) {
         {isLoading && entries.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <span
-              className="h-6 w-6 rounded-full border-2 border-slate-400 border-t-transparent animate-spin"
+              className="h-6 w-6 rounded-full border-2 border-muted border-t-transparent animate-spin"
               aria-label="Loading health checks"
               role="status"
             />

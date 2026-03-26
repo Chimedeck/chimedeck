@@ -25,12 +25,12 @@ const BoardButtonItem: FC<Props> = ({ automation, runState, onRun }) => {
         className={[
           'flex items-center justify-center rounded p-1.5 transition-colors',
           isRunning
-            ? 'cursor-not-allowed opacity-60 text-slate-400'
+            ? 'cursor-not-allowed opacity-60 text-muted'
             : runState === 'success'
               ? 'text-emerald-400 hover:bg-emerald-900/30'
               : runState === 'error'
                 ? 'text-red-400 hover:bg-red-900/30'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200',
+                : 'text-muted hover:bg-bg-surface hover:text-subtle',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -48,10 +48,10 @@ const BoardButtonItem: FC<Props> = ({ automation, runState, onRun }) => {
         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none"
         role="tooltip"
       >
-        <div className="whitespace-nowrap rounded bg-slate-700 px-2 py-1 text-xs text-slate-100 shadow-lg">
+        <div className="whitespace-nowrap rounded bg-bg-overlay px-2 py-1 text-xs text-base shadow-lg">
           {isRunning ? translations['automation.boardButtonItem.running'] : automation.name}
         </div>
-        <div className="mx-auto h-1.5 w-1.5 rotate-45 bg-slate-700 translate-y-[-3px]" />
+        <div className="mx-auto h-1.5 w-1.5 rotate-45 bg-bg-overlay translate-y-[-3px]" />
       </div>
     </div>
   );

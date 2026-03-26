@@ -24,13 +24,13 @@ const TableRow = ({ row, onCardClick }: Props) => {
 
   return (
     <tr
-      className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors"
+      className="border-b border-border hover:bg-bg-surface/50 transition-colors"
       data-testid={`table-row-${row.id}`}
     >
       {/* Title */}
       <td className="px-3 py-2">
         <button
-          className="text-sm font-medium text-slate-100 hover:text-blue-400 text-left underline-offset-2 hover:underline focus:outline-none"
+          className="text-sm font-medium text-base hover:text-blue-400 text-left underline-offset-2 hover:underline focus:outline-none"
           onClick={() => onCardClick(row.id)}
           aria-label={`${translations['TableView.ariaOpenCard']} ${row.title}`}
           data-testid={`table-card-title-${row.id}`}
@@ -40,7 +40,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
       </td>
 
       {/* List */}
-      <td className="px-3 py-2 text-sm text-slate-400" data-testid={`table-cell-list-${row.id}`}>
+      <td className="px-3 py-2 text-sm text-muted" data-testid={`table-cell-list-${row.id}`}>
         {row.listTitle}
       </td>
 
@@ -79,25 +79,25 @@ const TableRow = ({ row, onCardClick }: Props) => {
 
       {/* Due Date */}
       <td
-        className={`px-3 py-2 text-sm${overdue ? ' text-red-400 font-medium' : ' text-slate-400'}`}
+        className={`px-3 py-2 text-sm${overdue ? ' text-red-400 font-medium' : ' text-muted'}`}
         data-testid={`table-cell-due-date-${row.id}`}
       >
-        {row.due_date ? formatDate(row.due_date) : <span className="text-slate-600">—</span>}
+        {row.due_date ? formatDate(row.due_date) : <span className="text-muted">—</span>}
       </td>
 
       {/* Start Date */}
-      <td className="px-3 py-2 text-sm text-slate-400" data-testid={`table-cell-start-date-${row.id}`}>
-        {row.start_date ? formatDate(row.start_date) : <span className="text-slate-600">—</span>}
+      <td className="px-3 py-2 text-sm text-muted" data-testid={`table-cell-start-date-${row.id}`}>
+        {row.start_date ? formatDate(row.start_date) : <span className="text-muted">—</span>}
       </td>
 
       {/* Value */}
-      <td className="px-3 py-2 text-sm text-slate-400" data-testid={`table-cell-value-${row.id}`}>
+      <td className="px-3 py-2 text-sm text-muted" data-testid={`table-cell-value-${row.id}`}>
         {row.amount != null ? (
           <span>
             {row.currency ?? ''} {parseFloat(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         ) : (
-          <span className="text-slate-600">—</span>
+          <span className="text-muted">—</span>
         )}
       </td>
     </tr>

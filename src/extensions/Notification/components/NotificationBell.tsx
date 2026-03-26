@@ -18,11 +18,12 @@ const NotificationBell: FC<Props> = ({ onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="relative p-2 rounded-full hover:bg-slate-800 transition-colors text-slate-300 hover:text-white"
+      className="relative p-2 rounded-full hover:bg-bg-surface transition-colors text-subtle hover:text-base"
       aria-label={hasUnread ? translations['Notifications.ariaUnread'].replace('{count}', label) : translations['Notifications.ariaOpenPanel']}
     >
       <BellIcon className="h-5 w-5" aria-hidden="true" />
       {hasUnread && (
+        // [theme-exception] bg-red-500 is a semantic indicator for unread count
         <span
           className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1"
           aria-hidden="true"

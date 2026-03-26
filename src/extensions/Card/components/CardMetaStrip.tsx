@@ -99,7 +99,7 @@ const PillButton = ({
 }) => (
   <button
     type="button"
-    className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 dark:border-slate-600 px-2 py-0.5 text-xs text-gray-500 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+    className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-2 py-0.5 text-xs text-gray-500 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors disabled:opacity-40 disabled:pointer-events-none"
     onClick={onClick}
     disabled={disabled}
     aria-label={ariaLabel}
@@ -228,7 +228,7 @@ const LabelSection = ({
         />
       ))}
       {overflow > 0 && (
-        <span className="text-xs text-gray-400 dark:text-slate-500 font-medium">+{overflow}</span>
+        <span className="text-xs text-gray-400 font-medium">+{overflow}</span>
       )}
       {!disabled && (
         <PillButton
@@ -246,16 +246,16 @@ const LabelSection = ({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
-            className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
+            className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-white border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
           >
             {/* ── Header ── */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
               {(view === 'list') ? (
-                <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">Labels</span>
+                <span className="text-sm font-semibold text-gray-700">Labels</span>
               ) : (
                 <button
                   type="button"
-                  className="flex items-center gap-1 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
+                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-slate-200"
                   onClick={resetToList}
                 >
                   ← {view === 'create' ? 'Create label' : `Edit label`}
@@ -263,7 +263,7 @@ const LabelSection = ({
               )}
               <button
                 type="button"
-                className="rounded p-0.5 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200"
+                className="rounded p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
               >
@@ -275,17 +275,17 @@ const LabelSection = ({
             {view === 'list' && (
               <div className="p-2 space-y-1 overflow-y-auto flex-1 min-h-0">
                 <input
-                  className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-1"
+                  className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary mb-1"
                   placeholder="Search labels..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   autoFocus
                 />
                 {filteredLabels.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-slate-500 px-2 py-1">No labels found</p>
+                  <p className="text-xs text-gray-400 px-2 py-1">No labels found</p>
                 )}
                 {filteredLabels.length > 0 && (
-                  <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 px-1 pb-0.5">Labels</p>
+                  <p className="text-xs font-semibold text-gray-500 px-1 pb-0.5">Labels</p>
                 )}
                 {filteredLabels.map((label) => {
                   const assigned = assignedIds.has(label.id);
@@ -295,7 +295,7 @@ const LabelSection = ({
                         type="checkbox"
                         checked={assigned}
                         onChange={() => void handleToggle(label)}
-                        className="h-3.5 w-3.5 rounded border-gray-400 dark:border-slate-500 accent-indigo-500 cursor-pointer flex-shrink-0"
+                        className="h-3.5 w-3.5 rounded border-gray-400 accent-indigo-500 cursor-pointer flex-shrink-0"
                         aria-label={`Toggle ${label.name}`}
                       />
                       <button
@@ -309,7 +309,7 @@ const LabelSection = ({
                       </button>
                       <button
                         type="button"
-                        className="flex-shrink-0 rounded p-1 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+                        className="flex-shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
                         onClick={() => openEdit(label)}
                         aria-label={`Edit ${label.name}`}
                       >
@@ -322,7 +322,7 @@ const LabelSection = ({
                 })}
                 <button
                   type="button"
-                  className="w-full mt-1 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-sm text-gray-700 dark:text-slate-300 py-1.5 transition-colors"
+                  className="w-full mt-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:hover:bg-slate-600 text-sm text-gray-700 py-1.5 transition-colors"
                   onClick={() => { setFormName(''); setFormColor(PRESET_COLORS[6]?.hex ?? '#6366f1'); setView('create'); }}
                 >
                   Create a new label
@@ -342,10 +342,10 @@ const LabelSection = ({
                 </div>
                 {/* Name input */}
                 <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Title</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Title</p>
                   <input
                     id="label-form-name"
-                    className="w-full bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Label name"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
@@ -355,7 +355,7 @@ const LabelSection = ({
                 </div>
                 {/* Colour grid */}
                 <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">Colour</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1.5">Colour</p>
                   <ColorGrid selected={formColor} onChange={setFormColor} />
                 </div>
                 {/* Actions */}
@@ -412,14 +412,14 @@ const MemberSection = ({
           <span
             key={m.id}
             title={name}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-white"
           >
             {getInitials(m.name, m.email ?? '')}
           </span>
         );
       })}
       {overflow > 0 && (
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 dark:bg-slate-700 text-[10px] font-semibold text-gray-500 dark:text-slate-400 ring-2 ring-white dark:ring-slate-900">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-500 ring-2 ring-white">
           +{overflow}
         </span>
       )}
@@ -438,9 +438,9 @@ const MemberSection = ({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-2 space-y-1">
+          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white border border-gray-200 shadow-2xl p-2 space-y-1">
             {boardMembers.length === 0 && (
-              <p className="text-xs text-gray-400 dark:text-slate-500 px-2 py-1">No board members</p>
+              <p className="text-xs text-gray-400 px-2 py-1">No board members</p>
             )}
             {boardMembers.map((member) => {
               const assigned = assignedIds.has(member.id);
@@ -449,7 +449,7 @@ const MemberSection = ({
                 <button
                   key={member.id}
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => handleToggle(member)}
                 >
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white flex-shrink-0">
@@ -485,15 +485,15 @@ function getDuePillClass(status: DueDateStatus, hasDate: boolean): string {
   if (status === 'done') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700';
   if (status === 'overdue') return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700';
   if (status === 'due-soon') return 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-700';
-  if (hasDate) return 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600';
-  return 'border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
+  if (hasDate) return 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:hover:bg-slate-600 border border-gray-200';
+  return 'border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
 }
 
 function getDueCheckboxClass(status: DueDateStatus): string {
   if (status === 'done') return 'bg-emerald-500 border-emerald-500';
   if (status === 'overdue') return 'bg-red-500 border-red-500';
   if (status === 'due-soon') return 'bg-orange-400 border-orange-400';
-  return 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800';
+  return 'border-gray-300 bg-white';
 }
 
 const DatesButton = ({
@@ -617,7 +617,7 @@ const MoneyButton = ({
   const pillText = amount ? formatMoney(amount, currency) : '$';
   const pillClass = amount
     ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-900/60'
-    : 'border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
+    : 'border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
 
   return (
     <div className="relative flex items-center gap-1" ref={ref}>
@@ -637,7 +637,7 @@ const MoneyButton = ({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-3">
+          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white border border-gray-200 shadow-2xl p-3">
             <CardValue
               amount={amount}
               currency={currency}
@@ -693,7 +693,7 @@ const CardMetaStrip = ({
       />
 
       {/* Divider */}
-      <span className="h-4 w-px bg-gray-200 dark:bg-slate-700 flex-shrink-0" aria-hidden="true" />
+      <span className="h-4 w-px bg-gray-200 flex-shrink-0" aria-hidden="true" />
 
       {/* Members */}
       <MemberSection
@@ -705,7 +705,7 @@ const CardMetaStrip = ({
       />
 
       {/* Divider */}
-      <span className="h-4 w-px bg-gray-200 dark:bg-slate-700 flex-shrink-0" aria-hidden="true" />
+      <span className="h-4 w-px bg-gray-200 flex-shrink-0" aria-hidden="true" />
 
       {/* Pricing */}
       <MoneyButton
@@ -716,7 +716,7 @@ const CardMetaStrip = ({
       />
 
       {/* Divider */}
-      <span className="h-4 w-px bg-gray-200 dark:bg-slate-700 flex-shrink-0" aria-hidden="true" />
+      <span className="h-4 w-px bg-gray-200 flex-shrink-0" aria-hidden="true" />
 
       {/* Dates */}
       <DatesButton

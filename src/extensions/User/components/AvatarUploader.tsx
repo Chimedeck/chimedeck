@@ -66,7 +66,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       {/* Avatar display + drop zone */}
       <div
         className={`relative cursor-pointer rounded-full border-2 transition-colors ${
-          dragOver ? 'border-indigo-400 bg-slate-700' : 'border-slate-700 bg-slate-800'
+          dragOver ? 'border-indigo-400 bg-bg-overlay' : 'border-border bg-bg-surface'
         }`}
         style={{ width: 128, height: 128 }}
         onClick={() => inputRef.current?.click()}
@@ -92,7 +92,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
 
         {uploading && (
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
-            <span className="text-sm text-white">Uploading…</span>
+            <span className="text-sm text-base">Uploading…</span>
           </div>
         )}
       </div>
@@ -120,7 +120,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
             type="button"
             onClick={handleRemove}
             disabled={uploading}
-            className="text-sm text-slate-400 hover:text-red-400 disabled:opacity-50"
+            className="text-sm text-muted hover:text-red-400 disabled:opacity-50"
           >
             {translations['ProfilePage.removePhoto']}
           </button>

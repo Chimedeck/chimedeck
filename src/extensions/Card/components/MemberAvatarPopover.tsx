@@ -110,7 +110,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
   return createPortal(
     <div
       ref={popoverRef}
-      className="fixed z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl p-4 w-56"
+      className="fixed z-50 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-56"
       style={{ top: pos.top, left: pos.left }}
       role="dialog"
       aria-modal="true"
@@ -118,7 +118,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
     >
       {/* Close button */}
       <button
-        className="absolute top-2 right-2 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white rounded p-0.5"
+        className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white rounded p-0.5"
         onClick={onClose}
         aria-label="Close"
       >
@@ -142,14 +142,14 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
           <p className="text-sm font-semibold text-white truncate">
             {member.name ?? member.email}
           </p>
-          <p className="text-xs text-gray-400 dark:text-slate-400 truncate">{handle}</p>
+          <p className="text-xs text-gray-400 truncate">{handle}</p>
         </div>
       </div>
 
       {/* Actions */}
       {isSelf ? (
         <button
-          className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200"
+          className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-800"
           onClick={handleEditProfile}
         >
           Edit profile info

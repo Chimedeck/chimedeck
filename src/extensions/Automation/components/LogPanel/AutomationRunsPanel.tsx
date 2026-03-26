@@ -5,6 +5,7 @@ import type { FC } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import type { AutomationRunLog, PaginatedRunLogs } from '../../types';
 import { getAutomationRuns } from '../../api';
+import Button from '../../../../common/components/Button';
 import RunLogTable from './RunLogTable';
 import translations from '../../translations/en.json';
 
@@ -47,16 +48,17 @@ const AutomationRunsPanel: FC<Props> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-700 shrink-0">
-        <button
-          className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onBack}
           aria-label={translations['automation.runsPanel.backAriaLabel']}
         >
           <ArrowLeftIcon className="h-4 w-4" />
-        </button>
-        <span className="text-sm text-slate-200 font-medium truncate">{automationName}</span>
-        <span className="ml-auto text-xs text-slate-500">{translations['automation.runsPanel.runHistory']}</span>
+        </Button>
+        <span className="text-sm text-subtle font-medium truncate">{automationName}</span>
+        <span className="ml-auto text-xs text-muted">{translations['automation.runsPanel.runHistory']}</span>
       </div>
 
       <RunLogTable

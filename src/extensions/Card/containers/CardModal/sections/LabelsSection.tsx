@@ -13,7 +13,7 @@ interface Props {
 
 export const LabelsSection = ({ allLabels, assignedLabels, onAttach, onDetach, disabled }: Props) => (
   <section aria-label="Labels">
-    <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-slate-300">Labels</h3>
+    <h3 className="mb-1 text-sm font-semibold text-gray-700">Labels</h3>
     <div className="flex flex-wrap items-center gap-1">
       {assignedLabels.map((label) => (
         <LabelChip

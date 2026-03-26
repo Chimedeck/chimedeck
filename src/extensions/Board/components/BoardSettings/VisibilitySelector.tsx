@@ -36,7 +36,7 @@ interface Props {
 const VisibilitySelector = ({ value, onChange, disabled = false }: Props) => {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Visibility</p>
+      <p className="text-xs font-medium text-muted uppercase tracking-wide">Visibility</p>
       {OPTIONS.map((opt) => (
         <label
           key={opt.value}
@@ -52,8 +52,8 @@ const VisibilitySelector = ({ value, onChange, disabled = false }: Props) => {
             className="mt-0.5 accent-blue-500"
           />
           <div>
-            <p className="text-sm text-slate-200">{opt.label}</p>
-            <p className="text-xs text-slate-500">{opt.description}</p>
+            <p className="text-sm text-subtle">{opt.label}</p>
+            <p className="text-xs text-muted">{opt.description}</p>
           </div>
         </label>
       ))}

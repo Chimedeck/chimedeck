@@ -1,6 +1,7 @@
 // ChecklistSection — a single named checklist group: editable title, progress, items, add form, delete.
 import { useState, useRef, useEffect } from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import type { Checklist, ChecklistItem as ChecklistItemType } from '../api';
 import { ChecklistItem } from './ChecklistItem';
 import { ChecklistProgress } from './ChecklistProgress';
@@ -64,7 +65,7 @@ export const ChecklistSection = ({
         {editingTitle ? (
           <input
             ref={titleInputRef}
-            className="flex-1 rounded border border-blue-400 px-2 py-0.5 text-sm font-semibold text-gray-800 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none"
+            className="flex-1 rounded border border-border bg-bg-overlay px-2 py-0.5 text-sm font-semibold text-base focus:outline-none focus:ring-1 focus:ring-primary"
             value={titleDraft}
             onChange={(e) => setTitleDraft(e.target.value)}
             onBlur={handleTitleCommit}
@@ -76,7 +77,7 @@ export const ChecklistSection = ({
         ) : (
           <button
             type="button"
-            className="flex-1 text-left text-sm font-semibold text-gray-800 dark:text-slate-200 hover:text-blue-500 dark:hover:text-blue-400 transition-colors truncate"
+            className="flex-1 text-left text-sm font-semibold text-gray-800 hover:text-blue-500 dark:hover:text-blue-400 transition-colors truncate"
             onClick={() => !disabled && setEditingTitle(true)}
             title="Click to rename"
             disabled={disabled}
@@ -87,22 +88,25 @@ export const ChecklistSection = ({
         <div className="flex items-center gap-1 shrink-0">
           {!disabled && (
             <>
-              <button
+              <Button
                 type="button"
-                className="rounded bg-gray-200 dark:bg-slate-700 px-2 py-0.5 text-xs text-gray-700 dark:text-slate-200 hover:bg-gray-300 dark:hover:bg-slate-600"
+                variant="secondary"
+                className="px-2 py-0.5 text-xs"
                 onClick={() => setAdding((v) => !v)}
               >
                 + Item
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="rounded p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                variant="ghost"
+                size="icon"
+                className="text-muted hover:text-red-500 dark:hover:text-red-400"
                 onClick={onDelete}
                 title="Delete checklist"
                 aria-label="Delete checklist"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -126,7 +130,7 @@ export const ChecklistSection = ({
       {adding && (
         <div className="mt-2 flex gap-2">
           <input
-            className="flex-1 rounded border border-gray-300 dark:border-slate-600 px-2 py-1 text-sm text-gray-800 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 bg-white dark:bg-slate-800 focus:border-blue-400 focus:outline-none"
+            className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="Add an item…"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
@@ -136,21 +140,23 @@ export const ChecklistSection = ({
             }}
             autoFocus
           />
-          <button
+          <Button
             type="button"
-            className="rounded bg-blue-500 px-3 py-1 text-sm text-white hover:bg-blue-600 disabled:opacity-50"
+            variant="primary"
+            className="px-3 py-1 text-sm"
             onClick={handleItemAdd}
             disabled={!newTitle.trim()}
           >
             Add
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="text-sm text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+            variant="ghost"
+            className="text-sm text-muted hover:text-gray-700"
             onClick={() => setAdding(false)}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       )}
     </section>

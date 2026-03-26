@@ -9,6 +9,7 @@ import { marked } from 'marked';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from './OneLineToolbar';
 import LinkInsertPopover from './LinkInsertPopover';
+import Button from '../../../common/components/Button';
 import type { Attachment } from '~/extensions/Attachments/types';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
@@ -174,7 +175,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
 function getDraftStatusClass(status: DraftStatus): string {
   if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
   if (status === 'synced') return 'text-green-500 dark:text-green-400';
-  return 'text-gray-400 dark:text-slate-500';
+  return 'text-muted';
 }
 
 function buildDescriptionSaveMarkdown(
@@ -331,7 +332,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       // [why] Apply prose classes directly on ProseMirror so Tailwind Typography
       // descendant selectors (.prose ul, .prose blockquote, etc.) work correctly.
       attributes: {
-        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-gray-900 dark:text-slate-100',
+        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-base',
       },
       handleDrop(view, event, _slice, moved) {
         if (moved || !event.dataTransfer) return false;
@@ -524,7 +525,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   return (
     <section aria-label="Description">
-      <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+      <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
         Description
       </h3>
       {editing && !disabled ? (
@@ -541,17 +542,17 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           />
 
           <div className="mb-2 flex items-center justify-between">
-            <div className="inline-flex rounded-md border border-gray-200 dark:border-slate-700 overflow-hidden">
+            <div className="inline-flex rounded-md border border-border overflow-hidden">
               <button
                 type="button"
-                className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300'}`}
+                className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-inverse' : 'bg-white text-gray-600'}`}
                 onClick={() => handleModeChange('rich')}
               >
                 Rich text
               </button>
               <button
                 type="button"
-                className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300'}`}
+                className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-inverse' : 'bg-white text-gray-600'}`}
                 onClick={() => handleModeChange('markdown')}
               >
                 Markdown
@@ -560,7 +561,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           </div>
 
           {editMode === 'rich' ? (
-            <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-border bg-white">
               {/* Single-line toolbar: primary controls always visible, secondary behind + */}
               <div className="relative">
                 <OneLineToolbar
@@ -590,7 +591,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 )}
               </div>
               <div className="relative min-h-[180px] flex-1 overflow-y-auto overscroll-contain rounded-b-lg">
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent" />
                 <EditorContent
                   editor={editor}
                   className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror>*:first-child]:mt-0"
@@ -602,7 +603,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               {uploads.length > 0 && (
                 <div
                   aria-label="File uploads"
-                  className="flex flex-col gap-1 border-t border-gray-200 dark:border-slate-700 p-2"
+                  className="flex flex-col gap-1 border-t border-border p-2"
                 >
                   {uploads.map((entry) => (
                     <InlineUploadPreview
@@ -622,12 +623,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 notifyDraftChange(e.target.value);
               }}
               onKeyDown={handleEditorKeyDown}
-              className="w-full min-h-[180px] rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm text-gray-900 dark:text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full min-h-[180px] rounded-lg border border-border bg-bg-overlay p-3 text-sm text-base font-mono focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Write markdown..."
             />
           )}
 
-          <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">
+          <p className="mt-2 text-[11px] text-muted">
             Save as markdown. Shortcut: Ctrl/Cmd+Enter to save, Escape to cancel.
           </p>
 
@@ -658,7 +659,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   </button>
                   <button
                     type="button"
-                    className="text-gray-400 hover:text-gray-300 underline transition-colors"
+                    className="text-muted hover:text-subtle underline transition-colors"
                     onClick={discardDraft}
                     data-testid="draft-discard"
                   >
@@ -676,16 +677,17 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           )}
 
           <div className="flex gap-2 mt-2">
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               type="button"
-              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition-colors"
               onClick={handleSave}
             >
               Save
-            </button>
+            </Button>
             <button
               type="button"
-              className="px-3 py-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 text-xs transition-colors"
+              className="px-3 py-1 text-muted hover:text-gray-700 text-xs transition-colors"
               onClick={handleCancel}
             >
               Cancel
@@ -717,15 +719,13 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               'w-full text-left rounded-lg p-3 min-h-[80px] transition-colors',
               disabled
                 ? 'cursor-default'
-                : 'cursor-text hover:bg-gray-100 dark:hover:bg-slate-800/80',
+                : 'cursor-text hover:bg-gray-100',
               isEmpty
-                ? 'text-gray-400 dark:text-slate-500 text-sm italic bg-gray-50 dark:bg-slate-800/50'
-                : 'prose dark:prose-invert prose-sm max-w-none text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800/50',
+                ? 'text-muted text-sm italic bg-bg-overlay'
+                : 'prose dark:prose-invert prose-sm max-w-none text-base',
               isLong && !expanded ? 'overflow-hidden' : '',
             ].join(' ')}
             style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
-            onClick={handleEnterEdit}
-            disabled={disabled}
             {...(!isEmpty && { dangerouslySetInnerHTML: { __html: previewHtml } })}
           >
             {isEmpty ? 'Add a more detailed description…' : undefined}

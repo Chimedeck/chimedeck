@@ -49,7 +49,7 @@ const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, o
         <div className="relative">
           <button
             type="button"
-            className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 flex items-center gap-1 transition-colors"
+            className="text-xs text-gray-500 hover:text-gray-800 dark:hover:text-slate-200 flex items-center gap-1 transition-colors"
             onClick={() => setPickerOpen((v) => !v)}
             aria-haspopup="true"
             aria-expanded={pickerOpen}
@@ -64,9 +64,9 @@ const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, o
                 onClick={() => setPickerOpen(false)}
                 aria-hidden="true"
               />
-              <div className="absolute left-0 top-6 z-20 w-56 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl p-2 space-y-1">
+              <div className="absolute left-0 top-6 z-20 w-56 rounded-xl bg-white border border-gray-200 shadow-2xl p-2 space-y-1">
                 {boardMembers.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-slate-500 px-2 py-1">No board members</p>
+                  <p className="text-xs text-gray-400 px-2 py-1">No board members</p>
                 )}
                 {boardMembers.map((member) => {
                   const assigned = assignedIds.has(member.id);
@@ -75,7 +75,7 @@ const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, o
                     <button
                       key={member.id}
                       type="button"
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                       onClick={() => handleToggle(member)}
                     >
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white flex-shrink-0">

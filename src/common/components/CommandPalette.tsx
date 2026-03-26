@@ -253,7 +253,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder={scopeMeta.placeholder}
-            className="flex-1 bg-transparent text-sm text-base placeholder-subtle outline-none"
+            className="flex-1 bg-transparent text-sm text-base placeholder:text-subtle outline-none"
             aria-label={translations['CommandPalette.inputAriaLabel']}
           />
         </div>

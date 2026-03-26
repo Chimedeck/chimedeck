@@ -2,6 +2,7 @@
 // and delete/edit action buttons with inline confirmation and inline rename input.
 import React, { useRef, useState } from 'react';
 import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon, PencilIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import type { Attachment } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
@@ -23,8 +24,9 @@ interface Props {
   onInsertComment?: (markdown: string) => void;
 }
 
+// [theme-exception] Status badge colours intentionally use semantic status colours (green/yellow/red).
 const STATUS_CLASSES: Record<Attachment['status'], string> = {
-  PENDING: 'bg-slate-600 text-slate-200',
+  PENDING: 'bg-bg-sunken text-subtle',
   SCANNING: 'bg-yellow-900/50 text-yellow-300',
   READY: 'bg-green-900/50 text-green-300',
   REJECTED: 'bg-red-900/50 text-red-300',
@@ -114,10 +116,10 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
   };
 
   return (
-    <div className="flex flex-col gap-1 py-2 border-b border-slate-700 last:border-0">
+    <div className="flex flex-col gap-1 py-2 border-b border-border last:border-0">
       <div className="flex items-center gap-2">
         {/* File-type icon badge */}
-        <span className="flex-shrink-0 text-slate-400">
+        <span className="flex-shrink-0 text-muted">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
 
@@ -132,23 +134,23 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
             onBlur={commitRename}
             placeholder={translations['attachment.rename.placeholder']}
             aria-label={translations['attachment.rename.placeholder']}
-            className={`flex-1 min-w-0 text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 ${
+            className={`flex-1 min-w-0 text-sm bg-bg-overlay text-base placeholder:text-subtle border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 ${
               renameError
-                ? 'border-red-500 focus:ring-red-500 animate-shake'
-                : 'border-slate-600 focus:ring-blue-500'
+                ? 'border-danger focus:ring-danger animate-shake'
+                : 'border-border focus:ring-primary'
             }`}
             data-testid="attachment-rename-input"
             autoFocus
           />
         ) : (
-          <span className="flex-1 min-w-0 text-sm text-slate-100 truncate" title={displayName}>
+          <span className="flex-1 min-w-0 text-sm text-base truncate" title={displayName}>
             {displayName}
           </span>
         )}
 
         {/* Size */}
         {attachment.size_bytes != null && (
-          <span className="flex-shrink-0 text-xs text-slate-400">{formatBytes(attachment.size_bytes)}</span>
+          <span className="flex-shrink-0 text-xs text-muted">{formatBytes(attachment.size_bytes)}</span>
         )}
 
         {/* Status chip */}
@@ -162,59 +164,69 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         {attachment.status === 'READY' && (() => {
           if (attachment.type === 'URL') {
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleOpen}
-                className="flex-shrink-0 text-slate-400 hover:text-slate-200"
+                className="flex-shrink-0"
                 aria-label={translations['attachments.item.action.openLink.ariaLabel']}
               >
                 <LinkIcon className="h-4 w-4" aria-hidden="true" />
-              </button>
+              </Button>
             );
           }
           if (isVideo) {
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleOpen}
-                className="flex-shrink-0 text-slate-400 hover:text-slate-200"
+                className="flex-shrink-0"
                 aria-label={translations['attachments.item.action.playVideo.ariaLabel']}
               >
                 <PlayIcon className="h-4 w-4" aria-hidden="true" />
-              </button>
+              </Button>
             );
           }
           return (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleOpen}
-              className="flex-shrink-0 text-slate-400 hover:text-slate-200"
+              className="flex-shrink-0"
               aria-label={translations['attachments.item.action.downloadFile.ariaLabel']}
             >
               <ArrowDownTrayIcon className="h-4 w-4" aria-hidden="true" />
-            </button>
+            </Button>
           );
         })()}
 
         {/* Edit (rename) button — only when onRename is wired and not in upload/delete mode */}
         {onRename && !confirming && !editing && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleEditClick}
-            className="flex-shrink-0 text-slate-500 hover:text-slate-200 transition-colors"
+            className="flex-shrink-0"
             aria-label={translations['attachment.item.action.edit.ariaLabel']}
             data-testid="attachment-edit-button"
           >
             <PencilIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </Button>
         )}
 
         {/* Comment button — inserts [alias ?? name](view_url) into the active comment editor */}
         {onInsertComment && attachment.status === 'READY' && attachment.view_url && !confirming && !editing && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleCommentClick}
-            className="flex-shrink-0 text-slate-500 hover:text-slate-200 transition-colors"
+            className="flex-shrink-0"
             aria-label={translations['attachment.item.action.comment.ariaLabel']}
             data-testid="attachment-comment-button"
           >
             <ChatBubbleLeftIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </Button>
         )}
 
         {/* Save / Cancel buttons while editing */}
@@ -232,7 +244,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
             </button>
             <button
               onClick={cancelRename}
-              className="flex-shrink-0 text-xs text-slate-400 hover:text-slate-200"
+              className="flex-shrink-0 text-xs text-muted hover:text-subtle"
               aria-label={translations['attachment.rename.cancel']}
               data-testid="attachment-rename-cancel"
               // Prevent onBlur from firing commit before cancel registers
@@ -246,21 +258,21 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         {/* Delete button / inline confirmation */}
         {!editing && (confirming ? (
           <span className="flex items-center gap-1 text-xs">
-            <span className="text-slate-300">{translations['attachments.item.delete.confirm']}</span>
+            <span className="text-subtle">{translations['attachments.item.delete.confirm']}</span>
             <button
               onClick={handleDeleteConfirm}
               className="text-red-400 hover:text-red-300 font-medium"
             >
               {translations['attachments.item.delete.yes']}
             </button>
-            <button onClick={handleDeleteCancel} className="text-slate-400 hover:text-slate-200">
+            <button onClick={handleDeleteCancel} className="text-muted hover:text-subtle">
               {translations['attachments.item.delete.no']}
             </button>
           </span>
         ) : (
           <button
             onClick={handleDeleteClick}
-            className="flex-shrink-0 text-slate-500 hover:text-red-400 transition-colors"
+            className="flex-shrink-0 text-muted hover:text-red-400 transition-colors"
             aria-label={translations['attachments.item.action.delete.ariaLabel']}
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />

@@ -79,8 +79,8 @@ const CardButtonsSection: FC<Props> = ({ boardId, cardId, disabled = false }) =>
     return (
       <section aria-label={translations['automation.cardButtonsSection.ariaLabel']}>
         <div className="flex items-center gap-1.5 mb-2">
-          <BoltIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
-          <h3 className="text-sm font-medium text-slate-300">{translations['automation.panel.title']}</h3>
+          <BoltIcon className="h-4 w-4 text-muted" aria-hidden="true" />
+          <h3 className="text-sm font-medium text-subtle">{translations['automation.panel.title']}</h3>
         </div>
         <AddCardButtonButton onClick={() => setShowBuilder(true)} disabled={disabled} />
 
@@ -98,8 +98,8 @@ const CardButtonsSection: FC<Props> = ({ boardId, cardId, disabled = false }) =>
   return (
     <section aria-label={translations['automation.cardButtonsSection.ariaLabel']}>
       <div className="flex items-center gap-1.5 mb-2">
-        <BoltIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
-        <h3 className="text-sm font-medium text-slate-300">{translations['automation.panel.title']}</h3>
+        <BoltIcon className="h-4 w-4 text-muted" aria-hidden="true" />
+        <h3 className="text-sm font-medium text-subtle">{translations['automation.panel.title']}</h3>
       </div>
 
       <ul className="flex flex-col gap-1.5">

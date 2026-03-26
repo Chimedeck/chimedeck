@@ -86,17 +86,17 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
 
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-2.5 hover:bg-slate-800/50 rounded-md group">
+      <div className="flex items-center gap-2 px-4 py-2.5 hover:bg-bg-surface/50 rounded-md group">
         {/* Icon */}
-        <span className="flex-shrink-0 flex items-center justify-center h-6 w-6 rounded bg-slate-800 border border-slate-700">
-          <ButtonIcon name={automation.icon} className="h-3.5 w-3.5 text-slate-400" />
+        <span className="flex-shrink-0 flex items-center justify-center h-6 w-6 rounded bg-bg-surface border border-border">
+          <ButtonIcon name={automation.icon} className="h-3.5 w-3.5 text-muted" />
         </span>
 
         {/* Name */}
-        <span className="flex-1 text-sm text-slate-200 truncate">{automation.name}</span>
+        <span className="flex-1 text-sm text-subtle truncate">{automation.name}</span>
 
         {/* Action count chip */}
-        <span className="text-xs text-slate-500 flex-shrink-0">
+        <span className="text-xs text-muted flex-shrink-0">
           {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.buttonsTab.row.actions'] : translations['automation.buttonsTab.row.action']}
         </span>
 
@@ -108,7 +108,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
           type="button"
           disabled={toggling}
           onClick={handleToggle}
-          className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors"
+          className="flex-shrink-0 rounded p-1 text-muted hover:text-subtle disabled:opacity-50 transition-colors"
           aria-label={automation.isEnabled ? translations['automation.buttonsTab.row.disableAriaLabel'] : translations['automation.buttonsTab.row.enableAriaLabel']}
           title={automation.isEnabled ? translations['automation.buttonsTab.row.enableTitle'] : translations['automation.buttonsTab.row.disableTitle']}
         >
@@ -123,7 +123,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
         <button
           type="button"
           onClick={() => setShowBuilder(true)}
-          className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="flex-shrink-0 rounded p-1 text-muted hover:text-subtle opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label={translations['automation.buttonsTab.row.editAriaLabel']}
         >
           <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
@@ -143,7 +143,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
             <button
               type="button"
               onClick={() => setConfirmDelete(false)}
-              className="text-xs rounded px-2 py-0.5 text-slate-400 hover:text-slate-200"
+              className="text-xs rounded px-2 py-0.5 text-muted hover:text-subtle"
             >
               {translations['automation.buttonsTab.row.cancel']}
             </button>
@@ -152,7 +152,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="flex-shrink-0 rounded p-1 text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label={translations['automation.buttonsTab.row.deleteAriaLabel']}
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />
@@ -199,13 +199,13 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
       {/* ── Card Buttons section ── */}
       <section>
         <div className="flex items-center justify-between px-4 mb-2">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
             {translations['automation.buttonsTab.cardButtons.heading']}
           </h3>
           <button
             type="button"
             onClick={() => setShowCardBuilder(true)}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-slate-800 hover:text-blue-300 transition-colors"
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-bg-surface hover:text-blue-300 transition-colors"
             aria-label={translations['automation.buttonsTab.cardButtons.addAriaLabel']}
           >
             <PlusIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -214,7 +214,7 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
         </div>
 
         {cardButtons.length === 0 ? (
-          <p className="px-4 text-xs text-slate-500">{translations['automation.buttonsTab.cardButtons.empty']}</p>
+          <p className="px-4 text-xs text-muted">{translations['automation.buttonsTab.cardButtons.empty']}</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {cardButtons.map((a) => (
@@ -233,13 +233,13 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
       {/* ── Board Buttons section ── */}
       <section>
         <div className="flex items-center justify-between px-4 mb-2">
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
             {translations['automation.buttonsTab.boardButtons.heading']}
           </h3>
           <button
             type="button"
             onClick={() => setShowBoardBuilder(true)}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-slate-800 hover:text-blue-300 transition-colors"
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-bg-surface hover:text-blue-300 transition-colors"
             aria-label={translations['automation.buttonsTab.boardButtons.addAriaLabel']}
           >
             <PlusIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -248,7 +248,7 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
         </div>
 
         {boardButtons.length === 0 ? (
-          <p className="px-4 text-xs text-slate-500">{translations['automation.buttonsTab.boardButtons.empty']}</p>
+          <p className="px-4 text-xs text-muted">{translations['automation.buttonsTab.boardButtons.empty']}</p>
         ) : (
           <div className="flex flex-col gap-0.5">
             {boardButtons.map((a) => (
