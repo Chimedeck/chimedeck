@@ -2,19 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS custom properties for light/dark palettes — used by non-Tailwind surfaces */
+/* CSS custom properties for light/dark palettes — single source of truth for all design tokens */
 :root {
-  --bg-base:     #f8fafc;   /* slate-50 */
-  --bg-surface:  #ffffff;
-  --text-base:   #0f172a;   /* slate-900 */
-  --border:      #e2e8f0;   /* slate-200 */
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #2563eb;   /* blue-600 */
+  --color-primary-hover: #1d4ed8;   /* blue-700 */
+  --color-secondary:     #64748b;   /* slate-500 */
+  --color-accent:        #0ea5e9;   /* sky-500 */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #f8fafc;   /* slate-50  — page background */
+  --bg-surface:  #ffffff;   /* cards, modals, panels */
+  --bg-overlay:  #f1f5f9;   /* slate-100 — hover rows, inner blocks */
+  --bg-sunken:   #e2e8f0;   /* slate-200 — input fills, code blocks */
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #0f172a;  /* slate-900 — primary body text */
+  --text-muted:   #64748b;  /* slate-500 — secondary / placeholder */
+  --text-subtle:  #94a3b8;  /* slate-400 — disabled, timestamps */
+  --text-inverse: #ffffff;  /* text on dark/coloured backgrounds */
+  --text-link:    #2563eb;  /* blue-600  — links */
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #e2e8f0;  /* slate-200 */
+  --border-strong:#cbd5e1;  /* slate-300 — focused inputs */
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #dc2626;  /* red-600   */
+  --color-success:  #16a34a;  /* green-600 */
+  --color-warning:  #d97706;  /* amber-600 */
+  --color-info:     #0284c7;  /* sky-700   */
 }
 
 .dark {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #3b82f6;   /* blue-500 */
+  --color-primary-hover: #2563eb;   /* blue-600 */
+  --color-secondary:     #94a3b8;   /* slate-400 */
+  --color-accent:        #38bdf8;   /* sky-400  */
+
+  /* ── Surfaces ───────────────────────────────────────── */
   --bg-base:     #0f172a;   /* slate-900 */
   --bg-surface:  #1e293b;   /* slate-800 */
-  --text-base:   #f1f5f9;   /* slate-100 */
-  --border:      #334155;   /* slate-700 */
+  --bg-overlay:  #334155;   /* slate-700 */
+  --bg-sunken:   #475569;   /* slate-600 */
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #f1f5f9;  /* slate-100 */
+  --text-muted:   #94a3b8;  /* slate-400 */
+  --text-subtle:  #64748b;  /* slate-500 */
+  --text-inverse: #0f172a;  /* slate-900 — text on light backgrounds */
+  --text-link:    #60a5fa;  /* blue-400  */
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #334155;  /* slate-700 */
+  --border-strong:#475569;  /* slate-600 */
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #ef4444;  /* red-500   */
+  --color-success:  #22c55e;  /* green-500 */
+  --color-warning:  #f59e0b;  /* amber-500 */
+  --color-info:     #38bdf8;  /* sky-400   */
 }
 
 /* TipTap editor list/heading styles — applied here to cover both the
