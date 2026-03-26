@@ -136,7 +136,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
               type="button"
               disabled={deleting}
               onClick={handleDelete}
-              className="text-xs rounded px-2 py-0.5 bg-red-600 text-white hover:bg-red-500 disabled:opacity-50 transition-colors"
+              className="text-xs rounded px-2 py-0.5 bg-danger text-white hover:opacity-90 disabled:opacity-50 transition-colors" // [theme-exception] text-white on danger button
             >
               {deleting ? translations['automation.buttonsTab.row.deleting'] : translations['automation.buttonsTab.row.delete']}
             </button>

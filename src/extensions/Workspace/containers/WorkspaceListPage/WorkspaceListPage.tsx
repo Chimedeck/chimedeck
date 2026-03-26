@@ -41,7 +41,7 @@ export default function WorkspaceListPage() {
         </h1>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
         >
           {translations['WorkspaceListPage.newButton']}
         </button>
@@ -59,7 +59,7 @@ export default function WorkspaceListPage() {
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
+            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
           >
             {translations['WorkspaceListPage.emptyAction']}
           </button>

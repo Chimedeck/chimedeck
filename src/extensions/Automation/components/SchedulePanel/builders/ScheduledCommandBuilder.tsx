@@ -190,9 +190,9 @@ const ScheduledCommandBuilder: FC<Props> = ({
               <div
                 className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold ${
                   step === n
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                     : step > n
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-success text-white' // [theme-exception] text-white on completed success step
                     : 'bg-bg-overlay text-muted'
                 }`}
               >
@@ -227,7 +227,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                       onClick={() => setFrequency(f)}
                       className={`rounded-md py-2 text-xs font-medium capitalize transition-colors ${
                         frequency === f
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                           : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
                       }`}
                     >
@@ -252,7 +252,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                         onClick={() => setDayOfWeek(i)}
                         className={`rounded py-1.5 text-xs font-medium transition-colors ${
                           dayOfWeek === i
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                             : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
                         }`}
                       >
@@ -423,7 +423,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               type="button"
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
               onClick={() => setStep((s) => (s + 1) as 2 | 3)}
-              className="flex items-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors" // [theme-exception] text-white on primary button
             >
               {translations['automation.scheduledBuilder.next']}
               <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
@@ -433,7 +433,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               type="button"
               disabled={!canSave || saving}
               onClick={handleSave}
-              className="rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors" // [theme-exception] text-white on primary button
             >
               {saving ? translations['automation.scheduledBuilder.saving'] : existing ? translations['automation.scheduledBuilder.saveChanges'] : translations['automation.scheduledBuilder.create']}
             </button>

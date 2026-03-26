@@ -73,7 +73,7 @@ export default function Sidebar() {
   return (
     <>
       <nav
-        className="flex h-full w-64 flex-col border-r border-border bg-slate-50"
+        className="flex h-full w-64 flex-col border-r border-border bg-bg-surface"
         aria-label="Sidebar"
       >
         {/* Logo */}

@@ -47,8 +47,8 @@ const CustomFieldBadge = ({ fieldName, fieldType, value, dropdownOption }: Props
         isCheckbox
           ? isChecked
             ? 'bg-emerald-900/40 border border-emerald-700/40 text-emerald-400'
-            : 'bg-slate-800 border border-slate-700 text-muted'
-          : 'bg-slate-800 border border-slate-700 text-subtle'
+            : 'bg-bg-overlay border border-border text-muted'
+          : 'bg-bg-overlay border border-border text-subtle'
       }`}
       title={`${fieldName}: ${formatted}`}
       aria-label={`${fieldName}: ${formatted}`}

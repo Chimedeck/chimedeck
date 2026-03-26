@@ -409,11 +409,10 @@ const MemberSection = ({
       {visibleMembers.map((m) => {
         const name = m.name ?? m.email ?? '';
         return (
-          // [theme-exception] text-white on indigo-600 avatar background
           <span
             key={m.id}
             title={name}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-bg-surface"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-bg-surface" // [theme-exception] text-white on indigo-600 avatar background
           >
             {getInitials(m.name, m.email ?? '')}
           </span>

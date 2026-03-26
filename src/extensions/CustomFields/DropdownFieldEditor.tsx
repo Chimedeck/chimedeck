@@ -45,7 +45,7 @@ const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupP
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-8 z-20 bg-slate-900 border border-slate-600 rounded-lg p-4 shadow-xl w-48"
+      className="absolute left-0 top-8 z-20 bg-bg-surface border border-border rounded-lg p-4 shadow-xl w-48"
     >
       <p className="text-xs font-medium text-subtle mb-2">Colour</p>
       <div className="grid grid-cols-4 gap-3">
@@ -59,7 +59,7 @@ const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupP
             onClick={() => onSelect(c)}
           >
             {c === currentColor && (
-              <span className="text-white text-xs font-bold drop-shadow" aria-hidden="true">✓</span>
+              <span className="text-white text-xs font-bold drop-shadow" aria-hidden="true">✓</span> // [theme-exception] text-white checkmark on colored option
             )}
           </button>
         ))}

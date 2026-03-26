@@ -128,7 +128,7 @@ const WorkspaceDashboard = () => {
           {/* [why] GUEST users cannot create boards — they are scoped to granted boards only. */}
           {!isGuest && (
             <button
-              className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors"
+              className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
               onClick={() => setShowCreateModal(true)}
             >
               Create Board

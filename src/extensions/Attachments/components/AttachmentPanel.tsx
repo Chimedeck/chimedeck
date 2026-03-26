@@ -421,7 +421,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                       {detectedCard.labels.map((label) => (
                         <span
                           key={label.id}
-                          className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white/90 truncate max-w-[120px]"
+                          className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white/90 truncate max-w-[120px]" // [theme-exception] text-white on colored attachment thumbnail
                           style={{ backgroundColor: label.color }}
                           title={label.name}
                         >

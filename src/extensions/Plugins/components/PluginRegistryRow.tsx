@@ -128,8 +128,7 @@ const PluginRegistryRow = ({
                   type="button"
                   onClick={handleConfirmYes}
                   disabled={isDeactivating}
-                  // [theme-exception]: text-white on bg-red-600 destructive confirm button
-                  className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                  className="px-2 py-1 rounded bg-danger hover:opacity-90 text-white transition-colors disabled:opacity-50" // [theme-exception] text-white on danger button
                   aria-label="Confirm deactivate"
                 >
                   {isDeactivating

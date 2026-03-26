@@ -167,7 +167,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
                 className={[
                   'flex-1 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors border',
                   scope === s
-                    ? 'bg-blue-600 border-blue-500 text-white'
+                    ? 'bg-primary border-primary text-white' // [theme-exception] text-white on active primary button
                     : 'bg-bg-surface border-border text-muted hover:text-subtle hover:border-border',
                 ].join(' ')}
               >

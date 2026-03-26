@@ -230,7 +230,7 @@ const CardModal = ({
                     <img
                       src={card.cover_image_url}
                       alt="Card cover"
-                      className="h-full w-full bg-slate-900/60 object-contain"
+                      className="h-full w-full bg-slate-900/60 object-contain" // [theme-exception] dark overlay for media lightbox
                       loading="eager"
                       draggable={false}
                     />

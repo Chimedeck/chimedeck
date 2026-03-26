@@ -98,7 +98,7 @@ const IconPicker: FC<Props> = ({ value, onChange }) => {
             className={[
               'flex items-center justify-center rounded-md p-1.5 transition-colors',
               selected
-                ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                ? 'bg-primary text-white ring-2 ring-primary/50' // [theme-exception] text-white on selected primary icon
                 : 'text-muted hover:bg-bg-overlay hover:text-subtle',
             ].join(' ')}
           >

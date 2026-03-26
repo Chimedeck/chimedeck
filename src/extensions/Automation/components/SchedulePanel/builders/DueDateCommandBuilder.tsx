@@ -171,9 +171,9 @@ const DueDateCommandBuilder: FC<Props> = ({
               <div
                 className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold ${
                   step === n
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                     : step > n
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-success text-white' // [theme-exception] text-white on completed success step
                     : 'bg-bg-overlay text-muted'
                 }`}
               >
@@ -211,10 +211,9 @@ const DueDateCommandBuilder: FC<Props> = ({
                       onClick={() => setTriggerMoment(value as TriggerMoment)}
                       className={`flex flex-col items-center gap-1 rounded-md py-2.5 px-2 text-xs font-medium transition-colors ${
                         triggerMoment === value
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-primary text-white' // [theme-exception]: text-white on active-state primary button
                           : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
-                      }`}
-                    >
+                      }`}>
                       <Icon className="h-4 w-4" aria-hidden="true" />
                       {label}
                     </button>
@@ -249,7 +248,7 @@ const DueDateCommandBuilder: FC<Props> = ({
                           onClick={() => setOffsetUnit(u)}
                           className={`rounded-md px-3 py-2 text-xs font-medium capitalize transition-colors ${
                             offsetUnit === u
-                              ? 'bg-blue-600 text-white'
+                              ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                               : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
                           }`}
                         >

@@ -47,7 +47,7 @@ const AddListButton = ({ onAdd }: Props) => {
         <button
           type="submit"
           disabled={!title.trim()}
-          className="rounded bg-primary px-3 py-1 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+          className="rounded bg-primary px-3 py-1 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50" // [theme-exception] text-white on primary button
         >
           Add list
         </button>

@@ -126,7 +126,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     <div className="flex gap-3">
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`}
+        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on colored avatar
         title={displayName}
       >
         {avatarUrl

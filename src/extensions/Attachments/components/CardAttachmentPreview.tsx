@@ -77,7 +77,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
             {card.labels.map((label) => (
               <span
                 key={label.id}
-                className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold text-white/90 truncate max-w-full"
+                className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold text-white/90 truncate max-w-full" // [theme-exception] text-white on attachment preview overlay
                 style={{ backgroundColor: label.color }}
                 title={label.name}
               >

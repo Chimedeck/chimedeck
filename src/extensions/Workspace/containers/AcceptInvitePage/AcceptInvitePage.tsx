@@ -70,7 +70,7 @@ const AcceptInvitePage = () => {
             </p>
             <button
               onClick={handleAccept}
-              className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-hover"
+              className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-hover" // [theme-exception] text-white on primary button
             >
               Accept Invitation
             </button>

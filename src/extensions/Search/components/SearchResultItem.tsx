@@ -43,7 +43,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
         </span>
       ) : (
         <span
-          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${
+          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${ // [theme-exception] text-white on colored avatar
             isBoard ? 'bg-indigo-500' : 'bg-emerald-500'
           }`}
           aria-hidden="true"

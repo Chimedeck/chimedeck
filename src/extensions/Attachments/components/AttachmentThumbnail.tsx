@@ -31,7 +31,7 @@ function ImageLightbox({ src, name, onClose }: { src: string; name: string; onCl
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none"
+        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none" // [theme-exception] text-white on media overlay
         aria-label={translations['attachments.thumbnail.image.close.ariaLabel']}
       >
         <XMarkIcon className="h-8 w-8" />
@@ -114,7 +114,7 @@ export function VideoLightbox({
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none"
+        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none" // [theme-exception] text-white on media overlay
         aria-label={translations['attachments.thumbnail.video.close.ariaLabel']}
       >
         <XMarkIcon className="h-8 w-8" />
@@ -150,7 +150,7 @@ export function VideoThumbnail({ attachment }: Props): React.ReactElement {
         aria-label={translations['attachments.thumbnail.video.play.ariaLabel'].replace('{name}', attachment.name)}
       >
         <FilmIcon className="h-6 w-6 text-muted group-hover:text-subtle transition-colors" aria-hidden="true" />
-        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" />
+        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" /> // [theme-exception] text-white on media overlay
       </button>
       {lightboxOpen && (
         <VideoLightbox src={src} name={attachment.name} onClose={() => setLightboxOpen(false)} />

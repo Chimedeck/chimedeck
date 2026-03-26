@@ -135,7 +135,7 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
         <button
           className={`rounded p-1 transition-colors ${
             confirmDelete
-              ? 'bg-red-700 text-white hover:bg-red-600'
+              ? 'bg-danger text-white hover:opacity-90' // [theme-exception] text-white on danger active state
               : 'text-muted hover:bg-bg-overlay hover:text-danger'
           } ${deleting ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleDelete}

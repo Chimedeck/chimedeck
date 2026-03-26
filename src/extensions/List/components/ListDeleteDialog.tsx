@@ -61,7 +61,7 @@ const ListDeleteDialog = ({ listTitle, cardCount, onConfirm, onCancel }: Props) 
             type="button"
             onClick={handleConfirm}
             disabled={busy}
-            className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm rounded-lg bg-danger text-white hover:opacity-90 transition-colors disabled:opacity-50" // [theme-exception] text-white on danger button
           >
             {busy ? 'Deleting…' : 'Delete list'}
           </button>

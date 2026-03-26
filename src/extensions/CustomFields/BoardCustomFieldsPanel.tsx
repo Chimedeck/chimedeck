@@ -284,8 +284,7 @@ const BoardCustomFieldsPanel = () => {
                         type="button"
                         onClick={() => commitOptions(field)}
                         disabled={busy}
-                        className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors"
-                        aria-label={`Save options for ${field.name}`}
+                        className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors" // [theme-exception] text-white on bg-blue-600 button
                       >
                         {busy ? translations['CustomFields.creatingButton'] : translations['CustomFields.saveOptionsButton']}
                       </button>
@@ -365,8 +364,7 @@ const BoardCustomFieldsPanel = () => {
               type="button"
               onClick={handleCreate}
               disabled={creating || !newField.name.trim()}
-              className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors"
-              aria-label={translations['CustomFields.ariaCreateField']}
+              className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors" // [theme-exception] text-white on bg-blue-600 button
             >
               {creating ? translations['CustomFields.creatingButton'] : translations['CustomFields.createFieldButton']}
             </button>

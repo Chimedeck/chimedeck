@@ -8,9 +8,8 @@ interface Props {
 }
 
 export const LabelChip = ({ label, onRemove }: Props) => (
-  // [theme-exception] text-white is intentional on dynamically-colored chip background
   <span
-    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
+    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white" // [theme-exception] text-white on dynamically-colored chip background
     style={{ backgroundColor: label.color }}
     title={label.name}
   >

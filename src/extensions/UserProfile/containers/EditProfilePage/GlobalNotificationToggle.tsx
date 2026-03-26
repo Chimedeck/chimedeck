@@ -19,10 +19,10 @@ const ToggleSwitch = ({
   ariaLabel: string;
 }) => {
   const track = disabled
-    ? 'bg-slate-700 cursor-not-allowed opacity-40'
+    ? 'bg-bg-overlay cursor-not-allowed opacity-40'
     : enabled
       ? 'bg-indigo-600'
-      : 'bg-slate-600 hover:bg-slate-500';
+      : 'bg-bg-sunken hover:bg-bg-overlay';
 
   return (
     <button

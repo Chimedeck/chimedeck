@@ -89,7 +89,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
               <button
                 type="submit"
                 disabled={inProgress || !name.trim()}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 transition-colors" // [theme-exception] text-white on primary button
               >
                 {inProgress
                   ? translations['CreateWorkspaceModal.submitting']
