@@ -7,6 +7,7 @@ import { handleListAttachments } from './list';
 import { handleViewAttachment } from './view';
 import { handleThumbnailAttachment } from './thumbnail';
 import { handlePatchAttachment } from './patch';
+import { handleLinkPreview } from './linkPreview';
 import { handleMultipartStart } from './multipart/start';
 import { handleMultipartPartUrl } from './multipart/partUrl';
 import { handleMultipartComplete } from './multipart/complete';
@@ -83,6 +84,11 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   const deleteMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)$/);
   if (deleteMatch && req.method === 'DELETE') {
     return handleDeleteAttachment(req, deleteMatch[1] as string);
+  }
+
+  // GET /api/v1/link-preview?url=...
+  if (pathname === '/api/v1/link-preview' && req.method === 'GET') {
+    return handleLinkPreview(req);
   }
 
   return null;

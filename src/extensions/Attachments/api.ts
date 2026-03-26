@@ -91,7 +91,25 @@ export async function createUrlAttachment({
   url,
   name,
 }: { cardId: string } & Omit<UrlAttachmentRequest, 'type'>): Promise<{ data: Attachment }> {
-  return apiClient.post(`/cards/${cardId}/attachments`, { type: 'URL', url, name });
+  return apiClient.post(`/cards/${cardId}/attachments/url`, { url, name });
+}
+
+// Fetch minimal card info for the paste-URL preview (form-time detection).
+export async function fetchCardPreview({ cardId }: { cardId: string }): Promise<{
+  data: { id: string; title: string };
+  includes: {
+    board: { id: string; title: string };
+    list: { id: string; title: string };
+    labels: Array<{ id: string; name: string; color: string }>;
+  };
+}> {
+  return apiClient.get(`/cards/${cardId}`);
+}
+
+// ---------- Link preview ----------
+
+export async function fetchLinkPreview({ url }: { url: string }): Promise<{ data: { title: string; faviconUrl: string } }> {
+  return apiClient.get(`/link-preview?url=${encodeURIComponent(url)}`);
 }
 
 // ---------- Delete ----------

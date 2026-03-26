@@ -1,16 +1,19 @@
 // AttachmentPanel — full attachment section rendered inside CardDetailModal.
 // Shows a header with file-picker trigger, drag-drop zone, attachment list,
 // image thumbnail grid, and an "Attach a link" external URL form.
-import React, { useCallback, useRef, useState } from 'react';
+// Internal card links are shown in a "Trello cards" section (card preview).
+// External links are shown in a separate "Links" section.
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
-import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment } from '../api';
+import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment, fetchCardPreview } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
 import { AttachmentThumbnail } from './AttachmentThumbnail';
+import { CardAttachmentPreview } from './CardAttachmentPreview';
+import { ExternalLinkPreview } from './ExternalLinkPreview';
 import { PasteListener } from './PasteListener';
-import type { Attachment } from '../types';
-import { useEffect } from 'react';
+import type { Attachment, CardPreview } from '../types';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -37,6 +40,11 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
   const [linkUrl, setLinkUrl] = useState('');
   const [linkName, setLinkName] = useState('');
   const [linkSubmitting, setLinkSubmitting] = useState(false);
+  // Card detection — live preview when an internal card URL is pasted
+  const [detectedCard, setDetectedCard] = useState<CardPreview | null>(null);
+  const [detectingCard, setDetectingCard] = useState(false);
+  const [detectError, setDetectError] = useState(false);
+  const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load attachments from the server
   const loadAttachments = useCallback(async () => {
@@ -119,20 +127,77 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
     ev.target.value = '';
   };
 
+  // Parse an internal card URL — same logic as the server-side parseInternalCardUrl.
+  // Returns { cardId } only when the URL is on the same origin as the current page.
+  const parseInternalCardUrl = (url: string): { cardId: string } | null => {
+    try {
+      const parsed = new URL(url);
+      // [why] Only URLs on this origin are internal — guard against cross-site links.
+      if (parsed.origin !== globalThis.location.origin) return null;
+      const match = /^\/boards\/([^/]+)$/.exec(parsed.pathname);
+      if (!match) return null;
+      const cardId = parsed.searchParams.get('card');
+      if (!cardId) return null;
+      return { cardId };
+    } catch {
+      return null;
+    }
+  };
+
+  // Debounced URL detection — fires 400 ms after the user stops typing.
+  const handleLinkUrlChange = (value: string): void => {
+    setLinkUrl(value);
+    // Reset detection state immediately when URL changes
+    setDetectedCard(null);
+    setDetectError(false);
+    if (detectTimerRef.current) clearTimeout(detectTimerRef.current);
+
+    const internal = parseInternalCardUrl(value.trim());
+    if (!internal) return;
+
+    setDetectingCard(true);
+    detectTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetchCardPreview({ cardId: internal.cardId });
+        const card: CardPreview = {
+          id: res.data.id,
+          title: res.data.title,
+          board_id: res.includes.board.id,
+          board_name: res.includes.board.title,
+          list_id: res.includes.list.id,
+          list_name: res.includes.list.title,
+          labels: res.includes.labels,
+        };
+        setDetectedCard(card);
+        // Auto-fill name with card title if user hasn't typed a custom name
+        setLinkName((prev) => (prev.trim() === '' ? card.title : prev));
+      } catch {
+        setDetectError(true);
+      } finally {
+        setDetectingCard(false);
+      }
+    }, 400);
+  };
+
   // External URL form submit
   const handleLinkSubmit = async (ev: React.FormEvent): Promise<void> => {
     ev.preventDefault();
     if (!linkUrl.trim()) return;
     setLinkSubmitting(true);
     try {
-      const res = await createUrlAttachment({
+      // [why] For internal card links the name is auto-filled from the card title;
+      // fall back to the URL string only for external links with no display name.
+      const nameToSend = linkName.trim() || detectedCard?.title || linkUrl.trim();
+      await createUrlAttachment({
         cardId,
         url: linkUrl.trim(),
-        name: linkName.trim() || linkUrl.trim(),
+        name: nameToSend,
       });
-      setAttachments((prev) => [res.data, ...prev]);
+      void loadAttachments();
       setLinkUrl('');
       setLinkName('');
+      setDetectedCard(null);
+      setDetectError(false);
       setShowLinkForm(false);
     } catch {
       // keep form open so user can retry
@@ -142,7 +207,19 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
   };
 
   // Separate image attachments (READY + image/* content_type) for thumbnail grid
-  const imageAttachments = attachments.filter(
+  // Partition server attachments by kind.
+  // Card links: URL attachments that reference an internal card.
+  const cardLinkAttachments = attachments.filter(
+    (a) => a.type === 'URL' && a.referenced_card_id,
+  );
+  // External links: URL attachments that are pure external URLs.
+  const externalLinkAttachments = attachments.filter(
+    (a) => a.type === 'URL' && !a.referenced_card_id,
+  );
+  // Files: all FILE-type attachments.
+  const fileAttachments = attachments.filter((a) => a.type === 'FILE');
+
+  const imageAttachments = fileAttachments.filter(
     (a) => a.status === 'READY' && a.content_type?.startsWith('image/'),
   );
 
@@ -210,6 +287,8 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
             view_url: null,
             thumbnail_url: null,
             external_url: null,
+            referenced_card_id: null,
+            referenced_card: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
@@ -232,8 +311,9 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
         <p className="text-xs text-slate-500 italic mt-1">{translations['attachments.panel.empty']}</p>
       )}
 
+      {/* FILE attachments */}
       <div className="space-y-0" data-testid="attachment-list">
-        {attachments.map((attachment) => (
+        {fileAttachments.map((attachment) => (
           <AttachmentItem
             key={attachment.id}
             attachment={attachment}
@@ -257,11 +337,53 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
         </div>
       )}
 
+      {/* Trello cards section — internal card-link attachments */}
+      {cardLinkAttachments.length > 0 && (
+        <div className="mt-4" data-testid="card-attachments-section">
+          <p className="text-xs font-semibold text-slate-400 mb-2">
+            {translations['attachments.panel.cardsSection']}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {cardLinkAttachments.map((attachment) =>
+              attachment.referenced_card ? (
+                <CardAttachmentPreview
+                  key={attachment.id}
+                  attachmentId={attachment.id}
+                  card={attachment.referenced_card}
+                  cardUrl={attachment.view_url ?? attachment.external_url ?? ''}
+                  canWrite={canWrite}
+                  onDelete={handleDelete}
+                />
+              ) : null,
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Links section — external URL attachments */}
+      {externalLinkAttachments.length > 0 && (
+        <div className="mt-4" data-testid="link-attachments-section">
+          <p className="text-xs font-semibold text-slate-400 mb-2">
+            {translations['attachments.panel.linksSection']}
+          </p>
+          <div className="space-y-2">
+            {externalLinkAttachments.map((attachment) => (
+              <ExternalLinkPreview
+                key={attachment.id}
+                attachment={attachment}
+                canWrite={canWrite}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Video attachments do not show previews — they are listed in the attachment list above. */}
 
-      {/* External URL form — hidden for VIEWER guests */}
+      {/* External URL / card link form — hidden for VIEWER guests */}
       {canWrite && (
-        <div className="mt-3">
+        <div className="mt-3 pb-4">
           {showLinkForm ? (
             <form
               onSubmit={handleLinkSubmit}
@@ -272,24 +394,60 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                 type="url"
                 placeholder={translations['attachments.panel.link.urlPlaceholder']}
                 value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
+                onChange={(e) => handleLinkUrlChange(e.target.value)}
                 required
                 className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 data-testid="link-url-input"
                 autoFocus
               />
-              <input
-                type="text"
-                placeholder={translations['attachments.panel.link.namePlaceholder']}
-                value={linkName}
-                onChange={(e) => setLinkName(e.target.value)}
-                className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                data-testid="link-name-input"
-              />
+
+              {/* Internal card preview — shown when URL resolves to a card in this workspace */}
+              {detectingCard && (
+                <p className="text-xs text-slate-400 italic">{translations['attachments.panel.link.loadingCard']}</p>
+              )}
+              {detectError && !detectingCard && (
+                <p className="text-xs text-amber-400">{translations['attachments.panel.link.cardNotFound']}</p>
+              )}
+              {detectedCard && !detectingCard && (
+                <div className="rounded-lg border border-slate-600 bg-slate-800/60 px-3 py-2" data-testid="link-card-preview">
+                  <p className="text-[11px] text-slate-400 truncate mb-0.5">
+                    {detectedCard.board_name ?? ''}
+                    {detectedCard.list_name ? <span className="ml-1 text-slate-500">· {detectedCard.list_name}</span> : null}
+                  </p>
+                  {detectedCard.labels.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {detectedCard.labels.map((label) => (
+                        <span
+                          key={label.id}
+                          className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white/90 truncate max-w-[120px]"
+                          style={{ backgroundColor: label.color }}
+                          title={label.name}
+                        >
+                          {label.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm font-medium text-slate-100 truncate">{detectedCard.title}</p>
+                </div>
+              )}
+
+              {/* Name field — hidden when a card was detected (card title is used automatically) */}
+              {!detectedCard && (
+                <input
+                  type="text"
+                  placeholder={translations['attachments.panel.link.namePlaceholder']}
+                  value={linkName}
+                  onChange={(e) => setLinkName(e.target.value)}
+                  className="w-full text-sm bg-slate-800 text-slate-100 placeholder-slate-500 border border-slate-600 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  data-testid="link-name-input"
+                />
+              )}
+
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={linkSubmitting}
+                  disabled={linkSubmitting || detectingCard}
                   className="text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
                   data-testid="link-submit-button"
                 >
@@ -301,6 +459,8 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
                     setShowLinkForm(false);
                     setLinkUrl('');
                     setLinkName('');
+                    setDetectedCard(null);
+                    setDetectError(false);
                   }}
                   className="text-xs text-slate-400 hover:text-slate-200 rounded px-3 py-1.5 border border-slate-600 hover:border-slate-400"
                 >

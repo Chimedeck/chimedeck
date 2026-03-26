@@ -248,10 +248,43 @@ interface TrelloAction {
   memberCreator: TrelloMember;
 }
 
+interface TrelloCustomFieldOption {
+  id: string;
+  idCustomField: string;
+  value: { text: string };
+  color: string;
+  pos: number;
+}
+
+interface TrelloCustomField {
+  id: string;
+  idModel: string; // board ID
+  name: string;
+  type: string;    // 'checkbox' | 'list' | 'text' | 'number' | 'date'
+  pos: number;
+  display?: { cardFront?: boolean };
+  options?: TrelloCustomFieldOption[];
+}
+
+interface TrelloCustomFieldItem {
+  id: string;
+  idCustomField: string;
+  idModel: string;   // card ID
+  modelType: string;
+  value?: {
+    checked?: string; // 'true' | 'false'
+    text?: string;
+    number?: string;
+    date?: string;
+  };
+  idValue?: string;  // DROPDOWN: selected option ID
+}
+
 interface TrelloBoard {
   id: string;
   name: string;
   manager?: string;
+  customFields?: TrelloCustomField[];
 }
 
 interface TrelloCard {
@@ -277,6 +310,18 @@ interface TrelloCard {
   board?: TrelloBoard;
   pluginData?: Array<{ id: string; idPlugin: string; scope: string; idModel: string; value: string; access: string; dateLastUpdated: string }>;
   checklists?: TrelloChecklist[];
+  customFieldItems?: TrelloCustomFieldItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Custom field type mapper
+// Trello: 'checkbox' → CHECKBOX, 'list' (dropdown) → DROPDOWN, rest → TEXT
+// ---------------------------------------------------------------------------
+
+function trelloFieldType(type: string): 'TEXT' | 'CHECKBOX' | 'DROPDOWN' {
+  if (type === 'checkbox') return 'CHECKBOX';
+  if (type === 'list') return 'DROPDOWN';
+  return 'TEXT';
 }
 
 // ---------------------------------------------------------------------------
@@ -347,6 +392,7 @@ async function main() {
   const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
+  const customFieldSet = new Map<string, object>(); // fieldId → row
   const memberSet = new Map<string, string>(); // trelloId → email
   // Rich member data (fullName, username, avatarUrl) when available
   const memberDataMap = new Map<string, TrelloMember>();
@@ -398,6 +444,29 @@ async function main() {
       }
     }
 
+    // Custom fields — defined per board, collected from card.board.customFields
+    for (const cf of card.board?.customFields ?? []) {
+      if (customFieldSet.has(cf.id)) continue;
+      const options =
+        cf.type === 'list'
+          ? (cf.options ?? []).map((opt) => ({
+              id: opt.id,
+              label: opt.value.text,
+              color: opt.color,
+            }))
+          : null;
+      customFieldSet.set(cf.id, {
+        id: cf.id,
+        board_id: cf.idModel,
+        name: cf.name,
+        field_type: trelloFieldType(cf.type),
+        options: options ? JSON.stringify(options) : null,
+        show_on_card: cf.display?.cardFront ?? false,
+        position: cf.pos,
+        created_at: new Date(),
+      });
+    }
+
     // Members — prefer rich data from card.members array
     for (const member of card.members ?? []) {
       if (!memberDataMap.has(member.id)) {
@@ -444,6 +513,7 @@ async function main() {
   console.log(`    Boards              : ${boardSet.size}`);
   console.log(`    Lists               : ${listSet.size}`);
   console.log(`    Labels              : ${labelSet.size}`);
+  console.log(`    Custom fields       : ${customFieldSet.size}`);
   console.log(`    Members             : ${memberSet.size}`);
 
   // -------------------------------------------------------------------------
@@ -595,6 +665,16 @@ async function main() {
   await batchUpsert('labels', [...labelSet.values()], 'id', ['name', 'color']);
 
   // -------------------------------------------------------------------------
+  // 7b. Custom field definitions (board-scoped)
+  // Must be inserted before cards so FK from card_custom_field_values is satisfied.
+  // -------------------------------------------------------------------------
+
+  console.log(`🔧  Creating/updating ${customFieldSet.size} custom field definitions…`);
+  await batchUpsert('custom_fields', [...customFieldSet.values()], 'id', [
+    'name', 'field_type', 'options', 'show_on_card', 'position',
+  ]);
+
+  // -------------------------------------------------------------------------
   // 8. Cards + card_labels + card_members (batched)
   // -------------------------------------------------------------------------
 
@@ -605,11 +685,13 @@ async function main() {
   // can sync them with a single delete-then-insert pass after all cards are processed.
   const allCardLabelRows: object[] = [];
   const allCardMemberRows: object[] = [];
+  const allCardCustomFieldValueRows: object[] = [];
   // All Trello card IDs that appear in this JSON (used to scope the junction sync)
   const trelloCardIds: string[] = [];
   // Track uniqueness for junction tables within this run
   const cardLabelSeen = new Set<string>();
   const cardMemberSeen = new Set<string>();
+  const customFieldValueSeen = new Set<string>(); // cardId:fieldId
 
   for (const card of cards) {
     // Skip cards whose list was not collected (list property missing)
@@ -663,6 +745,49 @@ async function main() {
       }
     }
 
+    // Custom field values — per card, keyed by customField ID
+    for (const item of card.customFieldItems ?? []) {
+      const key = `${card.id}:${item.idCustomField}`;
+      if (customFieldValueSeen.has(key)) continue;
+      // Only import items whose field definition was collected (guards FK)
+      if (!customFieldSet.has(item.idCustomField)) continue;
+      customFieldValueSeen.add(key);
+
+      const fieldType = (customFieldSet.get(item.idCustomField) as any).field_type as string;
+
+      let valueCheckbox: boolean | null = null;
+      let valueOptionId: string | null = null;
+      let valueText: string | null = null;
+
+      if (fieldType === 'CHECKBOX') {
+        valueCheckbox = item.value?.checked === 'true';
+      } else if (fieldType === 'DROPDOWN') {
+        valueOptionId = item.idValue ?? null;
+      } else {
+        // TEXT — accepts Trello text, number, or date as a plain string
+        valueText =
+          item.value?.text ??
+          item.value?.number ??
+          item.value?.date ??
+          null;
+      }
+
+      // [why] Skip items with no actual value — they add noise without information
+      if (valueCheckbox === null && valueOptionId === null && valueText === null) continue;
+
+      allCardCustomFieldValueRows.push({
+        // [why] Stable deterministic PK for idempotent re-runs
+        id: `${card.id}:${item.idCustomField}`,
+        card_id: card.id,
+        custom_field_id: item.idCustomField,
+        value_text: valueText,
+        value_number: null,
+        value_date: null,
+        value_checkbox: valueCheckbox,
+        value_option_id: valueOptionId,
+      });
+    }
+
     // Flush card rows when large to avoid holding everything in memory.
     // Junction rows (ID pairs only) are small and collected in full above.
     if (cardRows.length >= BATCH_SIZE * 4) {
@@ -694,6 +819,14 @@ async function main() {
     await db('card_members').whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE)).delete();
   }
   await batchInsert('card_members', allCardMemberRows, ['card_id', 'user_id']);
+
+  console.log(`🔧  Syncing ${allCardCustomFieldValueRows.length.toLocaleString()} custom field values…`);
+  for (let i = 0; i < trelloCardIds.length; i += BATCH_SIZE) {
+    await db('card_custom_field_values')
+      .whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE))
+      .delete();
+  }
+  await batchInsert('card_custom_field_values', allCardCustomFieldValueRows, 'id');
 
   // -------------------------------------------------------------------------
   // 8b. Comments from Trello actions

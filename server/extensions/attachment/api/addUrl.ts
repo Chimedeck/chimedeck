@@ -38,6 +38,22 @@ export function isForbiddenUrl(rawUrl: string): boolean {
   return FORBIDDEN_RANGES.some((re) => re.test(hostname));
 }
 
+// Detects internal card URLs of the form /boards/:boardId?card=:cardId.
+// Returns the cardId if matched; otherwise null.
+// We only extract the card query-param so the check works for any domain/port.
+export function parseInternalCardUrl(rawUrl: string): { cardId: string } | null {
+  try {
+    const parsed = new URL(rawUrl);
+    const pathMatch = parsed.pathname.match(/^\/boards\/([^/]+)$/);
+    if (!pathMatch) return null;
+    const cardId = parsed.searchParams.get('card');
+    if (!cardId) return null;
+    return { cardId };
+  } catch {
+    return null;
+  }
+}
+
 export async function handleAddUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -73,7 +89,29 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     );
   }
 
-  if (isForbiddenUrl(body.url)) {
+  // Try to detect an internal card URL first (bypasses SSRF check — validated via DB instead).
+  const internalCard = parseInternalCardUrl(body.url);
+  let referencedCardId: string | null = null;
+
+  if (internalCard) {
+    const referencedCard = await db('cards').where({ id: internalCard.cardId }).first();
+    if (!referencedCard) {
+      return Response.json(
+        { name: 'referenced-card-not-found', data: { message: 'The linked card was not found' } },
+        { status: 404 },
+      );
+    }
+    // Validate the referenced card is in the same workspace to prevent cross-workspace links.
+    const refList = await db('lists').where({ id: referencedCard.list_id }).first();
+    const refBoard = refList ? await db('boards').where({ id: refList.board_id }).first() : null;
+    if (!refBoard || refBoard.workspace_id !== board.workspace_id) {
+      return Response.json(
+        { name: 'referenced-card-not-in-workspace', data: { message: 'The linked card is not in the same workspace' } },
+        { status: 400 },
+      );
+    }
+    referencedCardId = referencedCard.id;
+  } else if (isForbiddenUrl(body.url)) {
     return Response.json(
       { error: { code: 'url-target-forbidden', message: 'URL resolves to a forbidden internal address' } },
       { status: 400 },
@@ -91,10 +129,13 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     type: 'URL',
     url: body.url,
     status: 'READY',
+    referenced_card_id: referencedCardId,
     created_at: new Date().toISOString(),
   });
 
   const attachment = await db('attachments').where({ id: attachmentId }).first();
+
+  const activityAction = referencedCardId ? 'card_link_attached' : 'attachment_added';
 
   await writeEvent({
     type: 'attachment_added',
@@ -108,9 +149,15 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     entityType: 'card',
     entityId: cardId,
     boardId: board.id,
-    action: 'attachment_added',
+    action: activityAction,
     actorId,
-    payload: { attachmentId, cardId, name: body.name, cardTitle: card.title },
+    payload: {
+      attachmentId,
+      cardId,
+      name: body.name,
+      cardTitle: card.title,
+      ...(referencedCardId ? { referencedCardId } : {}),
+    },
   });
 
   publisher

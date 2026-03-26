@@ -17,6 +17,7 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   'card.due_date.cleared',
   'card.money.updated',
   'attachment_added',
+  'card_link_attached',
   'attachment_removed',
   // Checklist events
   'checklist_created',

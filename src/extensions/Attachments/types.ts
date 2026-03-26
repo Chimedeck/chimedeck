@@ -3,6 +3,17 @@
 export type AttachmentStatus = 'PENDING' | 'SCANNING' | 'READY' | 'REJECTED';
 export type AttachmentType = 'FILE' | 'URL';
 
+/** Minimal card data returned for internal card-link attachments. */
+export interface CardPreview {
+  id: string;
+  title: string;
+  board_id: string | null;
+  board_name: string | null;
+  list_id: string | null;
+  list_name: string | null;
+  labels: Array<{ id: string; name: string; color: string }>;
+}
+
 export interface Attachment {
   id: string;
   card_id: string;
@@ -28,6 +39,10 @@ export interface Attachment {
   thumbnail_url: string | null;
   /** External URL for URL-type attachments */
   external_url: string | null;
+  /** FK to cards.id — set when this attachment is an internal card link. */
+  referenced_card_id: string | null;
+  /** Resolved card preview — populated by the list API when referenced_card_id is set. */
+  referenced_card: CardPreview | null;
   created_at: string;
   updated_at: string;
 }
