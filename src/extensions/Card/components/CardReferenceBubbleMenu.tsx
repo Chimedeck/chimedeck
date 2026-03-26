@@ -34,15 +34,15 @@ const CardReferenceBubbleMenu = ({ editor }: Props) => {
       options={{ placement: 'top-start' }}
       shouldShow={({ editor: ed }) => ed.isActive('cardReference')}
     >
-      <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white px-2 py-1 shadow-xl">
+      <div className="flex items-center gap-0.5 rounded-lg border border-border bg-bg-surface px-2 py-1 shadow-xl">
         {/* Label */}
-        <span className="mr-1 text-xs text-gray-500">Edit link</span>
+        <span className="mr-1 text-xs text-muted">Edit link</span>
 
         {/* Open in new tab */}
         <button
           type="button"
           title="Open card"
-          className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-base dark:hover:bg-slate-800"
           onMouseDown={(e) => { e.preventDefault(); handleOpen(); }}
         >
           <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
@@ -52,7 +52,7 @@ const CardReferenceBubbleMenu = ({ editor }: Props) => {
         <button
           type="button"
           title="Copy link"
-          className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-base dark:hover:bg-slate-800"
           onMouseDown={(e) => { e.preventDefault(); handleCopy(); }}
         >
           <LinkIcon className="h-3.5 w-3.5" />
@@ -62,7 +62,7 @@ const CardReferenceBubbleMenu = ({ editor }: Props) => {
         <button
           type="button"
           title="Copy URL to clipboard"
-          className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-base dark:hover:bg-slate-800"
           onMouseDown={(e) => { e.preventDefault(); handleCopy(); }}
         >
           <DocumentDuplicateIcon className="h-3.5 w-3.5" />
@@ -72,7 +72,7 @@ const CardReferenceBubbleMenu = ({ editor }: Props) => {
         <button
           type="button"
           title="Remove reference"
-          className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-slate-800 dark:hover:text-red-400"
+          className="rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-danger dark:hover:bg-slate-800"
           onMouseDown={(e) => { e.preventDefault(); handleDelete(); }}
         >
           <TrashIcon className="h-3.5 w-3.5" />

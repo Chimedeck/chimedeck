@@ -30,7 +30,7 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
       <div className="w-full max-w-md rounded-xl bg-bg-base border border-border p-6 shadow-xl">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <ExclamationTriangleIcon className="w-6 h-6 text-red-400 shrink-0" />
+            <ExclamationTriangleIcon className="w-6 h-6 text-danger shrink-0" />
             <h2 className="text-lg font-semibold text-base">Delete board?</h2>
           </div>
           <button
@@ -50,7 +50,7 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
           <li>{listCount} list{listCount !== 1 ? 's' : ''}</li>
           <li>{cardCount} card{cardCount !== 1 ? 's' : ''}</li>
         </ul>
-        <p className="text-sm text-red-500 mb-6">
+        <p className="text-sm text-danger mb-6">
           All of this content will be permanently deleted. This cannot be undone.
         </p>
 

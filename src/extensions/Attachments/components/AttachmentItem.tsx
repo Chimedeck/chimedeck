@@ -28,8 +28,8 @@ interface Props {
 const STATUS_CLASSES: Record<Attachment['status'], string> = {
   PENDING: 'bg-bg-sunken text-subtle',
   SCANNING: 'bg-yellow-900/50 text-yellow-300',
-  READY: 'bg-green-900/50 text-green-300',
-  REJECTED: 'bg-red-900/50 text-red-300',
+  READY: 'bg-green-900/50 text-green-300',  // [theme-exception]
+  REJECTED: 'bg-red-900/50 text-red-300',  // [theme-exception]
 };
 
 const STATUS_LABELS: Record<Attachment['status'], string> = {
@@ -261,7 +261,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
             <span className="text-subtle">{translations['attachments.item.delete.confirm']}</span>
             <button
               onClick={handleDeleteConfirm}
-              className="text-red-400 hover:text-red-300 font-medium"
+              className="text-danger hover:text-danger font-medium"
             >
               {translations['attachments.item.delete.yes']}
             </button>
@@ -272,7 +272,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         ) : (
           <button
             onClick={handleDeleteClick}
-            className="flex-shrink-0 text-muted hover:text-red-400 transition-colors"
+            className="flex-shrink-0 text-muted hover:text-danger transition-colors"
             aria-label={translations['attachments.item.action.delete.ariaLabel']}
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />

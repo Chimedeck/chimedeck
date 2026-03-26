@@ -196,14 +196,15 @@ const PluginRegistryPage = () => {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-base">
             {translations['plugins.registry.title']}
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted">
             {translations['plugins.registry.subtitle']}
           </p>
         </div>
         {/* "+ Register Plugin" button — wired in a future iteration */}
+        {/* [theme-exception]: text-white on bg-indigo-600 button */}
         <button
           type="button"
           className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
@@ -232,7 +233,7 @@ const PluginRegistryPage = () => {
       {status === 'loading' && (
         <div className="flex items-center justify-center py-16">
           <Spinner size="lg" className="text-indigo-500" />
-          <span className="ml-3 text-sm text-slate-500 dark:text-slate-400">
+          <span className="ml-3 text-sm text-muted">
             {translations['plugins.registry.loading']}
           </span>
         </div>
@@ -240,7 +241,7 @@ const PluginRegistryPage = () => {
 
       {/* Error state */}
       {status === 'error' && error && (
-        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-danger">
           {translations['plugins.registry.error']}
         </div>
       )}
@@ -248,7 +249,7 @@ const PluginRegistryPage = () => {
       {/* Empty state */}
       {status === 'idle' && plugins.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <p className="text-muted text-sm">
             {translations['plugins.registry.empty']}
           </p>
         </div>

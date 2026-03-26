@@ -69,14 +69,14 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
         {entry.phase === 'error' && (
           <p
             role="alert"
-            className="mt-0.5 text-[10px] text-red-600"
+            className="mt-0.5 text-[10px] text-danger"
           >
             {entry.error ?? translations['attachments.inline.uploadFailed']}
           </p>
         )}
 
         {entry.phase === 'done' && (
-          <p className="mt-0.5 text-[10px] text-green-600">{translations['attachments.inline.uploaded']}</p>
+          <p className="mt-0.5 text-[10px] text-success">{translations['attachments.inline.uploaded']}</p>
         )}
 
         {/* [why] 'pending' means the file is queued locally and will upload on submit. */}
@@ -99,7 +99,7 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
         type="button"
         aria-label={translations['attachments.inline.cancel.ariaLabel'].replace('{fileName}', entry.file.name)}
         title={entry.phase === 'pending' ? translations['attachments.inline.cancel.remove'] : entry.phase === 'error' || entry.phase === 'done' ? translations['attachments.inline.cancel.dismiss'] : translations['attachments.inline.cancel.cancelUpload']}
-        className="flex-shrink-0 text-muted hover:text-red-500 transition-colors"
+        className="flex-shrink-0 text-muted hover:text-danger transition-colors"
         onClick={() => onCancel(entry.clientId)}
       >
         <XMarkIcon className="h-4 w-4" />

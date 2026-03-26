@@ -9,7 +9,7 @@ import type { Plugin } from '../api';
 // [why] Encapsulate icon-with-fallback so the main row stays clean.
 const PluginIcon = ({ iconUrl, name }: { iconUrl: string; name: string }) => {
   const [broken, setBroken] = useState(false);
-  if (broken) return <PuzzlePieceIcon className="h-5 w-5 text-slate-400" aria-hidden="true" />;
+  if (broken) return <PuzzlePieceIcon className="h-5 w-5 text-subtle" aria-hidden="true" />;
   return (
     <img
       src={iconUrl}
@@ -47,14 +47,14 @@ const PluginRegistryRow = ({
   const handleConfirmNo = () => setConfirmOpen(false);
 
   return (
-    <tr className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+    <tr className="border-b border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       {/* Icon */}
       <td className="px-4 py-3 w-12">
-        <div className="flex-shrink-0 w-9 h-9 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden">
+        <div className="flex-shrink-0 w-9 h-9 rounded-md bg-bg-overlay flex items-center justify-center overflow-hidden">
           {plugin.iconUrl ? (
             <PluginIcon iconUrl={plugin.iconUrl} name={plugin.name} />
           ) : (
-            <PuzzlePieceIcon className="h-5 w-5 text-slate-400" aria-hidden="true" />
+            <PuzzlePieceIcon className="h-5 w-5 text-subtle" aria-hidden="true" />
           )}
         </div>
       </td>
@@ -62,7 +62,7 @@ const PluginRegistryRow = ({
       {/* Name + Author */}
       <td className="px-4 py-3 max-w-[180px]">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">
+          <span className="font-medium text-sm text-base truncate">
             {plugin.name}
           </span>
           {!plugin.isActive && (
@@ -72,7 +72,7 @@ const PluginRegistryRow = ({
           )}
         </div>
         {plugin.authorEmail && (
-          <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">
+          <p className="text-xs text-subtle truncate mt-0.5">
             {plugin.authorEmail}
           </p>
         )}
@@ -80,7 +80,7 @@ const PluginRegistryRow = ({
 
       {/* Description */}
       <td className="px-4 py-3 max-w-[240px]">
-        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+        <p className="text-sm text-muted line-clamp-2">
           {plugin.description}
         </p>
       </td>
@@ -99,7 +99,7 @@ const PluginRegistryRow = ({
             ))}
           </div>
         ) : (
-          <span className="text-xs text-slate-400 dark:text-slate-600">—</span>
+          <span className="text-xs text-subtle">—</span>
         )}
       </td>
 
@@ -110,7 +110,7 @@ const PluginRegistryRow = ({
           <button
             type="button"
             onClick={() => onEdit(plugin)}
-            className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 hover:border-indigo-400 transition-colors"
+            className="inline-flex items-center gap-1 text-xs text-muted hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded border border-border hover:border-indigo-400 transition-colors"
             aria-label={`${translations['plugins.registry.row.edit']} ${plugin.name}`}
           >
             <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -121,13 +121,14 @@ const PluginRegistryRow = ({
           {plugin.isActive ? (
             confirmOpen ? (
               <span className="inline-flex items-center gap-1 text-xs">
-                <span className="text-slate-600 dark:text-slate-400">
+                <span className="text-muted">
                   {translations['plugins.registry.row.confirmDeactivate']}
                 </span>
                 <button
                   type="button"
                   onClick={handleConfirmYes}
                   disabled={isDeactivating}
+                  // [theme-exception]: text-white on bg-red-600 destructive confirm button
                   className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
                   aria-label="Confirm deactivate"
                 >
@@ -138,7 +139,7 @@ const PluginRegistryRow = ({
                 <button
                   type="button"
                   onClick={handleConfirmNo}
-                  className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-muted hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
                   aria-label="Cancel deactivate"
                 >
                   {translations['plugins.registry.row.confirmNo']}
@@ -149,7 +150,7 @@ const PluginRegistryRow = ({
                 type="button"
                 onClick={handleDeactivateClick}
                 disabled={isDeactivating}
-                className="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 px-2 py-1 rounded border border-red-200 dark:border-red-800 hover:border-red-400 transition-colors disabled:opacity-50"
+                className="text-xs text-danger hover:text-danger px-2 py-1 rounded border border-red-200 dark:border-red-800 hover:border-red-400 transition-colors disabled:opacity-50"
                 aria-label={`${translations['plugins.registry.row.deactivate']} ${plugin.name}`}
               >
                 {translations['plugins.registry.row.deactivate']}

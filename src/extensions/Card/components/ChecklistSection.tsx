@@ -77,7 +77,7 @@ export const ChecklistSection = ({
         ) : (
           <button
             type="button"
-            className="flex-1 text-left text-sm font-semibold text-gray-800 hover:text-blue-500 dark:hover:text-blue-400 transition-colors truncate"
+            className="flex-1 text-left text-sm font-semibold text-base hover:text-blue-500 dark:hover:text-blue-400 transition-colors truncate"
             onClick={() => !disabled && setEditingTitle(true)}
             title="Click to rename"
             disabled={disabled}
@@ -100,7 +100,7 @@ export const ChecklistSection = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-muted hover:text-red-500 dark:hover:text-red-400"
+                className="text-muted hover:text-danger"
                 onClick={onDelete}
                 title="Delete checklist"
                 aria-label="Delete checklist"
@@ -152,7 +152,7 @@ export const ChecklistSection = ({
           <Button
             type="button"
             variant="ghost"
-            className="text-sm text-muted hover:text-gray-700"
+            className="text-sm text-muted hover:text-base"
             onClick={() => setAdding(false)}
           >
             Cancel

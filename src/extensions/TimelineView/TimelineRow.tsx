@@ -92,7 +92,7 @@ const TimelineRow = ({
 
   return (
     <div
-      className="border-b border-slate-800"
+      className="border-b border-border"
       // minWidth must match the header so the border-b extends across the full scrollable width.
       style={{ minWidth: labelWidth + totalWidth }}
       data-testid={`timeline-row-${swimlane.listId}`}
@@ -101,15 +101,15 @@ const TimelineRow = ({
       <div className="flex" style={{ minWidth: labelWidth + totalWidth }}>
         {/* Sticky swimlane label */}
         <div
-          className="sticky left-0 z-10 flex shrink-0 flex-col justify-center border-r border-slate-700 bg-slate-900 px-3 py-2"
+          className="sticky left-0 z-10 flex shrink-0 flex-col justify-center border-r border-border bg-bg-surface px-3 py-2"
           style={{ width: labelWidth, minHeight: barAreaHeight }}
           data-testid={`timeline-lane-label-${swimlane.listId}`}
         >
-          <span className="truncate text-sm font-medium text-slate-300">
+          <span className="truncate text-sm font-medium text-subtle">
             {swimlane.listTitle}
           </span>
           {swimlane.scheduledCards.length > 0 && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted">
               {swimlane.scheduledCards.length} {translations['TimelineView.scheduledCount']}
             </span>
           )}
@@ -147,10 +147,10 @@ const TimelineRow = ({
         >
           {/* Sticky label for unscheduled section */}
           <div
-            className="sticky left-0 z-10 shrink-0 border-r border-slate-700 bg-slate-900 px-3 py-1"
+            className="sticky left-0 z-10 shrink-0 border-r border-border bg-bg-surface px-3 py-1"
             style={{ width: labelWidth }}
           >
-            <span className="text-xs italic text-slate-500">{translations['TimelineView.unscheduledLabel']}</span>
+            <span className="text-xs italic text-muted">{translations['TimelineView.unscheduledLabel']}</span>
           </div>
 
           {/* Chips */}
@@ -160,7 +160,7 @@ const TimelineRow = ({
                 key={card.id}
                 onClick={() => onCardClick(card.id)}
                 data-testid={`timeline-unscheduled-chip-${card.id}`}
-                className="rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-600"
+                className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
               >
                 {card.title}
               </button>

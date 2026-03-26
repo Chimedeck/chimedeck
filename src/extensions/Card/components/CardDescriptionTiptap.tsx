@@ -174,7 +174,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
 
 function getDraftStatusClass(status: DraftStatus): string {
   if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
-  if (status === 'synced') return 'text-green-500 dark:text-green-400';
+  if (status === 'synced') return 'text-success';
   return 'text-muted';
 }
 
@@ -545,14 +545,14 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             <div className="inline-flex rounded-md border border-border overflow-hidden">
               <button
                 type="button"
-                className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-inverse' : 'bg-white text-gray-600'}`}
+                className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
                 onClick={() => handleModeChange('rich')}
               >
                 Rich text
               </button>
               <button
                 type="button"
-                className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-inverse' : 'bg-white text-gray-600'}`}
+                className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
                 onClick={() => handleModeChange('markdown')}
               >
                 Markdown
@@ -561,7 +561,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           </div>
 
           {editMode === 'rich' ? (
-            <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-border bg-white">
+            <div className="flex max-h-[55vh] flex-col overflow-hidden rounded-lg border border-border bg-bg-surface">
               {/* Single-line toolbar: primary controls always visible, secondary behind + */}
               <div className="relative">
                 <OneLineToolbar
@@ -640,7 +640,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             >
               {draftStatus === 'sync_failed' ? (
                 <>
-                  <span className="text-red-500 dark:text-red-400">
+                  <span className="text-danger">
                     {isSavePending ? 'Save failed' : 'Sync failed'}
                   </span>
                   <button
@@ -687,7 +687,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             </Button>
             <button
               type="button"
-              className="px-3 py-1 text-muted hover:text-gray-700 text-xs transition-colors"
+              className="px-3 py-1 text-muted hover:text-base text-xs transition-colors"
               onClick={handleCancel}
             >
               Cancel
@@ -719,7 +719,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               'w-full text-left rounded-lg p-3 min-h-[80px] transition-colors',
               disabled
                 ? 'cursor-default'
-                : 'cursor-text hover:bg-gray-100',
+                : 'cursor-text hover:bg-bg-overlay',
               isEmpty
                 ? 'text-muted text-sm italic bg-bg-overlay'
                 : 'prose dark:prose-invert prose-sm max-w-none text-base',

@@ -47,7 +47,7 @@ const TYPE_ACCENT: Record<string, string> = {
   card_member_assigned: 'text-violet-400',
   card_member_unassigned: 'text-rose-400',
   card_updated: 'text-indigo-400',
-  card_deleted: 'text-red-400',
+  card_deleted: 'text-danger',
   card_archived: 'text-amber-400',
 };
 

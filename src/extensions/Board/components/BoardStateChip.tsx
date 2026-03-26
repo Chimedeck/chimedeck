@@ -14,8 +14,7 @@ const BoardStateChip = ({ state }: Props) => {
     );
   }
   return (
-    // [theme-exception] Active status chip uses green for positive state indication
-    <span className="inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+    <span className="inline-block rounded bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
       Active
     </span>
   );

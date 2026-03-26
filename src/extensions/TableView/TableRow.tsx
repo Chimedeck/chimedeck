@@ -50,7 +50,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
           {(row.members ?? []).map((m) => (
             <span
               key={m.id}
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-700 text-xs font-bold text-white uppercase"
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-700 text-xs font-bold text-white uppercase" // [theme-exception] text-white on colored avatar bg
               title={m.name ?? m.email}
               aria-label={m.name ?? m.email}
             >
@@ -66,7 +66,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
           {row.labels.map((label) => (
             <span
               key={label.id}
-              className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-white"
+              className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-white" // [theme-exception] text-white on dynamic label bg color
               style={{ backgroundColor: label.color }}
               title={label.name}
               aria-label={label.name}
@@ -79,7 +79,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
 
       {/* Due Date */}
       <td
-        className={`px-3 py-2 text-sm${overdue ? ' text-red-400 font-medium' : ' text-muted'}`}
+        className={`px-3 py-2 text-sm${overdue ? ' text-danger font-medium' : ' text-muted'}`}
         data-testid={`table-cell-due-date-${row.id}`}
       >
         {row.due_date ? formatDate(row.due_date) : <span className="text-muted">—</span>}

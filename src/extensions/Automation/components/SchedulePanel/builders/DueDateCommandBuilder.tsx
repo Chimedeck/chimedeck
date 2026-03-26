@@ -182,7 +182,7 @@ const DueDateCommandBuilder: FC<Props> = ({
               <span className={`text-xs ${step === n ? 'text-subtle' : 'text-muted'}`}>
                 {n === 1 ? translations['automation.dueDateBuilder.stepWhen'] : translations['automation.dueDateBuilder.stepActionsAndSave']}
               </span>
-              {n < 2 && <span className="mx-1 text-slate-600 text-xs">›</span>}
+              {n < 2 && <span className="mx-1 text-muted text-xs">›</span>}
             </div>
           ))}
         </div>
@@ -259,7 +259,7 @@ const DueDateCommandBuilder: FC<Props> = ({
                     </div>
                   </div>
                   {(offsetValue < 1 || offsetValue > 30) && (
-                    <p className="text-xs text-red-400">{translations['automation.dueDateBuilder.offsetError']}</p>
+                    <p className="text-xs text-danger">{translations['automation.dueDateBuilder.offsetError']}</p>
                   )}
                 </div>
               )}
@@ -314,7 +314,7 @@ const DueDateCommandBuilder: FC<Props> = ({
               </div>
 
               {error && (
-                <p className="text-sm text-red-400" role="alert">
+                <p className="text-sm text-danger" role="alert">
                   {error}
                 </p>
               )}

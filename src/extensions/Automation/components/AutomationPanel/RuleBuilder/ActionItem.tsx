@@ -109,7 +109,7 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [] }: Props) => {
       {/* Delete */}
       <button
         type="button"
-        className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-red-400"
+        className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-bg-overlay hover:text-danger"
         onClick={onDelete}
         aria-label={`Remove ${item.label} action`}
       >

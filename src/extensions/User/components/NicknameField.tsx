@@ -41,7 +41,7 @@ export default function NicknameField({ value, onChange, error }: NicknameFieldP
       </div>
       <p className="text-xs text-muted">{translations['ProfilePage.nicknameHint']}</p>
       {error && (
-        <p id="nickname-error" className="text-sm text-red-400" role="alert">
+        <p id="nickname-error" className="text-sm text-danger" role="alert">
           {error === 'nickname-taken' ? translations['ProfilePage.nicknameTaken'] : error}
         </p>
       )}

@@ -30,7 +30,7 @@ const ConnectionBadge = ({ state }: Props) => {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/20 px-2.5 py-0.5 text-xs font-medium text-red-400">
+    <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/20 px-2.5 py-0.5 text-xs font-medium text-danger">
       {translations['Realtime.statusOffline']}
     </span>
   );

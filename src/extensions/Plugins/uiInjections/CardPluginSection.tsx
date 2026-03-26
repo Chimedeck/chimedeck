@@ -55,15 +55,15 @@ const CardPluginSection = ({ cardId, listId, boardId }: Props) => {
       {sections.map((section, i) => (
         <div
           key={i}
-          className="rounded-lg border border-slate-700 bg-slate-800/50 p-4"
+          className="rounded-lg border border-border bg-bg-overlay/50 p-4"
         >
           {section.title && (
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
               {section.title}
             </p>
           )}
           {section.content && (
-            <p className="text-sm text-slate-300 whitespace-pre-wrap">
+            <p className="text-sm text-subtle whitespace-pre-wrap">
               {section.content}
             </p>
           )}

@@ -94,7 +94,7 @@ const BoardListPage = () => {
 
   const pageContent = (() => {
     if (loading) return <p className="text-muted">Loading boards…</p>;
-    if (error) return <p className="text-red-400">Failed to load boards.</p>;
+    if (error) return <p className="text-danger">Failed to load boards.</p>;
     if (!boards.length) {
       return (
         <p className="text-muted">

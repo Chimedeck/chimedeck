@@ -136,7 +136,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
               )}
               {!loading && error && (
                 <div className="p-4">
-                  <p className="text-sm text-red-400">{error}</p>
+                  <p className="text-sm text-danger">{error}</p>
                   <button
                     className="mt-2 text-xs text-blue-400 hover:underline"
                     onClick={loadAutomations}

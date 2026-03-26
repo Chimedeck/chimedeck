@@ -54,23 +54,23 @@ const AcceptInvitePage = () => {
   const bodyContent = (() => {
     switch (state.status) {
       case 'loading':
-        return <p className="text-gray-500">Validating invite…</p>;
+        return <p className="text-muted">Validating invite…</p>;
 
       case 'ready': {
         const { invite } = state;
         return (
           <div className="space-y-4">
-            <p className="text-gray-700">
+            <p className="text-base">
               You have been invited to join{' '}
               <strong>{invite.workspaceName}</strong> as{' '}
               <RoleBadge role={invite.role} />.
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted">
               Invite expires: {new Date(invite.expiresAt).toLocaleString()}
             </p>
             <button
               onClick={handleAccept}
-              className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-hover"
             >
               Accept Invitation
             </button>
@@ -79,11 +79,11 @@ const AcceptInvitePage = () => {
       }
 
       case 'accepting':
-        return <p className="text-gray-500">Accepting invite…</p>;
+        return <p className="text-muted">Accepting invite…</p>;
 
       case 'success':
         return (
-          <p className="font-medium text-green-700">
+          <p className="font-medium text-success">
             You have joined the workspace.
           </p>
         );
@@ -100,7 +100,7 @@ const AcceptInvitePage = () => {
           }
         })();
         return (
-          <p role="alert" className="text-red-600">
+          <p role="alert" className="text-danger">
             {message}
           </p>
         );

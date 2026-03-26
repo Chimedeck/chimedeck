@@ -37,7 +37,7 @@ function relativeTime(dateStr: string): string {
 const STATUS_ICON: Record<string, { icon: typeof CheckCircleIcon; cls: string; label: string }> = {
   SUCCESS: { icon: CheckCircleIcon, cls: 'text-emerald-400', label: translations['automation.runLogRow.status.success'] },
   PARTIAL: { icon: ExclamationCircleIcon, cls: 'text-amber-400', label: translations['automation.runLogRow.status.partial'] },
-  FAILED: { icon: XCircleIcon, cls: 'text-red-400', label: translations['automation.runLogRow.status.failed'] },
+  FAILED: { icon: XCircleIcon, cls: 'text-danger', label: translations['automation.runLogRow.status.failed'] },
 };
 
 const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {

@@ -112,7 +112,7 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
               key={btnKey}
               type="button"
               onClick={(e) => handleButtonClick(btn, e)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-subtle hover:bg-bg-overlay rounded-lg transition-colors"
             >
               {btn.icon && (
                 <img src={btn.icon} alt="" className="w-4 h-4 shrink-0 object-contain" />
@@ -135,7 +135,7 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
           <button
             key={btnKey}
             onClick={(e) => handleButtonClick(btn, e)}
-            className="inline-flex items-center gap-1 rounded bg-slate-700 px-2 py-0.5 text-xs text-slate-200 hover:bg-slate-600 transition-colors"
+            className="inline-flex items-center gap-1 rounded bg-bg-overlay px-2 py-0.5 text-xs text-base hover:bg-bg-sunken transition-colors"
           >
             {btn.icon && (
               <img src={btn.icon} alt="" className="h-3 w-3 object-contain" />

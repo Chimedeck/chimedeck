@@ -66,14 +66,14 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
       aria-labelledby="invite-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
     >
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-lg bg-bg-surface p-6 shadow-xl">
         <h2 id="invite-modal-title" className="mb-4 text-lg font-semibold">
           Add Member
         </h2>
 
         {success ? (
           <div className="space-y-4">
-            <p className="text-green-700">
+            <p className="text-success">
               ✓ <strong>{addedEmail}</strong> has been added to the workspace.
             </p>
             <Button
@@ -129,7 +129,7 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
             </div>
 
             {errorMessage && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className="text-sm text-danger">
                 {errorMessage}
               </p>
             )}

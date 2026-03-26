@@ -81,7 +81,7 @@ const SortableListColumn = ({
       ref={setNodeRef}
       id={`board-list-${list.id}`}
       style={style}
-      className="w-72 shrink-0 bg-white/90 dark:bg-slate-900/80 backdrop-blur-sm border border-gray-200 dark:border-slate-800 rounded-xl flex flex-col h-full"
+      className="w-72 shrink-0 bg-bg-surface/90 backdrop-blur-sm border border-border rounded-xl flex flex-col h-full"
       role="listitem"
       aria-label={`List: ${list.title}`}
     >
@@ -128,7 +128,7 @@ const SortableListColumn = ({
           />
         ) : (
           <button
-            className="text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-sm rounded-lg px-2 py-1.5 w-full text-left transition-colors"
+            className="text-muted hover:text-base hover:bg-bg-overlay text-sm rounded-lg px-2 py-1.5 w-full text-left transition-colors"
             onClick={() => setAddingCard(true)}
             aria-label={`Add a card to ${list.title}`}
           >

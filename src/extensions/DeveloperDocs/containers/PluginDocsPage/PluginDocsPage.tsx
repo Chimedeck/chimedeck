@@ -660,7 +660,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-connector',
                   cells: [
                     { key: 'file', content: <Code>connector.html</Code> },
-                    { key: 'req', content: <Badge color="bg-red-900/50 text-red-300">Required</Badge> },
+                    { key: 'req', content: <Badge color="bg-red-900/50 text-red-300">Required</Badge> },  // [theme-exception]
                     { key: 'purpose', content: 'Hidden iframe. Registers all capabilities via jhInstance.initialize.' },
                   ],
                 },

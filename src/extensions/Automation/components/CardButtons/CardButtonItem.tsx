@@ -30,7 +30,7 @@ const CardButtonItem: FC<Props> = ({ automation, runState, onRun, disabled = fal
           ? 'cursor-not-allowed opacity-60'
           : 'hover:bg-bg-overlay hover:border-border hover:text-base',
         runState === 'success' ? 'border-emerald-700 bg-emerald-900/20 text-emerald-300' : '',
-        runState === 'error' ? 'border-red-700 bg-red-900/20 text-red-300' : '',
+        runState === 'error' ? 'border-red-700 bg-red-900/20 text-red-300' : '',  // [theme-exception]
         'text-subtle',
       ]
         .filter(Boolean)
@@ -44,7 +44,7 @@ const CardButtonItem: FC<Props> = ({ automation, runState, onRun, disabled = fal
         ) : runState === 'success' ? (
           <CheckCircleIcon className="h-4 w-4 text-emerald-400" aria-hidden="true" />
         ) : runState === 'error' ? (
-          <ExclamationCircleIcon className="h-4 w-4 text-red-400" aria-hidden="true" />
+          <ExclamationCircleIcon className="h-4 w-4 text-danger" aria-hidden="true" />
         ) : (
           <ButtonIcon name={automation.icon} className="h-4 w-4 text-muted" />
         )}

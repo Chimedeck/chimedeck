@@ -186,7 +186,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
     <div
       role="menu"
       aria-label="Command menu"
-      className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-border bg-white shadow-lg"
+      className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-border bg-bg-surface shadow-lg"
       onKeyDown={handleKeyDown}
     >
       {/* Search input */}
@@ -219,11 +219,11 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
               className={[
                 'flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors',
                 idx === activeIndex
-                  ? 'bg-gray-100'
-                  : 'hover:bg-gray-50',
+                  ? 'bg-bg-overlay'
+                  : 'hover:bg-bg-overlay',
                 isActive(cmd)
                   ? 'font-semibold text-indigo-600 dark:text-indigo-300'
-                  : 'text-gray-700',
+                  : 'text-base',
               ].join(' ')}
               onMouseEnter={() => setActiveIndex(idx)}
               onMouseDown={(e) => {

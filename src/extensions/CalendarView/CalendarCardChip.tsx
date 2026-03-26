@@ -13,6 +13,7 @@ const CalendarCardChip = ({ card, onClick }: CalendarCardChipProps) => {
   };
 
   return (
+    // [theme-exception]: CalendarView dark theme
     <button
       draggable
       onDragStart={handleDragStart}
@@ -20,7 +21,7 @@ const CalendarCardChip = ({ card, onClick }: CalendarCardChipProps) => {
       title={card.title}
       aria-label={`${translations['CalendarView.cardAriaPrefix']} ${card.title}`}
       data-testid={`calendar-chip-${card.id}`}
-      className="flex w-full items-center gap-1 rounded bg-slate-700 px-1.5 py-0.5 text-left text-xs text-slate-100 hover:bg-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 truncate cursor-grab active:cursor-grabbing"
+      className="flex w-full items-center gap-1 rounded bg-bg-overlay px-1.5 py-0.5 text-left text-xs text-base hover:bg-bg-sunken focus:outline-none focus:ring-1 focus:ring-primary truncate cursor-grab active:cursor-grabbing"
     >
       {firstLabel && (
         <span

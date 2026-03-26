@@ -64,7 +64,7 @@ const TimelineBar = ({
     <div
       data-testid={`timeline-bar-${card.id}`}
       title={card.title}
-      className="absolute flex items-center rounded text-xs text-white shadow select-none"
+      className="absolute flex items-center rounded text-xs text-white shadow select-none" // [theme-exception]: text on card label colored bg
       style={{
         left,
         width,

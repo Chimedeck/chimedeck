@@ -59,7 +59,7 @@ const BoardActivityPanel = ({ boardId }: Props) => {
   }
 
   if (error) {
-    return <p className="p-4 text-sm text-red-500">{error}</p>;
+    return <p className="p-4 text-sm text-danger">{error}</p>;
   }
 
   return (

@@ -24,8 +24,7 @@ const PluginRegistryTable = ({
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
       <table className="min-w-full divide-y divide-border">
-        {/* [theme-exception] bg-slate-50: light-mode table header */}
-        <thead className="bg-slate-50">
+        <thead className="bg-bg-sunken">
           <tr>
             <th
               scope="col"
@@ -59,8 +58,8 @@ const PluginRegistryTable = ({
             </th>
           </tr>
         </thead>
-        {/* [theme-exception] bg-white: light-mode table body */}
-        <tbody className="bg-white divide-y divide-slate-100">
+        {/* [theme-exception] bg-bg-surface: light-mode table body */}
+        <tbody className="bg-bg-surface divide-y divide-border">
           {plugins.map((plugin) => (
             <PluginRegistryRow
               key={plugin.id}

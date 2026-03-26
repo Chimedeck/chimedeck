@@ -72,7 +72,7 @@ const MemberList = ({
   return (
     <div className="overflow-x-auto">
       {(removeErrorMessage || updateRoleError) && (
-        <p role="alert" className="mb-2 text-sm text-red-600">
+        <p role="alert" className="mb-2 text-sm text-danger">
           {removeErrorMessage ?? 'Role update failed. Please try again.'}
         </p>
       )}
@@ -117,7 +117,7 @@ const MemberList = ({
                   {member.userId !== currentUserId && !isLastOwner(member) && (
                     <button
                       onClick={() => handleRemoveConfirm(member.userId)}
-                      className="text-red-600 hover:underline"
+                      className="text-danger hover:underline"
                       aria-label={`Remove ${member.email}`}
                     >
                       Remove
@@ -141,7 +141,7 @@ const MemberList = ({
           aria-labelledby="confirm-remove-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
         >
-          <div className="rounded-lg bg-white p-6 shadow-xl">
+          <div className="rounded-lg bg-bg-surface p-6 shadow-xl">
             <h3 id="confirm-remove-title" className="mb-2 font-semibold">
               Remove member?
             </h3>

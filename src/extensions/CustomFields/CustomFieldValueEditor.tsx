@@ -117,7 +117,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+            className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
             onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
@@ -155,7 +155,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+            className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
             onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
@@ -187,7 +187,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+            className="text-xs text-muted hover:text-danger transition-colors"
             onClick={handleClear}
           >
             {translations['CustomFieldValue.clearDate']}
@@ -211,7 +211,7 @@ const CustomFieldValueEditor = ({
             save({ value_checkbox: e.target.checked });
           }}
         />
-        <span className="text-sm text-slate-300">{checked ? translations['CustomFieldValue.checkboxYes'] : translations['CustomFieldValue.checkboxNo']}</span>
+        <span className="text-sm text-subtle">{checked ? translations['CustomFieldValue.checkboxYes'] : translations['CustomFieldValue.checkboxNo']}</span>
       </label>
     );
   }
@@ -257,7 +257,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+            className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
             onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >

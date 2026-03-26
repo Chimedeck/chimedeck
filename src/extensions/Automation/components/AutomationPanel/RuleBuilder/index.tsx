@@ -154,7 +154,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
         </section>
 
         {error && (
-          <p className="text-sm text-red-400" role="alert">
+          <p className="text-sm text-danger" role="alert">
             {error}
           </p>
         )}

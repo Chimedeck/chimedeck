@@ -116,7 +116,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     >
       <div className="mb-3">
         <label htmlFor="link-insert-url" className="mb-1 block text-xs font-semibold text-subtle">
-          Link <span className="text-red-400">*</span>
+          Link <span className="text-danger">*</span>
         </label>
         <input
           id="link-insert-url"

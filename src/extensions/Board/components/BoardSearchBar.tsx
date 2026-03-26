@@ -197,7 +197,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
               Searching…
             </p>
           ) : error ? (
-            <p className="px-3 py-2 text-xs text-red-500" role="alert">
+            <p className="px-3 py-2 text-xs text-danger" role="alert">
               Search failed. Please try again.
             </p>
           ) : results.length === 0 ? (
@@ -217,7 +217,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
                 onClick={() => handleSelect(result)}
               >
                 <span
-                  className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-white ${
+                  className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-white ${ // [theme-exception] text-white on colored bg chip (indigo/emerald)
                     result.type === 'list' ? 'bg-indigo-500' : 'bg-emerald-500'
                   }`}
                   aria-hidden="true"

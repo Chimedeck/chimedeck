@@ -171,7 +171,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             onClick={() => handleModeSwitch('preset')}
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               mode === 'preset'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white' // [theme-exception]
                 : 'bg-bg-overlay text-subtle hover:bg-bg-sunken'
             }`}
             aria-pressed={mode === 'preset'}
@@ -183,7 +183,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             onClick={() => handleModeSwitch('custom')}
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               mode === 'custom'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white' // [theme-exception]
                 : 'bg-bg-overlay text-subtle hover:bg-bg-sunken'
             }`}
             aria-pressed={mode === 'custom'}
@@ -205,7 +205,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                 <p className="text-sm text-muted">Loading presets…</p>
               )}
               {presetsStatus === 'failed' && (
-                <p className="text-sm text-red-400">Failed to load presets. Please close and try again.</p>
+                <p className="text-sm text-danger">Failed to load presets. Please close and try again.</p>
               )}
               {(presetsStatus === 'succeeded' || presets.length > 0) && (
                 <select
@@ -276,7 +276,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
           {error && (
             <p
               role="alert"
-              className="mb-4 text-sm text-red-400 bg-red-900/20 border border-red-800 rounded-md px-3 py-2"
+              className="mb-4 text-sm text-danger bg-red-900/20 border border-red-800 rounded-md px-3 py-2"
             >
               {error}
             </p>

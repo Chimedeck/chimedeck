@@ -29,7 +29,7 @@ const BoardButtonItem: FC<Props> = ({ automation, runState, onRun }) => {
             : runState === 'success'
               ? 'text-emerald-400 hover:bg-emerald-900/30'
               : runState === 'error'
-                ? 'text-red-400 hover:bg-red-900/30'
+                ? 'text-danger hover:bg-red-900/30'
                 : 'text-muted hover:bg-bg-surface hover:text-subtle',
         ]
           .filter(Boolean)

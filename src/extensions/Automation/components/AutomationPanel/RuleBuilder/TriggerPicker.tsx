@@ -76,7 +76,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           )}
 
           {error && (
-            <p className="px-3 py-4 text-center text-sm text-red-400">{error}</p>
+            <p className="px-3 py-4 text-center text-sm text-danger">{error}</p>
           )}
 
           {!loading && !error && filtered.length === 0 && (

@@ -22,8 +22,8 @@ interface Props {
 
 // Maps Trello-style color names to Tailwind classes
 const COLOR_MAP: Record<string, string> = {
-  green: 'bg-green-600/20 text-green-400',
-  red: 'bg-red-600/20 text-red-400',
+  green: 'bg-green-600/20 text-green-400', // [theme-exception]
+  red: 'bg-red-600/20 text-danger', // [theme-exception]
   blue: 'bg-blue-600/20 text-blue-400',
   yellow: 'bg-yellow-600/20 text-yellow-400',
   orange: 'bg-orange-600/20 text-orange-400',
@@ -72,7 +72,7 @@ const CardPluginBadges = ({ cardId, listId, cardTitle, listTitle, boardTitle }: 
     <div className="mt-1 flex flex-wrap gap-1">
       {badges.map((badge) => {
         const cls =
-          (badge.color && COLOR_MAP[badge.color]) ?? 'bg-slate-600/30 text-slate-400';
+          (badge.color && COLOR_MAP[badge.color]) ?? 'bg-bg-overlay/30 text-subtle';
         const badgeKey = `${badge.title ?? ''}-${badge.text ?? ''}-${badge.icon ?? ''}-${badge.color ?? ''}`;
         return (
           <span

@@ -21,7 +21,7 @@ const AddListButton = ({ onAdd }: Props) => {
   if (!open) {
     return (
       <button
-        className="flex h-10 w-64 shrink-0 items-center gap-2 rounded-lg bg-white/70 px-3 text-sm font-medium text-gray-600 shadow hover:bg-white hover:text-gray-900"
+        className="flex h-10 w-64 shrink-0 items-center gap-2 rounded-lg bg-bg-surface/70 px-3 text-sm font-medium text-muted shadow hover:bg-bg-surface hover:text-base"
         onClick={() => setOpen(true)}
         aria-label="Add a list"
       >
@@ -33,7 +33,7 @@ const AddListButton = ({ onAdd }: Props) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-64 shrink-0 flex-col gap-2 rounded-lg bg-white p-3 shadow"
+      className="flex w-64 shrink-0 flex-col gap-2 rounded-lg bg-bg-surface p-3 shadow"
     >
       <input
         autoFocus
@@ -41,20 +41,20 @@ const AddListButton = ({ onAdd }: Props) => {
         placeholder="Enter list title…"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="rounded border border-border-strong px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={!title.trim()}
-          className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded bg-primary px-3 py-1 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
         >
           Add list
         </button>
         <button
           type="button"
           onClick={() => { setOpen(false); setTitle(''); }}
-          className="rounded px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
+          className="rounded px-2 py-1 text-sm text-muted hover:bg-bg-overlay"
         >
           Cancel
         </button>

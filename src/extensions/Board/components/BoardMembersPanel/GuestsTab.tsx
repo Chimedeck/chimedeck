@@ -134,12 +134,12 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
           </div>
 
           {error && (
-            <p role="alert" className="mt-2 text-xs text-red-400">
+            <p role="alert" className="mt-2 text-xs text-danger">
               {error}
             </p>
           )}
           {success && (
-            <p role="status" className="mt-2 text-xs text-green-400">
+            <p role="status" className="mt-2 text-xs text-success">
               {success}
             </p>
           )}
@@ -209,7 +209,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                       <button
                         type="button"
                         onClick={() => handleRevoke(guest)}
-                        className="rounded px-2 py-1 text-xs text-muted hover:bg-bg-overlay hover:text-red-400 transition-colors"
+                        className="rounded px-2 py-1 text-xs text-muted hover:bg-bg-overlay hover:text-danger transition-colors"
                         aria-label={`Remove guest ${guest.name ?? guest.email}`}
                       >
                         Remove
@@ -219,7 +219,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                 </div>
                 {/* Per-row error for type change failure */}
                 {typeChangeError?.userId === guest.id && (
-                  <p role="alert" className="text-xs text-red-400">{typeChangeError.message}</p>
+                  <p role="alert" className="text-xs text-danger">{typeChangeError.message}</p>
                 )}
               </li>
             ))}

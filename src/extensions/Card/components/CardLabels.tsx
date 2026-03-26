@@ -84,7 +84,7 @@ const CardLabels = ({
         <div className="relative">
           <button
             type="button"
-            className="text-xs text-muted hover:text-gray-800 flex items-center gap-1 transition-colors"
+            className="text-xs text-muted hover:text-base flex items-center gap-1 transition-colors"
             onClick={() => setPickerOpen((v) => !v)}
             aria-haspopup="true"
             aria-expanded={pickerOpen}
@@ -100,7 +100,7 @@ const CardLabels = ({
                 onClick={() => setPickerOpen(false)}
                 aria-hidden="true"
               />
-              <div className="absolute left-0 top-6 z-20 w-64 rounded-xl bg-white border border-border shadow-2xl p-3 space-y-3">
+              <div className="absolute left-0 top-6 z-20 w-64 rounded-xl bg-bg-surface border border-border shadow-2xl p-3 space-y-3">
                 {/* Search / create input */}
                 <input
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
@@ -152,7 +152,7 @@ const CardLabels = ({
                       <button
                         key={label.id}
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
                         onClick={() => handleToggle(label)}
                       >
                         <span
@@ -173,7 +173,7 @@ const CardLabels = ({
                       <button
                         key={label.id}
                         type="button"
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
                         onClick={() => handleToggle(label)}
                       >
                         <span

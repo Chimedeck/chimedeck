@@ -47,7 +47,7 @@ const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupP
       ref={ref}
       className="absolute left-0 top-8 z-20 bg-slate-900 border border-slate-600 rounded-lg p-4 shadow-xl w-48"
     >
-      <p className="text-xs font-medium text-slate-400 mb-2">Colour</p>
+      <p className="text-xs font-medium text-subtle mb-2">Colour</p>
       <div className="grid grid-cols-4 gap-3">
         {PRESET_COLORS.map((c) => (
           <button
@@ -101,7 +101,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
   return (
     <div className="space-y-2" aria-label={translations['CustomFields.dropdownEditorLabel']}>
       {options.length === 0 && (
-        <p className="text-xs text-slate-500 italic">{translations['CustomFields.dropdownNoOptions']}</p>
+        <p className="text-xs text-muted italic">{translations['CustomFields.dropdownNoOptions']}</p>
       )}
 
       {options.map((option) => (
@@ -140,7 +140,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
           <button
             type="button"
             onClick={() => handleRemoveOption(option.id)}
-            className="text-slate-500 hover:text-red-400 transition-colors text-xs px-1"
+            className="text-muted hover:text-danger transition-colors text-xs px-1"
             aria-label={`Remove option ${option.label}`}
           >
             ✕

@@ -152,7 +152,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="flex-shrink-0 rounded p-1 text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="flex-shrink-0 rounded p-1 text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label={translations['automation.buttonsTab.row.deleteAriaLabel']}
           >
             <TrashIcon className="h-4 w-4" aria-hidden="true" />

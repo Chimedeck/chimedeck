@@ -31,7 +31,7 @@ export default function TokenCreatedModal({ rawToken, onDone }: Props) {
           <input
             readOnly
             value={rawToken}
-            className="flex-1 rounded-lg bg-bg-base px-3 py-2 font-mono text-sm text-green-400 border border-border focus:outline-none"
+            className="flex-1 rounded-lg bg-bg-base px-3 py-2 font-mono text-sm text-success border border-border focus:outline-none"
             aria-label="API token value"
           />
           <Button

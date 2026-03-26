@@ -393,7 +393,7 @@ const BoardPage = () => {
   if (status === 'error') {
     return (
       <div className="flex h-screen items-center justify-center bg-bg-base">
-        <p className="text-red-400">Failed to load board.</p>
+        <p className="text-danger">Failed to load board.</p>
       </div>
     );
   }

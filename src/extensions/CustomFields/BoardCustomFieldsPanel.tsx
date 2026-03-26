@@ -181,14 +181,14 @@ const BoardCustomFieldsPanel = () => {
 
   return (
     <div className="space-y-3" aria-label={translations['CustomFields.ariaOpenPanel']}>
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{translations['CustomFields.panelTitle']}</p>
+      <p className="text-xs font-medium text-subtle uppercase tracking-wide">{translations['CustomFields.panelTitle']}</p>
 
-      {loading && <p className="text-xs text-slate-500">{translations['CustomFields.loading']}</p>}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {loading && <p className="text-xs text-muted">{translations['CustomFields.loading']}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {/* Existing fields list */}
       {!loading && fields.length === 0 && (
-        <p className="text-xs text-slate-500 italic">{translations['CustomFields.noFields']}.</p>
+        <p className="text-xs text-muted italic">{translations['CustomFields.noFields']}.</p>
       )}
 
       {fields.map((field) => {
@@ -198,7 +198,7 @@ const BoardCustomFieldsPanel = () => {
         return (
           <div
             key={field.id}
-            className="bg-slate-800 rounded p-2 space-y-1"
+            className="bg-bg-surface rounded p-2 space-y-1"
             aria-label={`Custom field ${field.name}`}
           >
             {/* Name row */}
@@ -220,7 +220,7 @@ const BoardCustomFieldsPanel = () => {
               ) : (
                 <button
                   type="button"
-                  className="flex-1 text-left text-sm text-slate-200 hover:text-white truncate"
+                  className="flex-1 text-left text-sm text-base hover:text-base truncate"
                   onClick={() => startRename(field)}
                   aria-label={`Rename field ${field.name}`}
                   disabled={busy}
@@ -229,7 +229,7 @@ const BoardCustomFieldsPanel = () => {
                 </button>
               )}
 
-              <span className="text-xs text-slate-500 flex-shrink-0">
+              <span className="text-xs text-muted flex-shrink-0">
                 {FIELD_TYPE_LABELS[field.field_type]}
               </span>
 
@@ -238,7 +238,7 @@ const BoardCustomFieldsPanel = () => {
                 type="button"
                 onClick={() => handleDelete(field)}
                 disabled={busy}
-                className="text-slate-500 hover:text-red-400 transition-colors text-xs"
+                className="text-muted hover:text-danger transition-colors text-xs"
                 aria-label={`Delete field ${field.name}`}
               >
                 ✕
@@ -255,7 +255,7 @@ const BoardCustomFieldsPanel = () => {
                 className="accent-blue-500"
                 aria-label={translations['CustomFields.showOnCardLabel']}
               />
-              <span className="text-xs text-slate-400">{translations['CustomFields.showOnCardLabel']}</span>
+              <span className="text-xs text-subtle">{translations['CustomFields.showOnCardLabel']}</span>
             </label>
 
             {/* Dropdown options editor toggle */}
@@ -293,7 +293,7 @@ const BoardCustomFieldsPanel = () => {
                         type="button"
                         onClick={closeOptionsEditor}
                         disabled={busy}
-                        className="text-slate-400 hover:text-slate-200 text-xs px-2 transition-colors"
+                        className="text-subtle hover:text-base text-xs px-2 transition-colors"
                         aria-label={translations['CustomFields.cancelButton']}
                       >
                         {translations['CustomFields.cancelButton']}
@@ -309,7 +309,7 @@ const BoardCustomFieldsPanel = () => {
 
       {/* Add field form */}
       {showForm ? (
-        <div className="bg-slate-800 rounded p-3 space-y-2" aria-label={translations['CustomFields.newFieldFormLabel']}>
+        <div className="bg-bg-surface rounded p-3 space-y-2" aria-label={translations['CustomFields.newFieldFormLabel']}>
           {/* Name */}
           <input
             type="text"
@@ -354,10 +354,10 @@ const BoardCustomFieldsPanel = () => {
               className="accent-blue-500"
               aria-label={translations['CustomFields.showOnCardLabel']}
             />
-            <span className="text-xs text-slate-400">{translations['CustomFields.showOnCardLabel']}</span>
+            <span className="text-xs text-subtle">{translations['CustomFields.showOnCardLabel']}</span>
           </label>
 
-          {createError && <p className="text-xs text-red-400">{createError}</p>}
+          {createError && <p className="text-xs text-danger">{createError}</p>}
 
           {/* Actions */}
           <div className="flex gap-2">
@@ -373,7 +373,7 @@ const BoardCustomFieldsPanel = () => {
             <button
               type="button"
               onClick={() => { setShowForm(false); setNewField(EMPTY_NEW_FIELD); setCreateError(null); }}
-              className="text-slate-400 hover:text-slate-200 text-xs px-2 transition-colors"
+              className="text-subtle hover:text-base text-xs px-2 transition-colors"
               aria-label={translations['CustomFields.cancelButton']}
             >
               {translations['CustomFields.cancelButton']}

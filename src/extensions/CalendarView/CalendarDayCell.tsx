@@ -65,7 +65,7 @@ const CalendarDayCell = ({
       data-testid={`calendar-day-${toIsoDate(date)}`}
       className={[
         'flex min-h-[90px] flex-col rounded-sm border p-1 transition-colors',
-        isCurrentMonth ? 'border-slate-700 bg-slate-900' : 'border-slate-800 bg-slate-950',
+        isCurrentMonth ? 'border-border bg-bg-surface' : 'border-border bg-bg-base',
         isDragOver ? 'border-blue-500 bg-blue-900/20' : '',
       ]
         .filter(Boolean)
@@ -75,7 +75,7 @@ const CalendarDayCell = ({
       <span
         className={[
           'mb-1 self-end rounded-full px-1.5 py-0.5 text-xs font-semibold leading-none',
-          isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-slate-300' : 'text-slate-600',
+          isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-subtle' : 'text-subtle', // [theme-exception]
         ].join(' ')}
         aria-label={isToday ? translations['CalendarView.todayButton'] : undefined}
       >
@@ -88,18 +88,20 @@ const CalendarDayCell = ({
           <CalendarCardChip key={card.id} card={card} onClick={onCardClick} />
         ))}
         {!expanded && overflow > 0 && (
+          // [theme-exception]: CalendarView dark theme
           <button
             onClick={() => setExpanded(true)}
-            className="w-full rounded bg-slate-800 px-1.5 py-0.5 text-left text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200 focus:outline-none"
+            className="w-full rounded bg-bg-overlay px-1.5 py-0.5 text-left text-xs text-subtle hover:bg-bg-sunken hover:text-base focus:outline-none"
             data-testid={`calendar-day-overflow-${toIsoDate(date)}`}
           >
             +{overflow} {translations['CalendarView.overflowMore']}
           </button>
         )}
         {expanded && overflow > 0 && (
+          // [theme-exception]: CalendarView dark theme
           <button
             onClick={() => setExpanded(false)}
-            className="w-full rounded bg-slate-800 px-1.5 py-0.5 text-left text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200 focus:outline-none"
+            className="w-full rounded bg-bg-overlay px-1.5 py-0.5 text-left text-xs text-subtle hover:bg-bg-sunken hover:text-base focus:outline-none"
           >
             {translations['CalendarView.showLess']}
           </button>

@@ -88,7 +88,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             </Button>
             <button
               type="button"
-              className="px-3 py-1 text-muted hover:text-gray-700 text-xs transition-colors"
+              className="px-3 py-1 text-muted hover:text-base text-xs transition-colors"
               onClick={handleCancel}
             >
               Cancel
@@ -107,7 +107,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
                 'rounded-lg p-3 min-h-[80px] transition-colors',
                 disabled
                   ? 'cursor-default'
-                  : 'cursor-text hover:bg-gray-100',
+                  : 'cursor-text hover:bg-bg-overlay',
                 isEmpty
                   ? 'text-muted text-sm italic bg-bg-overlay'
                   : 'prose dark:prose-invert prose-sm max-w-none text-base',

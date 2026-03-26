@@ -63,7 +63,7 @@ function usePopover() {
 // Shared bar-button style
 // ------------------------------------------------------------------
 const barButtonClass =
-  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200 transition-colors disabled:opacity-40 disabled:pointer-events-none';
+  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors disabled:opacity-40 disabled:pointer-events-none';
 
 const CardModalBottomBar = ({
   boardId,
@@ -88,7 +88,7 @@ const CardModalBottomBar = ({
   const actions = usePopover();
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-gray-50/50 rounded-b-2xl flex-shrink-0">
+    <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-bg-surface/50 rounded-b-2xl flex-shrink-0">
       {/* Left side */}
       <div className="flex items-center gap-1">
         {/* Power-ups popover */}
@@ -105,7 +105,7 @@ const CardModalBottomBar = ({
             <ChevronUpIcon className={`w-3 h-3 transition-transform ${powerUps.open ? '' : 'rotate-180'}`} />
           </button>
           {powerUps.open && (
-            <div className="absolute bottom-full left-0 mb-1 z-10 w-56 rounded-xl bg-white border border-gray-200 shadow-lg p-2">
+            <div className="absolute bottom-full left-0 mb-1 z-10 w-56 rounded-xl bg-bg-surface border border-border shadow-lg p-2">
               <CardPluginButtons
                 cardId={cardId}
                 listId={listId}
@@ -135,7 +135,7 @@ const CardModalBottomBar = ({
             <ChevronUpIcon className={`w-3 h-3 transition-transform ${automations.open ? '' : 'rotate-180'}`} />
           </button>
           {automations.open && (
-            <div className="absolute bottom-full left-0 mb-1 z-10 w-72 rounded-xl bg-white border border-gray-200 shadow-lg p-3">
+            <div className="absolute bottom-full left-0 mb-1 z-10 w-72 rounded-xl bg-bg-surface border border-border shadow-lg p-3">
               <CardButtonsSection boardId={boardId} cardId={cardId} {...(disabled !== undefined ? { disabled } : {})} />
             </div>
           )}
@@ -154,10 +154,10 @@ const CardModalBottomBar = ({
             <ChevronUpIcon className={`w-3 h-3 transition-transform ${actions.open ? '' : 'rotate-180'}`} />
           </button>
           {actions.open && (
-            <div className="absolute bottom-full left-0 mb-1 z-10 w-52 rounded-xl bg-white border border-gray-200 shadow-lg p-2">
+            <div className="absolute bottom-full left-0 mb-1 z-10 w-52 rounded-xl bg-bg-surface border border-border shadow-lg p-2">
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
                 onClick={() => { actions.setOpen(false); onArchive(); }}
               >
                 {archived
@@ -166,21 +166,21 @@ const CardModalBottomBar = ({
               </button>
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
                 onClick={() => { actions.setOpen(false); onCopyLink(); }}
               >
                 <LinkIcon className="w-4 h-4 shrink-0" /> Copy link
               </button>
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
                 onClick={() => { actions.setOpen(false); onCopyCard(); }}
               >
                 <DocumentDuplicateIcon className="w-4 h-4 shrink-0" /> Copy card
               </button>
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-40"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-40"
                 onClick={() => {
                   actions.setOpen(false);
                   if (confirm('Delete this card? This cannot be undone.')) onDelete();
@@ -197,7 +197,7 @@ const CardModalBottomBar = ({
       {/* Right side — activity toggle */}
       <button
         type="button"
-        className={`${barButtonClass} ${activityVisible ? 'bg-gray-100 text-gray-900' : ''}`}
+        className={`${barButtonClass} ${activityVisible ? 'bg-bg-overlay text-base' : ''}`}
         aria-pressed={activityVisible}
         onClick={onToggleActivity}
       >

@@ -124,7 +124,7 @@ function buildBoardProps(boardId?: string): { boardId: string } | Record<string,
 
 function getDraftStatusClass(status: DraftStatus): string {
   if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
-  if (status === 'synced') return 'text-green-500 dark:text-green-400';
+  if (status === 'synced') return 'text-success';
   return 'text-muted';
 }
 function normalizeEscapedBlockquoteMarkers(markdown: string): string {
@@ -610,7 +610,7 @@ const CommentEditor = ({
         )}
       </div>
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {/* Draft status footer */}
       {draftStatus !== 'idle' && (
@@ -620,7 +620,7 @@ const CommentEditor = ({
         >
           {draftStatus === 'sync_failed' ? (
             <>
-              <span className="text-red-500">
+              <span className="text-danger">
                 {isSubmitPending ? translations['comment.draft.postFailed'] : translations['comment.draft.syncFailed']}
               </span>
               <button

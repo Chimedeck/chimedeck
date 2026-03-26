@@ -13,14 +13,12 @@ const CONFIG: Record<BoardVisibility, { label: string; className: string; icon: 
   },
   WORKSPACE: {
     label: 'Workspace',
-    // [theme-exception] Workspace badge uses blue brand colour
-    className: 'bg-blue-600/80 text-blue-100',
+    className: 'bg-primary/80 text-inverse',
     icon: '👥',
   },
   PUBLIC: {
     label: 'Public',
-    // [theme-exception] Public badge uses green to signal open access
-    className: 'bg-green-600/80 text-green-100',
+    className: 'bg-success/80 text-inverse',
     icon: '🌐',
   },
 };

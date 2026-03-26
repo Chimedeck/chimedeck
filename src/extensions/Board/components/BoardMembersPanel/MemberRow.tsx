@@ -73,7 +73,7 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
           className={`ml-1 rounded p-1 text-muted transition-colors ${
             isLastAdmin
               ? 'cursor-not-allowed opacity-40'
-              : 'hover:bg-bg-overlay hover:text-red-400'
+              : 'hover:bg-bg-overlay hover:text-danger'
           }`}
           aria-label={removeTitle}
         >

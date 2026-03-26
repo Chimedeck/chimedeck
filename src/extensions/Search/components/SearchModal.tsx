@@ -82,7 +82,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
           )}
 
           {!loading && error && (
-            <p className="px-3 py-2 text-sm text-red-500">Search failed. Please try again.</p>
+            <p className="px-3 py-2 text-sm text-danger">Search failed. Please try again.</p>
           )}
 
           {!loading && !error && query.length >= 2 && !hasResults && (

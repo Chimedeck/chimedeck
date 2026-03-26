@@ -42,6 +42,7 @@ export const CardMemberAvatars = ({
           .slice(0, 2)
           .toUpperCase();
         return (
+          // [theme-exception] text-white on indigo-500 avatar background
           <button
             key={member.id}
             ref={(el) => {
@@ -49,7 +50,7 @@ export const CardMemberAvatars = ({
             }}
             type="button"
             title={member.name ?? member.email}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white ring-2 ring-slate-800 hover:ring-indigo-400 transition-all cursor-pointer overflow-hidden"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-[10px] font-bold text-white ring-2 ring-bg-surface hover:ring-indigo-400 transition-all cursor-pointer overflow-hidden" // [theme-exception] text-white on indigo-500 avatar background
             onClick={(e) => {
               e.stopPropagation();
               handleAvatarClick(member, e.currentTarget);
@@ -65,7 +66,7 @@ export const CardMemberAvatars = ({
       })}
       {overflow > 0 && (
         <span
-          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-[10px] font-bold text-white ring-2 ring-white"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg-overlay text-[10px] font-bold text-muted ring-2 ring-bg-surface"
           title={`${overflow} more`}
         >
           +{overflow}

@@ -208,7 +208,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
           <ActionList actions={actions} onChange={setActions} />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-1">

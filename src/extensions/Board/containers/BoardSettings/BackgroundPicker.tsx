@@ -103,7 +103,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
           <button
             onClick={handleRemove}
             disabled={uploading || removing}
-            className="flex items-center gap-1.5 rounded-md border border-red-700 px-3 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md border border-red-700 px-3 py-1.5 text-xs text-danger transition-colors hover:bg-red-900/30 disabled:opacity-50"
             aria-label="Remove background"
           >
             <TrashIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -113,7 +113,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
       </div>
 
       {error && (
-        <p className="text-xs text-red-400">{error}</p>
+        <p className="text-xs text-danger">{error}</p>
       )}
 
       <p className="text-xs text-muted">

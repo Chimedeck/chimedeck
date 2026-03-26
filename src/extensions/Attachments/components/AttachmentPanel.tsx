@@ -306,7 +306,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
 
       {/* Server-persisted attachment list */}
       {loadError && (
-        <p className="text-xs text-red-500 mt-1">{loadError}</p>
+        <p className="text-xs text-danger mt-1">{loadError}</p>
       )}
 
       {attachments.length === 0 && uploads.filter((u) => u.phase !== 'done').length === 0 && (

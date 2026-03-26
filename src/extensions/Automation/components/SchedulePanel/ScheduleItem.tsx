@@ -126,7 +126,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           title={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
         >
           {automation.isEnabled ? (
-            <CheckCircleIcon className="h-4 w-4 text-green-400" aria-hidden="true" />
+            <CheckCircleIcon className="h-4 w-4 text-success" aria-hidden="true" />
           ) : (
             <XCircleIcon className="h-4 w-4" aria-hidden="true" />
           )}
@@ -148,8 +148,8 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           disabled={deleting}
           className={`rounded p-1 transition-colors disabled:opacity-50 ${
             confirmDelete
-              ? 'bg-red-700 text-white hover:bg-red-600'
-              : 'text-muted hover:text-red-400 hover:bg-bg-overlay'
+              ? 'bg-red-700 text-white hover:bg-red-600'  // [theme-exception]
+              : 'text-muted hover:text-danger hover:bg-bg-overlay'
           }`}
           aria-label={confirmDelete ? translations['automation.scheduleItem.confirmDeleteAriaLabel'] : translations['automation.scheduleItem.deleteAriaLabel']}
           title={confirmDelete ? translations['automation.scheduleItem.confirmDeleteTitle'] : translations['automation.scheduleItem.deleteTitle']}

@@ -151,7 +151,7 @@ const ActivityFeed = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">Activity</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">Activity</h3>
 
       {/* Comment input — hidden for VIEWER guests */}
       {canAddComment && (
@@ -168,7 +168,7 @@ const ActivityFeed = ({
 
       <div className="flex flex-col gap-3">
         {feed.length === 0 && (
-          <p className="text-sm text-gray-400 italic">No activity yet.</p>
+          <p className="text-sm text-subtle italic">No activity yet.</p>
         )}
 
         {feed.map((item) => {
@@ -221,7 +221,7 @@ const ActivityFeed = ({
             <div key={`event-${activity.id}`} className="flex gap-3">
               {/* Avatar */}
               <div
-                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`}
+                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on dynamically-colored avatar background
                 title={displayName}
               >
                 {actorAvatarUrl
@@ -232,9 +232,10 @@ const ActivityFeed = ({
               {/* Body */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-white">{displayName}</span>
-                  <span className="text-xs text-slate-400">{meta.label}</span>
-                  <span className="text-xs text-slate-600 flex-shrink-0">{relativeTime(activity.created_at)}</span>
+                  {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
+                  <span className="text-sm font-semibold text-base">{displayName}</span>
+                  <span className="text-xs text-subtle">{meta.label}</span>
+                  <span className="text-xs text-muted flex-shrink-0">{relativeTime(activity.created_at)}</span>
                 </div>
                 {showThumbnail && (
                   <a

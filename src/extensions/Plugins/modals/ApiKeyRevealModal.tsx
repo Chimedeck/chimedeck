@@ -45,7 +45,8 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
           </div>
 
           <div className="flex gap-2 items-stretch">
-            <code className="flex-1 bg-bg-surface border border-border rounded px-3 py-2 text-sm text-green-300 font-mono break-all">
+            {/* [theme-exception]: monospace API key display — green-300 on dark bg, shown once */}
+            <code className="flex-1 bg-bg-surface border border-border rounded px-3 py-2 text-sm text-success font-mono break-all">
               {apiKey}
             </code>
             <button

@@ -78,7 +78,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           aria-label="Currency"
         />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
       {!disabled && (
         <Button
           type="button"

@@ -99,7 +99,7 @@ const PillButton = ({
 }) => (
   <button
     type="button"
-    className="inline-flex items-center gap-1 rounded-full border border-dashed border-gray-300 px-2 py-0.5 text-xs text-gray-500 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+    className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-muted hover:border-border-strong hover:text-base transition-colors disabled:opacity-40 disabled:pointer-events-none"
     onClick={onClick}
     disabled={disabled}
     aria-label={ariaLabel}
@@ -127,7 +127,7 @@ const ColorGrid = ({
         type="button"
         title={c.name}
         className={`h-7 w-full rounded-md transition-transform hover:scale-110 focus:outline-none ${
-          selected === c.hex ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
+          selected === c.hex ? 'ring-2 ring-bg-surface ring-offset-2 ring-offset-bg-base' : ''
         }`}
         style={{ backgroundColor: c.hex }}
         onClick={() => onChange(c.hex)}
@@ -228,7 +228,7 @@ const LabelSection = ({
         />
       ))}
       {overflow > 0 && (
-        <span className="text-xs text-gray-400 font-medium">+{overflow}</span>
+        <span className="text-xs text-subtle font-medium">+{overflow}</span>
       )}
       {!disabled && (
         <PillButton
@@ -246,16 +246,16 @@ const LabelSection = ({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
-            className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-white border border-gray-200 shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
+            className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-bg-surface border border-border shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
           >
             {/* ── Header ── */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
               {(view === 'list') ? (
-                <span className="text-sm font-semibold text-gray-700">Labels</span>
+                <span className="text-sm font-semibold text-base">Labels</span>
               ) : (
                 <button
                   type="button"
-                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-slate-200"
+                  className="flex items-center gap-1 text-sm text-muted hover:text-base"
                   onClick={resetToList}
                 >
                   ← {view === 'create' ? 'Create label' : `Edit label`}
@@ -263,7 +263,7 @@ const LabelSection = ({
               )}
               <button
                 type="button"
-                className="rounded p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200"
+                className="rounded p-0.5 text-subtle hover:text-base"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
               >
@@ -282,10 +282,10 @@ const LabelSection = ({
                   autoFocus
                 />
                 {filteredLabels.length === 0 && (
-                  <p className="text-xs text-gray-400 px-2 py-1">No labels found</p>
+                  <p className="text-xs text-subtle px-2 py-1">No labels found</p>
                 )}
                 {filteredLabels.length > 0 && (
-                  <p className="text-xs font-semibold text-gray-500 px-1 pb-0.5">Labels</p>
+                  <p className="text-xs font-semibold text-muted px-1 pb-0.5">Labels</p>
                 )}
                 {filteredLabels.map((label) => {
                   const assigned = assignedIds.has(label.id);
@@ -300,7 +300,7 @@ const LabelSection = ({
                       />
                       <button
                         type="button"
-                        className="flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 min-w-0 truncate"
+                        className="flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 min-w-0 truncate" // [theme-exception] text-white on dynamically-colored label button
                         style={{ backgroundColor: label.color }}
                         onClick={() => void handleToggle(label)}
                         title={label.name}
@@ -309,7 +309,7 @@ const LabelSection = ({
                       </button>
                       <button
                         type="button"
-                        className="flex-shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+                        className="flex-shrink-0 rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
                         onClick={() => openEdit(label)}
                         aria-label={`Edit ${label.name}`}
                       >
@@ -322,7 +322,7 @@ const LabelSection = ({
                 })}
                 <button
                   type="button"
-                  className="w-full mt-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:hover:bg-slate-600 text-sm text-gray-700 py-1.5 transition-colors"
+                  className="w-full mt-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
                   onClick={() => { setFormName(''); setFormColor(PRESET_COLORS[6]?.hex ?? '#6366f1'); setView('create'); }}
                 >
                   Create a new label
@@ -335,14 +335,14 @@ const LabelSection = ({
               <div className="p-3 space-y-3">
                 {/* Preview */}
                 <div
-                  className="w-full rounded-md px-3 py-2 text-sm font-semibold text-white text-center truncate"
+                  className="w-full rounded-md px-3 py-2 text-sm font-semibold text-white text-center truncate" // [theme-exception] text-white on dynamically-colored label preview
                   style={{ backgroundColor: formColor }}
                 >
                   {formName || (isEditingLabel ? editingLabel?.name : 'Label preview')}
                 </div>
                 {/* Name input */}
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-1">Title</p>
+                  <p className="text-xs font-medium text-muted mb-1">Title</p>
                   <input
                     id="label-form-name"
                     className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
@@ -355,13 +355,13 @@ const LabelSection = ({
                 </div>
                 {/* Colour grid */}
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-1.5">Colour</p>
+                  <p className="text-xs font-medium text-muted mb-1.5">Colour</p>
                   <ColorGrid selected={formColor} onChange={setFormColor} />
                 </div>
                 {/* Actions */}
-                <button
+                                <button
                   type="button"
-                  className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50"
+                  className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50" // [theme-exception] text-white on indigo-600 background
                   onClick={() => void (view === 'create' ? handleCreate() : handleSaveEdit())}
                   disabled={saving || !formName.trim()}
                 >
@@ -409,17 +409,18 @@ const MemberSection = ({
       {visibleMembers.map((m) => {
         const name = m.name ?? m.email ?? '';
         return (
+          // [theme-exception] text-white on indigo-600 avatar background
           <span
             key={m.id}
             title={name}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-white"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-bg-surface"
           >
             {getInitials(m.name, m.email ?? '')}
           </span>
         );
       })}
       {overflow > 0 && (
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-500 ring-2 ring-white">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg-overlay text-[10px] font-semibold text-muted ring-2 ring-bg-surface">
           +{overflow}
         </span>
       )}
@@ -438,9 +439,9 @@ const MemberSection = ({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white border border-gray-200 shadow-2xl p-2 space-y-1">
+          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-2 space-y-1">
             {boardMembers.length === 0 && (
-              <p className="text-xs text-gray-400 px-2 py-1">No board members</p>
+              <p className="text-xs text-subtle px-2 py-1">No board members</p>
             )}
             {boardMembers.map((member) => {
               const assigned = assignedIds.has(member.id);
@@ -449,10 +450,10 @@ const MemberSection = ({
                 <button
                   key={member.id}
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
                   onClick={() => handleToggle(member)}
                 >
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white flex-shrink-0">
+                                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white flex-shrink-0"> // [theme-exception] text-white on indigo-600 avatar background
                     {getInitials(member.name, member.email)}
                   </span>
                   <span className="flex-1 truncate">{name}</span>
@@ -482,18 +483,19 @@ function getDueDateStatus(dueDate: string, dueComplete: boolean): DueDateStatus 
 }
 
 function getDuePillClass(status: DueDateStatus, hasDate: boolean): string {
-  if (status === 'done') return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700';
-  if (status === 'overdue') return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-700';
-  if (status === 'due-soon') return 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-700';
-  if (hasDate) return 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:hover:bg-slate-600 border border-gray-200';
-  return 'border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
+  if (status === 'done') return 'bg-success/10 text-success border border-success/30';
+  // [theme-exception] overdue status chip: intentional red text on red bg
+  if (status === 'overdue') return 'bg-danger/10 text-danger border border-danger/30';
+  if (status === 'due-soon') return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30'; // [theme-exception] orange due-soon chip, no semantic token
+  if (hasDate) return 'bg-bg-overlay text-base hover:bg-bg-sunken border border-border';
+  return 'border border-dashed border-border text-muted hover:border-border-strong hover:text-base';
 }
 
 function getDueCheckboxClass(status: DueDateStatus): string {
-  if (status === 'done') return 'bg-emerald-500 border-emerald-500';
-  if (status === 'overdue') return 'bg-red-500 border-red-500';
+  if (status === 'done') return 'bg-success border-success';
+  if (status === 'overdue') return 'bg-danger border-danger';
   if (status === 'due-soon') return 'bg-orange-400 border-orange-400';
-  return 'border-gray-300 bg-white';
+  return 'border-border bg-bg-overlay';
 }
 
 const DatesButton = ({
@@ -547,7 +549,7 @@ const DatesButton = ({
           aria-label={dueComplete ? 'Mark as not done' : 'Mark as done'}
           disabled={disabled}
         >
-          {dueComplete && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />}
+          {dueComplete && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />} {/* [theme-exception] text-white on success/danger checkbox background */}
         </button>
       )}
       <button
@@ -616,8 +618,8 @@ const MoneyButton = ({
 
   const pillText = amount ? formatMoney(amount, currency) : '$';
   const pillClass = amount
-    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-900/60'
-    : 'border border-dashed border-gray-300 text-gray-500 hover:border-gray-400 dark:hover:border-slate-500 hover:text-gray-700 dark:hover:text-slate-300';
+    ? 'bg-success/10 text-success border border-success/30 hover:bg-success/20'
+    : 'border border-dashed border-border text-muted hover:border-border-strong hover:text-base';
 
   return (
     <div className="relative flex items-center gap-1" ref={ref}>
@@ -637,7 +639,7 @@ const MoneyButton = ({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-white border border-gray-200 shadow-2xl p-3">
+          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-3">
             <CardValue
               amount={amount}
               currency={currency}
@@ -693,7 +695,7 @@ const CardMetaStrip = ({
       />
 
       {/* Divider */}
-      <span className="h-4 w-px bg-gray-200 flex-shrink-0" aria-hidden="true" />
+      <span className="h-4 w-px bg-border flex-shrink-0" aria-hidden="true" />
 
       {/* Members */}
       <MemberSection
@@ -705,7 +707,7 @@ const CardMetaStrip = ({
       />
 
       {/* Divider */}
-      <span className="h-4 w-px bg-gray-200 flex-shrink-0" aria-hidden="true" />
+      <span className="h-4 w-px bg-border flex-shrink-0" aria-hidden="true" />
 
       {/* Pricing */}
       <MoneyButton
@@ -716,7 +718,7 @@ const CardMetaStrip = ({
       />
 
       {/* Divider */}
-      <span className="h-4 w-px bg-gray-200 flex-shrink-0" aria-hidden="true" />
+      <span className="h-4 w-px bg-border flex-shrink-0" aria-hidden="true" />
 
       {/* Dates */}
       <DatesButton

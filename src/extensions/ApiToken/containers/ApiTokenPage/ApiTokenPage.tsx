@@ -108,7 +108,7 @@ export default function ApiTokenPage() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setRevokeTarget(token)}
-                      className="rounded px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-900/30 hover:text-red-300 transition-colors"
+                      className="rounded px-3 py-1 text-xs font-medium text-danger hover:bg-red-900/30 hover:text-red-300 transition-colors"  // [theme-exception]
                     >
                       {translations['ApiTokenPage.revokeButton']}
                     </button>

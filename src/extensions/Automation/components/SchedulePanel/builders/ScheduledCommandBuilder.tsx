@@ -203,7 +203,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               >
                 {stepLabel(n)}
               </span>
-              {n < 3 && <span className="mx-1 text-slate-600 text-xs">›</span>}
+              {n < 3 && <span className="mx-1 text-muted text-xs">›</span>}
             </div>
           ))}
         </div>
@@ -393,7 +393,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
               </div>
 
               {error && (
-                <p className="text-sm text-red-400" role="alert">
+                <p className="text-sm text-danger" role="alert">
                   {error}
                 </p>
               )}

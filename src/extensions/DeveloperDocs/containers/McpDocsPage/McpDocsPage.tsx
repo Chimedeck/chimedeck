@@ -389,7 +389,7 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-401',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-red-900/60 text-red-300">401</Badge> },
+                    { key: 'status', content: <Badge color="bg-red-900/60 text-red-300">401</Badge> },  // [theme-exception]
                     { key: 'name', content: <Code>unauthorized</Code> },
                     { key: 'meaning', content: 'Token absent or invalid' },
                   ],
@@ -397,7 +397,7 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-403',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-red-900/60 text-red-300">403</Badge> },
+                    { key: 'status', content: <Badge color="bg-red-900/60 text-red-300">403</Badge> },  // [theme-exception]
                     { key: 'name', content: <Code>forbidden</Code> },
                     { key: 'meaning', content: 'Token belongs to a different user than the session owner' },
                   ],

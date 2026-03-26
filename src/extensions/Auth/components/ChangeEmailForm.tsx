@@ -73,10 +73,10 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-lg font-semibold text-white">{translations.changeEmail.title}</h2>
+      <h2 className="text-lg font-semibold text-base">{translations.changeEmail.title}</h2>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1" htmlFor="newEmail">
+        <label className="block text-sm font-medium text-subtle mb-1" htmlFor="newEmail">
           {translations.changeEmail.newEmail}
         </label>
         <input
@@ -91,7 +91,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1" htmlFor="currentPasswordEmail">
+        <label className="block text-sm font-medium text-subtle mb-1" htmlFor="currentPasswordEmail">
           {translations.changeEmail.currentPassword}
         </label>
         <input
@@ -104,15 +104,15 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         />
       </div>
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-danger text-sm">{error}</p>}
 
       <button
         type="submit"
         disabled={submitting}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors" // [theme-exception] text-white on primary button
       >
         {submitting && (
-          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> {/* [theme-exception] text-white on primary button spinner */}
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>

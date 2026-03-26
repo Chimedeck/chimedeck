@@ -17,11 +17,11 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSet
     <div className="space-y-6">
       {/* Active section */}
       <section>
-        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wide mb-2">
           {translations['plugins.list.activeHeading']}
         </h3>
         {boardPlugins.length === 0 ? (
-          <p className="text-slate-500 text-sm">{translations['plugins.list.activeEmpty']}</p>
+          <p className="text-muted text-sm">{translations['plugins.list.activeEmpty']}</p>
         ) : (
           <div className="space-y-2">
             {boardPlugins.map((bp) => (
@@ -40,11 +40,11 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSet
 
       {/* Available section */}
       <section>
-        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+        <h3 className="text-xs font-semibold text-subtle uppercase tracking-wide mb-2">
           {translations['plugins.list.availableHeading']}
         </h3>
         {availablePlugins.length === 0 ? (
-          <p className="text-slate-500 text-sm">{translations['plugins.list.availableEmpty']}</p>
+          <p className="text-muted text-sm">{translations['plugins.list.availableEmpty']}</p>
         ) : (
           <div className="space-y-2">
             {availablePlugins.map((plugin) => (

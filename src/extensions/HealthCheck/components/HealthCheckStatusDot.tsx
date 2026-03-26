@@ -15,7 +15,7 @@ const DOT_CLASSES: Record<NonNullable<HealthCheckStatus> | 'unknown', string> = 
   green: 'bg-green-500',
   amber: 'bg-amber-400',
   red: 'bg-red-500',
-  unknown: 'bg-gray-300',
+  unknown: 'bg-bg-sunken',
 };
 
 // [theme-exception] Pulse rings mirror the dot palette for visual consistency.

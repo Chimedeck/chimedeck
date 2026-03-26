@@ -13,8 +13,8 @@ const RunLogDetail: FC<Props> = ({ run }) => (
       <div className="space-y-2">
         {run.errorMessage && (
           <div>
-            <p className="text-xs font-medium text-red-400 mb-1">{translations['automation.runLogDetail.error']}</p>
-            <pre className="text-xs text-red-300 whitespace-pre-wrap break-words font-mono bg-bg-base rounded p-2">
+            <p className="text-xs font-medium text-danger mb-1">{translations['automation.runLogDetail.error']}</p>
+            <pre className="text-xs text-danger whitespace-pre-wrap break-words font-mono bg-bg-base rounded p-2">
               {run.errorMessage}
             </pre>
           </div>

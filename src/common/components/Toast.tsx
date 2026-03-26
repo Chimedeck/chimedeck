@@ -33,10 +33,10 @@ const Toast = ({ toast, onDismiss }: Props) => {
 
   const iconClass =
     toast.variant === 'error'
-      ? 'text-red-400'
+      ? 'text-danger'
       : toast.variant === 'conflict'
         ? 'text-yellow-400'
-        : 'text-slate-400';
+        : 'text-subtle';
 
   const IconComponent =
     toast.variant === 'error'

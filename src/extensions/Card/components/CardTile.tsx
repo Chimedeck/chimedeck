@@ -32,7 +32,7 @@ const CardTile = ({
 
   return (
     <div
-      className={`group rounded bg-white px-3 py-2 shadow-sm cursor-pointer hover:bg-blue-50 transition-colors${card.archived ? ' opacity-60' : ''}`}
+      className={`group rounded bg-bg-surface px-3 py-2 shadow-sm cursor-pointer hover:bg-blue-50 transition-colors${card.archived ? ' opacity-60' : ''}`}
       style={style}
       onClick={() => onClick(card.id)}
       role="button"
@@ -48,9 +48,9 @@ const CardTile = ({
           Archived
         </span>
       )}
-      <p className="text-sm font-medium text-gray-800 break-words">{card.title}</p>
+      <p className="text-sm font-medium text-base break-words">{card.title}</p>
       {card.due_date && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-muted">
           Due: {new Date(card.due_date).toLocaleDateString()}
         </p>
       )}

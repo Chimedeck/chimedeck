@@ -37,7 +37,7 @@ const QuotaBar: FC<Props> = ({ quota }) => {
         </span>
         {isWarning && (
           <ExclamationTriangleIcon
-            className={`h-4 w-4 shrink-0 ${pct >= 95 ? 'text-red-400' : 'text-amber-400'}`}
+            className={`h-4 w-4 shrink-0 ${pct >= 95 ? 'text-danger' : 'text-amber-400'}`}
             aria-label={translations['automation.quotaBar.warningAriaLabel']}
           />
         )}

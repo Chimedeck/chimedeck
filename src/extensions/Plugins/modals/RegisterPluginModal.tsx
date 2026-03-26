@@ -116,10 +116,10 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
   const field = (label: string, required: boolean, input: React.ReactNode, err?: string) => (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-medium text-subtle">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+        {label}{required && <span className="text-danger ml-0.5">*</span>}
       </label>
       {input}
-      {err && <p className="text-red-400 text-xs">{err}</p>}
+      {err && <p className="text-danger text-xs">{err}</p>}
     </div>
   );
 
@@ -144,7 +144,8 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
           {serverError && (
-            <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
+            // [theme-exception]: light text on dark red error bg
+            <div className="bg-danger/10 border border-danger/40 rounded p-3 text-danger text-sm">
               {serverError === 'plugin-slug-taken'
                 ? translations['plugins.registerModal.error.slugTaken']
                 : serverError === 'invalid-connector-url'

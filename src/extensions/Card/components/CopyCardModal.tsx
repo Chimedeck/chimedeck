@@ -156,16 +156,16 @@ const CopyCardModal = ({
           aria-label="Copy card"
         >
           <Dialog.Title className="sr-only">Copy card</Dialog.Title>
-          <div className="relative w-80 rounded-2xl bg-white shadow-2xl overflow-hidden pointer-events-auto">
+          <div className="relative w-80 rounded-2xl bg-bg-surface shadow-2xl overflow-hidden pointer-events-auto">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-sm font-semibold text-gray-900">Copy card</h2>
+              <h2 className="text-sm font-semibold text-base">Copy card</h2>
               <Dialog.Close asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="text-muted hover:bg-gray-100"
+                  className="text-muted hover:bg-bg-overlay"
                   aria-label="Close"
                 >
                   <XMarkIcon className="w-4 h-4" />
@@ -176,7 +176,7 @@ const CopyCardModal = ({
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor="copy-card-title" className="block text-xs font-medium text-gray-600 mb-1">
+            <label htmlFor="copy-card-title" className="block text-xs font-medium text-muted mb-1">
               Name
             </label>
             <input
@@ -191,16 +191,16 @@ const CopyCardModal = ({
 
           {/* Keep... section */}
           <div>
-            <p className="text-xs font-medium text-gray-600 mb-2">Keep...</p>
+            <p className="text-xs font-medium text-muted mb-2">Keep...</p>
             <div className="space-y-1.5">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={keepChecklists}
                   onChange={(e) => setKeepChecklists(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                  className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-base">
                   Checklists
                   {checklistCount > 0 && (
                     <span className="ml-1 text-muted">
@@ -214,9 +214,9 @@ const CopyCardModal = ({
                   type="checkbox"
                   checked={keepMembers}
                   onChange={(e) => setKeepMembers(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                  className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-base">
                   Members
                   {memberCount > 0 && (
                     <span className="ml-1 text-muted">({memberCount})</span>
@@ -228,7 +228,7 @@ const CopyCardModal = ({
 
           {/* Copy to... section */}
           <div>
-            <p className="text-xs font-medium text-gray-600 mb-2">
+            <p className="text-xs font-medium text-muted mb-2">
               Copy to...
             </p>
             <div className="space-y-2">
@@ -293,7 +293,7 @@ const CopyCardModal = ({
           </div>
 
           {error && (
-            <p className="text-xs text-red-500 dark:text-red-400">{error}</p>
+            <p className="text-xs text-danger">{error}</p>
           )}
 
           <Button

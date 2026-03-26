@@ -48,7 +48,7 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
 
   return (
     <h1
-      className={`text-xl font-bold text-gray-900 rounded px-2 py-1 w-full cursor-text hover:bg-gray-100 dark:hover:bg-slate-800/50 transition-colors${
+      className={`text-xl font-bold text-base rounded px-2 py-1 w-full cursor-text hover:bg-bg-overlay/50 transition-colors${
         disabled ? ' cursor-default pointer-events-none' : ''
       }`}
       onClick={() => !disabled && setEditing(true)}

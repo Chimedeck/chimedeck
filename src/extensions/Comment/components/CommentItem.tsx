@@ -183,7 +183,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="hover:text-red-500 hover:underline disabled:opacity-50"
+                className="hover:text-danger hover:underline disabled:opacity-50"
               >
                 {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
               </button>

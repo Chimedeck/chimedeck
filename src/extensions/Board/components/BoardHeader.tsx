@@ -219,7 +219,7 @@ const BoardHeader = ({
               )}
               {onDelete && (
                 <button
-                  className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-bg-overlay"
+                  className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-bg-overlay"
                   onClick={() => { setMenuOpen(false); onDelete(); }}
                 >
                   Delete board

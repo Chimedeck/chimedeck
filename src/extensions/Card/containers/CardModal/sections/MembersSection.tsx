@@ -38,10 +38,10 @@ export const MembersSection = ({
 
   return (
     <section aria-label="Members">
-      <h3 className="mb-1 text-sm font-semibold text-gray-700">Members</h3>
+      <h3 className="mb-1 text-sm font-semibold text-base">Members</h3>
       <div className="flex items-center gap-2">
         {assignedMembers.length === 0 ? (
-          <span className="text-xs text-gray-400">No members assigned</span>
+          <span className="text-xs text-subtle">No members assigned</span>
         ) : (
           <CardMemberAvatars
             members={assignedMembers}
@@ -53,7 +53,7 @@ export const MembersSection = ({
         {!disabled && (
           <button
             type="button"
-            className="rounded border border-gray-200 bg-white dark:bg-white px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50"
+            className="rounded border border-border bg-bg-surface px-2 py-0.5 text-xs text-muted hover:bg-bg-overlay"
             onClick={() => setShowModal(true)}
           >
             Assign

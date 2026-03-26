@@ -40,7 +40,7 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
       </Button>
       {open && (
         <div
-          className="absolute z-10 mt-1 w-48 rounded-md border border-border bg-white shadow-lg max-h-64 overflow-y-auto"
+          className="absolute z-10 mt-1 w-48 rounded-md border border-border bg-bg-surface shadow-lg max-h-64 overflow-y-auto"
           role="listbox"
           aria-multiselectable="true"
         >
@@ -55,7 +55,7 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
                 type="button"
                 role="option"
                 aria-selected={selected}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-bg-overlay"
                 onClick={() => toggle(label)}
               >
                 <span

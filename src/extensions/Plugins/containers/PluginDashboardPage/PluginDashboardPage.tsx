@@ -215,13 +215,14 @@ const PluginDashboardPage = () => {
   }, [dispatch, boardId]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    // [theme-exception]: full dark-themed plugin dashboard page
+    <div className="min-h-screen bg-bg-base text-base">
       {/* Header */}
       <div className="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <button
             onClick={() => navigate(`/boards/${boardId}`)}
-            className="text-slate-400 hover:text-slate-200 text-sm mb-1 flex items-center gap-1"
+            className="text-subtle hover:text-base text-sm mb-1 flex items-center gap-1"
           >
             {translations['plugins.dashboard.backToBoard']}
           </button>
@@ -230,7 +231,7 @@ const PluginDashboardPage = () => {
         {isAdmin ? (
           <button
             onClick={() => setRegisterOpen(true)}
-            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2"
+            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2" // [theme-exception] text-white on bg-blue-600 button
           >
             {translations['plugins.dashboard.registerPlugin']}
           </button>
@@ -240,10 +241,11 @@ const PluginDashboardPage = () => {
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-6 space-y-8">
         {status === 'loading' && (
-          <p className="text-slate-400 text-sm">{translations['plugins.dashboard.loading']}</p>
+          <p className="text-subtle text-sm">{translations['plugins.dashboard.loading']}</p>
         )}
         {status === 'error' && error && !error.includes('not-board-admin') && (
-          <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
+          // [theme-exception]: light text on dark red error bg
+          <div className="bg-danger/10 border border-danger/40 rounded p-3 text-danger text-sm">
             {error}
           </div>
         )}
@@ -251,12 +253,12 @@ const PluginDashboardPage = () => {
         {/* ── Section 1: Enabled on this board ── */}
         {status !== 'loading' && (
           <section>
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+            <h2 className="text-xs font-semibold text-subtle uppercase tracking-wide mb-3">
               {translations['plugins.dashboard.enabled.heading']}
             </h2>
             {boardPlugins.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-slate-500">
-                <PuzzlePieceIcon className="h-8 w-8 text-slate-600" aria-hidden="true" />
+              <div className="flex flex-col items-center gap-2 py-8 text-muted">
+                <PuzzlePieceIcon className="h-8 w-8 text-muted" aria-hidden="true" />
                 <p className="text-sm text-center">{translations['plugins.dashboard.enabled.empty']}</p>
               </div>
             ) : (
@@ -277,7 +279,7 @@ const PluginDashboardPage = () => {
         {/* ── Section 2: Discover Plugins ── */}
         {status !== 'loading' && (
           <section>
-            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+            <h2 className="text-xs font-semibold text-subtle uppercase tracking-wide mb-3">
               {translations['plugins.dashboard.discover.heading']}
             </h2>
             <DiscoverPluginSearch
@@ -289,7 +291,7 @@ const PluginDashboardPage = () => {
             />
             {availablePlugins.length === 0 && (searchQuery || selectedCategory) ? (
               <div className="mb-4">
-                <p className="text-slate-400 text-sm mb-2">
+                <p className="text-subtle text-sm mb-2">
                   {translations['plugins.dashboard.discover.noMatch']}
                 </p>
                 <button
@@ -300,7 +302,7 @@ const PluginDashboardPage = () => {
                 </button>
               </div>
             ) : availablePlugins.length === 0 ? (
-              <p className="text-slate-500 text-sm">
+              <p className="text-muted text-sm">
                 {translations['plugins.dashboard.discover.empty']}
               </p>
             ) : (

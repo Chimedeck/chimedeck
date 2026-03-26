@@ -107,8 +107,8 @@ const PresenceAvatars: React.FC<PresenceAvatarsProps> = ({
       ))}
       {overflow > 0 && (
         <div
-          // [theme-exception] bg-gray-300/text-gray-700 overflow counter has no direct semantic equivalent — needs design input
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-300 text-xs font-semibold text-base ring-2 ring-white"
+          // [theme-exception] bg-bg-sunken/text-base overflow counter has no direct semantic equivalent — needs design input
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-sunken text-xs font-semibold text-base ring-2 ring-white"
           title={`${overflow} more active user${overflow > 1 ? 's' : ''}`}
         >
           +{overflow}

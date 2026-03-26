@@ -97,7 +97,7 @@ const PluginPopup = ({ popup, onClose }: Props) => {
         id={`plugin-popup-iframe-${popup.pluginId}`}
         src={iframeSrc}
         title={popup.title || translations['plugins.popup.defaultTitle']}
-        className="flex-1 w-full border-0 bg-white"
+        className="flex-1 w-full border-0 bg-bg-surface" // [theme-exception] iframe for third-party plugin content
         style={{ minHeight: 120 }}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer-when-downgrade"

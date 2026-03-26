@@ -6,7 +6,7 @@ const ROLE_STYLES: Record<Role, string> = {
   OWNER: 'bg-purple-100 text-purple-800', // [theme-exception]
   ADMIN: 'bg-blue-100 text-blue-800',     // [theme-exception]
   MEMBER: 'bg-green-100 text-green-800',  // [theme-exception]
-  VIEWER: 'bg-gray-100 text-gray-700',    // [theme-exception]
+  VIEWER: 'bg-bg-overlay text-base',    // [theme-exception]
 };
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -21,7 +21,7 @@ interface RoleBadgeProps {
 }
 
 const RoleBadge = ({ role }: RoleBadgeProps) => {
-  const style = ROLE_STYLES[role] ?? 'bg-gray-100 text-gray-700';
+  const style = ROLE_STYLES[role] ?? 'bg-bg-overlay text-base'; // [theme-exception]
   const label = ROLE_LABELS[role] ?? role;
 
   return (

@@ -33,7 +33,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         checked={item.checked}
         onChange={(e) => onToggle(item.id, e.target.checked)}
         disabled={disabled}
-        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-500 bg-white"
+        className="mt-0.5 h-4 w-4 rounded border-border-strong text-blue-500 bg-bg-surface"
         aria-label={`Toggle: ${item.title}`}
       />
       {editing ? (
@@ -47,7 +47,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         />
       ) : (
         <span
-          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-muted line-through' : 'text-gray-800'}`}
+          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-muted line-through' : 'text-base'}`}
           onClick={() => !disabled && setEditing(true)}
           role="button"
           tabIndex={0}
@@ -62,7 +62,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
           type="button"
           variant="ghost"
           size="icon"
-          className="text-muted hover:text-red-500 dark:hover:text-red-400"
+          className="text-muted hover:text-danger"
           onClick={() => onDelete(item.id)}
           aria-label={`Delete checklist item: ${item.title}`}
         >

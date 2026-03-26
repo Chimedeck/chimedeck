@@ -32,7 +32,7 @@ export interface CardItemProps {
 
 function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): string {
   if (done) return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30';
-  if (overdue) return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30';
+  if (overdue) return 'text-danger bg-red-50 dark:bg-red-900/30';
   if (dueSoon) return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30';
   return 'text-muted';
 }
@@ -98,7 +98,7 @@ const CardItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white hover:bg-gray-50 border border-border rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
+      className={`bg-bg-surface hover:bg-bg-overlay border border-border rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90' : ''
       }`}
       role="button"
@@ -135,7 +135,7 @@ const CardItem = ({
             onToggle={onToggleLabels ?? (() => {})}
           />
         )}
-        <p className="text-gray-800 text-sm leading-snug break-words">{card.title}</p>
+        <p className="text-base text-sm leading-snug break-words">{card.title}</p>
         {card.amount && (
           <div className="mt-1">
             <CardMoneyBadge amount={card.amount} currency={card.currency} />

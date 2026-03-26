@@ -67,7 +67,7 @@ const RunLogTable: FC<Props> = ({
             )}
             {!loading && error && (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-red-400">
+                <td colSpan={6} className="py-8 text-center text-sm text-danger">
                   {error}
                 </td>
               </tr>

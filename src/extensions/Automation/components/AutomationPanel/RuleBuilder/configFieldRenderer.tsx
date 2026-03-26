@@ -117,7 +117,7 @@ function FieldLabel({ id, label, required }: Readonly<{ id: string; label: strin
   return (
     <label htmlFor={id} className="block text-xs font-medium text-muted mb-1">
       {label}
-      {required && <span className="ml-1 text-red-400">*</span>}
+      {required && <span className="ml-1 text-danger">*</span>}
     </label>
   );
 }
@@ -259,7 +259,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
     <div key={key}>
       <span className="block text-xs font-medium text-muted mb-1">
         {fieldDef.label}
-        {fieldDef.required && <span className="ml-1 text-red-400">*</span>}
+        {fieldDef.required && <span className="ml-1 text-danger">*</span>}
       </span>
       <div className="flex flex-col gap-1.5">
         {items.map((item, idx) => (
@@ -277,7 +277,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
             />
             <button
               type="button"
-              className="flex-shrink-0 rounded p-1 text-muted hover:text-red-400 hover:bg-bg-overlay transition-colors"
+              className="flex-shrink-0 rounded p-1 text-muted hover:text-danger hover:bg-bg-overlay transition-colors"
               onClick={() => update(items.filter((_, i) => i !== idx))}
               title="Remove item"
             >

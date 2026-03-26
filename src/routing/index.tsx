@@ -97,8 +97,8 @@ const ApiTokenPage = lazy(() =>
 );
 
 const LoadingFallback = () => (
-  <div className="flex h-screen items-center justify-center bg-gray-900">
-    <Spinner size="lg" className="text-blue-500" />
+  <div className="flex h-screen items-center justify-center bg-bg-base">
+    <Spinner size="lg" className="text-primary" />
   </div>
 );
 

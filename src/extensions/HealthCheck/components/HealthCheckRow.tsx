@@ -103,7 +103,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
         type="button"
         onClick={() => onRemove(entry.id)}
         disabled={isProbing}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-muted hover:text-red-400 hover:bg-bg-overlay transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed"
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-muted hover:text-danger hover:bg-bg-overlay transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed"
         aria-label={`Remove ${entry.name}`}
         title={`Remove ${entry.name}`}
       >

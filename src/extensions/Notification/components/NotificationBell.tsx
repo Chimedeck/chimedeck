@@ -25,7 +25,7 @@ const NotificationBell: FC<Props> = ({ onClick }) => {
       {hasUnread && (
         // [theme-exception] bg-red-500 is a semantic indicator for unread count
         <span
-          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1"
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-danger text-inverse text-[10px] font-bold flex items-center justify-center px-1"
           aria-hidden="true"
         >
           {label}

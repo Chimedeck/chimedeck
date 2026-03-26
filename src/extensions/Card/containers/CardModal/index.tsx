@@ -533,7 +533,7 @@ const CardModalContainer = () => {
   if (status === 'loading' && !card) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div className="text-slate-400 animate-pulse">Loading card…</div>
+        <div className="text-subtle animate-pulse">Loading card…</div>
       </div>
     );
   }
@@ -541,7 +541,7 @@ const CardModalContainer = () => {
   if (status === 'error') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div className="bg-slate-900 rounded-xl p-8 text-red-400">
+        <div className="bg-bg-surface rounded-xl p-8 text-danger">
           Failed to load card.{' '}
           <button className="underline" onClick={handleClose}>
             Close

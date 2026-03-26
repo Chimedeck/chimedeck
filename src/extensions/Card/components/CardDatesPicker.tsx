@@ -206,8 +206,9 @@ export const CardDatesPicker = ({
           showOutsideDays
           modifiers={{ due_sel: isDue, start_sel: isStart, in_range: isInRange }}
           modifiersClassNames={{
-            due_sel: '!bg-blue-600 !text-white hover:!bg-blue-500',
-            start_sel: '!bg-slate-500 !text-white hover:!bg-slate-400',
+            // [theme-exception] calendar selected day chips: intentional colored bg with white text
+            due_sel: '!bg-blue-600 !text-white hover:!bg-blue-500', // [theme-exception] text-white on selected primary date
+            start_sel: '!bg-bg-sunken !text-base hover:!bg-bg-overlay',
             in_range: '!bg-blue-900/50 !text-blue-200 !rounded-none',
           }}
         />

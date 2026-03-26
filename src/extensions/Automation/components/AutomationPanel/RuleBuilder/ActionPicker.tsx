@@ -58,7 +58,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
         <p className="px-3 py-4 text-center text-sm text-muted">{translations['automation.actionPicker.loading']}</p>
       )}
       {error && (
-        <p className="px-3 py-4 text-center text-sm text-red-400">{error}</p>
+        <p className="px-3 py-4 text-center text-sm text-danger">{error}</p>
       )}
 
       {!loading && !error && (

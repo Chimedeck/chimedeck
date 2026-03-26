@@ -102,7 +102,7 @@ const PluginModal = ({ modal, onClose }: Props) => {
           id={`plugin-modal-iframe-${modal.pluginId}`}
           src={modal.url}
           title={modal.title || translations['plugins.modal.defaultTitle']}
-          className="flex-1 w-full border-0 bg-white"
+          className="flex-1 w-full border-0 bg-bg-surface" // [theme-exception] iframe for third-party plugin content
           // [why] allow="payment" is required for the Payment Request API (Google Pay,
           // Apple Pay) to work inside the sandboxed iframe. Without it the browser fires
           // "Permissions policy violation: payment is not allowed in this document",

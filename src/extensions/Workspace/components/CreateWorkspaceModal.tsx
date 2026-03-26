@@ -73,7 +73,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             </div>
 
             {error && (
-              <p className="mb-3 text-sm text-red-400">
+              <p className="mb-3 text-sm text-danger">
                 {translations['CreateWorkspaceModal.errorGeneric']}
               </p>
             )}
@@ -89,7 +89,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
               <button
                 type="submit"
                 disabled={inProgress || !name.trim()}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
               >
                 {inProgress
                   ? translations['CreateWorkspaceModal.submitting']

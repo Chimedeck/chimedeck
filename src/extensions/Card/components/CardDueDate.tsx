@@ -16,7 +16,7 @@ function getCheckboxClass(status: DueDateStatus): string {
   if (status === 'done') return 'bg-emerald-500 border-emerald-500';
   if (status === 'overdue') return 'bg-red-500 border-red-500';
   if (status === 'due-soon') return 'bg-orange-400 border-orange-400';
-  return 'border-gray-300 bg-white';
+  return 'border-border-strong bg-bg-surface';
 }
 
 interface Props {
@@ -69,7 +69,7 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
       {dueDate && !disabled && (
         <button
           type="button"
-          className="text-xs text-muted hover:text-gray-700 transition-colors"
+          className="text-xs text-muted hover:text-base transition-colors"
           onClick={() => onChange(null)}
         >
           Clear

@@ -50,7 +50,7 @@ const CardChecklist = ({
         {!disabled && (
           <button
             type="button"
-            className="flex items-center gap-1 rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-300"
+            className="flex items-center gap-1 rounded bg-bg-sunken px-2 py-0.5 text-xs text-base hover:bg-bg-sunken"
             onClick={() => setAddingChecklist((v) => !v)}
           >
             <PlusIcon className="h-3 w-3" />
@@ -82,7 +82,7 @@ const CardChecklist = ({
           </Button>
           <button
             type="button"
-            className="text-sm text-muted hover:text-gray-700"
+            className="text-sm text-muted hover:text-base"
             onClick={() => { setAddingChecklist(false); setNewChecklistTitle(''); }}
           >
             Cancel

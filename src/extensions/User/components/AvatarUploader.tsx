@@ -85,7 +85,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
             className="h-full w-full rounded-full object-cover"
           />
         ) : (
-          <span className="flex h-full w-full items-center justify-center rounded-full bg-indigo-600 text-3xl font-bold text-white">
+          <span className="flex h-full w-full items-center justify-center rounded-full bg-indigo-600 text-3xl font-bold text-white"> {/* [theme-exception]: avatar on colored bg */}
             {getInitials(name) || '?'}
           </span>
         )}
@@ -120,7 +120,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
             type="button"
             onClick={handleRemove}
             disabled={uploading}
-            className="text-sm text-muted hover:text-red-400 disabled:opacity-50"
+            className="text-sm text-muted hover:text-danger disabled:opacity-50"
           >
             {translations['ProfilePage.removePhoto']}
           </button>
@@ -128,7 +128,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       </div>
 
       {localError && (
-        <p className="text-sm text-red-400" role="alert">{localError}</p>
+        <p className="text-sm text-danger" role="alert">{localError}</p>
       )}
     </div>
   );

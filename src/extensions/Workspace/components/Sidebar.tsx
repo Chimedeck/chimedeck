@@ -79,7 +79,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
           <Squares2X2Icon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
-          <span className="text-base font-bold text-slate-900">{commonTranslations['App.name']}</span>
+          <span className="text-base font-bold text-base">{commonTranslations['App.name']}</span>
         </div>
 
         {/* Workspace switcher */}
@@ -87,7 +87,7 @@ export default function Sidebar() {
           <div className="relative">
             <button
               onClick={() => setSwitcherOpen((o) => !o)}
-              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-slate-800 hover:bg-slate-100 transition-colors"
+              className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-base hover:bg-bg-overlay transition-colors"
               aria-expanded={switcherOpen}
               aria-haspopup="listbox"
               aria-label={translations['WorkspaceSwitcher.label']}
@@ -109,13 +109,13 @@ export default function Sidebar() {
               <ul
                 role="listbox"
                 aria-label={translations['WorkspaceSwitcher.label']}
-                className="absolute left-0 top-full z-10 mt-1 w-full rounded-lg border border-border bg-white py-1 shadow-xl"
+                className="absolute left-0 top-full z-10 mt-1 w-full rounded-lg border border-border bg-bg-surface py-1 shadow-xl"
               >
                 {workspaces.map((ws) => (
                   <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                     <button
                       onClick={() => handleSwitchWorkspace(ws.id)}
-                      className="w-full px-3 py-1.5 text-left text-sm text-slate-800 hover:bg-slate-100 transition-colors"
+                      className="w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                     >
                       {ws.name}
                     </button>
@@ -125,7 +125,7 @@ export default function Sidebar() {
                 <li>
                   <button
                     onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
-                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-slate-100 transition-colors"
+                    className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-bg-overlay transition-colors"
                   >
                     <PlusIcon className="h-4 w-4" aria-hidden="true" />
                     {translations['Sidebar.newWorkspace']}
@@ -140,7 +140,7 @@ export default function Sidebar() {
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {/* Search button — triggers Cmd+K listener in AppShell */}
           <button
-            className="mb-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-slate-100 hover:text-slate-900 transition-colors"
+            className="mb-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors"
             onClick={() =>
               document.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }),
@@ -150,7 +150,7 @@ export default function Sidebar() {
           >
             <MagnifyingGlassIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
             <span>Search</span>
-            <kbd className="ml-auto rounded bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 text-xs text-slate-500 dark:text-slate-400">⌘K</kbd>
+            <kbd className="ml-auto rounded bg-bg-sunken px-1.5 py-0.5 text-xs text-muted">⌘K</kbd>
           </button>
           {activeWorkspace ? (
             <ul className="space-y-0.5">
@@ -160,8 +160,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
                     }`
                   }
                 >
@@ -182,8 +182,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
                     }`
                   }
                 >
@@ -199,8 +199,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
                     }`
                   }
                 >
@@ -214,8 +214,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
                     }`
                   }
                 >
@@ -229,8 +229,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                       isActive
-                        ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
                     }`
                   }
                 >
@@ -243,7 +243,7 @@ export default function Sidebar() {
                 <li>
                   <button
                     onClick={() => dispatch(openInviteModal())}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base transition-colors"
                     aria-label="Invite External User"
                   >
                     <UserPlusIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -255,7 +255,7 @@ export default function Sidebar() {
           ) : (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="mt-2 w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-sm text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              className="mt-2 w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-sm text-muted hover:border-slate-400 dark:hover:border-slate-500 hover:text-muted transition-colors"
             >
               {translations['Sidebar.createFirst']}
             </button>
@@ -263,11 +263,11 @@ export default function Sidebar() {
         </div>
 
         {/* User menu */}
-        <div className="border-t border-slate-200 dark:border-slate-800 px-3 py-3">
+        <div className="border-t border-border px-3 py-3">
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen((o) => !o)}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay dark:hover:bg-slate-800 transition-colors"
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"
             >
@@ -281,7 +281,7 @@ export default function Sidebar() {
                 />
               ) : (
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white" // [theme-exception]: avatar on colored bg
                   aria-hidden="true"
                 >
                   {(profile?.name ?? user?.name)?.charAt(0).toUpperCase() ?? '?'}
@@ -292,20 +292,20 @@ export default function Sidebar() {
                   ? `@${profile.nickname}`
                   : (profile?.name ?? user?.name ?? translations['Sidebar.unknownUser'])}
               </span>
-              <ChevronDownIcon className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" aria-hidden="true" />
+              <ChevronDownIcon className="h-4 w-4 text-subtle shrink-0" aria-hidden="true" />
             </button>
 
             {userMenuOpen && (
               <ul
                 role="menu"
-                className="absolute bottom-full left-0 mb-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl"
+                className="absolute bottom-full left-0 mb-1 w-full rounded-lg border border-border bg-bg-surface py-1 shadow-xl"
               >
                 <li role="none">
                   <NavLink
                     to="/settings/profile"
                     role="menuitem"
                     onClick={() => setUserMenuOpen(false)}
-                    className="block w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
                   >
                     {translations['Sidebar.settings']}
                   </NavLink>
@@ -315,7 +315,7 @@ export default function Sidebar() {
                   <button
                     role="menuitem"
                     onClick={handleLogout}
-                    className="w-full px-3 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
                   >
                     {translations['Sidebar.logout']}
                   </button>

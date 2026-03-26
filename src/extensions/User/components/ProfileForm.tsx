@@ -85,7 +85,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
         </Button>
 
         {saved && (
-          <span className="text-sm text-green-400" role="status">
+          <span className="text-sm text-success" role="status">
             {translations['ProfilePage.saved']}
           </span>
         )}

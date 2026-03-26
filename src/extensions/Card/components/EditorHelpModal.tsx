@@ -50,8 +50,9 @@ const MARKDOWN = [
   { label: 'Image', syntax: '![Alt text](http://www.image.com)' },
 ];
 
+// [theme-exception] Kbd uses slate-700 bg and slate-200 text — intentional dark-theme keyboard chip style
 const Kbd = ({ children }: { children: string }) => (
-  <kbd className="inline-flex items-center rounded bg-slate-700 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-200">
+  <kbd className="inline-flex items-center rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[10px] font-medium text-base">
     {children}
   </kbd>
 );
@@ -63,9 +64,9 @@ const EditorHelpModal = ({ onClose }: Props) => (
       if (e.target === e.currentTarget) onClose();
     }}
   >
-    <div className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-slate-800 shadow-2xl ring-1 ring-slate-700">
+    <div className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-bg-surface shadow-2xl ring-1 ring-border">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-border px-6 py-4">
         <h2 className="font-semibold text-base">Editor help</h2>
         <Button
           type="button"
@@ -84,17 +85,19 @@ const EditorHelpModal = ({ onClose }: Props) => (
         <div className="grid grid-cols-2 gap-8">
           {/* Keyboard shortcuts */}
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+            {/* [theme-exception] dark-modal slate text: intentional on bg-slate-800 */}
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-subtle">
               Keyboard shortcuts
             </h3>
             <ul className="space-y-1.5">
               {SHORTCUTS.map(({ label, keys }) => (
                 <li key={label} className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-slate-200">{label}</span>
+                  {/* [theme-exception] dark-modal text-slate-200 on bg-slate-800 */}
+                  <span className="text-sm text-base">{label}</span>
                   <span className="flex shrink-0 items-center gap-0.5">
                     {keys.map((k, i) => (
                       <span key={k} className="flex items-center gap-0.5">
-                        {i > 0 && <span className="text-[10px] text-slate-500">+</span>}
+                        {i > 0 && <span className="text-[10px] text-subtle">+</span>}
                         <Kbd>{k}</Kbd>
                       </span>
                     ))}
@@ -106,14 +109,16 @@ const EditorHelpModal = ({ onClose }: Props) => (
 
           {/* Markdown */}
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+            {/* [theme-exception] dark-modal slate text: intentional on bg-slate-800 */}
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-subtle">
               Markdown
             </h3>
             <ul className="space-y-1.5">
               {MARKDOWN.map(({ label, syntax }) => (
                 <li key={label} className="flex items-center justify-between gap-2">
-                  <span className="text-sm text-slate-200">{label}</span>
-                  <code className="shrink-0 rounded bg-slate-700 px-1.5 py-0.5 font-mono text-[11px] text-indigo-300">
+                  {/* [theme-exception] dark-modal text-slate-200 on bg-slate-800 */}
+                  <span className="text-sm text-base">{label}</span>
+                  <code className="shrink-0 rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[11px] text-indigo-300">
                     {syntax}
                   </code>
                 </li>
@@ -124,9 +129,10 @@ const EditorHelpModal = ({ onClose }: Props) => (
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-700 px-6 py-3">
-        <p className="text-center text-xs text-slate-400">
-          Press <Kbd>⌘</Kbd> <span className="mx-1 text-slate-500">+</span> <Kbd>/</Kbd> to quickly open this dialog at any time
+      <div className="border-t border-border px-6 py-3">
+        {/* [theme-exception] dark-modal footer text: intentional on bg-slate-800 */}
+        <p className="text-center text-xs text-subtle">
+          Press <Kbd>⌘</Kbd> <span className="mx-1 text-subtle">+</span> <Kbd>/</Kbd> to quickly open this dialog at any time
         </p>
       </div>
     </div>

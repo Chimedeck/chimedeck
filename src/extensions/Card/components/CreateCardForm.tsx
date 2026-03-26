@@ -48,7 +48,7 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
         aria-label="New card title"
         disabled={submitting}
       />
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
       <div className="flex gap-2">
         <Button
           type="submit"
@@ -62,7 +62,7 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
           type="button"
           variant="ghost"
           onClick={onCancel}
-          className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200"
+          className="px-3 py-1 text-sm text-muted hover:bg-bg-sunken"
         >
           Cancel
         </Button>

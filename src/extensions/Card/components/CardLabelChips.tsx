@@ -34,12 +34,11 @@ const CardLabelChips = ({ labels, expanded, onToggle }: Props) => {
       tabIndex={0}
       title={expanded ? 'Collapse labels' : 'Expand labels'}
     >
-      {/* [theme-exception] text-white on arbitrary label background color */}
       {labels.map((label) =>
         expanded ? (
           <span
             key={label.id}
-            className="inline-block px-2 py-0.5 text-[11px] font-semibold text-white rounded-full truncate max-w-[120px] transition-all duration-150"
+            className="inline-block px-2 py-0.5 text-[11px] font-semibold text-white rounded-full truncate max-w-[120px] transition-all duration-150" // [theme-exception] text-white on dynamically-colored label chip
             style={{ backgroundColor: label.color }}
             title={label.name}
           >

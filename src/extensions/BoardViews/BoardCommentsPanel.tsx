@@ -38,43 +38,43 @@ const BoardCommentsPanel = ({ boardId }: Props) => {
   }, [loadPage]);
 
   if (error) {
-    return <p className="p-4 text-sm text-red-500">{error}</p>;
+    return <p className="p-4 text-sm text-danger">{error}</p>;
   }
 
   return (
     <div className="p-4 space-y-3">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">{translations['BoardViews.commentsHeading']}</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">{translations['BoardViews.commentsHeading']}</h3>
 
       {comments.length === 0 && !loading && (
-        <p className="text-sm italic text-gray-400">{translations['BoardViews.noComments']}</p>
+        <p className="text-sm italic text-subtle">{translations['BoardViews.noComments']}</p>
       )}
 
       {comments.map((comment) => (
         <div
           key={comment.id}
-          className="rounded border border-slate-700 bg-slate-800 p-3 text-sm"
+          className="rounded border border-border bg-bg-surface p-3 text-sm"
         >
-          <div className="mb-1 flex items-center justify-between text-xs text-gray-400">
-            <span className="font-medium text-gray-300">
+          <div className="mb-1 flex items-center justify-between text-xs text-subtle">
+            <span className="font-medium text-subtle">
               {comment.author_name ?? comment.author_email ?? 'Unknown'}
             </span>
-            <span className="ml-2 text-gray-500">{comment.card_title}</span>
+            <span className="ml-2 text-muted">{comment.card_title}</span>
             <span className="ml-auto">{new Date(comment.created_at).toLocaleString()}</span>
           </div>
           {comment.deleted ? (
-            <p className="italic text-gray-500">This comment was deleted.</p>
+            <p className="italic text-muted">This comment was deleted.</p>
           ) : (
-            <p className="text-gray-200 whitespace-pre-wrap">{comment.content}</p>
+            <p className="text-base whitespace-pre-wrap">{comment.content}</p>
           )}
         </div>
       ))}
 
-      {loading && <p className="text-xs text-gray-400">{translations['BoardViews.loadingComments']}</p>}
+      {loading && <p className="text-xs text-subtle">{translations['BoardViews.loadingComments']}</p>}
 
       {hasMore && !loading && (
         <button
           onClick={() => loadPage(cursor)}
-          className="rounded px-3 py-1.5 text-xs text-blue-400 hover:bg-slate-700"
+          className="rounded px-3 py-1.5 text-xs text-link hover:bg-bg-overlay"
         >
           {translations['BoardViews.loadMoreComments']}
         </button>
