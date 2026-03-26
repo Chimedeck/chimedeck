@@ -67,6 +67,11 @@ export function parseConfigSchema(schema: unknown): Array<{ key: string; fieldDe
       return { key, fieldDef: { type: 'list-multi-select', label, required } satisfies FieldDef };
     }
 
+    // Array of plain strings → editable list of text items.
+    if (prop.type === 'array' && prop.items?.type === 'string') {
+      return { key, fieldDef: { type: 'string-list', label, required } satisfies FieldDef };
+    }
+
     // UUID fields whose key is exactly "targetBoardId" → board picker for cross-board actions.
     if ((prop.type === 'string' || prop.format === 'uuid') && key === 'targetBoardId') {
       return { key, fieldDef: { type: 'board-select', label, required } satisfies FieldDef };
@@ -244,6 +249,54 @@ function renderText(args: RenderArgs): JSX.Element {
   );
 }
 
+function renderStringList(args: RenderArgs): JSX.Element {
+  const { key, fieldDef } = args;
+  const items: string[] = Array.isArray(args.value) ? (args.value as string[]) : [];
+
+  const update = (next: string[]) => args.onChange(next.length > 0 ? next : undefined);
+
+  return (
+    <div key={key}>
+      <span className="block text-xs font-medium text-slate-400 mb-1">
+        {fieldDef.label}
+        {fieldDef.required && <span className="ml-1 text-red-400">*</span>}
+      </span>
+      <div className="flex flex-col gap-1.5">
+        {items.map((item, idx) => (
+          <div key={`${key}-item-${idx}`} className="flex items-center gap-1.5">
+            <input
+              type="text"
+              className={INPUT_CLASS}
+              value={item}
+              placeholder={`Item ${idx + 1}`}
+              onChange={(e) => {
+                const next = [...items];
+                next[idx] = e.target.value;
+                update(next);
+              }}
+            />
+            <button
+              type="button"
+              className="flex-shrink-0 rounded p-1 text-slate-400 hover:text-red-400 hover:bg-slate-700 transition-colors"
+              onClick={() => update(items.filter((_, i) => i !== idx))}
+              title="Remove item"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="mt-0.5 self-start rounded border border-dashed border-slate-600 px-2 py-1 text-xs text-slate-400 hover:border-slate-400 hover:text-slate-200 transition-colors"
+          onClick={() => update([...items, ''])}
+        >
+          + Add item
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type TypeRenderer = (args: RenderArgs) => JSX.Element;
 
 const TYPE_RENDERERS: Record<string, TypeRenderer> = {
@@ -251,6 +304,7 @@ const TYPE_RENDERERS: Record<string, TypeRenderer> = {
   'list-multi-select': renderListMultiSelect,
   'board-select': renderBoardSelect,
   'target-list-select': renderTargetListSelect,
+  'string-list': renderStringList,
   boolean: renderBoolean,
   number: renderNumber,
 };

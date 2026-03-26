@@ -49,6 +49,8 @@ const BoardCustomFieldsPanel = () => {
 
   // Which field's dropdown options editor is expanded.
   const [expandedOptionsId, setExpandedOptionsId] = useState<string | null>(null);
+  // Local draft options — edited in-place, only sent to API on explicit Save.
+  const [draftOptions, setDraftOptions] = useState<DropdownOption[] | null>(null);
 
   // Per-field operation in-progress flag (keyed by field id).
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
@@ -134,17 +136,28 @@ const BoardCustomFieldsPanel = () => {
 
   // ─── Dropdown options update ─────────────────────────────────────────────
 
-  const handleOptionsChange = async (field: CustomField, options: DropdownOption[]) => {
-    if (!boardId) return;
+  const openOptionsEditor = (field: CustomField) => {
+    setExpandedOptionsId(field.id);
+    setDraftOptions([...(field.options ?? [])]);
+  };
+
+  const closeOptionsEditor = () => {
+    setExpandedOptionsId(null);
+    setDraftOptions(null);
+  };
+
+  const commitOptions = async (field: CustomField) => {
+    if (!boardId || draftOptions === null) return;
     setFieldBusy(field.id, true);
     try {
       await updateCustomField({
         api: apiClient,
         boardId,
         fieldId: field.id,
-        payload: { options },
+        payload: { options: draftOptions },
       });
       refetch();
+      closeOptionsEditor();
     } finally {
       setFieldBusy(field.id, false);
     }
@@ -248,23 +261,44 @@ const BoardCustomFieldsPanel = () => {
             {/* Dropdown options editor toggle */}
             {field.field_type === 'DROPDOWN' && (
               <div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedOptionsId(expandedOptionsId === field.id ? null : field.id)
-                  }
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                  aria-label={`Edit options for ${field.name}`}
-                >
-                  {expandedOptionsId === field.id ? translations['CustomFields.hideOptions'] : translations['CustomFields.editOptions']}
-                </button>
+                {expandedOptionsId !== field.id && (
+                  <button
+                    type="button"
+                    onClick={() => openOptionsEditor(field)}
+                    className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                    aria-label={`Edit options for ${field.name}`}
+                    disabled={busy}
+                  >
+                    {translations['CustomFields.editOptions']}
+                  </button>
+                )}
 
-                {expandedOptionsId === field.id && (
-                  <div className="mt-2">
+                {expandedOptionsId === field.id && draftOptions !== null && (
+                  <div className="mt-2 space-y-2">
                     <DropdownFieldEditor
-                      options={field.options ?? []}
-                      onChange={(opts) => handleOptionsChange(field, opts)}
+                      options={draftOptions}
+                      onChange={setDraftOptions}
                     />
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => commitOptions(field)}
+                        disabled={busy}
+                        className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors"
+                        aria-label={`Save options for ${field.name}`}
+                      >
+                        {busy ? translations['CustomFields.creatingButton'] : translations['CustomFields.saveOptionsButton']}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeOptionsEditor}
+                        disabled={busy}
+                        className="text-slate-400 hover:text-slate-200 text-xs px-2 transition-colors"
+                        aria-label={translations['CustomFields.cancelButton']}
+                      >
+                        {translations['CustomFields.cancelButton']}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
