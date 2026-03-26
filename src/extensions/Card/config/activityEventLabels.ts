@@ -77,6 +77,19 @@ export function getActivityEventMeta(
     return { label: `removed attachment ${name}`, dotColor: 'bg-slate-500' };
   }
 
+  if (eventType === 'card_archived') {
+    return { label: 'archived this card', dotColor: 'bg-orange-500' };
+  }
+
+  if (eventType === 'card_unarchived') {
+    return { label: 'restored this card from archive', dotColor: 'bg-emerald-500' };
+  }
+
+  if (eventType === 'card_deleted') {
+    const title = typeof payload?.cardTitle === 'string' && payload.cardTitle ? ` "${payload.cardTitle}"` : '';
+    return { label: `deleted card${title}`, dotColor: 'bg-red-500' };
+  }
+
   if (eventType === 'checklist_created') {
     const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
     return { label: `added checklist "${title}"`, dotColor: 'bg-emerald-500' };

@@ -19,6 +19,10 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   'attachment_added',
   'card_link_attached',
   'attachment_removed',
+  // Card archive / delete lifecycle
+  'card_archived',
+  'card_unarchived',
+  'card_deleted',
   // Checklist events
   'checklist_created',
   'checklist_deleted',

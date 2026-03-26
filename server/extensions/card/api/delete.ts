@@ -2,6 +2,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
+import { writeActivity } from '../../activity/mods/write';
 import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 import {
   requireWorkspaceMembership,
@@ -54,6 +55,16 @@ export async function handleDeleteCard(req: Request, cardId: string): Promise<Re
     cardId,
     actorId,
   }).catch(() => {});
+
+  // Write to activity feed before deletion so the record is visible in board history
+  await writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: 'card_deleted',
+    actorId,
+    payload: { cardTitle: card.title },
+  });
 
   await db('cards').where({ id: cardId }).del();
 
