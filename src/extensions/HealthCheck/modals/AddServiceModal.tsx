@@ -217,11 +217,12 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 >
                   <option value="">{translations['AddServiceModal.presetSelectPlaceholder']}</option>
-                  {presets.map((p: HealthCheckPreset) => (
-                    <option key={p.key} value={p.key}>
-                      {p.name}
-                      {p.category ? ` (${p.category})` : ''}
-                    </option>
+                  {Array.from(new Set(presets.map((p: HealthCheckPreset) => p.category))).map((cat) => (
+                    <optgroup key={cat} label={cat.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}>
+                      {presets.filter((p: HealthCheckPreset) => p.category === cat).map((p: HealthCheckPreset) => (
+                        <option key={p.key} value={p.key}>{p.name}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               )}

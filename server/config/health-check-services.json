@@ -2,29 +2,169 @@
   {
     "key": "stripe-api",
     "name": "Stripe API",
-    "description": "Stripe payment processing API status",
-    "url": "https://api.stripe.com/",
+    "description": "Stripe payment processing — probes the public status page (returns 200 when Stripe is operational)",
+    "url": "https://status.stripe.com/",
     "category": "payments"
   },
   {
+    "key": "aws-s3-us-east-1",
+    "name": "AWS S3 (us-east-1 — US East N. Virginia)",
+    "description": "Amazon S3 object storage — US East 1 (N. Virginia)",
+    "url": "https://s3.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-us-east-2",
+    "name": "AWS S3 (us-east-2 — US East Ohio)",
+    "description": "Amazon S3 object storage — US East 2 (Ohio)",
+    "url": "https://s3.us-east-2.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-us-west-1",
+    "name": "AWS S3 (us-west-1 — US West N. California)",
+    "description": "Amazon S3 object storage — US West 1 (N. California)",
+    "url": "https://s3.us-west-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-us-west-2",
+    "name": "AWS S3 (us-west-2 — US West Oregon)",
+    "description": "Amazon S3 object storage — US West 2 (Oregon)",
+    "url": "https://s3.us-west-2.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-eu-west-1",
+    "name": "AWS S3 (eu-west-1 — EU Ireland)",
+    "description": "Amazon S3 object storage — EU West 1 (Ireland)",
+    "url": "https://s3.eu-west-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-eu-west-2",
+    "name": "AWS S3 (eu-west-2 — EU London)",
+    "description": "Amazon S3 object storage — EU West 2 (London)",
+    "url": "https://s3.eu-west-2.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-eu-west-3",
+    "name": "AWS S3 (eu-west-3 — EU Paris)",
+    "description": "Amazon S3 object storage — EU West 3 (Paris)",
+    "url": "https://s3.eu-west-3.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-eu-central-1",
+    "name": "AWS S3 (eu-central-1 — EU Frankfurt)",
+    "description": "Amazon S3 object storage — EU Central 1 (Frankfurt)",
+    "url": "https://s3.eu-central-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-eu-north-1",
+    "name": "AWS S3 (eu-north-1 — EU Stockholm)",
+    "description": "Amazon S3 object storage — EU North 1 (Stockholm)",
+    "url": "https://s3.eu-north-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-ap-southeast-1",
+    "name": "AWS S3 (ap-southeast-1 — Asia Pacific Singapore)",
+    "description": "Amazon S3 object storage — Asia Pacific (Singapore)",
+    "url": "https://s3.ap-southeast-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-ap-southeast-2",
+    "name": "AWS S3 (ap-southeast-2 — Asia Pacific Sydney)",
+    "description": "Amazon S3 object storage — Asia Pacific (Sydney)",
+    "url": "https://s3.ap-southeast-2.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-ap-northeast-1",
+    "name": "AWS S3 (ap-northeast-1 — Asia Pacific Tokyo)",
+    "description": "Amazon S3 object storage — Asia Pacific (Tokyo)",
+    "url": "https://s3.ap-northeast-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-ap-northeast-2",
+    "name": "AWS S3 (ap-northeast-2 — Asia Pacific Seoul)",
+    "description": "Amazon S3 object storage — Asia Pacific (Seoul)",
+    "url": "https://s3.ap-northeast-2.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-ap-south-1",
+    "name": "AWS S3 (ap-south-1 — Asia Pacific Mumbai)",
+    "description": "Amazon S3 object storage — Asia Pacific (Mumbai)",
+    "url": "https://s3.ap-south-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-sa-east-1",
+    "name": "AWS S3 (sa-east-1 — South America São Paulo)",
+    "description": "Amazon S3 object storage — South America (São Paulo)",
+    "url": "https://s3.sa-east-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-s3-ca-central-1",
+    "name": "AWS S3 (ca-central-1 — Canada Central)",
+    "description": "Amazon S3 object storage — Canada (Central)",
+    "url": "https://s3.ca-central-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-ses-us-east-1",
+    "name": "AWS SES (us-east-1)",
+    "description": "Amazon Simple Email Service — US East 1",
+    "url": "https://email.us-east-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-ses-us-west-2",
+    "name": "AWS SES (us-west-2)",
+    "description": "Amazon Simple Email Service — US West 2",
+    "url": "https://email.us-west-2.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-ses-eu-west-1",
+    "name": "AWS SES (eu-west-1)",
+    "description": "Amazon Simple Email Service — EU West 1",
+    "url": "https://email.eu-west-1.amazonaws.com/",
+    "category": "aws"
+  },
+  {
+    "key": "aws-status",
+    "name": "AWS Service Health Dashboard",
+    "description": "Official AWS service health page",
+    "url": "https://status.aws.amazon.com/",
+    "category": "aws"
+  },
+  {
     "key": "sendgrid-api",
-    "name": "SendGrid API",
-    "description": "Email delivery via SendGrid",
-    "url": "https://api.sendgrid.com/",
+    "name": "SendGrid",
+    "description": "Email delivery via SendGrid — probes the public status endpoint",
+    "url": "https://status.sendgrid.com/api/v2/status.json",
     "category": "email"
   },
   {
-    "key": "aws-s3-us-east-1",
-    "name": "AWS S3 (us-east-1)",
-    "description": "Amazon S3 object storage — US East 1 region",
-    "url": "https://s3.amazonaws.com/",
-    "category": "infrastructure"
+    "key": "mailgun-api",
+    "name": "Mailgun API",
+    "description": "Email delivery via Mailgun",
+    "url": "https://api.mailgun.net/",
+    "category": "email"
   },
   {
-    "key": "aws-ses",
-    "name": "AWS SES",
-    "description": "Amazon Simple Email Service",
-    "url": "https://email.us-east-1.amazonaws.com/",
+    "key": "postmark-api",
+    "name": "Postmark",
+    "description": "Transactional email via Postmark — probes the public status page",
+    "url": "https://status.postmarkapp.com/",
     "category": "email"
   },
   {
@@ -35,10 +175,52 @@
     "category": "developer-tools"
   },
   {
-    "key": "cloudflare",
-    "name": "Cloudflare",
-    "description": "Cloudflare CDN and DNS",
+    "key": "github-status",
+    "name": "GitHub Status",
+    "description": "Official GitHub status page",
+    "url": "https://www.githubstatus.com/api/v2/status.json",
+    "category": "developer-tools"
+  },
+  {
+    "key": "cloudflare-status",
+    "name": "Cloudflare Status",
+    "description": "Cloudflare CDN and DNS status page",
     "url": "https://www.cloudflarestatus.com/api/v2/status.json",
     "category": "infrastructure"
+  },
+  {
+    "key": "twilio-api",
+    "name": "Twilio API",
+    "description": "Twilio SMS/voice API",
+    "url": "https://api.twilio.com/",
+    "category": "communications"
+  },
+  {
+    "key": "pusher-api",
+    "name": "Pusher API",
+    "description": "Pusher real-time messaging API",
+    "url": "https://api.pusherapp.com/",
+    "category": "communications"
+  },
+  {
+    "key": "algolia-api",
+    "name": "Algolia API",
+    "description": "Algolia search service",
+    "url": "https://status.algolia.com/api/v2/status.json",
+    "category": "search"
+  },
+  {
+    "key": "datadog-api",
+    "name": "Datadog",
+    "description": "Datadog monitoring and observability — probes the public status endpoint",
+    "url": "https://status.datadoghq.com/api/v2/status.json",
+    "category": "monitoring"
+  },
+  {
+    "key": "pagerduty-api",
+    "name": "PagerDuty",
+    "description": "PagerDuty incident management — probes the public status page",
+    "url": "https://status.pagerduty.com/",
+    "category": "monitoring"
   }
 ]
