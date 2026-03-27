@@ -1,58 +1,73 @@
-# Test Credentials
+# TEST_CREDENTIALS
 
-Reference for all accounts and tokens used across the MCP test suite.
-The agent should use these when a test scenario refers to placeholder values
-like `<adminToken>`, `<regularToken>`, `<guestToken>`, etc.
+Single source of truth for all credentials, base URLs, and runtime IDs used across every test flow.
 
----
-
-## Users
-
-| Role    | Email                    | Password      | Notes                          |
-|---------|--------------------------|---------------|--------------------------------|
-| Admin   | `tam.vu@journeyh.io`      | `12345678` | Has `admin` role               |
-| Regular | `tam.vu@journeyh.io`       | `12345678` | Standard authenticated user    |
-| Guest   | `tam.vu@journeyh.io`      | `12345678` | Guest / limited-access user    |
+**Rule:** No test flow file may hard-code a URL, email, or password. All values must be referenced from this file using the notation below.
 
 ---
 
-## Obtaining Tokens
+## Credential Object
 
-Tokens are obtained by logging in via the API:
+```json
+{
+  "baseUrl": "http://localhost:5173",
+  "admin": {
+    "email": "tam.vu@journeyh.io",
+    "password": "12345678"
+  },
+  "user": {
+    "email": "tam.vu@journeyh.io",
+    "password": "12345678"
+  },
+  "guest": {
+    "email": "tam.vu@journeyh.io",
+    "password": "12345678"
+  }
+}
+```
+
+Set `TEST_BASE_URL` environment variable to override `baseUrl` when running against staging or production.
+
+---
+
+## Reference Notation
+
+| Token | Value |
+|---|---|
+| `TEST_CREDENTIALS.baseUrl` | Application root URL |
+| `TEST_CREDENTIALS.admin.email` | Admin user email |
+| `TEST_CREDENTIALS.admin.password` | Admin user password |
+| `TEST_CREDENTIALS.user.email` | Regular user email |
+| `TEST_CREDENTIALS.user.password` | Regular user password |
+| `TEST_CREDENTIALS.guest.email` | Guest / limited-access user email |
+| `TEST_CREDENTIALS.guest.password` | Guest / limited-access user password |
+
+---
+
+## Obtaining a Bearer Token (API flows)
 
 ```http
-POST /api/v1/auth/login
+POST {TEST_CREDENTIALS.baseUrl}/api/v1/auth/login
 Content-Type: application/json
 
-{ "email": "<email>", "password": "<password>" }
+{
+  "email": "{TEST_CREDENTIALS.admin.email}",
+  "password": "{TEST_CREDENTIALS.admin.password}"
+}
 ```
 
-The response `data.token` is the Bearer token to use in subsequent requests.
-
-- `adminToken`   → login with `tam.vu@journeyh.io`
-- `regularToken` → login with `tam.vu@journeyh.io`
-- `guestToken`   → login with `tam.vu@journeyh.io`
+`response.data.token` → use as `Authorization: Bearer <token>` in subsequent requests.
 
 ---
 
-## Known IDs
+## Runtime Placeholders
 
-These IDs are seeded in the development/test database and can be used as
-stable references in test scenarios.
+These are resolved during the flow execution (not pre-seeded).
 
-| Resource    | Placeholder      | Value                                  |
-|-------------|------------------|----------------------------------------|
-| Admin user  | `<adminUserId>`  | resolved at runtime via admin login    |
-| Regular user| `<userId>`       | resolved at runtime via user login     |
-| Workspace   | `<workspaceId>`  | resolved at runtime via GET /api/v1/workspaces |
-| Board       | `<boardId>`      | resolved at runtime via GET /api/v1/boards     |
-
----
-
-## Base URL
-
-```
-http://localhost:5173
-```
-
-Override with the `BASE_URL` environment variable when running against staging.
+| Placeholder | How to resolve |
+|---|---|
+| `$workspaceId` | `GET {TEST_CREDENTIALS.baseUrl}/api/v1/workspaces` → first item `id` |
+| `$boardId` | From board create response or `GET /api/v1/boards` |
+| `$listId` | From board lists panel or `GET /api/v1/boards/$boardId/lists` |
+| `$cardId` | From card create response or board view click |
+| `$token` | From login response `data.token` |
