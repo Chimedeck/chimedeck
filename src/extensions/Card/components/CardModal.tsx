@@ -71,6 +71,8 @@ interface Props {
   onCoverColorChange: (color: string | null) => void;
   onCoverSizeChange: (size: 'SMALL' | 'FULL') => void;
   onCoverAttachmentChange: (attachmentId: string | null) => void;
+  /** Called whenever the persisted attachment count changes — used to keep the board card tile in sync. */
+  onAttachmentCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
   /** True when the current user is a VIEWER guest — hides write-action controls. */
   isViewerGuest?: boolean;
 }
@@ -132,6 +134,7 @@ const CardModal = ({
   onCoverColorChange,
   onCoverSizeChange,
   onCoverAttachmentChange,
+  onAttachmentCountChange,
   isViewerGuest = false,
 }: Props) => {
   const isReadOnly = card.archived;
@@ -415,7 +418,7 @@ const CardModal = ({
                       boardId={boardId}
                     />
 
-                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} />
+                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} />
 
                     {/* Plugin detail badges */}
                     <div className="flex flex-wrap gap-3">
@@ -483,7 +486,7 @@ const CardModal = ({
                     boardId={boardId}
                   />
 
-                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} />
+                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} />
 
                   {/* Plugin detail badges */}
                   <div className="flex flex-wrap gap-3">

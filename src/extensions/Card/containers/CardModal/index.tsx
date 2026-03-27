@@ -507,6 +507,8 @@ const CardModalContainer = () => {
       if (!card) return;
       const comment = await postCardComment({ api, cardId: card.id, content });
       dispatch(cardDetailSliceActions.addComment(comment));
+      // [why] Keep the card tile comment counter in sync without a full board re-fetch.
+      dispatch(boardSliceActions.updateCard({ card: { ...card, comment_count: (card.comment_count ?? 0) + 1 } }));
     },
     [api, card, dispatch],
   );
@@ -523,8 +525,22 @@ const CardModalContainer = () => {
     async (commentId: string) => {
       await deleteComment({ api, commentId });
       dispatch(cardDetailSliceActions.removeComment({ commentId }));
+      // [why] Keep the card tile comment counter in sync without a full board re-fetch.
+      if (card) {
+        dispatch(boardSliceActions.updateCard({ card: { ...card, comment_count: Math.max(0, (card.comment_count ?? 0) - 1) } }));
+      }
     },
-    [api, dispatch],
+    [api, card, dispatch],
+  );
+
+  // [why] When the attachment list changes inside AttachmentPanel (add, delete, initial load),
+  // immediately update the board card tile so the counter reflects the live count.
+  const handleAttachmentCountChange = useCallback(
+    ({ fileCount, linkedCardCount }: { fileCount: number; linkedCardCount: number }) => {
+      if (!card) return;
+      dispatch(boardSliceActions.updateCard({ card: { ...card, attachment_count: fileCount, linked_card_count: linkedCardCount } }));
+    },
+    [card, dispatch],
   );
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -599,6 +615,7 @@ const CardModalContainer = () => {
       onCoverColorChange={handleCoverColorChange}
       onCoverSizeChange={handleCoverSizeChange}
       onCoverAttachmentChange={handleCoverAttachmentChange}
+      onAttachmentCountChange={handleAttachmentCountChange}
       isViewerGuest={isViewerGuest}
       />
       {copyModalOpen && card && activeWorkspaceId && (

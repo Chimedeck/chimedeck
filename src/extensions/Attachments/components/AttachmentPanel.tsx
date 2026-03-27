@@ -27,9 +27,11 @@ interface Props {
    * button that calls `insertMarkdownRef.current(md)` with the formatted link.
    */
   insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
+  /** Called whenever the persisted attachment count changes (add, delete, or initial load). */
+  onCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: Props): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange }: Props): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -56,10 +58,13 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
       setAttachments(sorted);
+      const fileCount = sorted.filter((a) => a.referenced_card_id == null).length;
+      const linkedCardCount = sorted.filter((a) => a.referenced_card_id != null).length;
+      onCountChange?.({ fileCount, linkedCardCount });
     } catch {
       setLoadError('Failed to load attachments');
     }
-  }, [cardId]);
+  }, [cardId, onCountChange]);
 
   useEffect(() => {
     void loadAttachments();
@@ -76,7 +81,13 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
   // Delete attachment with optimistic removal
   const handleDelete = useCallback(
     async (id: string) => {
-      setAttachments((prev) => prev.filter((a) => a.id !== id));
+      setAttachments((prev) => {
+        const next = prev.filter((a) => a.id !== id);
+        const fileCount = next.filter((a) => a.referenced_card_id == null).length;
+        const linkedCardCount = next.filter((a) => a.referenced_card_id != null).length;
+        onCountChange?.({ fileCount, linkedCardCount });
+        return next;
+      });
       try {
         await deleteAttachment({ cardId, attachmentId: id });
       } catch {
@@ -84,7 +95,33 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
         void loadAttachments();
       }
     },
-    [cardId, loadAttachments],
+    [cardId, loadAttachments, onCountChange],
+  );
+
+  // Handle a URL pasted anywhere in the card modal while no text input is focused.
+  // Immediately creates a link attachment — internal card links are resolved first
+  // to use the card title as the display name.
+  const handlePasteLink = useCallback(
+    async (url: string): Promise<void> => {
+      if (!canWrite) return;
+      const internal = parseInternalCardUrl(url);
+      let name = url;
+      if (internal) {
+        try {
+          const res = await fetchCardPreview({ cardId: internal.cardId });
+          name = res.data.title;
+        } catch {
+          // fall back to URL as name
+        }
+      }
+      try {
+        await createUrlAttachment({ cardId, url, name });
+        void loadAttachments();
+      } catch {
+        // silently ignore — user can still use the manual link form
+      }
+    },
+    [cardId, canWrite, loadAttachments],
   );
 
   // Rename attachment — optimistic alias update, rolls back on server error
@@ -233,7 +270,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef }: 
   return (
     <AttachmentDropZone onFiles={canWrite ? upload : () => {}}>
       {/* Invisible paste listener — only active when the user can write */}
-      <PasteListener enabled={canWrite} onFiles={upload} />
+      <PasteListener enabled={canWrite} onFiles={upload} onLink={handlePasteLink} />
 
       {/* Hidden file input — accept covers all server-allowed types; server re-validates */}
       {canWrite && (

@@ -23,6 +23,8 @@ export interface Card {
   /** Counts returned by the board list endpoint — may be absent on older cached responses. */
   comment_count?: number;
   attachment_count?: number;
+  /** Count of internal card-link attachments — separate from file/URL attachments. */
+  linked_card_count?: number;
   checklist_total?: number;
   checklist_done?: number;
 }

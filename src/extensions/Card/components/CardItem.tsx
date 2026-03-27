@@ -1,7 +1,7 @@
 // CardItem — draggable card chip using @dnd-kit/sortable useSortable.
 // Styled per sprint-18 spec §4.
 import { memo, useCallback, useMemo } from 'react';
-import { CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSelector } from 'react-redux';
@@ -90,6 +90,7 @@ const CardItem = ({
     card.due_date ||
     (card.comment_count ?? 0) > 0 ||
     (card.attachment_count ?? 0) > 0 ||
+    (card.linked_card_count ?? 0) > 0 ||
     hasChecklist;
 
   return (
@@ -173,7 +174,7 @@ const CardItem = ({
               </span>
             )}
 
-            {/* Attachment count */}
+            {/* Attachment count (files & URLs only) */}
             {(card.attachment_count ?? 0) > 0 && (
               <span
                 className="inline-flex items-center gap-0.5 text-xs text-muted"
@@ -181,6 +182,17 @@ const CardItem = ({
               >
                 <PaperClipIcon className="h-3 w-3 shrink-0" />
                 {card.attachment_count}
+              </span>
+            )}
+
+            {/* Linked internal cards */}
+            {(card.linked_card_count ?? 0) > 0 && (
+              <span
+                className="inline-flex items-center gap-0.5 text-xs text-muted"
+                title={`${card.linked_card_count} linked card${(card.linked_card_count ?? 0) > 1 ? 's' : ''}`}
+              >
+                <RectangleStackIcon className="h-3 w-3 shrink-0" />
+                {card.linked_card_count}
               </span>
             )}
 

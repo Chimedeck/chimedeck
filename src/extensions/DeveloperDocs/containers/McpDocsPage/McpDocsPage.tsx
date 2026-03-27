@@ -4,96 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import config from '~/config';
 import {
   CommandLineIcon,
-  ChevronRightIcon,
   KeyIcon,
   BoltIcon,
   ServerStackIcon,
 } from '@heroicons/react/24/outline';
-
-// ─── Small primitives ────────────────────────────────────────────────────────
-
-const Section = ({ id, children }: { id: string; children: React.ReactNode }) => (
-  <section id={id} className="scroll-mt-20">
-    {children}
-  </section>
-);
-
-const H2 = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="mb-4 text-xl font-semibold text-base">{children}</h2>
-);
-
-const H3 = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="mb-2 mt-5 text-base font-semibold text-base">{children}</h3>
-);
-
-const P = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-3 text-sm leading-relaxed text-subtle">{children}</p>
-);
-
-const Code = ({ children }: { children: React.ReactNode }) => (
-  <code className="rounded bg-bg-surface px-1.5 py-0.5 font-mono text-xs text-indigo-300">
-    {children}
-  </code>
-);
-
-const Pre = ({ children }: { children: React.ReactNode }) => (
-  <pre className="my-3 overflow-x-auto rounded-lg border border-border bg-bg-base px-4 py-4 font-mono text-xs leading-relaxed text-subtle">
-    {children}
-  </pre>
-);
-
-const Divider = () => <hr className="my-8 border-border" />;
-
-const Badge = ({ color, children }: { color: string; children: React.ReactNode }) => (
-  <span className={`rounded px-2 py-0.5 text-xs font-medium ${color}`}>{children}</span>
-);
-
-interface TableCell {
-  key: string;
-  content: React.ReactNode;
-}
-
-interface TableRow {
-  rowId: string;
-  cells: TableCell[];
-}
-
-const Table = ({ headers, rows }: { headers: string[]; rows: TableRow[] }) => (
-  <div className="my-4 overflow-x-auto rounded-lg border border-border">
-    <table className="w-full text-sm">
-      <thead className="bg-bg-surface">
-        <tr>
-          {headers.map((h) => (
-            <th key={h} className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted">
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => (
-          <tr key={row.rowId} className={i % 2 === 0 ? 'bg-bg-base' : 'bg-bg-base/50'}>
-            {row.cells.map((cell) => (
-              <td key={cell.key} className="border-t border-border px-4 py-2 text-subtle">
-                {cell.content}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-const NavItem = ({ href, label }: { href: string; label: string }) => (
-  <a
-    href={href}
-    className="flex items-center gap-1.5 rounded px-2 py-1 text-sm text-muted transition-colors hover:bg-bg-surface hover:text-base"
-  >
-    <ChevronRightIcon className="h-3 w-3 shrink-0 text-muted" />
-    {label}
-  </a>
-);
+import {
+  Section, H2, H3, P, Code, Pre, Divider, Badge,
+  InfoCallout, WarnCallout, Table, NavItem, inlineCodeClass,
+} from '~/extensions/DeveloperDocs/components/DocsPrimitives';
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -155,20 +73,18 @@ const McpDocsPage = () => {
 
           {/* ── Overview ───────────────────────────────────── */}
           <Section id="overview">
-            <div className="mb-6 rounded-lg border border-indigo-700/40 bg-indigo-900/20 px-5 py-4">
-              <p className="text-sm text-indigo-200">
-                The Taskinate MCP server lets AI assistants — Claude, Cursor, and any
-                MCP-compatible client — take actions inside Taskinate on your behalf. It bridges
-                MCP tool calls to Taskinate's REST API using your personal API token.
-              </p>
-            </div>
+            <InfoCallout className="mb-6">
+              The Taskinate MCP server lets AI assistants — Claude, Cursor, and any
+              MCP-compatible client — take actions inside Taskinate on your behalf. It bridges
+              MCP tool calls to Taskinate's REST API using your personal API token.
+            </InfoCallout>
             <P>
               The server supports two transport modes:
             </P>
             <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 '<strong>stdio</strong> — a local Bun subprocess that communicates over stdin/stdout. Best for Claude Desktop and Cursor.',
-                '<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">/api/mcp</code>) served on the same port as Taskinate. Best for remote agents, CI, and web-based AI assistants.',
+                `<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="${inlineCodeClass}">/api/mcp</code>) served on the same port as Taskinate. Best for remote agents, CI, and web-based AI assistants.`,
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
@@ -210,10 +126,10 @@ const McpDocsPage = () => {
                 </li>
               ))}
             </ol>
-            <div className="rounded-lg border border-amber-700/40 bg-amber-900/10 px-4 py-3 text-sm text-amber-200">
+            <WarnCallout>
               <strong>Keep your token secret.</strong> Treat it like a password. Anyone who has
               it can perform any action on your behalf.
-            </div>
+            </WarnCallout>
 
             <H3>Using the token</H3>
             <Table
@@ -229,7 +145,7 @@ const McpDocsPage = () => {
                 {
                   rowId: 'auth-http',
                   cells: [
-                    { key: 'transport', content: <Badge color="bg-indigo-900/60 text-indigo-300">HTTP</Badge> },
+                    { key: 'transport', content: <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">HTTP</Badge> },
                     { key: 'how', content: <><Code>Authorization: Bearer hf_your_token_here</Code> request header</> },
                   ],
                 },
@@ -312,9 +228,9 @@ const McpDocsPage = () => {
             <H3>Session lifecycle</H3>
             <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
-                '<strong>Initialize</strong> — <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">POST /api/mcp</code> (no <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header) creates a new isolated session. The response returns an <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header.',
-                '<strong>Interact</strong> — subsequent <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">POST</code> requests (tool calls / notifications) or <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">GET</code> requests (SSE stream) must include the <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">mcp-session-id</code> header.',
-                '<strong>Terminate</strong> — <code class="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-indigo-300">DELETE /api/mcp</code> with the session ID tears down the session immediately.',
+                `<strong>Initialize</strong> — <code class="${inlineCodeClass}">POST /api/mcp</code> (no <code class="${inlineCodeClass}">mcp-session-id</code> header) creates a new isolated session. The response returns an <code class="${inlineCodeClass}">mcp-session-id</code> header.`,
+                `<strong>Interact</strong> — subsequent <code class="${inlineCodeClass}">POST</code> requests (tool calls / notifications) or <code class="${inlineCodeClass}">GET</code> requests (SSE stream) must include the <code class="${inlineCodeClass}">mcp-session-id</code> header.`,
+                `<strong>Terminate</strong> — <code class="${inlineCodeClass}">DELETE /api/mcp</code> with the session ID tears down the session immediately.`,
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
@@ -381,7 +297,7 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-400',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-amber-900/60 text-amber-300">400</Badge> },
+                    { key: 'status', content: <Badge color="bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">400</Badge> },
                     { key: 'name', content: <Code>bad-request</Code> },
                     { key: 'meaning', content: 'mcp-session-id header missing on a non-initialize request' },
                   ],
@@ -389,7 +305,7 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-401',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-red-900/60 text-red-300">401</Badge> },  // [theme-exception]
+                    { key: 'status', content: <Badge color="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">401</Badge> },  // [theme-exception]
                     { key: 'name', content: <Code>unauthorized</Code> },
                     { key: 'meaning', content: 'Token absent or invalid' },
                   ],
@@ -397,7 +313,7 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-403',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-red-900/60 text-red-300">403</Badge> },  // [theme-exception]
+                    { key: 'status', content: <Badge color="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">403</Badge> },  // [theme-exception]
                     { key: 'name', content: <Code>forbidden</Code> },
                     { key: 'meaning', content: 'Token belongs to a different user than the session owner' },
                   ],
@@ -696,11 +612,11 @@ curl -X POST http://localhost:3000/api/mcp \\
           <Section id="tool-invite-to-board">
             <H3>invite_to_board</H3>
             <P>Invite a user to a board by email. Requires the token holder to be a board admin.</P>
-            <div className="rounded-lg border border-amber-700/40 bg-amber-900/10 px-4 py-3 text-sm text-amber-200 mb-3">
+            <WarnCallout className="mb-3">
               <strong>Access control:</strong> If the token holder is not a board admin, the
               tool returns a structured error (<Code>current-user-is-not-admin</Code>) instead
               of crashing.
-            </div>
+            </WarnCallout>
             <Table
               headers={['Parameter', 'Type', 'Required', 'Description']}
               rows={[

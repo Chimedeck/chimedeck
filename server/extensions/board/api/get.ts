@@ -75,7 +75,8 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
             ),
             // [why] Inline sub-counts avoid N+1 queries on subsequent per-card fetches.
             db.raw(`(SELECT COUNT(*) FROM comments WHERE card_id = c.id AND deleted = false)::int AS comment_count`),
-            db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY')::int AS attachment_count`),
+            db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY' AND referenced_card_id IS NULL)::int AS attachment_count`),
+            db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY' AND referenced_card_id IS NOT NULL)::int AS linked_card_count`),
             db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id)::int AS checklist_total`),
             db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id AND ci.checked = true)::int AS checklist_done`),
           )
