@@ -40,8 +40,7 @@
     "docker:build:nc": "docker build --no-cache -t taskinate-app:latest .",
     "test:unit": "bun test tests/integration",
     "test:e2e": "playwright test --project=e2e",
-    "test:mcp": "bash run-all-tests.sh",
-    "test:all": "bash run-all-tests-full.sh",
+    "test:mcp": "bash run-all-tests-full.sh",
     "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
     "clean": "rm -rf dist .vite node_modules/.cache"
   },

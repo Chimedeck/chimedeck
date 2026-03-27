@@ -8,7 +8,7 @@
 # For every developed feature a corresponding test case must be created there
 # in Markdown format (e.g. specs/tests/login-flow.md).
 # Run a specific test : ./run-test.sh specs/tests/<scenario>.md
-# Run all tests       : ./run-all-tests.sh
+# Run all tests       : ./run-all-tests-full.sh
 
 set -e
 
@@ -27,17 +27,28 @@ fi
 
 TEST_CONTENT=$(cat "$TEST_FILE")
 
-# Resolve MCP config path (workspace-local by default)
-MCP_CONFIG_PATH="${MCP_CONFIG_PATH:-.vscode/mcp.json}"
+# Resolve MCP config path — workspace-local first, then VS Code global fallback
+# Override precedence:
+#   MCP_CONFIG_PATH          — explicit path to use (skips all auto-detection)
+#   MCP_CONFIG_GLOBAL_PATH   — overrides the global VS Code fallback location
+MCP_CONFIG_GLOBAL_PATH="${MCP_CONFIG_GLOBAL_PATH:-$HOME/Library/Application Support/Code/User/mcp.json}"
+if [ -z "${MCP_CONFIG_PATH:-}" ]; then
+    if [ -f ".vscode/mcp.json" ]; then
+        MCP_CONFIG_PATH=".vscode/mcp.json"
+    else
+        MCP_CONFIG_PATH="$MCP_CONFIG_GLOBAL_PATH"
+    fi
+fi
 if [ ! -f "$MCP_CONFIG_PATH" ]; then
     echo "❌ MCP config not found: $MCP_CONFIG_PATH"
-    echo "ℹ️  Set MCP_CONFIG_PATH to your Copilot MCP config or place one at .vscode/mcp.json"
+    echo "ℹ️  Set MCP_CONFIG_PATH (explicit) or MCP_CONFIG_GLOBAL_PATH (global fallback)"
     exit 1
 fi
 
 # Try to extract MCP server URL (for a quick reachability check)
 if command -v jq >/dev/null 2>&1; then
-    MCP_URL=$(jq -r '.servers.playwright.url // empty' "$MCP_CONFIG_PATH")
+    # Strip trailing commas and // comments so jq can parse JSONC
+    MCP_URL=$(sed 's|//.*||g; s|,\s*}|}|g; s|,\s*]|]|g' "$MCP_CONFIG_PATH" | jq -r '.servers.playwright.url // empty' 2>/dev/null || true)
 else
     MCP_URL=""
 fi
