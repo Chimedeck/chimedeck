@@ -159,13 +159,15 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             submitLabel={translations['comment.editor.update']}
           />
         ) : (
-          <div
-            className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base
-              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-            // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
-            // Input is from authenticated users only (internal tool), so XSS risk is accepted.
-            dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
-          />
+          <div className="border border-border rounded-md px-3 py-2 bg-surface">
+            <div
+              className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base
+                [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
+              // Input is from authenticated users only (internal tool), so XSS risk is accepted.
+              dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
+            />
+          </div>
         )}
 
         {/* Inline action links */}
