@@ -253,7 +253,7 @@ const CardModal = ({
                   disabled={isReadOnly}
                 />
                 <p className="mt-1 text-xs text-subtle px-2">
-                  in list <span className="text-muted font-medium">{listTitle}</span>{' '}
+                  in list <span className="text-link font-medium">{listTitle}</span>{' '}
                   · {boardTitle}
                 </p>
               </div>
