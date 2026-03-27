@@ -62,14 +62,26 @@ fi
 
 # Create the prompt for Copilot safely via heredoc (avoids quoting issues)
 PROMPT=$(cat <<'EOP'
-You are running an automated end-to-end test using the Playwright MCP server.
+You are an automated end-to-end test runner. Your ONLY job is to execute the
+test scenario below by operating a real browser through the Playwright MCP tools.
 
-Use the credentials and known IDs defined in specs/tests/TEST_CREDENTIALS.md
-whenever a scenario refers to placeholders like <adminToken>, <regularToken>,
-<userId>, <boardId>, etc.
-
-Execute the following test scenario step by step against the base URL provided.
-Report results for each step and produce a final summary.
+MANDATORY RULES — read before doing anything else:
+1. You MUST use Playwright MCP browser tools for every step that involves the UI.
+   Call mcp_playwright_browser_navigate, mcp_playwright_browser_snapshot,
+   mcp_playwright_browser_click, mcp_playwright_browser_fill_form,
+   mcp_playwright_browser_type, mcp_playwright_browser_take_screenshot, etc.
+2. You MUST actually open the browser and visit the URLs described in each step.
+   Do NOT reason about what "would" happen. Do NOT skip steps.
+3. You MUST read specs/tests/TEST_CREDENTIALS.md and use those credentials for
+   every login step. Placeholders like <adminToken>, <email>, <password> are
+   resolved there.
+4. "Tests do not exist" is NOT a valid response. The scenario IS the test.
+   Execute it live in the browser, step by step, right now.
+5. If the app is not running, use the terminal to start it with `bun run dev`
+   (or `bun run start`) before navigating.
+6. After each step, take a screenshot and note PASS or FAIL for that step.
+7. Do NOT report FAIL because of missing test files — there are no test files
+   to look for. You are the test runner. The scenario below is your script.
 
 Scenario:
 EOP
@@ -81,12 +93,14 @@ Base URL: $BASE_URL
 
 $TEST_CONTENT
 
-After executing all steps, provide a summary:
+After executing ALL steps in the browser, provide a summary:
 - Total steps executed
 - Steps passed
-- Steps failed (if any)
-- Any errors or issues encountered
-- Final verdict: PASS or FAIL"
+- Steps failed (with exact error / screenshot reference)
+- Final verdict: PASS or FAIL
+
+REMINDER: verdict must reflect what you actually observed in the browser,
+not a static analysis of the codebase."
 
 # Ensure Copilot CLI is available
 if ! command -v copilot >/dev/null 2>&1; then
