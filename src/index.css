@@ -5,64 +5,65 @@
 /* CSS custom properties for light/dark palettes — single source of truth for all design tokens */
 :root {
   /* ── Brand ─────────────────────────────────────────── */
-  --color-primary:       #2563eb;   /* blue-600 */
-  --color-primary-hover: #1d4ed8;   /* blue-700 */
-  --color-secondary:     #64748b;   /* slate-500 */
-  --color-accent:        #0ea5e9;   /* sky-500 */
+  --color-primary:       #4f46e5;   /* indigo-600 - slightly warmer than blue */
+  --color-primary-hover: #4338ca;   /* indigo-700 */
+  --color-secondary:     #71717a;   /* zinc-500 */
+  --color-accent:        #06b6d4;   /* cyan-500 */
 
-  /* ── Surfaces ───────────────────────────────────────── */
-  --bg-base:     #f8fafc;   /* slate-50  — page background */
-  --bg-surface:  #ffffff;   /* cards, modals, panels */
-  --bg-overlay:  #f1f5f9;   /* slate-100 — hover rows, inner blocks */
-  --bg-sunken:   #e2e8f0;   /* slate-200 — input fills, code blocks */
+  /* ── Surfaces (Softer Light Mode) ──────────────────── */
+  --bg-base:     #f4f4f5;   /* zinc-100 — "Paper" feel, less glare */
+  --bg-surface:  #fafafa;   /* off-white — softer on the eyes than pure #fff */
+  --bg-overlay:  #e4e4e7;   /* zinc-200 */
+  --bg-sunken:   #d4d4d8;   /* zinc-300 */
 
   /* ── Text ───────────────────────────────────────────── */
-  --text-base:    #0f172a;  /* slate-900 — primary body text */
-  --text-muted:   #64748b;  /* slate-500 — secondary / placeholder */
-  --text-subtle:  #94a3b8;  /* slate-400 — disabled, timestamps */
-  --text-inverse: #ffffff;  /* text on dark/coloured backgrounds */
-  --text-link:    #2563eb;  /* blue-600  — links */
+  --text-base:    #18181b;  /* zinc-950 — softer than pure black */
+  --text-muted:   #52525b;  /* zinc-600 */
+  --text-subtle:  #a1a1aa;  /* zinc-400 */
+  --text-inverse: #ffffff;
+  --text-link:    #4f46e5;
 
   /* ── Borders ────────────────────────────────────────── */
-  --border:       #e2e8f0;  /* slate-200 */
-  --border-strong:#cbd5e1;  /* slate-300 — focused inputs */
+  --border:       #e4e4e7;  /* zinc-200 */
+  --border-strong:#d4d4d8;  /* zinc-300 */
 
   /* ── Semantic ───────────────────────────────────────── */
-  --color-danger:   #dc2626;  /* red-600   */
-  --color-success:  #16a34a;  /* green-600 */
-  --color-warning:  #d97706;  /* amber-600 */
-  --color-info:     #0284c7;  /* sky-700   */
+  --color-danger:   #e11d48;  /* rose-600 */
+  --color-success:  #10b981;  /* emerald-500 */
+  --color-warning:  #f59e0b;  /* amber-500 */
+  --color-info:     #0ea5e9;  /* sky-500 */
 }
 
 .dark {
   /* ── Brand ─────────────────────────────────────────── */
-  --color-primary:       #3b82f6;   /* blue-500 */
-  --color-primary-hover: #2563eb;   /* blue-600 */
-  --color-secondary:     #94a3b8;   /* slate-400 */
-  --color-accent:        #38bdf8;   /* sky-400  */
+  --color-primary:       #818cf8;   /* indigo-400 - pops against dark */
+  --color-primary-hover: #a5b4fc;   /* indigo-300 */
+  --color-secondary:     #a1a1aa;   /* zinc-400 */
+  --color-accent:        #22d3ee;   /* cyan-400 */
 
-  /* ── Surfaces ───────────────────────────────────────── */
-  --bg-base:     #0f172a;   /* slate-900 */
-  --bg-surface:  #1e293b;   /* slate-800 */
-  --bg-overlay:  #334155;   /* slate-700 */
-  --bg-sunken:   #475569;   /* slate-600 */
+  /* ── Surfaces (Vibrant Dark Mode) ──────────────────── */
+  /* Using a deep navy-indigo mix instead of cold slate */
+  --bg-base:     #09090b;   /* zinc-950 - very deep base */
+  --bg-surface:  #18181b;   /* zinc-900 - card surface */
+  --bg-overlay:  #27272a;   /* zinc-800 - hover state */
+  --bg-sunken:   #3f3f46;   /* zinc-700 - wells/inputs */
 
   /* ── Text ───────────────────────────────────────────── */
-  --text-base:    #f1f5f9;  /* slate-100 */
-  --text-muted:   #94a3b8;  /* slate-400 */
-  --text-subtle:  #64748b;  /* slate-500 */
-  --text-inverse: #0f172a;  /* slate-900 — text on light backgrounds */
-  --text-link:    #60a5fa;  /* blue-400  */
+  --text-base:    #f4f4f5;  /* zinc-100 - bright but not piercing */
+  --text-muted:   #a1a1aa;  /* zinc-400 */
+  --text-subtle:  #71717a;  /* zinc-500 */
+  --text-inverse: #09090b;
+  --text-link:    #818cf8;
 
   /* ── Borders ────────────────────────────────────────── */
-  --border:       #334155;  /* slate-700 */
-  --border-strong:#475569;  /* slate-600 */
+  --border:       #27272a;  /* zinc-800 */
+  --border-strong:#3f3f46;  /* zinc-700 */
 
   /* ── Semantic ───────────────────────────────────────── */
-  --color-danger:   #ef4444;  /* red-500   */
-  --color-success:  #22c55e;  /* green-500 */
-  --color-warning:  #f59e0b;  /* amber-500 */
-  --color-info:     #38bdf8;  /* sky-400   */
+  --color-danger:   #fb7185;  /* rose-400 */
+  --color-success:  #34d399;  /* emerald-400 */
+  --color-warning:  #fbbf24;  /* amber-400 */
+  --color-info:     #38bdf8;  /* sky-400 */
 }
 
 /* TipTap editor list/heading styles — applied here to cover both the
