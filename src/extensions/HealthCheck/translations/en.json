@@ -11,6 +11,10 @@
   "AddServiceModal.customNamePlaceholder": "e.g. My API",
   "AddServiceModal.customUrlLabel": "URL",
   "AddServiceModal.customUrlPlaceholder": "https://example.com/health",
+  "AddServiceModal.customExpectedStatusLabel": "Expected status",
+  "AddServiceModal.customExpectedStatusOptional": "optional",
+  "AddServiceModal.customExpectedStatusPlaceholder": "e.g. 401",
+  "AddServiceModal.customExpectedStatusHint": "Leave blank to treat any 2xx response as healthy. Set a code (e.g. 401) if your endpoint returns a non-2xx status when healthy.",
   "AddServiceModal.cancelButton": "Cancel",
   "AddServiceModal.addButton": "Add Service",
   "AddServiceModal.addingButton": "Adding…",
@@ -19,5 +23,6 @@
   "AddServiceModal.errorAddFailed": "Failed to add service. Please try again.",
   "AddServiceModal.errorNameRequired": "Name is required.",
   "AddServiceModal.errorUrlRequired": "URL is required.",
-  "AddServiceModal.errorUrlScheme": "URL must start with https:// or http://"
+  "AddServiceModal.errorUrlScheme": "URL must start with https:// or http://",
+  "AddServiceModal.errorExpectedStatusInvalid": "Expected status must be a number between 100 and 599."
 }

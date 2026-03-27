@@ -55,7 +55,7 @@ export async function handleProbeAllHealthChecks(
         return null;
       }
       try {
-        const result = await probe({ healthCheckId: check.id, url: check.url });
+        const result = await probe({ healthCheckId: check.id, url: check.url, expectedStatus: check.expected_status ?? null });
         return {
           id: result.id,
           healthCheckId: result.healthCheckId,

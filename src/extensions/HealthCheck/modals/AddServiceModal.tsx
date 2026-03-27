@@ -27,7 +27,7 @@ interface Props {
 }
 
 function buildInitialCustomState() {
-  return { name: '', url: '' };
+  return { name: '', url: '', expectedStatus: '' };
 }
 
 /** AddServiceModal renders a dialog to add a preset or custom health-check service. */
@@ -91,6 +91,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             url: preset.url,
             type: 'preset',
             presetKey: preset.key,
+            expectedStatus: preset.expectedStatus ?? null,
           }),
         ).unwrap();
         onClose();
@@ -116,10 +117,20 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         setError(translations['AddServiceModal.errorUrlScheme']);
         return;
       }
+      // Validate optional expected status code.
+      let expectedStatus: number | null = null;
+      if (custom.expectedStatus.trim() !== '') {
+        const code = Number.parseInt(custom.expectedStatus.trim(), 10);
+        if (Number.isNaN(code) || code < 100 || code > 599) {
+          setError(translations['AddServiceModal.errorExpectedStatusInvalid']);
+          return;
+        }
+        expectedStatus = code;
+      }
       setSubmitting(true);
       try {
         await dispatch(
-          addHealthCheckThunk({ boardId, name, url, type: 'custom' }),
+          addHealthCheckThunk({ boardId, name, url, type: 'custom', expectedStatus }),
         ).unwrap();
         onClose();
       } catch (err: unknown) {
@@ -270,6 +281,27 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="custom-expected-status"
+                  className="block text-sm font-medium text-subtle mb-1.5"
+                >
+                  {translations['AddServiceModal.customExpectedStatusLabel']}
+                  <span className="ml-1 text-xs font-normal text-subtle">({translations['AddServiceModal.customExpectedStatusOptional']})</span>
+                </label>
+                <input
+                  id="custom-expected-status"
+                  type="number"
+                  min={100}
+                  max={599}
+                  value={custom.expectedStatus}
+                  onChange={(e) => setCustom((prev) => ({ ...prev, expectedStatus: e.target.value }))}
+                  placeholder={translations['AddServiceModal.customExpectedStatusPlaceholder']}
+                  disabled={submitting}
+                  className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                />
+                <p className="mt-1 text-xs text-subtle">{translations['AddServiceModal.customExpectedStatusHint']}</p>
               </div>
             </>
           )}

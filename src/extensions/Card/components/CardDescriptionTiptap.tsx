@@ -309,7 +309,10 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       Link.configure({
         openOnClick: false,
         autolink: true,
-        linkOnPaste: true,
+        // [why] linkOnPaste conflicts with the Markdown extension's paste handler —
+        // both would insert the pasted URL, causing it to appear twice. autolink
+        // already converts plain URLs to links after insertion.
+        linkOnPaste: false,
         HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
       }),
       Markdown,

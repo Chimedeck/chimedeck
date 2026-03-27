@@ -22,6 +22,7 @@ export interface HealthCheck {
   url: string;
   type: HealthCheckType;
   presetKey: string | null;
+  expectedStatus: number | null;
   isActive: boolean;
   createdAt: string;
   latestResult: HealthCheckResult | null;
@@ -43,6 +44,7 @@ export interface HealthCheckPreset {
   description: string;
   url: string;
   category: string;
+  expectedStatus?: number | null;
 }
 
 // ---------- API client type ----------
@@ -92,6 +94,7 @@ export async function addHealthCheck({
   url,
   type,
   presetKey,
+  expectedStatus,
 }: {
   api: ApiClient;
   boardId: string;
@@ -99,12 +102,14 @@ export async function addHealthCheck({
   url: string;
   type: HealthCheckType;
   presetKey?: string;
+  expectedStatus?: number | null;
 }): Promise<{ data: HealthCheck }> {
   return api.post<{ data: HealthCheck }>(`/boards/${boardId}/health-checks`, {
     name,
     url,
     type,
     presetKey,
+    expectedStatus,
   });
 }
 

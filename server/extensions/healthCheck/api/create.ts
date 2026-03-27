@@ -24,6 +24,7 @@ export async function handleCreateHealthCheck(
     url?: string;
     type?: string;
     presetKey?: string;
+    expectedStatus?: number;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -79,6 +80,19 @@ export async function handleCreateHealthCheck(
     );
   }
 
+  // Validate optional expectedStatus — must be an integer in the valid HTTP status range.
+  let expectedStatus: number | null = null;
+  if (body.expectedStatus !== undefined && body.expectedStatus !== null) {
+    const code = Number(body.expectedStatus);
+    if (!Number.isInteger(code) || code < 100 || code > 599) {
+      return Response.json(
+        { name: 'bad-request', data: { message: 'expectedStatus must be an integer between 100 and 599' } },
+        { status: 400 },
+      );
+    }
+    expectedStatus = code;
+  }
+
   // Duplicate URL check — case-insensitive per board.
   const duplicate = await db('board_health_checks')
     .where({ board_id: boardId })
@@ -102,6 +116,7 @@ export async function handleCreateHealthCheck(
     url: parsedUrl.toString(),
     type,
     preset_key: type === 'preset' ? (body.presetKey ?? null) : null,
+    expected_status: expectedStatus,
     is_active: true,
     created_by: createdBy,
   });
@@ -117,6 +132,7 @@ export async function handleCreateHealthCheck(
         url: created.url,
         type: created.type,
         presetKey: created.preset_key ?? null,
+        expectedStatus: created.expected_status ?? null,
         isActive: created.is_active,
         createdAt: created.created_at,
         latestResult: null,

@@ -222,5 +222,28 @@
     "description": "PagerDuty incident management — probes the public status page",
     "url": "https://status.pagerduty.com/",
     "category": "monitoring"
+  },
+  {
+    "key": "sharetribe-marketplace-api",
+    "name": "Sharetribe Marketplace API",
+    "description": "Sharetribe Flex Marketplace API — a 401 response confirms the API is reachable (auth required)",
+    "url": "https://flex-api.sharetribe.com/v1/api/marketplace/show",
+    "category": "sharetribe",
+    "expectedStatus": 401
+  },
+  {
+    "key": "sharetribe-integration-api",
+    "name": "Sharetribe Integration API",
+    "description": "Sharetribe Flex Integration API — a 401 response confirms the API is reachable (auth required)",
+    "url": "https://flex-integ-api.sharetribe.com/v1/integration_api/marketplace/show",
+    "category": "sharetribe",
+    "expectedStatus": 401
+  },
+  {
+    "key": "sharetribe-console",
+    "name": "Sharetribe Console",
+    "description": "Sharetribe operator console — login page should return 200",
+    "url": "https://console.sharetribe.com/login",
+    "category": "sharetribe"
   }
 ]

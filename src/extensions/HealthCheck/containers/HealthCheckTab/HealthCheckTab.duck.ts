@@ -80,12 +80,13 @@ export const addHealthCheckThunk = createAppAsyncThunk(
       url,
       type,
       presetKey,
-    }: { boardId: string; name: string; url: string; type: HealthCheckType; presetKey?: string },
+      expectedStatus,
+    }: { boardId: string; name: string; url: string; type: HealthCheckType; presetKey?: string; expectedStatus?: number | null },
     { extra },
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = (extra as any).api;
-    return addHealthCheck({ api, boardId, name, url, type, ...(presetKey !== undefined ? { presetKey } : {}) });
+    return addHealthCheck({ api, boardId, name, url, type, presetKey, expectedStatus });
   },
 );
 

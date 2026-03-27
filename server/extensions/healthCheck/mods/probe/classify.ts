@@ -10,24 +10,42 @@ export interface ClassifyParams {
   error: string | null;
   /** Threshold in ms above which a 2xx response is classified amber. */
   amberThresholdMs: number;
+  /**
+   * Optional user-specified "healthy" status code.
+   * When set, an exact match is treated as green (or amber if slow) regardless
+   * of the status code range — e.g. 401 for an auth-protected health endpoint.
+   * null/undefined falls back to the standard 2xx = green logic.
+   */
+  expectedStatus?: number | null;
 }
 
 /**
  * Classification rules:
  *   green  — HTTP 2xx AND responseTimeMs < amberThresholdMs
+ *            OR httpStatus === expectedStatus AND responseTimeMs < amberThresholdMs
  *   amber  — HTTP 2xx but slow (>= threshold) OR HTTP 3xx (redirect) OR HTTP 4xx
  *            (4xx means the server is reachable and responding — e.g. auth-required endpoints)
+ *            OR httpStatus === expectedStatus but slow
  *   red    — HTTP 5xx, timeout, network error, or DNS failure
+ *            (unless expectedStatus matches, in which case slow = amber, fast = green)
  */
 export function classify({
   httpStatus,
   responseTimeMs,
   error,
   amberThresholdMs,
+  expectedStatus,
 }: ClassifyParams): ProbeStatus {
   // Any error (timeout, DNS failure, SSRF rejection) → red
   if (error !== null) return 'red';
   if (httpStatus === null) return 'red';
+
+  // [why] If the user declared an expected status, an exact match overrides the
+  // default range rules — the service is considered healthy at that code.
+  if (expectedStatus != null && httpStatus === expectedStatus) {
+    if (responseTimeMs !== null && responseTimeMs >= amberThresholdMs) return 'amber';
+    return 'green';
+  }
 
   // 5xx server errors → red
   if (httpStatus >= 500) return 'red';

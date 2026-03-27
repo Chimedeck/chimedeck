@@ -46,7 +46,7 @@ export async function handleProbeHealthCheck(
     );
   }
 
-  const result = await probe({ healthCheckId: check.id, url: check.url });
+  const result = await probe({ healthCheckId: check.id, url: check.url, expectedStatus: check.expected_status ?? null });
 
   return Response.json({
     data: {

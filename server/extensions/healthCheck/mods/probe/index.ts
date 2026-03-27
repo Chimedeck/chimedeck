@@ -15,10 +15,12 @@ export { classify } from './classify';
 export async function probe({
   healthCheckId,
   url,
+  expectedStatus,
 }: {
   healthCheckId: string;
   url: string;
+  expectedStatus?: number | null;
 }): Promise<PersistedProbeResult> {
-  const result = await runProbe({ url });
+  const result = await runProbe({ url, expectedStatus });
   return persistResult({ healthCheckId, result });
 }

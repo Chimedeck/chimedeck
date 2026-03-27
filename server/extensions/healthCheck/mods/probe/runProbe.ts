@@ -61,7 +61,7 @@ async function assertPublicHost(hostname: string): Promise<void> {
  * - Enforces configurable timeout (default 10 s).
  * - Returns a ProbeResult including status classification.
  */
-export async function runProbe({ url }: { url: string }): Promise<ProbeResult> {
+export async function runProbe({ url, expectedStatus }: { url: string; expectedStatus?: number | null }): Promise<ProbeResult> {
   const { timeoutMs, amberThresholdMs } = healthCheckConfig;
   const checkedAt = new Date().toISOString();
 
@@ -119,7 +119,7 @@ export async function runProbe({ url }: { url: string }): Promise<ProbeResult> {
     // If fetch silently followed a redirect, treat the original response as 3xx → amber
     const httpStatus = response.redirected ? 301 : response.status;
 
-    const status = classify({ httpStatus, responseTimeMs, error: null, amberThresholdMs });
+    const status = classify({ httpStatus, responseTimeMs, error: null, amberThresholdMs, expectedStatus });
     return { status, httpStatus, responseTimeMs, errorMessage: null, checkedAt };
   } catch (err) {
     const responseTimeMs = Date.now() - startTime;
