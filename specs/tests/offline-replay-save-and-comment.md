@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Offline Replay — Idempotent Comment Create & Card Description Save
 ## Sprint 83
 

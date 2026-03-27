@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 90 · Iteration 2 — Activity Extension i18n
 
 ## Purpose

@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 94 — UserProfile + AdminInvite i18n Test Plan (Playwright MCP)
 
 ## Overview

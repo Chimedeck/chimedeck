@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Offline Description Draft Recovery — Server Draft API Spec
 ## Sprint 83
 
@@ -561,4 +563,3 @@ another user's draft. The API follows standard response shapes:
 **Then** `storage.saveDraft` is NOT called
 **And** no draft recovery banner is shown
 **And** the draft status footer remains hidden
-

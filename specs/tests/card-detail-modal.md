@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Test: Card Detail Modal
 
 ## Overview
@@ -94,4 +96,3 @@ Verifies that clicking a card opens the detail modal with the two-column layout,
 - No sidebar panel exists for Members, Labels, Dates, or Value
 - All metadata (labels, members, dates) appears only in CardMetaStrip below the title/breadcrumb
 - The modal body is either a two-column ResizablePanels layout (activity visible) or a single content column (activity hidden)
-

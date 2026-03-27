@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Playwright MCP Test Spec — Board Notification Type Preferences Matrix (Sprint 100)
 
 > Tests the Board Settings notification type preferences matrix, board-level overrides, reset, and translation.

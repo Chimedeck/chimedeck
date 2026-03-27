@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Playwright MCP Test Spec — API Token Settings Page (Sprint 102, Iteration 6)
 
 > Tests that the /settings/api-tokens route is registered, "API Tokens" link appears in the

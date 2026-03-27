@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 78 – Iteration 1: board_members Migration & Board Creation Auto-Insert
 
 Verify that after a board is created the creator automatically appears in the board's member list with the ADMIN role.

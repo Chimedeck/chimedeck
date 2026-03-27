@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 80 – Iteration 7: Guest Invite Flow (Guests Tab in Board Members Panel)
 
 ## Overview

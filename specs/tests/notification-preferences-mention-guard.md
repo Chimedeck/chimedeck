@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Test: Notification Preferences — Mention Guard
 
 Verifies that the `preferenceGuard` check inside `createNotificationsForMentions` correctly gates

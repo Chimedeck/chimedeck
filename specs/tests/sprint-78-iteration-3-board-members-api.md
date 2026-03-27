@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 78 — Iteration 3: Board Member Management API Test
 
 Tests for the board member CRUD endpoints (`GET/POST/PATCH/DELETE /api/v1/boards/:id/members`)

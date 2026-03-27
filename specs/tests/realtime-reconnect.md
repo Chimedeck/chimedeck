@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Playwright Test: Reconnect Banner
 
 **File:** `tests/realtime-reconnect.spec.ts`

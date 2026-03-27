@@ -16,12 +16,12 @@ FAILED=0
 SKIPPED=0
 
 # ─── Ctrl+C / SIGTERM handler ────────────────────────────────────────────────
-# Kill the entire process group so any running run-test.sh + copilot child
-# processes are also terminated immediately.
+# run-test.sh handles killing copilot's process tree when it receives INT/TERM.
+# This handler stops the scenario loop and exits cleanly.
 _cleanup() {
   echo ""
   echo "⚠️  Interrupted — stopping all tests."
-  kill 0
+  exit 130
 }
 trap _cleanup INT TERM
 
@@ -90,3 +90,4 @@ echo "  📈 Total:   $((PASSED + FAILED))"
 echo "════════════════════════════════════════════════════════"
 
 [ "$FAILED" -eq 0 ]
+trap - EXIT

@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Playwright MCP Evaluator Test Plan — Iteration 6 (2026-03-05)
 
 ## Context

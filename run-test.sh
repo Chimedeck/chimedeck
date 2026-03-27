@@ -64,6 +64,10 @@ fi
 PROMPT=$(cat <<'EOP'
 You are running an automated end-to-end test using the Playwright MCP server.
 
+Use the credentials and known IDs defined in specs/tests/TEST_CREDENTIALS.md
+whenever a scenario refers to placeholders like <adminToken>, <regularToken>,
+<userId>, <boardId>, etc.
+
 Execute the following test scenario step by step against the base URL provided.
 Report results for each step and produce a final summary.
 
@@ -112,10 +116,34 @@ JSON
     echo "📄 Generated minimal MCP config: $MCP_CONFIG_PATH"
 fi
 
-# Run via GitHub Copilot CLI with MCP connection
-# Latest Copilot CLI loads MCP servers from the MCP_CONFIG environment variable.
-# We export MCP_CONFIG for this invocation and do not rely on any CLI flags.
-MCP_CONFIG="$MCP_CONFIG_PATH" copilot --allow-all-tools --add-dir "$PWD" -p "$PROMPT"
+# Recursively kill a process and all its descendants (macOS-compatible)
+_kill_tree() {
+    local pid=$1
+    for child in $(pgrep -P "$pid" 2>/dev/null); do
+        _kill_tree "$child"
+    done
+    kill -KILL "$pid" 2>/dev/null || true
+}
+
+COPILOT_PID=""
+_cleanup() {
+    echo ""
+    echo "⚠️  Interrupted — killing test process."
+    [ -n "$COPILOT_PID" ] && _kill_tree "$COPILOT_PID"
+    exit 130
+}
+trap _cleanup INT TERM
+
+COPILOT_MODEL="${COPILOT_MODEL:-gpt-4.1}"
+
+# Run via GitHub Copilot CLI with MCP connection.
+# Run in background so we can trap signals and kill the full process tree.
+MCP_CONFIG="$MCP_CONFIG_PATH" copilot --allow-all-tools --add-dir "$PWD" --model "$COPILOT_MODEL" -p "$PROMPT" &
+COPILOT_PID=$!
+wait $COPILOT_PID
+COPILOT_STATUS=$?
+trap - INT TERM
 
 echo "----------------------------------------"
 echo "✅ Test execution completed"
+exit $COPILOT_STATUS

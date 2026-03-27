@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 93 — TimelineView i18n: Playwright MCP Test Plan
 
 **Goal:** Verify all TimelineView UI copy renders from `translations/en.json` and no hardcoded English strings remain.

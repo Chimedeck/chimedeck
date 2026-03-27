@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Test Spec: Email Notifications (SES)
 
 > Playwright MCP specification for Sprint 72 — Email Notifications via SES.

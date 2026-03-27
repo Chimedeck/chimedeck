@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 79 — Iteration 4: Board Settings Visibility Selector
 
 Tests that the Visibility Selector appears for board admins, allows changing visibility, and is hidden for non-admins.

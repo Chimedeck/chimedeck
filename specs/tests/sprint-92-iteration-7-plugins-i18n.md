@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 92 — Iteration 7: Plugins — Edit modal, Board panel, Domain allowlist
 
 ## Goal

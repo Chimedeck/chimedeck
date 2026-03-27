@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # card-activity-create-move-assign — Playwright MCP test scenarios
 
 > Covers Sprint 88 activity event emission for card_created, card_moved, and

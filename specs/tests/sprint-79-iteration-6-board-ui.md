@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 79 Iteration 6 — Workspace Board Grid Visibility Badge + Board Header Avatar Stack
 
 ## Overview

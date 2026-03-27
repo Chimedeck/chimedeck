@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Playwright Test: Real-Time Card Update
 
 **File:** `tests/realtime-card-update.spec.ts`

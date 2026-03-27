@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 80 — Iteration 9: Guest Client Permission Guards + Auth-Aware Route Guards
 
 Verifies that GUEST users:

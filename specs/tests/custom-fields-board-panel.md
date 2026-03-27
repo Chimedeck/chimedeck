@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Custom Fields Board Panel — E2E Tests
 
 > Playwright MCP markdown tests for the Custom Fields section inside Board Settings UI.

@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 78 – Iteration 2: Board Visibility Enforcement Middleware
 
 Verify that the board visibility middleware correctly enforces access rules:

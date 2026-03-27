@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sidebar Collapsible Drawer — Playwright MCP Test Scenarios
 
 Tests covering desktop collapsible sidebar, icon-only rail, tooltip behavior, and persistence after reload (Sprint 85).

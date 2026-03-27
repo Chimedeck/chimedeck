@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Search Board Access Rights
 
 > Playwright MCP test scenarios for Sprint 86 — server-side access-aware search filtering and board-open permission consistency.

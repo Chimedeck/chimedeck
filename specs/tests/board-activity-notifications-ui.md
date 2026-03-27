@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Playwright MCP Test Spec — Board Activity Notification Panel (Sprint 73)
 
 > Tests the client-side notification panel for the 3 new board activity types:

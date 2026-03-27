@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Sprint 103 — Card Comments Endpoint (API Token Auth)
 
 Test that `POST /api/v1/cards/:id/comments` creates a comment and returns the slim

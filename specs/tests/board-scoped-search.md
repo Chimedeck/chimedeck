@@ -1,3 +1,5 @@
+> **Login credentials:** See [TEST_CREDENTIALS.md](./TEST_CREDENTIALS.md) for all usernames, passwords, and tokens. Do not hardcode credentials here.
+
 # Board-Scoped Search
 
 > Playwright MCP test scenarios for Sprint 84 — board-scoped search API and UI flows.
