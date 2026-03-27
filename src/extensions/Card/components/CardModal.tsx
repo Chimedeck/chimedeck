@@ -51,6 +51,7 @@ interface Props {
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
   onCopyCard: () => void;
+  onPrint: () => void;
   onCreateChecklist: (title?: string) => Promise<void>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
@@ -114,6 +115,7 @@ const CardModal = ({
   onDelete,
   onCopyLink,
   onCopyCard,
+  onPrint,
   onCreateChecklist,
   onRenameChecklist,
   onDeleteChecklist,
@@ -375,7 +377,7 @@ const CardModal = ({
             </div>
 
             {isReadOnly && (
-              <div className="mx-5 mb-2 rounded-lg bg-yellow-900/30 border border-yellow-700/50 px-3 py-2 text-sm text-yellow-400">
+              <div className="mx-5 mb-2 rounded-lg bg-yellow-50 border border-yellow-300 px-3 py-2 text-sm text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700/50 dark:text-yellow-400">
                 This card is archived.
               </div>
             )}
@@ -521,6 +523,7 @@ const CardModal = ({
               onDelete={onDelete}
               onCopyLink={onCopyLink}
               onCopyCard={onCopyCard}
+              onPrint={onPrint}
             />
           </div>
         </Dialog.Content>

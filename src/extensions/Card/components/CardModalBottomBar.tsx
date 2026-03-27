@@ -9,6 +9,7 @@ import {
   ChevronUpIcon,
   DocumentDuplicateIcon,
   LinkIcon,
+  PrinterIcon,
   PuzzlePieceIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -33,6 +34,7 @@ interface Props {
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
   onCopyCard: () => void;
+  onPrint: () => void;
 }
 
 // ------------------------------------------------------------------
@@ -82,6 +84,7 @@ const CardModalBottomBar = ({
   onDelete,
   onCopyLink,
   onCopyCard,
+  onPrint,
 }: Props) => {
   const powerUps = usePopover();
   const automations = usePopover();
@@ -177,6 +180,13 @@ const CardModalBottomBar = ({
                 onClick={() => { actions.setOpen(false); onCopyCard(); }}
               >
                 <DocumentDuplicateIcon className="w-4 h-4 shrink-0" /> Copy card
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
+                onClick={() => { actions.setOpen(false); onPrint(); }}
+              >
+                <PrinterIcon className="w-4 h-4 shrink-0" /> Print card
               </button>
               <button
                 type="button"

@@ -1,5 +1,6 @@
 // BoardArchivedCardsPanel — list of all archived cards in a board with restore option.
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getArchivedCards } from './api';
 import { apiClient } from '~/common/api/client';
 import type { ArchivedCard } from './types';
@@ -16,6 +17,7 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [, setSearchParams] = useSearchParams();
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,17 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
     }
   };
 
+  const handleOpenCard = useCallback(
+    (cardId: string) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('card', cardId);
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
+
   if (error) {
     return <p className="p-4 text-sm text-danger">{error}</p>;
   }
@@ -68,8 +81,14 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
           className="flex items-center justify-between rounded border border-border bg-bg-surface px-3 py-2 text-sm"
         >
           <div>
-            <p className="font-medium text-base">{card.title}</p>
-            <p className="text-xs text-muted">{translations['BoardViews.inList']} {card.list_title}</p>
+            <button
+              type="button"
+              className="font-medium text-base text-link hover:underline underline-offset-2 text-left"
+              onClick={() => handleOpenCard(card.id)}
+            >
+              {card.title}
+            </button>
+            <p className="text-xs text-subtle">{translations['BoardViews.inList']} {card.list_title}</p>
           </div>
           <button
             disabled={restoringId === card.id}

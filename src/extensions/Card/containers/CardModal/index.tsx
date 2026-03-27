@@ -48,6 +48,8 @@ import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/wo
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
+import { printCard } from '../../utils/printCard';
+import { listAttachments } from '~/extensions/Attachments/api';
 
 let _mutationCounter = 0;
 const nextMutationId = () => `m${++_mutationCounter}`;
@@ -194,8 +196,14 @@ const CardModalContainer = () => {
     if (!card) return;
     await archiveCardToggle({ api, cardId: card.id });
     dispatch(fetchCardDetailThunk({ cardId: card.id }));
-    // If archiving (not unarchiving) close modal
-    if (!card.archived) handleClose();
+    if (card.archived) {
+      // Unarchiving: put the card back in the board view
+      dispatch(boardSliceActions.updateCard({ card: { ...card, archived: false } }));
+    } else {
+      // Archiving: remove card from the board kanban view immediately
+      dispatch(boardSliceActions.removeCard({ cardId: card.id, listId: card.list_id }));
+      handleClose();
+    }
   }, [api, card, dispatch, handleClose]);
 
   const handleDelete = useCallback(async () => {
@@ -212,6 +220,18 @@ const CardModalContainer = () => {
   const handleCopyCard = useCallback(() => {
     setCopyModalOpen(true);
   }, []);
+
+  const handlePrint = useCallback(async () => {
+    if (!card) return;
+    const { data: attachments } = await listAttachments({ cardId: card.id }).catch(() => ({ data: [] }));
+    printCard({
+      card,
+      listTitle: meta.listTitle,
+      boardTitle: meta.boardTitle,
+      checklists,
+      attachments,
+    });
+  }, [card, meta, checklists]);
 
   // ── Checklist group CRUD ────────────────────────────────────────────────
   const handleCreateChecklist = useCallback(
@@ -595,6 +615,7 @@ const CardModalContainer = () => {
       onDelete={handleDelete}
       onCopyLink={handleCopyLink}
       onCopyCard={handleCopyCard}
+      onPrint={handlePrint}
       onCreateChecklist={handleCreateChecklist}
       onRenameChecklist={handleRenameChecklist}
       onDeleteChecklist={handleDeleteChecklist}

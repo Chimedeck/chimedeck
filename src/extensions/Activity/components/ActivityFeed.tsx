@@ -8,9 +8,11 @@ interface Props {
   hasMore?: boolean;
   onLoadMore?: () => void;
   loading?: boolean;
+  /** When provided, card titles in archive events become clickable links. */
+  boardId?: string;
 }
 
-const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore, loading = false }: Props) => {
+const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore, loading = false, boardId }: Props) => {
   return (
     <div className="flex flex-col">
       <h3 className="mb-2 text-xs font-semibold uppercase text-muted">{translations['activity.section.title']}</h3>
@@ -25,6 +27,7 @@ const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore
             key={activity.id}
             activity={activity}
             actorName={actorNames[activity.actor_id]}
+            {...(boardId ? { boardId } : {})}
           />
         ))}
       </div>

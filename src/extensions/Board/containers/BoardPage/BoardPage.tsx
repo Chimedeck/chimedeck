@@ -515,19 +515,10 @@ const BoardPage = () => {
               addToast={addToast}
             />
           ) : null}
-          {/* Card detail modal — URL-driven (?card=:id) */}
+          {/* Card detail modal — URL-driven (?card=:id). Kept outside the board
+               tab branch so it stays mounted while other tabs are active and
+               can respond to ?card= links from the Activity / Archived Cards panels. */}
           <CardModalContainer />
-          {/* Board settings panel */}
-          {settingsOpen && (
-            <BoardSettings
-              onClose={() => setSettingsOpen(false)}
-              isGuest={isGuest}
-            />
-          )}
-          {/* Board members panel (Sprint 79) */}
-          {membersOpen && (
-            <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
-          )}
           {/* Automation panel (Sprint 65) */}
           <AutomationPanel
             boardId={boardId ?? ''}
@@ -560,6 +551,21 @@ const BoardPage = () => {
             }}
           />
         </div>
+      )}
+
+      {/* Card detail modal — always mounted so ?card= links work from any tab */}
+      <CardModalContainer />
+
+      {/* Board settings panel */}
+      {settingsOpen && (
+        <BoardSettings
+          onClose={() => setSettingsOpen(false)}
+          isGuest={isGuest}
+        />
+      )}
+      {/* Board members panel (Sprint 79) */}
+      {membersOpen && (
+        <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
       )}
 
       {/* Board delete confirmation dialog — shown when server returns 409 with nested content counts */}
