@@ -1,6 +1,7 @@
 // HealthCheckStatusDot — traffic-light circle with tooltip describing probe result.
 // Pulse animation on green/amber indicates a live (recently-checked) status.
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { HealthCheckStatus } from '../api';
 
 interface Props {
@@ -55,18 +56,29 @@ function buildTooltip({
 
 /** Presentational status dot with accessible tooltip. */
 export function HealthCheckStatusDot({ status, httpStatus, responseTimeMs, errorMessage }: Props) {
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
   const resolved = (status ?? 'unknown') as NonNullable<HealthCheckStatus> | 'unknown';
   const tooltip = buildTooltip({ status, httpStatus, responseTimeMs, errorMessage });
   const hasPulse = resolved === 'green' || resolved === 'amber';
 
+  const showTooltip = () => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      // [why] Use fixed positioning so the tooltip escapes overflow:auto/hidden ancestors
+      setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 });
+    }
+  };
+  const hideTooltip = () => setTooltipPos(null);
+
   return (
     <span
+      ref={ref}
       className="relative inline-flex items-center justify-center h-5 w-5 flex-shrink-0"
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-      onFocus={() => setShowTooltip(true)}
-      onBlur={() => setShowTooltip(false)}
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocus={showTooltip}
+      onBlur={hideTooltip}
       tabIndex={0}
       role="img"
       aria-label={tooltip}
@@ -81,16 +93,18 @@ export function HealthCheckStatusDot({ status, httpStatus, responseTimeMs, error
       {/* Core dot */}
       <span className={`relative inline-flex h-3 w-3 rounded-full ${DOT_CLASSES[resolved]}`} />
 
-      {/* Tooltip */}
-      {showTooltip && (
+      {/* Tooltip — rendered in a portal so it escapes any overflow:hidden/auto container */}
+      {tooltipPos && createPortal(
         <span
           role="tooltip"
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg pointer-events-none" // [theme-exception] fixed dark tooltip for both modes
+          style={{ position: 'fixed', left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+          className="whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg pointer-events-none" // [theme-exception] fixed dark tooltip for both modes
         >
           {tooltip}
           {/* Arrow */}
           <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-        </span>
+        </span>,
+        document.body,
       )}
     </span>
   );
