@@ -515,10 +515,6 @@ const BoardPage = () => {
               addToast={addToast}
             />
           ) : null}
-          {/* Card detail modal — URL-driven (?card=:id). Kept outside the board
-               tab branch so it stays mounted while other tabs are active and
-               can respond to ?card= links from the Activity / Archived Cards panels. */}
-          <CardModalContainer />
           {/* Automation panel (Sprint 65) */}
           <AutomationPanel
             boardId={boardId ?? ''}
