@@ -5,6 +5,7 @@
 // State is fully reset when the modal closes or the mode switches.
 
 import { useState, useEffect, type FormEvent } from 'react';
+import translations from '../translations/en.json';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -73,12 +74,12 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
 
     if (mode === 'preset') {
       if (!selectedPresetKey) {
-        setError('Please select a service from the list.');
+        setError(translations['AddServiceModal.errorSelectPreset']);
         return;
       }
       const preset = presets.find((p: HealthCheckPreset) => p.key === selectedPresetKey);
       if (!preset) {
-        setError('Selected preset not found. Please refresh and try again.');
+        setError(translations['AddServiceModal.errorPresetNotFound']);
         return;
       }
       setSubmitting(true);
@@ -95,7 +96,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         onClose();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        setError(msg || 'Failed to add service. Please try again.');
+        setError(msg || translations['AddServiceModal.errorAddFailed']);
       } finally {
         setSubmitting(false);
       }
@@ -103,16 +104,16 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
       const name = custom.name.trim();
       const url = custom.url.trim();
       if (!name) {
-        setError('Name is required.');
+        setError(translations['AddServiceModal.errorNameRequired']);
         return;
       }
       if (!url) {
-        setError('URL is required.');
+        setError(translations['AddServiceModal.errorUrlRequired']);
         return;
       }
       // Basic client-side scheme check; the server validates fully.
       if (!url.startsWith('https://') && !url.startsWith('http://')) {
-        setError('URL must start with https:// or http://');
+        setError(translations['AddServiceModal.errorUrlScheme']);
         return;
       }
       setSubmitting(true);
@@ -123,7 +124,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         onClose();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        setError(msg || 'Failed to add service. Please try again.');
+        setError(msg || translations['AddServiceModal.errorAddFailed']);
       } finally {
         setSubmitting(false);
       }
@@ -151,14 +152,14 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             id="add-service-modal-title"
             className="text-base font-semibold text-base"
           >
-            Add Health Check Service
+            {translations['AddServiceModal.title']}
           </h2>
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={onClose}
-            aria-label="Close modal"
+            aria-label={translations['AddServiceModal.closeAriaLabel']}
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
           </Button>
@@ -169,26 +170,26 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
           <button
             type="button"
             onClick={() => handleModeSwitch('preset')}
-            className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               mode === 'preset'
-                ? 'bg-blue-600 text-white' // [theme-exception]
+                ? 'bg-primary text-inverse'
                 : 'bg-bg-overlay text-subtle hover:bg-bg-sunken'
             }`}
             aria-pressed={mode === 'preset'}
           >
-            Preset Service
+            {translations['AddServiceModal.tabPreset']}
           </button>
           <button
             type="button"
             onClick={() => handleModeSwitch('custom')}
-            className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               mode === 'custom'
-                ? 'bg-blue-600 text-white' // [theme-exception]
+                ? 'bg-primary text-inverse'
                 : 'bg-bg-overlay text-subtle hover:bg-bg-sunken'
             }`}
             aria-pressed={mode === 'custom'}
           >
-            Custom URL
+            {translations['AddServiceModal.tabCustom']}
           </button>
         </div>
 
@@ -199,13 +200,13 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                 htmlFor="preset-select"
                 className="block text-sm font-medium text-subtle mb-1.5"
               >
-                Select a preset service
+                {translations['AddServiceModal.presetSelectLabel']}
               </label>
               {presetsStatus === 'loading' && (
-                <p className="text-sm text-muted">Loading presets…</p>
+                <p className="text-sm text-muted">{translations['AddServiceModal.presetLoading']}</p>
               )}
               {presetsStatus === 'failed' && (
-                <p className="text-sm text-danger">Failed to load presets. Please close and try again.</p>
+                <p className="text-sm text-danger">{translations['AddServiceModal.presetLoadFailed']}</p>
               )}
               {(presetsStatus === 'succeeded' || presets.length > 0) && (
                 <select
@@ -215,7 +216,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 >
-                  <option value="">— Choose a service —</option>
+                  <option value="">{translations['AddServiceModal.presetSelectPlaceholder']}</option>
                   {presets.map((p: HealthCheckPreset) => (
                     <option key={p.key} value={p.key}>
                       {p.name}
@@ -239,14 +240,14 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   htmlFor="custom-name"
                   className="block text-sm font-medium text-subtle mb-1.5"
                 >
-                  Service name
+                  {translations['AddServiceModal.customNameLabel']}
                 </label>
                 <input
                   id="custom-name"
                   type="text"
                   value={custom.name}
                   onChange={(e) => setCustom((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. My API"
+                  placeholder={translations['AddServiceModal.customNamePlaceholder']}
                   disabled={submitting}
                   maxLength={100}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
@@ -257,14 +258,14 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   htmlFor="custom-url"
                   className="block text-sm font-medium text-subtle mb-1.5"
                 >
-                  URL
+                  {translations['AddServiceModal.customUrlLabel']}
                 </label>
                 <input
                   id="custom-url"
                   type="url"
                   value={custom.url}
                   onChange={(e) => setCustom((prev) => ({ ...prev, url: e.target.value }))}
-                  placeholder="https://example.com/health"
+                  placeholder={translations['AddServiceModal.customUrlPlaceholder']}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
@@ -276,7 +277,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
           {error && (
             <p
               role="alert"
-              className="mb-4 text-sm text-danger bg-red-900/20 border border-red-800 rounded-md px-3 py-2"
+              className="mb-4 text-sm text-danger bg-danger/10 border border-danger/50 rounded-md px-3 py-2"
             >
               {error}
             </p>
@@ -291,7 +292,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
               onClick={onClose}
               disabled={submitting}
             >
-              Cancel
+              {translations['AddServiceModal.cancelButton']}
             </Button>
             <Button
               type="submit"
@@ -299,7 +300,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
               size="md"
               disabled={submitting || presetsStatus === 'loading'}
             >
-              {submitting ? 'Adding…' : 'Add Service'}
+              {submitting ? translations['AddServiceModal.addingButton'] : translations['AddServiceModal.addButton']}
             </Button>
           </div>
         </form>

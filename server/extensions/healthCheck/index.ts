@@ -3,10 +3,11 @@
 import { healthCheckConfig } from './common/config/healthCheck';
 import { healthCheckRouter } from './api/index';
 
-const FEATURE_DISABLED = Response.json(
-  { error: { name: 'not-found', data: { message: 'Not found' } } },
-  { status: 404 },
-);
+const featureDisabled = () =>
+  Response.json(
+    { error: { name: 'not-found', data: { message: 'Not found' } } },
+    { status: 404 },
+  );
 
 export async function healthCheckExtensionRouter(
   req: Request,
@@ -17,7 +18,7 @@ export async function healthCheckExtensionRouter(
     const isHealthCheckPath =
       pathname === '/api/v1/health-check/presets' ||
       /^\/api\/v1\/boards\/[^/]+\/health-checks/.test(pathname);
-    if (isHealthCheckPath) return FEATURE_DISABLED;
+    if (isHealthCheckPath) return featureDisabled();
     return null;
   }
 

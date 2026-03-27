@@ -715,6 +715,8 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           <button
             type="button"
             aria-label={isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'}
+            onClick={disabled ? undefined : handleEnterEdit}
+            disabled={disabled}
             className={[
               'w-full text-left rounded-lg p-3 min-h-[80px] transition-colors',
               disabled

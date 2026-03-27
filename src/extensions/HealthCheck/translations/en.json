@@ -1,0 +1,23 @@
+{
+  "AddServiceModal.title": "Add Health Check Service",
+  "AddServiceModal.closeAriaLabel": "Close modal",
+  "AddServiceModal.tabPreset": "Preset Service",
+  "AddServiceModal.tabCustom": "Custom URL",
+  "AddServiceModal.presetSelectLabel": "Select a preset service",
+  "AddServiceModal.presetSelectPlaceholder": "— Choose a service —",
+  "AddServiceModal.presetLoading": "Loading presets…",
+  "AddServiceModal.presetLoadFailed": "Failed to load presets. Please close and try again.",
+  "AddServiceModal.customNameLabel": "Service name",
+  "AddServiceModal.customNamePlaceholder": "e.g. My API",
+  "AddServiceModal.customUrlLabel": "URL",
+  "AddServiceModal.customUrlPlaceholder": "https://example.com/health",
+  "AddServiceModal.cancelButton": "Cancel",
+  "AddServiceModal.addButton": "Add Service",
+  "AddServiceModal.addingButton": "Adding…",
+  "AddServiceModal.errorSelectPreset": "Please select a service from the list.",
+  "AddServiceModal.errorPresetNotFound": "Selected preset not found. Please refresh and try again.",
+  "AddServiceModal.errorAddFailed": "Failed to add service. Please try again.",
+  "AddServiceModal.errorNameRequired": "Name is required.",
+  "AddServiceModal.errorUrlRequired": "URL is required.",
+  "AddServiceModal.errorUrlScheme": "URL must start with https:// or http://"
+}
