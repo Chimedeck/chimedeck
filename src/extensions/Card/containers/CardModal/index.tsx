@@ -363,30 +363,38 @@ const CardModalContainer = () => {
       const label = allLabelsRef.current.find((l) => l.id === labelId);
       if (!label) return;
       const mutationId = nextMutationId();
+      const updatedLabels = labels.some((l) => l.id === labelId) ? labels : [...labels, label];
       dispatch(cardDetailSliceActions.applyOptimisticLabelAssign({ mutationId, label }));
+      // [why] Keep the board card in sync so the kanban view reflects the new label immediately
+      dispatch(boardSliceActions.updateCard({ card: { ...card, labels: updatedLabels } }));
       try {
         await postLabelAssign({ api, cardId: card.id, labelId });
         dispatch(cardDetailSliceActions.confirmLabel({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackLabel({ mutationId }));
+        dispatch(boardSliceActions.updateCard({ card: { ...card, labels } }));
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, labels],
   );
 
   const handleLabelDetach = useCallback(
     async (labelId: string) => {
       if (!card) return;
       const mutationId = nextMutationId();
+      const updatedLabels = labels.filter((l) => l.id !== labelId);
       dispatch(cardDetailSliceActions.applyOptimisticLabelDetach({ mutationId, labelId }));
+      // [why] Keep the board card in sync so the kanban view reflects the removed label immediately
+      dispatch(boardSliceActions.updateCard({ card: { ...card, labels: updatedLabels } }));
       try {
         await deleteLabelAssign({ api, cardId: card.id, labelId });
         dispatch(cardDetailSliceActions.confirmLabel({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackLabel({ mutationId }));
+        dispatch(boardSliceActions.updateCard({ card: { ...card, labels } }));
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, labels],
   );
 
   const handleLabelCreate = useCallback(

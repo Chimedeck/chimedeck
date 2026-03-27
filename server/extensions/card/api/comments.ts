@@ -14,6 +14,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleCreateCardComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -111,7 +112,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
         updated_at: now,
         author_name: author?.name ?? author?.email ?? null,
         author_email: author?.email ?? null,
-        author_avatar_url: author?.avatar_url ?? null,
+        author_avatar_url: buildAvatarProxyUrl({ userId: actorId, avatarUrl: author?.avatar_url ?? null }),
       },
     },
     { status: 201 },
