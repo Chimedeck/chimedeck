@@ -48,7 +48,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
 
   return (
     <div
-      className="group flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-bg-surface/50 transition-colors"
+      className="group flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 hover:bg-bg-overlay transition-colors"
       role="row"
     >
       {/* Status dot or loading spinner */}
@@ -71,7 +71,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
 
       {/* Name */}
       <span
-        className="flex-shrink-0 w-40 truncate text-sm font-medium text-subtle"
+        className="flex-shrink-0 w-40 truncate text-sm font-medium text-muted"
         title={entry.name}
       >
         {entry.name}
@@ -82,7 +82,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
         href={entry.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 truncate text-sm text-muted hover:text-subtle transition-colors"
+        className="flex-1 truncate text-sm text-muted transition-colors"
         title={entry.url}
       >
         {entry.url}
