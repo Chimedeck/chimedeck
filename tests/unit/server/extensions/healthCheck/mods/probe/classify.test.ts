@@ -40,12 +40,16 @@ describe('classify()', () => {
 
   // ── Red ────────────────────────────────────────────────────────────────────
 
-  it('returns red for HTTP 400 (bad request)', () => {
-    expect(classify({ httpStatus: 400, responseTimeMs: 100, error: null, amberThresholdMs: AMBER_MS })).toBe('red');
+  it('returns amber for HTTP 400 (bad request — server reachable)', () => {
+    expect(classify({ httpStatus: 400, responseTimeMs: 100, error: null, amberThresholdMs: AMBER_MS })).toBe('amber');
   });
 
-  it('returns red for HTTP 404 (not found)', () => {
-    expect(classify({ httpStatus: 404, responseTimeMs: 100, error: null, amberThresholdMs: AMBER_MS })).toBe('red');
+  it('returns amber for HTTP 401 (unauthorized — server reachable, auth required)', () => {
+    expect(classify({ httpStatus: 401, responseTimeMs: 100, error: null, amberThresholdMs: AMBER_MS })).toBe('amber');
+  });
+
+  it('returns amber for HTTP 404 (not found — server reachable)', () => {
+    expect(classify({ httpStatus: 404, responseTimeMs: 100, error: null, amberThresholdMs: AMBER_MS })).toBe('amber');
   });
 
   it('returns red for HTTP 500 (internal server error)', () => {

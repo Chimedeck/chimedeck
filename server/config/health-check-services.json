@@ -2,8 +2,8 @@
   {
     "key": "stripe-api",
     "name": "Stripe API",
-    "description": "Stripe payment processing — probes the public status page (returns 200 when Stripe is operational)",
-    "url": "https://status.stripe.com/",
+    "description": "Stripe payment processing — a 404 response means Stripe servers are reachable (auth required)",
+    "url": "https://api.stripe.com/",
     "category": "payments"
   },
   {
