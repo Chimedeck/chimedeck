@@ -46,7 +46,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
         <input
-          className="flex-1 bg-transparent text-sm text-subtle placeholder:text-muted focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
           placeholder={translations['automation.actionPicker.searchPlaceholder']}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -74,7 +74,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
                   type="button"
                   role="option"
                   aria-selected={false}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-subtle transition-colors hover:bg-bg-overlay"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors hover:bg-bg-overlay"
                   onClick={() => onSelect(t)}
                 >
                   <PlayIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
@@ -92,7 +92,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
       <div className="border-t border-border px-3 py-2">
         <button
           type="button"
-          className="text-xs text-muted hover:text-subtle transition-colors"
+          className="text-xs text-muted hover:text-foreground transition-colors"
           onClick={onCancel}
         >
           {translations['automation.actionPicker.cancel']}

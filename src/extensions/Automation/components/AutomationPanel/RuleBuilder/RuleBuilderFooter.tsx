@@ -32,7 +32,7 @@ const RuleBuilderFooter = ({
       <input
         id="rule-name"
         type="text"
-        className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-subtle placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full rounded-md border border-border bg-bg-overlay px-3 py-1.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
         placeholder={translations['automation.ruleBuilderFooter.ruleNamePlaceholder']}
         value={ruleName}
         onChange={(e) => onRuleNameChange(e.target.value)}
@@ -44,7 +44,7 @@ const RuleBuilderFooter = ({
     <div className="flex items-center justify-end gap-2">
       <button
         type="button"
-        className="rounded-md px-3 py-1.5 text-sm text-muted hover:text-subtle transition-colors"
+        className="rounded-md px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
         onClick={onCancel}
         disabled={saving}
       >

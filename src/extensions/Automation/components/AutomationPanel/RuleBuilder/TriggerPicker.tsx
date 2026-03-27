@@ -39,7 +39,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
 
       <button
         type="button"
-        className="flex w-full items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-subtle hover:border-border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex w-full items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-foreground hover:border-border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -63,7 +63,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
-              className="flex-1 bg-transparent text-sm text-subtle placeholder:text-muted focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
               placeholder={translations['automation.triggerPicker.searchPlaceholder']}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -90,7 +90,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
                   <button
                     type="button"
                     className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-bg-overlay ${
-                      t.type === selectedType ? 'bg-bg-overlay text-blue-400' : 'text-subtle'
+                      t.type === selectedType ? 'bg-bg-overlay text-blue-400' : 'text-foreground'
                     }`}
                     onClick={() => {
                       onSelect(t);

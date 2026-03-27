@@ -119,7 +119,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
         >
           <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
         </button>
-        <h3 className="text-sm font-semibold text-subtle">
+        <h3 className="text-sm font-semibold text-foreground">
           {initialAutomation ? translations['automation.ruleBuilder.editTitle'] : translations['automation.ruleBuilder.newTitle']}
         </h3>
       </div>

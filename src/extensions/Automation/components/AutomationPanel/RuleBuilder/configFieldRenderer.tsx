@@ -157,7 +157,7 @@ function renderListMultiSelect(args: RenderArgs): JSX.Element {
       ) : (
         <div className="flex flex-col gap-1 max-h-40 overflow-y-auto rounded-md border border-border bg-bg-overlay p-2">
           {lists.map((list) => (
-            <label key={list.id} className="flex items-center gap-2 cursor-pointer text-sm text-subtle">
+            <label key={list.id} className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
               <input
                 type="checkbox"
                 className="h-3.5 w-3.5 rounded border-border bg-bg-sunken text-blue-500 focus:ring-1 focus:ring-blue-500"
