@@ -87,7 +87,7 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
             Duplicate
           </button>
           <button
-            className="text-xs text-yellow-600 hover:underline"
+            className="text-xs text-amber-700 dark:text-yellow-400 hover:underline"
             onClick={onArchive}
           >
             {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}

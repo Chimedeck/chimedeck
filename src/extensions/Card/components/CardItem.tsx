@@ -31,9 +31,9 @@ export interface CardItemProps {
 }
 
 function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): string {
-  if (done) return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30';
-  if (overdue) return 'text-danger bg-red-50 dark:bg-red-900/30';
-  if (dueSoon) return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30';
+  if (done) return 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30';
+  if (overdue) return 'text-red-700 dark:text-danger bg-red-50 dark:bg-red-900/30';
+  if (dueSoon) return 'text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30';
   return 'text-muted';
 }
 
@@ -163,7 +163,7 @@ const CardItem = ({
               <span
                 className={`inline-flex items-center gap-0.5 text-xs ${
                   checklistComplete
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? 'text-emerald-800 dark:text-emerald-400'
                     : 'text-muted'
                 }`}
                 title={`Checklist: ${checklistDone}/${checklistTotal}`}

@@ -11,12 +11,13 @@ interface Props {
   max?: number;
 }
 
+// Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const COLORS = [
-  'bg-blue-500',
-  'bg-green-500',
-  'bg-purple-500',
-  'bg-pink-500',
-  'bg-yellow-500',
+  'bg-blue-600',
+  'bg-green-700',
+  'bg-purple-600',
+  'bg-pink-600',
+  'bg-amber-700',
 ];
 
 function initials(member: Member): string {

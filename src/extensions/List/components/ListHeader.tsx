@@ -53,7 +53,7 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
         >
           {list.title}
           {cardCount !== undefined && (
-            <span className="ml-1.5 text-xs font-normal text-subtle">({cardCount})</span>
+            <span className="ml-1.5 text-xs font-normal text-muted">({cardCount})</span>
           )}
         </button>
       )}
@@ -77,7 +77,7 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
               Rename
             </button>
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-yellow-600 dark:text-yellow-400 hover:bg-bg-overlay"
+              className="block w-full px-4 py-2 text-left text-sm text-amber-700 dark:text-yellow-400 hover:bg-bg-overlay"
               onClick={() => { setMenuOpen(false); onArchive(); }}
             >
               {list.archived ? 'Unarchive' : 'Archive'}

@@ -80,10 +80,10 @@ const MemberList = ({
       <table className="min-w-full divide-y divide-border text-sm">
         <thead>
           <tr>
-            <th className="px-4 py-2 text-left font-medium text-subtle">Email</th>
-            <th className="px-4 py-2 text-left font-medium text-subtle">Role</th>
+            <th className="px-4 py-2 text-left font-medium text-muted">Email</th>
+            <th className="px-4 py-2 text-left font-medium text-muted">Role</th>
             {canManageMembers && (
-              <th className="px-4 py-2 text-left font-medium text-subtle">Actions</th>
+              <th className="px-4 py-2 text-left font-medium text-muted">Actions</th>
             )}
           </tr>
         </thead>

@@ -8,7 +8,7 @@ interface Props {
 const CONFIG: Record<BoardVisibility, { label: string; className: string; icon: string }> = {
   PRIVATE: {
     label: 'Private',
-    className: 'bg-bg-sunken/80 text-subtle',
+    className: 'bg-bg-sunken text-base',
     icon: '🔒',
   },
   WORKSPACE: {

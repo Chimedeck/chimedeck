@@ -23,7 +23,7 @@ const TableHeader = ({ columns, sortState, onSort }: Props) => {
           <th
             key={col.key}
             scope="col"
-            className={`px-3 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wide select-none${col.sortable ? ' cursor-pointer hover:text-subtle' : ''}`}
+            className={`px-3 py-2 text-left text-xs font-semibold text-muted uppercase tracking-wide select-none${col.sortable ? ' cursor-pointer hover:text-base' : ''}`}
             style={col.width ? { width: col.width } : undefined}
             onClick={col.sortable ? () => onSort(col.key) : undefined}
             aria-sort={

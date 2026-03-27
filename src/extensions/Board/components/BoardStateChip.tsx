@@ -14,7 +14,7 @@ const BoardStateChip = ({ state }: Props) => {
     );
   }
   return (
-    <span className="inline-block rounded bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+    <span className="inline-block rounded bg-success/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-success">
       Active
     </span>
   );

@@ -392,7 +392,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 <>
                   {!collapsed && (
                     <li>
-                      <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-subtle">
+                      <p className="mt-3 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted">
                         {layoutTranslations['Sidebar.administrationSection']}
                       </p>
                     </li>

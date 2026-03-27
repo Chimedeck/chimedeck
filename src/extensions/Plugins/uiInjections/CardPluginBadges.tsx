@@ -22,12 +22,12 @@ interface Props {
 
 // Maps Trello-style color names to Tailwind classes
 const COLOR_MAP: Record<string, string> = {
-  green: 'bg-green-600/20 text-green-400', // [theme-exception]
-  red: 'bg-red-600/20 text-danger', // [theme-exception]
-  blue: 'bg-blue-600/20 text-blue-400',
-  yellow: 'bg-yellow-600/20 text-yellow-400',
-  orange: 'bg-orange-600/20 text-orange-400',
-  purple: 'bg-purple-600/20 text-purple-400',
+  green: 'bg-green-100 dark:bg-green-600/20 text-green-700 dark:text-green-400',
+  red: 'bg-red-100 dark:bg-red-600/20 text-danger',
+  blue: 'bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400',
+  yellow: 'bg-amber-100 dark:bg-yellow-600/20 text-amber-700 dark:text-yellow-400',
+  orange: 'bg-orange-100 dark:bg-orange-600/20 text-orange-700 dark:text-orange-400',
+  purple: 'bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400',
 };
 
 const CardPluginBadges = ({ cardId, listId, cardTitle, listTitle, boardTitle }: Props) => {

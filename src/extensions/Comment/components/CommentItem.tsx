@@ -47,9 +47,10 @@ function getInitials(name: string | null | undefined, email: string | null | und
 }
 
 /** Consistent avatar colour based on user id. */
+// Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-green-500', 'bg-purple-500',
-  'bg-pink-500', 'bg-yellow-500', 'bg-orange-500', 'bg-teal-500',
+  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
+  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
 ];
 function avatarColor(userId: string) {
   let hash = 0;

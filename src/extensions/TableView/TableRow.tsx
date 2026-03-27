@@ -4,6 +4,18 @@
 import translations from './translations/en.json';
 import type { TableRowData } from './types';
 
+/** Pick readable text colour (black or white) based on background luminance. */
+function contrastText(bgHex: string): string {
+  const hex = bgHex.replace('#', '');
+  if (hex.length < 6) return '#0f172a';
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return L > 0.19 ? '#0f172a' : '#ffffff';
+}
+
 interface Props {
   row: TableRowData;
   onCardClick: (cardId: string) => void;
@@ -66,8 +78,8 @@ const TableRow = ({ row, onCardClick }: Props) => {
           {row.labels.map((label) => (
             <span
               key={label.id}
-              className="inline-block rounded px-1.5 py-0.5 text-xs font-medium text-white" // [theme-exception] text-white on dynamic label bg color
-              style={{ backgroundColor: label.color }}
+              className="inline-block rounded px-1.5 py-0.5 text-xs font-medium"
+              style={{ backgroundColor: label.color, color: contrastText(label.color) }}
               title={label.name}
               aria-label={label.name}
             >

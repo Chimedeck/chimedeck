@@ -46,9 +46,9 @@ const CustomFieldBadge = ({ fieldName, fieldType, value, dropdownOption }: Props
       className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium max-w-[10rem] truncate ${
         isCheckbox
           ? isChecked
-            ? 'bg-emerald-900/40 border border-emerald-700/40 text-emerald-400'
-            : 'bg-bg-overlay border border-border text-muted'
-          : 'bg-bg-overlay border border-border text-subtle'
+            ? 'bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700/40 text-emerald-800 dark:text-emerald-400'
+            : 'bg-bg-overlay border border-border text-base'
+          : 'bg-bg-overlay border border-border text-base'
       }`}
       title={`${fieldName}: ${formatted}`}
       aria-label={`${fieldName}: ${formatted}`}

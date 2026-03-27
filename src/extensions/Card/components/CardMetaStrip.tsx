@@ -485,7 +485,7 @@ function getDuePillClass(status: DueDateStatus, hasDate: boolean): string {
   if (status === 'done') return 'bg-success/10 text-success border border-success/30';
   // [theme-exception] overdue status chip: intentional red text on red bg
   if (status === 'overdue') return 'bg-danger/10 text-danger border border-danger/30';
-  if (status === 'due-soon') return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/30'; // [theme-exception] orange due-soon chip, no semantic token
+  if (status === 'due-soon') return 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-500/30'; // orange due-soon chip — darker text for light mode
   if (hasDate) return 'bg-bg-overlay text-base hover:bg-bg-sunken border border-border';
   return 'border border-dashed border-border text-muted hover:border-border-strong hover:text-base';
 }
