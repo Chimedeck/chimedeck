@@ -1,0 +1,11 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e8]: Taskinate
+    - heading "Forgot your password?" [level=1] [ref=e9]
+    - paragraph [ref=e10]: Enter your email address and we'll send you a reset link.
+    - generic [ref=e19]:
+      - paragraph [ref=e20]: If an account exists for tam.vu+invalid@journeyh.io, we've sent a reset link.
+      - link "Back to log in" [ref=e21] [cursor=pointer]:
+        - /url: /login

@@ -64,7 +64,7 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   });
 
   const verificationUrl = `${env.APP_URL}/verify-email?token=${newToken}`;
-  const emailContent = buildVerificationEmail({ verificationUrl });
+  const emailContent = await buildVerificationEmail({ verificationUrl });
 
   await send({ to: user.email, ...emailContent });
 

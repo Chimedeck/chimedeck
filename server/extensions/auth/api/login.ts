@@ -38,7 +38,7 @@ async function resendVerificationEmailForUser(user: { id: string; email: string 
   });
 
   const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken}`;
-  const emailContent = buildVerificationEmail({ verificationUrl });
+  const emailContent = await buildVerificationEmail({ verificationUrl });
   await send({ to: user.email, ...emailContent });
 
   return true;

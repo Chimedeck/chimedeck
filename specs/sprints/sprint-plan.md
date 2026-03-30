@@ -148,6 +148,7 @@
 | [115](./sprint-115.md) | Health Check Tab: Backend & Config | `board_health_checks` + `board_health_check_results` tables; `server/config/health-check-services.json` presets; `GET /health-check/presets`; board CRUD endpoints (`GET/POST/DELETE`); on-demand `probe` + `probe-all`; probe engine with green/amber/red classification; SSRF prevention; `HEALTH_CHECK_ENABLED` flag | ⬜ Needs 05 + 03 |
 | [116](./sprint-116.md) | Health Check Tab UI | 5th board tab "Health Check"; traffic-light status dots (green/amber/red/gray); one row per endpoint with name, URL, response time; Add Service modal (preset picker + custom URL); manual ↻ Refresh + 60-second auto-refresh with Page Visibility pause; empty state | ⬜ Needs 115 + 18 |
 | [117](./sprint-117.md) | Secure Attachment Proxy + Alias & Comment/Edit Actions | Authenticated proxy endpoints replace raw S3 presigned URLs; `alias` DB column + `PATCH` endpoint for rename; Edit (inline rename) and Comment (insert markdown link) action buttons on attachment rows | ⬜ Needs 12 + 59 + 60 |
+| [121](./sprint-121.md) | Email Template Centralisation & Handlebars Migration | Extract all email HTML into `templates/html/*.html` files; `renderTemplate` Handlebars helper with `Bun.file` + compile cache; replace `${var}` interpolation with `{{var}}`; update call sites to `await` async builders | ⬜ Needs 23 |
 
 ---
 
@@ -299,6 +300,8 @@ Sprint 91 ──────────── i18n Phase 2: Automation extensio
 Sprint 92 ──────────── i18n Phase 3: Plugins extension (modals, search bar, board panel)
 Sprint 93 ──────────── i18n Phase 4: CustomFields, CalendarView, TimelineView, TableView
 Sprint 94 ──────────── i18n Phase 5: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, common/layout — zero hardcoded strings
+──── Email Infrastructure ───────────────────────────────────────────────────────────────────────
+Sprint 121 ─────────── Email template centralisation: extract HTML to *.html files, Handlebars {{var}} binding, renderTemplate helper
 ```
 
 ---

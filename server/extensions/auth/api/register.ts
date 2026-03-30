@@ -80,7 +80,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   // When verification is enabled: send email and return 201 without a JWT
   if (verificationEnabled) {
     const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken}`;
-    const emailContent = buildVerificationEmail({ verificationUrl });
+    const emailContent = await buildVerificationEmail({ verificationUrl });
     await send({ to: email, ...emailContent });
 
     return Response.json({ data: { requiresVerification: true } }, { status: 201 });
