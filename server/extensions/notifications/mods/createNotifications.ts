@@ -102,7 +102,7 @@ export async function createNotificationsForMentions({
       ['*'],
     );
 
-    publishToUser(userId, {
+    await publishToUser(userId, {
       type: 'notification_created',
       payload: {
         notification: {

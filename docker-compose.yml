@@ -27,6 +27,7 @@ services:
     command: >
       postgres -c shared_preload_libraries=pg_cron
                -c cron.database_name=taskinate_dev
+               -c max_connections=200
     ports:
       - "5432:5432"
     volumes:

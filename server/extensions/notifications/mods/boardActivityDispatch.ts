@@ -136,7 +136,7 @@ export async function handleBoardActivityNotification({
           }, ['*'])
           .then(([inserted]) => {
             if (inserted) {
-              publishToUser(recipientId, {
+              return publishToUser(recipientId, {
                 type: 'notification_created',
                 payload: {
                   notification: {
@@ -191,12 +191,12 @@ async function buildTemplateData({
   if (eventType === 'card.created') {
     const card = payload.card as { id: string; title: string; list_id: string } | undefined;
     if (!card) return null;
-    const list = await db('lists').where({ id: card.list_id }).select('name').first();
+    const list = await db('lists').where({ id: card.list_id }).select('title').first();
     const cardUrl = `/boards/${event.board_id}/cards/${card.id}`;
     return {
       cardTitle: card.title,
       boardName,
-      listName: list?.name ?? '',
+      listName: list?.title ?? '',
       cardUrl,
     };
   }
@@ -206,15 +206,15 @@ async function buildTemplateData({
     if (!card) return null;
     const fromListId = payload.fromListId as string | undefined;
     const [toList, fromList] = await Promise.all([
-      db('lists').where({ id: card.list_id }).select('name').first(),
-      fromListId ? db('lists').where({ id: fromListId }).select('name').first() : Promise.resolve(null),
+      db('lists').where({ id: card.list_id }).select('title').first(),
+      fromListId ? db('lists').where({ id: fromListId }).select('title').first() : Promise.resolve(null),
     ]);
     const cardUrl = `/boards/${event.board_id}/cards/${card.id}`;
     return {
       cardTitle: card.title,
       boardName,
-      fromList: fromList?.name ?? '',
-      toList: toList?.name ?? '',
+      fromList: fromList?.title ?? '',
+      toList: toList?.title ?? '',
       cardUrl,
     };
   }
@@ -347,7 +347,7 @@ export async function dispatchDirectCardNotification({
           }, ['*'])
           .then(([inserted]) => {
             if (inserted) {
-              publishToUser(recipientId, {
+              return publishToUser(recipientId, {
                 type: 'notification_created',
                 payload: {
                   notification: {

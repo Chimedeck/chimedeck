@@ -131,7 +131,7 @@ const BoardHeader = ({
   }
 
   return (
-    <header className={`sticky top-0 z-10 flex items-center gap-3 px-6 pt-4 pb-2${headerBgClass}`}>
+    <header className={`sticky top-0 z-30 flex items-center gap-3 px-6 pt-4 pb-2${headerBgClass}`}>
       {/* Editable board title */}
       {editing ? (
         <input
@@ -217,7 +217,7 @@ const BoardHeader = ({
             ···
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-48 rounded-md border border-border bg-bg-surface py-1 shadow-xl z-20">
+            <div className="absolute right-0 mt-1 w-48 rounded-md border border-border bg-bg-surface py-1 shadow-xl z-50">
               {onOpenSettings && (
                 <button
                   className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"

@@ -73,6 +73,18 @@ function findListForCard(cardId: string, cardsByList: Record<string, string[]>):
   return null;
 }
 
+function getPointerClientY(evt: Event | null | undefined): number | null {
+  if (!evt) return null;
+  if ('clientY' in evt && typeof evt.clientY === 'number') {
+    return evt.clientY;
+  }
+  if ('changedTouches' in evt) {
+    const touch = (evt as TouchEvent).changedTouches?.item(0);
+    return touch ? touch.clientY : null;
+  }
+  return null;
+}
+
 const BoardCanvas = ({
   boardId,
   boardTitle,
@@ -125,6 +137,7 @@ const BoardCanvas = ({
         fromListIdRef.current = findListForCard(id, cardsByList);
         // Snapshot current ordering into local drag state — onDragOver will
         // mutate this without touching Redux, preventing re-render loops.
+        dragCardsByListRef.current = cardsByList;
         setDragCardsByList(cardsByList);
       }
       onDragStart();
@@ -136,6 +149,7 @@ const BoardCanvas = ({
     (event: DragOverEvent) => {
       const { active, over } = event;
       if (!over) return;
+      const pointerY = getPointerClientY((event as { activatorEvent?: Event }).activatorEvent);
 
       const activeId = String(active.id);
       const overId = String(over.id);
@@ -162,7 +176,29 @@ const BoardCanvas = ({
         let insertIndex = toCards.length;
         if (cards[overId]) {
           const idx = toCards.indexOf(overId);
-          insertIndex = idx >= 0 ? idx : toCards.length;
+          const fromIdxInTarget = toCards.indexOf(activeId);
+          if (fromListId === toListId && fromIdxInTarget !== -1 && idx !== -1) {
+            // Deterministic same-list behavior: dropping on a card moves above
+            // when dragging upward and below when dragging downward.
+            insertIndex = idx + (fromIdxInTarget < idx ? 1 : 0);
+          } else {
+          // Use pointer position to decide before/after when hovering a card.
+          // Without this, dragging card 1 onto card 2 always inserts before 2,
+          // so adjacent swaps require touching card 3.
+          const translatedRect = active.rect.current.translated;
+          const translatedCenterY = translatedRect
+            ? translatedRect.top + translatedRect.height / 2
+            : null;
+          const effectiveY = pointerY ?? translatedCenterY;
+          const isBelowOverCard =
+            effectiveY != null &&
+            effectiveY > over.rect.top + over.rect.height / 2;
+          if (idx >= 0) {
+            insertIndex = idx + (isBelowOverCard ? 1 : 0);
+          } else {
+            insertIndex = toCards.length;
+          }
+          }
         }
 
         if (fromListId === toListId) {
@@ -170,13 +206,22 @@ const BoardCanvas = ({
           const fromIdx = mutable.indexOf(activeId);
           if (fromIdx === -1) return prev;
           mutable.splice(fromIdx, 1);
-          mutable.splice(insertIndex > fromIdx ? insertIndex - 1 : insertIndex, 0, activeId);
-          return { ...prev, [toListId]: mutable };
+          const adjustedIndex = insertIndex > fromIdx ? insertIndex - 1 : insertIndex;
+          mutable.splice(adjustedIndex, 0, activeId);
+          const next = { ...prev, [toListId]: mutable };
+          // Keep ref in sync immediately so handleDragEnd can commit the
+          // latest order even if React state batching hasn't painted yet.
+          dragCardsByListRef.current = next;
+          return next;
         }
         const newFrom = (prev[fromListId] ?? []).filter((id) => id !== activeId);
         const newTo = [...(prev[toListId] ?? [])];
         newTo.splice(insertIndex, 0, activeId);
-        return { ...prev, [fromListId]: newFrom, [toListId]: newTo };
+        const next = { ...prev, [fromListId]: newFrom, [toListId]: newTo };
+        // Keep ref in sync immediately so handleDragEnd can commit the
+        // latest order even if React state batching hasn't painted yet.
+        dragCardsByListRef.current = next;
+        return next;
       });
     },
     [cards, lists],
@@ -185,6 +230,7 @@ const BoardCanvas = ({
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
+      const pointerY = getPointerClientY((event as { activatorEvent?: Event }).activatorEvent);
       setActiveCardId(null);
 
       if (!over) {
@@ -224,24 +270,63 @@ const BoardCanvas = ({
         const toListId = findListForCard(activeId, finalCardsByList);
         const fromListId = fromListIdRef.current ?? toListId;
         fromListIdRef.current = null;
+        dragCardsByListRef.current = null;
         setDragCardsByList(null);
         if (!toListId || !fromListId) {
           onDragRollback();
           return;
         }
-        const toCards = finalCardsByList[toListId] ?? [];
-        const cardIndex = toCards.indexOf(activeId);
-        const afterCardId = cardIndex > 0 ? (toCards[cardIndex - 1] ?? null) : null;
-        const newIndex = cardIndex >= 0 ? cardIndex : toCards.length;
+
+        let resolvedToListId = toListId;
+        let resolvedNewIndex = (finalCardsByList[toListId] ?? []).indexOf(activeId);
+        if (resolvedNewIndex < 0) {
+          resolvedNewIndex = (finalCardsByList[toListId] ?? []).length;
+        }
+
+        if (cards[overId]) {
+          const hoverListId = findListForCard(overId, finalCardsByList) ?? resolvedToListId;
+          const sourceCardsInHoverList = finalCardsByList[hoverListId] ?? [];
+          const fromIdxInHover = sourceCardsInHoverList.indexOf(activeId);
+          const overIdxInHover = sourceCardsInHoverList.indexOf(overId);
+          const targetCards = [...(finalCardsByList[hoverListId] ?? [])].filter((id) => id !== activeId);
+          const hoverIndex = targetCards.indexOf(overId);
+          if (hoverIndex >= 0) {
+            resolvedToListId = hoverListId;
+            if (fromListId === hoverListId && fromIdxInHover !== -1 && overIdxInHover !== -1) {
+              resolvedNewIndex = hoverIndex + (fromIdxInHover < overIdxInHover ? 1 : 0);
+            } else {
+              const translatedRect = active.rect.current.translated;
+              const translatedCenterY = translatedRect
+                ? translatedRect.top + translatedRect.height / 2
+                : over.rect.top;
+              const effectiveY = pointerY ?? translatedCenterY;
+              const isBelowHoverCard = effectiveY > over.rect.top + over.rect.height / 2;
+              resolvedNewIndex = hoverIndex + (isBelowHoverCard ? 1 : 0);
+            }
+          }
+        } else if (lists[overId]) {
+          resolvedToListId = overId;
+          resolvedNewIndex = (finalCardsByList[overId] ?? []).length;
+        }
+
+        const targetPreview = [...(finalCardsByList[resolvedToListId] ?? [])].filter((id) => id !== activeId);
+        targetPreview.splice(resolvedNewIndex, 0, activeId);
+        const afterCardId = resolvedNewIndex > 0 ? (targetPreview[resolvedNewIndex - 1] ?? null) : null;
+
         // Apply the final position to Redux in a single dispatch (moved here
         // from onDragOver — see handleDragOver comment for why)
-        onCardMove({ cardId: activeId, fromListId, toListId, newIndex });
+        onCardMove({
+          cardId: activeId,
+          fromListId,
+          toListId: resolvedToListId,
+          newIndex: resolvedNewIndex,
+        });
         try {
           await onDragCommit({
             type: 'card',
             cardId: activeId,
             fromListId,
-            toListId,
+            toListId: resolvedToListId,
             afterCardId,
           });
         } catch {

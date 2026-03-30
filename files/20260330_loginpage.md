@@ -1,0 +1,28 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e8]: Taskinate
+    - heading "Welcome back" [level=1] [ref=e9]
+    - paragraph [ref=e10]: Sign in to your account
+    - form "Sign in form" [ref=e11]:
+      - generic [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: Email
+          - textbox "Email" [ref=e15]:
+            - /placeholder: you@example.com
+        - generic [ref=e16]:
+          - generic [ref=e17]: Password
+          - generic [ref=e18]:
+            - textbox "Password" [ref=e19]:
+              - /placeholder: ••••••••
+            - button "Show password" [ref=e20] [cursor=pointer]:
+              - img [ref=e21]
+        - button "Sign in" [ref=e24] [cursor=pointer]
+    - paragraph [ref=e25]:
+      - link "Forgot password?" [ref=e26] [cursor=pointer]:
+        - /url: /forgot-password
+    - paragraph [ref=e27]:
+      - text: Belongs to our company?
+      - link "Sign up" [ref=e28] [cursor=pointer]:
+        - /url: /signup

@@ -23,6 +23,13 @@ export class RedisPubSubAdapter implements PubSubProvider {
   }
 
   async subscribe(channel: string, handler: (msg: string) => void): Promise<void> {
+    // If already subscribed (e.g. after hot-reload the handler map survives but
+    // caller-side room state is reset), just update the handler in place — the
+    // Redis SUBSCRIBE was already issued and ioredis keeps it alive.
+    if (this.handlers.has(channel)) {
+      this.handlers.set(channel, handler);
+      return;
+    }
     this.handlers.set(channel, handler);
     await this.sub.subscribe(channel);
   }

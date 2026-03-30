@@ -262,12 +262,24 @@ const BoardPage = () => {
     }) => {
       if (!boardId) return;
       if (args.type === 'card' && args.cardId && args.toListId) {
-        await moveCard({
+        const result = await moveCard({
           api,
           cardId: args.cardId,
           targetListId: args.toListId,
           afterCardId: args.afterCardId ?? null,
         });
+        if (args.fromListId) {
+          dispatch(
+            boardSliceActions.remoteCardMove({
+              card: {
+                id: result.data.id,
+                list_id: result.data.list_id,
+                position: result.data.position,
+              },
+              fromListId: args.fromListId,
+            }),
+          );
+        }
         dispatch(boardSliceActions.clearDragSnapshot());
       } else if (args.type === 'list' && args.newListOrder) {
         await reorderLists({ api, boardId, order: args.newListOrder });
@@ -421,7 +433,9 @@ const BoardPage = () => {
       {/* All content above the scrim */}
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
       {/* Unified glass block — one frosted surface using theme tokens so dark mode works */}
-      <div className={`border-b border-border${board.background ? ' bg-bg-surface/75 backdrop-blur-2xl' : ' bg-bg-surface'}`}>
+      {/* WHY: relative z-10 ensures this stacking context paints above the BoardCanvas sibling,
+          preventing the header dropdown from being hidden behind kanban column elements */}
+      <div className={`relative z-10 border-b border-border${board.background ? ' bg-bg-surface/75 backdrop-blur-2xl' : ' bg-bg-surface'}`}>
       <BoardHeader
         board={board}
         members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email, avatar_url: m.avatar_url }))}

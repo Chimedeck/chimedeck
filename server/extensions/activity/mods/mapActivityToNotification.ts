@@ -156,7 +156,7 @@ export async function mapActivityToNotification({
           )
           .then(([inserted]) => {
             if (inserted) {
-              publishToUser(recipientId, {
+              return publishToUser(recipientId, {
                 type: 'notification_created',
                 payload: {
                   notification: {

@@ -188,7 +188,7 @@ const boardSlice = createSlice({
     /** Move a card between lists without saving an undo snapshot (WS events) */
     remoteCardMove(
       state,
-      action: PayloadAction<{ card: { id: string; list_id: string }; fromListId: string }>,
+      action: PayloadAction<{ card: { id: string; list_id: string; position: string }; fromListId: string }>,
     ) {
       const { card, fromListId } = action.payload;
 
@@ -196,17 +196,23 @@ const boardSlice = createSlice({
       const fromCards = state.cardsByList[fromListId] ?? [];
       state.cardsByList[fromListId] = fromCards.filter((id) => id !== card.id);
 
-      // Append to target list (server is authoritative on order)
-      const toCards = state.cardsByList[card.list_id] ?? [];
-      if (!toCards.includes(card.id)) {
-        toCards.push(card.id);
-        state.cardsByList[card.list_id] = toCards;
-      }
-
-      // Update card record if present
+      // Update the card record first so position comparisons below are current
       if (state.cards[card.id]) {
         state.cards[card.id] = { ...state.cards[card.id], ...card } as Card;
       }
+
+      // Insert into target list at the correct sorted position (bytewise, matching DB COLLATE "C")
+      const existing = (state.cardsByList[card.list_id] ?? []).filter((id) => id !== card.id);
+      const insertIdx = existing.findIndex((id) => {
+        const c = state.cards[id];
+        return c != null && c.position > card.position;
+      });
+      if (insertIdx === -1) {
+        existing.push(card.id);
+      } else {
+        existing.splice(insertIdx, 0, card.id);
+      }
+      state.cardsByList[card.list_id] = existing;
     },
   },
   extraReducers: (builder) => {
