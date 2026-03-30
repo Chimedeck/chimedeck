@@ -1,11 +1,11 @@
-// Maps card activity events to notification fan-out for workspace members.
+// Maps card activity events to notification fan-out for board participants.
 // Called after each activity write so recipients are notified according to
 // their preferences without blocking the originating mutation.
 //
 // Activity → notification type mapping:
-//   card_created           → card_created  (workspace members, excluding actor)
-//   card_moved             → card_moved    (workspace members, excluding actor)
-//   card_member_assigned   → card_member_assigned (assigned user + workspace members, excl. actor)
+//   card_created           → card_created  (board participants, excluding actor)
+//   card_moved             → card_moved    (board participants, excluding actor)
+//   card_member_assigned   → card_member_assigned (assigned user + board participants, excl. actor)
 //   card_member_unassigned → card_member_unassigned (unassigned user, excl. actor)
 import { db } from '../../../common/db';
 import { preferenceGuard } from '../../notifications/mods/preferenceGuard';
@@ -54,32 +54,23 @@ export async function mapActivityToNotification({
       .first();
     if (!board) return;
 
-    // Determine recipients based on action type.
-    // card_member_assigned/unassigned — notify the affected user plus workspace members.
-    // All other events — notify all workspace members.
-    const workspaceMembers = await db('memberships')
-      .where({ workspace_id: board.workspace_id })
-      .whereNot({ user_id: activity.actor_id })
-      .select('user_id');
+    // Resolve recipients from board-level access only.
+    // [why] Guests are workspace-scoped with per-board grants; using workspace memberships
+    // leaks notifications across boards for users that are guests on a different board.
+    const [boardMembers, boardGuests] = await Promise.all([
+      db('board_members').where({ board_id: boardId }).select('user_id'),
+      db('board_guest_access').where({ board_id: boardId }).select('user_id'),
+    ]);
 
-    const workspaceMemberIds: string[] = workspaceMembers.map(
-      (m: { user_id: string }) => m.user_id,
-    );
-
-    let recipientIds = workspaceMemberIds;
-
-    // For assignment events, also include the affected user if they are not already in the list.
-    if (
-      activity.action === 'card_member_assigned' ||
-      activity.action === 'card_member_unassigned'
-    ) {
-      const affectedUserId = payload.userId as string | undefined;
-      if (affectedUserId && affectedUserId !== activity.actor_id) {
-        if (!recipientIds.includes(affectedUserId)) {
-          recipientIds = [...recipientIds, affectedUserId];
-        }
-      }
+    const recipientSet = new Set<string>();
+    for (const row of boardMembers as Array<{ user_id: string }>) {
+      if (row.user_id !== activity.actor_id) recipientSet.add(row.user_id);
     }
+    for (const row of boardGuests as Array<{ user_id: string }>) {
+      if (row.user_id !== activity.actor_id) recipientSet.add(row.user_id);
+    }
+
+    const recipientIds = Array.from(recipientSet);
 
     if (recipientIds.length === 0) return;
 
