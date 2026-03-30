@@ -116,7 +116,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   });
 
   const confirmUrl = `${env.APP_URL}/confirm-email-change?token=${token}`;
-  const emailContent = buildEmailChangeConfirmation({ newEmail, confirmUrl, expiresIn: '24 hours' });
+  const emailContent = await buildEmailChangeConfirmation({ newEmail, confirmUrl, expiresIn: '24 hours' });
   await send({ to: newEmail, ...emailContent });
 
   return Response.json(

@@ -52,7 +52,7 @@ export async function handleForgotPassword(req: Request): Promise<Response> {
     });
 
     const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
-    const emailContent = buildPasswordResetEmail({ resetUrl, expiresIn: '1 hour' });
+    const emailContent = await buildPasswordResetEmail({ resetUrl, expiresIn: '1 hour' });
     await send({ to: email, ...emailContent });
   }
 
