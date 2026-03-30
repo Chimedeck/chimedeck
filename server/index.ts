@@ -1,4 +1,6 @@
 #!/usr/bin/env bun
+import { initSentry } from './common/monitoring/sentry';
+import { handleUnhandledError } from './common/middlewares/errorHandler';
 import { appConfig } from './config/app';
 import { flags } from './mods/flags';
 import { logRequest } from './mods/logger';
@@ -40,6 +42,10 @@ import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
 import { initObservability } from './mods/observability/index';
+
+// Initialise Sentry error capture as early as possible (before any other async work)
+// so that startup errors are also captured.
+initSentry();
 
 // Initialise OTel tracing + metrics (no-op when OTEL_ENABLED=false)
 await initObservability();
@@ -219,7 +225,15 @@ Bun.serve({
       return csrfError;
     }
 
-    const res = await router(req);
+    let res: Response;
+    try {
+      res = await router(req);
+    } catch (err) {
+      const errRes = handleUnhandledError(err);
+      logRequest(req, errRes.status, Date.now() - start);
+      return errRes;
+    }
+
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();
 
