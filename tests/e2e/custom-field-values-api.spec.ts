@@ -92,6 +92,19 @@ test.describe('Custom Field Values API', () => {
     expect(match!.value_text).toBe('Updated note');
   });
 
+  test('POST board batch custom-field-values — accepts cardIds in request body', async ({ request }) => {
+    const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/custom-field-values`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { cardIds: [cardId] },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.json() as { data: Array<{ card_id: string; custom_field_id: string; value_text?: string }> };
+    expect(Array.isArray(body.data)).toBe(true);
+    const value = body.data.find((v) => v.card_id === cardId && v.custom_field_id === textFieldId);
+    expect(value).toBeTruthy();
+    expect(value?.value_text).toBe('Updated note');
+  });
+
   test('PUT — NUMBER value creates record', async ({ request }) => {
     const numFieldId = await createField(request, token, boardId, {
       name: 'Score',
