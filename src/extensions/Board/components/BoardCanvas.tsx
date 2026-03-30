@@ -25,6 +25,12 @@ import CardItem from '../../Card/components/CardItem';
 import AddListForm from '../../List/components/AddListForm';
 import { useCardLabelExpanded } from '../../Card/hooks/useCardLabelExpanded';
 
+interface DragPlaceholder {
+  listId: string;
+  index: number;
+  height: number;
+}
+
 interface Props {
   boardId: string;
   boardTitle?: string;
@@ -73,6 +79,14 @@ function findListForCard(cardId: string, cardsByList: Record<string, string[]>):
   return null;
 }
 
+function buildCardToListMap(cardsByList: Record<string, string[]>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [listId, ids] of Object.entries(cardsByList)) {
+    for (const id of ids) out[id] = listId;
+  }
+  return out;
+}
+
 function getPointerClientY(evt: Event | null | undefined): number | null {
   if (!evt) return null;
   if ('clientY' in evt && typeof evt.clientY === 'number') {
@@ -83,6 +97,21 @@ function getPointerClientY(evt: Event | null | undefined): number | null {
     return touch ? touch.clientY : null;
   }
   return null;
+}
+
+function normalizePlaceholderHeight(value: number | null | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 24) {
+    return 72;
+  }
+  return value;
+}
+
+function getSortableContainerId(
+  over: DragOverEvent['over'] | DragEndEvent['over'] | null | undefined,
+): string | null {
+  const data = over?.data?.current as { sortable?: { containerId?: unknown } } | undefined;
+  const containerId = data?.sortable?.containerId;
+  return typeof containerId === 'string' ? containerId : null;
 }
 
 const BoardCanvas = ({
@@ -108,8 +137,14 @@ const BoardCanvas = ({
   isViewerGuest = false,
   customFieldValuesMap,
 }: Props) => {
+  const totalCards = Object.keys(cards).length;
+  // WHY: live reordering during drag-over updates React state on nearly every
+  // pointer move. On very large boards this causes visible jank, so we switch
+  // to drop-time commit only for smoother dragging.
+  const disableLiveDragPreview = totalCards >= 120;
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [dragPlaceholder, setDragPlaceholder] = useState<DragPlaceholder | null>(null);
   // WHY: capture the source list at drag-start; by drag-end the optimistic move
   // has already updated cardsByList so re-deriving fromListId returns toListId.
   const fromListIdRef = useRef<string | null>(null);
@@ -120,6 +155,7 @@ const BoardCanvas = ({
   // its children — no BoardPage/PluginIframeContainer re-renders during drag.
   const [dragCardsByList, setDragCardsByList] = useState<Record<string, string[]> | null>(null);
   const dragCardsByListRef = useRef<Record<string, string[]> | null>(null);
+  const dragCardToListRef = useRef<Record<string, string> | null>(null);
   dragCardsByListRef.current = dragCardsByList;
   const effectiveCardsByList = dragCardsByList ?? cardsByList;
 
@@ -135,14 +171,26 @@ const BoardCanvas = ({
       if (cards[id]) {
         setActiveCardId(id);
         fromListIdRef.current = findListForCard(id, cardsByList);
-        // Snapshot current ordering into local drag state — onDragOver will
-        // mutate this without touching Redux, preventing re-render loops.
-        dragCardsByListRef.current = cardsByList;
-        setDragCardsByList(cardsByList);
+        const startListId = findListForCard(id, cardsByList);
+        if (disableLiveDragPreview && startListId) {
+          const startIndex = Math.max(0, (cardsByList[startListId] ?? []).indexOf(id));
+          const startHeight = normalizePlaceholderHeight(event.active.rect.current.initial?.height);
+          setDragPlaceholder({ listId: startListId, index: startIndex, height: startHeight });
+        }
+        if (disableLiveDragPreview) {
+          dragCardsByListRef.current = null;
+          dragCardToListRef.current = null;
+          setDragCardsByList(null);
+        } else {
+          // Snapshot current ordering into local drag state — onDragOver will
+          // mutate this without touching Redux, preventing re-render loops.
+          dragCardsByListRef.current = cardsByList;
+          dragCardToListRef.current = buildCardToListMap(cardsByList);
+          setDragCardsByList(cardsByList);
+        }
       }
-      onDragStart();
     },
-    [cards, cardsByList, onDragStart],
+    [cards, cardsByList, disableLiveDragPreview],
   );
 
   const handleDragOver = useCallback(
@@ -156,6 +204,51 @@ const BoardCanvas = ({
 
       // Only handle card-over-card or card-over-column (not list reorder)
       if (!cards[activeId]) return;
+      if (disableLiveDragPreview) {
+        const sourceListId = fromListIdRef.current ?? findListForCard(activeId, cardsByList);
+        if (!sourceListId) return;
+
+        const overContainerId = getSortableContainerId(over);
+        let toListId = overContainerId ?? overId;
+        if (!lists[toListId]) {
+          toListId = findListForCard(overId, cardsByList) ?? sourceListId;
+        }
+
+        const targetCards = (cardsByList[toListId] ?? []).filter((id) => id !== activeId);
+        let insertIndex = targetCards.length;
+        const placeholderHeight = normalizePlaceholderHeight(
+          active.rect.current.initial?.height
+          ?? active.rect.current.translated?.height
+          ?? 72,
+        );
+
+        if (cards[overId]) {
+          const overIndex = targetCards.indexOf(overId);
+          if (overIndex >= 0) {
+            const translatedRect = active.rect.current.translated;
+            const translatedCenterY = translatedRect
+              ? translatedRect.top + translatedRect.height / 2
+              : null;
+            const effectiveY = pointerY ?? translatedCenterY;
+            const isBelowOverCard =
+              effectiveY != null &&
+              effectiveY > over.rect.top + over.rect.height / 2;
+            insertIndex = overIndex + (isBelowOverCard ? 1 : 0);
+          }
+        }
+
+        setDragPlaceholder((prev) => {
+          if (
+            prev?.listId === toListId
+            && prev.index === insertIndex
+            && Math.abs(prev.height - placeholderHeight) < 1
+          ) {
+            return prev;
+          }
+          return { listId: toListId, index: insertIndex, height: placeholderHeight };
+        });
+        return;
+      }
 
       // WHY: update local drag state only — no Redux dispatch here.
       // Dispatching onCardMove on every drag-over event triggers a Redux
@@ -163,12 +256,14 @@ const BoardCanvas = ({
       // indices → infinite update loop.
       setDragCardsByList((prev) => {
         if (!prev) return prev;
-        const fromListId = findListForCard(activeId, prev);
+        const cardToList = dragCardToListRef.current ?? buildCardToListMap(prev);
+        dragCardToListRef.current = cardToList;
+        const fromListId = cardToList[activeId] ?? findListForCard(activeId, prev);
         if (!fromListId) return prev;
 
         let toListId = overId;
         if (!lists[overId]) {
-          toListId = findListForCard(overId, prev) ?? fromListId;
+          toListId = cardToList[overId] ?? findListForCard(overId, prev) ?? fromListId;
         }
         if (fromListId === toListId && activeId === overId) return prev;
 
@@ -218,13 +313,14 @@ const BoardCanvas = ({
         const newTo = [...(prev[toListId] ?? [])];
         newTo.splice(insertIndex, 0, activeId);
         const next = { ...prev, [fromListId]: newFrom, [toListId]: newTo };
+        cardToList[activeId] = toListId;
         // Keep ref in sync immediately so handleDragEnd can commit the
         // latest order even if React state batching hasn't painted yet.
         dragCardsByListRef.current = next;
         return next;
       });
     },
-    [cards, lists],
+    [cards, disableLiveDragPreview, lists],
   );
 
   const handleDragEnd = useCallback(
@@ -235,7 +331,9 @@ const BoardCanvas = ({
 
       if (!over) {
         setDragCardsByList(null);
+        setDragPlaceholder(null);
         fromListIdRef.current = null;
+        dragCardToListRef.current = null;
         onDragRollback();
         return;
       }
@@ -245,12 +343,15 @@ const BoardCanvas = ({
 
       // List reorder
       if (lists[activeId]) {
+        setDragPlaceholder(null);
+        dragCardToListRef.current = null;
         const oldIndex = listOrder.indexOf(activeId);
         const newIndex = listOrder.indexOf(overId);
         if (oldIndex !== newIndex && newIndex >= 0) {
           const newOrder = [...listOrder];
           newOrder.splice(oldIndex, 1);
           newOrder.splice(newIndex, 0, activeId);
+          onDragStart();
           onListReorder(newOrder);
           try {
             await onDragCommit({ type: 'list', newListOrder: newOrder });
@@ -265,12 +366,15 @@ const BoardCanvas = ({
 
       // Card move commit
       if (cards[activeId]) {
+        setDragPlaceholder(null);
         // Read final position from local drag state before clearing it
         const finalCardsByList = dragCardsByListRef.current ?? cardsByList;
-        const toListId = findListForCard(activeId, finalCardsByList);
+        const dragCardToList = dragCardToListRef.current;
+        const toListId = dragCardToList?.[activeId] ?? findListForCard(activeId, finalCardsByList);
         const fromListId = fromListIdRef.current ?? toListId;
         fromListIdRef.current = null;
         dragCardsByListRef.current = null;
+        dragCardToListRef.current = null;
         setDragCardsByList(null);
         if (!toListId || !fromListId) {
           onDragRollback();
@@ -279,12 +383,13 @@ const BoardCanvas = ({
 
         let resolvedToListId = toListId;
         let resolvedNewIndex = (finalCardsByList[toListId] ?? []).indexOf(activeId);
+        const overContainerId = getSortableContainerId(over);
         if (resolvedNewIndex < 0) {
           resolvedNewIndex = (finalCardsByList[toListId] ?? []).length;
         }
 
         if (cards[overId]) {
-          const hoverListId = findListForCard(overId, finalCardsByList) ?? resolvedToListId;
+          const hoverListId = dragCardToList?.[overId] ?? findListForCard(overId, finalCardsByList) ?? resolvedToListId;
           const sourceCardsInHoverList = finalCardsByList[hoverListId] ?? [];
           const fromIdxInHover = sourceCardsInHoverList.indexOf(activeId);
           const overIdxInHover = sourceCardsInHoverList.indexOf(overId);
@@ -307,6 +412,9 @@ const BoardCanvas = ({
         } else if (lists[overId]) {
           resolvedToListId = overId;
           resolvedNewIndex = (finalCardsByList[overId] ?? []).length;
+        } else if (overContainerId && lists[overContainerId]) {
+          resolvedToListId = overContainerId;
+          resolvedNewIndex = (finalCardsByList[overContainerId] ?? []).length;
         }
 
         const targetPreview = [...(finalCardsByList[resolvedToListId] ?? [])].filter((id) => id !== activeId);
@@ -315,6 +423,7 @@ const BoardCanvas = ({
 
         // Apply the final position to Redux in a single dispatch (moved here
         // from onDragOver — see handleDragOver comment for why)
+        onDragStart();
         onCardMove({
           cardId: activeId,
           fromListId,
@@ -338,6 +447,16 @@ const BoardCanvas = ({
   );
 
   const activeCard = activeCardId ? cards[activeCardId] : null;
+  const overlayProps: { listTitle?: string; boardTitle?: string } = {};
+  if (activeCard) {
+    const overlayListTitle = lists[activeCard.list_id]?.title;
+    if (typeof overlayListTitle === 'string') {
+      overlayProps.listTitle = overlayListTitle;
+    }
+    if (typeof boardTitle === 'string') {
+      overlayProps.boardTitle = boardTitle;
+    }
+  }
 
   return (
     <DndContext
@@ -373,6 +492,8 @@ const BoardCanvas = ({
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
                 isViewerGuest={isViewerGuest}
                 hasBackground={hasBackground}
+                {...(dragPlaceholder?.listId === listId ? { dragPlaceholderIndex: dragPlaceholder.index } : {})}
+                {...(dragPlaceholder?.listId === listId ? { dragPlaceholderHeight: dragPlaceholder.height } : {})}
               />
             );
           })}
@@ -380,14 +501,12 @@ const BoardCanvas = ({
         </div>
       </SortableContext>
 
-      {/* DragOverlay renders the dragged card at its drag position */}
       <DragOverlay>
         {activeCard && (
           <CardItem
             card={activeCard}
             isOverlay
-            listTitle={lists[activeCard.list_id]?.title}
-            boardTitle={boardTitle}
+            {...overlayProps}
             labelsExpanded={labelsExpanded}
             onToggleLabels={onToggleLabels}
           />

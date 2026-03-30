@@ -20,7 +20,6 @@ export interface BoardState {
   dragSnapshot: {
     listOrder: string[];
     cardsByList: Record<string, string[]>;
-    cards: Record<string, Card>;
   } | null;
 }
 
@@ -56,7 +55,6 @@ const boardSlice = createSlice({
         cardsByList: Object.fromEntries(
           Object.entries(state.cardsByList).map(([k, v]) => [k, [...v]]),
         ),
-        cards: { ...state.cards },
       };
     },
 
@@ -69,7 +67,17 @@ const boardSlice = createSlice({
       if (state.dragSnapshot) {
         state.listOrder = state.dragSnapshot.listOrder;
         state.cardsByList = state.dragSnapshot.cardsByList;
-        state.cards = state.dragSnapshot.cards;
+        // [why] Avoid cloning the full cards map on drag-start (hot path).
+        // Reconcile card.list_id from the rolled-back cardsByList only when
+        // rollback happens, which is the uncommon failure path.
+        for (const [listId, cardIds] of Object.entries(state.cardsByList)) {
+          for (const cardId of cardIds) {
+            const card = state.cards[cardId];
+            if (card && card.list_id !== listId) {
+              card.list_id = listId;
+            }
+          }
+        }
         state.dragSnapshot = null;
       }
     },

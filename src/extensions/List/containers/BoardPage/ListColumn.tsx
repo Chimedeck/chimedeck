@@ -2,7 +2,7 @@
 // Provides drag handle for list reorder and a SortableContext for card items.
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useCallback, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useMemo, useRef, useState } from 'react';
 import type { List } from '../../api';
 import type { Card } from '../../../Card/api';
 import ListHeader from '../../components/ListHeader';
@@ -30,7 +30,13 @@ interface Props {
   isViewerGuest?: boolean;
   /** When true the column sits over a board background image — apply solid (opaque) column body. */
   hasBackground?: boolean;
+  /** Predicted insertion index for drag placeholder in this list. */
+  dragPlaceholderIndex?: number;
+  /** Measured height of the currently dragged card for exact placeholder dimensions. */
+  dragPlaceholderHeight?: number;
 }
+
+const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldValue[] = [];
 
 const SortableListColumn = ({
   list,
@@ -48,6 +54,8 @@ const SortableListColumn = ({
   customFieldValuesMap,
   isViewerGuest = false,
   hasBackground = false,
+  dragPlaceholderIndex,
+  dragPlaceholderHeight,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -75,9 +83,16 @@ const SortableListColumn = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const listCardObjects = cardIds
-    .map((id) => cards[id])
-    .filter((c): c is Card => c !== undefined);
+  const listCardObjects = useMemo(
+    () => cardIds
+      .map((id) => cards[id])
+      .filter((c): c is Card => c !== undefined),
+    [cardIds, cards],
+  );
+  const resolvedPlaceholderHeight =
+    typeof dragPlaceholderHeight === 'number' && Number.isFinite(dragPlaceholderHeight) && dragPlaceholderHeight >= 24
+      ? dragPlaceholderHeight
+      : 72;
 
   return (
     <div
@@ -103,19 +118,41 @@ const SortableListColumn = ({
       {/* Cards — vertically sortable */}
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]">
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-          {listCardObjects.map((card) => (
-            <CardItem
-              key={card.id}
-              card={card}
-              listTitle={list.title}
-              {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
-              {...(boardId ? { boardId } : {})}
-              labelsExpanded={labelsExpanded ?? false}
-              onToggleLabels={stableToggleLabels}
-              {...(onCardClick ? { onClick: onCardClick } : {})}
-              {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? [] } : {})}
+          {typeof dragPlaceholderIndex === 'number' && dragPlaceholderIndex <= 0 && (
+            <div
+              className="rounded-lg border border-border bg-bg-surface/70"
+              style={{ height: resolvedPlaceholderHeight }}
+              aria-hidden="true"
             />
+          )}
+          {listCardObjects.map((card, idx) => (
+            <Fragment key={card.id}>
+              <CardItem
+                card={card}
+                listTitle={list.title}
+                {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+                {...(boardId ? { boardId } : {})}
+                labelsExpanded={labelsExpanded ?? false}
+                onToggleLabels={stableToggleLabels}
+                {...(onCardClick ? { onClick: onCardClick } : {})}
+                {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
+              />
+              {typeof dragPlaceholderIndex === 'number' && dragPlaceholderIndex === idx + 1 && (
+                <div
+                  className="rounded-lg border border-border bg-bg-surface/70"
+                  style={{ height: resolvedPlaceholderHeight }}
+                  aria-hidden="true"
+                />
+              )}
+            </Fragment>
           ))}
+          {typeof dragPlaceholderIndex === 'number' && dragPlaceholderIndex >= listCardObjects.length && (
+            <div
+              className="rounded-lg border border-border bg-bg-surface/70"
+              style={{ height: resolvedPlaceholderHeight }}
+              aria-hidden="true"
+            />
+          )}
         </SortableContext>
       </div>
 
@@ -144,4 +181,23 @@ const SortableListColumn = ({
   );
 };
 
-export default SortableListColumn;
+function areEqual(prev: Props, next: Props): boolean {
+  return prev.list === next.list
+    && prev.cardIds === next.cardIds
+    && prev.cards === next.cards
+    && prev.boardId === next.boardId
+    && prev.boardTitle === next.boardTitle
+    && prev.onRename === next.onRename
+    && prev.onArchive === next.onArchive
+    && prev.onDelete === next.onDelete
+    && prev.onAddCard === next.onAddCard
+    && prev.onCardClick === next.onCardClick
+    && prev.labelsExpanded === next.labelsExpanded
+    && prev.onToggleLabels === next.onToggleLabels
+    && prev.customFieldValuesMap === next.customFieldValuesMap
+    && prev.isViewerGuest === next.isViewerGuest
+    && prev.hasBackground === next.hasBackground
+    && prev.dragPlaceholderIndex === next.dragPlaceholderIndex;
+}
+
+export default memo(SortableListColumn, areEqual);
