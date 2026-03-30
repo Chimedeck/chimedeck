@@ -9,9 +9,11 @@ interface Props {
   onRename: (title: string) => void;
   onArchive: () => void;
   onDelete: () => void;
+  /** When true the column sits over a board background image — apply frosted-glass styling. */
+  hasBackground?: boolean;
 }
 
-const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) => {
+const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackground }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(list.title);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,7 +35,7 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
   };
 
   return (
-    <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+    <div className={`px-3 pt-3 pb-2 flex items-center justify-between rounded-t-xl${hasBackground ? ' backdrop-blur-md bg-bg-surface/75' : ''}`}>
       {editing ? (
         <input
           autoFocus

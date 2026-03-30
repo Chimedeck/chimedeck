@@ -24,6 +24,8 @@ interface Props {
   onQueryChange?: (query: string) => void;
   /** Called when the user clicks a result item */
   onSelectResult?: (result: BoardSearchResult) => void;
+  /** When true, soften the search bar background to blend with a board background image. */
+  hasBackground?: boolean;
 }
 
 /** Renders a title string with the matching substring wrapped in a <mark>. */
@@ -43,7 +45,7 @@ const HighlightedTitle = ({ title, query }: { title: string; query: string }) =>
   );
 };
 
-const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSelectResult }: Props) => {
+const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSelectResult, hasBackground = false }: Props) => {
   const [inputValue, setInputValue] = useState(initialQuery);
   const [results, setResults] = useState<BoardSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -147,7 +149,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
   return (
     <div ref={containerRef} className="relative">
       {/* Search input */}
-      <div className="flex items-center gap-1.5 rounded-md bg-bg-surface border border-transparent focus-within:border-blue-500 focus-within:bg-bg-base px-2 py-1 transition-colors w-56">
+      <div className="flex items-center gap-1.5 rounded-md border border-border focus-within:border-primary px-2 py-1 transition-colors w-56 bg-bg-surface shadow-sm focus-within:shadow-md">
         <MagnifyingGlassIcon
           className="h-4 w-4 flex-shrink-0 text-muted"
           aria-hidden="true"

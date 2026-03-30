@@ -28,6 +28,8 @@ interface Props {
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
   /** True when the current user is a VIEWER guest — hides the Add card button. */
   isViewerGuest?: boolean;
+  /** When true the column sits over a board background image — apply solid (opaque) column body. */
+  hasBackground?: boolean;
 }
 
 const SortableListColumn = ({
@@ -45,6 +47,7 @@ const SortableListColumn = ({
   onToggleLabels,
   customFieldValuesMap,
   isViewerGuest = false,
+  hasBackground = false,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -81,7 +84,7 @@ const SortableListColumn = ({
       ref={setNodeRef}
       id={`board-list-${list.id}`}
       style={style}
-      className="w-72 shrink-0 bg-bg-surface/90 backdrop-blur-sm border border-border rounded-xl flex flex-col h-full"
+      className={`w-72 shrink-0 border border-border rounded-xl flex flex-col h-full ${hasBackground ? 'bg-bg-surface' : 'bg-bg-surface/90 backdrop-blur-sm'}`}
       role="listitem"
       aria-label={`List: ${list.title}`}
     >
@@ -93,6 +96,7 @@ const SortableListColumn = ({
           onRename={(title) => onRename(list.id, title)}
           onArchive={() => onArchive(list.id)}
           onDelete={() => onDelete(list.id)}
+          hasBackground={hasBackground}
         />
       </div>
 

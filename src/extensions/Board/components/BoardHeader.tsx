@@ -33,6 +33,10 @@ interface Props {
   onOpenAutomation?: () => void;
   onOpenMembers?: () => void;
   activeAutomationCount?: number;
+  /** When true the header sits over a board background image — apply frosted-glass styling. */
+  hasBackground?: boolean;
+  /** When true, a parent container supplies the glass backdrop — header itself stays transparent. */
+  useParentGlass?: boolean;
   /** When true, hides member avatar stack and board settings menu (GUEST workspace role). */
   isGuest?: boolean;
   /** Auth token for board-scoped search requests */
@@ -58,6 +62,8 @@ const BoardHeader = ({
   onOpenAutomation,
   onOpenMembers,
   activeAutomationCount = 0,
+  hasBackground = false,
+  useParentGlass = false,
   isGuest = false,
   searchToken,
   initialSearchQuery,
@@ -114,8 +120,18 @@ const BoardHeader = ({
     }
   };
 
+  let headerBgClass: string;
+  if (useParentGlass) {
+    // Parent owns the surface — header is fully transparent, no border
+    headerBgClass = '';
+  } else if (hasBackground) {
+    headerBgClass = ' [backdrop-filter:blur(20px)] border-b border-[#eee]';
+  } else {
+    headerBgClass = '';
+  }
+
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-3 bg-bg-base/80 backdrop-blur-sm px-4 py-2 border-b border-border">
+    <header className={`sticky top-0 z-10 flex items-center gap-3 px-6 pt-4 pb-2${headerBgClass}`}>
       {/* Editable board title */}
       {editing ? (
         <input
@@ -126,12 +142,12 @@ const BoardHeader = ({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleSave}
           onKeyDown={handleKeyDown}
-          className="bg-bg-overlay text-base font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary min-w-0 max-w-xs"
+          className={`bg-bg-overlay font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary min-w-0 max-w-xs${hasBackground ? ' text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : ' text-base'}`}
           aria-label="Edit board title"
         />
       ) : (
         <button
-          className="text-base font-semibold text-lg hover:bg-bg-surface rounded px-2 py-0.5 transition-colors"
+          className={`text-[17px] font-semibold rounded px-2 py-0.5 transition-colors${hasBackground ? ' text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)] hover:bg-white/20' : ' text-base hover:bg-bg-overlay'}`}
           onClick={handleTitleClick}
           aria-label="Click to edit board title"
         >
@@ -148,6 +164,7 @@ const BoardHeader = ({
         <BoardSearchBar
           boardId={board.id}
           token={searchToken}
+          hasBackground={hasBackground}
           {...(initialSearchQuery ? { initialQuery: initialSearchQuery } : {})}
           {...(onSearchQueryChange ? { onQueryChange: onSearchQueryChange } : {})}
           {...(onSearchResultSelect ? { onSelectResult: onSearchResultSelect } : {})}

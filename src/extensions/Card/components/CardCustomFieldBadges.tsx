@@ -20,7 +20,7 @@ function hasNonNullValue(v: CustomFieldValue): boolean {
     v.value_text !== null ||
     v.value_number !== null ||
     v.value_date !== null ||
-    v.value_checkbox !== null ||
+    v.value_checkbox === true ||
     v.value_option_id !== null
   );
 }
@@ -37,7 +37,7 @@ function resolveDisplayValue(
     case 'DATE':
       return v.value_date;
     case 'CHECKBOX':
-      return v.value_checkbox;
+      return v.value_checkbox === true ? true : null;
     case 'DROPDOWN': {
       const opt = field.options?.find((o) => o.id === v.value_option_id);
       return opt ? opt.label : null;

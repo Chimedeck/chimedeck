@@ -85,7 +85,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
   const hasUnscheduled = cards.length > scheduledCards.length;
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto" data-testid="calendar-view">
+    <div className="flex flex-1 flex-col overflow-auto bg-bg-base" data-testid="calendar-view">
       {/* Toolbar */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-2 text-sm text-subtle">
         {/* Mode toggle */}

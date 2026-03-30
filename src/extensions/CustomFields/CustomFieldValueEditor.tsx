@@ -211,7 +211,6 @@ const CustomFieldValueEditor = ({
             save({ value_checkbox: e.target.checked });
           }}
         />
-        <span className="text-sm text-subtle">{checked ? translations['CustomFieldValue.checkboxYes'] : translations['CustomFieldValue.checkboxNo']}</span>
       </label>
     );
   }

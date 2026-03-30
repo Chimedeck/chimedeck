@@ -61,6 +61,8 @@ interface Props {
   /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
    *  null = batch not yet loaded (don't pass per-card values to tiles). */
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
+  /** True when the board has a background image — columns render solid, headers get frosted-glass. */
+  hasBackground?: boolean;
 }
 
 /** Find which list contains a given card ID */
@@ -78,6 +80,7 @@ const BoardCanvas = ({
   lists,
   cardsByList,
   cards,
+  hasBackground = false,
   onCardMove,
   onListReorder,
   onDragStart,
@@ -284,6 +287,7 @@ const BoardCanvas = ({
                 {...(onCardClick ? { onCardClick } : {})}
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
                 isViewerGuest={isViewerGuest}
+                hasBackground={hasBackground}
               />
             );
           })}

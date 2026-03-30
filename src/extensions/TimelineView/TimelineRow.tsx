@@ -92,7 +92,7 @@ const TimelineRow = ({
 
   return (
     <div
-      className="border-b border-border"
+      className="border-b border-border bg-bg-surface"
       // minWidth must match the header so the border-b extends across the full scrollable width.
       style={{ minWidth: labelWidth + totalWidth }}
       data-testid={`timeline-row-${swimlane.listId}`}

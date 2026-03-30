@@ -420,6 +420,8 @@ const BoardPage = () => {
       )}
       {/* All content above the scrim */}
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
+      {/* Unified glass block — one frosted surface using theme tokens so dark mode works */}
+      <div className={`border-b border-border${board.background ? ' bg-bg-surface/75 backdrop-blur-2xl' : ' bg-bg-surface'}`}>
       <BoardHeader
         board={board}
         members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email, avatar_url: m.avatar_url }))}
@@ -427,6 +429,8 @@ const BoardPage = () => {
         pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
         onOpenAutomation={automationPanel.openPanel}
+        hasBackground={!!board.background}
+        useParentGlass={!!board.background}
         isGuest={isGuest}
         {...(accessToken ? { searchToken: accessToken } : {})}
         {...(initialBoardSearch ? { initialSearchQuery: initialBoardSearch } : {})}
@@ -440,26 +444,40 @@ const BoardPage = () => {
         })}
       />
       {board.state === 'ARCHIVED' && (
-        <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
+        <div className="mx-6 mt-1 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
           This board is archived and read-only.
         </div>
       )}
 
-      {/* Tab bar */}
-      <div className="flex gap-1 border-b border-border px-4 pt-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`rounded-t px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-muted hover:text-subtle'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Nav row: primary tabs on the left, view switcher on the right */}
+      <div className="flex items-center px-6 pb-0">
+        {/* Primary navigation group */}
+        <div className="flex items-center">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            // Underline-only active state — no background pills
+            const tabClass = isActive
+              ? (board.background ? 'text-white font-medium border-b-2 border-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : 'text-primary font-medium border-b-2 border-primary')
+              : (board.background ? 'text-white/80 border-b-2 border-transparent hover:text-white hover:bg-white/15 rounded transition-colors [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : 'text-muted border-b-2 border-transparent hover:text-base transition-colors');
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-2.5 text-sm ${tabClass}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        {/* Thin divider + view switcher — only on Board tab */}
+        {activeTab === 'board' && (
+          <>
+            <div className={`mx-4 h-4 w-px flex-shrink-0 ${board.background ? 'bg-white/30' : 'bg-border'}`} aria-hidden="true" />
+            <BoardViewSwitcher boardId={boardId ?? ''} hasBackground={!!board.background} segmented />
+          </>
+        )}
+      </div>
       </div>
 
       {/* Tab content */}
@@ -467,9 +485,6 @@ const BoardPage = () => {
         /* Hidden plugin iframes + bridge provider for card plugin UI injections */
         <div className="flex flex-col flex-1 overflow-hidden">
         <PluginIframeContainer boardId={boardId ?? ''}>
-          {/* View switcher: Kanban | Table | Calendar | Timeline (Sprint 52) */}
-          <BoardViewSwitcher boardId={boardId ?? ''} />
-
           {/* Render the active view */}
           {activeView === 'KANBAN' ? (
             <BoardCanvas
@@ -493,6 +508,7 @@ const BoardPage = () => {
               isReadOnly={board.state === 'ARCHIVED'}
               isViewerGuest={isViewerGuest}
               customFieldValuesMap={customFieldValuesMap}
+              hasBackground={!!board.background}
             />
           ) : activeView === 'TABLE' ? (
             <TableView
@@ -528,17 +544,22 @@ const BoardPage = () => {
         </PluginIframeContainer>
         </div>
       ) : activeTab === 'activity' ? (
-        <div className="flex-1 overflow-y-auto">
-          <BoardActivityPanel boardId={boardId ?? ''} />
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
+            <BoardActivityPanel boardId={boardId ?? ''} />
+          </div>
         </div>
       ) : activeTab === 'comments' ? (
-        <div className="flex-1 overflow-y-auto">
-          <BoardCommentsPanel boardId={boardId ?? ''} />
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
+            <BoardCommentsPanel boardId={boardId ?? ''} />
+          </div>
         </div>
       ) : activeTab === 'health-check' ? (
         <HealthCheckTab boardId={boardId ?? ''} />
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
           <BoardArchivedCardsPanel
             boardId={boardId ?? ''}
             onCardUnarchived={() => {
@@ -546,6 +567,7 @@ const BoardPage = () => {
               setActiveTab('board');
             }}
           />
+          </div>
         </div>
       )}
 

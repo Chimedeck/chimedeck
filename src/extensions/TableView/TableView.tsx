@@ -9,12 +9,12 @@ import translations from './translations/en.json';
 import type { TableColumn, TableViewProps } from './types';
 
 const COLUMNS: TableColumn[] = [
-  { key: 'title',      label: translations['TableView.columnTitle'],      sortable: true,  width: '220px' },
-  { key: 'list',       label: translations['TableView.columnList'],       sortable: true,  width: '140px' },
-  { key: 'assignees',  label: translations['TableView.columnMembers'],    sortable: true,  width: '120px' },
-  { key: 'labels',     label: translations['TableView.columnLabels'],     sortable: true,  width: '160px' },
-  { key: 'due_date',   label: translations['TableView.columnDueDate'],    sortable: true,  width: '120px' },
-  { key: 'start_date', label: translations['TableView.columnStartDate'],  sortable: true,  width: '120px' },
+  { key: 'title',      label: translations['TableView.columnTitle'],      sortable: true,  width: '280px' },
+  { key: 'list',       label: translations['TableView.columnList'],       sortable: true,  width: '130px' },
+  { key: 'assignees',  label: translations['TableView.columnMembers'],    sortable: true,  width: '100px' },
+  { key: 'labels',     label: translations['TableView.columnLabels'],     sortable: true,  width: '200px' },
+  { key: 'due_date',   label: translations['TableView.columnDueDate'],    sortable: true,  width: '110px' },
+  { key: 'start_date', label: translations['TableView.columnStartDate'],  sortable: true,  width: '110px' },
   { key: 'value',      label: translations['TableView.columnMoney'],      sortable: true,  width: '100px' },
 ];
 
@@ -33,7 +33,10 @@ const TableView = ({ cards, lists, onCardClick }: TableViewProps) => {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-4" data-testid="table-view">
+    <div
+      className="flex-1 overflow-auto px-6 py-4 bg-bg-base"
+      data-testid="table-view"
+    >
       <table className="w-full border-collapse text-left">
         <TableHeader columns={COLUMNS} sortState={sortState} onSort={handleSort} />
         <tbody>

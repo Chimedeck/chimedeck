@@ -77,8 +77,8 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden" data-testid="timeline-view">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 border-b border-slate-700 px-4 py-2">
+      {/* Toolbar — solid surface */}
+      <div className="flex items-center gap-3 border-b border-border bg-bg-surface px-4 py-2">
         <button
           onClick={scrollToToday}
           className="rounded border border-border px-3 py-1 text-xs text-subtle hover:bg-bg-overlay"
@@ -89,35 +89,37 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
         <TimelineZoomControl zoom={zoom} onZoomChange={setZoom} />
       </div>
 
-      {/* Horizontally scrollable timeline canvas */}
+      {/* Horizontally scrollable timeline canvas — transparent so board background shows below the rows */}
       <div
         ref={scrollRef}
         className="flex flex-1 flex-col overflow-x-auto overflow-y-auto"
         data-testid="timeline-scroll"
       >
-        <TimelineHeader
-          zoom={zoom}
-          originDate={originDate}
-          totalDays={TIMELINE_DAYS}
-          dayWidth={dayWidth}
-          labelWidth={LABEL_WIDTH}
-          today={today}
-        />
-
-        {swimlanes.map((lane) => (
-          <TimelineRow
-            key={lane.listId}
-            swimlane={lane}
+        {/* Header and rows each carry their own bg-bg-surface so solid coverage extends to full scroll width */}
+          <TimelineHeader
             zoom={zoom}
             originDate={originDate}
             totalDays={TIMELINE_DAYS}
             dayWidth={dayWidth}
             labelWidth={LABEL_WIDTH}
             today={today}
-            onCardClick={onCardClick}
-            {...(_addToast !== undefined ? { addToast: _addToast } : {})}
           />
-        ))}
+
+          {swimlanes.map((lane) => (
+            <TimelineRow
+              key={lane.listId}
+              swimlane={lane}
+              zoom={zoom}
+              originDate={originDate}
+              totalDays={TIMELINE_DAYS}
+              dayWidth={dayWidth}
+              labelWidth={LABEL_WIDTH}
+              today={today}
+              onCardClick={onCardClick}
+              {...(_addToast !== undefined ? { addToast: _addToast } : {})}
+            />
+          ))}
+        {/* Empty flex-1 remainder — transparent, lets board background image show through */}
       </div>
     </div>
   );
