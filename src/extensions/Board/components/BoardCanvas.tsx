@@ -388,7 +388,14 @@ const BoardCanvas = ({
           resolvedNewIndex = (finalCardsByList[toListId] ?? []).length;
         }
 
-        if (cards[overId]) {
+        if (disableLiveDragPreview && dragPlaceholder) {
+          const placeholderListId = dragPlaceholder.listId;
+          const targetWithoutActive = (finalCardsByList[placeholderListId] ?? []).filter((id) => id !== activeId);
+          resolvedToListId = placeholderListId;
+          resolvedNewIndex = Math.max(0, Math.min(dragPlaceholder.index, targetWithoutActive.length));
+        }
+
+        if (!(disableLiveDragPreview && dragPlaceholder) && cards[overId]) {
           const hoverListId = dragCardToList?.[overId] ?? findListForCard(overId, finalCardsByList) ?? resolvedToListId;
           const sourceCardsInHoverList = finalCardsByList[hoverListId] ?? [];
           const fromIdxInHover = sourceCardsInHoverList.indexOf(activeId);
@@ -409,10 +416,10 @@ const BoardCanvas = ({
               resolvedNewIndex = hoverIndex + (isBelowHoverCard ? 1 : 0);
             }
           }
-        } else if (lists[overId]) {
+        } else if (!(disableLiveDragPreview && dragPlaceholder) && lists[overId]) {
           resolvedToListId = overId;
           resolvedNewIndex = (finalCardsByList[overId] ?? []).length;
-        } else if (overContainerId && lists[overContainerId]) {
+        } else if (!(disableLiveDragPreview && dragPlaceholder) && overContainerId && lists[overContainerId]) {
           resolvedToListId = overContainerId;
           resolvedNewIndex = (finalCardsByList[overContainerId] ?? []).length;
         }
@@ -443,7 +450,7 @@ const BoardCanvas = ({
         }
       }
     },
-    [cards, cardsByList, lists, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder],
+    [cards, cardsByList, disableLiveDragPreview, dragPlaceholder, lists, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder],
   );
 
   const activeCard = activeCardId ? cards[activeCardId] : null;
