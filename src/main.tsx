@@ -6,8 +6,14 @@ import { setTokenGetter } from './common/api/client';
 import { setClearAuthCallback } from './common/api/interceptors';
 import { clearAuth } from './extensions/Auth/duck/authDuck';
 import { socket } from './extensions/Realtime/client/socket';
+import { initSentry } from './common/monitoring/sentryClient';
+import { ErrorBoundary } from './common/monitoring/ErrorBoundary';
 import App from './App';
 import './index.css';
+
+// Initialise Sentry before any React rendering so all bootstrap errors are captured.
+// No-op when VITE_SENTRY_CLIENT_ENABLED is false or DSN is missing.
+initSentry();
 
 // Apply saved theme before React renders to prevent flash of wrong theme.
 // Default to dark when no preference is stored.
@@ -37,8 +43,10 @@ if (!root) throw new Error('Root element not found');
 
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
