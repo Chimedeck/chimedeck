@@ -33,8 +33,83 @@ const IGNORED_ERROR_PATTERNS: RegExp[] = [
 ];
 
 /**
- * Drop known noisy browser errors before they reach Sentry.
- * Returns null to discard the event or the event unchanged to forward it.
+ * URL query-param names that must never be forwarded to Sentry.
+ * Values are replaced with [redacted] before the event leaves the browser.
+ */
+const SENSITIVE_QUERY_PARAMS = new Set([
+  'token', 'access_token', 'auth', 'api_key', 'key', 'secret',
+  'password', 'passwd', 'pwd', 'code', 'state',
+]);
+
+/**
+ * HTTP header names (lower-cased) that must never be forwarded to Sentry.
+ */
+const SENSITIVE_HEADERS = new Set([
+  'authorization', 'cookie', 'set-cookie', 'x-auth-token', 'x-api-key',
+]);
+
+/**
+ * Redact sensitive query-params from a URL string.
+ * Returns the original string unchanged if it is not a valid URL.
+ */
+function redactUrl(raw: string): string {
+  try {
+    const url = new URL(raw, window.location.origin);
+    url.searchParams.forEach((_value, key) => {
+      if (SENSITIVE_QUERY_PARAMS.has(key.toLowerCase())) {
+        url.searchParams.set(key, '[redacted]');
+      }
+    });
+    // Return only the path+search+hash when the origin matches (avoids leaking full absolute URL).
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
+/**
+ * Scrub sensitive headers and query-params from a Sentry event's request context.
+ * Mutates the event in-place (Sentry already owns the object at this point).
+ */
+function redactRequest(event: Sentry.ErrorEvent): void {
+  if (!event.request) return;
+
+  // Scrub URL query params.
+  if (event.request.url) {
+    event.request.url = redactUrl(event.request.url);
+  }
+
+  // Scrub headers.
+  if (event.request.headers) {
+    for (const key of Object.keys(event.request.headers)) {
+      if (SENSITIVE_HEADERS.has(key.toLowerCase())) {
+        (event.request.headers as Record<string, string>)[key] = '[redacted]';
+      }
+    }
+  }
+
+  // Remove query_string blob entirely — already covered by URL redaction above.
+  if (event.request.query_string) {
+    delete event.request.query_string;
+  }
+}
+
+/**
+ * Scrub breadcrumb URLs so navigation/fetch trails don't leak tokens.
+ */
+function redactBreadcrumbs(event: Sentry.ErrorEvent): void {
+  if (!event.breadcrumbs) return;
+
+  for (const crumb of event.breadcrumbs) {
+    if (crumb.data?.url) {
+      crumb.data.url = redactUrl(crumb.data.url as string);
+    }
+  }
+}
+
+/**
+ * Drop known noisy browser errors and redact PII before the event reaches Sentry.
+ * Returns null to discard or the scrubbed event to forward.
  */
 function beforeSend(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   const message =
@@ -43,6 +118,9 @@ function beforeSend(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   if (IGNORED_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
     return null;
   }
+
+  redactRequest(event);
+  redactBreadcrumbs(event);
 
   return event;
 }

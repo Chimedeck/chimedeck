@@ -123,4 +123,14 @@ export const env = {
   HEALTH_CHECK_TIMEOUT_MS: parseInt(Bun.env['HEALTH_CHECK_TIMEOUT_MS'] ?? '10000', 10),
   /** Response time threshold (ms) above which a 2xx response is classified amber. Default: 1 000 ms. */
   HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000', 10),
+
+  // Sentry server-side monitoring
+  /** Set SENTRY_SERVER_ENABLED=true and provide SENTRY_SERVER_DSN to activate capture. */
+  SENTRY_SERVER_ENABLED: Bun.env['SENTRY_SERVER_ENABLED'] === 'true',
+  /** Sentry DSN for the Bun server. An empty string disables Sentry even when SENTRY_SERVER_ENABLED=true. */
+  SENTRY_SERVER_DSN: Bun.env['SENTRY_SERVER_DSN'] ?? '',
+  /** Deployment environment tag sent to Sentry (e.g. "production", "staging", "development"). */
+  SENTRY_ENV: Bun.env['SENTRY_ENV'] ?? 'development',
+  /** Release identifier sent to Sentry, typically a git SHA or semver tag. */
+  SENTRY_RELEASE: Bun.env['SENTRY_RELEASE'] ?? '',
 } as const;

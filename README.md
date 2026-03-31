@@ -210,6 +210,20 @@ Key production-only variables:
 
 Both `*_ENABLED` flags must be `true` **and** the corresponding `*_DSN` must be non-empty for Sentry to initialise. Omitting or leaving either blank is safe — the app starts normally without capture.
 
+#### Sentry privacy defaults
+
+Sentry is configured with strict privacy defaults that apply automatically — no extra setup required:
+
+| Protection | Default |
+|---|---|
+| Auto-PII collection | **Disabled** (`sendDefaultPii: false`) |
+| Authorization / Cookie headers | Redacted to `[redacted]` by `beforeSend` |
+| Sensitive URL query-params (`token`, `access_token`, `password`, `secret`, …) | Redacted to `[redacted]` by `beforeSend` |
+| Request body credentials (`password`, `token`, `credit_card`, …) | Redacted server-side by `beforeSend` |
+| Session Replay text / media | Fully masked (`maskAllText`, `blockAllMedia`) |
+
+> **Override caveat:** if you call `captureMessage` or `captureError` with manually constructed strings that include PII, the automatic redaction will not save you. Always sanitize data before passing it to Sentry helpers.
+
 #### Sentry source map upload (deploy builds only)
 
 Source maps are generated on every build (`vite build`). The Sentry Vite plugin uploads them to Sentry and then **deletes the `.map` files** from `dist/` so they are never served publicly.

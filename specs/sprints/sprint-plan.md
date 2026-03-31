@@ -149,6 +149,7 @@
 | [116](./sprint-116.md) | Health Check Tab UI | 5th board tab "Health Check"; traffic-light status dots (green/amber/red/gray); one row per endpoint with name, URL, response time; Add Service modal (preset picker + custom URL); manual ↻ Refresh + 60-second auto-refresh with Page Visibility pause; empty state | ⬜ Needs 115 + 18 |
 | [117](./sprint-117.md) | Secure Attachment Proxy + Alias & Comment/Edit Actions | Authenticated proxy endpoints replace raw S3 presigned URLs; `alias` DB column + `PATCH` endpoint for rename; Edit (inline rename) and Comment (insert markdown link) action buttons on attachment rows | ⬜ Needs 12 + 59 + 60 |
 | [121](./sprint-121.md) | Email Template Centralisation & Handlebars Migration | Extract all email HTML into `templates/html/*.html` files; `renderTemplate` Handlebars helper with `Bun.file` + compile cache; replace `${var}` interpolation with `{{var}}`; update call sites to `await` async builders | ⬜ Needs 23 |
+| [123](./sprint-123.md) | Sentry Monitoring: Client + Server | Add Sentry SDK wiring for React client and Bun server, unified release/environment tagging, source map upload, and error-boundary capture with trace propagation | ⬜ Needs 15 + 03 + 58 |
 
 ---
 
@@ -175,6 +176,8 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `AUTOMATION_SCHEDULER_ENABLED` | Sprint 64 | Prevent calendar + due-date scheduler workers from starting (useful in read-only replicas) |
 | `AUTOMATION_MONTHLY_QUOTA` | Sprint 68 | Maximum automation runs per board per calendar month (default: `1000`) |
 | `HEALTH_CHECK_ENABLED` | Sprint 115 | Disable all health-check routes and hide the Health Check board tab (default: `false`) |
+| `SENTRY_CLIENT_ENABLED` | Sprint 123 | Skip browser-side Sentry SDK initialisation (no client error/performance events sent) |
+| `SENTRY_SERVER_ENABLED` | Sprint 123 | Skip Bun server Sentry SDK initialisation and server-side capture wrappers |
 
 ---
 
@@ -302,6 +305,8 @@ Sprint 93 ──────────── i18n Phase 4: CustomFields, Calen
 Sprint 94 ──────────── i18n Phase 5: Mention, Notifications, UserProfile, AdminInvite, Realtime, OfflineDrafts, BoardViews, common/layout — zero hardcoded strings
 ──── Email Infrastructure ───────────────────────────────────────────────────────────────────────
 Sprint 121 ─────────── Email template centralisation: extract HTML to *.html files, Handlebars {{var}} binding, renderTemplate helper
+──── Monitoring & Error Tracking ────────────────────────────────────────────────────────────────
+Sprint 123 ─────────── Sentry end-to-end monitoring: React runtime errors + route tracing, Bun API error capture, shared release/environment tags, source map upload for deobfuscated stack traces
 ```
 
 ---
