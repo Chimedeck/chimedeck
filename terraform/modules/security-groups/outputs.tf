@@ -17,3 +17,8 @@ output "redis_sg_id" {
   description = "ID of the Redis security group."
   value       = aws_security_group.redis.id
 }
+
+output "fixed_instance_sg_id" {
+  description = "ID of the fixed EC2 instance security group (ALB traffic + SSH)."
+  value       = aws_security_group.fixed_instance.id
+}

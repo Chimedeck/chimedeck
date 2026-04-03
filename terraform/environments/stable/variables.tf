@@ -2,10 +2,8 @@
 # Core / provider
 # ─────────────────────────────────────────────
 
-variable "aws_region" {
-  description = "Primary AWS region for all resources."
-  type        = string
-}
+# aws_region is derived from fleet_regions[0].region and is no longer a
+# top-level variable. The primary region is the first entry in fleet_regions.
 
 variable "app_name" {
   description = "Short application name used as a prefix for resource names (e.g. 'myapp')."
@@ -26,8 +24,10 @@ variable "deployment_mode" {
   description = <<-EOT
     Controls which compute modules are instantiated.
     Valid values:
-      "single"         — one EC2 instance with an Elastic IP (no ALB, no NAT Gateway)
-      "fleet"          — fixed-count instances behind an ALB with NAT Gateway
+      "single"         — one EC2 instance with an Elastic IP (no ALB)
+      "fleet"          — fixed-count instances in public subnets behind regional ALBs;
+                         multiple regions stitched together by AWS Global Accelerator.
+                         No NAT Gateways. VPC peering is created for RDS/Redis access only.
       "asg-bluegreen"  — two Auto Scaling Groups with weighted ALB blue/green routing
   EOT
   type        = string
@@ -43,33 +43,57 @@ variable "deployment_mode" {
 # ─────────────────────────────────────────────
 
 variable "create_vpc" {
-  description = "When true, creates a dedicated VPC. When false, uses the AWS default VPC."
+  description = "When true, creates a dedicated VPC for the primary region. When false, uses the AWS default VPC. Additional fleet regions always create their own VPCs."
   type        = bool
   default     = false
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for the VPC. Only used when create_vpc = true."
-  type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "availability_zones" {
-  description = "List of Availability Zones to spread subnets across (e.g. [\"ap-southeast-1a\", \"ap-southeast-1b\"])."
-  type        = list(string)
-}
+# vpc_cidr and availability_zones are now per-region inside fleet_regions.
 
 # ─────────────────────────────────────────────
 # EC2 / compute
 # ─────────────────────────────────────────────
 
-variable "ami_ids" {
+variable "fleet_regions" {
   description = <<-EOT
-    Map of AWS region → AMI ID for the custom baked AMI.
-    Must include an entry for aws_region, plus any additional regions used by
-    the fleet module. Example: { "ap-southeast-1" = "ami-0abc123" }
+    Ordered list of regions for fleet deployment. The first entry is the
+    PRIMARY region — it hosts S3, RDS, Redis, ECR, and the primary ALB.
+    Additional entries each create their own VPC, security groups, instances,
+    and ALB. AWS Global Accelerator routes users to the nearest healthy region.
+    All regions share the same PEM key pair for SSH access.
+
+    Each entry:
+      region               — AWS region name (e.g. "ap-southeast-1")
+      instance_count       — fixed number of EC2 instances in that region
+      ami_id               — baked AMI ID (must have Docker, AWS CLI v2, jq)
+      vpc_cidr             — CIDR block for the VPC (must not overlap across regions)
+      azs                  — availability zones to spread subnets across
+      acm_certificate_arn  — ARN of ACM cert in THAT region for the HTTPS listener
+    Instance counts are fixed at apply time (not autoscaled).
   EOT
-  type        = map(string)
+  type = list(object({
+    region               = string
+    instance_count       = number
+    ami_id               = string
+    vpc_cidr             = string
+    azs                  = list(string)
+    acm_certificate_arn  = string
+  }))
+  validation {
+    condition     = length(var.fleet_regions) >= 1
+    error_message = "fleet_regions must have at least one entry (the primary region)."
+  }
+}
+
+variable "fleet_key_pair_name" {
+  description = <<-EOT
+    Name of the EC2 key pair used across ALL fleet regions for SSH access.
+    The same private key (PEM file) must be imported into every configured
+    region under this name before applying. Leave null to launch without SSH
+    access (recommended when using SSM Session Manager).
+  EOT
+  type    = string
+  default = null
 }
 
 variable "instance_type" {
@@ -81,12 +105,6 @@ variable "instance_type" {
 variable "iam_instance_profile" {
   description = "Name of the IAM instance profile attached to EC2 instances (must grant ECR pull + Secrets Manager read)."
   type        = string
-}
-
-variable "instance_count" {
-  description = "Number of instances per region when deployment_mode = \"fleet\"."
-  type        = number
-  default     = 2
 }
 
 # ─────────────────────────────────────────────
@@ -120,16 +138,6 @@ variable "s3_bucket_name" {
 variable "secrets_arn" {
   description = "ARN of the Secrets Manager secret containing the application's .env key-value pairs (JSON object)."
   type        = string
-}
-
-# ─────────────────────────────────────────────
-# ACM / TLS (fleet and asg-bluegreen modes only)
-# ─────────────────────────────────────────────
-
-variable "acm_certificate_arn" {
-  description = "ARN of the ACM certificate used by the HTTPS listener. Required when deployment_mode is \"fleet\" or \"asg-bluegreen\"."
-  type        = string
-  default     = ""
 }
 
 # ─────────────────────────────────────────────

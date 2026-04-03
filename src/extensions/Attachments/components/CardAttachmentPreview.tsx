@@ -1,4 +1,4 @@
-// CardAttachmentPreview — compact card-style attachment matching the Trello mockup.
+// CardAttachmentPreview — compact card-style.
 // Cards sit in a 2-column flex-wrap grid managed by AttachmentPanel.
 import React, { useEffect, useRef, useState } from 'react';
 import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline';

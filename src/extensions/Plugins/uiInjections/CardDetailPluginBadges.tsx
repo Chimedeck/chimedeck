@@ -20,7 +20,6 @@ interface Props {
   boardTitle?: string;
 }
 
-// Maps Trello-style color names to Tailwind classes (includes border for detail context)
 const COLOR_MAP: Record<string, string> = {
   green: 'bg-green-600/20 text-green-400 border-green-700/40', // [theme-exception]
   red: 'bg-red-600/20 text-danger border-red-700/40', // [theme-exception]

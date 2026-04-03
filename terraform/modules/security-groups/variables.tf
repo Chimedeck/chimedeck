@@ -13,3 +13,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "ssh_allowed_cidrs" {
+  description = "CIDR blocks allowed to SSH (port 22) into the fixed EC2 instance. Restrict to known office/VPN CIDRs in production."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}

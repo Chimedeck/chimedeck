@@ -22,3 +22,23 @@ output "instance_ids" {
   description = "IDs of all primary-region EC2 instances created by this module."
   value       = aws_instance.primary[*].id
 }
+
+output "instance_elastic_ips" {
+  description = "Elastic IP addresses of all primary-region instances. Use these to whitelist SSH access or cross-region security group rules."
+  value       = aws_eip.primary[*].public_ip
+}
+
+output "key_pair_name" {
+  description = "Name of the EC2 key pair created in the primary region. Use this name when creating aws_key_pair resources in additional fleet regions."
+  value       = aws_key_pair.fleet.key_name
+}
+
+output "public_key_openssh" {
+  description = "OpenSSH-format public key. Pass to aws_key_pair.public_key in each additional fleet region so all regions share the same private key (PEM file)."
+  value       = tls_private_key.fleet.public_key_openssh
+}
+
+output "private_key_pem_path" {
+  description = "Absolute path to the generated .pem file written to the root module directory."
+  value       = local_sensitive_file.fleet_pem.filename
+}

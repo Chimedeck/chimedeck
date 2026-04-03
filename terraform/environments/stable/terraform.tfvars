@@ -18,9 +18,6 @@
 # Core / provider
 # ─────────────────────────────────────────────
 
-# AWS region where all resources are created.
-aws_region = "ap-southeast-1"
-
 # Short name used as a prefix for resource names (no spaces or uppercase).
 app_name = "journeyhorizon"
 
@@ -36,7 +33,7 @@ tags = {
 # ─────────────────────────────────────────────
 
 # "single"        — one EC2 instance with an Elastic IP; no ALB, no NAT Gateway.
-# "fleet"         — fixed-count instances behind an ALB + NAT Gateway.
+# "fleet"         — fixed-count instances in public subnets behind regional ALBs + Elastic IPs.
 # "asg-bluegreen" — two ASGs with a weighted ALB listener for zero-downtime deploys.
 # Stable typically mirrors the production deployment_mode to catch regressions early.
 deployment_mode = "fleet"
@@ -49,31 +46,58 @@ deployment_mode = "fleet"
 # Recommended for stable to mirror production networking.
 create_vpc = true
 
-# CIDR block for the created VPC (must not overlap with production VPC if peering is planned).
-vpc_cidr = "10.2.0.0/16"
-
-# Availability zones to spread subnets across.
-availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
-
 # ─────────────────────────────────────────────
 # EC2 / compute
 # ─────────────────────────────────────────────
 
-# Custom baked AMI IDs per region.
-# The AMI must have Docker Engine, AWS CLI v2, jq, and /app/docker-compose.prod.yml.
-# See terraform/README.md for the full AMI baking checklist.
-ami_ids = {
-  "ap-southeast-1" = "ami-REPLACE_WITH_STABLE_AMI"
-}
+# Fleet region configuration.
+# The FIRST entry is the PRIMARY region — it hosts S3, RDS, Redis, ECR, and
+# the primary ALB. Every other entry creates its own VPC + ALB + EC2 instances.
+# All regions share one PEM key pair. AWS Global Accelerator routes users to
+# the nearest healthy regional ALB automatically.
+#
+# vpc_cidr values must not overlap across regions.
+# instance_count is fixed at apply time (not autoscaled).
+# acm_certificate_arn must be issued in THAT region (ACM certs are regional).
+fleet_regions = [
+  {
+    region               = "ap-southeast-1"
+    instance_count       = 2
+    ami_id               = "ami-REPLACE_WITH_STABLE_AMI"
+    vpc_cidr             = "10.2.0.0/16"
+    azs                  = ["ap-southeast-1a", "ap-southeast-1b"]
+    acm_certificate_arn  = "arn:aws:acm:ap-southeast-1:123456789012:certificate/REPLACE"
+  }
+  # Uncomment and fill to add a 2nd region:
+  # ,{
+  #   region               = "us-east-1"
+  #   instance_count       = 1
+  #   ami_id               = "ami-REPLACE_WITH_US_EAST_AMI"
+  #   vpc_cidr             = "10.3.0.0/16"
+  #   azs                  = ["us-east-1a", "us-east-1b"]
+  #   acm_certificate_arn  = "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE"
+  # }
+  # Uncomment and fill to add a 3rd region:
+  # ,{
+  #   region               = "eu-west-1"
+  #   instance_count       = 1
+  #   ami_id               = "ami-REPLACE_WITH_EU_WEST_AMI"
+  #   vpc_cidr             = "10.4.0.0/16"
+  #   azs                  = ["eu-west-1a", "eu-west-1b"]
+  #   acm_certificate_arn  = "arn:aws:acm:eu-west-1:123456789012:certificate/REPLACE"
+  # }
+]
+
+# EC2 key pair name shared across ALL fleet regions.
+# Import the same public key into every configured region under this name.
+# Set to null (or remove) to launch instances without SSH key access.
+fleet_key_pair_name = "myapp-stable-keypair"
 
 # Instance type — medium for stable (balance of cost vs. realistic load testing).
 instance_type = "t3.small"
 
 # IAM instance profile name that grants ECR pull + Secrets Manager read.
 iam_instance_profile = "myapp-stable-ec2-profile"
-
-# Number of instances per region (only used for deployment_mode = "fleet").
-instance_count = 2
 
 # ─────────────────────────────────────────────
 # ECR / image
@@ -99,14 +123,6 @@ s3_bucket_name = "myapp-stable-assets-UNIQUE_SUFFIX"
 # ARN of the secret containing the application's .env key-value pairs as a JSON object.
 # The EC2 startup script will fetch this and write it to /app/.env at boot.
 secrets_arn = "arn:aws:secretsmanager:ap-southeast-1:123456789012:secret:myapp-stable-env-XXXXXX"
-
-# ─────────────────────────────────────────────
-# ACM / TLS (required for fleet and asg-bluegreen modes only)
-# ─────────────────────────────────────────────
-
-# ARN of the ACM certificate in the same region as the ALB.
-# Required when deployment_mode = "fleet" or "asg-bluegreen".
-acm_certificate_arn = "arn:aws:acm:ap-southeast-1:123456789012:certificate/REPLACE"
 
 # ─────────────────────────────────────────────
 # RDS PostgreSQL

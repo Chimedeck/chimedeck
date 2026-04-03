@@ -10,7 +10,7 @@ The system is a task management application that organizes work hierarchically a
   - Optional: **Timeline/Gantt**, **Calendar**
   - Optional: **Table**, **Filtered Views**
 
-The MVP’s core user value is visual task organization and simple task workflows reflecting typical board/list/card interactions from Trello’s product model.
+The MVP’s core user value is visual task organization and simple task workflows reflecting typical board/list/card interactions.
 
 **In scope for MVP:** create/update/delete workspaces, boards, lists, tasks; move tasks between lists; basic views, team collaboration, user permissions, integrations, notifications, power-ups
 **Out of scope for MVP unless explicitly noted:** automated rules, shared board templates, , advanced filters.
@@ -315,8 +315,6 @@ The system will use UUID v7 or sortable ID for all entities.
 ---
 
 ## 7. Future / Extension Considerations
-
-These features reflect Trello’s broader paradigm and could be phased for later releases:
 
 - **Tags/Labels** on tasks. :contentReference[oaicite:9]{index=9}  
 - **Checklists/Sub-tasks** within tasks. :contentReference[oaicite:10]{index=10}  

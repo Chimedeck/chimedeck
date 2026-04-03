@@ -1,8 +1,5 @@
 # Architecture — Plugin System
 
-> Reference: Atlassian Power-Ups "Managing Apps" pattern, adapted for this platform.
-> The Trello Power-Up model is used as the conceptual template; our SDK is `jhInstance`.
-
 ---
 
 ## 1. Concept Overview

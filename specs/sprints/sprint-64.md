@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 63 (Automation Actions), Sprint 09 (Event Store)
-> **References:** Trello Automation — https://trello.com/guide/automate-anything#calendar-and-due-date-commands
+> **References:** Automation
 
 ---
 

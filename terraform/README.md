@@ -16,7 +16,6 @@ terraform/
 │   └── outputs.tf
 ├── modules/                    # Reusable modules (no provider config inside)
 │   ├── vpc/
-│   ├── nat-gateway/
 │   ├── ecr/
 │   ├── s3/
 │   ├── security-groups/
@@ -101,7 +100,6 @@ terraform apply -var-file=terraform.tfvars
 | Module | Purpose |
 |--------|---------|
 | `vpc` | Optional VPC with public/private subnets and IGW. Falls back to default VPC when `create_vpc = false`. |
-| `nat-gateway` | EIP + managed NAT Gateway; wires private route tables to enable outbound internet from private subnets. |
 | `ecr` | ECR repository with configurable lifecycle policy. |
 | `s3` | General-purpose S3 bucket with versioning, SSE-S3, and public-access blocking. |
 | `security-groups` | Four security groups: ALB, App, DB, Redis — with least-privilege ingress rules. |

@@ -35,20 +35,11 @@ variable "vpc_id" {
 variable "vpc_cidr_block" {
   description = "CIDR block of the primary VPC. Documented here for callers setting up vpc-peering alongside this module."
   type        = string
-}
-
-variable "private_subnet_ids" {
-  description = "Private subnet IDs in the primary region. Instances are distributed across these subnets."
-  type        = list(string)
+  default     = null
 }
 
 variable "public_subnet_ids" {
-  description = "Public subnet IDs in the primary region. The ALB is placed across these subnets."
-  type        = list(string)
-}
-
-variable "private_route_table_ids" {
-  description = "Private route table IDs in the primary region. Passed to modules/vpc-peering when setting up cross-region routing in the environment."
+  description = "Public subnet IDs in the primary region. Instances and the ALB are placed across these subnets."
   type        = list(string)
 }
 
@@ -87,18 +78,10 @@ variable "acm_certificate_arn" {
   type        = string
 }
 
-# Cross-region instances are created outside this module (using provider aliases
-# and modules/vpc-peering + modules/nat-gateway in the environment directory).
-# Their private IPs are registered in the shared target group here.
-variable "additional_target_ips" {
-  description = <<-EOT
-    Private IP addresses of instances in additional regions to register in the
-    ALB target group alongside the primary-region instances. Use this after
-    creating cross-region instances externally with modules/vpc-peering and
-    modules/nat-gateway. See README for the recommended environment-level pattern.
-  EOT
-  type        = list(string)
-  default     = []
+variable "key_pair_name" {
+  description = "Name for the generated EC2 key pair. Defaults to <name_prefix>-fleet-key when null. The module always generates the key material — this only controls the Key Pair name shown in the AWS console."
+  type        = string
+  default     = null
 }
 
 variable "tags" {

@@ -2,13 +2,13 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 07 (Card Core), Sprint 09 (Event Store), Sprint 11 (Activity Log)
-> **References:** Trello Automation Overview — https://support.atlassian.com/trello/docs/automation-overview/
+> **References:** Automation Overview — https://support.atlassian.com/trello/docs/automation-overview/
 
 ---
 
 ## Goal
 
-Lay the database foundation and server-side evaluation engine for the full Trello-compatible automation system. This sprint delivers the schema, a rule registry, and the plumbing that connects incoming card events to automation evaluation — without yet wiring up a full set of triggers/actions (those follow in Sprints 62–64).
+Lay the database foundation and server-side evaluation engine for the full automation system. This sprint delivers the schema, a rule registry, and the plumbing that connects incoming card events to automation evaluation — without yet wiring up a full set of triggers/actions (those follow in Sprints 62–64).
 
 ---
 

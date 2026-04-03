@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 67 (Scheduled Commands UI — all automation types live)
-> **References:** Trello Automation — https://support.atlassian.com/trello/docs/automation-overview/ (Automation terminology section)
+> **References:** Automation
 
 ---
 

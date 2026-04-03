@@ -1,4 +1,4 @@
-// Single comment with inline edit/delete controls — styled to match the Trello-like mockup.
+// Single comment with inline edit/delete controls
 import { useState } from 'react';
 import { marked } from 'marked';
 import type { Attachment } from '~/extensions/Attachments/types';

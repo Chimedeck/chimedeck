@@ -1,4 +1,4 @@
-// CardDatesPicker — Trello-style date picker panel with calendar, start/due inputs, and Save/Remove.
+// CardDatesPicker — Date picker panel with calendar, start/due inputs, and Save/Remove.
 import { useState, useCallback } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { CheckIcon } from '@heroicons/react/24/solid';

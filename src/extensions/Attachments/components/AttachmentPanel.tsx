@@ -1,7 +1,7 @@
 // AttachmentPanel — full attachment section rendered inside CardDetailModal.
 // Shows a header with file-picker trigger, drag-drop zone, attachment list,
 // image thumbnail grid, and an "Attach a link" external URL form.
-// Internal card links are shown in a "Trello cards" section (card preview).
+// Internal card links are shown in a "Cards" section (card preview).
 // External links are shown in a separate "Links" section.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
@@ -376,7 +376,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
         </div>
       )}
 
-      {/* Trello cards section — internal card-link attachments */}
+      {/* Cards section — internal card-link attachments */}
       {cardLinkAttachments.length > 0 && (
         <div className="mt-4" data-testid="card-attachments-section">
           <p className="text-xs font-semibold text-muted mb-2">
