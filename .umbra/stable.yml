@@ -8,7 +8,7 @@ on:
 env:
   ENV: production
   DEPLOYMENT_MODE: asg-bluegreen
-  USE_SSH: "FALSE"
+  USE_SSM_DEPLOYMENT: "TRUE"
   ENV_NAME: production
   AWS_ACCESS_KEY_ID: ${{ secrets.STABLE_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.STABLE_AWS_SECRET_ACCESS_KEY }}
@@ -24,6 +24,10 @@ env:
   TF_STATE_BUCKET: ${{ secrets.STABLE_TF_STATE_BUCKET }}
   # Run DB migrations against RDS before slot flip
   USE_RDS: "TRUE"
+  # SSM deployment targets — format: "<instance-id>:<region>", comma-separated for multiple
+  # e.g. "i-0abc1234567890def:us-east-1" or "i-0abc1234567890def:us-east-1,i-0fed9876543210abc:eu-west-1"
+  AWS_INSTANCE_IDS: ${{ secrets.STABLE_AWS_INSTANCE_IDS }}
+  AWS_INSTANCE_DEPLOY_SCRIPT: ${{ secrets.STABLE_AWS_INSTANCE_DEPLOY_SCRIPT }}
 
 jobs:
   deploy:
