@@ -454,10 +454,10 @@ Open `start-agent-loop.sh` and adjust the variables at the top if needed:
 | `MAX_ITERATIONS` | `10` | Maximum number of Recap→Execute cycles |
 | `SAMPLE_PROJECT_DIR` | `sample-project` | Path to the read-only reference repo |
 | `CHANGELOG_DIR` | `specs/changelog` | Where timestamped changelogs are written |
-| `MODEL_RECAP` | `claude-haiku-4-5` | Model for Recap phase |
+| `MODEL_RECAP` | `gpt-4.1` | Model for Recap phase |
 | `MODEL_PLAN` | `claude-sonnet-4-6` | Model for Planning phase |
-| `MODEL_EXECUTE` | `claude-sonnet-4-5` | Model for Execute phase |
-| `MODEL_TEST_FREE` | `claude-haiku-4-5` | Model for Retest scout pass |
+| `MODEL_EXECUTE` | `gpt-4.1` | Model for Execute phase |
+| `MODEL_TEST_FREE` | `gpt-4.1` | Model for Retest scout pass |
 | `MODEL_TEST_EVAL` | `gpt-4.1` | Model for Playwright MCP evaluation |
 
 ---

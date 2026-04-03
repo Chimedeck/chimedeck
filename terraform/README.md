@@ -83,7 +83,9 @@ Note the outputs — you will paste them into each environment's `backend.tf`.
 
 ```bash
 cd terraform/environments/stable
-terraform init -backend-config=backend.tf
+terraform init \
+  -backend-config="bucket=YOUR_TF_STATE_BUCKET" \
+  -backend-config="region=YOUR_STATE_BUCKET_REGION"
 ```
 
 ### 3. Plan & apply

@@ -1,3 +1,13 @@
+# ── EC2 Instance Connect IP ranges ───────────────────────────────────────────
+# Fetched at plan time from https://ip-ranges.amazonaws.com/ip-ranges.json.
+# Filtered to EC2_INSTANCE_CONNECT for the deployment region so only the AWS
+# managed SSH relay IPs are permitted — not the full AMAZON prefix list.
+
+data "aws_ip_ranges" "ec2_instance_connect" {
+  regions  = var.regions
+  services = ["EC2_INSTANCE_CONNECT"]
+}
+
 # ── ALB Security Group ────────────────────────────────────────────────────────
 # Accepts inbound HTTP and HTTPS from anywhere. Outbound is unrestricted so
 # the load balancer can forward requests to app instances on any port.
@@ -40,10 +50,12 @@ resource "aws_security_group" "alb" {
 # ── App Security Group ────────────────────────────────────────────────────────
 # Only accepts traffic forwarded by the ALB security group. Outbound is open
 # so instances can reach ECR (image pull), Secrets Manager, RDS, and Redis.
+# EC2 Instance Connect IPs are allowed on port 22 so operators can open
+# browser-based SSH sessions from the AWS console without long-lived keys.
 
 resource "aws_security_group" "app" {
   name        = "${var.name_prefix}-app"
-  description = "App: allow all traffic from ALB SG only"
+  description = "App: allow all traffic from ALB SG + EC2 Instance Connect SSH"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -52,6 +64,14 @@ resource "aws_security_group" "app" {
     to_port         = 65535
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
+  }
+
+  ingress {
+    description = "SSH via EC2 Instance Connect (AWS managed relay IPs)"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = data.aws_ip_ranges.ec2_instance_connect.cidr_blocks
   }
 
   egress {
@@ -93,12 +113,12 @@ resource "aws_security_group" "db" {
 
 # ── Fixed-Instance Security Group ────────────────────────────────────────────
 # Used by the single EC2 instance (ec2-single module). Mirrors the app SG but
-# also opens port 22 so operators can SSH in to pull code and run commands.
-# Restrict ssh_allowed_cidrs to known office / VPN CIDRs for tighter security.
+# also opens port 22 for SSH. EC2 Instance Connect IPs are always included;
+# ssh_allowed_cidrs lets operators append office/VPN CIDRs as a fallback.
 
 resource "aws_security_group" "fixed_instance" {
   name        = "${var.name_prefix}-fixed-instance"
-  description = "Fixed EC2: ALB traffic + SSH from allowed CIDRs"
+  description = "Fixed EC2: ALB traffic + SSH via EC2 Instance Connect and allowed CIDRs"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -110,11 +130,11 @@ resource "aws_security_group" "fixed_instance" {
   }
 
   ingress {
-    description = "SSH from allowed CIDRs"
+    description = "SSH via EC2 Instance Connect and optional VPN/office CIDRs"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = var.ssh_allowed_cidrs
+    cidr_blocks = concat(data.aws_ip_ranges.ec2_instance_connect.cidr_blocks, var.ssh_allowed_cidrs)
   }
 
   egress {

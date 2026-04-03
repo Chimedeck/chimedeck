@@ -56,7 +56,6 @@ public/avatars/
 .ecr-build-output
 terraform/environments/**/terraform.tfvars.rollback
 terraform/**/.terraform/
-terraform/**/.terraform.lock.hcl
 terraform/**/terraform.tfstate
 terraform/**/terraform.tfstate.backup
 terraform/environments/**/tfplan
