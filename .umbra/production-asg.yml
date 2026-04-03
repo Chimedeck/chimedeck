@@ -1,0 +1,39 @@
+name: Deploy to Production ASG (Blue/Green)
+
+on:
+  push:
+    branches:
+      - production-asg
+
+env:
+  ENV: production
+  DEPLOYMENT_MODE: asg-bluegreen
+  USE_SSH: "FALSE"
+  ENV_NAME: production
+  AWS_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCOUNT_ID: ${{ secrets.PRODUCTION_AWS_ACCOUNT_ID }}
+  AWS_ECR_REGION: ${{ secrets.PRODUCTION_AWS_ECR_REGION }}
+  AWS_ECR_REPO_NAME: ${{ secrets.PRODUCTION_AWS_ECR_REPO_NAME }}
+  AWS_JH_ENV_SECRET_NAME: ${{ secrets.PRODUCTION_AWS_JH_ENV_SECRET_NAME }}
+  AWS_ENV_USER_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ENV_USER_ACCESS_KEY_ID }}
+  AWS_ENV_USER_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_ENV_USER_SECRET_ACCESS_KEY }}
+  AWS_ENV_USER_REGION: ${{ secrets.PRODUCTION_AWS_ENV_USER_REGION }}
+  AWS_ECR_TAG_NAME: ${{ secrets.PRODUCTION_AWS_ECR_TAG_NAME }}
+  # Terraform state backend
+  TF_STATE_BUCKET: ${{ secrets.PRODUCTION_TF_STATE_BUCKET }}
+  # Run DB migrations against RDS before slot flip
+  USE_RDS: "TRUE"
+
+jobs:
+  deploy:
+    builder:
+      - ubuntu
+      - docker
+      - aws
+    steps:
+      - uses: checkout
+      - name: Build Docker image and push to ECR
+        run: ./scripts/build.sh
+      - name: Blue/Green deploy via Terraform
+        run: ./scripts/deploy.sh

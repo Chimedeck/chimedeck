@@ -19,6 +19,12 @@ export ERR='\033[0;31m'
 # AWS_INSTANCE_URL - single instance
 # AWS_INSTANCE_URLS - multiple instances
 
+# Deployment strategy — added Sprint 128
+# USE_SSH              — TRUE = SSH in-place; FALSE = Terraform replacement (asg only)
+# DEPLOYMENT_MODE      — single | fleet | asg-bluegreen (informational, used for logging)
+# USE_RDS              — TRUE = run migrations against RDS before terraform apply
+# ENV_NAME             — environment directory name under terraform/environments/: staging | stable | production
+
 # AWS_ACCESS_KEY_ID
 # AWS_SECRET_ACCESS_KEY
 # AWS_ENV_USER_ACCESS_KEY_ID

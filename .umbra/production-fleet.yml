@@ -1,0 +1,40 @@
+name: Deploy to Production Fleet
+
+on:
+  push:
+    branches:
+      - production-fleet
+
+env:
+  ENV: production
+  DEPLOYMENT_MODE: fleet
+  USE_SSH: "TRUE"
+  AWS_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_SECRET_ACCESS_KEY }}
+  AWS_ACCOUNT_ID: ${{ secrets.PRODUCTION_AWS_ACCOUNT_ID }}
+  AWS_ECR_REGION: ${{ secrets.PRODUCTION_AWS_ECR_REGION }}
+  AWS_ECR_REPO_NAME: ${{ secrets.PRODUCTION_AWS_ECR_REPO_NAME }}
+  AWS_JH_ENV_SECRET_NAME: ${{ secrets.PRODUCTION_AWS_JH_ENV_SECRET_NAME }}
+  AWS_ENV_USER_ACCESS_KEY_ID: ${{ secrets.PRODUCTION_AWS_ENV_USER_ACCESS_KEY_ID }}
+  AWS_ENV_USER_SECRET_ACCESS_KEY: ${{ secrets.PRODUCTION_AWS_ENV_USER_SECRET_ACCESS_KEY }}
+  AWS_ENV_USER_REGION: ${{ secrets.PRODUCTION_AWS_ENV_USER_REGION }}
+  AWS_ECR_TAG_NAME: ${{ secrets.PRODUCTION_AWS_ECR_TAG_NAME }}
+  # Fleet-specific SSH deployment
+  USE_SSH_DEPLOYMENT: "TRUE"
+  ENCODED_PEM: ${{ secrets.PRODUCTION_FLEET_ENCODED_PEM }}
+  AWS_PRIVATE_KEY_PATH: /tmp/fleet-deploy.pem
+  AWS_INSTANCE_URLS: ${{ secrets.PRODUCTION_FLEET_INSTANCE_URLS }}
+  AWS_INSTANCE_DEPLOY_SCRIPT: ${{ secrets.PRODUCTION_FLEET_DEPLOY_SCRIPT }}
+
+jobs:
+  deploy:
+    builder:
+      - ubuntu
+      - docker
+      - aws
+    steps:
+      - uses: checkout
+      - name: Build Docker image and push to ECR
+        run: ./scripts/build.sh
+      - name: Deploy to fleet instances via SSH
+        run: ./scripts/deploy.sh

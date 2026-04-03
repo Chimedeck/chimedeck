@@ -52,6 +52,17 @@ public/avatars/
 
 .task
 
+# Build pipeline artifacts — never commit
+.ecr-build-output
+terraform/environments/**/terraform.tfvars.rollback
+terraform/**/.terraform/
+terraform/**/.terraform.lock.hcl
+terraform/**/terraform.tfstate
+terraform/**/terraform.tfstate.backup
+terraform/environments/**/tfplan
+terraform/environments/**/tfplan-rollback
+/tmp/*.pem
+
 /plugins/
 test-results/
 test-screenshots-tmp/
