@@ -46,11 +46,10 @@ resource "aws_launch_template" "this" {
 
   vpc_security_group_ids = [var.app_sg_id]
 
-  # Startup script pulls the tagged image from ECR and sources env vars from
-  # Secrets Manager; no credentials are stored in the AMI or Launch Template.
+  # Startup script pulls the tagged image from ECR; env vars are baked into
+  # the image by the build script.
   user_data = base64encode(templatefile(var.user_data_template_path, {
     ecr_image_url = "${var.ecr_repo_url}:${var.ecr_tag}"
-    secrets_arn   = var.secrets_arn
   }))
 
   lifecycle {

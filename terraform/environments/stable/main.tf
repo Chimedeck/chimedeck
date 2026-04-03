@@ -277,7 +277,6 @@ resource "aws_instance" "fleet_r1" {
 
   user_data = templatefile("${path.root}/../../scripts/startup.sh", {
     ecr_image_url = "${module.ecr.repository_url}:${var.ecr_image_tag}"
-    secrets_arn   = var.secrets_arn
   })
 
   lifecycle {
@@ -452,7 +451,6 @@ resource "aws_instance" "fleet_r2" {
 
   user_data = templatefile("${path.root}/../../scripts/startup.sh", {
     ecr_image_url = "${module.ecr.repository_url}:${var.ecr_image_tag}"
-    secrets_arn   = var.secrets_arn
   })
 
   lifecycle {
@@ -622,7 +620,6 @@ resource "aws_instance" "fleet_r3" {
 
   user_data = templatefile("${path.root}/../../scripts/startup.sh", {
     ecr_image_url = "${module.ecr.repository_url}:${var.ecr_image_tag}"
-    secrets_arn   = var.secrets_arn
   })
 
   lifecycle {
@@ -756,7 +753,6 @@ module "ec2_single" {
   subnet_id               = module.vpc.public_subnet_ids[0]
   security_group_ids      = [module.security_groups.app_sg_id]
   iam_instance_profile    = var.iam_instance_profile
-  secrets_arn             = var.secrets_arn
   ecr_image_url           = "${module.ecr.repository_url}:${var.ecr_image_tag}"
   user_data_template_path = "${path.root}/../../scripts/startup.sh"
   tags                    = var.tags
@@ -782,7 +778,6 @@ module "ec2_fleet" {
   app_sg_id               = module.security_groups.app_sg_id
   alb_sg_id               = module.security_groups.alb_sg_id
   iam_instance_profile    = var.iam_instance_profile
-  secrets_arn             = var.secrets_arn
   ecr_image_url           = "${module.ecr.repository_url}:${var.ecr_image_tag}"
   user_data_template_path = "${path.root}/../../scripts/startup.sh"
   acm_certificate_arn     = local.primary.acm_certificate_arn
@@ -807,14 +802,13 @@ module "ec2_asg_bluegreen" {
   ami_id                       = local.primary.ami_id
   instance_type                = var.instance_type
   iam_instance_profile         = var.iam_instance_profile
-  secrets_arn                  = var.secrets_arn
   ecr_repo_url                 = module.ecr.repository_url
   blue_ecr_tag                 = var.blue_ecr_tag
   green_ecr_tag                = var.green_ecr_tag
   blue_weight                  = var.blue_weight
   green_weight                 = var.green_weight
   acm_certificate_arn          = local.primary.acm_certificate_arn
-  user_data_template_path      = "${path.root}/../../scripts/startup.sh"
+  user_data_template_path      = "${path.root}/../../scripts/startup-asg.sh"
   health_check_min_healthy     = var.health_check_min_healthy
   health_check_timeout_seconds = var.health_check_timeout_seconds
   tags                         = var.tags

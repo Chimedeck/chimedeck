@@ -54,6 +54,7 @@ public/avatars/
 
 # Build pipeline artifacts — never commit
 .ecr-build-output
+terraform/environments/**/terraform.tfvars
 terraform/environments/**/terraform.tfvars.rollback
 terraform/**/.terraform/
 terraform/**/terraform.tfstate

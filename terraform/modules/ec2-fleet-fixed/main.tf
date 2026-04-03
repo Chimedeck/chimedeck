@@ -154,11 +154,10 @@ resource "aws_instance" "primary" {
   key_name                    = aws_key_pair.fleet.key_name
   associate_public_ip_address = false # Elastic IP allocated separately below
 
-  # Startup script pulls the Docker image from ECR and sources env vars from
-  # Secrets Manager; no credentials are baked into the AMI.
+  # Startup script pulls the Docker image from ECR; env vars are baked into
+  # the image by the build script.
   user_data = templatefile(var.user_data_template_path, {
     ecr_image_url = var.ecr_image_url
-    secrets_arn   = var.secrets_arn
   })
 
   lifecycle {

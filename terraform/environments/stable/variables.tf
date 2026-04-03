@@ -132,15 +132,6 @@ variable "s3_bucket_name" {
 }
 
 # ─────────────────────────────────────────────
-# Secrets Manager
-# ─────────────────────────────────────────────
-
-variable "secrets_arn" {
-  description = "ARN of the Secrets Manager secret containing the application's .env key-value pairs (JSON object)."
-  type        = string
-}
-
-# ─────────────────────────────────────────────
 # RDS PostgreSQL
 # ─────────────────────────────────────────────
 

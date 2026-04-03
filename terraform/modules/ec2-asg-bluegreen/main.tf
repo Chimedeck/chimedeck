@@ -40,7 +40,6 @@ module "blue" {
   instance_type           = var.instance_type
   ecr_tag                 = var.blue_ecr_tag
   ecr_repo_url            = var.ecr_repo_url
-  secrets_arn             = var.secrets_arn
   desired_capacity        = var.desired_capacity
   min_size                = var.min_size
   max_size                = var.max_size
@@ -63,7 +62,6 @@ module "green" {
   instance_type           = var.instance_type
   ecr_tag                 = var.green_ecr_tag
   ecr_repo_url            = var.ecr_repo_url
-  secrets_arn             = var.secrets_arn
   desired_capacity        = var.desired_capacity
   min_size                = var.min_size
   max_size                = var.max_size

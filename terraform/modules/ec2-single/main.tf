@@ -9,14 +9,12 @@ resource "aws_instance" "this" {
   iam_instance_profile   = var.iam_instance_profile
 
   # User data is rendered from the startup.sh template, injecting the ECR image
-  # URL and Secrets Manager ARN so the instance can pull the image and load env
-  # vars without storing any credentials in the AMI.
+  # URL. Env vars are baked into the Docker image by the build script.
   user_data = templatefile(var.user_data_template_path, {
     ecr_image_url = var.ecr_image_url
-    secrets_arn   = var.secrets_arn
   })
 
-  # Replace the instance when user data changes (image tag or secrets ARN update).
+  # Replace the instance when user data changes (image tag update).
   lifecycle {
     create_before_destroy = true
   }

@@ -1,4 +1,4 @@
-name: taskinate-prod
+name: chimedeck-prod
 
 # By default only the app container runs.
 # External managed services (AWS RDS + S3) are used via env vars.
@@ -32,18 +32,18 @@ services:
     profiles: [local-db]
     build:
       context: .
-      dockerfile: Dockerfile.taskinate.postgres
+      dockerfile: Dockerfile.chimedeck.postgres
     environment:
-      POSTGRES_USER: "${POSTGRES_USER:-taskinate}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-taskinate}"
-      POSTGRES_DB: "${POSTGRES_DB:-taskinate}"
+      POSTGRES_USER: "${POSTGRES_USER:-chimedeck}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-chimedeck}"
+      POSTGRES_DB: "${POSTGRES_DB:-chimedeck}"
     command: >
       postgres -c shared_preload_libraries=pg_cron
-               -c cron.database_name=${POSTGRES_DB:-taskinate}
+               -c cron.database_name=${POSTGRES_DB:-chimedeck}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taskinate}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chimedeck}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -57,7 +57,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-taskinate}
+      S3_BUCKET: ${S3_BUCKET:-chimedeck}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

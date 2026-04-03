@@ -34,11 +34,6 @@ variable "ecr_repo_url" {
   type        = string
 }
 
-variable "secrets_arn" {
-  description = "Secrets Manager ARN for app environment variables. Injected into user data."
-  type        = string
-}
-
 variable "desired_capacity" {
   description = "Desired number of instances in the ASG."
   type        = number
@@ -73,12 +68,12 @@ variable "app_sg_id" {
 }
 
 variable "iam_instance_profile" {
-  description = "Name of the IAM instance profile to attach to instances (grants ECR pull + Secrets Manager read)."
+  description = "Name of the IAM instance profile to attach to instances (grants ECR pull)."
   type        = string
 }
 
 variable "user_data_template_path" {
-  description = "Path to the startup.sh templatefile rendered as EC2 user data. Receives ecr_image_url and secrets_arn."
+  description = "Path to the startup.sh templatefile rendered as EC2 user data. Receives ecr_image_url."
   type        = string
 }
 

@@ -4,12 +4,13 @@
 # Template variables injected at render time:
 #   ecr_image_url  — full ECR image URL including tag
 #                    e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/app:abc1234
-#   secrets_arn    — AWS Secrets Manager ARN for app env vars (JSON key-value object)
+#
+# Env vars are baked into the Docker image by the build script — no Secrets
+# Manager fetch is needed at boot time.
 #
 # AMI baking requirements (must be pre-installed):
 #   - Docker Engine (latest stable), NOT set to auto-start on boot
 #   - AWS CLI v2
-#   - jq
 #   - /app/docker-compose.prod.yml
 
 set -euo pipefail
@@ -19,7 +20,6 @@ log() {
 }
 
 ECR_IMAGE_URL="${ecr_image_url}"
-SECRETS_ARN="${secrets_arn}"
 
 # Extract registry host (everything before the first '/') and region
 # e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/app:abc1234
@@ -30,7 +30,6 @@ AWS_REGION="$(echo "$${ECR_REGISTRY}" | awk -F'.' '{print $4}')"
 
 APP_DIR="/app"
 COMPOSE_FILE="$${APP_DIR}/docker-compose.prod.yml"
-ENV_FILE="$${APP_DIR}/.env"
 
 # ── 1. Enable Docker ─────────────────────────────────────────────────────────
 log "Enabling and starting Docker..."
@@ -49,18 +48,7 @@ log "Pulling image $${ECR_IMAGE_URL}..."
 docker pull "$${ECR_IMAGE_URL}"
 log "Image pulled."
 
-# ── 4. Write .env from Secrets Manager ───────────────────────────────────────
-log "Fetching secrets from $${SECRETS_ARN}..."
-mkdir -p "$${APP_DIR}"
-aws secretsmanager get-secret-value \
-  --secret-id "$${SECRETS_ARN}" \
-  --query SecretString \
-  --output text \
-  | jq -r 'to_entries[] | "\(.key)=\(.value)"' > "$${ENV_FILE}"
-chmod 600 "$${ENV_FILE}"
-log "Secrets written to $${ENV_FILE}."
-
-# ── 5. Start app ──────────────────────────────────────────────────────────────
+# ── 4. Start app ──────────────────────────────────────────────────────────────
 if [[ ! -f "$${COMPOSE_FILE}" ]]; then
   log "ERROR: $${COMPOSE_FILE} not found. Ensure the AMI bakes this file in at /app/."
   exit 1
@@ -69,6 +57,6 @@ log "Starting app with docker compose..."
 docker compose -f "$${COMPOSE_FILE}" up -d
 log "App started."
 
-# ── 6. Health signal ──────────────────────────────────────────────────────────
+# ── 5. Health signal ──────────────────────────────────────────────────────────
 touch /tmp/startup-complete
 log "Startup complete. Marker written to /tmp/startup-complete."

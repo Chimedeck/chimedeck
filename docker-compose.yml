@@ -1,4 +1,4 @@
-name: taskinate-dev
+name: chimedeck-dev
 
 services:
   app:
@@ -21,19 +21,19 @@ services:
       context: .
       dockerfile: Dockerfile.postgres
     environment:
-      POSTGRES_USER: taskinate
-      POSTGRES_PASSWORD: taskinate
-      POSTGRES_DB: taskinate_dev
+      POSTGRES_USER: chimedeck
+      POSTGRES_PASSWORD: chimedeck
+      POSTGRES_DB: chimedeck_dev
     command: >
       postgres -c shared_preload_libraries=pg_cron
-               -c cron.database_name=taskinate_dev
+               -c cron.database_name=chimedeck_dev
                -c max_connections=200
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taskinate"]
+      test: ["CMD-SHELL", "pg_isready -U chimedeck"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -45,7 +45,7 @@ services:
     environment:
       SERVICES: s3
       DEFAULT_REGION: us-east-1
-      S3_BUCKET: ${S3_BUCKET:-taskinate}
+      S3_BUCKET: ${S3_BUCKET:-chimedeck}
     volumes:
       - localstack_data:/var/lib/localstack
       - ./localstack-init/ready.d:/etc/localstack/init/ready.d:ro

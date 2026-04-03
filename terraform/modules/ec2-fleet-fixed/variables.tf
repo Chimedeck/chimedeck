@@ -54,12 +54,7 @@ variable "alb_sg_id" {
 }
 
 variable "iam_instance_profile" {
-  description = "Name of the IAM instance profile to attach to all instances (grants ECR pull + Secrets Manager read)."
-  type        = string
-}
-
-variable "secrets_arn" {
-  description = "Secrets Manager ARN for app environment variables. Injected into user data on every instance."
+  description = "Name of the IAM instance profile to attach to all instances (grants ECR pull)."
   type        = string
 }
 

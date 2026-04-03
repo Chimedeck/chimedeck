@@ -118,14 +118,6 @@ ecr_image_tag = "latest"
 s3_bucket_name = "myapp-stable-assets-UNIQUE_SUFFIX"
 
 # ─────────────────────────────────────────────
-# Secrets Manager
-# ─────────────────────────────────────────────
-
-# ARN of the secret containing the application's .env key-value pairs as a JSON object.
-# The EC2 startup script will fetch this and write it to /app/.env at boot.
-secrets_arn = "arn:aws:secretsmanager:ap-southeast-1:123456789012:secret:myapp-stable-env-XXXXXX"
-
-# ─────────────────────────────────────────────
 # RDS PostgreSQL
 # ─────────────────────────────────────────────
 
