@@ -2,7 +2,7 @@
   - generic [ref=e30]:
     - generic [ref=e31]:
       - img [ref=e32]
-      - generic [ref=e34]: Taskinate
+      - generic [ref=e34]: ChimeDeck
     - heading "Create an account" [level=1] [ref=e35]
     - paragraph [ref=e36]: Join your team on Kanban
     - form "Sign up form" [ref=e37]:

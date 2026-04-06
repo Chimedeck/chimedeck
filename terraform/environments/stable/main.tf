@@ -250,6 +250,7 @@ module "security_groups_r1" {
 
   name_prefix = "${local.name_prefix}-r1"
   vpc_id      = module.vpc_r1[0].vpc_id
+  regions     = [for r in var.fleet_regions : r.region]
   tags        = var.tags
 }
 
@@ -424,6 +425,7 @@ module "security_groups_r2" {
 
   name_prefix = "${local.name_prefix}-r2"
   vpc_id      = module.vpc_r2[0].vpc_id
+  regions     = [for r in var.fleet_regions : r.region]
   tags        = var.tags
 }
 
@@ -593,6 +595,7 @@ module "security_groups_r3" {
 
   name_prefix = "${local.name_prefix}-r3"
   vpc_id      = module.vpc_r3[0].vpc_id
+  regions     = [for r in var.fleet_regions : r.region]
   tags        = var.tags
 }
 

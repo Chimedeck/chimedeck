@@ -4,8 +4,8 @@
 Call the `set_card_price` MCP tool with `amount: null` to verify the card's price is cleared.
 
 ## Preconditions
-- Taskinate is running at `http://localhost:3000`
-- A valid `TASKINATE_TOKEN` is set
+- ChimeDeck is running at `http://localhost:3000`
+- A valid `CHIMEDECK_TOKEN` is set
 - A card exists that already has a price set; record the card's ID as `CARD_ID`
 
 ## Steps

@@ -22,10 +22,10 @@ export async function adminInviteEmail({
   plainPassword,
   loginUrl,
 }: AdminInviteEmailParams): Promise<EmailPayload> {
-  const subject = 'You have been invited to Taskinate';
+  const subject = 'You have been invited to ChimeDeck';
 
   const text = [
-    `You have been invited to Taskinate by ${inviterName}.`,
+    `You have been invited to ChimeDeck by ${inviterName}.`,
     '',
     'Your login details:',
     `  Email:    ${newUserEmail}`,

@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
 # ── Default VPC data sources (create_vpc = false) ────────────────────────────
 
 data "aws_vpc" "default" {

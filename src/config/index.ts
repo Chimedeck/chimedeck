@@ -4,7 +4,7 @@ const config = {
   /** Maximum upload size in bytes. Mirrors MAX_ATTACHMENT_SIZE_MB on the server. Default: 250 MB. */
   maxAttachmentSizeBytes:
     parseInt(import.meta.env['VITE_MAX_ATTACHMENT_SIZE_MB'] ?? '250', 10) * 1024 * 1024,
-  /** Public base URL of this Taskinate instance, e.g. https://app.example.com */
+  /** Public base URL of this ChimeDeck instance, e.g. https://app.example.com */
   appUrl: (import.meta.env['VITE_APP_URL'] as string | undefined) ?? '',
   /** Set VITE_OAUTH_GOOGLE_ENABLED=true when OAUTH_GOOGLE_CLIENT_ID/SECRET are configured. */
   oauthGoogleEnabled: import.meta.env['VITE_OAUTH_GOOGLE_ENABLED'] === 'true',

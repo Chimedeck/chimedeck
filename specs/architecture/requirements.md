@@ -1,4 +1,4 @@
-# Taskinate Application Requirements
+# ChimeDeck Application Requirements
 
 ## 1. Goal and Scope
 

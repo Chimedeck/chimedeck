@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-taskinate get-card — Retrieve full details of a card
+chimedeck get-card — Retrieve full details of a card
 
 Usage:
-  taskinate get-card --card <cardId>
+  chimedeck get-card --card <cardId>
 
 Options:
   --card <cardId>  ID of the card to retrieve (required)
@@ -30,7 +30,7 @@ export async function runGetCard({
   const cardId = argv.card as string | undefined;
 
   if (!cardId) {
-    console.error('Error: --card <cardId> is required.\nRun \'taskinate get-card --help\' for usage.');
+    console.error('Error: --card <cardId> is required.\nRun \'chimedeck get-card --help\' for usage.');
     process.exit(1);
   }
 

@@ -1,11 +1,11 @@
 {
-  "name": "taskinate",
+  "name": "chimedeck",
   "version": "0.1.0",
-  "description": "taskinate — server",
+  "description": "chimedeck — server",
   "module": "server/index.ts",
   "type": "module",
   "bin": {
-    "taskinate": "dist/cli/index.js"
+    "chimedeck": "dist/cli/index.js"
   },
   "files": [
     "dist/cli"
@@ -37,8 +37,8 @@
     "docker:dev": "docker compose -f docker-compose.yml up --build",
     "docker:dev:redis": "docker compose -f docker-compose.yml --profile redis up --build",
     "docker:prod": "docker compose -f docker-compose.prod.yml up",
-    "docker:build": "docker build -t taskinate-app:latest .",
-    "docker:build:nc": "docker build --no-cache -t taskinate-app:latest .",
+    "docker:build": "docker build -t chimedeck-app:latest .",
+    "docker:build:nc": "docker build --no-cache -t chimedeck-app:latest .",
     "test:unit": "bun test tests/integration",
     "test:e2e": "playwright test --project=e2e",
     "test:mcp": "bash run-all-tests-full.sh",

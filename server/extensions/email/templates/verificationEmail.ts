@@ -12,9 +12,9 @@ export async function buildVerificationEmail({ verificationUrl }: VerificationEm
   html: string;
   text: string;
 }> {
-  const subject = 'Verify your email — Taskinate';
+  const subject = 'Verify your email — ChimeDeck';
 
-  const text = `Welcome to Taskinate!\n\nPlease verify your email address by visiting the link below:\n\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create an account, you can safely ignore this email.`;
+  const text = `Welcome to ChimeDeck!\n\nPlease verify your email address by visiting the link below:\n\n${verificationUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create an account, you can safely ignore this email.`;
 
   const html = await renderTemplate({ templateName: 'verification', data: { verificationUrl } });
 

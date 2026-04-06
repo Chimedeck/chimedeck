@@ -246,7 +246,7 @@ Bun.serve({
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, ...pluginOrigins.connectSrc],
-      extraImgSrc: [s3ImgOrigin, 'https://taskinate.jhorizon.io'],
+      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
     });
     const response = new Response(res.body, {
       status: res.status,

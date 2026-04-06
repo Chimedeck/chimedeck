@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-taskinate comment — Add a comment to a card
+chimedeck comment — Add a comment to a card
 
 Usage:
-  taskinate comment --card <cardId> --text <text>
+  chimedeck comment --card <cardId> --text <text>
 
 Options:
   --card <cardId>  ID of the card to comment on (required)
@@ -32,11 +32,11 @@ export async function runComment({
   const text = argv.text as string | undefined;
 
   if (!cardId) {
-    console.error('Error: --card <cardId> is required.\nRun \'taskinate comment --help\' for usage.');
+    console.error('Error: --card <cardId> is required.\nRun \'chimedeck comment --help\' for usage.');
     process.exit(1);
   }
   if (!text) {
-    console.error('Error: --text <text> is required.\nRun \'taskinate comment --help\' for usage.');
+    console.error('Error: --text <text> is required.\nRun \'chimedeck comment --help\' for usage.');
     process.exit(1);
   }
 

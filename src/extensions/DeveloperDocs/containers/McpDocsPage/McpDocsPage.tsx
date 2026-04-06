@@ -1,4 +1,4 @@
-// McpDocsPage — developer reference for the Taskinate MCP server.
+// McpDocsPage — developer reference for the ChimeDeck MCP server.
 // Route: /developer/mcp (private, within AppShell)
 import { useNavigate } from 'react-router-dom';
 import config from '~/config';
@@ -62,7 +62,7 @@ const McpDocsPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-base">MCP Server Developer Guide</h1>
               <p className="text-sm text-muted">
-                Connect AI assistants to Taskinate using the{' '}
+                Connect AI assistants to ChimeDeck using the{' '}
                 <Code>Model Context Protocol</Code> (MCP).
               </p>
             </div>
@@ -74,9 +74,9 @@ const McpDocsPage = () => {
           {/* ── Overview ───────────────────────────────────── */}
           <Section id="overview">
             <InfoCallout className="mb-6">
-              The Taskinate MCP server lets AI assistants — Claude, Cursor, and any
-              MCP-compatible client — take actions inside Taskinate on your behalf. It bridges
-              MCP tool calls to Taskinate's REST API using your personal API token.
+              The ChimeDeck MCP server lets AI assistants — Claude, Cursor, and any
+              MCP-compatible client — take actions inside ChimeDeck on your behalf. It bridges
+              MCP tool calls to ChimeDeck's REST API using your personal API token.
             </InfoCallout>
             <P>
               The server supports two transport modes:
@@ -84,7 +84,7 @@ const McpDocsPage = () => {
             <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 '<strong>stdio</strong> — a local Bun subprocess that communicates over stdin/stdout. Best for Claude Desktop and Cursor.',
-                `<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="${inlineCodeClass}">/api/mcp</code>) served on the same port as Taskinate. Best for remote agents, CI, and web-based AI assistants.`,
+                `<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="${inlineCodeClass}">/api/mcp</code>) served on the same port as ChimeDeck. Best for remote agents, CI, and web-based AI assistants.`,
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
@@ -113,7 +113,7 @@ const McpDocsPage = () => {
             <H3>Generate a token</H3>
             <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
-                'Open Taskinate in your browser and sign in.',
+                'Open ChimeDeck in your browser and sign in.',
                 'Go to <strong>User Settings → API Tokens</strong>.',
                 'Click <strong>Generate new token</strong> and copy the value.',
               ].map((step, i) => (
@@ -139,7 +139,7 @@ const McpDocsPage = () => {
                   rowId: 'auth-stdio',
                   cells: [
                     { key: 'transport', content: <Badge color="bg-bg-overlay text-subtle">stdio</Badge> },
-                    { key: 'how', content: <><Code>TASKINATE_TOKEN</Code> environment variable</> },
+                    { key: 'how', content: <><Code>CHIMEDECK_TOKEN</Code> environment variable</> },
                   ],
                 },
                 {
@@ -162,7 +162,7 @@ const McpDocsPage = () => {
               Connecting
             </H2>
             <P>
-              The Taskinate MCP server runs as a remote HTTP endpoint — you do not need to install
+              The ChimeDeck MCP server runs as a remote HTTP endpoint — you do not need to install
               anything locally. Point your AI client at the server URL and supply your API token
               as a bearer header.
             </P>
@@ -170,11 +170,11 @@ const McpDocsPage = () => {
             <H3>Claude Desktop</H3>
             <P>
               Edit <Code>~/.claude/claude_desktop_config.json</Code> (create it if it does not
-              exist) and add the <Code>taskinate</Code> entry under <Code>mcpServers</Code>:
+              exist) and add the <Code>chimedeck</Code> entry under <Code>mcpServers</Code>:
             </P>
             <Pre>{`{
   "mcpServers": {
-    "taskinate": {
+    "chimedeck": {
       "url": "${appUrl}/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
@@ -194,7 +194,7 @@ const McpDocsPage = () => {
             </P>
             <Pre>{`{
   "mcpServers": {
-    "taskinate": {
+    "chimedeck": {
       "url": "${appUrl}/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
@@ -222,7 +222,7 @@ const McpDocsPage = () => {
             </H2>
             <P>
               The HTTP MCP endpoint is served at <Code>/api/mcp</Code> on the same port as
-              Taskinate (default <Code>3000</Code>). No additional ports or env vars are required.
+              ChimeDeck (default <Code>3000</Code>). No additional ports or env vars are required.
             </P>
 
             <H3>Session lifecycle</H3>
@@ -336,7 +336,7 @@ curl -X POST http://localhost:3000/api/mcp \\
           <Section id="available-tools">
             <H2>Available Tools</H2>
             <P>
-              Taskinate exposes 9 MCP tools. Each tool maps to a specific REST API endpoint.
+              ChimeDeck exposes 9 MCP tools. Each tool maps to a specific REST API endpoint.
             </P>
             <Table
               headers={['Tool', 'Description', 'Endpoint']}

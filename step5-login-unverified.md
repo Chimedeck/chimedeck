@@ -2,7 +2,7 @@
   - generic [ref=e67]:
     - generic [ref=e68]:
       - img [ref=e69]
-      - generic [ref=e71]: Taskinate
+      - generic [ref=e71]: Chimedeck
     - heading "Welcome back" [level=1] [ref=e72]
     - paragraph [ref=e73]: Sign in to your account
     - form "Sign in form" [ref=e74]:

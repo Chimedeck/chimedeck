@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-taskinate search-board — Full-text search over cards scoped to a single board
+chimedeck search-board — Full-text search over cards scoped to a single board
 
 Usage:
-  taskinate search-board --board <boardId> --query <text> [--limit <number>]
+  chimedeck search-board --board <boardId> --query <text> [--limit <number>]
 
 Options:
   --board <boardId>   ID of the board to search within (required)
@@ -34,11 +34,11 @@ export async function runSearchBoard({
   const limit = argv.limit as number | undefined;
 
   if (!boardId) {
-    console.error('Error: --board <boardId> is required.\nRun \'taskinate search-board --help\' for usage.');
+    console.error('Error: --board <boardId> is required.\nRun \'chimedeck search-board --help\' for usage.');
     process.exit(1);
   }
   if (!query) {
-    console.error('Error: --query <text> is required.\nRun \'taskinate search-board --help\' for usage.');
+    console.error('Error: --query <text> is required.\nRun \'chimedeck search-board --help\' for usage.');
     process.exit(1);
   }
 

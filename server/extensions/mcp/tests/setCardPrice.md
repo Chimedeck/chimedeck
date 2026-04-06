@@ -4,8 +4,8 @@
 Call the `set_card_price` MCP tool with a valid `cardId`, `amount`, and `currency` to verify the card's price fields are updated.
 
 ## Preconditions
-- Taskinate is running at `http://localhost:3000`
-- A valid `TASKINATE_TOKEN` is set
+- ChimeDeck is running at `http://localhost:3000`
+- A valid `CHIMEDECK_TOKEN` is set
 - A board exists with at least one card; record the card's ID as `CARD_ID`
 
 ## Steps

@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
 # ── EC2 Instance Connect IP ranges ───────────────────────────────────────────
 # Fetched at plan time from https://ip-ranges.amazonaws.com/ip-ranges.json.
 # Filtered to EC2_INSTANCE_CONNECT for the deployment region so only the AWS

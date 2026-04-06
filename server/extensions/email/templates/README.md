@@ -1,6 +1,6 @@
 # Email Templates
 
-This directory contains all email templates used by the Taskinate server.
+This directory contains all email templates used by the ChimeDeck server.
 
 ## Pattern
 

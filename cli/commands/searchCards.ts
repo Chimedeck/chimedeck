@@ -3,10 +3,10 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-taskinate search-cards — Full-text search over cards within a workspace
+chimedeck search-cards — Full-text search over cards within a workspace
 
 Usage:
-  taskinate search-cards --workspace <workspaceId> --query <text> [--limit <number>]
+  chimedeck search-cards --workspace <workspaceId> --query <text> [--limit <number>]
 
 Options:
   --workspace <workspaceId>  ID of the workspace to search within (required)
@@ -34,11 +34,11 @@ export async function runSearchCards({
   const limit = argv.limit as number | undefined;
 
   if (!workspaceId) {
-    console.error('Error: --workspace <workspaceId> is required.\nRun \'taskinate search-cards --help\' for usage.');
+    console.error('Error: --workspace <workspaceId> is required.\nRun \'chimedeck search-cards --help\' for usage.');
     process.exit(1);
   }
   if (!query) {
-    console.error('Error: --query <text> is required.\nRun \'taskinate search-cards --help\' for usage.');
+    console.error('Error: --query <text> is required.\nRun \'chimedeck search-cards --help\' for usage.');
     process.exit(1);
   }
 

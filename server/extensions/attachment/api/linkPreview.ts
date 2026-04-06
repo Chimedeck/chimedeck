@@ -45,7 +45,7 @@ async function fetchPageTitle(rawUrl: string): Promise<string | null> {
     const resp = await fetch(rawUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Taskinate/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; ChimeDeck/1.0)',
         Accept: 'text/html,application/xhtml+xml',
       },
       redirect: 'follow',

@@ -14,9 +14,9 @@ export async function buildEmailChangeConfirmation({
   confirmUrl,
   expiresIn,
 }: EmailChangeConfirmationInput): Promise<{ subject: string; html: string; text: string }> {
-  const subject = 'Confirm your email change — Taskinate';
+  const subject = 'Confirm your email change — ChimeDeck';
 
-  const text = `You requested to change your Taskinate account email to ${newEmail}.\n\nConfirm the change by visiting the link below:\n\n${confirmUrl}\n\nThis link expires in ${expiresIn}.\n\nIf you did not request this change, you can safely ignore this email.`;
+  const text = `You requested to change your ChimeDeck account email to ${newEmail}.\n\nConfirm the change by visiting the link below:\n\n${confirmUrl}\n\nThis link expires in ${expiresIn}.\n\nIf you did not request this change, you can safely ignore this email.`;
 
   const html = await renderTemplate({
     templateName: 'emailChangeConfirmation',

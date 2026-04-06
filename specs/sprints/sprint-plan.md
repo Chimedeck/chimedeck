@@ -117,7 +117,7 @@
 | [102](./sprint-102.md) | API Token UI (User Settings) | "API Tokens" settings page; generate modal (name + expiry); one-time copy modal; token list with revoke; RTK Query slice | ⬜ Needs 101 + 96 |
 | [103](./sprint-103.md) | External API Surface Audit & Card Money Endpoint | Audit all 6 external operations; add `PATCH /api/v1/cards/:id/money`; add `POST /api/v1/cards/:id/comments` if missing; verify permission guard on board invite; `docs/api-reference.md` | ⬜ Needs 101 |
 | [104](./sprint-104.md) | MCP Server | `server/extensions/mcp/` — MCP stdio server with 6 tools (move_card, write_comment, create_card, edit_card_description, set_card_price, invite_to_board); token auth; Claude Desktop + Cursor setup README | ⬜ Needs 101 + 103 |
-| [105](./sprint-105.md) | CLI | `cli/` — `taskinate` Bun CLI with 6 sub-commands; `--token` flag + `TASKINATE_TOKEN` env; `--json` mode; `cli/README.md` | ⬜ Needs 101 + 103 |
+| [105](./sprint-105.md) | CLI | `cli/` — `chimedeck` Bun CLI with 6 sub-commands; `--token` flag + `CHIMEDECK_TOKEN` env; `--json` mode; `cli/README.md` | ⬜ Needs 101 + 103 |
 | **— Admin Enhancements —** | | | |
 | [74](./sprint-74.md) | Admin: Auto-Verify External User Email | `autoVerifyEmail` param on `POST /api/v1/admin/users`; sets `email_verified_at` at creation; checkbox in invite modal (default: checked); verification status in credential sheet | ⬜ Needs 44 + 45 |
 | **— UI / UX Polish —** | | | |
@@ -276,7 +276,7 @@ Sprint 101 ─────────── API Token infrastructure: DB table,
 Sprint 102 ─────────── API Token UI: generate/list/revoke tokens in User Settings
 Sprint 103 ─────────── External API surface audit: card money endpoint, comments endpoint, API reference doc
 Sprint 104 ─────────── MCP server: 6 tools over stdio transport; Claude Desktop + Cursor setup
-Sprint 105 ─────────── CLI: taskinate CLI with 6 commands, token auth, --json mode
+Sprint 105 ─────────── CLI: chimedeck CLI with 6 commands, token auth, --json mode
 ──── Admin Enhancements ─────────────────────────────────────────────────────────────────────────
 Sprint 74 ──────────── Admin auto-verify external user email on invite
 ──── UI / UX Polish ─────────────────────────────────────────────────────────────────────────────

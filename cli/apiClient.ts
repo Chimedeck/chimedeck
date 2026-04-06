@@ -26,7 +26,7 @@ export async function call<T>({
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (err) {
-    console.error(`Error: Unable to connect to ${config.apiUrl}. Check your network or TASKINATE_API_URL.`);
+    console.error(`Error: Unable to connect to ${config.apiUrl}. Check your network or CHIMEDECK_API_URL.`);
     process.exit(1);
   }
 

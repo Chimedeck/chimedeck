@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * taskinate CLI — calls the Taskinate REST API on behalf of the user.
- * Usage: taskinate [--token <token>] [--api-url <url>] [--json] <command> [options]
+ * chimedeck CLI — calls the ChimeDeck REST API on behalf of the user.
+ * Usage: chimedeck [--token <token>] [--api-url <url>] [--json] <command> [options]
  */
 
 import minimist from 'minimist';
@@ -20,14 +20,14 @@ import { runGetCard } from './commands/getCard';
 const VERSION = '0.1.0';
 
 const USAGE = `
-taskinate — Taskinate CLI
+chimedeck — ChimeDeck CLI
 
 Usage:
-  taskinate [global options] <command> [command options]
+  chimedeck [global options] <command> [command options]
 
 Global options:
-  --token <value>    API token (overrides TASKINATE_TOKEN env var)
-  --api-url <value>  API base URL (overrides TASKINATE_API_URL env var)
+  --token <value>    API token (overrides CHIMEDECK_TOKEN env var)
+  --api-url <value>  API base URL (overrides CHIMEDECK_API_URL env var)
   --json             Output raw JSON (useful for scripting with jq)
   --help, -h         Print this help message
   --version, -v      Print version
@@ -43,7 +43,7 @@ Commands:
   search-board       Full-text search over cards in a board
   get-card           Get full details of a card
 
-Run 'taskinate <command> --help' for command-specific usage.
+Run 'chimedeck <command> --help' for command-specific usage.
 `.trim();
 
 async function main() {
@@ -55,7 +55,7 @@ async function main() {
   });
 
   if (argv.version) {
-    console.log(`taskinate v${VERSION}`);
+    console.log(`chimedeck v${VERSION}`);
     process.exit(0);
   }
 
@@ -103,7 +103,7 @@ async function main() {
       await runGetCard({ argv: argv as Record<string, unknown>, config, jsonMode });
       break;
     default:
-      console.error(`Unknown command: ${command}\nRun 'taskinate --help' for usage.`);
+      console.error(`Unknown command: ${command}\nRun 'chimedeck --help' for usage.`);
       process.exit(1);
   }
 }
