@@ -230,8 +230,11 @@ const CardModalContainer = () => {
       boardTitle: meta.boardTitle,
       checklists,
       attachments,
+      comments,
+      labels,
+      members,
     });
-  }, [card, meta, checklists]);
+  }, [card, meta, checklists, comments, labels, members]);
 
   // ── Checklist group CRUD ────────────────────────────────────────────────
   const handleCreateChecklist = useCallback(

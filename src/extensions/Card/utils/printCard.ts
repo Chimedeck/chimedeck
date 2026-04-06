@@ -1,8 +1,9 @@
 // printCard — generates a print-ready HTML page in a new window for a card.
 // Opens window.print() automatically once the content is rendered.
 import { marked } from 'marked';
-import type { Card, Checklist } from '../api';
+import type { Card, Checklist, Label, CardMember } from '../api';
 import type { Attachment } from '~/extensions/Attachments/types';
+import type { CommentData } from '../api/cardDetail';
 
 interface PrintCardOptions {
   card: Card;
@@ -10,6 +11,9 @@ interface PrintCardOptions {
   boardTitle: string;
   checklists: Checklist[];
   attachments: Attachment[];
+  comments?: CommentData[];
+  labels?: Label[];
+  members?: CardMember[];
 }
 
 function escHtml(str: string): string {
@@ -82,6 +86,29 @@ function renderChecklists(checklists: Checklist[]): string {
     </section>`;
 }
 
+function renderComments(comments: CommentData[]): string {
+  const visible = comments.filter((c) => !c.deleted);
+  if (!visible.length) return '';
+  const items = visible
+    .map((c) => {
+      const author = escHtml(c.author_name ?? c.author_email ?? 'Unknown');
+      const date = formatDate(c.created_at);
+      // Render markdown inside comments the same way descriptions are rendered
+      const contentHtml = (marked.parse(c.content) as string);
+      return `
+        <li class="comment-row">
+          <div class="comment-meta"><strong>${author}</strong> &middot; ${date}</div>
+          <div class="comment-content prose">${contentHtml}</div>
+        </li>`;
+    })
+    .join('');
+  return `
+    <section class="section">
+      <h2 class="section-title">Comments</h2>
+      <ul class="comment-list">${items}</ul>
+    </section>`;
+}
+
 function renderAttachments(attachments: Attachment[]): string {
   if (!attachments.length) return '';
 
@@ -138,9 +165,13 @@ export function printCard({
   boardTitle,
   checklists,
   attachments,
+  comments = [],
+  labels: labelsArg,
+  members: membersArg,
 }: PrintCardOptions): void {
-  const labels = card.labels ?? [];
-  const members = card.members ?? [];
+  // [why] labels/members are tracked in separate Redux slice state, not on card.labels/members
+  const labels = labelsArg ?? card.labels ?? [];
+  const members = membersArg ?? card.members ?? [];
 
   const membersHtml = members.length
     ? `<div class="meta-row"><span class="meta-label">Members</span> ${members.map((m) => escHtml(m.name ?? m.email)).join(', ')}</div>`
@@ -156,6 +187,27 @@ export function printCard({
     return parts.length
       ? `<div class="meta-row"><span class="meta-label">Dates</span> ${parts.join(' &nbsp;·&nbsp; ')}</div>`
       : '';
+  })();
+
+  const amountHtml = (() => {
+    if (!card.amount) return '';
+    const currency = card.currency ?? 'USD';
+    const formatted = new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(Number.parseFloat(card.amount));
+    return `<div class="meta-row"><span class="meta-label">Amount</span> ${escHtml(formatted)}</div>`;
+  })();
+
+  const archivedBanner = card.archived
+    ? `<div class="archived-banner">&#128196; This card is archived</div>`
+    : '';
+
+  const coverHtml = (() => {
+    if (card.cover_image_url) {
+      return `<div class="cover cover-image"><img src="${escHtml(card.cover_image_url)}" alt="Card cover" /></div>`;
+    }
+    if (card.cover_color) {
+      return `<div class="cover cover-color" style="background:${escHtml(card.cover_color)}"></div>`;
+    }
+    return '';
   })();
 
   const html = `<!DOCTYPE html>
@@ -303,6 +355,24 @@ export function printCard({
     .attachment-info { display: flex; flex-direction: column; gap: 2px; }
     .attachment-url { font-size: 11px; color: #2563eb; word-break: break-all; }
     .attachment-meta { font-size: 11px; color: #9ca3af; }
+    /* Cover */
+    .cover { width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
+    .cover-color { height: 80px; }
+    .cover-image img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+    /* Archived banner */
+    .archived-banner {
+      background: #fef9c3; border: 1px solid #fde047; border-radius: 6px;
+      color: #854d0e; font-size: 12px; font-weight: 600; padding: 6px 12px;
+      margin-bottom: 12px;
+    }
+    /* Comments */
+    .comment-list { list-style: none; padding: 0; }
+    .comment-row { padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+    .comment-row:last-child { border-bottom: none; }
+    .comment-meta { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .comment-content.prose { font-size: 13px; line-height: 1.6; }
+    .comment-content.prose p { margin-bottom: 6px; }
+    .comment-content.prose p:last-child { margin-bottom: 0; }
     /* Print */
     @media print {
       body { padding: 32px 40px; }
@@ -311,7 +381,9 @@ export function printCard({
   </style>
 </head>
 <body>
+  ${coverHtml}
   <div class="breadcrumb">${escHtml(boardTitle)} &rsaquo; ${escHtml(listTitle)}</div>
+  ${archivedBanner}
   <div class="card-title">
     <span class="card-title-circle"></span>
     <h1>${escHtml(card.title)}</h1>
@@ -319,9 +391,11 @@ export function printCard({
   ${renderLabels(labels)}
   ${membersHtml}
   ${datesHtml}
+  ${amountHtml}
   ${renderDescription(card.description)}
   ${renderChecklists(checklists)}
   ${renderAttachments(attachments)}
+  ${renderComments(comments)}
   <script>window.onload = function() { window.print(); };</script>
 </body>
 </html>`;
