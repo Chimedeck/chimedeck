@@ -38,10 +38,8 @@ export async function evaluate({ boardId, event, context }: EvaluateInput): Prom
   try {
     const automations = await loadEnabledRules(boardId);
     const matching = automations.filter(
-      (a) => a.trigger !== null && matchesTrigger({ event, trigger: a.trigger }),
+      (a) => a.trigger !== null && matchesTrigger({ event, trigger: a.trigger })
     );
-
-    console.log('[automation:evaluate] event:', event.type, 'board:', boardId, 'matching:', matching.length);
 
     if (matching.length === 0) return;
 
@@ -59,7 +57,7 @@ export async function evaluate({ boardId, event, context }: EvaluateInput): Prom
             actorId: automation.created_by,
           };
           return runOne({ automation, event, evalContext: ruleEvalContext });
-        }),
+        })
       );
     }
   } catch {
@@ -149,7 +147,12 @@ export interface ExecuteInput {
  * Called by the scheduler LISTEN client or Worker fallback after receiving a tick.
  * Fire-and-forget — never throws.
  */
-export async function execute({ automationId, boardId, cardId, actorId }: ExecuteInput): Promise<void> {
+export async function execute({
+  automationId,
+  boardId,
+  cardId,
+  actorId,
+}: ExecuteInput): Promise<void> {
   if (!automationConfig.enabled) return;
 
   try {

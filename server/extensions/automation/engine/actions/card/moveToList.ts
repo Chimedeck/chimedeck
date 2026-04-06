@@ -13,7 +13,13 @@ export const cardMoveToListAction: ActionHandler = {
   label: 'Move card to list',
   category: 'card',
   configSchema,
-  async execute({ action, evalContext, automation, trx, postCommit }: ActionContext): Promise<void> {
+  async execute({
+    action,
+    evalContext,
+    automation,
+    trx,
+    postCommit,
+  }: ActionContext): Promise<void> {
     const config = configSchema.parse(action.config);
     const cardId = evalContext.cardId;
     if (!cardId) throw new Error('card-id-missing');
@@ -25,7 +31,8 @@ export const cardMoveToListAction: ActionHandler = {
     if (!targetList) throw new Error('target-list-not-found');
 
     // Guard: the target list must belong to the same board as the automation.
-    if (targetList.board_id !== automation.board_id) throw new Error('target-list-on-different-board');
+    if (targetList.board_id !== automation.board_id)
+      throw new Error('target-list-on-different-board');
 
     const targetCards = await trx('cards')
       .where({ list_id: config.listId, archived: false })
@@ -51,12 +58,10 @@ export const cardMoveToListAction: ActionHandler = {
     const boardId = automation.board_id;
     const movedCard = { ...card, list_id: config.listId, position };
     postCommit(() => {
-      console.log('[automation:moveToList] broadcasting card_moved', { boardId, cardId, fromListId, toListId: config.listId });
       broadcast({
         boardId,
         message: JSON.stringify({ type: 'card_moved', payload: { card: movedCard, fromListId } }),
       });
-      console.log('[automation:moveToList] broadcast done');
     });
   },
 };
