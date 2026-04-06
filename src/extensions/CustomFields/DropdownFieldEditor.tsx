@@ -53,7 +53,7 @@ const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupP
           <button
             key={c}
             type="button"
-            className="relative w-8 h-8 rounded-full hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-white/50 flex items-center justify-center"
+            className="relative w-8 h-8 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 flex items-center justify-center"
             style={{ backgroundColor: c }}
             aria-label={`Select colour ${c}`}
             onClick={() => onSelect(c)}

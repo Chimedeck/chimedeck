@@ -120,7 +120,7 @@ const CardLabels = ({
                         key={c.hex}
                         type="button"
                         title={c.name}
-                        className={`h-7 w-full rounded-md transition-transform hover:scale-110 focus:outline-none ${
+                        className={`h-7 w-full rounded-md transition-colors focus:outline-none ${
                           selectedColor === c.hex ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
                         }`}
                         style={{ backgroundColor: c.hex }}

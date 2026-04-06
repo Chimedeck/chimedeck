@@ -126,7 +126,7 @@ const ColorGrid = ({
         key={c.hex}
         type="button"
         title={c.name}
-        className={`h-7 w-full rounded-md transition-transform hover:scale-110 focus:outline-none ${
+        className={`h-7 w-full rounded-md transition-colors focus:outline-none ${
           selected === c.hex ? 'ring-2 ring-bg-surface ring-offset-2 ring-offset-bg-base' : ''
         }`}
         style={{ backgroundColor: c.hex }}

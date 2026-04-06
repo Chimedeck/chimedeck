@@ -477,7 +477,7 @@ const BoardPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-2.5 text-sm ${tabClass}`}
+                className={`px-3 py-2.5 text-sm font-medium ${tabClass}`}
               >
                 {tab.label}
               </button>
