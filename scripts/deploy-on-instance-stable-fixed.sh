@@ -11,7 +11,7 @@
 #                      e.g. COMPOSE_PROFILES="" to use all external AWS services
 
 COMPOSE_FILE=docker-compose.chimedeck.prod.yml
-AWS_REGION=${AWS_REGION:-ap-southeast-1}
+AWS_REGION=${AWS_REGION:-us-east-1}
 export COMPOSE_PROFILES=""
 
 # Main deployment config
@@ -33,7 +33,7 @@ fi
 
 echo "Authenticating with ECR"
 aws ecr get-login-password --region "${AWS_REGION}" \
-  | docker login --username AWS --password-stdin "${IMAGE_URL}"
+  | docker login --password-stdin --username AWS "${IMAGE_URL}"
 
 echo "Pulling new image: ${IMAGE_URL}"
 CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
