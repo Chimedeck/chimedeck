@@ -90,7 +90,20 @@ const memberMapper = new Map(
 // DB connection
 // ---------------------------------------------------------------------------
 
-const db = Knex({ client: 'pg', connection: DATABASE_URL, pool: { min: 1, max: 5 } });
+const _dbUrl = new URL(DATABASE_URL);
+const _isLocal = _dbUrl.hostname === 'localhost' || _dbUrl.hostname === '127.0.0.1';
+const _dbConnection = _isLocal
+  ? DATABASE_URL
+  : {
+      host: _dbUrl.hostname,
+      port: parseInt(_dbUrl.port || '5432', 10),
+      user: decodeURIComponent(_dbUrl.username),
+      password: decodeURIComponent(_dbUrl.password),
+      database: _dbUrl.pathname.slice(1),
+      ssl: { rejectUnauthorized: false },
+    };
+
+const db = Knex({ client: 'pg', connection: _dbConnection, pool: { min: 1, max: 5 } });
 
 // ---------------------------------------------------------------------------
 // Trello colour → hex
