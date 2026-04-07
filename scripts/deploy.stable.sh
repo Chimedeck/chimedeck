@@ -39,7 +39,7 @@ if [ "$USE_SSM_DEPLOYMENT" == "TRUE" ]; then
       COMMAND_ID=$(aws ssm send-command \
         --instance-ids "$INSTANCE_ID" \
         --document-name "AWS-RunShellScript" \
-        --parameters "commands=[\"IMAGE_URL=${AWS_ECR_REPO_URL} REGION=${INSTANCE_REGION} ${AWS_INSTANCE_DEPLOY_SCRIPT}\"]" \
+        --parameters "commands=[\"sudo -u ubuntu bash -c 'IMAGE_URL=${AWS_ECR_REPO_URL} REGION=${INSTANCE_REGION} ${AWS_INSTANCE_DEPLOY_SCRIPT}'\"]" \
         --timeout-seconds 240 \
         --region ${INSTANCE_REGION} \
         --query "Command.CommandId" \
