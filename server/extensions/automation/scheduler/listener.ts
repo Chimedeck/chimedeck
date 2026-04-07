@@ -14,7 +14,10 @@ import { execute } from '../engine/index';
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function connect(): Promise<void> {
-  const client = new pg.Client({ connectionString: env.DATABASE_URL });
+  const client = new pg.Client({
+    connectionString: env.DATABASE_URL,
+    ssl: env.DATABASE_URL.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
+  });
 
   try {
     await client.connect();
