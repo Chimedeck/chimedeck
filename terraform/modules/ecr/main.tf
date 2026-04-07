@@ -34,10 +34,9 @@ resource "aws_ecr_lifecycle_policy" "this" {
       },
       {
         rulePriority = 2
-        description  = "Keep only the last ${var.keep_last_n_images} tagged images"
+        description  = "Keep only the last ${var.keep_last_n_images} images"
         selection = {
-          tagStatus   = "tagged"
-          tagPrefixList = [""]
+          tagStatus   = "any"
           countType   = "imageCountMoreThan"
           countNumber = var.keep_last_n_images
         }

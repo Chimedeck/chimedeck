@@ -525,10 +525,14 @@ async function main() {
 
   const SYSTEM_USER_ID = '58ce49cc971aa59ff0ef284c'; // tam.vu@journeyh.io
   const SYSTEM_USER_EMAIL = 'tam.vu@journeyh.io';
-  const DEFAULT_PASSWORD = '12345678';
+
+  // [why] Track generated passwords so we can export full-user.json at the end
+  const userPasswords = new Map<string, { email: string; password: string }>();
 
   console.log('\n👤  Hashing passwords…');
-  const systemPasswordHash = await Bun.password.hash(DEFAULT_PASSWORD, {
+  const systemPassword = generatePassword();
+  userPasswords.set(SYSTEM_USER_ID, { email: SYSTEM_USER_EMAIL, password: systemPassword });
+  const systemPasswordHash = await Bun.password.hash(systemPassword, {
     algorithm: 'bcrypt',
     cost: 12,
   });
@@ -596,13 +600,16 @@ async function main() {
   const HASH_CONCURRENCY = 20;
   for (let i = 0; i < memberEntries.length; i += HASH_CONCURRENCY) {
     const slice = memberEntries.slice(i, i + HASH_CONCURRENCY);
+    const passwords = slice.map(() => generatePassword());
     const hashes = await Promise.all(
-      slice.map(() =>
-        Bun.password.hash(DEFAULT_PASSWORD, { algorithm: 'bcrypt', cost: 12 }),
+      passwords.map((pw) =>
+        Bun.password.hash(pw, { algorithm: 'bcrypt', cost: 12 }),
       ),
     );
     for (let j = 0; j < slice.length; j++) {
       const [trelloId] = slice[j];
+      const email = memberEmail(trelloId, memberDataMap.get(trelloId)?.username);
+      userPasswords.set(memberId(trelloId), { email, password: passwords[j] });
       const richData = memberDataMap.get(trelloId);
       memberRows.push({
         id: memberId(trelloId),
@@ -1108,8 +1115,21 @@ async function main() {
     body: JSON.stringify(memberRecords, null, 2),
   });
 
+  // full-user.json — all users with their generated plaintext passwords
+  const fullUserRecords = [...userPasswords.entries()].map(([id, { email, password }]) => ({
+    id,
+    email,
+    password,
+  }));
+  const fullUserPath = await writeOutputJsonWithFallback({
+    preferredPath: resolve(outDir, 'full-user.json'),
+    fallbackPath: resolve(tmpdir(), 'full-user.json'),
+    body: JSON.stringify(fullUserRecords, null, 2),
+  });
+
   console.log(`\n📄  Written workspace IDs to ${workspaceIdsPath}`);
   console.log(`📄  Written member IDs to ${memberIdsPath}`);
+  console.log(`📄  Written full user credentials to ${fullUserPath}`);
 
   await db.destroy();
 }
@@ -1176,6 +1196,12 @@ async function writeOutputJsonWithFallback({
     console.warn(`    Original write error: ${toErrorMessage(err)}`);
     return fallbackPath;
   }
+}
+
+function generatePassword(length = 16): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%^&*-_+=?';
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => chars[b % chars.length]).join('');
 }
 
 function toErrorMessage(err: unknown): string {

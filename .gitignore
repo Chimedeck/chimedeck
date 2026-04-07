@@ -48,6 +48,7 @@ coverage/
 db/all_trello_cards.json
 db/trello-import-member-ids.json
 db/trello-import-workspace-ids.json
+db/full-user.json
 public/avatars/
 
 .task
@@ -62,6 +63,7 @@ terraform/**/terraform.tfstate.backup
 terraform/environments/**/tfplan
 terraform/environments/**/tfplan-rollback
 /tmp/*.pem
+terraform/**/*.pem
 
 /plugins/
 test-results/
