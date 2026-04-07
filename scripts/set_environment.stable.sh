@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+set -e
+
+export COLOR='\033[0;32m'
+export NC='\033[0m'
+export ERR='\033[0;31m'
+
+# A list of possible environment variables:
+# AWS_ECR_TAG_NAME
+# AWS_PROFILE_PARAM // This might not be needed
+# ENV_FILE_PATH
+# ENV_NAME
+# AWS_ACCOUNT_ID
+# AWS_ECR_REGION
+# AWS_ECR_REPO_NAME
+# AWS_ECR_REPO_URL
+# AWS_JH_ENV_SECRET_NAME
+# AWS_INSTANCE_URL - single instance
+# AWS_INSTANCE_URLS - multiple instances
+
+# Deployment strategy — added Sprint 128
+# USE_SSH              — TRUE = SSH in-place; FALSE = Terraform replacement (asg only)
+# DEPLOYMENT_MODE      — single | fleet | asg-bluegreen (informational, used for logging)
+# USE_RDS              — TRUE = run migrations against RDS before terraform apply
+# ENV_NAME             — environment directory name under terraform/environments/: staging | stable | production
+
+# AWS_ACCESS_KEY_ID
+# AWS_SECRET_ACCESS_KEY
+# AWS_ENV_USER_ACCESS_KEY_ID
+# AWS_ENV_USER_SECRET_ACCESS_KEY
+# AWS_ENV_USER_REGION
+# ENCODED_PEM
+
+source ./scripts/utils.sh
+
+echo -e "${COLOR}:::::::::::::Start Environment Setting for $ENV::::::::::::::${NC}"
+
+#Optional variables for shared hosting
+# AWS_INSTANCE_DEPLOY_SCRIPT
+required_envs=(
+  "AWS_ACCESS_KEY_ID"
+  "AWS_SECRET_ACCESS_KEY"
+  "AWS_ACCOUNT_ID"
+  "AWS_ECR_REGION"
+  "AWS_ECR_REPO_NAME"
+  "AWS_JH_ENV_SECRET_NAME"
+  "AWS_ENV_USER_ACCESS_KEY_ID"
+  "AWS_ENV_USER_SECRET_ACCESS_KEY"
+  "AWS_ENV_USER_REGION",
+  "AWS_INSTANCE_IDS"
+)
+
+for required_env in "${required_envs[@]}"; do
+  if [ -z "${!required_env}" ]; then
+    echo "Error: $required_env is not set"
+    exit 1
+  fi
+done
+
+set_env_var "AWS_ECR_TAG_NAME" "${TAG:-"latest-$(git rev-parse HEAD)"}"
+set_env_var "AWS_PROFILE_PARAM" ""
+set_env_var "ENV_FILE_PATH" ".env"
+
+export ENV_NAME=$ENV
+export AWS_ENV_USER_REGION=ap-southeast-1
+export AWS_ECR_REPO_URL="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_ECR_REGION}.amazonaws.com/${AWS_ECR_REPO_NAME}:${AWS_ECR_TAG_NAME}"
+
+set_env_var "AWS_INSTANCE_DEPLOY_SCRIPT" "./deploy.sh"
+
+echo -e "${COLOR}:::::::::::::Current Environment Setting is correct, CI is starting::::::::::::::${NC}"
+export TEMPORARY_SESSION_NAME=$(uuidgen)
+export AWS_PRIVATE_KEY_PATH="./${TEMPORARY_SESSION_NAME}.pem"
