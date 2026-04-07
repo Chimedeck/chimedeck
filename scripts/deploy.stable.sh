@@ -40,15 +40,26 @@ if [ "$USE_SSM_DEPLOYMENT" == "TRUE" ]; then
         --instance-ids "$INSTANCE_ID" \
         --document-name "AWS-RunShellScript" \
         --parameters "commands=[\"IMAGE_URL=${AWS_ECR_REPO_URL} REGION=${INSTANCE_REGION} ${AWS_INSTANCE_DEPLOY_SCRIPT}\"]" \
+        --timeout-seconds 240 \
         --region ${INSTANCE_REGION} \
         --query "Command.CommandId" \
         --output text)
 
       echo "Waiting for command $COMMAND_ID on $INSTANCE_ID..."
-      aws ssm wait command-executed \
+      if ! aws ssm wait command-executed \
         --command-id "$COMMAND_ID" \
         --instance-id "$INSTANCE_ID" \
-        --region ${INSTANCE_REGION}
+        --region ${INSTANCE_REGION}; then
+
+        echo "❌ SSM command failed on $INSTANCE_ID — fetching logs..."
+        aws ssm get-command-invocation \
+          --command-id "$COMMAND_ID" \
+          --instance-id "$INSTANCE_ID" \
+          --region ${INSTANCE_REGION} \
+          --query "{ExitCode:ResponseCode,Status:StatusDetails,Stdout:StandardOutputContent,Stderr:StandardErrorContent}" \
+          --output json
+        exit 1
+      fi
 
       aws ssm get-command-invocation \
         --command-id "$COMMAND_ID" \
