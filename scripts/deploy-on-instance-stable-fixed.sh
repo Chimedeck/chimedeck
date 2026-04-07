@@ -32,10 +32,8 @@ if [[ -z "${IMAGE_URL}" ]]; then
 fi
 
 echo "Authenticating with ECR"
-# Extract registry host (everything before the first /)
-ECR_REGISTRY=$(echo "${IMAGE_URL}" | cut -d'/' -f1)
 aws ecr get-login-password --region "${AWS_REGION}" \
-  | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+  | docker login --username AWS --password-stdin "${IMAGE_URL}"
 
 echo "Pulling new image: ${IMAGE_URL}"
 CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
