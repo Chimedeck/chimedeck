@@ -49,6 +49,7 @@ db/all_trello_cards.json
 db/trello-import-member-ids.json
 db/trello-import-workspace-ids.json
 db/full-user.json
+db/full-user.csv
 public/avatars/
 
 .task
