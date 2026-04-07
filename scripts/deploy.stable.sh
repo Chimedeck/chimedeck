@@ -4,7 +4,7 @@ set -e
 
 SECONDS=0
 
-source ./scripts/set_environment.sh
+source ./scripts/set_environment.stable.sh
 
 # set up aws credentials for getting the env file
 aws configure set aws_access_key_id ${AWS_ENV_USER_ACCESS_KEY_ID} --profile $TEMPORARY_SESSION_NAME && aws configure set aws_secret_access_key ${AWS_ENV_USER_SECRET_ACCESS_KEY} --profile $TEMPORARY_SESSION_NAME && aws configure set region "$AWS_ENV_USER_REGION" && aws configure set output "text" --profile $TEMPORARY_SESSION_NAME

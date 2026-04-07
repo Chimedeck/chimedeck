@@ -39,5 +39,5 @@ jobs:
       - uses: checkout
       - name: Build Docker image and push to ECR
         run: ./scripts/build.sh
-      - name: Blue/Green deploy via Terraform
+      - name: Multi instance deployment via SSM
         run: ./scripts/deploy.stable.sh
