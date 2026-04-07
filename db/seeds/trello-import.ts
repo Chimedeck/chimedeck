@@ -50,7 +50,6 @@ const DATABASE_URL =
   Bun.env['DATABASE_URL'] ?? 'postgresql://chimedeck:chimedeck@localhost:5432/chimedeck_dev';
 
 const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'chimedeck';
-const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'chimedeck';
 const S3_REGION    = Bun.env['S3_REGION'] ?? 'us-east-1';
 const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || undefined;
 const S3_BASE_URL  = S3_ENDPOINT
