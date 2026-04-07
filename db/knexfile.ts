@@ -5,7 +5,12 @@ const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://chimedeck:chim
 
 const config: Knex.Config = {
   client: 'pg',
-  connection: DATABASE_URL,
+  connection: {
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL.includes('localhost') || DATABASE_URL.includes('127.0.0.1')
+      ? false
+      : { rejectUnauthorized: false },
+  },
   migrations: {
     // knex CLI changes cwd to the knexfile's directory (db/), so paths are relative to db/
     directory: './migrations',
