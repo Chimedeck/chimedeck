@@ -85,7 +85,7 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
       <QuickStartTemplates onUseTemplate={handleUseTemplate} />
 
       {/* Divider */}
-      <div className="mx-4 border-t border-slate-700 my-2" aria-hidden="true" />
+      <div className="mx-4 border-t border-border my-2" aria-hidden="true" />
 
       {/* List or empty state */}
       {hasAny ? (

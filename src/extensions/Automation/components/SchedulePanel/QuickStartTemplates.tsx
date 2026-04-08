@@ -93,7 +93,7 @@ interface Props {
 
 const QuickStartTemplates: FC<Props> = ({ onUseTemplate }) => (
   <div className="px-4 pt-4 pb-2">
-    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
       {translations['automation.quickStartTemplates.heading']}
     </p>
     <div className="flex flex-col gap-2">
@@ -103,12 +103,12 @@ const QuickStartTemplates: FC<Props> = ({ onUseTemplate }) => (
           <button
             key={tpl.id}
             onClick={() => onUseTemplate(tpl)}
-            className="flex items-start gap-3 rounded-md border border-slate-700 bg-slate-800 px-3 py-3 text-left hover:border-blue-500 hover:bg-slate-750 transition-colors group"
+            className="flex items-start gap-3 rounded-md border border-border bg-bg-surface px-3 py-3 text-left hover:border-blue-500 hover:bg-bg-overlay transition-colors group"
           >
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 group-hover:text-blue-400" aria-hidden="true" />
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted group-hover:text-blue-400" aria-hidden="true" />
             <div className="min-w-0">
-              <p className="text-xs font-medium text-slate-200 group-hover:text-white">{tpl.title}</p>
-              <p className="mt-0.5 text-xs text-slate-400">{tpl.description}</p>
+              <p className="text-xs font-medium text-subtle group-hover:text-base">{tpl.title}</p>
+              <p className="mt-0.5 text-xs text-muted">{tpl.description}</p>
             </div>
           </button>
         );

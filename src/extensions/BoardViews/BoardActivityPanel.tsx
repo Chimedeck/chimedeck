@@ -9,7 +9,6 @@ import translations from './translations/en.json';
 interface Props {
   boardId: string;
 }
-
 // Map server-shaped entry to ActivityItem's Activity interface
 function toActivity(entry: BoardActivityEntry): Activity {
   return {
@@ -59,7 +58,7 @@ const BoardActivityPanel = ({ boardId }: Props) => {
   }
 
   if (error) {
-    return <p className="p-4 text-sm text-red-500">{error}</p>;
+    return <p className="p-4 text-sm text-danger">{error}</p>;
   }
 
   return (
@@ -70,6 +69,7 @@ const BoardActivityPanel = ({ boardId }: Props) => {
         hasMore={hasMore}
         loading={loading}
         onLoadMore={() => loadPage(cursor)}
+        boardId={boardId}
       />
     </div>
   );

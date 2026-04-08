@@ -19,10 +19,10 @@ const ToggleSwitch = ({
   ariaLabel: string;
 }) => {
   const track = disabled
-    ? 'bg-slate-700 cursor-not-allowed opacity-40'
+    ? 'bg-bg-overlay cursor-not-allowed opacity-40'
     : enabled
       ? 'bg-indigo-600'
-      : 'bg-slate-600 hover:bg-slate-500';
+      : 'bg-bg-sunken hover:bg-bg-overlay';
 
   return (
     <button
@@ -34,7 +34,7 @@ const ToggleSwitch = ({
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${track}`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform /* [theme-exception] toggle thumb */ ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
       />
     </button>
   );
@@ -78,15 +78,15 @@ const GlobalNotificationToggle = () => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-slate-100">
+      <h2 className="text-base font-semibold text-base">
         {translations['GlobalNotificationToggle.heading']}
       </h2>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-slate-200">
+        <div className="flex items-center gap-2 text-sm text-base">
           {enabled ? (
-            <BellIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+            <BellIcon className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
           ) : (
-            <BellSlashIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+            <BellSlashIcon className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
           )}
           <span>{translations['UserProfile.notificationsLabel']}</span>
         </div>
@@ -97,7 +97,7 @@ const GlobalNotificationToggle = () => {
           ariaLabel={translations['UserProfile.notificationsAriaLabel']}
         />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );
 };

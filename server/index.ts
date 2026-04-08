@@ -1,4 +1,6 @@
 #!/usr/bin/env bun
+import { initSentry } from './common/monitoring/sentry';
+import { handleUnhandledError } from './common/middlewares/errorHandler';
 import { appConfig } from './config/app';
 import { flags } from './mods/flags';
 import { logRequest } from './mods/logger';
@@ -35,10 +37,15 @@ import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
+import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
 import { initObservability } from './mods/observability/index';
+
+// Initialise Sentry error capture as early as possible (before any other async work)
+// so that startup errors are also captured.
+initSentry();
 
 // Initialise OTel tracing + metrics (no-op when OTEL_ENABLED=false)
 await initObservability();
@@ -148,6 +155,9 @@ async function router(req: Request): Promise<Response> {
   const apiTokenResponse = await apiTokenRouter(req, path);
   if (apiTokenResponse) return apiTokenResponse;
 
+  const healthCheckResponse = await healthCheckExtensionRouter(req, path);
+  if (healthCheckResponse) return healthCheckResponse;
+
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;
 
@@ -215,7 +225,15 @@ Bun.serve({
       return csrfError;
     }
 
-    const res = await router(req);
+    let res: Response;
+    try {
+      res = await router(req);
+    } catch (err) {
+      const errRes = handleUnhandledError(err);
+      logRequest(req, errRes.status, Date.now() - start);
+      return errRes;
+    }
+
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();
 
@@ -228,7 +246,7 @@ Bun.serve({
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, ...pluginOrigins.connectSrc],
-      extraImgSrc: [s3ImgOrigin, 'https://taskinate.jhorizon.io'],
+      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
     });
     const response = new Response(res.body, {
       status: res.status,

@@ -72,20 +72,20 @@ const PluginPopup = ({ popup, onClose }: Props) => {
   return createPortal(
     <div
       ref={panelRef}
-      className="fixed z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl flex flex-col overflow-hidden"
+      className="fixed z-50 bg-bg-surface border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden"
       style={{ left, top, width: POPUP_WIDTH, maxHeight: POPUP_MAX_HEIGHT }}
       role="dialog"
       aria-modal="true"
       aria-label={popup.title || translations['plugins.popup.defaultTitle']}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700 flex-shrink-0">
-        <span className="text-slate-100 text-xs font-medium truncate pr-3">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border flex-shrink-0">
+        <span className="text-base text-xs font-medium truncate pr-3">
           {popup.title || translations['plugins.popup.defaultTitle']}
         </span>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-200 text-sm leading-none flex-shrink-0"
+          className="text-muted hover:text-subtle text-sm leading-none flex-shrink-0"
           aria-label={translations['plugins.popup.closeAriaLabel']}
         >
           ✕
@@ -97,7 +97,7 @@ const PluginPopup = ({ popup, onClose }: Props) => {
         id={`plugin-popup-iframe-${popup.pluginId}`}
         src={iframeSrc}
         title={popup.title || translations['plugins.popup.defaultTitle']}
-        className="flex-1 w-full border-0 bg-white"
+        className="flex-1 w-full border-0 bg-bg-surface" // [theme-exception] iframe for third-party plugin content
         style={{ minHeight: 120 }}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer-when-downgrade"

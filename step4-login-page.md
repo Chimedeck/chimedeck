@@ -1,0 +1,28 @@
+- main [ref=e66]:
+  - generic [ref=e67]:
+    - generic [ref=e68]:
+      - img [ref=e69]
+      - generic [ref=e71]: ChimeDeck
+    - heading "Welcome back" [level=1] [ref=e72]
+    - paragraph [ref=e73]: Sign in to your account
+    - form "Sign in form" [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]: Email
+          - textbox "Email" [ref=e78]:
+            - /placeholder: you@example.com
+        - generic [ref=e79]:
+          - generic [ref=e80]: Password
+          - generic [ref=e81]:
+            - textbox "Password" [ref=e82]:
+              - /placeholder: ••••••••
+            - button "Show password" [ref=e83] [cursor=pointer]:
+              - img [ref=e84]
+        - button "Sign in" [ref=e87] [cursor=pointer]
+    - paragraph [ref=e88]:
+      - link "Forgot password?" [ref=e89] [cursor=pointer]:
+        - /url: /forgot-password
+    - paragraph [ref=e90]:
+      - text: Belongs to our company?
+      - link "Sign up" [ref=e91] [cursor=pointer]:
+        - /url: /signup

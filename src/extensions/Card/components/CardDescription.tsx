@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { marked } from 'marked';
 import MentionInput from '~/common/components/MentionInput/MentionInput';
+import Button from '../../../common/components/Button';
 
 interface Props {
   boardId: string;
@@ -60,7 +61,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
 
   return (
     <section aria-label="Description">
-      <h3 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+      <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
         Description
       </h3>
 
@@ -72,21 +73,22 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             onChange={setDraft}
             onKeyDown={handleKeyDown}
             placeholder="Add a more detailed description…"
-            className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-3 text-gray-700 dark:text-slate-300 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] font-mono"
+            className="w-full bg-bg-overlay border border-border rounded-lg p-3 text-base text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] font-mono"
             aria-label="Card description editor"
             autoFocus
           />
           <div className="flex gap-2 mt-2">
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               type="button"
-              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded transition-colors"
               onClick={handleSave}
             >
               Save
-            </button>
+            </Button>
             <button
               type="button"
-              className="px-3 py-1 text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 text-xs transition-colors"
+              className="px-3 py-1 text-muted hover:text-base text-xs transition-colors"
               onClick={handleCancel}
             >
               Cancel
@@ -105,10 +107,10 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
                 'rounded-lg p-3 min-h-[80px] transition-colors',
                 disabled
                   ? 'cursor-default'
-                  : 'cursor-text hover:bg-gray-100 dark:hover:bg-slate-800/80',
+                  : 'cursor-text hover:bg-bg-overlay',
                 isEmpty
-                  ? 'text-gray-400 dark:text-slate-500 text-sm italic bg-gray-50 dark:bg-slate-800/50'
-                  : 'prose dark:prose-invert prose-sm max-w-none text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800/50',
+                  ? 'text-muted text-sm italic bg-bg-overlay'
+                  : 'prose dark:prose-invert prose-sm max-w-none text-base',
                 isLong && !expanded ? 'overflow-hidden' : '',
               ].join(' ')}
               style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
@@ -126,7 +128,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             </div>
             {/* Gradient overlay when truncated */}
             {isLong && !expanded && (
-              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 dark:from-slate-900/80 to-transparent rounded-b-lg pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent rounded-b-lg pointer-events-none" />
             )}
           </div>
           {isLong && (

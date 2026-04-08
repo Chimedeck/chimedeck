@@ -61,11 +61,11 @@ const WorkspaceDashboard = () => {
   const handleUnstar = (boardId: string) => dispatch(unstarBoardThunk({ boardId }));
 
   const pageContent = (() => {
-    if (loading) return <p className="text-slate-500 dark:text-slate-400">Loading boards…</p>;
-    if (error) return <p className="text-red-400">Failed to load boards.</p>;
+    if (loading) return <p className="text-muted">Loading boards…</p>;
+    if (error) return <p className="text-danger">Failed to load boards.</p>;
     if (!boards.length) {
       return (
-        <p className="text-slate-500 dark:text-slate-400">
+        <p className="text-muted">
           {showStarredOnly
             ? 'No starred boards. Star a board to add it here.'
             : isGuest
@@ -105,7 +105,7 @@ const WorkspaceDashboard = () => {
     <div className="px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Boards</h1>
+          <h1 className="text-2xl font-bold text-base">Boards</h1>
           {isGuest && (
             <span className="rounded-md bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-sm font-medium text-amber-700 dark:text-amber-400">
               guest access
@@ -118,7 +118,7 @@ const WorkspaceDashboard = () => {
             className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors ${
               showStarredOnly
                 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800'
             }`}
             aria-pressed={showStarredOnly}
           >
@@ -128,7 +128,7 @@ const WorkspaceDashboard = () => {
           {/* [why] GUEST users cannot create boards — they are scoped to granted boards only. */}
           {!isGuest && (
             <button
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
               onClick={() => setShowCreateModal(true)}
             >
               Create Board

@@ -240,12 +240,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
     >
       {/* Panel */}
       <div
-        className="w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-slate-800"
+        className="w-full max-w-xl overflow-hidden rounded-xl bg-bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-slate-700">
-          <MagnifyingGlassIcon className="h-5 w-5 flex-shrink-0 text-gray-400 dark:text-slate-400" aria-hidden="true" />
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <MagnifyingGlassIcon className="h-5 w-5 flex-shrink-0 text-subtle" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
@@ -253,14 +253,14 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder={scopeMeta.placeholder}
-            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-slate-100 dark:placeholder-slate-500"
+            className="flex-1 bg-transparent text-sm text-base placeholder:text-subtle outline-none"
             aria-label={translations['CommandPalette.inputAriaLabel']}
           />
         </div>
 
         {/* Scope tabs */}
         <div
-          className="flex gap-1 border-b border-gray-200 px-3 py-2 dark:border-slate-700"
+          className="flex gap-1 border-b border-border px-3 py-2"
           role="tablist"
           aria-label={translations['CommandPalette.scopeTabsAriaLabel']}
         >
@@ -274,8 +274,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
               onKeyDown={(e) => handleTabKeyDown(e, idx)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 scope === s.value
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700'
+                  ? 'bg-primary text-inverse'
+                  : 'text-muted hover:bg-bg-overlay'
               }`}
             >
               {s.label}
@@ -291,26 +291,26 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
         >
           {/* Too short */}
           {tooShort && (
-            <p className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">
+            <p className="px-3 py-2 text-sm text-muted">
               {translations['CommandPalette.tooShort']}
             </p>
           )}
 
           {/* Loading */}
           {!tooShort && query.length >= 2 && loading && (
-            <p className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">{translations['CommandPalette.searching']}</p>
+            <p className="px-3 py-2 text-sm text-muted">{translations['CommandPalette.searching']}</p>
           )}
 
           {/* Error */}
           {!loading && error && (
-            <p className="px-3 py-2 text-sm text-red-500 dark:text-red-400">
+            <p className="px-3 py-2 text-sm text-danger">
               {translations['CommandPalette.error']}
             </p>
           )}
 
           {/* Empty state (scope-aware) */}
           {!loading && !error && query.length >= 2 && !hasResults && (
-            <p className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">
+            <p className="px-3 py-2 text-sm text-muted">
               {scopeMeta.emptyText}
             </p>
           )}
@@ -320,7 +320,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             <>
               {boards.length > 0 && (
                 <section aria-label={translations['CommandPalette.boardsHeader']}>
-                  <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                  <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-subtle">
                     {translations['CommandPalette.boardsHeader']}
                   </p>
                   {boards.map((r, globalIdx) => {
@@ -339,7 +339,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
               )}
               {cards.length > 0 && (
                 <section aria-label={translations['CommandPalette.cardsHeader']}>
-                  <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                  <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-subtle">
                     {translations['CommandPalette.cardsHeader']}
                   </p>
                   {cards.map((r, i) => {
@@ -376,16 +376,16 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer hint */}
-        <div className="flex items-center justify-between border-t border-gray-100 px-4 py-2 text-xs text-gray-400 dark:border-slate-700 dark:text-slate-500">
+        <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-subtle">
           <span>
-            <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">↑↓</kbd>
+            <kbd className="rounded bg-bg-overlay px-1 text-muted">↑↓</kbd>
             {' '}{translations['CommandPalette.footerNavigate']}
             {' · '}
-            <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">↵</kbd>
+            <kbd className="rounded bg-bg-overlay px-1 text-muted">↵</kbd>
             {' '}{translations['CommandPalette.footerOpen']}
           </span>
           <span>
-            {translations['CommandPalette.footerEscPrefix']} <kbd className="rounded bg-gray-100 px-1 dark:bg-slate-700 dark:text-slate-400">Esc</kbd> {translations['CommandPalette.footerEscClose']}
+            {translations['CommandPalette.footerEscPrefix']} <kbd className="rounded bg-bg-overlay px-1 text-muted">Esc</kbd> {translations['CommandPalette.footerEscClose']}
           </span>
         </div>
       </div>

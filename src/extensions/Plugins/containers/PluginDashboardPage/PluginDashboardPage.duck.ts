@@ -5,6 +5,7 @@ import { createAppAsyncThunk } from '~/utils/redux';
 import {
   fetchBoardPlugins,
   fetchAvailablePlugins,
+  fetchBoardAvailablePlugins,
   fetchCategories,
   enablePlugin as enablePluginApi,
   disablePlugin as disablePluginApi,
@@ -80,6 +81,27 @@ export const fetchAvailablePluginsThunk = createAppAsyncThunk(
     if (perPage != null) params.perPage = perPage;
     const result = await fetchAvailablePlugins(params);
     return { ...result, boardId };
+  },
+);
+
+// [why] Uses the board-specific /available endpoint so results exclude already-enabled plugins
+// and do not require client-side filtering.
+export const fetchDiscoverablePluginsThunk = createAppAsyncThunk(
+  'plugins/fetchDiscoverablePlugins',
+  async ({
+    boardId,
+    q,
+    category,
+  }: {
+    boardId: string;
+    q?: string;
+    category?: string | null;
+  }) => {
+    const params: { boardId: string; q?: string; category?: string | null } = { boardId };
+    if (q) params.q = q;
+    if (category) params.category = category;
+    const result = await fetchBoardAvailablePlugins(params);
+    return { data: result.data, boardId };
   },
 );
 
@@ -228,6 +250,13 @@ const pluginDashboardSlice = createSlice({
           // Filter out plugins already active on this board
           const activeIds = new Set(state.boardPlugins.map((b) => b.plugin.id));
           state.availablePlugins = action.payload.data.filter((p) => !activeIds.has(p.id));
+        },
+      )
+      // fetchDiscoverablePluginsThunk uses the board-specific endpoint so results are pre-filtered
+      .addCase(
+        fetchDiscoverablePluginsThunk.fulfilled,
+        (state, action: PayloadAction<{ data: Plugin[]; boardId: string }>) => {
+          state.availablePlugins = action.payload.data;
         },
       )
       .addCase(

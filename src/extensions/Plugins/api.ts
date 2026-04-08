@@ -45,6 +45,29 @@ export interface FetchAvailablePluginsParams {
   category?: string | null;
   page?: number;
   perPage?: number;
+  /** Filter by active state — undefined means no filter (returns all) */
+  isActive?: boolean;
+}
+
+/** GET /api/v1/boards/:boardId/plugins/available — active plugins NOT yet enabled on this board */
+export async function fetchBoardAvailablePlugins({
+  boardId,
+  q,
+  category,
+}: {
+  boardId: string;
+  q?: string;
+  category?: string | null;
+}): Promise<{ data: Plugin[]; metadata: { total: number } }> {
+  const searchParams = new URLSearchParams();
+  if (q) searchParams.set('q', q);
+  if (category) searchParams.set('category', category);
+  const qs = searchParams.toString();
+  return apiClient.get(
+    qs
+      ? `${pluginsConfig.boardPluginsPath(boardId)}/available?${qs}`
+      : `${pluginsConfig.boardPluginsPath(boardId)}/available`,
+  );
 }
 
 /** GET /api/v1/plugins — public+active plugin registry, with optional search/filter/pagination */
@@ -56,6 +79,7 @@ export async function fetchAvailablePlugins(
   if (params?.category) searchParams.set('category', params.category);
   if (params?.page != null) searchParams.set('page', String(params.page));
   if (params?.perPage != null) searchParams.set('perPage', String(params.perPage));
+  if (params?.isActive != null) searchParams.set('isActive', String(params.isActive));
   const qs = searchParams.toString();
   return apiClient.get(qs ? `${pluginsConfig.registryPath}?${qs}` : pluginsConfig.registryPath);
 }
@@ -130,4 +154,22 @@ export async function updatePlugin({
   body: UpdatePluginBody;
 }): Promise<{ data: Plugin }> {
   return apiClient.patch(`${pluginsConfig.registryPath}/${pluginId}`, body);
+}
+
+/** DELETE /api/v1/plugins/:pluginId — soft-deactivate a plugin (platform admin only). */
+export async function deletePlugin({
+  pluginId,
+}: {
+  pluginId: string;
+}): Promise<{ data: Plugin }> {
+  return apiClient.delete(`${pluginsConfig.registryPath}/${pluginId}`);
+}
+
+/** PATCH /api/v1/plugins/:pluginId — reactivate a deactivated plugin (platform admin only). */
+export async function reactivatePlugin({
+  pluginId,
+}: {
+  pluginId: string;
+}): Promise<{ data: Plugin }> {
+  return apiClient.patch(`${pluginsConfig.registryPath}/${pluginId}`, { isActive: true });
 }

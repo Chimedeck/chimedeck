@@ -16,7 +16,7 @@ function getCheckboxClass(status: DueDateStatus): string {
   if (status === 'done') return 'bg-emerald-500 border-emerald-500';
   if (status === 'overdue') return 'bg-red-500 border-red-500';
   if (status === 'due-soon') return 'bg-orange-400 border-orange-400';
-  return 'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800';
+  return 'border-border-strong bg-bg-surface';
 }
 
 interface Props {
@@ -50,13 +50,13 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
             disabled={disabled}
           >
             {dueComplete && (
-              <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />
+              <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />
             )}
           </button>
         )}
         <input
           type="datetime-local"
-          className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 [color-scheme:light] dark:[color-scheme:dark]"
+          className="flex-1 bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 [color-scheme:light]"
           value={localValue}
           onChange={(e) => {
             const val = e.target.value;
@@ -69,7 +69,7 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
       {dueDate && !disabled && (
         <button
           type="button"
-          className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
+          className="text-xs text-muted hover:text-base transition-colors"
           onClick={() => onChange(null)}
         >
           Clear

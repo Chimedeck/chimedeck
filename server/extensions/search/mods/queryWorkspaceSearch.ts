@@ -15,6 +15,7 @@ import { db } from '../../../common/db';
 import { buildQuery } from './buildQuery';
 import type { Role } from '../../../middlewares/permissionManager';
 import { searchLog } from '../common/searchLogger';
+import { resolveBackgroundUrl } from '../../board/common/resolveBackgroundUrl';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -155,7 +156,13 @@ export async function queryWorkspaceSearch({
     applyBoardAccessFilter(boardQ, userId, callerRole);
 
     const boards = await boardQ.orderBy('rank', 'desc').limit(limit);
-    results.push(...boards.map((b) => ({ ...b, type: 'board' as const, rank: Number(b.rank) })));
+    results.push(...boards.map((b) => ({
+      ...b,
+      type: 'board' as const,
+      rank: Number(b.rank),
+      // [why] Never expose raw S3 URLs — proxy through the authenticated background endpoint.
+      background: resolveBackgroundUrl({ boardId: b.id, backgroundUrl: b.background }),
+    })));
   }
 
   // ── Card search ───────────────────────────────────────────────────────────

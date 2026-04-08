@@ -51,13 +51,13 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 text-center">
+      <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-8">
             <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-            <span className="text-xl font-bold text-white">{translations.appName}</span>
+            <span className="text-xl font-bold text-base">{translations.appName}</span>
           </div>
-          <p className="text-red-400 mb-4">{translations.resetPassword.invalidToken}</p>
+          <p className="text-danger mb-4">{translations.resetPassword.invalidToken}</p>
           <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 text-sm underline">
             {translations.resetPassword.requestNew}
           </Link>
@@ -67,31 +67,31 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+    <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">{translations.appName}</span>
+          <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-6">{translations.resetPassword.title}</h1>
+        <h1 className="text-2xl font-bold text-base mb-6">{translations.resetPassword.title}</h1>
 
         {status === 'success' && (
-          <p className="text-green-400 font-medium">{translations.resetPassword.success}</p>
+          <p className="text-success font-medium">{translations.resetPassword.success}</p>
         )}
 
         {status === 'error' && (
           <div className="mb-4">
             {apiError === 'invalid-or-expired-token' ? (
               <div>
-                <p className="text-red-400 mb-2">{translations.resetPassword.invalidToken}</p>
+                <p className="text-danger mb-2">{translations.resetPassword.invalidToken}</p>
                 <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 text-sm underline">
                   {translations.resetPassword.requestNew}
                 </Link>
               </div>
             ) : (
-              <p className="text-red-400">{translations.resetPassword.invalidToken}</p>
+              <p className="text-danger">{translations.resetPassword.invalidToken}</p>
             )}
           </div>
         )}
@@ -100,7 +100,7 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleSubmit} noValidate>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label htmlFor="reset-password" className="text-sm font-medium text-slate-300">
+                <label htmlFor="reset-password" className="text-sm font-medium text-subtle">
                   {translations.resetPassword.newPassword}
                 </label>
                 <input
@@ -109,19 +109,19 @@ export default function ResetPasswordPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'reset-password-error' : undefined}
                 />
                 {errors.password && (
-                  <span id="reset-password-error" className="text-red-400 text-xs mt-1" role="alert">
+                  <span id="reset-password-error" className="text-danger text-xs mt-1" role="alert">
                     {errors.password}
                   </span>
                 )}
               </div>
 
               <div className="flex flex-col gap-1">
-                <label htmlFor="reset-confirm-password" className="text-sm font-medium text-slate-300">
+                <label htmlFor="reset-confirm-password" className="text-sm font-medium text-subtle">
                   {translations.resetPassword.confirmPassword}
                 </label>
                 <input
@@ -130,12 +130,12 @@ export default function ResetPasswordPage() {
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={errors.confirmPassword ? 'reset-confirm-error' : undefined}
                 />
                 {errors.confirmPassword && (
-                  <span id="reset-confirm-error" className="text-red-400 text-xs mt-1" role="alert">
+                  <span id="reset-confirm-error" className="text-danger text-xs mt-1" role="alert">
                     {errors.confirmPassword}
                   </span>
                 )}
@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
+                className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm" // [theme-exception] text-white on primary button
               >
                 {status === 'loading' ? 'Resetting…' : translations.resetPassword.submit}
               </button>

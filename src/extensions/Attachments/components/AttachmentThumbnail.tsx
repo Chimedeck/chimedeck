@@ -31,7 +31,7 @@ function ImageLightbox({ src, name, onClose }: { src: string; name: string; onCl
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none"
+        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none" // [theme-exception] text-white on media overlay
         aria-label={translations['attachments.thumbnail.image.close.ariaLabel']}
       >
         <XMarkIcon className="h-8 w-8" />
@@ -47,13 +47,16 @@ function ImageLightbox({ src, name, onClose }: { src: string; name: string; onCl
 
 export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const src = attachment.thumbnail_url ?? attachment.url;
-  const fullSrc = attachment.url ?? src;
+  // [why] thumbnail_url is the proxy path to the resized thumbnail (set once
+  // the thumbnail job runs). Fall back to view_url to show the full image
+  // inline when no thumbnail exists yet. Never use the old raw `url` field.
+  const src = attachment.thumbnail_url ?? attachment.view_url;
+  const fullSrc = attachment.view_url ?? src;
 
   if (!src) {
     // Placeholder when thumbnail URL is not yet available
     return (
-      <div className="flex items-center justify-center w-24 h-16 rounded bg-slate-700 text-slate-500">
+      <div className="flex items-center justify-center w-24 h-16 rounded bg-bg-overlay text-muted">
         <PhotoIcon className="h-8 w-8" aria-hidden="true" />
       </div>
     );
@@ -63,7 +66,7 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
     <>
       <button
         onClick={() => setLightboxOpen(true)}
-        className="relative w-24 h-16 rounded overflow-hidden border border-slate-600 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="relative w-24 h-16 rounded overflow-hidden border border-border hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label={translations['attachments.thumbnail.image.preview.ariaLabel'].replace('{name}', attachment.name)}
       >
         <img
@@ -111,7 +114,7 @@ export function VideoLightbox({
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none"
+        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none" // [theme-exception] text-white on media overlay
         aria-label={translations['attachments.thumbnail.video.close.ariaLabel']}
       >
         <XMarkIcon className="h-8 w-8" />
@@ -129,11 +132,11 @@ export function VideoLightbox({
 
 export function VideoThumbnail({ attachment }: Props): React.ReactElement {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const src = attachment.url;
+  const src = attachment.view_url;
 
   if (!src) {
     return (
-      <div className="flex items-center justify-center w-24 h-16 rounded bg-slate-700 text-slate-500">
+      <div className="flex items-center justify-center w-24 h-16 rounded bg-bg-overlay text-muted">
         <FilmIcon className="h-8 w-8" aria-hidden="true" />
       </div>
     );
@@ -143,11 +146,11 @@ export function VideoThumbnail({ attachment }: Props): React.ReactElement {
     <>
       <button
         onClick={() => setLightboxOpen(true)}
-        className="relative w-24 h-16 rounded overflow-hidden border border-slate-600 bg-slate-800 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center group"
+        className="relative w-24 h-16 rounded overflow-hidden border border-border bg-bg-surface hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center group"
         aria-label={translations['attachments.thumbnail.video.play.ariaLabel'].replace('{name}', attachment.name)}
       >
-        <FilmIcon className="h-6 w-6 text-slate-500 group-hover:text-slate-300 transition-colors" aria-hidden="true" />
-        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" />
+        <FilmIcon className="h-6 w-6 text-muted group-hover:text-subtle transition-colors" aria-hidden="true" />
+        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" /> // [theme-exception] text-white on media overlay
       </button>
       {lightboxOpen && (
         <VideoLightbox src={src} name={attachment.name} onClose={() => setLightboxOpen(false)} />

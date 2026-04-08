@@ -29,14 +29,14 @@ const Toast = ({ toast, onDismiss }: Props) => {
       ? 'border-red-500/40'
       : toast.variant === 'conflict'
         ? 'border-yellow-500/40'
-        : 'border-slate-700';
+        : 'border-border';
 
   const iconClass =
     toast.variant === 'error'
-      ? 'text-red-400'
+      ? 'text-danger'
       : toast.variant === 'conflict'
         ? 'text-yellow-400'
-        : 'text-slate-400';
+        : 'text-subtle';
 
   const IconComponent =
     toast.variant === 'error'
@@ -47,13 +47,13 @@ const Toast = ({ toast, onDismiss }: Props) => {
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl border ${borderClass} bg-slate-800 px-4 py-3 shadow-2xl`}
+      className={`flex items-start gap-3 rounded-xl border ${borderClass} bg-bg-surface px-4 py-3 shadow-2xl`}
       role="alert"
     >
       <IconComponent className={`mt-0.5 h-5 w-5 shrink-0 ${iconClass}`} aria-hidden="true" />
-      <p className="flex-1 text-sm text-slate-200">{toast.message}</p>
+      <p className="flex-1 text-sm text-base">{toast.message}</p>
       <button
-        className="ml-auto shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
+        className="ml-auto shrink-0 text-subtle hover:text-muted transition-colors"
         onClick={() => onDismiss(toast.id)}
         aria-label={translations['Common.dismissNotification']}
       >

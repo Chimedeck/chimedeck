@@ -1,7 +1,8 @@
 // ActivityFeed — unified timeline of comments and system activity events for a card.
 // Renders comments as full bubbles and system events as compact single-line rows.
 // Feed is sorted descending by created_at (newest first).
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type React from 'react';
 import CommentItem, { type Comment } from '~/extensions/Comment/components/CommentItem';
 import CommentEditor from '~/extensions/Comment/components/CommentEditor';
 import { getActivityEventMeta, type ActivityEventContext } from '../../config/activityEventLabels';
@@ -29,12 +30,19 @@ interface Props {
   onDeleteComment: (commentId: string) => Promise<void>;
   /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
   canAddComment?: boolean;
+  /**
+   * When provided, ActivityFeed registers an `insertMarkdown(md)` function on this ref
+   * once the CommentEditor mounts. External callers (e.g. AttachmentPanel Comment action)
+   * can then call `insertMarkdownRef.current(md)` to insert text without a network call.
+   */
+  insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
 }
 
 /** Consistent avatar colour based on user id. */
+// Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-green-500', 'bg-purple-500',
-  'bg-pink-500', 'bg-yellow-500', 'bg-orange-500', 'bg-teal-500',
+  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
+  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
 ];
 function avatarColor(userId: string): string {
   let hash = 0;
@@ -77,8 +85,14 @@ const ActivityFeed = ({
   onEditComment,
   onDeleteComment,
   canAddComment = true,
+  insertMarkdownRef,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  // [why] Local ref that is passed to CommentEditor so it can register its insert function.
+  // We forward the caller-supplied insertMarkdownRef (if any) so CardModal can wire
+  // AttachmentPanel → CommentEditor without prop-drilling through multiple layers.
+  const localInsertMarkdownRef = useRef<((md: string) => void) | null>(null);
+  const resolvedInsertRef = insertMarkdownRef ?? localInsertMarkdownRef;
 
   const loadAttachments = useCallback(async () => {
     try {
@@ -112,7 +126,8 @@ const ActivityFeed = ({
       attachment.id,
       {
         thumbnail_url: attachment.thumbnail_url,
-        url: attachment.url,
+        // [why] Use proxy view_url exclusively — never expose raw presigned url field.
+        view_url: attachment.view_url,
         content_type: attachment.content_type,
       },
     ]),
@@ -137,7 +152,7 @@ const ActivityFeed = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">Activity</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">Activity</h3>
 
       {/* Comment input — hidden for VIEWER guests */}
       {canAddComment && (
@@ -148,12 +163,13 @@ const ActivityFeed = ({
           placeholder="Add a comment…"
           onSubmit={handleAddComment}
           submitLabel="Comment"
+          insertMarkdownRef={resolvedInsertRef}
         />
       )}
 
       <div className="flex flex-col gap-3">
         {feed.length === 0 && (
-          <p className="text-sm text-gray-400 italic">No activity yet.</p>
+          <p className="text-sm text-subtle italic">No activity yet.</p>
         )}
 
         {feed.map((item) => {
@@ -189,7 +205,7 @@ const ActivityFeed = ({
           // For attachment events, look up thumbnail from the attachment map
           const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
           const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
-          const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.url);
+          const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
           const actorAvatarUrl = activity.actor_avatar_url ?? null;
 
           // [why] Pass context so label builder can resolve member names and detect self-assignment.
@@ -206,7 +222,7 @@ const ActivityFeed = ({
             <div key={`event-${activity.id}`} className="flex gap-3">
               {/* Avatar */}
               <div
-                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`}
+                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on dynamically-colored avatar background
                 title={displayName}
               >
                 {actorAvatarUrl
@@ -217,18 +233,19 @@ const ActivityFeed = ({
               {/* Body */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-white">{displayName}</span>
-                  <span className="text-xs text-slate-400">{meta.label}</span>
-                  <span className="text-xs text-slate-600 flex-shrink-0">{relativeTime(activity.created_at)}</span>
+                  {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
+                  <span className="text-sm font-semibold text-base">{displayName}</span>
+                  <span className="text-xs text-subtle">{meta.label}</span>
+                  <span className="text-xs text-muted flex-shrink-0">{relativeTime(activity.created_at)}</span>
                 </div>
                 {showThumbnail && (
                   <a
-                    href={(attachmentInfo!.url ?? attachmentInfo!.thumbnail_url)!}
+                    href={(attachmentInfo!.view_url ?? attachmentInfo!.thumbnail_url)!}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <img
-                      src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.url)!}
+                      src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.view_url)!}
                       alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
                       className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
                     />

@@ -15,4 +15,13 @@ export const VISIBLE_ACTIVITY_EVENT_TYPES: string[] = [
   'card.money.updated',
   'attachment_added',
   'attachment_removed',
+  // Card archive / delete lifecycle
+  'card_archived',
+  'card_unarchived',
+  'card_deleted',
+  // Checklist events
+  'checklist_created',
+  'checklist_deleted',
+  'checklist_item_checked',
+  'checklist_item_unchecked',
 ];

@@ -101,7 +101,7 @@ export default function AppShell() {
   }, [navigate]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-bg-base">
       {/* Desktop sidebar — always visible on md+ */}
       <div className="hidden md:flex md:shrink-0">
         <Sidebar />

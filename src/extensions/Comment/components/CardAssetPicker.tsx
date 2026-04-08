@@ -4,6 +4,7 @@
 // [why] Receives already-loaded attachments from CommentEditor to avoid a duplicate fetch.
 import { useEffect, useRef } from 'react';
 import { ArrowUpTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import type { Attachment } from '~/extensions/Attachments/types';
 import { getMimeIcon } from '~/extensions/Attachments/utils/mimeIcon';
 import translations from '../translations/en.json';
@@ -46,44 +47,46 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
     <div
       ref={containerRef}
       data-testid="card-asset-picker"
-      className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl"
+      className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border border-border bg-bg-base shadow-xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 px-3 py-2">
-        <span className="text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase tracking-wide">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-xs font-semibold text-subtle uppercase tracking-wide">
           {translations['comment.assetPicker.title']}
         </span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
           aria-label={translations['comment.assetPicker.close']}
           onClick={onClose}
-          className="rounded p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
+          className="!p-0.5"
         >
           <XMarkIcon className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* Upload new file action */}
-      <div className="p-2 border-b border-gray-100 dark:border-slate-800">
+      <div className="p-2 border-b border-border">
         <button
           type="button"
           data-testid="asset-picker-upload-new"
           onClick={() => { onUploadNew(); onClose(); }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-base hover:bg-bg-surface transition-colors"
         >
-          <ArrowUpTrayIcon className="h-4 w-4 text-gray-400 dark:text-slate-400 flex-shrink-0" />
+          <ArrowUpTrayIcon className="h-4 w-4 text-muted flex-shrink-0" />
           <span>{translations['comment.assetPicker.uploadNew']}</span>
         </button>
       </div>
 
       {/* Existing card assets */}
       <div className="p-2">
-        <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500">
+        <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-muted">
           {translations['comment.assetPicker.existingTitle']}
         </p>
 
         {attachments.length === 0 && (
-          <p className="px-1 py-3 text-center text-xs text-gray-400 dark:text-slate-500">
+          <p className="px-1 py-3 text-center text-xs text-muted">
             {translations['comment.assetPicker.empty']}
           </p>
         )}
@@ -117,24 +120,24 @@ function AssetRow({ attachment, onInsert }: Readonly<AssetRowProps>) {
         type="button"
         data-testid="asset-picker-item"
         onClick={onInsert}
-        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-bg-surface transition-colors"
       >
         {/* Thumbnail or icon */}
         {isImage ? (
           <img
-            src={attachment.thumbnail_url ?? attachment.url ?? ''}
+            src={attachment.thumbnail_url ?? attachment.view_url ?? ''}
             alt=""
             aria-hidden="true"
-            className="h-8 w-8 flex-shrink-0 rounded object-cover border border-gray-200 dark:border-slate-700"
+            className="h-8 w-8 flex-shrink-0 rounded object-cover border border-border"
           />
         ) : (
-          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
-            <Icon className="h-4 w-4 text-gray-400 dark:text-slate-400" />
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-border bg-bg-surface">
+            <Icon className="h-4 w-4 text-muted" />
           </span>
         )}
 
         {/* Name */}
-        <span className="min-w-0 flex-1 truncate text-xs text-gray-700 dark:text-slate-200">
+        <span className="min-w-0 flex-1 truncate text-xs text-base">
           {attachment.name}
         </span>
 

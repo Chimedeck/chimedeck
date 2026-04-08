@@ -4,14 +4,16 @@
 // Route: /boards/:boardId/settings/plugins
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { PuzzlePieceIcon } from '@heroicons/react/24/outline';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { isPlatformAdmin } from '~/extensions/Auth/utils/isPlatformAdmin';
 import translations from '../../translations/en.json';
 import { useBoardPlugins } from '../../hooks/useBoardPlugins';
-import PluginList from '../../components/PluginList';
-import PluginSearchBar from '../../components/PluginSearchBar';
+import EnabledPluginRow from '../../components/EnabledPluginRow';
+import DiscoverPluginRow from '../../components/DiscoverPluginRow';
+import DiscoverPluginSearch from '../../components/DiscoverPluginSearch';
 import PluginModal, { type PluginModalState } from '../../modals/PluginModal';
 import RegisterPluginModal from '../../modals/RegisterPluginModal';
 import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
@@ -23,7 +25,7 @@ import {
   clearRegisterState,
   updatePluginThunk,
   clearUpdateState,
-  fetchAvailablePluginsThunk,
+  fetchDiscoverablePluginsThunk,
   fetchCategoriesThunk,
   setSearchQuery,
   setSelectedCategory,
@@ -169,7 +171,7 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchAvailablePluginsThunk(params));
+      dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery, selectedCategory]);
 
@@ -193,7 +195,7 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (q) params.q = q;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchAvailablePluginsThunk(params));
+      dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, selectedCategory]);
 
@@ -203,23 +205,24 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (searchQuery) params.q = searchQuery;
       if (category) params.category = category;
-      dispatch(fetchAvailablePluginsThunk(params));
+      dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery]);
 
   const handleClearSearch = useCallback(() => {
     dispatch(clearSearch());
-    if (boardId) dispatch(fetchAvailablePluginsThunk({ boardId }));
+    if (boardId) dispatch(fetchDiscoverablePluginsThunk({ boardId }));
   }, [dispatch, boardId]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100">
+    // [theme-exception]: full dark-themed plugin dashboard page
+    <div className="min-h-screen bg-bg-base text-base">
       {/* Header */}
       <div className="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <button
             onClick={() => navigate(`/boards/${boardId}`)}
-            className="text-slate-400 hover:text-slate-200 text-sm mb-1 flex items-center gap-1"
+            className="text-subtle hover:text-base text-sm mb-1 flex items-center gap-1"
           >
             {translations['plugins.dashboard.backToBoard']}
           </button>
@@ -228,7 +231,7 @@ const PluginDashboardPage = () => {
         {isAdmin ? (
           <button
             onClick={() => setRegisterOpen(true)}
-            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2"
+            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2" // [theme-exception] text-white on bg-blue-600 button
           >
             {translations['plugins.dashboard.registerPlugin']}
           </button>
@@ -236,44 +239,84 @@ const PluginDashboardPage = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-6 py-6">
+      <div className="max-w-2xl mx-auto px-6 py-6 space-y-8">
         {status === 'loading' && (
-          <p className="text-slate-400 text-sm">{translations['plugins.dashboard.loading']}</p>
+          <p className="text-subtle text-sm">{translations['plugins.dashboard.loading']}</p>
         )}
         {status === 'error' && error && !error.includes('not-board-admin') && (
-          <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
+          // [theme-exception]: light text on dark red error bg
+          <div className="bg-danger/10 border border-danger/40 rounded p-3 text-danger text-sm">
             {error}
           </div>
         )}
+
+        {/* ── Section 1: Enabled on this board ── */}
         {status !== 'loading' && (
-          <>
-            <PluginSearchBar
+          <section>
+            <h2 className="text-xs font-semibold text-subtle uppercase tracking-wide mb-3">
+              {translations['plugins.dashboard.enabled.heading']}
+            </h2>
+            {boardPlugins.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-8 text-muted">
+                <PuzzlePieceIcon className="h-8 w-8 text-muted" aria-hidden="true" />
+                <p className="text-sm text-center">{translations['plugins.dashboard.enabled.empty']}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {boardPlugins.map((bp) => (
+                  <EnabledPluginRow
+                    key={bp.id}
+                    boardPlugin={bp}
+                    onDisable={disablePlugin}
+                    onSettings={handleSettings}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Section 2: Discover Plugins ── */}
+        {status !== 'loading' && (
+          <section>
+            <h2 className="text-xs font-semibold text-subtle uppercase tracking-wide mb-3">
+              {translations['plugins.dashboard.discover.heading']}
+            </h2>
+            <DiscoverPluginSearch
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
               categories={categories}
               onSearchChange={handleSearchChange}
               onCategoryChange={handleCategoryChange}
-              searchQuery={searchQuery}
-              selectedCategory={selectedCategory}
             />
             {availablePlugins.length === 0 && (searchQuery || selectedCategory) ? (
               <div className="mb-4">
-                <p className="text-slate-400 text-sm mb-2">{translations['plugins.dashboard.noMatch']}</p>
+                <p className="text-subtle text-sm mb-2">
+                  {translations['plugins.dashboard.discover.noMatch']}
+                </p>
                 <button
                   onClick={handleClearSearch}
                   className="text-xs text-blue-400 hover:text-blue-300 underline"
                 >
-                  {translations['plugins.dashboard.clearSearch']}
+                  {translations['plugins.dashboard.discover.clearSearch']}
                 </button>
               </div>
-            ) : null}
-            <PluginList
-              boardPlugins={boardPlugins}
-              availablePlugins={availablePlugins}
-              onEnable={enablePlugin}
-              onDisable={disablePlugin}
-              onSettings={handleSettings}
-              {...(isAdmin ? { onEdit: handleEditOpen } : {})}
-            />
-          </>
+            ) : availablePlugins.length === 0 ? (
+              <p className="text-muted text-sm">
+                {translations['plugins.dashboard.discover.empty']}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {availablePlugins.map((plugin) => (
+                  <DiscoverPluginRow
+                    key={plugin.id}
+                    plugin={plugin}
+                    onEnable={enablePlugin}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
         )}
       </div>
 

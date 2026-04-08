@@ -25,7 +25,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
   return (
     <button
       ref={buttonRef}
-      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:hover:bg-slate-700 dark:focus:bg-slate-700"
+      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-bg-surface focus:bg-bg-surface focus:outline-none"
       onClick={() => onSelect(result)}
       onKeyDown={onKeyDown}
     >
@@ -43,7 +43,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
         </span>
       ) : (
         <span
-          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${
+          className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-white ${ // [theme-exception] text-white on colored avatar
             isBoard ? 'bg-indigo-500' : 'bg-emerald-500'
           }`}
           aria-hidden="true"
@@ -53,8 +53,8 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
             : <DocumentTextIcon className="h-4 w-4" />}
         </span>
       )}
-      <span className="truncate font-medium text-gray-800 dark:text-slate-200">{result.title}</span>
-      <span className="ml-auto text-xs text-gray-400 dark:text-slate-500">{isBoard ? 'Board' : 'Card'}</span>
+      <span className="truncate font-medium text-base">{result.title}</span>
+      <span className="ml-auto text-xs text-muted">{isBoard ? 'Board' : 'Card'}</span>
     </button>
   );
 };

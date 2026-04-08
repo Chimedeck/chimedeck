@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 61 (Automation Core Engine), Sprint 08 (Card Extended Fields)
-> **References:** Trello Automation — https://trello.com/guide/automate-anything#rule-based-automation
+> **References:** Automation
 
 ---
 

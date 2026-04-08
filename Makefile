@@ -1,4 +1,4 @@
-.PHONY: dev dev-redis build test lint typecheck docker clean
+.PHONY: dev dev-redis build test test-e2e test-all lint typecheck docker clean
 
 dev:
 	bun run docker:dev
@@ -11,6 +11,12 @@ build:
 
 test:
 	bun run test
+
+test-e2e:
+	bun run test:e2e
+
+test-all:
+	bash run-all-tests-full.sh
 
 lint:
 	bun run lint

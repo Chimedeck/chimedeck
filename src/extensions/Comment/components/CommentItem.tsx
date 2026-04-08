@@ -1,4 +1,4 @@
-// Single comment with inline edit/delete controls — styled to match the Trello-like mockup.
+// Single comment with inline edit/delete controls
 import { useState } from 'react';
 import { marked } from 'marked';
 import type { Attachment } from '~/extensions/Attachments/types';
@@ -47,9 +47,10 @@ function getInitials(name: string | null | undefined, email: string | null | und
 }
 
 /** Consistent avatar colour based on user id. */
+// Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-green-500', 'bg-purple-500',
-  'bg-pink-500', 'bg-yellow-500', 'bg-orange-500', 'bg-teal-500',
+  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
+  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
 ];
 function avatarColor(userId: string) {
   let hash = 0;
@@ -86,7 +87,7 @@ function renderContent(text: string, attachments: Attachment[]): string {
   // Wrap @mentions in a styled chip
   return html.replaceAll(
     /(@\w[\w.+-]*)/g,
-    '<span class="rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">$1</span>',
+    '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>',
   );
 }
 
@@ -126,7 +127,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     <div className="flex gap-3">
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`}
+        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on colored avatar
         title={displayName}
       >
         {avatarUrl
@@ -139,10 +140,10 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
       <div className="flex-1 min-w-0">
         {/* Header: name + timestamp */}
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">{displayName}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{relativeTime(comment.created_at)}</span>
+          <span className="text-sm font-semibold text-base">{displayName}</span>
+          <span className="text-xs text-muted">{relativeTime(comment.created_at)}</span>
           {comment.version > 1 && (
-            <span className="text-xs italic text-gray-400">{translations['comment.edited']}</span>
+            <span className="text-xs italic text-muted">{translations['comment.edited']}</span>
           )}
         </div>
 
@@ -158,22 +159,24 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             submitLabel={translations['comment.editor.update']}
           />
         ) : (
-          <div
-            className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-100
-              [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-            // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
-            // Input is from authenticated users only (internal tool), so XSS risk is accepted.
-            dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
-          />
+          <div className="border border-border rounded-md px-3 py-2 bg-surface">
+            <div
+              className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base
+                [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
+              // Input is from authenticated users only (internal tool), so XSS risk is accepted.
+              dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
+            />
+          </div>
         )}
 
         {/* Inline action links */}
         {!editing && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted">
             {canEdit && (
               <button
                 onClick={() => setEditing(true)}
-                className="hover:text-gray-800 dark:hover:text-gray-200 hover:underline"
+                className="hover:text-subtle hover:underline"
               >
                 {translations['comment.action.edit']}
               </button>
@@ -183,7 +186,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="hover:text-red-500 hover:underline disabled:opacity-50"
+                className="hover:text-danger hover:underline disabled:opacity-50"
               >
                 {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
               </button>

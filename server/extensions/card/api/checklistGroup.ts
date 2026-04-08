@@ -12,6 +12,8 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
+import { writeActivity } from '../../activity/mods/write';
+import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 
 interface CardContext { boardId: string; workspaceId: string; }
 
@@ -97,6 +99,19 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
   });
 
   const result = await checklistWithItems(id);
+
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: context.boardId,
+    action: 'checklist_created',
+    actorId,
+    payload: { checklistTitle: title, cardTitle: card?.title ?? '' },
+  }).then((activity) => {
+    publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
+  }).catch(() => {});
+
   return Response.json({ data: result }, { status: 201 });
 }
 
@@ -184,6 +199,20 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
 
   // ON DELETE CASCADE removes checklist_items rows automatically
   await db('checklists').where({ id: checklistId }).delete();
+
+  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const card = await db('cards').where({ id: checklist.card_id }).select('title').first();
+  writeActivity({
+    entityType: 'card',
+    entityId: checklist.card_id,
+    boardId: context.boardId,
+    action: 'checklist_deleted',
+    actorId,
+    payload: { checklistTitle: checklist.title, cardTitle: card?.title ?? '' },
+  }).then((activity) => {
+    publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
+  }).catch(() => {});
+
   return new Response(null, { status: 204 });
 }
 

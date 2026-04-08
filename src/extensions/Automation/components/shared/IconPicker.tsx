@@ -84,7 +84,7 @@ interface Props {
 /** Grid of 24 icon buttons — clicking one selects it. */
 const IconPicker: FC<Props> = ({ value, onChange }) => {
   return (
-    <div className="grid grid-cols-8 gap-1.5 p-2 bg-slate-800 rounded-lg border border-slate-700">
+    <div className="grid grid-cols-8 gap-1.5 p-2 bg-bg-surface rounded-lg border border-border">
       {BUTTON_ICONS.map((name) => {
         const Icon = ICON_MAP[name] as FC<{ className?: string }>;
         const selected = value === name;
@@ -98,8 +98,8 @@ const IconPicker: FC<Props> = ({ value, onChange }) => {
             className={[
               'flex items-center justify-center rounded-md p-1.5 transition-colors',
               selected
-                ? 'bg-blue-600 text-white ring-2 ring-blue-400'
-                : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200',
+                ? 'bg-primary text-white ring-2 ring-primary/50' // [theme-exception] text-white on selected primary icon
+                : 'text-muted hover:bg-bg-overlay hover:text-subtle',
             ].join(' ')}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />

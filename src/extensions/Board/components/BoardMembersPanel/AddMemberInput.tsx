@@ -66,7 +66,7 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
             onFocus={() => setOpen(true)}
             placeholder="Search workspace members…"
             disabled={adding}
-            className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+            className="w-full rounded border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             aria-label="Search workspace members to add"
             aria-autocomplete="list"
             aria-expanded={open}
@@ -75,7 +75,7 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
             <ul
               role="listbox"
               aria-label="Matching workspace members"
-              className="absolute left-0 right-0 top-full z-40 mt-1 max-h-48 overflow-y-auto rounded border border-slate-600 bg-slate-800 shadow-xl"
+              className="absolute left-0 right-0 top-full z-40 mt-1 max-h-48 overflow-y-auto rounded border border-border bg-bg-surface shadow-xl"
             >
               {filtered.map((m) => (
                 <li key={m.userId}>
@@ -84,11 +84,11 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
                     role="option"
                     aria-selected={false}
                     onClick={() => handleSelect(m)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
                   >
                     <span className="font-medium">{m.name ?? m.email}</span>
                     {m.name && (
-                      <span className="text-xs text-slate-400">{m.email}</span>
+                      <span className="text-xs text-muted">{m.email}</span>
                     )}
                   </button>
                 </li>
@@ -96,7 +96,7 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
             </ul>
           )}
           {open && query.trim() && filtered.length === 0 && (
-            <div className="absolute left-0 right-0 top-full z-40 mt-1 rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-400 shadow-xl">
+            <div className="absolute left-0 right-0 top-full z-40 mt-1 rounded border border-border bg-bg-surface px-3 py-2 text-sm text-muted shadow-xl">
               No matching members
             </div>
           )}
@@ -105,7 +105,7 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
         <select
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value as BoardMemberRole)}
-          className="rounded border border-slate-600 bg-slate-800 px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Role for new board member"
         >
           {BOARD_ROLES.map((r) => (

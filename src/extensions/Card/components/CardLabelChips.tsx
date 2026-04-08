@@ -1,5 +1,18 @@
 // CardLabelChips — coloured label chips for a card tile.
 // Collapsed: short coloured bars; Expanded: coloured pills with label text.
+
+/** Pick readable text colour (black or white) based on background luminance. */
+function contrastText(bgHex: string): string {
+  const hex = bgHex.replace('#', '');
+  if (hex.length < 6) return '#0f172a';
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return L > 0.19 ? '#0f172a' : '#ffffff';
+}
+
 interface LabelChip {
   id: string;
   name: string;
@@ -38,8 +51,8 @@ const CardLabelChips = ({ labels, expanded, onToggle }: Props) => {
         expanded ? (
           <span
             key={label.id}
-            className="inline-block px-2 py-0.5 text-[11px] font-semibold text-white rounded-full truncate max-w-[120px] transition-all duration-150"
-            style={{ backgroundColor: label.color }}
+            className="inline-block px-2 py-0.5 text-[11px] font-semibold rounded-full truncate max-w-[120px] transition-all duration-150"
+            style={{ backgroundColor: label.color, color: contrastText(label.color) }}
             title={label.name}
           >
             {label.name}

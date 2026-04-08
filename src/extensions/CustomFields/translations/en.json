@@ -18,6 +18,7 @@
   "CustomFields.showOnCardLabel": "Show on card tile",
   "CustomFields.editOptions": "▼ Edit options",
   "CustomFields.hideOptions": "▲ Hide options",
+  "CustomFields.saveOptionsButton": "Save options",
   "CustomFields.creatingButton": "Creating…",
   "CustomFields.createFieldButton": "Create field",
   "CustomFields.cancelButton": "Cancel",

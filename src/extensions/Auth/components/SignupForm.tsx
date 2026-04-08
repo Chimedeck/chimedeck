@@ -74,7 +74,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
       <div className="flex flex-col gap-4">
         {/* Name */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="signup-name" className="text-sm font-medium text-slate-300">
+          <label htmlFor="signup-name" className="text-sm font-medium text-subtle">
             {translations.fields.name}
           </label>
           <input
@@ -85,14 +85,14 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             onChange={(e) => setName(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, name: validateName(name) }))}
             placeholder="Jane Smith"
-            className={`w-full bg-slate-800 border ${errors.name ? 'border-red-500' : 'border-slate-700'} text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            className={`w-full bg-bg-overlay border ${errors.name ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.name && <p className="text-red-400 text-sm">{errors.name}</p>}
+          {errors.name && <p className="text-danger text-sm">{errors.name}</p>}
         </div>
 
         {/* Email */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="signup-email" className="text-sm font-medium text-slate-300">
+          <label htmlFor="signup-email" className="text-sm font-medium text-subtle">
             {translations.fields.email}
           </label>
           <input
@@ -103,9 +103,9 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
             placeholder="you@example.com"
-            className={`w-full bg-slate-800 border ${errors.email ? 'border-red-500' : 'border-slate-700'} text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
+          {errors.email && <p className="text-danger text-sm">{errors.email}</p>}
         </div>
 
         {/* Password */}
@@ -134,14 +134,14 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
 
         {/* API error */}
         {mappedApiError && (
-          <p role="alert" className="text-red-400 text-sm">{mappedApiError}</p>
+          <p role="alert" className="text-danger text-sm">{mappedApiError}</p>
         )}
 
         {/* Submit */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium rounded-lg py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-primary hover:bg-primary-hover active:bg-primary text-white font-medium rounded-lg py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed" // [theme-exception] text-white on primary button
         >
           {isLoading ? translations.actions.creatingAccount : translations.actions.createAccount}
         </button>

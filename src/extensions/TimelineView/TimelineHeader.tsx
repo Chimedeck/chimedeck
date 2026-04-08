@@ -139,7 +139,7 @@ function buildMonthColumns(
 /** Shared sticky label-column placeholder rendered in each header tier. */
 const StickyPlaceholder = ({ width }: { width: number }) => (
   <div
-    className="sticky left-0 z-10 shrink-0 border-r border-slate-700 bg-slate-900"
+    className="sticky left-0 z-10 shrink-0 border-r border-border bg-bg-surface"
     style={{ width }}
   />
 );
@@ -161,19 +161,19 @@ const TimelineHeader = ({
 
     return (
       <div
-        className="flex shrink-0 flex-col border-b border-slate-700 bg-slate-900 text-xs text-slate-400"
+        className="flex shrink-0 flex-col border-b border-border bg-bg-surface text-xs text-subtle"
         style={{ minWidth: labelWidth + totalWidth }}
         data-testid="timeline-header"
       >
         {/* Top tier: month bands */}
-        <div className="flex border-b border-slate-700/60">
+        <div className="flex border-b border-border/60">
           <StickyPlaceholder width={labelWidth} />
           <div className="flex" style={{ width: totalWidth }}>
             {monthBands.map((band) => (
               <div
                 key={band.dateKey}
                 style={{ width: band.widthPx, minWidth: band.widthPx }}
-                className="overflow-hidden border-r border-slate-700 px-2 py-0.5 font-semibold text-slate-300"
+                className="overflow-hidden border-r border-border px-2 py-0.5 font-semibold text-subtle"
               >
                 {band.label}
               </div>
@@ -189,14 +189,14 @@ const TimelineHeader = ({
               <div
                 key={col.dateKey}
                 style={{ width: col.widthPx, minWidth: col.widthPx }}
-                className={`flex flex-col items-center justify-center overflow-hidden border-r border-slate-800 py-1 ${
+                className={`flex flex-col items-center justify-center overflow-hidden border-r border-border py-1 ${
                   col.isToday ? 'bg-blue-950/40 text-blue-300' : ''
                 }`}
                 data-testid={col.isToday ? 'timeline-today-column' : undefined}
               >
                 <span className="font-medium leading-tight">{col.label}</span>
                 {col.subLabel && (
-                  <span className="text-slate-500 leading-tight">{col.subLabel}</span>
+                  <span className="text-muted leading-tight">{col.subLabel}</span>
                 )}
               </div>
             ))}
@@ -214,7 +214,7 @@ const TimelineHeader = ({
 
   return (
     <div
-      className="flex shrink-0 border-b border-slate-700 bg-slate-900 text-xs text-slate-400"
+      className="flex shrink-0 border-b border-border bg-bg-surface text-xs text-subtle"
       style={{ minWidth: labelWidth + totalWidth }}
       data-testid="timeline-header"
     >
@@ -225,14 +225,14 @@ const TimelineHeader = ({
           <div
             key={col.dateKey}
             style={{ width: col.widthPx, minWidth: col.widthPx }}
-            className={`flex flex-col items-center justify-center overflow-hidden border-r border-slate-800 py-1 ${
+            className={`flex flex-col items-center justify-center overflow-hidden border-r border-border py-1 ${
               col.isToday ? 'bg-blue-950/40 text-blue-300' : ''
             }`}
             data-testid={col.isToday ? 'timeline-today-column' : undefined}
           >
             <span className="truncate font-medium leading-tight">{col.label}</span>
             {col.subLabel && (
-              <span className="text-slate-500 leading-tight">{col.subLabel}</span>
+              <span className="text-muted leading-tight">{col.subLabel}</span>
             )}
           </div>
         ))}

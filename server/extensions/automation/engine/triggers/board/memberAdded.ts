@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { TriggerHandler } from '../../../common/types';
 
 const configSchema = z.object({
-  memberId: z.string().uuid().optional(),
+  memberId: z.string().min(1).optional(),
 });
 
 export const boardMemberAddedTrigger: TriggerHandler = {

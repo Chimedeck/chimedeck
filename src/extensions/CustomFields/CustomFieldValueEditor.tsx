@@ -90,7 +90,7 @@ const CustomFieldValueEditor = ({
   }, [api, cardId, field.id, onValueChange]);
 
   const inputClass =
-    'w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50';
+    'w-full bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50';
 
   if (field.field_type === 'TEXT') {
     return (
@@ -117,7 +117,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+            className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
             onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
@@ -155,7 +155,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+            className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
             onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >
@@ -187,7 +187,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+            className="text-xs text-muted hover:text-danger transition-colors"
             onClick={handleClear}
           >
             {translations['CustomFieldValue.clearDate']}
@@ -211,7 +211,6 @@ const CustomFieldValueEditor = ({
             save({ value_checkbox: e.target.checked });
           }}
         />
-        <span className="text-sm text-slate-300">{checked ? translations['CustomFieldValue.checkboxYes'] : translations['CustomFieldValue.checkboxNo']}</span>
       </label>
     );
   }
@@ -257,7 +256,7 @@ const CustomFieldValueEditor = ({
         {value && !disabled && (
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
+            className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
             onClick={handleClear}
             aria-label={`Clear ${field.name}`}
           >

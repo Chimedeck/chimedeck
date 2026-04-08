@@ -1,5 +1,4 @@
 import { db } from '../db';
-import { presignGetUrl } from '../../extensions/attachment/common/presign';
 
 export interface CardCoverFields {
   id: string;
@@ -37,8 +36,7 @@ export async function resolveCoverImageUrls<T extends CardCoverFields>(cards: T[
 
   const attachmentById = new Map(attachmentRows.map((row) => [row.id, row]));
 
-  const cardsWithCover = await Promise.all(
-    cards.map(async (card) => {
+  const cardsWithCover = cards.map((card) => {
       const attachmentId = card.cover_attachment_id;
       if (!attachmentId) return { ...card, cover_image_url: null };
 
@@ -47,17 +45,15 @@ export async function resolveCoverImageUrls<T extends CardCoverFields>(cards: T[
         return { ...card, cover_image_url: null };
       }
 
-      const objectKey = attachment.s3_key ?? attachment.thumbnail_key;
-      if (!objectKey) return { ...card, cover_image_url: null };
+      const hasKey = attachment.s3_key ?? attachment.thumbnail_key;
+      if (!hasKey) return { ...card, cover_image_url: null };
 
-      try {
-        const { url } = await presignGetUrl({ s3Key: objectKey });
-        return { ...card, cover_image_url: url };
-      } catch {
-        return { ...card, cover_image_url: null };
-      }
-    }),
-  );
+      // [why] Never expose presigned S3 URLs — use the authenticated proxy endpoint instead.
+      const proxyUrl = attachment.thumbnail_key
+        ? `/api/v1/attachments/${attachment.id}/thumbnail`
+        : `/api/v1/attachments/${attachment.id}/view`;
+      return { ...card, cover_image_url: proxyUrl };
+    });
 
   return cardsWithCover;
 }

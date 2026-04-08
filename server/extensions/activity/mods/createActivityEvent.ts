@@ -84,6 +84,7 @@ export interface CardMemberAssignedPayload {
   cardId: string;
   cardTitle: string;
   userId: string;
+  assigneeName: string;
   boardId: string;
   workspaceId: string;
 }
@@ -117,6 +118,7 @@ export interface CardMemberUnassignedPayload {
   cardId: string;
   cardTitle: string;
   userId: string;
+  assigneeName: string;
   boardId: string;
   workspaceId: string;
 }

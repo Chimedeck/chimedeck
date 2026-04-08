@@ -19,8 +19,17 @@ export async function handleDeleteLabel(req: Request, labelId: string): Promise<
     );
   }
 
+  // [why] Labels are now board-scoped; derive workspace_id via the board for permission check.
+  const board = await db('boards').where({ id: label.board_id }).first();
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
+
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, label.workspace_id);
+  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
   const roleError = requireRole(scopedReq, 'ADMIN');

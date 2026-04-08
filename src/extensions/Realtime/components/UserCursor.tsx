@@ -22,7 +22,7 @@ const UserCursor: React.FC<UserCursorProps> = ({ editor, children }) => {
       {children}
       {/* Name badge — floats above the top-right corner */}
       <span
-        className="absolute -top-5 right-0 rounded px-1 py-0.5 text-xs font-semibold text-white"
+        className="absolute -top-5 right-0 rounded px-1 py-0.5 text-xs font-semibold text-inverse"
         style={{ backgroundColor: editor.color }}
       >
         {editor.displayName}

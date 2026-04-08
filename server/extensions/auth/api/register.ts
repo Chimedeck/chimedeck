@@ -10,7 +10,7 @@ import { send } from '../../email';
 import { buildVerificationEmail } from '../../email/templates/verificationEmail';
 import { env } from '../../../config/env';
 import { isEmailDomainAllowed } from '../common/emailDomain';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleRegister(req: Request): Promise<Response> {
   let body: { name?: string; email?: string; password?: string };
@@ -80,7 +80,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   // When verification is enabled: send email and return 201 without a JWT
   if (verificationEnabled) {
     const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken}`;
-    const emailContent = buildVerificationEmail({ verificationUrl });
+    const emailContent = await buildVerificationEmail({ verificationUrl });
     await send({ to: email, ...emailContent });
 
     return Response.json({ data: { requiresVerification: true } }, { status: 201 });
@@ -107,7 +107,7 @@ export async function handleRegister(req: Request): Promise<Response> {
     `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
 
-  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+  const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
 
   return new Response(
     JSON.stringify({

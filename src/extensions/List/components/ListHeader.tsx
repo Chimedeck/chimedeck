@@ -9,9 +9,11 @@ interface Props {
   onRename: (title: string) => void;
   onArchive: () => void;
   onDelete: () => void;
+  /** When true the column sits over a board background image — apply frosted-glass styling. */
+  hasBackground?: boolean;
 }
 
-const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) => {
+const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackground }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(list.title);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,7 +35,7 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
   };
 
   return (
-    <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+    <div className={`px-3 pt-3 pb-2 flex items-center justify-between rounded-t-xl${hasBackground ? ' backdrop-blur-md bg-bg-surface/75' : ''}`}>
       {editing ? (
         <input
           autoFocus
@@ -42,25 +44,25 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commitRename}
           onKeyDown={handleKeyDown}
-          className="bg-transparent text-gray-900 dark:text-slate-100 font-semibold text-sm focus:outline-none focus:bg-gray-100 dark:focus:bg-slate-800 rounded px-1 py-0.5 w-full"
+          className="bg-transparent text-base font-semibold text-sm focus:outline-none focus:bg-bg-overlay rounded px-1 py-0.5 w-full"
           aria-label={`Rename list ${list.title}`}
         />
       ) : (
         <button
-          className="flex-1 text-left text-sm font-semibold text-gray-900 dark:text-slate-100 hover:text-black dark:hover:text-white"
+          className="flex-1 text-left text-sm font-semibold text-base hover:text-base"
           onClick={() => { setEditing(true); setTitle(list.title); }}
           aria-label={`Rename list ${list.title}`}
         >
           {list.title}
           {cardCount !== undefined && (
-            <span className="ml-1.5 text-xs font-normal text-gray-400 dark:text-slate-400">({cardCount})</span>
+            <span className="ml-1.5 text-xs font-normal text-muted">({cardCount})</span>
           )}
         </button>
       )}
 
       <div className="relative ml-2">
         <button
-          className="rounded p-1 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+          className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="List options"
           aria-haspopup="true"
@@ -69,21 +71,21 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete }: Props) =
           ···
         </button>
         {menuOpen && (
-          <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1 shadow-xl">
+          <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-border bg-bg-surface py-1 shadow-xl">
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"
+              className="block w-full px-4 py-2 text-left text-sm text-base hover:bg-bg-overlay"
               onClick={() => { setMenuOpen(false); setEditing(true); setTitle(list.title); }}
             >
               Rename
             </button>
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-yellow-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+              className="block w-full px-4 py-2 text-left text-sm text-amber-700 dark:text-yellow-400 hover:bg-bg-overlay"
               onClick={() => { setMenuOpen(false); onArchive(); }}
             >
               {list.archived ? 'Unarchive' : 'Archive'}
             </button>
             <button
-              className="block w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+              className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-bg-overlay"
               onClick={() => { setMenuOpen(false); onDelete(); }}
             >
               Delete

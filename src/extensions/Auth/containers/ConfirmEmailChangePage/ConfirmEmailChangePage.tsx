@@ -37,28 +37,28 @@ export default function ConfirmEmailChangePage() {
   }, [status, navigate]);
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 text-center">
+    <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">{translations.appName}</span>
+          <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-4">
+        <h1 className="text-2xl font-bold text-base mb-4">
           {translations.changeEmail.title}
         </h1>
 
         {status === 'loading' && (
-          <p className="text-slate-400">Confirming your email change…</p>
+          <p className="text-subtle">Confirming your email change…</p>
         )}
 
         {status === 'success' && (
-          <p className="text-green-400 font-medium">{translations.changeEmail.confirmed}</p>
+          <p className="text-success font-medium">{translations.changeEmail.confirmed}</p>
         )}
 
         {status === 'error' && (
           <div>
-            <p className="text-red-400 mb-4">
+            <p className="text-danger mb-4">
               {error === 'email-already-in-use'
                 ? translations.changeEmail.emailInUse
                 : translations.changeEmail.invalidToken}
@@ -73,7 +73,7 @@ export default function ConfirmEmailChangePage() {
         )}
 
         {status === 'idle' && !token && (
-          <p className="text-slate-400">{translations.changeEmail.invalidToken}</p>
+          <p className="text-subtle">{translations.changeEmail.invalidToken}</p>
         )}
       </div>
     </main>

@@ -58,7 +58,7 @@ const MentionList = forwardRef<MentionListHandle, Props>(({ items, command }, re
   return (
     <ul
       aria-label={translations['Mention.ariaList']}
-      className="z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
+      className="z-50 bg-bg-surface border border-border rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
     >
       {items.map((item, i) => (
         <li key={item.id}>

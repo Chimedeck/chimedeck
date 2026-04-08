@@ -12,7 +12,7 @@ export default function OAuthButton({ icon, label, ...props }: OAuthButtonProps)
   return (
     <button
       type="button"
-      className="w-full flex items-center gap-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg px-4 py-2.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+      className="w-full flex items-center gap-3 bg-bg-overlay hover:bg-bg-sunken border border-border text-base rounded-lg px-4 py-2.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       {...props}
     >
       <span className="shrink-0">{icon}</span>

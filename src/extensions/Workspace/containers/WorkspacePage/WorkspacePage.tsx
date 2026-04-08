@@ -73,7 +73,7 @@ const WorkspacePage = () => {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-gray-400">Loading workspace…</p>
+        <p className="text-subtle">Loading workspace…</p>
       </div>
     );
   }
@@ -81,7 +81,7 @@ const WorkspacePage = () => {
   if (error) {
     return (
       <div className="p-6">
-        <p role="alert" className="text-red-500">
+        <p role="alert" className="text-danger">
           Failed to load workspace. Please try again.
         </p>
       </div>
@@ -91,7 +91,7 @@ const WorkspacePage = () => {
   if (!workspace) {
     return (
       <div className="p-6">
-        <p className="text-gray-400">Workspace not found.</p>
+        <p className="text-subtle">Workspace not found.</p>
       </div>
     );
   }
@@ -101,13 +101,13 @@ const WorkspacePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{workspace.name}</h1>
-          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Workspace Settings</p>
+          <h1 className="text-2xl font-bold text-base">{workspace.name}</h1>
+          <p className="text-sm text-muted mt-1">Workspace Settings</p>
         </div>
         {currentMember?.role === 'OWNER' && (
           <button
             onClick={handleDeleteWorkspace}
-            className="text-sm text-red-500 hover:text-red-700 hover:underline"
+            className="text-sm text-danger hover:text-danger hover:underline"
           >
             Delete workspace
           </button>
@@ -117,11 +117,11 @@ const WorkspacePage = () => {
       {/* Members section */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-gray-100">Members</h2>
+          <h2 className="text-lg font-semibold text-base">Members</h2>
           {canInvite && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
             >
               + Invite Member
             </button>

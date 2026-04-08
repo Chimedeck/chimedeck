@@ -39,7 +39,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 
   if (fieldsLoading || valuesLoading) {
     return (
-      <div className="text-xs text-slate-500 animate-pulse py-2">
+      <div className="text-xs text-muted animate-pulse py-2">
         {translations['CustomFields.loadingCustomFields']}
       </div>
     );
@@ -49,7 +49,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
 
   return (
     <section aria-label={translations['CustomFields.sectionLabel']}>
-      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+      <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
         {translations['CustomFields.panelTitle']}
       </h3>
       <div className="space-y-3">
@@ -57,7 +57,7 @@ const CustomFieldsSection = ({ boardId, cardId, disabled = false }: Props) => {
           const value = values.find((v) => v.custom_field_id === field.id) ?? null;
           return (
             <div key={field.id} className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">{field.name}</label>
+              <label className="text-xs text-subtle">{field.name}</label>
               <CustomFieldValueEditor
                 cardId={cardId}
                 field={field}

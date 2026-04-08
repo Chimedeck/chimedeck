@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 64 (Automation backend complete), Sprint 18 (Board View — Kanban), Sprint 20 (Real-Time UI)
-> **References:** Trello Automation — https://trello.com/guide/automate-anything
+> **References:** Automation
 
 ---
 

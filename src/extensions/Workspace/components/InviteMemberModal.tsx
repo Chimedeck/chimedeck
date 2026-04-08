@@ -1,6 +1,7 @@
 // Modal for adding a member directly to a workspace (by email, user must already have an account).
 import { useState } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
+import Button from '../../../common/components/Button';
 import {
   addMemberThunk,
   fetchWorkspace,
@@ -65,29 +66,30 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
       aria-labelledby="invite-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
     >
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-lg bg-bg-surface p-6 shadow-xl">
         <h2 id="invite-modal-title" className="mb-4 text-lg font-semibold">
           Add Member
         </h2>
 
         {success ? (
           <div className="space-y-4">
-            <p className="text-green-700">
+            <p className="text-success">
               ✓ <strong>{addedEmail}</strong> has been added to the workspace.
             </p>
-            <button
+            <Button
+              variant="primary"
               onClick={onClose}
-              className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+              className="w-full"
             >
               Close
-            </button>
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
                 htmlFor="invite-email"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1 block text-sm font-medium text-base"
               >
                 Email address
               </label>
@@ -98,9 +100,9 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="member@example.com"
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 The user must already have an account.
               </p>
             </div>
@@ -108,7 +110,7 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
             <div>
               <label
                 htmlFor="invite-role"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1 block text-sm font-medium text-base"
               >
                 Role
               </label>
@@ -116,7 +118,7 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
                 id="invite-role"
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {assignableRoles.map((r) => (
                   <option key={r} value={r}>
@@ -127,26 +129,26 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
             </div>
 
             {errorMessage && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className="text-sm text-danger">
                 {errorMessage}
               </p>
             )}
 
             <div className="flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={onClose}
-                className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={inProgress}
-                className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {inProgress ? 'Adding…' : 'Add Member'}
-              </button>
+              </Button>
             </div>
           </form>
         )}

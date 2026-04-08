@@ -6,6 +6,7 @@
 // Sprint 52: BoardViewSwitcher mounted above canvas for Kanban/Table/Calendar/Timeline.
 // Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
 // Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
+// Sprint 116: Health Check fifth tab (HEALTH_CHECK_ENABLED flag).
 import { useEffect, useCallback, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -53,6 +54,8 @@ import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { canBoardGuestWrite } from '../../mods/guestPermissions';
 import type { BoardSearchResult } from '~/extensions/Search/api';
+import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
+import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthCheckConfig';
 
 // Injected by app bootstrap (same pattern as other containers)
 declare const __api__: {
@@ -106,7 +109,7 @@ const BoardPage = () => {
   }, []);
 
   // ── Active tab ────────────────────────────────────────────────────────────
-  type BoardTab = 'board' | 'activity' | 'comments' | 'archived-cards';
+  type BoardTab = 'board' | 'activity' | 'comments' | 'archived-cards' | 'health-check';
   const [activeTab, setActiveTab] = useState<BoardTab>('board');
 
   // ── Board settings panel ─────────────────────────────────────────────────
@@ -259,12 +262,24 @@ const BoardPage = () => {
     }) => {
       if (!boardId) return;
       if (args.type === 'card' && args.cardId && args.toListId) {
-        await moveCard({
+        const result = await moveCard({
           api,
           cardId: args.cardId,
           targetListId: args.toListId,
           afterCardId: args.afterCardId ?? null,
         });
+        if (args.fromListId) {
+          dispatch(
+            boardSliceActions.remoteCardMove({
+              card: {
+                id: result.data.id,
+                list_id: result.data.list_id,
+                position: result.data.position,
+              },
+              fromListId: args.fromListId,
+            }),
+          );
+        }
         dispatch(boardSliceActions.clearDragSnapshot());
       } else if (args.type === 'list' && args.newListOrder) {
         await reorderLists({ api, boardId, order: args.newListOrder });
@@ -381,16 +396,16 @@ const BoardPage = () => {
 
   if (status === 'loading' && !board) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <p className="text-slate-400">Loading board…</p>
+      <div className="flex h-screen items-center justify-center bg-bg-base">
+        <p className="text-muted">Loading board…</p>
       </div>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <p className="text-red-400">Failed to load board.</p>
+      <div className="flex h-screen items-center justify-center bg-bg-base">
+        <p className="text-danger">Failed to load board.</p>
       </div>
     );
   }
@@ -402,11 +417,13 @@ const BoardPage = () => {
     { id: 'activity' as const, label: 'Activity' },
     { id: 'comments' as const, label: 'Comments' },
     { id: 'archived-cards' as const, label: 'Archived Cards' },
+    // Health Check tab — only visible when feature flag is enabled (Sprint 116)
+    ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
   ];
 
   return (
     <div
-      className="flex flex-col text-slate-900 dark:text-slate-100 h-full overflow-hidden relative bg-slate-50 dark:bg-slate-950 bg-cover bg-center"
+      className="flex flex-col text-base h-full overflow-hidden relative bg-bg-base bg-cover bg-center"
       style={board.background ? { backgroundImage: `url(${board.background})` } : undefined}
     >
       {/* Dark scrim over background image so text stays legible */}
@@ -415,6 +432,10 @@ const BoardPage = () => {
       )}
       {/* All content above the scrim */}
       <div className="relative z-10 flex flex-col h-full overflow-hidden">
+      {/* Unified glass block — one frosted surface using theme tokens so dark mode works */}
+      {/* WHY: relative z-10 ensures this stacking context paints above the BoardCanvas sibling,
+          preventing the header dropdown from being hidden behind kanban column elements */}
+      <div className={`relative z-10 border-b border-border${board.background ? ' bg-bg-surface/75 backdrop-blur-2xl' : ' bg-bg-surface'}`}>
       <BoardHeader
         board={board}
         members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email, avatar_url: m.avatar_url }))}
@@ -422,39 +443,55 @@ const BoardPage = () => {
         pollingActive={pollingActive}
         onTitleSave={handleTitleSave}
         onOpenAutomation={automationPanel.openPanel}
+        hasBackground={!!board.background}
+        useParentGlass={!!board.background}
         isGuest={isGuest}
         {...(accessToken ? { searchToken: accessToken } : {})}
         {...(initialBoardSearch ? { initialSearchQuery: initialBoardSearch } : {})}
         onSearchResultSelect={handleSearchResultSelect}
         onSearchQueryChange={handleSearchQueryChange}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenMembers={() => setMembersOpen(true)}
         {...(!isGuest && {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
-          onOpenSettings: () => setSettingsOpen(true),
-          onOpenMembers: () => setMembersOpen(true),
         })}
       />
       {board.state === 'ARCHIVED' && (
-        <div className="mx-4 mt-2 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
+        <div className="mx-6 mt-1 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">
           This board is archived and read-only.
         </div>
       )}
 
-      {/* Tab bar */}
-      <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700 px-4 pt-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`rounded-t px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Nav row: primary tabs on the left, view switcher on the right */}
+      <div className="flex items-center px-6 pb-0">
+        {/* Primary navigation group */}
+        <div className="flex items-center">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            // Underline-only active state — no background pills
+            const tabClass = isActive
+              ? (board.background ? 'text-white font-medium border-b-2 border-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : 'text-primary font-medium border-b-2 border-primary')
+              : (board.background ? 'text-white/80 border-b-2 border-transparent hover:text-white hover:bg-white/15 rounded transition-colors [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : 'text-muted border-b-2 border-transparent hover:text-base transition-colors');
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-2.5 text-sm font-medium ${tabClass}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        {/* Thin divider + view switcher — only on Board tab */}
+        {activeTab === 'board' && (
+          <>
+            <div className={`mx-4 h-4 w-px flex-shrink-0 ${board.background ? 'bg-white/30' : 'bg-border'}`} aria-hidden="true" />
+            <BoardViewSwitcher boardId={boardId ?? ''} hasBackground={!!board.background} segmented />
+          </>
+        )}
+      </div>
       </div>
 
       {/* Tab content */}
@@ -462,9 +499,6 @@ const BoardPage = () => {
         /* Hidden plugin iframes + bridge provider for card plugin UI injections */
         <div className="flex flex-col flex-1 overflow-hidden">
         <PluginIframeContainer boardId={boardId ?? ''}>
-          {/* View switcher: Kanban | Table | Calendar | Timeline (Sprint 52) */}
-          <BoardViewSwitcher boardId={boardId ?? ''} />
-
           {/* Render the active view */}
           {activeView === 'KANBAN' ? (
             <BoardCanvas
@@ -488,6 +522,7 @@ const BoardPage = () => {
               isReadOnly={board.state === 'ARCHIVED'}
               isViewerGuest={isViewerGuest}
               customFieldValuesMap={customFieldValuesMap}
+              hasBackground={!!board.background}
             />
           ) : activeView === 'TABLE' ? (
             <TableView
@@ -510,19 +545,6 @@ const BoardPage = () => {
               addToast={addToast}
             />
           ) : null}
-          {/* Card detail modal — URL-driven (?card=:id) */}
-          <CardModalContainer />
-          {/* Board settings panel */}
-          {settingsOpen && (
-            <BoardSettings
-              onClose={() => setSettingsOpen(false)}
-              isGuest={isGuest}
-            />
-          )}
-          {/* Board members panel (Sprint 79) */}
-          {membersOpen && (
-            <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
-          )}
           {/* Automation panel (Sprint 65) */}
           <AutomationPanel
             boardId={boardId ?? ''}
@@ -536,15 +558,22 @@ const BoardPage = () => {
         </PluginIframeContainer>
         </div>
       ) : activeTab === 'activity' ? (
-        <div className="flex-1 overflow-y-auto">
-          <BoardActivityPanel boardId={boardId ?? ''} />
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
+            <BoardActivityPanel boardId={boardId ?? ''} />
+          </div>
         </div>
       ) : activeTab === 'comments' ? (
-        <div className="flex-1 overflow-y-auto">
-          <BoardCommentsPanel boardId={boardId ?? ''} />
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
+            <BoardCommentsPanel boardId={boardId ?? ''} />
+          </div>
         </div>
+      ) : activeTab === 'health-check' ? (
+        <HealthCheckTab boardId={boardId ?? ''} />
       ) : (
-        <div className="flex-1 overflow-y-auto">
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
           <BoardArchivedCardsPanel
             boardId={boardId ?? ''}
             onCardUnarchived={() => {
@@ -552,7 +581,24 @@ const BoardPage = () => {
               setActiveTab('board');
             }}
           />
+          </div>
         </div>
+      )}
+
+      {/* Card detail modal — always mounted so ?card= links work from any tab */}
+      <CardModalContainer />
+
+      {/* Board settings panel */}
+      {settingsOpen && (
+        <BoardSettings
+          onClose={() => setSettingsOpen(false)}
+          isGuest={isGuest}
+          isViewerGuest={isViewerGuest}
+        />
+      )}
+      {/* Board members panel (Sprint 79) */}
+      {membersOpen && (
+        <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
       )}
 
       {/* Board delete confirmation dialog — shown when server returns 409 with nested content counts */}

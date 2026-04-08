@@ -70,22 +70,25 @@ const CalendarWeekGrid = ({
     <div className="flex flex-col gap-2 p-4" data-testid="calendar-week-grid">
       {/* Week range + navigation header */}
       <div className="flex items-center justify-between">
+        {/* [theme-exception]: CalendarView dark theme */}
         <button
           onClick={onPrev}
           aria-label={translations['CalendarView.ariaPrevWeek']}
           data-testid="calendar-week-prev"
-          className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
+          className="rounded px-3 py-1 text-subtle hover:bg-bg-overlay hover:text-base focus:outline-none"
         >
           ‹
         </button>
-        <h2 className="text-base font-semibold text-slate-100" data-testid="calendar-week-title">
+        {/* [theme-exception]: CalendarView dark theme */}
+        <h2 className="text-base font-semibold text-base" data-testid="calendar-week-title">
           {weekRangeLabel(weekStart)}
         </h2>
+        {/* [theme-exception]: CalendarView dark theme */}
         <button
           onClick={onNext}
           aria-label={translations['CalendarView.ariaNextWeek']}
           data-testid="calendar-week-next"
-          className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
+          className="rounded px-3 py-1 text-subtle hover:bg-bg-overlay hover:text-base focus:outline-none"
         >
           ›
         </button>
@@ -104,14 +107,14 @@ const CalendarWeekGrid = ({
               key={i}
               className={[
                 'py-1 text-center text-xs font-medium uppercase tracking-wide',
-                isToday ? 'text-blue-400' : 'text-slate-500',
+                isToday ? 'text-blue-400' : 'text-subtle', // [theme-exception]
               ].join(' ')}
             >
               <div>{WEEKDAY_LABELS[i]}</div>
               <div
                 className={[
                   'mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold',
-                  isToday ? 'bg-blue-600 text-white' : 'text-slate-300',
+                  isToday ? 'bg-blue-600 text-white' : 'text-subtle', // [theme-exception]
                 ].join(' ')}
               >
                 {date.getDate()}

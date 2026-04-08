@@ -7,7 +7,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../config/visibleEventTypes';
-import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleCardActivity(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -47,7 +47,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   const rawActors = actorIds.length
     ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email', 'avatar_url')
     : [];
-  const actors = await resolveAvatarUrlsInCollection(rawActors);
+  const actors = buildAvatarProxyUrlsInCollection(rawActors);
   const actorMap = new Map(actors.map((u) => [u.id, u]));
 
   const data = activities.map((a) => {

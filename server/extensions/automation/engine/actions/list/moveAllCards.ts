@@ -6,8 +6,8 @@ import { between, HIGH_SENTINEL } from '../../../../list/mods/fractional';
 import type { ActionHandler, ActionContext } from '../../../../common/types';
 
 const configSchema = z.object({
-  fromListId: z.string().uuid(),
-  toListId: z.string().uuid(),
+  fromListId: z.string().min(1),
+  toListId: z.string().min(1),
 });
 
 export const listMoveAllCardsAction: ActionHandler = {

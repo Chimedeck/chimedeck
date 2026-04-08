@@ -82,9 +82,9 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
     );
   }
 
-  if (label.workspace_id !== labelContext.workspaceId) {
+  if (label.board_id !== labelContext.boardId) {
     return Response.json(
-      { error: { code: 'label-not-in-workspace', message: 'Label does not belong to this workspace' } },
+      { error: { code: 'label-not-in-board', message: 'Label does not belong to this board' } },
       { status: 400 },
     );
   }

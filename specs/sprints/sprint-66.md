@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 65 (Automation Panel + Board Header button), Sprint 19 (Card Detail Modal)
-> **References:** Trello Automation — https://trello.com/guide/automate-anything#card-and-board-buttons
+> **References:** Automation
 
 ---
 

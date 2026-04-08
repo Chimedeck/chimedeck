@@ -30,12 +30,12 @@ const ScheduleList: FC<Props> = ({
       {/* Scheduled commands section */}
       <section aria-labelledby="scheduled-heading">
         <div className="mb-2 flex items-center justify-between">
-          <h3 id="scheduled-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <h3 id="scheduled-heading" className="text-xs font-semibold uppercase tracking-wider text-muted">
             {translations['automation.scheduleList.scheduledHeading']}
           </h3>
           <button
             onClick={onCreateScheduled}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 hover:bg-bg-overlay transition-colors"
             aria-label={translations['automation.scheduleList.scheduledAddAriaLabel']}
           >
             <PlusIcon className="h-3 w-3" aria-hidden="true" />
@@ -56,19 +56,19 @@ const ScheduleList: FC<Props> = ({
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-slate-500 italic">{translations['automation.scheduleList.scheduledEmpty']}</p>
+          <p className="text-xs text-muted italic">{translations['automation.scheduleList.scheduledEmpty']}</p>
         )}
       </section>
 
       {/* Due date commands section */}
       <section aria-labelledby="duedate-heading">
         <div className="mb-2 flex items-center justify-between">
-          <h3 id="duedate-heading" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <h3 id="duedate-heading" className="text-xs font-semibold uppercase tracking-wider text-muted">
             {translations['automation.scheduleList.dueDateHeading']}
           </h3>
           <button
             onClick={onCreateDueDate}
-            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 hover:bg-bg-overlay transition-colors"
             aria-label={translations['automation.scheduleList.dueDateAddAriaLabel']}
           >
             <PlusIcon className="h-3 w-3" aria-hidden="true" />
@@ -89,7 +89,7 @@ const ScheduleList: FC<Props> = ({
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-slate-500 italic">{translations['automation.scheduleList.dueDateEmpty']}</p>
+          <p className="text-xs text-muted italic">{translations['automation.scheduleList.dueDateEmpty']}</p>
         )}
       </section>
     </div>

@@ -1,0 +1,142 @@
+// Modal showing keyboard shortcuts and markdown cheat sheet for the rich text editor.
+// Opened via the ? button in OneLineToolbar.
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
+
+interface Props {
+  onClose: () => void;
+}
+
+const SHORTCUTS = [
+  { label: 'Navigate to editor toolbar', keys: ['Opt', 'F9'] },
+  { label: 'Navigate to floating toolbar', keys: ['Opt', 'F10'] },
+  { label: 'Clear formatting', keys: ['⌘', '\\'] },
+  { label: 'Undo', keys: ['⌘', 'Z'] },
+  { label: 'Redo', keys: ['⌘', 'Y'] },
+  { label: 'Paste plain text', keys: ['⌘', 'Shift', 'V'] },
+  { label: 'Comment', keys: ['⌘', 'Opt', 'C'] },
+  { label: 'Toggle action item', keys: ['⌘', 'Opt', '↵'] },
+  { label: 'Toggle highlight color palette', keys: ['⌘', 'Opt', 'B'] },
+  { label: 'Bold', keys: ['⌘', 'B'] },
+  { label: 'Italic', keys: ['⌘', 'I'] },
+  { label: 'Strikethrough', keys: ['⌘', 'Shift', 'S'] },
+  { label: 'Heading 1', keys: ['⌘', 'Opt', '1'] },
+  { label: 'Heading 2', keys: ['⌘', 'Opt', '2'] },
+  { label: 'Heading 3', keys: ['⌘', 'Opt', '3'] },
+  { label: 'Heading 4', keys: ['⌘', 'Opt', '4'] },
+  { label: 'Heading 5', keys: ['⌘', 'Opt', '5'] },
+  { label: 'Heading 6', keys: ['⌘', 'Opt', '6'] },
+  { label: 'Normal text', keys: ['⌘', 'Opt', '0'] },
+  { label: 'Numbered list', keys: ['⌘', 'Shift', '7'] },
+];
+
+const MARKDOWN = [
+  { label: 'Bold', syntax: '**Bold**' },
+  { label: 'Italic', syntax: '*Italic*' },
+  { label: 'Strikethrough', syntax: '~~Strikethrough~~' },
+  { label: 'Heading 1', syntax: '# Space' },
+  { label: 'Heading 2', syntax: '## Space' },
+  { label: 'Heading 3', syntax: '### Space' },
+  { label: 'Heading 4', syntax: '#### Space' },
+  { label: 'Heading 5', syntax: '##### Space' },
+  { label: 'Heading 6', syntax: '###### Space' },
+  { label: 'Numbered list', syntax: '1. Space' },
+  { label: 'Bullet list', syntax: '* Space' },
+  { label: 'Quote', syntax: '> Space' },
+  { label: 'Code snippet', syntax: '```' },
+  { label: 'Divider', syntax: '---' },
+  { label: 'Link', syntax: '[Link](http://a.com)' },
+  { label: 'Code', syntax: '`Code`' },
+  { label: 'Image', syntax: '![Alt text](http://www.image.com)' },
+];
+
+// [theme-exception] Kbd uses slate-700 bg and slate-200 text — intentional dark-theme keyboard chip style
+const Kbd = ({ children }: { children: string }) => (
+  <kbd className="inline-flex items-center rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[10px] font-medium text-base">
+    {children}
+  </kbd>
+);
+
+const EditorHelpModal = ({ onClose }: Props) => (
+  <div
+    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4"
+    onMouseDown={(e) => {
+      if (e.target === e.currentTarget) onClose();
+    }}
+  >
+    <div className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-bg-surface shadow-2xl ring-1 ring-border">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <h2 className="font-semibold text-base">Editor help</h2>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Close editor help"
+          className="text-muted hover:bg-bg-overlay hover:text-base"
+          onClick={onClose}
+        >
+          <XMarkIcon className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Body */}
+      <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
+        <div className="grid grid-cols-2 gap-8">
+          {/* Keyboard shortcuts */}
+          <section>
+            {/* [theme-exception] dark-modal slate text: intentional on bg-slate-800 */}
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-subtle">
+              Keyboard shortcuts
+            </h3>
+            <ul className="space-y-1.5">
+              {SHORTCUTS.map(({ label, keys }) => (
+                <li key={label} className="flex items-center justify-between gap-2">
+                  {/* [theme-exception] dark-modal text-slate-200 on bg-slate-800 */}
+                  <span className="text-sm text-base">{label}</span>
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {keys.map((k, i) => (
+                      <span key={k} className="flex items-center gap-0.5">
+                        {i > 0 && <span className="text-[10px] text-subtle">+</span>}
+                        <Kbd>{k}</Kbd>
+                      </span>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Markdown */}
+          <section>
+            {/* [theme-exception] dark-modal slate text: intentional on bg-slate-800 */}
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-subtle">
+              Markdown
+            </h3>
+            <ul className="space-y-1.5">
+              {MARKDOWN.map(({ label, syntax }) => (
+                <li key={label} className="flex items-center justify-between gap-2">
+                  {/* [theme-exception] dark-modal text-slate-200 on bg-slate-800 */}
+                  <span className="text-sm text-base">{label}</span>
+                  <code className="shrink-0 rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[11px] text-indigo-300">
+                    {syntax}
+                  </code>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-border px-6 py-3">
+        {/* [theme-exception] dark-modal footer text: intentional on bg-slate-800 */}
+        <p className="text-center text-xs text-subtle">
+          Press <Kbd>⌘</Kbd> <span className="mx-1 text-subtle">+</span> <Kbd>/</Kbd> to quickly open this dialog at any time
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+export default EditorHelpModal;

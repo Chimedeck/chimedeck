@@ -10,7 +10,7 @@ import { flags } from '../../../mods/flags';
 import { send } from '../../email';
 import { buildVerificationEmail } from '../../email/templates/verificationEmail';
 import { env } from '../../../config/env';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 // Rate limit: 10 login attempts per IP per minute.
 const RATE_LIMIT_MAX = 10;
@@ -38,7 +38,7 @@ async function resendVerificationEmailForUser(user: { id: string; email: string 
   });
 
   const verificationUrl = `${env.APP_URL}/verify-email?token=${verificationToken}`;
-  const emailContent = buildVerificationEmail({ verificationUrl });
+  const emailContent = await buildVerificationEmail({ verificationUrl });
   await send({ to: user.email, ...emailContent });
 
   return true;
@@ -132,8 +132,15 @@ export async function handleLogin(req: Request): Promise<Response> {
     'Set-Cookie',
     `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
   );
+  // [why] access_token cookie lets <img> tags and other browser resource
+  // requests authenticate without an Authorization header. HttpOnly prevents
+  // JS from reading it; Path=/ ensures it is sent with all API calls.
+  responseHeaders.append(
+    'Set-Cookie',
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+  );
 
-  const avatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+  const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
 
   return new Response(
     JSON.stringify({

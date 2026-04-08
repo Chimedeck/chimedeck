@@ -68,11 +68,11 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
   if (whitelistedDomains.length === 0) return null;
 
   return (
-    <div className="border-t border-slate-700 bg-slate-850 px-4 py-3 flex-shrink-0">
-      <h3 className="text-slate-300 text-xs font-semibold uppercase tracking-wide mb-2">
+    <div className="border-t border-border bg-bg-sunken px-4 py-3 flex-shrink-0">
+      <h3 className="text-subtle text-xs font-semibold uppercase tracking-wide mb-2">
         {translations['plugins.allowedDomains.heading']}
       </h3>
-      <p className="text-slate-400 text-xs mb-3">
+      <p className="text-subtle text-xs mb-3">
         {translations['plugins.allowedDomains.description']}
       </p>
 
@@ -88,7 +88,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
             />
             <label
               htmlFor={`allowed-domain-${domain}`}
-              className="text-slate-300 text-xs font-mono cursor-pointer select-none"
+              className="text-subtle text-xs font-mono cursor-pointer select-none"
             >
               {domain}
             </label>
@@ -97,12 +97,12 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
       </ul>
 
       {saveError && (
-        <p className="text-red-400 text-xs mb-2" role="alert">
+        <p className="text-danger text-xs mb-2" role="alert">
           {saveError}
         </p>
       )}
       {saveSuccess && (
-        <p className="text-green-400 text-xs mb-2" role="status">
+        <p className="text-success text-xs mb-2" role="status">
           {translations['plugins.allowedDomains.saveSuccess']}
         </p>
       )}
@@ -110,7 +110,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
       <button
         onClick={() => void handleSave()}
         disabled={isPristine || saving}
-        className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded px-3 py-1.5 transition-colors"
+        className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded px-3 py-1.5 transition-colors" // [theme-exception] text-white on bg-blue-600 save button
       >
         {saving ? translations['plugins.allowedDomains.saving'] : translations['plugins.allowedDomains.save']}
       </button>

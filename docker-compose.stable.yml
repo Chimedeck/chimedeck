@@ -1,0 +1,11 @@
+name: chimedeck-prod
+
+services:
+  app:
+    image: "${IMAGE_URL}"
+    container_name: "${CONTAINER_NAME}"
+    ports:
+      - "${APP_PORT}:3000"
+    environment:
+      SEED_TRELLO: "${SEED_TRELLO:-false}"
+    restart: always

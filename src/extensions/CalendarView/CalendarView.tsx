@@ -85,14 +85,14 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
   const hasUnscheduled = cards.length > scheduledCards.length;
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto" data-testid="calendar-view">
+    <div className="flex flex-1 flex-col overflow-auto bg-bg-base" data-testid="calendar-view">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 border-b border-slate-700 px-4 py-2 text-sm text-slate-400">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-2 text-sm text-subtle">
         {/* Mode toggle */}
-        <div className="flex rounded border border-slate-700" role="group" aria-label={translations['CalendarView.ariaMode']}>
+        <div className="flex rounded border border-border" role="group" aria-label={translations['CalendarView.ariaMode']}>
           <button
             onClick={() => setMode('month')}
-            className={`px-3 py-1 text-xs rounded-l ${mode === 'month' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`px-3 py-1 text-xs rounded-l ${mode === 'month' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'month'}
             data-testid="calendar-mode-month"
           >
@@ -100,7 +100,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
           </button>
           <button
             onClick={() => setMode('week')}
-            className={`px-3 py-1 text-xs rounded-r ${mode === 'week' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            className={`px-3 py-1 text-xs rounded-r ${mode === 'week' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'week'}
             data-testid="calendar-mode-week"
           >
@@ -109,7 +109,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
         </div>
 
         {/* Cards-without-due-date note (always shown) */}
-        <span className="text-xs text-slate-500" data-testid="calendar-no-due-date-note">
+        <span className="text-xs text-subtle" data-testid="calendar-no-due-date-note">
           {translations['CalendarView.noDueDateNote']}
           {hasUnscheduled && (
             <> ({cards.length - scheduledCards.length} hidden)</>

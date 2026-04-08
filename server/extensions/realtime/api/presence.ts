@@ -3,7 +3,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { cache } from '../../../mods/cache/index';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetPresence(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -22,12 +22,10 @@ export async function handleGetPresence(req: Request, boardId: string): Promise<
     ? await db('users').whereIn('id', userIds).select('id', 'email', 'name', 'avatar_url')
     : [];
 
-  const data = await Promise.all(
-    users.map(async (user) => ({
-      ...user,
-      avatar_url: await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null }),
-    })),
-  );
+  const data = users.map((user) => ({
+    ...user,
+    avatar_url: buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null }),
+  }));
 
   return Response.json({ data });
 }

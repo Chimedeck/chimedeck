@@ -117,33 +117,33 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           role="status"
           aria-live="polite"
           data-testid="stale-board-banner"
-          className="mx-2 mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+          className="mx-2 mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
         >
           This board is no longer accessible. Redirecting to your boards list…
         </div>
       )}
 
       {tooShort && (
-        <p className="px-3 py-2 text-sm text-gray-500">
+        <p className="px-3 py-2 text-sm text-muted">
           Type at least 2 characters to search.
         </p>
       )}
 
       {!tooShort && query.length >= 2 && loading && (
-        <p className="px-3 py-2 text-sm text-gray-500">Searching…</p>
+        <p className="px-3 py-2 text-sm text-muted">Searching…</p>
       )}
 
       {!loading && error && (
-        <p className="px-3 py-2 text-sm text-red-500">Search failed. Please try again.</p>
+        <p className="px-3 py-2 text-sm text-danger">Search failed. Please try again.</p>
       )}
 
       {!loading && !error && query.length >= 2 && !hasResults && staleBoardId === null && (
-        <p className="px-3 py-2 text-sm text-gray-500">No results found.</p>
+        <p className="px-3 py-2 text-sm text-muted">No results found.</p>
       )}
 
       {!loading && boards.length > 0 && (
         <section>
-          <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
             Boards
           </p>
           {boards.map((r) => (
@@ -156,7 +156,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               {checkingId === r.id && (
                 <span
                   aria-hidden="true"
-                  className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500"
+                  className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin rounded-full border-2 border-border border-t-indigo-500"
                 />
               )}
             </div>
@@ -166,7 +166,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
       {!loading && cards.length > 0 && (
         <section>
-          <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
             Cards
           </p>
           {cards.map((r) => (

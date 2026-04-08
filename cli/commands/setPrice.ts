@@ -3,11 +3,11 @@ import { call } from '../apiClient';
 import { print } from '../output';
 
 const USAGE = `
-taskinate set-price — Set or clear a card's price
+chimedeck set-price — Set or clear a card's price
 
 Usage:
-  taskinate set-price --card <cardId> --amount <number> --currency <code> [--label <text>]
-  taskinate set-price --card <cardId> --clear
+  chimedeck set-price --card <cardId> --amount <number> --currency <code> [--label <text>]
+  chimedeck set-price --card <cardId> --clear
 
 Options:
   --card <cardId>      ID of the card (required)
@@ -42,18 +42,18 @@ export async function runSetPrice({
   const label = argv.label as string | undefined;
 
   if (!cardId) {
-    console.error("Error: --card <cardId> is required.\nRun 'taskinate set-price --help' for usage.");
+    console.error("Error: --card <cardId> is required.\nRun 'chimedeck set-price --help' for usage.");
     process.exit(1);
   }
 
   // --clear takes precedence over --amount/--currency
   if (!clear) {
     if (amount === undefined) {
-      console.error("Error: --amount <number> is required (or use --clear to remove the price).\nRun 'taskinate set-price --help' for usage.");
+      console.error("Error: --amount <number> is required (or use --clear to remove the price).\nRun 'chimedeck set-price --help' for usage.");
       process.exit(1);
     }
     if (!currency) {
-      console.error("Error: --currency <code> is required (or use --clear to remove the price).\nRun 'taskinate set-price --help' for usage.");
+      console.error("Error: --currency <code> is required (or use --clear to remove the price).\nRun 'chimedeck set-price --help' for usage.");
       process.exit(1);
     }
   }

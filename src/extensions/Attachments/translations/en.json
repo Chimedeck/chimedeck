@@ -33,5 +33,16 @@
   "attachments.panel.link.namePlaceholder": "Display name (optional)",
   "attachments.panel.link.attach": "Attach",
   "attachments.panel.link.cancel": "Cancel",
-  "attachments.panel.link.attachLink": "Attach a link"
+  "attachments.panel.link.attachLink": "Attach a link",
+  "attachments.panel.link.loadingCard": "Loading card…",
+  "attachments.panel.link.cardNotFound": "Card not found or you don't have access",
+  "attachments.panel.cardsSection": "Related Cards",
+  "attachments.panel.linksSection": "Links",
+  "attachment.edit": "Edit",
+  "attachment.item.action.edit.ariaLabel": "Rename attachment",
+  "attachment.rename.placeholder": "Enter a display name…",
+  "attachment.rename.save": "Save",
+  "attachment.rename.cancel": "Cancel rename",
+  "attachment.comment.insert": "Comment",
+  "attachment.item.action.comment.ariaLabel": "Insert attachment link into comment"
 }

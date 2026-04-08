@@ -50,6 +50,8 @@ interface Props {
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
+  onCopyCard: () => void;
+  onPrint: () => void;
   onCreateChecklist: (title?: string) => Promise<void>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
@@ -60,6 +62,7 @@ interface Props {
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
+  onLabelUpdate: (labelId: string, name: string, color: string) => Promise<void>;
   onMemberAssign: (userId: string) => Promise<void>;
   onMemberRemove: (userId: string) => Promise<void>;
   onAddComment: (content: string) => Promise<void>;
@@ -69,6 +72,8 @@ interface Props {
   onCoverColorChange: (color: string | null) => void;
   onCoverSizeChange: (size: 'SMALL' | 'FULL') => void;
   onCoverAttachmentChange: (attachmentId: string | null) => void;
+  /** Called whenever the persisted attachment count changes — used to keep the board card tile in sync. */
+  onAttachmentCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
   /** True when the current user is a VIEWER guest — hides write-action controls. */
   isViewerGuest?: boolean;
 }
@@ -109,6 +114,8 @@ const CardModal = ({
   onArchive,
   onDelete,
   onCopyLink,
+  onCopyCard,
+  onPrint,
   onCreateChecklist,
   onRenameChecklist,
   onDeleteChecklist,
@@ -119,6 +126,7 @@ const CardModal = ({
   onLabelAttach,
   onLabelDetach,
   onLabelCreate,
+  onLabelUpdate,
   onMemberAssign,
   onMemberRemove,
   onAddComment,
@@ -128,6 +136,7 @@ const CardModal = ({
   onCoverColorChange,
   onCoverSizeChange,
   onCoverAttachmentChange,
+  onAttachmentCountChange,
   isViewerGuest = false,
 }: Props) => {
   const isReadOnly = card.archived;
@@ -138,6 +147,9 @@ const CardModal = ({
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const coverMenuRef = useRef<HTMLDivElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  // [why] Shared ref so AttachmentPanel's Comment action can insert markdown into the
+  // CommentEditor in ActivityFeed without prop-drilling through intermediate components.
+  const insertMarkdownRef = useRef<((md: string) => void) | null>(null);
 
   const { uploads: coverUploads, upload: uploadCover } = useAttachmentUpload({
     cardId: card.id,
@@ -202,7 +214,7 @@ const CardModal = ({
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
+          <div className="bg-bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
             <input
               ref={coverInputRef}
               type="file"
@@ -223,7 +235,7 @@ const CardModal = ({
                     <img
                       src={card.cover_image_url}
                       alt="Card cover"
-                      className="h-full w-full bg-slate-900/60 object-contain"
+                      className="h-full w-full bg-slate-900/60 object-contain" // [theme-exception] dark overlay for media lightbox
                       loading="eager"
                       draggable={false}
                     />
@@ -240,15 +252,15 @@ const CardModal = ({
                   onSave={onTitleSave}
                   disabled={isReadOnly}
                 />
-                <p className="mt-1 text-xs text-gray-400 dark:text-slate-500 px-2">
-                  in list <span className="text-gray-500 dark:text-slate-400 font-medium">{listTitle}</span>{' '}
+                <p className="mt-1 text-xs text-subtle px-2">
+                  in list <span className="text-link font-medium">{listTitle}</span>{' '}
                   · {boardTitle}
                 </p>
               </div>
               <div className="relative" ref={coverMenuRef}>
                 <button
                   type="button"
-                  className="rounded-lg px-2.5 py-2 text-sm text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors disabled:opacity-40"
+                  className="rounded-lg px-2.5 py-2 text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors disabled:opacity-40"
                   onClick={() => setCoverMenuOpen((openState) => !openState)}
                   disabled={!canEditCover}
                 >
@@ -259,8 +271,8 @@ const CardModal = ({
                 </button>
 
                 {coverMenuOpen && (
-                  <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                  <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border bg-bg-surface p-3 shadow-xl">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
                       Size
                     </p>
                     <div className="mb-3 grid grid-cols-2 gap-2">
@@ -269,7 +281,7 @@ const CardModal = ({
                         onClick={() => onCoverSizeChange('SMALL')}
                         className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'SMALL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                          : 'border-border text-muted hover:bg-bg-overlay'}`}
                       >
                         Compact
                       </button>
@@ -278,13 +290,13 @@ const CardModal = ({
                         onClick={() => onCoverSizeChange('FULL')}
                         className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'FULL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                          : 'border-border text-muted hover:bg-bg-overlay'}`}
                       >
                         Large
                       </button>
                     </div>
 
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
                       Colors
                     </p>
                     <div className="mb-3 grid grid-cols-5 gap-2">
@@ -304,7 +316,7 @@ const CardModal = ({
                       type="button"
                       onClick={() => coverInputRef.current?.click()}
                       disabled={coverUploading}
-                      className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                      className="mb-2 w-full rounded-md border border-border-strong px-3 py-2 text-xs font-medium text-base transition-colors hover:bg-bg-overlay disabled:opacity-50 dark:hover:bg-slate-800"
                     >
                       {coverUploading ? 'Uploading cover...' : 'Upload a cover image'}
                     </button>
@@ -316,20 +328,20 @@ const CardModal = ({
                           onCoverAttachmentChange(null);
                           onCoverColorChange(null);
                         }}
-                        className="w-full rounded-md px-3 py-1.5 text-xs text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
+                        className="w-full rounded-md px-3 py-1.5 text-xs text-danger transition-colors hover:bg-red-50 dark:hover:bg-red-900/30"
                       >
                         Remove cover
                       </button>
                     )}
 
                     {coverUploadError && (
-                      <p className="mt-2 text-xs text-red-500">{coverUploadError}</p>
+                      <p className="mt-2 text-xs text-danger">{coverUploadError}</p>
                     )}
                   </div>
                 )}
               </div>
               <Dialog.Close
-                className="rounded-lg p-2 text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
+                className="rounded-lg p-2 text-subtle hover:bg-bg-overlay hover:text-base transition-colors flex-shrink-0"
                 aria-label="Close"
               >
                 <XMarkIcon className="h-5 w-5" aria-hidden="true" />
@@ -354,6 +366,7 @@ const CardModal = ({
                 onLabelAttach={onLabelAttach}
                 onLabelDetach={onLabelDetach}
                 onLabelCreate={onLabelCreate}
+                onLabelUpdate={onLabelUpdate}
                 onMemberAssign={onMemberAssign}
                 onMemberRemove={onMemberRemove}
                 onMoneySave={onMoneySave}
@@ -364,7 +377,7 @@ const CardModal = ({
             </div>
 
             {isReadOnly && (
-              <div className="mx-5 mb-2 rounded-lg bg-yellow-900/30 border border-yellow-700/50 px-3 py-2 text-sm text-yellow-400">
+              <div className="mx-5 mb-2 rounded-lg bg-yellow-50 border border-yellow-300 px-3 py-2 text-sm text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700/50 dark:text-yellow-400">
                 This card is archived.
               </div>
             )}
@@ -407,7 +420,7 @@ const CardModal = ({
                       boardId={boardId}
                     />
 
-                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
+                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} />
 
                     {/* Plugin detail badges */}
                     <div className="flex flex-wrap gap-3">
@@ -423,7 +436,7 @@ const CardModal = ({
                   </div>
                 }
                 right={
-                  <div className="h-full min-h-0 p-5 pt-3 pl-3 border-l border-gray-100 dark:border-slate-800">
+                  <div className="h-full min-h-0 p-5 pt-3 pl-3 border-l border-gray-100">
                     <ActivityFeed
                       boardId={boardId}
                       cardId={card.id}
@@ -435,6 +448,7 @@ const CardModal = ({
                       onEditComment={onEditComment}
                       onDeleteComment={onDeleteComment}
                       canAddComment={!isViewerGuest}
+                      insertMarkdownRef={insertMarkdownRef}
                     />
                   </div>
                 }
@@ -474,7 +488,7 @@ const CardModal = ({
                     boardId={boardId}
                   />
 
-                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} />
+                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} />
 
                   {/* Plugin detail badges */}
                   <div className="flex flex-wrap gap-3">
@@ -508,6 +522,8 @@ const CardModal = ({
               onArchive={onArchive}
               onDelete={onDelete}
               onCopyLink={onCopyLink}
+              onCopyCard={onCopyCard}
+              onPrint={onPrint}
             />
           </div>
         </Dialog.Content>

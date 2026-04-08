@@ -29,13 +29,13 @@ export default function SignupPage() {
   // Show verification pending screen after signup when email verification is required
   if (status === 'pending-verification' && pendingEmail) {
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+      <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
           <div className="flex items-center gap-2 mb-8">
             <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-            <span className="text-xl font-bold text-white">{translations.appName}</span>
+            <span className="text-xl font-bold text-base">{translations.appName}</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">{translations.verifyEmail.title}</h1>
+          <h1 className="text-2xl font-bold text-base mb-4">{translations.verifyEmail.title}</h1>
           <VerificationPending email={pendingEmail} />
         </div>
       </main>
@@ -43,16 +43,16 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+    <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">{translations.appName}</span>
+          <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-1">{translations.signup.title}</h1>
-        <p className="text-slate-400 text-sm mb-6">{translations.signup.subtitle}</p>
+        <h1 className="text-2xl font-bold text-base mb-1">{translations.signup.title}</h1>
+        <p className="text-subtle text-sm mb-6">{translations.signup.subtitle}</p>
 
         <SignupForm
           onSubmit={handleSubmit}
@@ -60,7 +60,7 @@ export default function SignupPage() {
           apiError={apiError}
         />
 
-        <p className="text-slate-500 text-sm text-center mt-6">
+        <p className="text-muted text-sm text-center mt-6">
           {translations.signup.haveAccount}{' '}
           <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">
             {translations.signup.signIn}

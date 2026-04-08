@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import type { Automation } from '../../types';
 import { updateAutomation, deleteAutomation } from '../../api';
+import Button from '../../../../common/components/Button';
 import RunCountChip from '../LogPanel/RunCountChip';
 import { socket } from '~/extensions/Realtime/client/socket';
 import translations from '../../translations/en.json';
@@ -84,16 +85,16 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
     : translations['automation.list.noTrigger'];
 
   return (
-    <li className="group flex items-start gap-3 rounded-md border border-slate-700 bg-slate-800 px-3 py-3">
+    <li className="group flex items-start gap-3 rounded-md border border-border bg-bg-surface px-3 py-3">
       {/* Icon */}
       <div className="mt-0.5 shrink-0">
-        <BoltIcon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <BoltIcon className="h-4 w-4 text-muted" aria-hidden="true" />
       </div>
 
       {/* Body */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-200">{automation.name}</p>
-        <p className="mt-0.5 truncate text-xs text-slate-400">
+        <p className="truncate text-sm font-medium text-subtle">{automation.name}</p>
+        <p className="mt-0.5 truncate text-xs text-muted">
           {triggerLabel} · {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.list.actions'] : translations['automation.list.action']}
         </p>
       </div>
@@ -106,8 +107,8 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
         {/* Enable/disable toggle */}
         <button
           className={`rounded p-1 transition-colors ${
-            toggling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-700'
-          } ${automation.isEnabled ? 'text-emerald-400' : 'text-slate-500'}`}
+            toggling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-bg-overlay'
+          } ${automation.isEnabled ? 'text-emerald-400' : 'text-muted'}`}
           onClick={handleToggle}
           disabled={toggling}
           aria-label={automation.isEnabled ? translations['automation.list.row.disableAriaLabel'] : translations['automation.list.row.enableAriaLabel']}
@@ -122,7 +123,7 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
 
         {/* Edit */}
         <button
-          className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
+          className="rounded p-1 text-muted hover:bg-bg-overlay hover:text-subtle transition-colors"
           onClick={onEdit}
           aria-label={translations['automation.list.row.editAriaLabel']}
           title={translations['automation.list.row.editTitle']}
@@ -134,8 +135,8 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
         <button
           className={`rounded p-1 transition-colors ${
             confirmDelete
-              ? 'bg-red-700 text-white hover:bg-red-600'
-              : 'text-slate-400 hover:bg-slate-700 hover:text-red-400'
+              ? 'bg-danger text-white hover:opacity-90' // [theme-exception] text-white on danger active state
+              : 'text-muted hover:bg-bg-overlay hover:text-danger'
           } ${deleting ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleDelete}
           disabled={deleting}
@@ -156,15 +157,16 @@ const AutomationList = ({ boardId, automations, onCreateRule, onEditRule, onChan
   return (
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">
           {translations['automation.list.sectionLabel']} ({rules.length})
         </p>
-        <button
-          className="flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+        <Button
+          variant="primary"
           onClick={onCreateRule}
+          className="flex items-center gap-1"
         >
           {translations['automation.list.createRule']}
-        </button>
+        </Button>
       </div>
 
       <ul className="flex flex-col gap-2">

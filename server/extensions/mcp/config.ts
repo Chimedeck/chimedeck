@@ -3,6 +3,6 @@
 // Note: no startup validation here — the stdio entrypoint validates at runtime;
 //       the HTTP handler uses the caller's own token from the Authorization header.
 export const config = {
-  apiUrl: Bun.env.TASKINATE_API_URL ?? 'http://localhost:3000',
-  token: Bun.env.TASKINATE_TOKEN ?? '',
+  apiUrl: Bun.env.CHIMEDECK_API_URL ?? 'http://localhost:3000',
+  token: Bun.env.CHIMEDECK_TOKEN ?? '',
 };

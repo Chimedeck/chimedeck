@@ -2,9 +2,12 @@ import { useState, type FormEvent } from 'react';
 import PasswordInput from './PasswordInput';
 import AuthDivider from './AuthDivider';
 import OAuthButton from './OAuthButton';
+import VerificationPending from './VerificationPending';
+import config from '~/config';
 import translations from '../translations/en.json';
 
 // API error codes → user-friendly field messages
+// [why] email-not-verified is handled separately via VerificationPending banner
 const API_ERROR_MAP: Record<string, string> = {
   'invalid-credentials': translations.errors.invalidCredentials,
   'login-failed': translations.errors.loginFailed,
@@ -51,7 +54,7 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
       <div className="flex flex-col gap-4">
         {/* Email */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="login-email" className="text-sm font-medium text-slate-300">
+          <label htmlFor="login-email" className="text-sm font-medium text-subtle">
             {translations.fields.email}
           </label>
           <input
@@ -62,9 +65,9 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
             placeholder="you@example.com"
-            className={`w-full bg-slate-800 border ${errors.email ? 'border-red-500' : 'border-slate-700'} text-slate-100 placeholder-slate-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+            className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
-          {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
+          {errors.email && <p className="text-danger text-sm">{errors.email}</p>}
         </div>
 
         {/* Password */}
@@ -80,34 +83,37 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
         />
 
         {/* API error shown below form, not on specific field */}
-        {mappedApiError && (
-          <p role="alert" className="text-red-400 text-sm">{mappedApiError}</p>
+        {apiError === 'email-not-verified' && <VerificationPending email={email} />}
+        {apiError !== 'email-not-verified' && mappedApiError && (
+          <p role="alert" className="text-danger text-sm">{mappedApiError}</p>
         )}
 
         {/* Submit */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium rounded-lg py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-primary hover:bg-primary-hover active:bg-primary text-white font-medium rounded-lg py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed" // [theme-exception] text-white on primary button
         >
           {isLoading ? translations.actions.signingIn : translations.actions.signIn}
         </button>
 
-        <AuthDivider />
-
-        {/* OAuth buttons — gated by feature flags (TODO: wire flags) */}
-        <OAuthButton
-          icon={<GoogleIcon />}
-          label={translations.oauth.continueWithGoogle}
-          disabled
-          aria-disabled="true"
-        />
-        <OAuthButton
-          icon={<GitHubIcon />}
-          label={translations.oauth.continueWithGitHub}
-          disabled
-          aria-disabled="true"
-        />
+        {(config.oauthGoogleEnabled || config.oauthGithubEnabled) && (
+          <>
+            <AuthDivider />
+            {config.oauthGoogleEnabled && (
+              <OAuthButton
+                icon={<GoogleIcon />}
+                label={translations.oauth.continueWithGoogle}
+              />
+            )}
+            {config.oauthGithubEnabled && (
+              <OAuthButton
+                icon={<GitHubIcon />}
+                label={translations.oauth.continueWithGitHub}
+              />
+            )}
+          </>
+        )}
       </div>
     </form>
   );

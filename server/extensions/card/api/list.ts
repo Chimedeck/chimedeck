@@ -5,7 +5,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { resolveCoverImageUrls } from '../../../common/cards/cover';
 
 export async function handleListCards(req: Request, listId: string): Promise<Response> {
@@ -78,11 +78,11 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   const data = await Promise.all(
     rows.map(async (row) => ({
       ...row,
-      members: await resolveAvatarUrlsInCollection(
-        Array.isArray(row.members)
-          ? (row.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
-          : [],
-      ),
+      members: buildAvatarProxyUrlsInCollection(
+          Array.isArray(row.members)
+            ? (row.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+            : [],
+        ),
     })),
   );
 

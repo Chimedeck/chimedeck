@@ -47,7 +47,7 @@ const TYPE_ACCENT: Record<string, string> = {
   card_member_assigned: 'text-violet-400',
   card_member_unassigned: 'text-rose-400',
   card_updated: 'text-indigo-400',
-  card_deleted: 'text-red-400',
+  card_deleted: 'text-danger',
   card_archived: 'text-amber-400',
 };
 
@@ -101,8 +101,8 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
 
   return (
     <div
-      className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors ${
-        notification.read ? '' : 'bg-slate-800/60'
+      className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-bg-overlay/50 transition-colors ${
+        notification.read ? '' : 'bg-bg-surface/60'
       }`}
       onClick={handleClick}
       role="button"
@@ -119,20 +119,20 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
         {!notification.read && (
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 mr-1.5 mb-0.5 align-middle" aria-hidden="true" />
         )}
-        <p className="text-sm text-slate-200 leading-snug inline">
+        <p className="text-sm text-subtle leading-snug inline">
           {copy}
         </p>
         {notification.board_title && (
-          <p className="text-xs text-slate-400 mt-0.5">{notification.board_title}</p>
+          <p className="text-xs text-muted mt-0.5">{notification.board_title}</p>
         )}
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-muted mt-0.5">
           {new Date(notification.created_at).toLocaleString()}
         </p>
       </div>
 
       <button
         onClick={handleDelete}
-        className="shrink-0 text-slate-500 hover:text-slate-300 transition-colors ml-1"
+        className="shrink-0 text-muted hover:text-subtle transition-colors ml-1"
         aria-label={translations['Notifications.deleteAriaLabel']}
         tabIndex={0}
       >

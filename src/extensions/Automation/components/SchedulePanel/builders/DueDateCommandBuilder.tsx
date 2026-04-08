@@ -9,6 +9,7 @@ import {
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import type { FC } from 'react';
+import Button from '../../../../../common/components/Button';
 import ActionList from '../../AutomationPanel/RuleBuilder/ActionList';
 import type { ActionItemData } from '../../AutomationPanel/RuleBuilder/ActionItem';
 import { createAutomation, updateAutomation } from '../../../api';
@@ -145,21 +146,22 @@ const DueDateCommandBuilder: FC<Props> = ({
       aria-modal="true"
       aria-label={existing ? translations['automation.dueDateBuilder.ariaLabelEdit'] : translations['automation.dueDateBuilder.ariaLabelNew']}
     >
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
+      <div className="bg-bg-base border border-border rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-2 border-b border-slate-700 px-5 py-4">
+        <div className="flex items-center gap-2 border-b border-border px-5 py-4">
           <ExclamationCircleIcon className="h-5 w-5 text-amber-400 flex-shrink-0" aria-hidden="true" />
-          <h2 className="flex-1 text-base font-semibold text-slate-100">
+          <h2 className="flex-1 text-base font-semibold text-base">
             {existing ? translations['automation.dueDateBuilder.titleEdit'] : translations['automation.dueDateBuilder.titleNew']}
           </h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
             aria-label={translations['automation.dueDateBuilder.close']}
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
 
         {/* Step indicator */}
@@ -169,18 +171,18 @@ const DueDateCommandBuilder: FC<Props> = ({
               <div
                 className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold ${
                   step === n
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                     : step > n
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-700 text-slate-400'
+                    ? 'bg-success text-white' // [theme-exception] text-white on completed success step
+                    : 'bg-bg-overlay text-muted'
                 }`}
               >
                 {n}
               </div>
-              <span className={`text-xs ${step === n ? 'text-slate-200' : 'text-slate-500'}`}>
+              <span className={`text-xs ${step === n ? 'text-subtle' : 'text-muted'}`}>
                 {n === 1 ? translations['automation.dueDateBuilder.stepWhen'] : translations['automation.dueDateBuilder.stepActionsAndSave']}
               </span>
-              {n < 2 && <span className="mx-1 text-slate-600 text-xs">›</span>}
+              {n < 2 && <span className="mx-1 text-muted text-xs">›</span>}
             </div>
           ))}
         </div>
@@ -192,7 +194,7 @@ const DueDateCommandBuilder: FC<Props> = ({
             <>
               {/* Timing selector */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                <label className="text-xs font-medium text-muted uppercase tracking-wide">
                   {translations['automation.dueDateBuilder.timingLabel']}
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -209,10 +211,9 @@ const DueDateCommandBuilder: FC<Props> = ({
                       onClick={() => setTriggerMoment(value as TriggerMoment)}
                       className={`flex flex-col items-center gap-1 rounded-md py-2.5 px-2 text-xs font-medium transition-colors ${
                         triggerMoment === value
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                      }`}
-                    >
+                          ? 'bg-primary text-white' // [theme-exception]: text-white on active-state primary button
+                          : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
+                      }`}>
                       <Icon className="h-4 w-4" aria-hidden="true" />
                       {label}
                     </button>
@@ -223,7 +224,7 @@ const DueDateCommandBuilder: FC<Props> = ({
               {/* Offset config (not shown for 'on') */}
               {triggerMoment !== 'on' && (
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                  <label className="text-xs font-medium text-muted uppercase tracking-wide">
                     {translations['automation.dueDateBuilder.offsetLabel']}
                   </label>
                   <div className="flex items-center gap-2">
@@ -236,7 +237,7 @@ const DueDateCommandBuilder: FC<Props> = ({
                         const v = Math.max(1, Math.min(30, Number(e.target.value)));
                         setOffsetValue(v);
                       }}
-                      className="w-20 rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-20 rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                       aria-label={translations['automation.dueDateBuilder.offsetAriaLabel']}
                     />
                     <div className="flex gap-1">
@@ -247,8 +248,8 @@ const DueDateCommandBuilder: FC<Props> = ({
                           onClick={() => setOffsetUnit(u)}
                           className={`rounded-md px-3 py-2 text-xs font-medium capitalize transition-colors ${
                             offsetUnit === u
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                              ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
+                              : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
                           }`}
                         >
                           {u}
@@ -257,14 +258,14 @@ const DueDateCommandBuilder: FC<Props> = ({
                     </div>
                   </div>
                   {(offsetValue < 1 || offsetValue > 30) && (
-                    <p className="text-xs text-red-400">{translations['automation.dueDateBuilder.offsetError']}</p>
+                    <p className="text-xs text-danger">{translations['automation.dueDateBuilder.offsetError']}</p>
                   )}
                 </div>
               )}
 
               {/* Live preview */}
-              <p className="text-xs text-slate-400 italic">
-                {translations['automation.dueDateBuilder.triggerLabel']}: <span className="text-slate-200">{autoSummary}</span>
+              <p className="text-xs text-muted italic">
+                {translations['automation.dueDateBuilder.triggerLabel']}: <span className="text-subtle">{autoSummary}</span>
               </p>
             </>
           )}
@@ -274,7 +275,7 @@ const DueDateCommandBuilder: FC<Props> = ({
             <div className="flex flex-col gap-5">
               {/* Actions */}
               <div className="flex flex-col gap-2">
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted">
                   {translations['automation.dueDateBuilder.actionsHint']}
                 </p>
                 <ActionList actions={actions} onChange={setActions} />
@@ -284,8 +285,8 @@ const DueDateCommandBuilder: FC<Props> = ({
               </div>
 
               {/* Schedule summary */}
-              <div className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-300">
-                <span className="text-xs text-slate-500 block mb-1">{translations['automation.dueDateBuilder.triggerSummaryLabel']}</span>
+              <div className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-subtle">
+                <span className="text-xs text-muted block mb-1">{translations['automation.dueDateBuilder.triggerSummaryLabel']}</span>
                 {autoSummary}
               </div>
 
@@ -293,7 +294,7 @@ const DueDateCommandBuilder: FC<Props> = ({
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="due-date-name"
-                  className="text-xs font-medium text-slate-400 uppercase tracking-wide"
+                  className="text-xs font-medium text-muted uppercase tracking-wide"
                 >
                   {translations['automation.dueDateBuilder.commandNameLabel']}
                 </label>
@@ -303,16 +304,16 @@ const DueDateCommandBuilder: FC<Props> = ({
                   value={commandName}
                   onChange={(e) => setNameOverride(e.target.value)}
                   maxLength={120}
-                  className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={translations['automation.dueDateBuilder.commandNamePlaceholder']}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted">
                   {translations['automation.dueDateBuilder.commandNameHint']}
                 </p>
               </div>
 
               {error && (
-                <p className="text-sm text-red-400" role="alert">
+                <p className="text-sm text-danger" role="alert">
                   {error}
                 </p>
               )}
@@ -321,11 +322,12 @@ const DueDateCommandBuilder: FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-700 px-5 py-4">
-          <button
+        <div className="flex items-center justify-between border-t border-border px-5 py-4">
+          <Button
+            variant="secondary"
             type="button"
             onClick={step === 1 ? onClose : () => setStep(1)}
-            className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-1"
           >
             {step === 1 ? (
               translations['automation.dueDateBuilder.cancel']
@@ -335,26 +337,26 @@ const DueDateCommandBuilder: FC<Props> = ({
                 {translations['automation.dueDateBuilder.back']}
               </>
             )}
-          </button>
+          </Button>
 
           {step === 1 ? (
-            <button
+            <Button
+              variant="primary"
               type="button"
               disabled={!canProceedStep1}
               onClick={() => setStep(2)}
-              className="rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {translations['automation.dueDateBuilder.next']}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="primary"
               type="button"
               disabled={!canSave || saving}
               onClick={handleSave}
-              className="rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {saving ? translations['automation.dueDateBuilder.saving'] : existing ? translations['automation.dueDateBuilder.saveChanges'] : translations['automation.dueDateBuilder.create']}
-            </button>
+            </Button>
           )}
         </div>
       </div>

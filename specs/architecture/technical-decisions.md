@@ -596,7 +596,7 @@ Only flags explicitly allow-listed for client exposure are returned (server cont
 **Decision:** In-process evaluation engine wired into the card event pipeline; no separate automation microservice.
 
 **Rationale:**
-- Trello's Butler automation model maps cleanly onto an event-driven rule engine without extra infrastructure
+- We need automation model maps cleanly onto an event-driven rule engine without extra infrastructure
 - Running the engine inside the same Bun process avoids network hops and keeps latency sub-millisecond for simple rules
 - The engine is isolated enough (single `evaluate()` entry point, its own DB tables) to be extracted into a worker process later if throughput requires it
 - Scheduled workers (`setInterval`) are lightweight and sufficient at the expected concurrency; a proper cron library (e.g. `node-cron`) can replace them without touching the action handlers
@@ -866,7 +866,7 @@ Key UI decisions:
 
 | Decision | Rationale |
 |----------|-----------|
-| `BoltIcon` left of `...` menu | Consistent with Trello; immediately discoverable without cluttering the header |
+| `BoltIcon` left of `...` menu | immediately discoverable without cluttering the header |
 | Slide-in drawer (not modal) | Allows builder and board to be visible simultaneously for context |
 | Trigger + action types fetched from API (`GET /automation/trigger-types`, `GET /automation/action-types`) | UI never hardcodes type lists; adding a backend trigger/action automatically surfaces it in the builder |
 | DnD reorder for actions (`@dnd-kit/core`) | Already in project; consistent with card/list drag UX |

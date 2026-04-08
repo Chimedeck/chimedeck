@@ -6,7 +6,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
-import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
 export async function handleGetCard(req: Request, cardId: string): Promise<Response> {
@@ -46,7 +46,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     .where('card_members.card_id', cardId)
     .select('users.id', 'users.email', 'users.name', 'users.avatar_url');
 
-  const members = await resolveAvatarUrlsInCollection(
+  const members = buildAvatarProxyUrlsInCollection(
     memberRows as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
   );
 
@@ -92,7 +92,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     const rawActors = actorIds.length
       ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email', 'avatar_url')
       : [];
-    const resolvedActors = await resolveAvatarUrlsInCollection(rawActors);
+    const resolvedActors = buildAvatarProxyUrlsInCollection(rawActors);
     const actorMap = new Map(resolvedActors.map((u) => [u.id, u]));
 
     activities = rows.map((a) => {

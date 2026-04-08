@@ -8,26 +8,60 @@ import type { ViewType } from './types';
 
 interface Props {
   boardId: string;
+  /** When true the switcher sits over a board background — apply frosted-glass-aware styles. */
+  hasBackground?: boolean;
+  /**
+   * When true, renders only the tab buttons with no wrapper div.
+   * Use when embedding inside a parent that provides layout context.
+   */
+  inline?: boolean;
+  /**
+   * When true, renders a segmented control: a single rounded pill container
+   * where the active item gets an inset raised background.
+   */
+  segmented?: boolean;
 }
 
-const BoardViewSwitcher = ({ boardId }: Props) => {
+const BoardViewSwitcher = ({ boardId, hasBackground = false, inline = false, segmented = false }: Props) => {
   const { activeView, switchView } = useViewPreference({ boardId });
+
+  const tabElements = VIEW_TYPES.map((viewType: ViewType) => (
+    <BoardViewTab
+      key={viewType}
+      viewType={viewType}
+      isActive={activeView === viewType}
+      onClick={switchView}
+      hasBackground={hasBackground}
+      segmented={segmented}
+    />
+  ));
+
+  if (inline) {
+    return <>{tabElements}</>;
+  }
+
+  if (segmented) {
+    // Underline-style group: no pill container, just flush tab buttons
+    return (
+      <div
+        role="tablist"
+        aria-label="Board view"
+        className="inline-flex items-center"
+        data-testid="board-view-switcher"
+      >
+        {tabElements}
+      </div>
+    );
+  }
 
   return (
     <div
       role="tablist"
       aria-label="Board view"
-      className="flex gap-1 border-b border-slate-200 dark:border-slate-700 px-4"
+      className={`flex gap-1 border-b px-4${hasBackground ? ' border-black/10' : ' border-border'}`}
       data-testid="board-view-switcher"
     >
-      {VIEW_TYPES.map((viewType: ViewType) => (
-        <BoardViewTab
-          key={viewType}
-          viewType={viewType}
-          isActive={activeView === viewType}
-          onClick={switchView}
-        />
-      ))}
+      {tabElements}
     </div>
   );
 };

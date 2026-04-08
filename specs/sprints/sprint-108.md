@@ -7,7 +7,7 @@
 
 ## Goal
 
-Add a **"MCP Docs"** entry to the main sidebar that opens a developer-reference page documenting the Taskinate MCP server — how to connect, how to authenticate, and the full list of available tools with their input schemas and example usage.
+Add a **"MCP Docs"** entry to the main sidebar that opens a developer-reference page documenting the ChimeDeck MCP server — how to connect, how to authenticate, and the full list of available tools with their input schemas and example usage.
 
 The page follows the same pattern as the existing **Plugin Docs** page (`/developer/plugins`): a static React documentation page with a left-hand table of contents, served at `/developer/mcp`, and reachable from the sidebar without requiring a workspace to be active.
 
@@ -49,7 +49,7 @@ The page documents the MCP server comprehensively. Sections (TOC):
 
 | # | Section | Content |
 |---|---------|---------|
-| 1 | Overview | What Taskinate MCP is; two things needed to connect (URL + API token) |
+| 1 | Overview | What ChimeDeck MCP is; two things needed to connect (URL + API token) |
 | 2 | Authentication | How to generate an `hf_` API token via Profile → API Tokens; how to pass it as `Authorization: Bearer hf_…` |
 | 3 | Connecting | Claude.ai remote MCP config snippet; Cursor `mcp.json` snippet; raw `curl` example |
 | 4 | Endpoint reference | `POST /api/mcp`, `GET /api/mcp` (SSE), `DELETE /api/mcp`; session lifecycle |

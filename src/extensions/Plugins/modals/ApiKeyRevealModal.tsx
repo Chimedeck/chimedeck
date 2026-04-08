@@ -2,6 +2,7 @@
 // The key is never shown again once this modal is dismissed.
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import Button from '../../../common/components/Button';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -30,10 +31,10 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
       aria-label={translations['plugins.apiKeyModal.ariaLabel']}
     >
       <div className="absolute inset-0 bg-black/60" />
-      <div className="relative w-full max-w-md bg-slate-900 rounded-lg shadow-2xl mx-4 overflow-hidden">
+      <div className="relative w-full max-w-md bg-bg-base rounded-lg shadow-2xl mx-4 overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-700">
-          <h2 className="text-slate-100 font-semibold text-base">{translations['plugins.apiKeyModal.title']}</h2>
+        <div className="px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold">{translations['plugins.apiKeyModal.title']}</h2>
         </div>
 
         {/* Body */}
@@ -44,12 +45,13 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
           </div>
 
           <div className="flex gap-2 items-stretch">
-            <code className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-green-300 font-mono break-all">
+            {/* [theme-exception]: monospace API key display — green-300 on dark bg, shown once */}
+            <code className="flex-1 bg-bg-surface border border-border rounded px-3 py-2 text-sm text-success font-mono break-all">
               {apiKey}
             </code>
             <button
               onClick={handleCopy}
-              className="flex-shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm rounded px-3 py-2"
+              className="flex-shrink-0 bg-bg-overlay hover:bg-bg-sunken text-subtle text-sm rounded px-3 py-2"
               aria-label={translations['plugins.apiKeyModal.copyAriaLabel']}
             >
               {copied ? translations['plugins.apiKeyModal.copied'] : translations['plugins.apiKeyModal.copy']}
@@ -58,13 +60,14 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end px-5 py-4 border-t border-slate-700">
-          <button
+        <div className="flex justify-end px-5 py-4 border-t border-border">
+          <Button
+            variant="primary"
+            size="sm"
             onClick={onClose}
-            className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-4 py-2"
           >
             {translations['plugins.apiKeyModal.done']}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

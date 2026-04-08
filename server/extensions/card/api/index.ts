@@ -12,6 +12,7 @@ import { handleUpdateCard } from './update';
 import { handleArchiveCard } from './archive';
 import { handleMoveCard } from './move';
 import { handleDuplicateCard } from './duplicate';
+import { handleCopyCard } from './copy';
 import { handleDeleteCard } from './delete';
 import { handleAttachLabel, handleDetachLabel } from './labels';
 import { handleAssignMember, handleRemoveMember } from './members';
@@ -115,6 +116,9 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
 
     // POST /api/v1/cards/:id/duplicate
     if (sub === '/duplicate' && req.method === 'POST') return handleDuplicateCard(req, cardId);
+
+    // POST /api/v1/cards/:id/copy
+    if (sub === '/copy' && req.method === 'POST') return handleCopyCard(req, cardId);
 
     // POST /api/v1/cards/:id/labels — attach label
     if (sub === '/labels' && req.method === 'POST') return handleAttachLabel(req, cardId);
