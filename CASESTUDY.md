@@ -84,7 +84,7 @@ The browser testing was not stubbed. Playwright MCP opened a live Chromium insta
 - Tested the plugin iframe injection and the postMessage bridge
 - Verified that automation rules fired and appeared in the run log
 
-When it found bugs — a WebSocket broadcast missing from `comment_updated`, a drag-and-drop infinite re-render from a stale closure, an HTTP method mismatch causing 404s on card moves — it described them precisely enough that the Execute phase of the next iteration fixed them without human intervention.
+When it found bugs Copilot can read the or see the problem directly and attempt to solve it.
 
 ---
 
@@ -140,6 +140,6 @@ The sprint plan covers **123 named sprint specifications**. The majority of the 
 
 ## Where It Is Now
 
-ChimeDeck runs in production. The Trello seats are cancelled. The data was migrated via a custom import script from the exported Trello JSON. The team uses it daily, and when something is missing, we add it — without filing a feature request, without waiting for a roadmap, without paying per seat.
+ChimeDeck runs in production. The data was migrated via a custom import script from the exported Trello JSON. The team uses it daily, and when something is missing, we add it — without filing a feature request, without waiting for a roadmap, without paying per seat.
 
 That was the point.

@@ -58,12 +58,4 @@ export default defineConfig({
     // In local builds (no SENTRY_AUTH_TOKEN) source maps are still emitted but not uploaded.
     sourcemap: true,
   },
-  // Use the client-specific tsconfig for JSX and DOM types
-  esbuild: {
-    tsconfigRaw: {
-      compilerOptions: {
-        jsx: 'react-jsx',
-      },
-    },
-  },
 });
