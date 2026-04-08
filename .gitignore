@@ -48,8 +48,26 @@ coverage/
 db/all_trello_cards.json
 db/trello-import-member-ids.json
 db/trello-import-workspace-ids.json
+db/full-user.json
+db/full-user.csv
 public/avatars/
 
 .task
 
+# Build pipeline artifacts — never commit
+.ecr-build-output
+terraform/environments/**/terraform.tfvars
+terraform/environments/**/terraform.tfvars.rollback
+terraform/**/.terraform/
+terraform/**/terraform.tfstate
+terraform/**/terraform.tfstate.backup
+terraform/environments/**/tfplan
+terraform/environments/**/tfplan-rollback
+/tmp/*.pem
+terraform/**/*.pem
+
 /plugins/
+test-results/
+test-screenshots-tmp/
+playwright-report/
+.playwright-mcp/

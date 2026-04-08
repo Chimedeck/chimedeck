@@ -1,4 +1,4 @@
-# Taskinate
+# ChimeDeck
 
 A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.  
 This repo also contains the agent loop that builds it sprint by sprint.
@@ -122,11 +122,11 @@ aws ecr get-login-password --region <region> \
   | docker login --username AWS --password-stdin <account>.dkr.ecr.<region>.amazonaws.com
 
 # Build — typecheck + Vite bundle happen inside the multi-stage Dockerfile
-docker build -t taskinate-app:${IMAGE_TAG} .
+docker build -t chimedeck-app:${IMAGE_TAG} .
 
 # Tag and push
-docker tag taskinate-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/taskinate-app:${IMAGE_TAG}
-docker push <account>.dkr.ecr.<region>.amazonaws.com/taskinate-app:${IMAGE_TAG}
+docker tag chimedeck-app:${IMAGE_TAG} <account>.dkr.ecr.<region>.amazonaws.com/chimedeck-app:${IMAGE_TAG}
+docker push <account>.dkr.ecr.<region>.amazonaws.com/chimedeck-app:${IMAGE_TAG}
 ```
 
 ### CD pipeline (host machine)
@@ -147,7 +147,7 @@ aws ecr get-login-password --region <region> \
 
 # 2. Run database migrations (one-off container — Compose pulls the image here)
 docker run --rm --env-file .env.production \
-  <account>.dkr.ecr.<region>.amazonaws.com/taskinate-app:${IMAGE_TAG} \
+  <account>.dkr.ecr.<region>.amazonaws.com/chimedeck-app:${IMAGE_TAG} \
   bun run db:migrate
 
 # 3. (One-time, local-db profile only) Activate pg_cron after the first migration
@@ -160,7 +160,7 @@ docker compose -f docker-compose.prod.yml --profile local-db exec postgres \
 # 4. Start the app (Compose reuses the already-pulled image)
 #
 # Default — external RDS + S3 (AWS managed):
-DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/taskinate-app \
+DOCKER_IMAGE=<account>.dkr.ecr.<region>.amazonaws.com/chimedeck-app \
 IMAGE_TAG=${IMAGE_TAG} \
 docker compose -f docker-compose.prod.yml up -d
 
@@ -195,6 +195,79 @@ Key production-only variables:
 | `S3_BUCKET` | AWS S3 bucket name |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | IAM credentials for S3 |
 | `AWS_REGION` | AWS region |
+
+#### Sentry (optional)
+
+| Variable | Default | Description |
+|---|---|---|
+| `SENTRY_SERVER_ENABLED` | `false` | Enable Sentry capture on the Bun server |
+| `SENTRY_SERVER_DSN` | _(empty)_ | Sentry DSN for the server — obtain from your Sentry project settings |
+| `VITE_SENTRY_CLIENT_ENABLED` | `false` | Enable Sentry capture in the React client |
+| `VITE_SENTRY_CLIENT_DSN` | _(empty)_ | Sentry DSN for the client |
+| `SENTRY_ENV` / `VITE_SENTRY_ENV` | `development` | Deployment environment tag sent to Sentry — must match on both client and server for source-map lookup to work (e.g. `production`, `staging`) |
+| `SENTRY_RELEASE` / `VITE_SENTRY_RELEASE` | _(empty)_ | Release identifier (git SHA or semver tag). Must be identical to the value used during `build:deploy` for source-map correlation |
+| `VITE_SENTRY_REPLAY_ENABLED` | `false` | Opt-in Session Replay for the React client (bandwidth-intensive) |
+
+Both `*_ENABLED` flags must be `true` **and** the corresponding `*_DSN` must be non-empty for Sentry to initialise. Omitting or leaving either blank is safe — the app starts normally without capture.
+
+#### Sentry privacy defaults
+
+Sentry is configured with strict privacy defaults that apply automatically — no extra setup required:
+
+| Protection | Default |
+|---|---|
+| Auto-PII collection | **Disabled** (`sendDefaultPii: false`) |
+| Authorization / Cookie headers | Redacted to `[redacted]` by `beforeSend` |
+| Sensitive URL query-params (`token`, `access_token`, `password`, `secret`, …) | Redacted to `[redacted]` by `beforeSend` |
+| Request body credentials (`password`, `token`, `credit_card`, …) | Redacted server-side by `beforeSend` |
+| Session Replay text / media | Fully masked (`maskAllText`, `blockAllMedia`) |
+
+> **Override caveat:** if you call `captureMessage` or `captureError` with manually constructed strings that include PII, the automatic redaction will not save you. Always sanitize data before passing it to Sentry helpers.
+
+#### Sentry source map upload (deploy builds only)
+
+Source maps are generated on every build (`vite build`). The Sentry Vite plugin uploads them to Sentry and then **deletes the `.map` files** from `dist/` so they are never served publicly.
+
+The upload is gated: it only runs when **all three** of the following env vars are present at build time:
+
+| Build-time variable | Description |
+|---|---|
+| `SENTRY_AUTH_TOKEN` | Sentry API auth token with `project:releases` scope |
+| `SENTRY_ORG` | Your Sentry organisation slug |
+| `SENTRY_PROJECT` | Your Sentry project slug |
+
+When any of these is absent (e.g. in local dev or plain CI runs) the plugin is omitted entirely — no network calls are made and no `.map` files are deleted.
+
+**Deploy build command** (CI/CD pipeline):
+
+```bash
+# SENTRY_RELEASE is derived from the git SHA automatically if not set explicitly
+SENTRY_AUTH_TOKEN=<token> \
+SENTRY_ORG=<org> \
+SENTRY_PROJECT=<project> \
+SENTRY_RELEASE=$(git rev-parse --short HEAD) \
+VITE_SENTRY_RELEASE=$(git rev-parse --short HEAD) \
+  bun run build:deploy
+```
+
+`build:deploy` is equivalent to `build` but pre-seeds `SENTRY_RELEASE` from the current git SHA so the runtime SDK and the source-map upload always use the same identifier.
+
+> **Local dev**: run `bun run build:client` or `bun run dev` as usual — no upload, no token required.
+
+#### Sentry client bootstrap
+
+The React client initialises Sentry in `src/main.tsx` via `initSentry()` (defined in `src/common/monitoring/sentryClient.ts`).  
+Initialisation is guarded — Sentry is a no-op when `VITE_SENTRY_CLIENT_ENABLED` is `false` or `VITE_SENTRY_CLIENT_DSN` is empty.
+
+**Manual smoke test checklist:**
+
+1. Set `VITE_SENTRY_CLIENT_ENABLED=true` and a valid `VITE_SENTRY_CLIENT_DSN` in `.env`.
+2. Start the dev server: `bun run dev`.
+3. Trigger a client error (e.g., open the browser console and run `throw new Error('test')`).
+4. Confirm the event appears in your Sentry project dashboard.
+5. Set `VITE_SENTRY_CLIENT_ENABLED=false`, restart, and confirm **no** Sentry network requests are made (check the Network tab).
+
+See `src/common/monitoring/README.md` for full usage and privacy guidance.
 
 ### Feature flags at startup
 
@@ -381,10 +454,10 @@ Open `start-agent-loop.sh` and adjust the variables at the top if needed:
 | `MAX_ITERATIONS` | `10` | Maximum number of Recap→Execute cycles |
 | `SAMPLE_PROJECT_DIR` | `sample-project` | Path to the read-only reference repo |
 | `CHANGELOG_DIR` | `specs/changelog` | Where timestamped changelogs are written |
-| `MODEL_RECAP` | `claude-haiku-4-5` | Model for Recap phase |
+| `MODEL_RECAP` | `gpt-4.1` | Model for Recap phase |
 | `MODEL_PLAN` | `claude-sonnet-4-6` | Model for Planning phase |
-| `MODEL_EXECUTE` | `claude-sonnet-4-5` | Model for Execute phase |
-| `MODEL_TEST_FREE` | `claude-haiku-4-5` | Model for Retest scout pass |
+| `MODEL_EXECUTE` | `gpt-4.1` | Model for Execute phase |
+| `MODEL_TEST_FREE` | `gpt-4.1` | Model for Retest scout pass |
 | `MODEL_TEST_EVAL` | `gpt-4.1` | Model for Playwright MCP evaluation |
 
 ---

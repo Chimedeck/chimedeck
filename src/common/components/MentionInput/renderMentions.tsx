@@ -32,6 +32,7 @@ const renderMentions = ({ text, userMap = {} }: Props): React.ReactNode => {
       <span
         key={i}
         title={title}
+        // [theme-exception] Mention chips use brand-tinted indigo highlight intentionally
         className="inline-flex items-center gap-1 rounded-full bg-indigo-900/50 px-1.5 py-0.5 text-indigo-300 text-xs font-medium cursor-pointer hover:bg-indigo-900"
       >
         {part}

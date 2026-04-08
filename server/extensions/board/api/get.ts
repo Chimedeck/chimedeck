@@ -6,9 +6,10 @@ import {
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
 import { VISIBLE_EVENT_TYPES } from '../../activity/config/visibleEventTypes';
-import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { searchLog } from '../../search/common/searchLogger';
 import { resolveCoverImageUrls } from '../../../common/cards/cover';
+import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
 
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -71,7 +72,13 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
             ),
             db.raw(
               `COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`
-            )
+            ),
+            // [why] Inline sub-counts avoid N+1 queries on subsequent per-card fetches.
+            db.raw(`(SELECT COUNT(*) FROM comments WHERE card_id = c.id AND deleted = false)::int AS comment_count`),
+            db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY' AND referenced_card_id IS NULL)::int AS attachment_count`),
+            db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY' AND referenced_card_id IS NOT NULL)::int AS linked_card_count`),
+            db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id)::int AS checklist_total`),
+            db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id AND ci.checked = true)::int AS checklist_done`),
           )
           .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
           .leftJoin('labels as l', 'l.id', 'cl.label_id')
@@ -83,7 +90,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   const cardsWithResolvedMembers = await Promise.all(
     cards.map(async (card) => ({
       ...card,
-      members: await resolveAvatarUrlsInCollection(
+      members: buildAvatarProxyUrlsInCollection(
         Array.isArray(card.members)
           ? (card.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
           : []
@@ -113,8 +120,10 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   // render write-action controls without a second round-trip.
   const callerGuestType = (scopedReq.guestType as string | undefined) ?? null;
 
+  const backgroundUrl = resolveBackgroundUrl({ boardId, backgroundUrl: board.background });
+
   return Response.json({
-    data: { ...board, callerGuestType },
+    data: { ...board, background: backgroundUrl, callerGuestType },
     includes: { lists, cards: cardsWithResolvedCovers, activities },
   });
 }

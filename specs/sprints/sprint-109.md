@@ -11,7 +11,7 @@ Fix the **Connecting** section of the MCP Docs page (`/developer/mcp`) so it cor
 the **remote HTTP** transport model instead of local stdio subprocess configuration.
 
 The docs are intended for end-users and operators who connect their AI tools (Claude Desktop,
-Cursor, custom agents) to an already-running Taskinate server — not for developers running the
+Cursor, custom agents) to an already-running ChimeDeck server — not for developers running the
 server binary locally.
 
 ---
@@ -24,10 +24,10 @@ Sprint 108 shipped the MCP Docs page with Claude Desktop and Cursor config snipp
 ```json
 {
   "mcpServers": {
-    "taskinate": {
+    "chimedeck": {
       "command": "bun",
       "args": ["run", "/absolute/path/to/server/extensions/mcp/index.ts"],
-      "env": { "TASKINATE_TOKEN": "...", "TASKINATE_API_URL": "..." }
+      "env": { "CHIMEDECK_TOKEN": "...", "CHIMEDECK_API_URL": "..." }
     }
   }
 }
@@ -35,7 +35,7 @@ Sprint 108 shipped the MCP Docs page with Claude Desktop and Cursor config snipp
 
 This is the stdio transport for running the server as a local subprocess — only useful for
 developers hosting their own instance from source. The target audience for this page is anyone
-connecting to a **deployed** Taskinate instance over HTTP.
+connecting to a **deployed** ChimeDeck instance over HTTP.
 
 ---
 
@@ -56,8 +56,8 @@ Rewrote the **Connecting** section:
 ```json
 {
   "mcpServers": {
-    "taskinate": {
-      "url": "https://your-taskinate-instance.com/api/mcp",
+    "chimedeck": {
+      "url": "https://your-chimedeck-instance.com/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
       }
@@ -70,8 +70,8 @@ Rewrote the **Connecting** section:
 ```json
 {
   "mcpServers": {
-    "taskinate": {
-      "url": "https://your-taskinate-instance.com/api/mcp",
+    "chimedeck": {
+      "url": "https://your-chimedeck-instance.com/api/mcp",
       "headers": {
         "Authorization": "Bearer hf_your_token_here"
       }

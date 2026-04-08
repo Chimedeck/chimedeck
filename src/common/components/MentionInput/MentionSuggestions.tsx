@@ -28,7 +28,7 @@ const MentionSuggestions = ({
     <ul
       role="listbox"
       aria-label={translations['Mention.ariaList']}
-      className="absolute z-50 top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
+      className="absolute z-50 top-full left-0 mt-1 bg-bg-surface border border-border rounded-lg shadow-xl min-w-[220px] max-h-[260px] overflow-y-auto"
     >
       {suggestions.map((s, i) => (
         <li key={s.id} role="presentation">

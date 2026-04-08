@@ -1,5 +1,6 @@
 // BoardArchivedCardsPanel — list of all archived cards in a board with restore option.
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getArchivedCards } from './api';
 import { apiClient } from '~/common/api/client';
 import type { ArchivedCard } from './types';
@@ -16,6 +17,7 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [, setSearchParams] = useSearchParams();
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -48,33 +50,50 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
     }
   };
 
+  const handleOpenCard = useCallback(
+    (cardId: string) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('card', cardId);
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
+
   if (error) {
-    return <p className="p-4 text-sm text-red-500">{error}</p>;
+    return <p className="p-4 text-sm text-danger">{error}</p>;
   }
 
   return (
     <div className="p-4 space-y-2">
-      <h3 className="text-xs font-semibold uppercase text-gray-500">{translations['BoardViews.archivedCardsHeading']}</h3>
+      <h3 className="text-xs font-semibold uppercase text-muted">{translations['BoardViews.archivedCardsHeading']}</h3>
 
-      {loading && <p className="text-sm text-gray-400">{translations['BoardViews.loadingArchivedCards']}</p>}
+      {loading && <p className="text-sm text-subtle">{translations['BoardViews.loadingArchivedCards']}</p>}
 
       {!loading && cards.length === 0 && (
-        <p className="text-sm italic text-gray-400">{translations['BoardViews.noArchivedCards']}</p>
+        <p className="text-sm italic text-subtle">{translations['BoardViews.noArchivedCards']}</p>
       )}
 
       {cards.map((card) => (
         <div
           key={card.id}
-          className="flex items-center justify-between rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm"
+          className="flex items-center justify-between rounded border border-border bg-bg-surface px-3 py-2 text-sm"
         >
           <div>
-            <p className="font-medium text-gray-200">{card.title}</p>
-            <p className="text-xs text-gray-500">{translations['BoardViews.inList']} {card.list_title}</p>
+            <button
+              type="button"
+              className="font-medium text-base text-link hover:underline underline-offset-2 text-left"
+              onClick={() => handleOpenCard(card.id)}
+            >
+              {card.title}
+            </button>
+            <p className="text-xs text-subtle">{translations['BoardViews.inList']} {card.list_title}</p>
           </div>
           <button
             disabled={restoringId === card.id}
             onClick={() => handleRestore(card.id)}
-            className="ml-4 rounded px-2 py-1 text-xs text-blue-400 hover:bg-slate-700 disabled:opacity-50"
+            className="ml-4 rounded px-2 py-1 text-xs text-link hover:bg-bg-overlay disabled:opacity-50"
           >
             {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
           </button>

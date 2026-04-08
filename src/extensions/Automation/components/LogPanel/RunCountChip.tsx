@@ -12,7 +12,7 @@ const RunCountChip: FC<Props> = ({ count }) => {
   const colourClass =
     count > 0
       ? 'bg-emerald-900/60 text-emerald-300 border-emerald-700'
-      : 'bg-slate-800 text-slate-500 border-slate-700';
+      : 'bg-bg-surface text-muted border-border';
 
   return (
     <span

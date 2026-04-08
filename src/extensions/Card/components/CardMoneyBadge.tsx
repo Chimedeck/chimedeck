@@ -28,7 +28,7 @@ const CardMoneyBadge = ({ amount, currency }: Props) => {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-900/30 border border-emerald-700/40 rounded px-1.5 py-0.5">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700/40 rounded px-1.5 py-0.5">
       <CurrencyDollarIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
       {formatted}
     </span>

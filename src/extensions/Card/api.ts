@@ -20,11 +20,18 @@ export interface Card {
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;
   members: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  /** Counts returned by the board list endpoint — may be absent on older cached responses. */
+  comment_count?: number;
+  attachment_count?: number;
+  /** Count of internal card-link attachments — separate from file/URL attachments. */
+  linked_card_count?: number;
+  checklist_total?: number;
+  checklist_done?: number;
 }
 
 export interface Label {
   id: string;
-  workspace_id: string;
+  board_id: string;
   name: string;
   color: string; // hex e.g. "#FF5733"
 }
@@ -166,6 +173,32 @@ export async function duplicateCard({
   return api.post<{ data: Card }>(`/cards/${cardId}/duplicate`, {});
 }
 
+export async function copyCard({
+  api,
+  cardId,
+  targetListId,
+  position,
+  title,
+  keepChecklists,
+  keepMembers,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  cardId: string;
+  targetListId: string;
+  position?: number;
+  title?: string;
+  keepChecklists?: boolean;
+  keepMembers?: boolean;
+}): Promise<{ data: Card }> {
+  return api.post<{ data: Card }>(`/cards/${cardId}/copy`, {
+    targetListId,
+    position,
+    title,
+    keepChecklists,
+    keepMembers,
+  });
+}
+
 export async function deleteCard({
   api,
   cardId,
@@ -180,26 +213,26 @@ export async function deleteCard({
 
 export async function listLabels({
   api,
-  workspaceId,
+  boardId,
 }: {
   api: { get: <T>(url: string) => Promise<T> };
-  workspaceId: string;
+  boardId: string;
 }): Promise<{ data: Label[] }> {
-  return api.get<{ data: Label[] }>(`/workspaces/${workspaceId}/labels`);
+  return api.get<{ data: Label[] }>(`/boards/${boardId}/labels`);
 }
 
 export async function createLabel({
   api,
-  workspaceId,
+  boardId,
   name,
   color,
 }: {
   api: { post: <T>(url: string, data: unknown) => Promise<T> };
-  workspaceId: string;
+  boardId: string;
   name: string;
   color: string;
 }): Promise<{ data: Label }> {
-  return api.post<{ data: Label }>(`/workspaces/${workspaceId}/labels`, { name, color });
+  return api.post<{ data: Label }>(`/boards/${boardId}/labels`, { name, color });
 }
 
 export async function updateLabel({

@@ -9,14 +9,14 @@ export const ChecklistProgress = ({ total, checked }: Props) => {
 
   return (
     <div className="flex items-center gap-2" aria-label={`Checklist progress: ${checked} of ${total}`}>
-      <span className="min-w-[2.5rem] text-right text-xs text-gray-400 dark:text-slate-400">{pct}%</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
+      <span className="min-w-[2.5rem] text-right text-xs text-muted">{pct}%</span>
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-overlay">
         <div
           className="h-full rounded-full bg-green-500 transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-gray-400 dark:text-slate-400">{checked}/{total}</span>
+      <span className="text-xs text-muted">{checked}/{total}</span>
     </div>
   );
 };

@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 62 (Automation Triggers), Sprint 08 (Labels, members, due dates), Sprint 11 (Comments)
-> **References:** Trello Automation — https://trello.com/guide/automate-anything#rule-based-automation
+> **References:** Automation
 
 ---
 

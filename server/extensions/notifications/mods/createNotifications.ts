@@ -6,7 +6,7 @@
 // Also dispatches mention email notifications (fire-and-forget) after in-app creation.
 import { db } from '../../../common/db';
 import { publishToUser } from '../../realtime/userChannel';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { preferenceGuard } from './preferenceGuard';
 import { boardPreferenceGuard } from './boardPreferenceGuard';
 import { globalPreferenceGuard } from './globalPreferenceGuard';
@@ -53,7 +53,7 @@ export async function createNotificationsForMentions({
   const actorPayload = actor
     ? {
         ...actor,
-        avatar_url: await resolveAvatarUrl({ avatarUrl: actor.avatar_url ?? null }),
+        avatar_url: buildAvatarProxyUrl({ userId: actor.id, avatarUrl: actor.avatar_url ?? null }),
       }
     : { id: actorId, nickname: null, name: null, avatar_url: null };
 
@@ -102,7 +102,7 @@ export async function createNotificationsForMentions({
       ['*'],
     );
 
-    publishToUser(userId, {
+    await publishToUser(userId, {
       type: 'notification_created',
       payload: {
         notification: {

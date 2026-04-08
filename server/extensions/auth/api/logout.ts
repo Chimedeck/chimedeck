@@ -4,7 +4,7 @@ import { pubsub } from '../../../mods/pubsub/index';
 
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
-  const match = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  const match = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`).exec(header);
   return match ? decodeURIComponent(match[1]!) : null;
 }
 
@@ -35,10 +35,14 @@ export async function handleLogout(req: Request): Promise<Response> {
   }
 
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
-  // Clear the cookie by setting Max-Age=0.
+  // Clear both auth cookies.
   responseHeaders.append(
     'Set-Cookie',
     'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=0',
+  );
+  responseHeaders.append(
+    'Set-Cookie',
+    'access_token=; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=0',
   );
 
   return new Response(JSON.stringify({ data: {} }), { status: 200, headers: responseHeaders });

@@ -17,6 +17,7 @@ import {
   type WorkspaceScopedRequest,
   type Role,
 } from '../../../middlewares/permissionManager';
+import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
 
 export async function handleListBoards(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -71,5 +72,13 @@ export async function handleListBoards(req: Request, workspaceId: string): Promi
       .orderBy('b.created_at', 'asc');
   }
 
-  return Response.json({ data: boards });
+  const boardsWithResolvedBackground = boards.map((board) => ({
+    ...board,
+    background: resolveBackgroundUrl({
+      boardId: board.id as string,
+      backgroundUrl: board.background as string | null | undefined,
+    }),
+  }));
+
+  return Response.json({ data: boardsWithResolvedBackground });
 }

@@ -1,5 +1,5 @@
-// GET  /api/v1/boards/:id/labels — list labels for the board's workspace.
-// POST /api/v1/boards/:id/labels — create a label in the board's workspace.
+// GET  /api/v1/boards/:id/labels — list labels for the board.
+// POST /api/v1/boards/:id/labels — create a label scoped to the board.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
@@ -28,7 +28,7 @@ export async function handleGetBoardLabels(req: Request, boardId: string): Promi
   }
 
   const labels = await db('labels')
-    .where({ workspace_id: board.workspace_id })
+    .where({ board_id: boardId })
     .orderBy('name', 'asc');
 
   return Response.json({ data: labels });
@@ -72,7 +72,7 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
 
   const label = {
     id: randomUUID(),
-    workspace_id: board.workspace_id,
+    board_id: boardId,
     name: body.name.trim(),
     color: body.color ?? '#6b7280',
   };

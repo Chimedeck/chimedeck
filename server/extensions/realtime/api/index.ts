@@ -9,7 +9,7 @@ import { unsubscribeFromBoard } from '../mods/rooms/unsubscribe';
 import { recordPong, initHeartbeat, startHeartbeatLoop } from '../mods/heartbeat';
 import { cache } from '../../../mods/cache/index';
 import { db } from '../../../common/db';
-import { registerUserSocket, deregisterUserSocket } from '../userChannel';
+import { registerUserSocket, deregisterUserSocket, subscribeUserChannel, unsubscribeUserChannel } from '../userChannel';
 import {
   subscribeSessionRevocation,
   unsubscribeSessionRevocation,
@@ -50,6 +50,7 @@ export const wsHandlers = {
     allSockets.add(ws);
     initHeartbeat(ws);
     registerUserSocket(ws);
+    subscribeUserChannel(ws.data.userId).catch(() => {});
     // Subscribe to session revocation so logout/password-reset closes this socket.
     subscribeSessionRevocation(ws.data.userId).catch(() => {});
   },
@@ -109,6 +110,7 @@ export const wsHandlers = {
     for (const boardId of ws.data.subscribedBoards) {
       await unsubscribeFromBoard({ ws, boardId });
     }
+    await unsubscribeUserChannel(ws.data.userId);
     // Clean up session revocation listener when the last socket for this user closes.
     await unsubscribeSessionRevocation(ws.data.userId);
   },

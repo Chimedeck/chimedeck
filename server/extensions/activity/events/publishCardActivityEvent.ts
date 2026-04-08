@@ -9,7 +9,7 @@
 // card-specific channel.
 import { db } from '../../../common/db';
 import { publisher } from '../../../mods/pubsub/publisher';
-import { resolveAvatarUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import type { WrittenActivity } from '../mods/write';
 
 export interface PublishCardActivityEventInput {
@@ -25,7 +25,7 @@ export async function publishCardActivityEvent({
   const rawActors = await db('users')
     .where({ id: activity.actor_id })
     .select('id', 'name', 'email', 'avatar_url');
-  const actors = await resolveAvatarUrlsInCollection(rawActors);
+  const actors = buildAvatarProxyUrlsInCollection(rawActors);
   const actor = actors[0] ?? null;
 
   const message = JSON.stringify({

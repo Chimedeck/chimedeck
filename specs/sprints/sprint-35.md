@@ -202,7 +202,7 @@ Mounted inside the Card Detail Modal (Sprint 19).
 
 #### `PluginPopup.tsx`
 
-Small floating popup anchored near the triggering element (mimicking Trello's popup). Contains an `<iframe src={options.url}>` sized to fit. Closed on outside click or when the plugin calls `t.closePopup()`.
+Small floating popup anchored near the triggering element. Contains an `<iframe src={options.url}>` sized to fit. Closed on outside click or when the plugin calls `t.closePopup()`.
 
 #### `PluginModal.tsx`
 
@@ -253,9 +253,9 @@ When the user clicks a gear icon next to an active plugin in the dashboard, the 
    └── Injects <iframe src="https://escrow.jhorizon.io/connector.html?..."> (hidden)
    └── iframe loads connector.html:
          <script src="/sdk/jh-instance.js">   ← our SDK
-         <script src="/js/client.js">          ← plugin code (uses TrelloPowerUp alias)
+         <script src="/js/client.js">          ← plugin code
    └── client.js calls:
-         TrelloPowerUp.initialize({            ← aliased to jhInstance
+         PowerUp.initialize({            ← aliased to jhInstance
            'card-badges': async (t) => {...},
            'card-buttons': async (t) => {...},
            'card-detail-badges': async (t) => {...},
@@ -319,7 +319,7 @@ When the user clicks a gear icon next to an active plugin in the dashboard, the 
 - [ ] Enabling a plugin creates a `board_plugins` record and moves the plugin to "Active" without page reload.
 - [ ] Disabling a plugin sets `disabled_at`; the iframe is removed from the DOM within one render cycle.
 - [ ] Navigating back to the board after enabling a plugin shows the plugin iframe injected (hidden) in the DOM.
-- [ ] `connector.html` loads, `client.js` runs `TrelloPowerUp.initialize(...)` (with shim), and `PLUGIN_READY` is received by the host within 3 seconds.
+- [ ] `connector.html` loads, `client.js` runs `initialize(...)` (with shim), and `PLUGIN_READY` is received by the host within 3 seconds.
 - [ ] Card tiles display `card-badges` returned by the plugin.
 - [ ] Card tiles display `card-buttons`; clicking a button triggers the plugin callback and opens a `PluginModal`.
 - [ ] Card detail modal displays `card-detail-badges` and a `section` panel when those capabilities are registered.

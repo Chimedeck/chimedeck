@@ -188,6 +188,21 @@ export async function createBoardLabel({
   return (res as unknown as { data: Label }).data;
 }
 
+export async function updateBoardLabel({
+  api,
+  labelId,
+  name,
+  color,
+}: {
+  api: ApiClient;
+  labelId: string;
+  name: string;
+  color: string;
+}): Promise<Label> {
+  const res = await api.patch<{ data: Label }>(`/labels/${labelId}`, { name, color });
+  return (res as unknown as { data: Label }).data;
+}
+
 export async function getBoardLabels({
   api,
   boardId,

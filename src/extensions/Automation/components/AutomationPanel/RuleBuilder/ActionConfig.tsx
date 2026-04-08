@@ -50,7 +50,7 @@ const ActionConfig = ({ actionType, config, onChange, boardId }: Props) => {
   if (fields.length === 0) return null;
 
   return (
-    <div className="mt-2 flex flex-col gap-3 rounded-md border border-slate-700 bg-slate-800/50 px-3 py-2">
+    <div className="mt-2 flex flex-col gap-3 rounded-md border border-border bg-bg-surface/50 px-3 py-2">
       {fields.map(({ key, fieldDef }) =>
         renderConfigField({
           key,

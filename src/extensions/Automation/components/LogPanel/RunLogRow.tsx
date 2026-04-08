@@ -13,6 +13,7 @@ import {
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import type { AutomationRunLog } from '../../types';
+import Button from '../../../../common/components/Button';
 import RunLogDetail from './RunLogDetail';
 import translations from '../../translations/en.json';
 
@@ -36,7 +37,7 @@ function relativeTime(dateStr: string): string {
 const STATUS_ICON: Record<string, { icon: typeof CheckCircleIcon; cls: string; label: string }> = {
   SUCCESS: { icon: CheckCircleIcon, cls: 'text-emerald-400', label: translations['automation.runLogRow.status.success'] },
   PARTIAL: { icon: ExclamationCircleIcon, cls: 'text-amber-400', label: translations['automation.runLogRow.status.partial'] },
-  FAILED: { icon: XCircleIcon, cls: 'text-red-400', label: translations['automation.runLogRow.status.failed'] },
+  FAILED: { icon: XCircleIcon, cls: 'text-danger', label: translations['automation.runLogRow.status.failed'] },
 };
 
 const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {
@@ -59,7 +60,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
   return (
     <>
       <tr
-        className="border-b border-slate-800 hover:bg-slate-800/40 transition-colors"
+        className="border-b border-border hover:bg-bg-surface/40 transition-colors"
         data-testid="run-log-row"
       >
         {/* Status */}
@@ -73,8 +74,8 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
         {/* Automation name + type chip */}
         <td className="py-2 px-2 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="truncate text-xs text-slate-200">{run.automationName}</span>
-            <span className="shrink-0 flex items-center gap-0.5 rounded-full bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-400">
+            <span className="truncate text-xs text-subtle">{run.automationName}</span>
+            <span className="shrink-0 flex items-center gap-0.5 rounded-full bg-bg-overlay px-1.5 py-0.5 text-[10px] text-muted">
               <TypeIcon className="h-3 w-3" aria-hidden="true" />
               {typeMeta.label}
             </span>
@@ -92,28 +93,29 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
               {run.cardName}
             </button>
           ) : (
-            <span className="text-xs text-slate-500">{translations['automation.runLogRow.boardWide']}</span>
+            <span className="text-xs text-muted">{translations['automation.runLogRow.boardWide']}</span>
           )}
         </td>
 
         {/* Triggered by */}
         <td className="py-2 px-2">
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-muted">
             {run.triggeredByUser ? run.triggeredByUser.name : translations['automation.runLogRow.scheduledTrigger']}
           </span>
         </td>
 
         {/* When */}
         <td className="py-2 px-2 whitespace-nowrap">
-          <span className="text-xs text-slate-500" title={run.ranAt}>
+          <span className="text-xs text-muted" title={run.ranAt}>
             {relativeTime(run.ranAt)}
           </span>
         </td>
 
         {/* Expand toggle */}
         <td className="py-2 pl-2 pr-4 w-8">
-          <button
-            className="rounded p-0.5 text-slate-500 hover:text-slate-300 transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setExpanded((v) => !v)}
             aria-label={expanded ? translations['automation.runLogRow.collapseAriaLabel'] : translations['automation.runLogRow.expandAriaLabel']}
           >
@@ -122,7 +124,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
             ) : (
               <ChevronDownIcon className="h-4 w-4" />
             )}
-          </button>
+          </Button>
         </td>
       </tr>
 

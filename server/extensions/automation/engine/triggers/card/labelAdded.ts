@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { TriggerHandler } from '../../../common/types';
 
 const configSchema = z.object({
-  labelId: z.string().uuid().optional(),
+  labelId: z.string().min(1).optional(),
 });
 
 export const cardLabelAddedTrigger: TriggerHandler = {

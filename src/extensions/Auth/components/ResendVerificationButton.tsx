@@ -14,7 +14,7 @@ export default function ResendVerificationButton() {
 
   if (status === 'sent') {
     return (
-      <p className="text-green-400 text-sm">{translations.verifyEmail.resendSuccess}</p>
+      <p className="text-success text-sm">{translations.verifyEmail.resendSuccess}</p>
     );
   }
 

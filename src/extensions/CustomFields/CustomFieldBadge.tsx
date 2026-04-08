@@ -46,21 +46,30 @@ const CustomFieldBadge = ({ fieldName, fieldType, value, dropdownOption }: Props
       className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium max-w-[10rem] truncate ${
         isCheckbox
           ? isChecked
-            ? 'bg-emerald-900/40 border border-emerald-700/40 text-emerald-400'
-            : 'bg-slate-800 border border-slate-700 text-slate-500'
-          : 'bg-slate-800 border border-slate-700 text-slate-300'
+            ? 'bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700/40 text-emerald-800 dark:text-emerald-400'
+            : 'bg-bg-overlay border border-border text-base'
+          : 'bg-bg-overlay border border-border text-base'
       }`}
       title={`${fieldName}: ${formatted}`}
       aria-label={`${fieldName}: ${formatted}`}
     >
-      {dropdownOption && (
-        <span
-          className="w-2 h-2 rounded-full flex-shrink-0"
-          style={{ backgroundColor: dropdownOption.color }}
-          aria-hidden="true"
-        />
+      {isCheckbox ? (
+        <>
+          <span aria-hidden="true">{isChecked ? '✓' : '✗'}</span>
+          <span className="truncate">{fieldName}</span>
+        </>
+      ) : (
+        <>
+          {dropdownOption && (
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: dropdownOption.color }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="truncate">{formatted}</span>
+        </>
       )}
-      <span className="truncate">{formatted}</span>
     </span>
   );
 };

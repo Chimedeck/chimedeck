@@ -2,6 +2,7 @@
 // Unimplemented tabs show a "Coming soon" placeholder.
 import { useEffect, useState, useCallback } from 'react';
 import { BoltIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../../common/components/Button';
 import type { Automation, AutomationTab } from '../../types';
 import { getAutomations } from '../../api';
 import AutomationList from './AutomationList';
@@ -23,14 +24,14 @@ interface Props {
 const TABS: { id: AutomationTab; label: string }[] = [
   { id: 'rules', label: translations['automation.panel.tab.rules'] },
   { id: 'buttons', label: translations['automation.panel.tab.buttons'] },
-  { id: 'schedule', label: translations['automation.panel.tab.schedule'] },
+  // TODO: unhide schedule tab when feature is ready
   { id: 'log', label: translations['automation.panel.tab.log'] },
 ];
 
 const ComingSoon = ({ tab }: { tab: string }) => (
   <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
-    <p className="text-slate-200 font-medium capitalize">{tab}</p>
-    <p className="text-sm text-slate-400">Coming soon</p>
+    <p className="text-subtle font-medium capitalize">{tab}</p>
+    <p className="text-sm text-muted">Coming soon</p>
   </div>
 );
 
@@ -84,28 +85,29 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
 
       {/* Panel */}
       <div
-        className="absolute right-0 top-0 h-full w-96 bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-40"
+        className="absolute right-0 top-0 h-full w-96 bg-bg-base border-l border-border flex flex-col shadow-2xl z-40"
         role="dialog"
         aria-modal="true"
         aria-label={translations['automation.panel.title']}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
-            <BoltIcon className="h-5 w-5 text-slate-300" aria-hidden="true" />
-            <h2 className="text-slate-100 font-semibold text-sm">{translations['automation.panel.title']}</h2>
+            <BoltIcon className="h-5 w-5 text-subtle" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-sm">{translations['automation.panel.title']}</h2>
           </div>
-          <button
-            className="rounded p-1 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label={translations['automation.panel.close']}
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 border-b border-slate-700 px-4 pt-2 shrink-0">
+        <div className="flex gap-1 border-b border-border px-4 pt-2 shrink-0">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -113,7 +115,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
               className={`rounded-t px-3 py-2 text-xs font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'border-b-2 border-blue-500 text-blue-400'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-muted hover:text-subtle'
               }`}
               aria-selected={activeTab === tab.id}
               role="tab"
@@ -129,12 +131,12 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
             <>
               {loading && (
                 <div className="flex items-center justify-center py-12">
-                  <p className="text-sm text-slate-400">{translations['automation.panel.loading']}</p>
+                  <p className="text-sm text-muted">{translations['automation.panel.loading']}</p>
                 </div>
               )}
               {!loading && error && (
                 <div className="p-4">
-                  <p className="text-sm text-red-400">{error}</p>
+                  <p className="text-sm text-danger">{error}</p>
                   <button
                     className="mt-2 text-xs text-blue-400 hover:underline"
                     onClick={loadAutomations}

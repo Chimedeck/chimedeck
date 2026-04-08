@@ -115,16 +115,16 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
     >
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
-        className="absolute right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl"
+        className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Board Members"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <h2 className="text-slate-100 font-semibold text-sm">Board Members</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 className="text-base font-semibold text-sm">Board Members</h2>
           <button
-            className="text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-muted hover:text-subtle transition-colors"
             onClick={onClose}
             aria-label="Close members panel"
           >
@@ -133,14 +133,14 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
         </div>
 
         {/* Tab navigation */}
-        <div className="flex border-b border-slate-700">
+        <div className="flex border-b border-border">
           <button
             type="button"
             onClick={() => setActiveTab('members')}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'members'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-muted hover:text-subtle'
             }`}
             aria-selected={activeTab === 'members'}
             role="tab"
@@ -154,7 +154,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'guests'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-muted hover:text-subtle'
             }`}
             aria-selected={activeTab === 'guests'}
             role="tab"
@@ -170,7 +170,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
               {/* Add member input — only admins can add */}
               {isAdmin && (
                 <div>
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
                     Add member
                   </p>
                   <AddMemberInput candidates={candidates} onAdd={handleAdd} />
@@ -179,15 +179,15 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
 
               {/* Member list */}
               <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
                   Members
                 </p>
                 {isLoading ? (
-                  <p className="text-sm text-slate-500">Loading…</p>
+                  <p className="text-sm text-muted">Loading…</p>
                 ) : boardMembers.length === 0 ? (
-                  <p className="text-sm text-slate-500">No members yet.</p>
+                  <p className="text-sm text-muted">No members yet.</p>
                 ) : (
-                  <ul className="divide-y divide-slate-800">
+                  <ul className="divide-y divide-border">
                     {boardMembers.map((member) => {
                       // Last-admin guard: disable remove for the last ADMIN/OWNER.
                       const isThisLastAdmin =

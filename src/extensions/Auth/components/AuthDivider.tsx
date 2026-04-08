@@ -3,7 +3,7 @@ export default function AuthDivider() {
   return (
     <div className="flex items-center gap-3 my-2">
       <div className="flex-1 border-t border-slate-700" />
-      <span className="text-slate-500 text-sm">or</span>
+      <span className="text-muted text-sm">or</span>
       <div className="flex-1 border-t border-slate-700" />
     </div>
   );

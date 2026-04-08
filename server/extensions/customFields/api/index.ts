@@ -34,11 +34,13 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
     }
   }
 
-  // GET /api/v1/boards/:boardId/custom-field-values?cardIds=id1,id2,...  (batch)
+  // GET/POST /api/v1/boards/:boardId/custom-field-values  (batch)
+  //   - GET:  ?cardIds=id1,id2,... (legacy)
+  //   - POST: { cardIds: [id1, id2, ...] } (preferred; avoids overly long URLs)
   // [why] Must be checked before the board custom-fields pattern since the path differs
   //       (custom-field-values vs custom-fields) — placed here for clarity.
   const boardBatchValuesMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/custom-field-values$/);
-  if (boardBatchValuesMatch && req.method === 'GET') {
+  if (boardBatchValuesMatch && (req.method === 'GET' || req.method === 'POST')) {
     const boardId = boardBatchValuesMatch[1] as string;
     return handleBatchCardFieldValues(req, boardId);
   }

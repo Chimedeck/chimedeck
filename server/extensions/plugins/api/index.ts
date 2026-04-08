@@ -4,6 +4,7 @@ import { handleEnableBoardPlugin } from './board-plugins/enable';
 import { handleDisableBoardPlugin } from './board-plugins/disable';
 import { handleSetBoardPluginAllowedDomains } from './board-plugins/allowed-domains';
 import { handleGetPluginToken } from './board-plugins/token';
+import { handleListAvailableBoardPlugins } from './board-plugins/available';
 import { handleGetPluginData } from './plugin-data/get';
 import { handleSetPluginData } from './plugin-data/set';
 import { handleListPlugins } from './registry/list';
@@ -21,6 +22,11 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
     const boardId = boardPluginsMatch[1] as string;
     const pluginSegment = boardPluginsMatch[2] ?? '';
     const subResource = boardPluginsMatch[3] ?? '';
+
+    // GET /api/v1/boards/:boardId/plugins/available — list plugins not yet enabled on this board
+    if (pluginSegment === '/available' && subResource === '' && req.method === 'GET') {
+      return handleListAvailableBoardPlugins(req, boardId);
+    }
 
     // PATCH /api/v1/boards/:boardId/plugins/:pluginId/allowed-domains
     if (pluginSegment !== '' && subResource === '/allowed-domains' && req.method === 'PATCH') {

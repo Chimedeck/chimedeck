@@ -3,8 +3,11 @@ import { handleRequestUploadUrl } from './requestUploadUrl';
 import { handleConfirmUpload } from './confirmUpload';
 import { handleAddUrl } from './addUrl';
 import { handleDeleteAttachment } from './delete';
-import { handleGetSignedUrl } from './getSignedUrl';
 import { handleListAttachments } from './list';
+import { handleViewAttachment } from './view';
+import { handleThumbnailAttachment } from './thumbnail';
+import { handlePatchAttachment } from './patch';
+import { handleLinkPreview } from './linkPreview';
 import { handleMultipartStart } from './multipart/start';
 import { handleMultipartPartUrl } from './multipart/partUrl';
 import { handleMultipartComplete } from './multipart/complete';
@@ -59,16 +62,33 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
     return handleConfirmUpload(req, confirmMatch[1] as string);
   }
 
-  // GET /api/v1/attachments/:id/url
-  const signedUrlMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/url$/);
-  if (signedUrlMatch && req.method === 'GET') {
-    return handleGetSignedUrl(req, signedUrlMatch[1] as string);
+  // GET /api/v1/attachments/:id/view — secure file proxy (auth required)
+  const viewMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/view$/);
+  if (viewMatch && req.method === 'GET') {
+    return handleViewAttachment(req, viewMatch[1] as string);
+  }
+
+  // GET /api/v1/attachments/:id/thumbnail — secure thumbnail proxy (auth required)
+  const thumbnailMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/thumbnail$/);
+  if (thumbnailMatch && req.method === 'GET') {
+    return handleThumbnailAttachment(req, thumbnailMatch[1] as string);
+  }
+
+  // PATCH /api/v1/attachments/:id — update alias
+  const patchMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)$/);
+  if (patchMatch && req.method === 'PATCH') {
+    return handlePatchAttachment(req, patchMatch[1] as string);
   }
 
   // DELETE /api/v1/attachments/:id
   const deleteMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)$/);
   if (deleteMatch && req.method === 'DELETE') {
     return handleDeleteAttachment(req, deleteMatch[1] as string);
+  }
+
+  // GET /api/v1/link-preview?url=...
+  if (pathname === '/api/v1/link-preview' && req.method === 'GET') {
+    return handleLinkPreview(req);
   }
 
   return null;

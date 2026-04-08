@@ -32,7 +32,7 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
       <button
         onClick={handleDismiss}
         aria-label="Dismiss"
-        className="absolute top-3 right-3 text-indigo-400 hover:text-white"
+        className="absolute top-3 right-3 text-indigo-400 hover:text-base"
       >
         <XMarkIcon className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -42,12 +42,12 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
       </p>
 
       {resendStatus === 'sent' ? (
-        <p className="text-green-400">{translations.verifyEmail.resendSuccess}</p>
+        <p className="text-success">{translations.verifyEmail.resendSuccess}</p>
       ) : (
         <button
           onClick={handleResend}
           disabled={resendStatus === 'loading'}
-          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-3 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors" // [theme-exception] text-white on primary button
         >
           {resendStatus === 'loading' ? 'Sending…' : translations.verifyEmail.resend}
         </button>

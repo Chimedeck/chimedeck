@@ -1,6 +1,7 @@
 // LabelPicker — multi-select dropdown for workspace labels.
 import { useState } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import type { Label } from '../api';
 import { LabelChip } from './LabelChip';
 
@@ -26,24 +27,25 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
 
   return (
     <div className="relative">
-      <button
+      <Button
         type="button"
-        className="rounded border border-gray-300 bg-white px-2 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+        variant="secondary"
+        className="px-2 py-1 text-sm"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         Labels <ChevronDownIcon className="inline-block h-3 w-3 align-middle" aria-hidden="true" />
-      </button>
+      </Button>
       {open && (
         <div
-          className="absolute z-10 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg"
+          className="absolute z-10 mt-1 w-48 rounded-md border border-border bg-bg-surface shadow-lg max-h-64 overflow-y-auto"
           role="listbox"
           aria-multiselectable="true"
         >
           {allLabels.length === 0 && (
-            <p className="px-3 py-2 text-sm text-gray-400">No labels in workspace</p>
+            <p className="px-3 py-2 text-sm text-muted">No labels on this board</p>
           )}
           {allLabels.map((label) => {
             const selected = selectedIds.includes(label.id);
@@ -53,7 +55,7 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
                 type="button"
                 role="option"
                 aria-selected={selected}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-bg-overlay"
                 onClick={() => toggle(label)}
               >
                 <span

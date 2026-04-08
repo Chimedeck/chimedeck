@@ -1,7 +1,7 @@
 // POST /api/v1/cards/:id/comments — add a comment; min role: MEMBER.
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
@@ -106,9 +106,9 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       .first();
 
     if (existing) {
-      const authorAvatarUrl = await resolveAvatarUrl({
-        avatarUrl:
-          ((existing as Record<string, unknown>).author_avatar_url as string | null) ?? null,
+      const authorAvatarUrl = buildAvatarProxyUrl({
+        userId: actorId,
+        avatarUrl: ((existing as Record<string, unknown>).author_avatar_url as string | null) ?? null,
       });
       return Response.json(
         { data: { ...existing, author_avatar_url: authorAvatarUrl } },
@@ -174,7 +174,8 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     )
     .first();
 
-  const authorAvatarUrl = await resolveAvatarUrl({
+  const authorAvatarUrl = buildAvatarProxyUrl({
+    userId: actorId,
     avatarUrl: ((comment as Record<string, unknown>).author_avatar_url as string | null) ?? null,
   });
   const commentData = { ...comment, author_avatar_url: authorAvatarUrl };
@@ -193,7 +194,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       boardId: board.id,
       action: 'comment_added',
       actorId,
-      payload: { commentId: id, cardId, cardTitle: card.title },
+      payload: { commentId: id, cardId, cardTitle: card.title, commentPreview },
     }),
   ]);
 

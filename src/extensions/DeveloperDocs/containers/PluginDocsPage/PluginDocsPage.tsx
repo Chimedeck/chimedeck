@@ -6,93 +6,11 @@ import {
   PuzzlePieceIcon,
   CubeIcon,
   WrenchScrewdriverIcon,
-  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
-
-// ─── Small primitives ────────────────────────────────────────────────────────
-
-const Section = ({ id, children }: { id: string; children: React.ReactNode }) => (
-  <section id={id} className="scroll-mt-20">
-    {children}
-  </section>
-);
-
-const H2 = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="mb-4 text-xl font-semibold text-white">{children}</h2>
-);
-
-const H3 = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="mb-2 mt-5 text-base font-semibold text-slate-100">{children}</h3>
-);
-
-const P = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-3 text-sm leading-relaxed text-slate-300">{children}</p>
-);
-
-const Code = ({ children }: { children: React.ReactNode }) => (
-  <code className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-xs text-indigo-300">
-    {children}
-  </code>
-);
-
-const Pre = ({ children }: { children: React.ReactNode }) => (
-  <pre className="my-3 overflow-x-auto rounded-lg border border-slate-700 bg-slate-950 px-4 py-4 font-mono text-xs leading-relaxed text-slate-200">
-    {children}
-  </pre>
-);
-
-const Divider = () => <hr className="my-8 border-slate-700" />;
-
-const Badge = ({ color, children }: { color: string; children: React.ReactNode }) => (
-  <span className={`rounded px-2 py-0.5 text-xs font-medium ${color}`}>{children}</span>
-);
-
-interface TableCell {
-  key: string;
-  content: React.ReactNode;
-}
-
-interface TableRow {
-  rowId: string;
-  cells: TableCell[];
-}
-
-const Table = ({ headers, rows }: { headers: string[]; rows: TableRow[] }) => (
-  <div className="my-4 overflow-x-auto rounded-lg border border-slate-700">
-    <table className="w-full text-sm">
-      <thead className="bg-slate-800">
-        <tr>
-          {headers.map((h) => (
-            <th key={h} className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => (
-          <tr key={row.rowId} className={i % 2 === 0 ? 'bg-slate-900' : 'bg-slate-900/50'}>
-            {row.cells.map((cell) => (
-              <td key={cell.key} className="border-t border-slate-800 px-4 py-2 text-slate-300">
-                {cell.content}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-const NavItem = ({ href, label }: { href: string; label: string }) => (
-  <a
-    href={href}
-    className="flex items-center gap-1.5 rounded px-2 py-1 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-  >
-    <ChevronRightIcon className="h-3 w-3 shrink-0 text-slate-600" />
-    {label}
-  </a>
-);
+import {
+  Section, H2, H3, P, Code, Pre, Divider, Badge,
+  InfoCallout, WarnCallout, Table, NavItem,
+} from '~/extensions/DeveloperDocs/components/DocsPrimitives';
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -100,11 +18,11 @@ const PluginDocsPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+    <div className="flex min-h-screen bg-bg-base text-base">
       {/* ── Left TOC ─────────────────────────────────────── */}
-      <aside className="hidden w-56 shrink-0 border-r border-slate-800 bg-slate-900 xl:block">
+      <aside className="hidden w-56 shrink-0 border-r border-border bg-bg-base xl:block">
         <div className="sticky top-0 overflow-y-auto py-8 px-3">
-          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-muted">
             On this page
           </p>
           <nav className="space-y-0.5">
@@ -128,18 +46,18 @@ const PluginDocsPage = () => {
       {/* ── Main content ─────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-slate-800 bg-slate-900 px-8 py-5">
+        <div className="border-b border-border bg-bg-base px-8 py-5">
           <button
             onClick={() => navigate(-1)}
-            className="mb-2 flex items-center gap-1 text-sm text-slate-400 hover:text-slate-200"
+            className="mb-2 flex items-center gap-1 text-sm text-muted hover:text-subtle"
           >
             ← Back
           </button>
           <div className="flex items-center gap-3">
             <PuzzlePieceIcon className="h-7 w-7 text-indigo-400" />
             <div>
-              <h1 className="text-2xl font-bold text-white">Plugin &amp; SDK Developer Guide</h1>
-              <p className="text-sm text-slate-400">
+              <h1 className="text-2xl font-bold text-base">Plugin &amp; SDK Developer Guide</h1>
+              <p className="text-sm text-muted">
                 Build, register, and enable plugins on boards using the <Code>jhInstance</Code> SDK.
               </p>
             </div>
@@ -150,20 +68,18 @@ const PluginDocsPage = () => {
 
           {/* ── Overview ───────────────────────────────────── */}
           <Section id="overview">
-            <div className="mb-6 rounded-lg border border-indigo-700/40 bg-indigo-900/20 px-5 py-4">
-              <p className="text-sm text-indigo-200">
-                The plugin system lets first-party extensions add capabilities to boards — card
-                buttons, badges, sections, settings modals, and more. Each plugin is a small
-                web app that the platform loads into a hidden <Code>&lt;iframe&gt;</Code> and
-                communicates with over <Code>postMessage</Code>.
-              </p>
-            </div>
+            <InfoCallout className="mb-6">
+              The plugin system lets first-party extensions add capabilities to boards — card
+              buttons, badges, sections, settings modals, and more. Each plugin is a small
+              web app that the platform loads into a hidden <Code>&lt;iframe&gt;</Code> and
+              communicates with over <Code>postMessage</Code>.
+            </InfoCallout>
           </Section>
 
           {/* ── How plugins work ───────────────────────────── */}
           <Section id="how-plugins-work">
             <H2>How plugins work</H2>
-            <ol className="mb-4 space-y-2 text-sm text-slate-300">
+            <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 'The plugin is registered in the Plugin Registry with a connector URL and a manifest.',
                 'A board admin enables the plugin from the board\'s Settings → Plugins page.',
@@ -173,7 +89,7 @@ const PluginDocsPage = () => {
               ].map((step, i) => (
                 // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-white">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
                   </span>
                   <span dangerouslySetInnerHTML={{ __html: step }} />
@@ -262,11 +178,11 @@ const PluginDocsPage = () => {
               admin only). Find your plugin in the <em>Available plugins</em> list and click{' '}
               <strong>Enable</strong>. The platform will load the connector iframe immediately.
             </P>
-            <div className="rounded-lg border border-amber-700/40 bg-amber-900/10 px-4 py-3 text-sm text-amber-200">
+            <WarnCallout>
               <strong>Access control:</strong> Only board admins can enable and disable plugins.
               The server enforces this with a <Code>boardAdminGuard</Code> middleware. A 403
               response redirects the client back to the board.
-            </div>
+            </WarnCallout>
           </Section>
 
           <Divider />
@@ -285,7 +201,7 @@ const PluginDocsPage = () => {
                   cells: [
                     { key: 'sdk', content: <Code>jhInstance</Code> },
                     { key: 'url', content: <Code>/sdk/jh-instance.js</Code> },
-                    { key: 'proto', content: <Badge color="bg-indigo-900/60 text-indigo-300">postMessage</Badge> },
+                    { key: 'proto', content: <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">postMessage</Badge> },
                     { key: 'desc', content: 'Primary plugin SDK. Trello Power-Up compatible.' },
                   ],
                 },
@@ -660,7 +576,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-connector',
                   cells: [
                     { key: 'file', content: <Code>connector.html</Code> },
-                    { key: 'req', content: <Badge color="bg-red-900/50 text-red-300">Required</Badge> },
+                    { key: 'req', content: <Badge color="bg-red-900/50 text-red-300">Required</Badge> },  // [theme-exception]
                     { key: 'purpose', content: 'Hidden iframe. Registers all capabilities via jhInstance.initialize.' },
                   ],
                 },
@@ -668,7 +584,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-settings',
                   cells: [
                     { key: 'file', content: <Code>settings.html</Code> },
-                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
+                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
                     { key: 'purpose', content: 'Board-level settings UI loaded by show-settings capability.' },
                   ],
                 },
@@ -676,7 +592,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-modal',
                   cells: [
                     { key: 'file', content: <Code>modal.html</Code> },
-                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
+                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
                     { key: 'purpose', content: 'Generic fullscreen modal for complex flows.' },
                   ],
                 },
@@ -684,7 +600,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-section',
                   cells: [
                     { key: 'file', content: <Code>section.html</Code> },
-                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
+                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
                     { key: 'purpose', content: 'Custom section rendered on the card back (section capability).' },
                   ],
                 },
@@ -692,7 +608,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-authorize',
                   cells: [
                     { key: 'file', content: <Code>api-client-authorize.html</Code> },
-                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
+                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
                     { key: 'purpose', content: 'Embedded Stripe Checkout page. Reads card amount/currency via t.card(), creates a checkout session, and mounts the Stripe embedded checkout UI.' },
                   ],
                 },
@@ -700,7 +616,7 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-payment-success',
                   cells: [
                     { key: 'file', content: <Code>payment-success.html</Code> },
-                    { key: 'req', content: <Badge color="bg-slate-700 text-slate-300">Optional</Badge> },
+                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
                     { key: 'purpose', content: 'Stripe return_url page. Verifies the checkout session, writes paymentStatus via t.set(), then calls t.closeModal().' },
                   ],
                 },
@@ -751,10 +667,10 @@ setTimeout(() => t.closeModal(), 5000);`}</Pre>
 window.TrelloPowerUp = window.jhInstance;
 
 // All existing TrelloPowerUp.initialize(...) calls now work unchanged`}</Pre>
-            <div className="mt-2 rounded-lg border border-amber-700/40 bg-amber-900/10 px-4 py-3 text-sm text-amber-200">
+            <WarnCallout className="mt-2">
               Not all Trello Power-Up features are supported. Hooks and UI injection points map
               to our capability names. Test each capability after migration.
-            </div>
+            </WarnCallout>
           </Section>
 
           <Divider />

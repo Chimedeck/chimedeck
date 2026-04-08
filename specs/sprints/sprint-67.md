@@ -2,7 +2,7 @@
 
 > **Sprint plan:** [sprint-plan.md](./sprint-plan.md)
 > **Depends on:** Sprint 66 (Card & Board Buttons UI), Sprint 64 (Scheduled & Due Date backend)
-> **References:** Trello Automation — https://trello.com/guide/automate-anything#calendar-and-due-date-commands
+> **References:** Automation
 
 ---
 

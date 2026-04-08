@@ -4,13 +4,17 @@
 // background-syncs to server when online, restores draft on card open, and
 // queues the POST with an idempotency key when submitting while offline.
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type React from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
+import Link from '@tiptap/extension-link';
 import type { Editor } from '@tiptap/react';
 import type { Attachment } from '~/extensions/Attachments/types';
 import InlineImage from '../extensions/InlineImage';
 import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
+import CardReference from '~/extensions/Card/extensions/CardReferenceExtension';
+import CardReferenceBubbleMenu from '~/extensions/Card/components/CardReferenceBubbleMenu';
 import {
   dehydrateCommentAttachmentMarkdown,
   hasAttachmentPlaceholder,
@@ -18,9 +22,11 @@ import {
   resolveAttachmentMarkdownUrl,
   stripCommentAttachmentPlaceholders,
 } from '~/extensions/Comment/utils/attachmentMarkdown';
+import { rewriteS3UrlsToProxy } from '~/common/utils/rewriteS3UrlsToProxy';
 import { CardAssetPicker } from './CardAssetPicker';
 import { useSelector } from 'react-redux';
 import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
+import LinkInsertPopover from '~/extensions/Card/components/LinkInsertPopover';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { listAttachments } from '~/extensions/Attachments/api';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
@@ -30,6 +36,7 @@ import {
 } from '~/extensions/OfflineDrafts/hooks/useOfflineCommentDraft';
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import Button from '~/common/components/Button';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -41,6 +48,12 @@ interface Props {
   onSubmit: (content: string) => Promise<void>;
   onCancel?: () => void;
   submitLabel?: string;
+  /**
+   * When provided, the editor will set this ref to an `insertMarkdown(md)` function
+   * once ready. External callers (e.g. AttachmentPanel's Comment action) can use it
+   * to insert markdown at the current cursor position without a network call.
+   */
+  insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
 }
 
 // Map draft status to a human-readable footer label — mirrors description editor.
@@ -111,10 +124,9 @@ function buildBoardProps(boardId?: string): { boardId: string } | Record<string,
 
 function getDraftStatusClass(status: DraftStatus): string {
   if (status === 'will_sync_when_online') return 'text-amber-500 dark:text-amber-400';
-  if (status === 'synced') return 'text-green-500 dark:text-green-400';
-  return 'text-gray-400 dark:text-slate-500';
+  if (status === 'synced') return 'text-success';
+  return 'text-muted';
 }
-
 function normalizeEscapedBlockquoteMarkers(markdown: string): string {
   return markdown
     .replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>')
@@ -125,7 +137,9 @@ function resolvePendingHydratedContent(pendingContent: string | null, attachment
   if (!pendingContent) return null;
   const normalized = normalizeEscapedBlockquoteMarkers(pendingContent);
   if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) return null;
-  return hydrateCommentAttachmentMarkdown(normalized, attachments);
+  const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
+  // [why] Rewrite any legacy raw S3 URLs to the authenticated proxy path.
+  return rewriteS3UrlsToProxy(hydrated, attachments);
 }
 
 function getInitialEditorContent(initialValue: string, attachments: Attachment[]): string {
@@ -133,7 +147,9 @@ function getInitialEditorContent(initialValue: string, attachments: Attachment[]
   if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) {
     return stripCommentAttachmentPlaceholders(normalized);
   }
-  return hydrateCommentAttachmentMarkdown(normalized, attachments);
+  const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
+  // [why] Rewrite any legacy raw S3 URLs to the authenticated proxy path.
+  return rewriteS3UrlsToProxy(hydrated, attachments);
 }
 
 function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): boolean {
@@ -163,12 +179,22 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
     return true;
   }
 
-  const snippet = buildAttachmentSnippet({
-    name: attachment.name,
-    url,
-    isImage,
-  });
-  insertSnippetAt(editor, pos, snippet);
+  // [why] Insert as a proper link node so the Link extension renders it as a
+  // clickable link rather than raw markdown text.
+  const displayName = attachment.alias ?? attachment.name;
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(pos, [
+      {
+        type: 'text',
+        text: displayName,
+        marks: [{ type: 'link', attrs: { href: url, target: '_blank' } }],
+      },
+      { type: 'text', text: ' ' },
+    ])
+    .setTextSelection(pos + displayName.length + 2)
+    .run();
   return true;
 }
 
@@ -181,11 +207,13 @@ const CommentEditor = ({
   onSubmit,
   onCancel,
   submitLabel = translations['comment.editor.submit'],
+  insertMarkdownRef,
 }: Props) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>(availableAttachments);
 
   // Auth + workspace context needed by the offline draft hook
@@ -296,8 +324,11 @@ const CommentEditor = ({
     extensions: [
       StarterKit,
       Markdown,
+      Link.configure({ openOnClick: false, autolink: true }),
       // [why] InlineImage now includes markdown parse/render support.
       InlineImage,
+      // [why] CardReference converts pasted card URLs into interactive chip nodes.
+      CardReference,
       // [why] Mention extension auto-loads for boards; skip if no boardId (edge case).
       ...(boardId ? [buildMentionExtension(boardId)] : []),
     ],
@@ -313,7 +344,7 @@ const CommentEditor = ({
       // Using [&_.ProseMirror]:prose variant only applies the root .prose properties,
       // not the child-element selectors that list/blockquote/heading styling depends on.
       attributes: {
-        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-gray-900 dark:text-slate-100',
+        class: 'prose prose-sm dark:prose-invert max-w-none outline-none text-base',
       },
       // [why] Intercept file drops directly onto the editor so images dropped
       // anywhere in the text area are uploaded and inserted at the drop position.
@@ -334,6 +365,39 @@ const CommentEditor = ({
   });
   // Keep editorRef current so the async onSuccess always reads the live editor
   editorRef.current = editor;
+
+  // [why] Expose a stable insert function via ref so external callers (e.g. AttachmentPanel
+  // Comment action) can insert markdown at the current cursor without re-rendering.
+  useEffect(() => {
+    if (!insertMarkdownRef) return;
+    insertMarkdownRef.current = (md: string) => {
+      const ed = editorRef.current;
+      if (!ed || ed.isDestroyed) return;
+      const pos = ed.state.selection.anchor;
+      // [why] Parse [label](url) markdown so it inserts as a proper link node
+      // rather than raw text — the Link extension renders it correctly this way.
+      const linkMatch = /^\[(.+?)\]\((.+?)\)\s*$/.exec(md);
+      if (linkMatch) {
+        const [, text, href] = linkMatch;
+        ed.chain()
+          .focus()
+          .insertContentAt(pos, [
+            { type: 'text', text, marks: [{ type: 'link', attrs: { href, target: '_blank' } }] },
+            { type: 'text', text: ' ' },
+          ])
+          .setTextSelection(pos + text.length + 2)
+          .run();
+        return;
+      }
+      insertSnippetAt(ed, pos, md);
+    };
+    return () => {
+      // Clear on unmount so stale refs don't leak
+      if (insertMarkdownRef.current) insertMarkdownRef.current = null;
+    };
+  // [why] insertMarkdownRef identity is stable (ref object), so this runs once on mount/unmount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insertMarkdownRef]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -479,7 +543,7 @@ const CommentEditor = ({
           </span>
           <button
             type="button"
-            className="ml-4 text-gray-400 hover:text-gray-300 underline transition-colors"
+            className="ml-4 text-muted hover:text-subtle underline transition-colors"
             onClick={discardDraft}
             data-testid="comment-draft-discard"
           >
@@ -489,7 +553,7 @@ const CommentEditor = ({
       )}
 
       <div
-        className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
+        className="rounded-lg border border-border bg-bg-base overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
         onKeyDown={handleKeyDown}
       >
         {/* Single-line toolbar — never wraps */}
@@ -499,8 +563,19 @@ const CommentEditor = ({
             editor={editor}
             overflowOpen={overflowOpen}
             onToggleOverflow={() => setOverflowOpen((o) => !o)}
+            linkPopoverOpen={linkPopoverOpen}
+            onToggleLinkPopover={() => {
+              setAssetPickerOpen(false);
+              setLinkPopoverOpen((v) => !v);
+            }}
             {...(cardId ? { onAttach: handleAttach } : {})}
           />
+          {linkPopoverOpen && (
+            <LinkInsertPopover
+              editor={editor}
+              onClose={() => setLinkPopoverOpen(false)}
+            />
+          )}
           {assetPickerOpen && cardId && (
             <CardAssetPicker
               attachments={cardAttachments}
@@ -516,12 +591,13 @@ const CommentEditor = ({
           aria-placeholder={placeholder}
           className="px-3 py-2 text-sm [&_.ProseMirror]:min-h-[72px] [&_.ProseMirror>*:first-child]:mt-0 [&_.ProseMirror>*:last-child]:mb-0"
         />
+        {editor && <CardReferenceBubbleMenu editor={editor} />}
 
         {/* Inline upload previews — shown while files are in-flight */}
         {uploads.length > 0 && (
           <div
             aria-label={translations['comment.editor.uploads.ariaLabel']}
-            className="flex flex-col gap-1 border-t border-gray-300 dark:border-slate-700 p-2"
+            className="flex flex-col gap-1 border-t border-border p-2"
           >
             {uploads.map((entry) => (
               <InlineUploadPreview
@@ -534,7 +610,7 @@ const CommentEditor = ({
         )}
       </div>
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {/* Draft status footer */}
       {draftStatus !== 'idle' && (
@@ -544,7 +620,7 @@ const CommentEditor = ({
         >
           {draftStatus === 'sync_failed' ? (
             <>
-              <span className="text-red-500 dark:text-red-400">
+              <span className="text-danger">
                 {isSubmitPending ? translations['comment.draft.postFailed'] : translations['comment.draft.syncFailed']}
               </span>
               <button
@@ -558,7 +634,7 @@ const CommentEditor = ({
               </button>
               <button
                 type="button"
-                className="text-gray-400 hover:text-gray-300 underline transition-colors"
+                className="text-muted hover:text-subtle underline transition-colors"
                 onClick={discardDraft}
                 data-testid="comment-draft-discard-footer"
               >
@@ -576,21 +652,23 @@ const CommentEditor = ({
       )}
 
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={handleSubmit}
           disabled={submitting}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {submitting ? translations['comment.editor.submitting'] : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onCancel}
             disabled={submitting}
-            className="rounded px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100"
           >
             {translations['comment.editor.cancel']}
-          </button>
+          </Button>
         )}
       </div>
     </div>

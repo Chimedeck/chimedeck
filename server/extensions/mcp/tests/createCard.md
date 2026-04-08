@@ -4,8 +4,8 @@
 Call the `create_card` MCP tool with a valid `listId` and `title` to verify a card is created in the specified list.
 
 ## Preconditions
-- Taskinate is running at `http://localhost:3000`
-- A valid `TASKINATE_TOKEN` is set
+- ChimeDeck is running at `http://localhost:3000`
+- A valid `CHIMEDECK_TOKEN` is set
 - A board exists with at least one list; record the list's ID as `LIST_ID`
 
 ## Steps

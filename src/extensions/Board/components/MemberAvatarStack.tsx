@@ -28,7 +28,7 @@ const MemberAvatarStack = ({ members, onOpenMembers, max = 5 }: Props) => {
       {members.length > 0 ? (
         <BoardMemberAvatars members={members} max={max} />
       ) : (
-        <span className="text-xs text-slate-400 hover:text-slate-200 transition-colors">
+        <span className="text-xs text-muted hover:text-subtle transition-colors">
           + Add members
         </span>
       )}

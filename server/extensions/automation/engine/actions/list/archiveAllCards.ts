@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { ActionHandler, ActionContext } from '../../../../common/types';
 
 const configSchema = z.object({
-  listId: z.string().uuid(),
+  listId: z.string().min(1),
 });
 
 export const listArchiveAllCardsAction: ActionHandler = {

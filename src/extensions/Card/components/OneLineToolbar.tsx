@@ -12,8 +12,13 @@ import {
   PlusIcon,
   PaperClipIcon,
   ChevronDownIcon,
+  QuestionMarkCircleIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline';
+import EditorHelpModal from './EditorHelpModal';
 import CommandMenu from './CommandMenu';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 
 // ---------------------------------------------------------------------------
 // HeadingDropdown — "Tt" text-styles menu matching the mockup design
@@ -31,43 +36,43 @@ const HEADING_OPTIONS: Array<{
     label: 'Normal text',
     level: null,
     shortcut: '⌘⌥0',
-    labelClass: 'text-sm font-normal text-gray-800 dark:text-slate-200',
+    labelClass: 'text-sm font-normal text-base',
   },
   {
     label: 'Heading 1',
     level: 1,
     shortcut: '⌘⌥1',
-    labelClass: 'text-[1.5rem] font-bold leading-tight text-gray-900 dark:text-white',
+    labelClass: 'text-[1.5rem] font-bold leading-tight text-base',
   },
   {
     label: 'Heading 2',
     level: 2,
     shortcut: '⌘⌥2',
-    labelClass: 'text-[1.25rem] font-bold leading-tight text-gray-900 dark:text-white',
+    labelClass: 'text-[1.25rem] font-bold leading-tight text-base',
   },
   {
     label: 'Heading 3',
     level: 3,
     shortcut: '⌘⌥3',
-    labelClass: 'text-[1.075rem] font-semibold leading-snug text-gray-900 dark:text-slate-100',
+    labelClass: 'text-[1.075rem] font-semibold leading-snug text-base',
   },
   {
     label: 'Heading 4',
     level: 4,
     shortcut: '⌘⌥4',
-    labelClass: 'text-[0.9375rem] font-semibold text-gray-800 dark:text-slate-200',
+    labelClass: 'text-[0.9375rem] font-semibold text-base',
   },
   {
     label: 'Heading 5',
     level: 5,
     shortcut: '⌘⌥5',
-    labelClass: 'text-sm font-semibold text-gray-700 dark:text-slate-300',
+    labelClass: 'text-sm font-semibold text-base',
   },
   {
     label: 'Heading 6',
     level: 6,
     shortcut: '⌘⌥6',
-    labelClass: 'text-sm font-semibold text-gray-400 dark:text-slate-500',
+    labelClass: 'text-sm font-semibold text-subtle',
   },
 ];
 
@@ -129,7 +134,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
         aria-label="Text styles"
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex items-center gap-0.5 rounded border border-gray-200 px-1.5 py-1 text-xs text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        className="flex items-center gap-0.5 rounded border border-border px-1.5 py-1 text-xs text-base transition-colors hover:bg-bg-overlay"
         onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -145,11 +150,11 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
         <div
           role="menu"
           aria-label="Text styles"
-          className="absolute left-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+          className="absolute left-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-lg border border-border bg-bg-surface shadow-xl"
         >
           {/* Tooltip-style header */}
-          <div className="border-b border-gray-100 px-3 py-1.5 dark:border-slate-800">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
+          <div className="border-b border-gray-100 px-3 py-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-subtle">
               Text styles
             </span>
           </div>
@@ -166,8 +171,8 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
                   type="button"
                   role="menuitemradio"
                   aria-checked={isActive}
-                  className={`flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-slate-700/60 ${
-                    isActive ? 'bg-indigo-50 dark:bg-indigo-800/40' : ''
+                  className={`flex w-full items-center justify-between px-3 py-1.5 text-left transition-colors hover:bg-bg-overlay ${
+                    isActive ? 'bg-primary/10' : ''
                   }`}
                   onMouseDown={(e) => {
                     e.preventDefault();
@@ -175,7 +180,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
                   }}
                 >
                   <span className={opt.labelClass}>{opt.label}</span>
-                  <kbd className="ml-3 shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-400 dark:bg-slate-700 dark:text-slate-400">
+                  <kbd className="ml-3 shrink-0 rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[10px] text-subtle">
                     {opt.shortcut}
                   </kbd>
                 </button>
@@ -194,10 +199,58 @@ interface Props {
   onToggleOverflow: () => void;
   /** When provided, a paperclip button appears in the toolbar to trigger file upload */
   onAttach?: () => void;
+  /** Controlled open state for the link insert popover */
+  linkPopoverOpen?: boolean;
+  /** Called when the link button is clicked — parent controls the open state */
+  onToggleLinkPopover?: () => void;
 }
 
-const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Props) => {
+const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, linkPopoverOpen = false, onToggleLinkPopover }: Props) => {
   const overflowRef = useRef<HTMLDivElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  // Open help modal with ⌘+/ keyboard shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setHelpOpen((v) => !v);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  // Close emoji picker when clicking outside.
+  // [why] The listener is registered in a setTimeout(0) so the same mousedown
+  // event that triggered the picker to open doesn't immediately close it.
+  useEffect(() => {
+    if (!emojiPickerOpen) return;
+    let handler: ((e: MouseEvent) => void) | null = null;
+    const timer = setTimeout(() => {
+      handler = (e: MouseEvent) => {
+        if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+          setEmojiPickerOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handler);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      if (handler) document.removeEventListener('mousedown', handler);
+    };
+  }, [emojiPickerOpen]);
+
+  const handleEmojiSelect = useCallback(
+    (emoji: { native?: string }) => {
+      if (!editor || !emoji.native) return;
+      editor.chain().focus().insertContent(emoji.native).run();
+      setEmojiPickerOpen(false);
+    },
+    [editor],
+  );
 
   // Close overflow menu when clicking outside
   useEffect(() => {
@@ -221,20 +274,21 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
   );
 
   const btn =
-    'p-1.5 text-xs rounded border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors';
-  const btnActive = 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200';
+    'p-1.5 text-xs rounded border border-border text-base hover:bg-bg-overlay transition-colors';
+  const btnActive = 'bg-primary/10 text-primary';
 
   return (
+    <>
     <div
       role="toolbar"
       aria-label="Text formatting"
-      className="z-20 flex shrink-0 items-center gap-1 border-b border-gray-200 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900"
+      className="z-20 flex shrink-0 items-center gap-1 border-b border-border bg-bg-surface p-2 shadow-md"
     >
       {/* Text styles (heading) dropdown — always first */}
       <HeadingDropdown editor={editor} />
 
       {/* Divider */}
-      <span className="mx-0.5 h-4 w-px shrink-0 bg-gray-200 dark:bg-slate-700" aria-hidden />
+      <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />
 
       {/* Primary controls — always visible */}
       <button
@@ -274,6 +328,27 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
         <ListBulletIcon className="h-3.5 w-3.5" />
       </button>
 
+      {/* Hyperlink button */}
+      <button
+        type="button"
+        aria-label="Insert link"
+        title="Insert link"
+        className={`${btn} ${linkPopoverOpen || editor?.isActive('link') ? btnActive : ''}`}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!linkPopoverOpen) {
+            // Close internal panels before parent opens the link popover
+            if (overflowOpen) onToggleOverflow();
+            setEmojiPickerOpen(false);
+            setHelpOpen(false);
+          }
+          onToggleLinkPopover?.();
+        }}
+      >
+        <LinkIcon className="h-3.5 w-3.5" />
+      </button>
+
       {/* Attach file button — shown when caller provides onAttach handler */}
       {onAttach && (
         <button
@@ -290,6 +365,21 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
           <PaperClipIcon className="h-3.5 w-3.5" />
         </button>
       )}
+
+      {/* Help button */}
+      <button
+        type="button"
+        aria-label="Editor help"
+        title="Editor help (⌘+/)"
+        className={btn}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setHelpOpen(true);
+        }}
+      >
+        <QuestionMarkCircleIcon className="h-3.5 w-3.5" />
+      </button>
 
       {/* Overflow + button — secondary controls */}
       <div ref={overflowRef} className="relative ml-auto">
@@ -310,10 +400,34 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach }: Pr
         </button>
 
         {overflowOpen && (
-          <CommandMenu editor={editor} onClose={onToggleOverflow} />
+            <CommandMenu
+              editor={editor}
+              onClose={onToggleOverflow}
+              onOpenEmojiPicker={() => setEmojiPickerOpen(true)}
+            />
+          )}
+
+        {/* Emoji picker — shown instead of command menu after selecting Emoji */}
+        {emojiPickerOpen && (
+          <div
+            ref={emojiRef}
+            className="absolute right-0 top-full z-50 mt-1"
+          >
+            <Picker
+              data={data}
+              onEmojiSelect={handleEmojiSelect}
+              theme="dark"
+              previewPosition="bottom"
+              skinTonePosition="none"
+            />
+          </div>
         )}
       </div>
     </div>
+
+      {/* Editor help modal — rendered via portal outside the toolbar div */}
+      {helpOpen && <EditorHelpModal onClose={() => setHelpOpen(false)} />}
+    </>
   );
 };
 

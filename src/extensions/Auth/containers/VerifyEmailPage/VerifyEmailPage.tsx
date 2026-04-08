@@ -42,50 +42,50 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 text-center">
+    <main className="min-h-screen bg-bg-base flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8 text-center">
         <div className="flex items-center justify-center gap-2 mb-8">
           <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
-          <span className="text-xl font-bold text-white">Kanban</span>
+          <span className="text-xl font-bold text-base">Kanban</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-4">
+        <h1 className="text-2xl font-bold text-base mb-4">
           {translations.verifyEmail.title}
         </h1>
 
         {status === 'loading' && (
-          <p className="text-slate-400">Verifying your email…</p>
+          <p className="text-subtle">Verifying your email…</p>
         )}
 
         {status === 'success' && (
-          <p className="text-green-400 font-medium">{translations.verifyEmail.success}</p>
+          <p className="text-success font-medium">{translations.verifyEmail.success}</p>
         )}
 
         {status === 'error' && (
           <div>
-            <p className="text-red-400 mb-4">{translations.verifyEmail.invalidToken}</p>
+            <p className="text-danger mb-4">{translations.verifyEmail.invalidToken}</p>
             {resendStatus === 'sent' ? (
-              <p className="text-green-400 text-sm">{translations.verifyEmail.resendSuccess}</p>
+              <p className="text-success text-sm">{translations.verifyEmail.resendSuccess}</p>
             ) : (
               <button
                 onClick={handleResend}
                 disabled={resendStatus === 'loading'}
-                className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                className="mt-2 px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors" // [theme-exception] text-white on primary button
               >
                 {resendStatus === 'loading' ? 'Sending…' : translations.verifyEmail.resend}
               </button>
             )}
             {resendStatus === 'error' && (
-              <p className="text-red-400 text-sm mt-2">Failed to resend. Please try again later.</p>
+              <p className="text-danger text-sm mt-2">Failed to resend. Please try again later.</p>
             )}
             {!token && (
-              <p className="text-slate-500 text-sm mt-4">{error}</p>
+              <p className="text-muted text-sm mt-4">{error}</p>
             )}
           </div>
         )}
 
         {status === 'idle' && !token && (
-          <p className="text-slate-400">{translations.verifyEmail.invalidToken}</p>
+          <p className="text-subtle">{translations.verifyEmail.invalidToken}</p>
         )}
       </div>
     </main>

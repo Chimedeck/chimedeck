@@ -142,9 +142,19 @@ function _fetchBoardCardFieldValues(
   const inflight = _batchCfInflight.get(boardId);
   if (inflight) return inflight;
 
-  const qs = cardIds.join(',');
   const promise = apiClient
-    .get<{ data: CustomFieldValue[] }>(`/boards/${boardId}/custom-field-values?cardIds=${qs}`)
+    .post<{ data: CustomFieldValue[] }>(`/boards/${boardId}/custom-field-values`, {
+      cardIds,
+    })
+    .catch((err) => {
+      // Backward compatibility for older servers that only support GET with query string.
+      const qs = cardIds.join(',');
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404 || status === 405) {
+        return apiClient.get<{ data: CustomFieldValue[] }>(`/boards/${boardId}/custom-field-values?cardIds=${qs}`);
+      }
+      throw err;
+    })
     .then((res) => {
       const flat = (res as unknown as { data: CustomFieldValue[] }).data ?? [];
       const map: Record<string, CustomFieldValue[]> = {};

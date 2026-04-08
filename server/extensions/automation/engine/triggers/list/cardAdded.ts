@@ -3,7 +3,7 @@ import type { TriggerHandler } from '../../../common/types';
 
 // Fires when any card lands in a specific list — whether by creation or move.
 const configSchema = z.object({
-  listId: z.string().uuid(),
+  listId: z.string().min(1),
 });
 
 export const listCardAddedTrigger: TriggerHandler = {

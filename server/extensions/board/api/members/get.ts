@@ -9,7 +9,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { resolveAvatarUrlsInCollection } from '../../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrlsInCollection } from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetBoardMembers(req: Request, boardId: string): Promise<Response> {
   const scopedReq = req as BoardVisibilityScopedRequest;
@@ -46,7 +46,7 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
     )
     .orderBy('bm.created_at', 'asc');
 
-  const data = await resolveAvatarUrlsInCollection(
+  const data = buildAvatarProxyUrlsInCollection(
     members as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
   );
 

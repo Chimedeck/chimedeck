@@ -47,9 +47,9 @@ if (await envFile.exists()) {
 }
 
 const DATABASE_URL =
-  Bun.env['DATABASE_URL'] ?? 'postgresql://taskinate:taskinate@localhost:5432/taskinate_dev';
+  Bun.env['DATABASE_URL'] ?? 'postgresql://chimedeck:chimedeck@localhost:5432/chimedeck_dev';
 
-const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'taskinate';
+const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'chimedeck';
 const S3_REGION    = Bun.env['S3_REGION'] ?? 'us-east-1';
 const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || undefined;
 const S3_BASE_URL  = S3_ENDPOINT
@@ -90,7 +90,20 @@ const memberMapper = new Map(
 // DB connection
 // ---------------------------------------------------------------------------
 
-const db = Knex({ client: 'pg', connection: DATABASE_URL, pool: { min: 1, max: 5 } });
+const _dbUrl = new URL(DATABASE_URL);
+const _isLocal = _dbUrl.hostname === 'localhost' || _dbUrl.hostname === '127.0.0.1';
+const _dbConnection = _isLocal
+  ? DATABASE_URL
+  : {
+      host: _dbUrl.hostname,
+      port: parseInt(_dbUrl.port || '5432', 10),
+      user: decodeURIComponent(_dbUrl.username),
+      password: decodeURIComponent(_dbUrl.password),
+      database: _dbUrl.pathname.slice(1),
+      ssl: { rejectUnauthorized: false },
+    };
+
+const db = Knex({ client: 'pg', connection: _dbConnection, pool: { min: 1, max: 5 } });
 
 // ---------------------------------------------------------------------------
 // Trello colour → hex
@@ -219,6 +232,24 @@ interface TrelloMember {
   confirmed?: boolean;
 }
 
+interface TrelloCheckItem {
+  id: string;
+  name: string;
+  pos: number;
+  state: 'complete' | 'incomplete';
+  due: string | null;
+  idChecklist: string;
+  idMember: string | null;
+}
+
+interface TrelloChecklist {
+  id: string;
+  name: string;
+  idCard: string;
+  pos: number;
+  checkItems: TrelloCheckItem[];
+}
+
 interface TrelloAction {
   id: string;
   date: string;
@@ -230,10 +261,43 @@ interface TrelloAction {
   memberCreator: TrelloMember;
 }
 
+interface TrelloCustomFieldOption {
+  id: string;
+  idCustomField: string;
+  value: { text: string };
+  color: string;
+  pos: number;
+}
+
+interface TrelloCustomField {
+  id: string;
+  idModel: string; // board ID
+  name: string;
+  type: string;    // 'checkbox' | 'list' | 'text' | 'number' | 'date'
+  pos: number;
+  display?: { cardFront?: boolean };
+  options?: TrelloCustomFieldOption[];
+}
+
+interface TrelloCustomFieldItem {
+  id: string;
+  idCustomField: string;
+  idModel: string;   // card ID
+  modelType: string;
+  value?: {
+    checked?: string; // 'true' | 'false'
+    text?: string;
+    number?: string;
+    date?: string;
+  };
+  idValue?: string;  // DROPDOWN: selected option ID
+}
+
 interface TrelloBoard {
   id: string;
   name: string;
   manager?: string;
+  customFields?: TrelloCustomField[];
 }
 
 interface TrelloCard {
@@ -248,7 +312,8 @@ interface TrelloCard {
   idMembers: string[];
   idLabels: string[];
   labels: TrelloLabel[];
-  list: TrelloList;
+  // list may be null for archived cards that Trello detaches from their list
+  list: TrelloList | null;
   shortLink: string;
   shortUrl: string;
   dateLastActivity: string;
@@ -256,6 +321,21 @@ interface TrelloCard {
   members?: TrelloMember[];
   actions?: TrelloAction[];
   board?: TrelloBoard;
+  pluginData?: Array<{ id: string; idPlugin: string; scope: string; idModel: string; value: string; access: string; dateLastUpdated: string }>;
+  checklists?: TrelloChecklist[];
+  customFields?: TrelloCustomField[];     // board-scoped field definitions, present on each card
+  customFieldItems?: TrelloCustomFieldItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Custom field type mapper
+// Trello: 'checkbox' → CHECKBOX, 'list' (dropdown) → DROPDOWN, rest → TEXT
+// ---------------------------------------------------------------------------
+
+function trelloFieldType(type: string): 'TEXT' | 'CHECKBOX' | 'DROPDOWN' {
+  if (type === 'checkbox') return 'CHECKBOX';
+  if (type === 'list') return 'DROPDOWN';
+  return 'TEXT';
 }
 
 // ---------------------------------------------------------------------------
@@ -326,10 +406,7 @@ async function main() {
   const boardSet = new Map<string, { id: string; workspace_id: string; title: string }>();
   const listSet = new Map<string, object>();
   const labelSet = new Map<string, object>();
-  // [why] Trello gives every board its own label IDs even for identical name+color combos.
-  // We deduplicate by name|color so workspace-scoped labels aren't duplicated per-board.
-  const labelKeyToId = new Map<string, string>(); // "name|color" → canonical Trello ID
-  const labelIdRemap = new Map<string, string>(); // duplicate Trello ID → canonical Trello ID
+  const customFieldSet = new Map<string, object>(); // fieldId → row
   const memberSet = new Map<string, string>(); // trelloId → email
   // Rich member data (fullName, username, avatarUrl) when available
   const memberDataMap = new Map<string, TrelloMember>();
@@ -346,7 +423,9 @@ async function main() {
       });
     }
 
-    // List — always anchor the board_id to card.idBoard for FK safety
+    // List — always anchor the board_id to card.idBoard for FK safety.
+    // For archived cards the list object may be null; synthesise a minimal
+    // placeholder so the card's FK is satisfied.
     if (card.list && !listSet.has(card.list.id)) {
       listSet.set(card.list.id, {
         id: card.list.id,
@@ -355,26 +434,52 @@ async function main() {
         position: toPosition(card.list.pos),
         archived: card.list.closed ?? false,
       });
+    } else if (!card.list && card.idList && !listSet.has(card.idList)) {
+      // [why] Archived cards exported from Trello sometimes have list: null but
+      // still reference an idList. Seed a synthetic archived list so the FK holds.
+      listSet.set(card.idList, {
+        id: card.idList,
+        board_id: card.idBoard,
+        title: '(Archived List)',
+        position: 0,
+        archived: true,
+      });
     }
 
-    // Labels — deduplicate by name+color so boards sharing the same label name/colour
-    // don't produce separate rows in the workspace-scoped labels table.
+    // Labels — board-scoped; each board has its own label IDs in Trello so no deduplication needed.
     for (const label of card.labels ?? []) {
-      const canonicalKey = `${label.name ?? ''}|${label.color ?? ''}`;
-      if (!labelKeyToId.has(canonicalKey)) {
-        labelKeyToId.set(canonicalKey, label.id);
+      if (!labelSet.has(label.id)) {
         labelSet.set(label.id, {
           id: label.id,
-          workspace_id: JOURNEYHORIZON_WORKSPACE_ID,
+          board_id: label.idBoard,
           name: label.name || 'Label',
           color: trelloColor(label.color),
         });
-      } else {
-        const canonicalId = labelKeyToId.get(canonicalKey)!;
-        if (canonicalId !== label.id) {
-          labelIdRemap.set(label.id, canonicalId);
-        }
       }
+    }
+
+    // Custom fields — defined per board; the export embeds the board's full
+    // customFields array directly on each card (not nested inside card.board).
+    for (const cf of card.customFields ?? []) {
+      if (customFieldSet.has(cf.id)) continue;
+      const options =
+        cf.type === 'list'
+          ? (cf.options ?? []).map((opt) => ({
+              id: opt.id,
+              label: opt.value.text,
+              color: opt.color,
+            }))
+          : null;
+      customFieldSet.set(cf.id, {
+        id: cf.id,
+        board_id: cf.idModel,
+        name: cf.name,
+        field_type: trelloFieldType(cf.type),
+        options: options ? JSON.stringify(options) : null,
+        show_on_card: cf.display?.cardFront ?? false,
+        position: cf.pos,
+        created_at: new Date(),
+      });
     }
 
     // Members — prefer rich data from card.members array
@@ -422,7 +527,8 @@ async function main() {
   console.log(`    Workspaces          : ${workspaceSet.size}`);
   console.log(`    Boards              : ${boardSet.size}`);
   console.log(`    Lists               : ${listSet.size}`);
-  console.log(`    Labels              : ${labelSet.size} (${labelIdRemap.size} duplicates merged)`);  
+  console.log(`    Labels              : ${labelSet.size}`);
+  console.log(`    Custom fields       : ${customFieldSet.size}`);
   console.log(`    Members             : ${memberSet.size}`);
 
   // -------------------------------------------------------------------------
@@ -431,10 +537,14 @@ async function main() {
 
   const SYSTEM_USER_ID = '58ce49cc971aa59ff0ef284c'; // tam.vu@journeyh.io
   const SYSTEM_USER_EMAIL = 'tam.vu@journeyh.io';
-  const DEFAULT_PASSWORD = '12345678';
+
+  // [why] Track generated passwords so we can export full-user.json at the end
+  const userPasswords = new Map<string, { email: string; password: string }>();
 
   console.log('\n👤  Hashing passwords…');
-  const systemPasswordHash = await Bun.password.hash(DEFAULT_PASSWORD, {
+  const systemPassword = generatePassword();
+  userPasswords.set(SYSTEM_USER_ID, { email: SYSTEM_USER_EMAIL, password: systemPassword });
+  const systemPasswordHash = await Bun.password.hash(systemPassword, {
     algorithm: 'bcrypt',
     cost: 12,
   });
@@ -502,13 +612,16 @@ async function main() {
   const HASH_CONCURRENCY = 20;
   for (let i = 0; i < memberEntries.length; i += HASH_CONCURRENCY) {
     const slice = memberEntries.slice(i, i + HASH_CONCURRENCY);
+    const passwords = slice.map(() => generatePassword());
     const hashes = await Promise.all(
-      slice.map(() =>
-        Bun.password.hash(DEFAULT_PASSWORD, { algorithm: 'bcrypt', cost: 12 }),
+      passwords.map((pw) =>
+        Bun.password.hash(pw, { algorithm: 'bcrypt', cost: 12 }),
       ),
     );
     for (let j = 0; j < slice.length; j++) {
       const [trelloId] = slice[j];
+      const email = memberEmail(trelloId, memberDataMap.get(trelloId)?.username);
+      userPasswords.set(memberId(trelloId), { email, password: passwords[j] });
       const richData = memberDataMap.get(trelloId);
       memberRows.push({
         id: memberId(trelloId),
@@ -574,6 +687,16 @@ async function main() {
   await batchUpsert('labels', [...labelSet.values()], 'id', ['name', 'color']);
 
   // -------------------------------------------------------------------------
+  // 7b. Custom field definitions (board-scoped)
+  // Must be inserted before cards so FK from card_custom_field_values is satisfied.
+  // -------------------------------------------------------------------------
+
+  console.log(`🔧  Creating/updating ${customFieldSet.size} custom field definitions…`);
+  await batchUpsert('custom_fields', [...customFieldSet.values()], 'id', [
+    'name', 'field_type', 'options', 'show_on_card', 'position',
+  ]);
+
+  // -------------------------------------------------------------------------
   // 8. Cards + card_labels + card_members (batched)
   // -------------------------------------------------------------------------
 
@@ -584,17 +707,31 @@ async function main() {
   // can sync them with a single delete-then-insert pass after all cards are processed.
   const allCardLabelRows: object[] = [];
   const allCardMemberRows: object[] = [];
+  const allCardCustomFieldValueRows: object[] = [];
   // All Trello card IDs that appear in this JSON (used to scope the junction sync)
   const trelloCardIds: string[] = [];
   // Track uniqueness for junction tables within this run
   const cardLabelSeen = new Set<string>();
   const cardMemberSeen = new Set<string>();
+  const customFieldValueSeen = new Set<string>(); // cardId:fieldId
 
   for (const card of cards) {
     // Skip cards whose list was not collected (list property missing)
     if (!listSet.has(card.idList)) continue;
 
     trelloCardIds.push(card.id);
+
+    // [why] Extract `size` from pluginData value JSON — used as the card's monetary amount in USD.
+    let cardAmount: number | null = null;
+    for (const pd of card.pluginData ?? []) {
+      try {
+        const parsed = JSON.parse(pd.value) as Record<string, unknown>;
+        if (typeof parsed.size === 'number' && parsed.size > 0) {
+          cardAmount = parsed.size;
+          break;
+        }
+      } catch { /* ignore malformed plugin value */ }
+    }
 
     cardRows.push({
       id: card.id,
@@ -606,17 +743,17 @@ async function main() {
       due_date: card.due ? new Date(card.due) : null,
       short_link: card.shortLink ?? null,
       short_url: card.shortUrl ?? null,
+      ...(cardAmount !== null ? { amount: cardAmount, currency: 'USD' } : {}),
       created_at: card.dateLastActivity ? new Date(card.dateLastActivity) : new Date(),
       updated_at: card.dateLastActivity ? new Date(card.dateLastActivity) : new Date(),
     });
 
     for (const labelId of card.idLabels ?? []) {
-      const resolvedId = labelIdRemap.get(labelId) ?? labelId;
-      if (labelSet.has(resolvedId)) {
-        const key = `${card.id}:${resolvedId}`;
+      if (labelSet.has(labelId)) {
+        const key = `${card.id}:${labelId}`;
         if (!cardLabelSeen.has(key)) {
           cardLabelSeen.add(key);
-          allCardLabelRows.push({ card_id: card.id, label_id: resolvedId });
+          allCardLabelRows.push({ card_id: card.id, label_id: labelId });
         }
       }
     }
@@ -630,12 +767,55 @@ async function main() {
       }
     }
 
+    // Custom field values — per card, keyed by customField ID
+    for (const item of card.customFieldItems ?? []) {
+      const key = `${card.id}:${item.idCustomField}`;
+      if (customFieldValueSeen.has(key)) continue;
+      // Only import items whose field definition was collected (guards FK)
+      if (!customFieldSet.has(item.idCustomField)) continue;
+      customFieldValueSeen.add(key);
+
+      const fieldType = (customFieldSet.get(item.idCustomField) as any).field_type as string;
+
+      let valueCheckbox: boolean | null = null;
+      let valueOptionId: string | null = null;
+      let valueText: string | null = null;
+
+      if (fieldType === 'CHECKBOX') {
+        valueCheckbox = item.value?.checked === 'true';
+      } else if (fieldType === 'DROPDOWN') {
+        valueOptionId = item.idValue ?? null;
+      } else {
+        // TEXT — accepts Trello text, number, or date as a plain string
+        valueText =
+          item.value?.text ??
+          item.value?.number ??
+          item.value?.date ??
+          null;
+      }
+
+      // [why] Skip items with no actual value — they add noise without information
+      if (valueCheckbox === null && valueOptionId === null && valueText === null) continue;
+
+      allCardCustomFieldValueRows.push({
+        // [why] Stable deterministic PK for idempotent re-runs
+        id: `${card.id}:${item.idCustomField}`,
+        card_id: card.id,
+        custom_field_id: item.idCustomField,
+        value_text: valueText,
+        value_number: null,
+        value_date: null,
+        value_checkbox: valueCheckbox,
+        value_option_id: valueOptionId,
+      });
+    }
+
     // Flush card rows when large to avoid holding everything in memory.
     // Junction rows (ID pairs only) are small and collected in full above.
     if (cardRows.length >= BATCH_SIZE * 4) {
       await batchUpsert('cards', cardRows, 'id', [
         'list_id', 'title', 'description', 'position', 'archived',
-        'due_date', 'short_link', 'short_url', 'updated_at',
+        'due_date', 'short_link', 'short_url', 'amount', 'currency', 'updated_at',
       ]);
       cardRows.length = 0;
     }
@@ -644,7 +824,7 @@ async function main() {
   // Final flush for remaining card rows
   await batchUpsert('cards', cardRows, 'id', [
     'list_id', 'title', 'description', 'position', 'archived',
-    'due_date', 'short_link', 'short_url', 'updated_at',
+    'due_date', 'short_link', 'short_url', 'amount', 'currency', 'updated_at',
   ]);
 
   // Sync junction tables: delete existing rows only for Trello-sourced cards,
@@ -661,6 +841,14 @@ async function main() {
     await db('card_members').whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE)).delete();
   }
   await batchInsert('card_members', allCardMemberRows, ['card_id', 'user_id']);
+
+  console.log(`🔧  Syncing ${allCardCustomFieldValueRows.length.toLocaleString()} custom field values…`);
+  for (let i = 0; i < trelloCardIds.length; i += BATCH_SIZE) {
+    await db('card_custom_field_values')
+      .whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE))
+      .delete();
+  }
+  await batchInsert('card_custom_field_values', allCardCustomFieldValueRows, 'id');
 
   // -------------------------------------------------------------------------
   // 8b. Comments from Trello actions
@@ -715,6 +903,63 @@ async function main() {
 
   console.log(`💬  Inserting/updating ${commentRows.length.toLocaleString()} comments…`);
   await batchUpsert('comments', commentRows, 'id', ['content', 'updated_at']);
+
+  // -------------------------------------------------------------------------
+  // 8c. Checklists + checklist items
+  // -------------------------------------------------------------------------
+
+  console.log('✅  Collecting checklists…');
+
+  const checklistRows: object[] = [];
+  const checklistItemRows: object[] = [];
+  const checklistSeen = new Set<string>();
+  const checklistItemSeen = new Set<string>();
+  const allChecklistCardIds: string[] = [];
+
+  for (const card of cards) {
+    if (!listSet.has(card.idList)) continue;
+    if (!card.checklists?.length) continue;
+
+    allChecklistCardIds.push(card.id);
+
+    for (const cl of card.checklists) {
+      if (!checklistSeen.has(cl.id)) {
+        checklistSeen.add(cl.id);
+        checklistRows.push({
+          id: cl.id,
+          card_id: card.id, // [why] use card.id — cl.idCard may be stale in the export
+          title: cl.name.trim() || 'Checklist',
+          position: toPosition(cl.pos),
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      }
+
+      for (const item of cl.checkItems ?? []) {
+        if (!checklistItemSeen.has(item.id)) {
+          checklistItemSeen.add(item.id);
+          checklistItemRows.push({
+            id: item.id,
+            card_id: card.id, // [why] same — keep consistent with parent checklist row
+            checklist_id: cl.id,
+            title: item.name,
+            checked: item.state === 'complete',
+            position: toPosition(item.pos),
+          });
+        }
+      }
+    }
+  }
+
+  console.log(`✅  Inserting/updating ${checklistRows.length.toLocaleString()} checklists and ${checklistItemRows.length.toLocaleString()} checklist items…`);
+
+  // Sync: delete existing checklists for Trello-sourced cards, then re-insert.
+  // CASCADE on checklists → checklist_items handles item cleanup automatically.
+  for (let i = 0; i < allChecklistCardIds.length; i += BATCH_SIZE) {
+    await db('checklists').whereIn('card_id', allChecklistCardIds.slice(i, i + BATCH_SIZE)).delete();
+  }
+  await batchInsert('checklists', checklistRows, 'id');
+  await batchInsert('checklist_items', checklistItemRows, 'id');
 
   // -------------------------------------------------------------------------
   // 9. Workspace memberships + board_members (mapper users) + board_guest_access (non-mapper)
@@ -882,8 +1127,21 @@ async function main() {
     body: JSON.stringify(memberRecords, null, 2),
   });
 
+  // full-user.json — all users with their generated plaintext passwords
+  const fullUserRecords = [...userPasswords.entries()].map(([id, { email, password }]) => ({
+    id,
+    email,
+    password,
+  }));
+  const fullUserPath = await writeOutputJsonWithFallback({
+    preferredPath: resolve(outDir, 'full-user.json'),
+    fallbackPath: resolve(tmpdir(), 'full-user.json'),
+    body: JSON.stringify(fullUserRecords, null, 2),
+  });
+
   console.log(`\n📄  Written workspace IDs to ${workspaceIdsPath}`);
   console.log(`📄  Written member IDs to ${memberIdsPath}`);
+  console.log(`📄  Written full user credentials to ${fullUserPath}`);
 
   await db.destroy();
 }
@@ -950,6 +1208,12 @@ async function writeOutputJsonWithFallback({
     console.warn(`    Original write error: ${toErrorMessage(err)}`);
     return fallbackPath;
   }
+}
+
+function generatePassword(length = 16): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%^&*-_+=?';
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => chars[b % chars.length]).join('');
 }
 
 function toErrorMessage(err: unknown): string {

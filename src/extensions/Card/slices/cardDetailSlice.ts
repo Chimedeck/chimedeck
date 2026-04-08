@@ -74,6 +74,15 @@ export const fetchCardDetailThunk = createAppAsyncThunk(
   },
 );
 
+export const fetchCardActivitiesThunk = createAppAsyncThunk(
+  'cardDetail/fetchActivities',
+  async ({ cardId }: { cardId: string }, { extra }) => {
+    const api = (extra as { api: { get: <T>(url: string) => Promise<T> } }).api;
+    const result = await api.get<{ data: ActivityData[] }>(`/cards/${cardId}/activity`);
+    return result;
+  },
+);
+
 // ---------- Slice ----------
 
 const cardDetailSlice = createSlice({
@@ -121,6 +130,11 @@ const cardDetailSlice = createSlice({
       // Mark as deleted (soft delete per schema) rather than removing
       const comment = state.comments.find((c) => c.id === action.payload.commentId);
       if (comment) comment.deleted = true;
+    },
+
+    // ── Activity ─────────────────────────────────────────────────────────────
+    setActivities(state, action: PayloadAction<ActivityData[]>) {
+      state.activities = action.payload;
     },
 
     // ── Realtime activity events ─────────────────────────────────────────────
@@ -363,6 +377,9 @@ const cardDetailSlice = createSlice({
       })
       .addCase(fetchCardDetailThunk.rejected, (state) => {
         state.status = 'error';
+      })
+      .addCase(fetchCardActivitiesThunk.fulfilled, (state, action) => {
+        state.activities = action.payload.data;
       });
   },
 });

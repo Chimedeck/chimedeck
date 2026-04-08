@@ -184,7 +184,7 @@ users (updated)
 - [ ] Login with an unverified account returns 403 with the `email-not-verified` error name
 - [ ] Resend is rate-limited (3 per hour)
 - [ ] Existing users (backfilled `email_verified = true`) are not affected
-- [ ] `<title>` on verify page: "Verify Email — Taskinate"
+- [ ] `<title>` on verify page: "Verify Email — ChimeDeck"
 
 ---
 

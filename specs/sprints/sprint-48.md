@@ -85,7 +85,7 @@ src/extensions/BoardViews/
   types.ts
 ```
 
-Each panel is accessible via a tab or popover on the board toolbar — consistent with how Trello's board menu works.
+Each panel is accessible via a tab or popover on the board toolbar.
 
 ---
 

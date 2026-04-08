@@ -88,6 +88,8 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const assigneeUser = await db('users').where({ id: body.userId }).select('name', 'email').first();
+  const assigneeName = assigneeUser?.name ?? assigneeUser?.email ?? body.userId;
 
   await db('card_members').insert({ card_id: cardId, user_id: body.userId });
 
@@ -96,6 +98,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
     cardId,
     cardTitle: card.title,
     userId: body.userId,
+    assigneeName,
     boardId: context.boardId,
     workspaceId: context.workspaceId,
     ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
@@ -142,11 +145,14 @@ export async function handleRemoveMember(
 
   if (existing) {
     const actorId = (req as AuthenticatedRequest).currentUser!.id;
+    const assigneeUser = await db('users').where({ id: userId }).select('name', 'email').first();
+    const assigneeName = assigneeUser?.name ?? assigneeUser?.email ?? userId;
     await emitCardMemberUnassigned({
       actorId,
       cardId,
       cardTitle: card.title,
       userId,
+      assigneeName,
       boardId: context.boardId,
       workspaceId: context.workspaceId,
       ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,

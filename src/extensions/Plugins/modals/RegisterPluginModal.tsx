@@ -1,6 +1,7 @@
 // Modal form for platform admins to register a new plugin in the registry.
 import { useState, useCallback, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import Button from '../../../common/components/Button';
 import translations from '../translations/en.json';
 import type { RegisterPluginBody } from '../api';
 
@@ -114,16 +115,16 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
 
   const field = (label: string, required: boolean, input: React.ReactNode, err?: string) => (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-slate-300">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      <label className="text-xs font-medium text-subtle">
+        {label}{required && <span className="text-danger ml-0.5">*</span>}
       </label>
       {input}
-      {err && <p className="text-red-400 text-xs">{err}</p>}
+      {err && <p className="text-danger text-xs">{err}</p>}
     </div>
   );
 
   const inputCls = (err?: string) =>
-    `bg-slate-800 border ${err ? 'border-red-500' : 'border-slate-600'} rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500`;
+    `bg-bg-overlay border ${err ? 'border-danger' : 'border-border'} rounded px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary`;
 
   return createPortal(
     <div
@@ -133,17 +134,18 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
       aria-label={translations['plugins.registerModal.ariaLabel']}
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 rounded-lg shadow-2xl mx-4 overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-bg-base rounded-lg shadow-2xl mx-4 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0">
-          <h2 className="text-slate-100 font-semibold text-base">{translations['plugins.registerModal.title']}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-lg leading-none" aria-label={translations['plugins.registerModal.closeAriaLabel']}>✕</button>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <h2 className="text-base font-semibold">{translations['plugins.registerModal.title']}</h2>
+          <button onClick={onClose} className="text-muted hover:text-subtle text-lg leading-none" aria-label={translations['plugins.registerModal.closeAriaLabel']}>✕</button>
         </div>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
           {serverError && (
-            <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
+            // [theme-exception]: light text on dark red error bg
+            <div className="bg-danger/10 border border-danger/40 rounded p-3 text-danger text-sm">
               {serverError === 'plugin-slug-taken'
                 ? translations['plugins.registerModal.error.slugTaken']
                 : serverError === 'invalid-connector-url'
@@ -271,7 +273,7 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
                     <button
                       type="button"
                       onClick={() => removeCategory(tag)}
-                      className="hover:text-white leading-none"
+                      className="hover:text-base leading-none"
                       aria-label={`Remove ${tag}`}
                     >
                       ×
@@ -300,28 +302,29 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
               disabled={isSubmitting}
               className="w-4 h-4 accent-blue-500"
             />
-            <label htmlFor="isPublic" className="text-sm text-slate-300 cursor-pointer">
+            <label htmlFor="isPublic" className="text-sm text-subtle cursor-pointer">
               {translations['plugins.registerModal.field.isPublic']}
             </label>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-5 py-4 border-t border-slate-700 flex-shrink-0">
+        <div className="flex justify-end gap-3 px-5 py-4 border-t border-border flex-shrink-0">
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="text-sm text-slate-400 hover:text-slate-200 px-4 py-2"
+            className="text-sm text-muted hover:text-subtle px-4 py-2"
           >
             {translations['plugins.registerModal.cancel']}
           </button>
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded px-4 py-2"
           >
             {isSubmitting ? translations['plugins.registerModal.registering'] : translations['plugins.registerModal.submit']}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

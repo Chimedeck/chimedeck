@@ -1,6 +1,7 @@
 // Modal form for platform admins to edit an existing plugin in the registry.
 import { useState, useCallback, useEffect, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import Button from '../../../common/components/Button';
 import translations from '../translations/en.json';
 import type { Plugin, UpdatePluginBody } from '../api';
 
@@ -140,16 +141,16 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
 
   const field = (label: string, required: boolean, input: React.ReactNode, err?: string) => (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-slate-300">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      <label className="text-xs font-medium text-subtle">
+        {label}{required && <span className="text-danger ml-0.5">*</span>}
       </label>
       {input}
-      {err && <p className="text-red-400 text-xs">{err}</p>}
+      {err && <p className="text-danger text-xs">{err}</p>}
     </div>
   );
 
   const inputCls = (err?: string) =>
-    `bg-slate-800 border ${err ? 'border-red-500' : 'border-slate-600'} rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500`;
+    `bg-bg-overlay border ${err ? 'border-danger' : 'border-border'} rounded px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary`;
 
   return createPortal(
     <div
@@ -159,17 +160,18 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
       aria-label={translations['plugins.editModal.ariaLabel']}
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 rounded-lg shadow-2xl mx-4 overflow-hidden">
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-bg-base rounded-lg shadow-2xl mx-4 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 flex-shrink-0">
-          <h2 className="text-slate-100 font-semibold text-base">{translations['plugins.editModal.title']}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-lg leading-none" aria-label={translations['plugins.editModal.closeAriaLabel']}>✕</button>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <h2 className="text-base font-semibold">{translations['plugins.editModal.title']}</h2>
+          <button onClick={onClose} className="text-muted hover:text-subtle text-lg leading-none" aria-label={translations['plugins.editModal.closeAriaLabel']}>✕</button>
         </div>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
           {serverError && (
-            <div className="bg-red-900/30 border border-red-700 rounded p-3 text-red-300 text-sm">
+            // [theme-exception]: light text on dark red error bg
+            <div className="bg-danger/10 border border-danger/40 rounded p-3 text-danger text-sm">
               {serverError === 'invalid-connector-url'
                 ? translations['plugins.editModal.error.invalidConnectorUrl']
                 : serverError === 'invalid-whitelisted-domain'
@@ -237,7 +239,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                 <img
                   src={iconUrl}
                   alt="icon preview"
-                  className="w-8 h-8 rounded object-cover border border-slate-600 flex-shrink-0"
+                  className="w-8 h-8 rounded object-cover border border-border flex-shrink-0"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               )}
@@ -288,7 +290,7 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                     <button
                       type="button"
                       onClick={() => removeCategory(tag)}
-                      className="hover:text-white leading-none"
+                      className="hover:text-base leading-none"
                       aria-label={`Remove ${tag}`}
                     >
                       ×
@@ -310,17 +312,17 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
 
           {field(translations['plugins.editModal.field.whitelistedDomains'], false,
             <div>
-              <p className="text-xs text-slate-500 mb-1">
+              <p className="text-xs text-muted mb-1">
                 {translations['plugins.editModal.whitelistedDomains.hint']}
               </p>
               <div className="flex flex-wrap gap-1 mb-1">
                 {whitelistedDomains.map((domain) => (
-                  <span key={domain} className="flex items-center gap-1 bg-slate-700 text-slate-200 text-xs rounded px-2 py-0.5">
+                  <span key={domain} className="flex items-center gap-1 bg-bg-overlay text-subtle text-xs rounded px-2 py-0.5">
                     {domain}
                     <button
                       type="button"
                       onClick={() => removeDomain(domain)}
-                      className="hover:text-white leading-none"
+                      className="hover:text-base leading-none"
                       aria-label={`Remove ${domain}`}
                     >
                       ×
@@ -350,28 +352,29 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
               disabled={isSubmitting}
               className="w-4 h-4 accent-blue-500"
             />
-            <label htmlFor="editIsPublic" className="text-sm text-slate-300 cursor-pointer">
+            <label htmlFor="editIsPublic" className="text-sm text-subtle cursor-pointer">
               {translations['plugins.editModal.field.isPublic']}
             </label>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 px-5 py-4 border-t border-slate-700 flex-shrink-0">
+        <div className="flex justify-end gap-3 px-5 py-4 border-t border-border flex-shrink-0">
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="text-sm text-slate-400 hover:text-slate-200 px-4 py-2"
+            className="text-sm text-muted hover:text-subtle px-4 py-2"
           >
             {translations['plugins.editModal.cancel']}
           </button>
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="text-sm bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded px-4 py-2"
           >
             {isSubmitting ? translations['plugins.editModal.saving'] : translations['plugins.editModal.submit']}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

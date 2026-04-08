@@ -61,7 +61,6 @@ export async function executeAutomation({
   });
 
   // Fire post-commit side effects (e.g. WS broadcasts) after the transaction is committed.
-  console.log('[automation:executor] running', postCommitCallbacks.length, 'postCommit callbacks');
   for (const fn of postCommitCallbacks) {
     try { fn(); } catch { /* ignore */ }
   }

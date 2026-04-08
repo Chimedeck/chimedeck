@@ -8,7 +8,7 @@
 # For every developed feature a corresponding test case must be created there
 # in Markdown format (e.g. specs/tests/login-flow.md).
 # Run a specific test : ./run-test.sh specs/tests/<scenario>.md
-# Run all tests       : ./run-all-tests.sh
+# Run all tests       : ./run-all-tests-full.sh
 
 set -e
 
@@ -27,34 +27,140 @@ fi
 
 TEST_CONTENT=$(cat "$TEST_FILE")
 
-# Resolve MCP config path (workspace-local by default)
-MCP_CONFIG_PATH="${MCP_CONFIG_PATH:-.vscode/mcp.json}"
-if [ ! -f "$MCP_CONFIG_PATH" ]; then
-    echo "❌ MCP config not found: $MCP_CONFIG_PATH"
-    echo "ℹ️  Set MCP_CONFIG_PATH to your Copilot MCP config or place one at .vscode/mcp.json"
-    exit 1
-fi
+# ─── Ensure ~/.copilot/mcp-config.json exists ───────────────────────────────
+COPILOT_MCP_CONFIG="$HOME/.copilot/mcp-config.json"
+DEFAULT_MCP_CONFIG='{
+  "mcpServers": {
+    "playwright": {
+      "type": "local",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "env": {},
+      "tools": ["*"]
+    }
+  }
+}'
 
-# Try to extract MCP server URL (for a quick reachability check)
-if command -v jq >/dev/null 2>&1; then
-    MCP_URL=$(jq -r '.servers.playwright.url // empty' "$MCP_CONFIG_PATH")
-else
-    MCP_URL=""
-fi
+if [ ! -f "$COPILOT_MCP_CONFIG" ]; then
+    echo ""
+    echo "⚠️  ~/.copilot/mcp-config.json not found."
+    echo ""
+    echo "  [1] Create default config (Playwright MCP via npx)"
+    echo "  [2] Copy from existing VS Code MCP config"
+    echo "  [3] Abort"
+    echo ""
+    printf "Choose [1/2/3]: "
+    read -r CHOICE </dev/tty
 
-if [ -n "$MCP_URL" ]; then
-    echo "🔌 Checking MCP server reachability: $MCP_URL"
-    if ! curl -sI --max-time 3 "$MCP_URL" >/dev/null; then
-        echo "⚠️  Unable to reach MCP server at $MCP_URL (non-fatal). Ensure it is running and accessible."
-    fi
+    case "$CHOICE" in
+        1)
+            mkdir -p "$HOME/.copilot"
+            echo "$DEFAULT_MCP_CONFIG" > "$COPILOT_MCP_CONFIG"
+            echo "✅ Created $COPILOT_MCP_CONFIG with default Playwright config."
+            ;;
+        2)
+            # Find candidate VS Code mcp.json files
+            VSCODE_MCP=""
+            if [ -f ".vscode/mcp.json" ]; then
+                VSCODE_MCP=".vscode/mcp.json"
+            elif [ -f "$HOME/Library/Application Support/Code/User/mcp.json" ]; then
+                VSCODE_MCP="$HOME/Library/Application Support/Code/User/mcp.json"
+            fi
+
+            if [ -z "$VSCODE_MCP" ]; then
+                echo "❌ No VS Code mcp.json found. Aborting."
+                exit 1
+            fi
+
+            echo "📋 Found: $VSCODE_MCP"
+            printf "Copy this file to ~/.copilot/mcp-config.json? [y/N]: "
+            read -r CONFIRM </dev/tty
+            if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
+                mkdir -p "$HOME/.copilot"
+                cp "$VSCODE_MCP" "$COPILOT_MCP_CONFIG"
+                echo "✅ Copied to $COPILOT_MCP_CONFIG"
+            else
+                echo "❌ Aborted."
+                exit 1
+            fi
+            ;;
+        *)
+            echo "❌ Aborted."
+            exit 1
+            ;;
+    esac
+    echo ""
 fi
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Create the prompt for Copilot safely via heredoc (avoids quoting issues)
 PROMPT=$(cat <<'EOP'
-You are running an automated end-to-end test using the Playwright MCP server.
+You are an automated end-to-end test runner. Your ONLY job is to execute the
+test scenario below by driving a real browser exclusively through Playwright MCP tools.
 
-Execute the following test scenario step by step against the base URL provided.
-Report results for each step and produce a final summary.
+════════════════════════════════════════════════════════════
+ABSOLUTE PROHIBITIONS — any violation is an immediate failure:
+════════════════════════════════════════════════════════════
+A. NEVER use any HTTP fetch, web fetch, or URL retrieval tool to inspect the app.
+   The following are permanently forbidden for interacting with the app:
+     - fetch_webpage / fetch web content / any tool that fetches a URL as HTML
+     - curl, wget, or any HTTP client tool
+   These tools do NOT execute JavaScript and will only return a blank React shell.
+   They will always fail. Use mcp_playwright_browser_navigate instead — it opens
+   a real browser that runs the full React app.
+
+B. NEVER run any terminal or shell command related to Playwright. The following
+   are permanently forbidden, no exceptions:
+     - npx playwright ...
+     - playwright codegen ...
+     - playwright test ...
+     - npx playwright codegen ...
+     - Any shell command that installs, launches, or wraps Playwright via CLI
+   If you feel the urge to run a terminal command to open a browser or record
+   actions, STOP — use the MCP tool instead.
+
+C. NEVER generate, write, or execute a .spec.ts / .spec.js / playwright test file.
+   Do not write code. Do not produce test scripts. Execute steps directly.
+
+D. NEVER open a new terminal session to run Playwright. The terminal is only
+   permitted for `bun run dev` if the app is not already running (rule 6 below).
+
+E. If mcp_playwright_browser_* tools are not present in your available toolset,
+   or a call to one of them returns a connection/transport error:
+   → Output exactly: "ERROR: MCP_NOT_CONNECTED — Playwright MCP server unavailable."
+   → Then STOP. Do NOT attempt any shell or CLI fallback whatsoever.
+
+════════════════════════════════════════
+MANDATORY RULES:
+════════════════════════════════════════
+1. DO NOT output a plan, summary, or description of what you are about to do.
+   Your FIRST action must be a Playwright MCP tool call — no text before it.
+   Opening phrases like "I will now...", "Proceeding to...", "Let me..." are forbidden.
+
+2. Use ONLY Playwright MCP browser tools for every UI step.
+   Every permitted tool name matches the pattern: mcp_playwright_browser_*
+   (i.e. any tool whose name starts with "mcp_playwright_browser_").
+   These are the ONLY tools permitted for browser interaction.
+   To visit a page: call mcp_playwright_browser_navigate, then immediately call
+   mcp_playwright_browser_snapshot to read the rendered DOM. NEVER use a fetch
+   or HTTP tool to inspect pages — they cannot execute JavaScript.
+
+3. Execute steps ONE AT A TIME. After each MCP tool call completes, inspect the
+   result, then immediately issue the next MCP tool call. Do not batch or defer.
+
+4. All credentials and the base URL come from specs/tests/TEST_CREDENTIALS.md.
+   Read that file first. Never hard-code URLs, emails, or passwords.
+
+5. "The test does not exist" is NOT a valid response. The scenario below IS the
+   test. Execute it live in the browser right now using MCP tools.
+
+6. Only if the app is unreachable (connection refused on the base URL), run
+   `bun run dev` in the terminal, wait for it to be ready, then continue with
+   MCP browser tools. Do not run any other terminal commands.
+
+7. After each step record PASS or FAIL inline, then move immediately to the next step.
+
+8. Only after ALL steps have been executed via MCP tool calls, output the final summary.
 
 Scenario:
 EOP
@@ -66,12 +172,14 @@ Base URL: $BASE_URL
 
 $TEST_CONTENT
 
-After executing all steps, provide a summary:
+After executing ALL steps in the browser, provide a summary:
 - Total steps executed
 - Steps passed
-- Steps failed (if any)
-- Any errors or issues encountered
-- Final verdict: PASS or FAIL"
+- Steps failed (with exact error / screenshot reference)
+- Final verdict: PASS or FAIL
+
+REMINDER: verdict must reflect what you actually observed in the browser,
+not a static analysis of the codebase."
 
 # Ensure Copilot CLI is available
 if ! command -v copilot >/dev/null 2>&1; then
@@ -80,31 +188,34 @@ if ! command -v copilot >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "🧰 Using MCP config via env: $MCP_CONFIG_PATH"
-
-# If a remote MCP URL is present, prefer it by generating a minimal temp config
-if [ -n "$MCP_URL" ]; then
-    echo "🔧 Preferring remote MCP server: $MCP_URL"
-    TMP_MCP_CONFIG=$(mktemp)
-    cat > "$TMP_MCP_CONFIG" <<JSON
-{
-    "servers": {
-        "playwright": {
-            "transport": "http",
-            "url": "$MCP_URL"
-        }
-    },
-    "inputs": []
+# Recursively kill a process and all its descendants (macOS-compatible)
+_kill_tree() {
+    local pid=$1
+    for child in $(pgrep -P "$pid" 2>/dev/null); do
+        _kill_tree "$child"
+    done
+    kill -KILL "$pid" 2>/dev/null || true
 }
-JSON
-    MCP_CONFIG_PATH="$TMP_MCP_CONFIG"
-    echo "📄 Generated minimal MCP config: $MCP_CONFIG_PATH"
-fi
 
-# Run via GitHub Copilot CLI with MCP connection
-# Latest Copilot CLI loads MCP servers from the MCP_CONFIG environment variable.
-# We export MCP_CONFIG for this invocation and do not rely on any CLI flags.
-MCP_CONFIG="$MCP_CONFIG_PATH" copilot --allow-all-tools --add-dir "$PWD" -p "$PROMPT"
+COPILOT_PID=""
+_cleanup() {
+    echo ""
+    echo "⚠️  Interrupted — killing test process."
+    [ -n "$COPILOT_PID" ] && _kill_tree "$COPILOT_PID"
+    exit 130
+}
+trap _cleanup INT TERM
+
+COPILOT_MODEL="${COPILOT_MODEL:-gpt-4.1}"
+
+# Run via GitHub Copilot CLI — picks up ~/.copilot/mcp-config.json automatically.
+# Run in background so we can trap signals and kill the full process tree.
+copilot --allow-all-tools --add-dir "$PWD" --model "$COPILOT_MODEL" -p "$PROMPT" &
+COPILOT_PID=$!
+wait $COPILOT_PID
+COPILOT_STATUS=$?
+trap - INT TERM
 
 echo "----------------------------------------"
 echo "✅ Test execution completed"
+exit $COPILOT_STATUS

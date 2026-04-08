@@ -2,6 +2,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
+import { writeActivity } from '../../activity/mods/write';
 import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 import {
   requireWorkspaceMembership,
@@ -52,10 +53,20 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
     .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*']);
 
   // Client expects { cardId, listId } to remove card from board state
-  await dispatchEvent({ type: 'card.archived', boardId: board.id, entityId: cardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { cardId, listId: card.list_id } });
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+  await dispatchEvent({ type: 'card.archived', boardId: board.id, entityId: cardId, actorId, payload: { cardId, listId: card.list_id } });
+
+  // Write to activity feed so archive/unarchive appears in card history
+  writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: newArchived ? 'card_archived' : 'card_unarchived',
+    actorId,
+    payload: { title: card.title },
+  }).catch(() => {});
 
   // Fire-and-forget card_archived notification with the new archived state
-  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
   dispatchDirectCardNotification({
     payload: { type: 'card_archived', cardTitle: card.title, archived: newArchived },
     boardId: board.id,

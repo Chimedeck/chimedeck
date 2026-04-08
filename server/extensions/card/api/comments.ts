@@ -14,6 +14,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleCreateCardComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -32,7 +33,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
-  let body: { text?: string };
+  let body: { text?: string; content?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -42,23 +43,25 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
     );
   }
 
-  if (!body.text || typeof body.text !== 'string' || body.text.trim() === '') {
+  // [why] Accept both `content` (UI) and `text` (MCP/CLI external contract)
+  const rawText = body.content ?? body.text;
+  if (!rawText || typeof rawText !== 'string' || rawText.trim() === '') {
     return Response.json(
-      { name: 'bad-request', data: { message: 'text is required' } },
+      { name: 'bad-request', data: { message: 'content is required' } },
       { status: 400 },
     );
   }
 
-  if (body.text.trim().length > 50000) {
+  if (rawText.trim().length > 50000) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'text must be ≤ 50 000 characters' } },
+      { name: 'bad-request', data: { message: 'content must be ≤ 50 000 characters' } },
       { status: 400 },
     );
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const id = randomUUID();
-  const content = sanitizeRichText(body.text.trim());
+  const content = sanitizeRichText(rawText.trim());
   const now = new Date().toISOString();
 
   await db('comments').insert({
@@ -73,6 +76,10 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   });
 
   const card = await db('cards').where({ id: cardId }).select('title').first();
+  const author = await db('users').where({ id: actorId }).select('name', 'email', 'avatar_url').first();
+
+  const rawPreview = content.replace(/<[^>]+>/g, '');
+  const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
 
   await Promise.all([
     dispatchEvent({
@@ -88,7 +95,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
       boardId: board.id,
       action: 'comment_added',
       actorId,
-      payload: { commentId: id, cardId, cardTitle: card?.title ?? '' },
+      payload: { commentId: id, cardId, cardTitle: card?.title ?? '', commentPreview },
     }),
   ]);
 
@@ -96,10 +103,16 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
     {
       data: {
         id,
-        cardId,
-        userId: actorId,
-        text: body.text.trim(),
-        createdAt: now,
+        card_id: cardId,
+        user_id: actorId,
+        content,
+        version: 1,
+        deleted: false,
+        created_at: now,
+        updated_at: now,
+        author_name: author?.name ?? author?.email ?? null,
+        author_email: author?.email ?? null,
+        author_avatar_url: buildAvatarProxyUrl({ userId: actorId, avatarUrl: author?.avatar_url ?? null }),
       },
     },
     { status: 201 },

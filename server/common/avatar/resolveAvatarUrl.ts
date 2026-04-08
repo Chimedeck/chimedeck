@@ -41,9 +41,6 @@ export async function resolveAvatarUrl({
 }): Promise<string | null> {
   if (!avatarUrl) return null;
 
-  // LocalStack/custom S3 endpoints are typically reachable directly in this project.
-  if (s3Config.endpoint) return avatarUrl;
-
   const s3Key = extractS3KeyFromAvatarUrl({ avatarUrl });
   if (!s3Key) return avatarUrl;
 
@@ -60,6 +57,23 @@ export async function resolveAvatarUrl({
     // Fall back to the stored URL to avoid breaking profile rendering.
     return avatarUrl;
   }
+}
+
+/**
+ * Returns the stable proxy path for a user's avatar.
+ * Use this in API responses instead of resolveAvatarUrl to avoid leaking
+ * short-lived presigned S3 URLs — the browser always hits the proxy endpoint.
+ * Returns null when the user has no avatar stored.
+ */
+export function buildAvatarProxyUrl({
+  userId,
+  avatarUrl,
+}: {
+  userId: string;
+  avatarUrl: string | null | undefined;
+}): string | null {
+  if (!avatarUrl) return null;
+  return `/api/v1/users/${userId}/avatar`;
 }
 
 export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: string | null }>(
@@ -81,4 +95,22 @@ export async function resolveAvatarUrlsInCollection<T extends { avatar_url?: str
       return { ...item, avatar_url: cache.get(rawAvatarUrl) ?? null };
     }),
   );
+}
+
+/**
+ * Maps a collection of user-like objects to use stable proxy avatar paths.
+ * Replaces avatar_url with /api/v1/users/:id/avatar when the user has an avatar stored.
+ * Synchronous — no S3 presigning needed.
+ */
+export function buildAvatarProxyUrlsInCollection<T extends Record<string, unknown>>(
+  items: T[],
+): T[] {
+  return items.map((item) => {
+    const id = item['id'] as string | undefined;
+    const avatarUrl = item['avatar_url'] as string | null | undefined;
+    return {
+      ...item,
+      avatar_url: id ? buildAvatarProxyUrl({ userId: id, avatarUrl: avatarUrl ?? null }) : null,
+    };
+  });
 }

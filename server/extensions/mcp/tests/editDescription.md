@@ -4,8 +4,8 @@
 Call the `edit_card_description` MCP tool with a valid `cardId` and new `description` to verify the card's description is updated.
 
 ## Preconditions
-- Taskinate is running at `http://localhost:3000`
-- A valid `TASKINATE_TOKEN` is set
+- ChimeDeck is running at `http://localhost:3000`
+- A valid `CHIMEDECK_TOKEN` is set
 - A card exists on a board; record its ID as `CARD_ID`
 
 ## Steps

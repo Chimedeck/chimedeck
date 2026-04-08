@@ -29,22 +29,22 @@ const QuotaBar: FC<Props> = ({ quota }) => {
   const isWarning = pct >= 80;
 
   return (
-    <div className="px-4 py-3 bg-slate-800 border-b border-slate-700">
+    <div className="px-4 py-3 bg-bg-surface border-b border-border">
       <div className="flex items-center gap-2 mb-2">
-        <ChartBarIcon className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
-        <span className="text-xs text-slate-300 font-medium">
+        <ChartBarIcon className="h-4 w-4 text-muted shrink-0" aria-hidden="true" />
+        <span className="text-xs text-subtle font-medium">
           {usedRuns.toLocaleString()} / {maxRuns.toLocaleString()} runs used this month
         </span>
         {isWarning && (
           <ExclamationTriangleIcon
-            className={`h-4 w-4 shrink-0 ${pct >= 95 ? 'text-red-400' : 'text-amber-400'}`}
+            className={`h-4 w-4 shrink-0 ${pct >= 95 ? 'text-danger' : 'text-amber-400'}`}
             aria-label={translations['automation.quotaBar.warningAriaLabel']}
           />
         )}
       </div>
 
       {/* Track */}
-      <div className="h-2 w-full rounded-full bg-slate-700 overflow-hidden">
+      <div className="h-2 w-full rounded-full bg-bg-overlay overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-300 ${barColor(pct)}`}
           style={{ width: `${pct}%` }}
@@ -56,7 +56,7 @@ const QuotaBar: FC<Props> = ({ quota }) => {
         />
       </div>
 
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted">
         Resets in {days} day{days !== 1 ? 's' : ''}
       </p>
     </div>

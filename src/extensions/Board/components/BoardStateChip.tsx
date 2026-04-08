@@ -8,13 +8,13 @@ interface Props {
 const BoardStateChip = ({ state }: Props) => {
   if (state === 'ARCHIVED') {
     return (
-      <span className="inline-block rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+      <span className="inline-block rounded bg-bg-overlay px-2 py-0.5 text-xs font-medium text-muted">
         Archived
       </span>
     );
   }
   return (
-    <span className="inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+    <span className="inline-block rounded bg-success/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-success">
       Active
     </span>
   );

@@ -52,22 +52,25 @@ const CalendarMonthGrid = ({
     <div className="flex flex-col gap-2 p-4" data-testid="calendar-month-grid">
       {/* Month + navigation header */}
       <div className="flex items-center justify-between">
+        {/* [theme-exception]: CalendarView dark theme */}
         <button
           onClick={onPrev}
           aria-label={translations['CalendarView.ariaPrevMonth']}
           data-testid="calendar-prev"
-          className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
+          className="rounded px-3 py-1 text-subtle hover:bg-bg-overlay hover:text-base focus:outline-none"
         >
           ‹
         </button>
-        <h2 className="text-base font-semibold text-slate-100" data-testid="calendar-month-title">
+        {/* [theme-exception]: CalendarView dark theme */}
+        <h2 className="text-base font-semibold text-base" data-testid="calendar-month-title">
           {MONTH_NAMES[month]} {year}
         </h2>
+        {/* [theme-exception]: CalendarView dark theme */}
         <button
           onClick={onNext}
           aria-label={translations['CalendarView.ariaNextMonth']}
           data-testid="calendar-next"
-          className="rounded px-3 py-1 text-slate-400 hover:bg-slate-800 hover:text-slate-100 focus:outline-none"
+          className="rounded px-3 py-1 text-subtle hover:bg-bg-overlay hover:text-base focus:outline-none"
         >
           ›
         </button>
@@ -76,9 +79,10 @@ const CalendarMonthGrid = ({
       {/* Weekday labels */}
       <div className="grid grid-cols-7 gap-1">
         {WEEKDAY_LABELS.map((label) => (
+          // [theme-exception]: CalendarView dark theme
           <div
             key={label}
-            className="py-1 text-center text-xs font-medium text-slate-500 uppercase tracking-wide"
+            className="py-1 text-center text-xs font-medium text-subtle uppercase tracking-wide"
           >
             {label}
           </div>

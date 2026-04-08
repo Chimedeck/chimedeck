@@ -1,6 +1,6 @@
 // GET /api/v1/cards/:id/comments — list comments for a card; min role: MEMBER.
 import { db } from '../../../common/db';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
@@ -53,12 +53,10 @@ export async function handleListComments(req: Request, cardId: string): Promise<
       'users.avatar_url as author_avatar_url',
     );
 
-  const data = await Promise.all(
-    comments.map(async (c) => ({
+  const data = comments.map((c) => ({
       ...c,
-      author_avatar_url: await resolveAvatarUrl({ avatarUrl: (c as Record<string, unknown>).author_avatar_url as string | null ?? null }),
-    }))
-  );
+      author_avatar_url: buildAvatarProxyUrl({ userId: (c as Record<string, unknown>).user_id as string, avatarUrl: (c as Record<string, unknown>).author_avatar_url as string | null ?? null }),
+    }));
 
   return Response.json({ data });
 }

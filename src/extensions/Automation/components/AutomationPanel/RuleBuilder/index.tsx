@@ -110,16 +110,16 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
   return (
     <div className="flex h-full flex-col">
       {/* Sub-header */}
-      <div className="flex items-center gap-2 border-b border-slate-700 px-4 py-3 shrink-0">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3 shrink-0">
         <button
           type="button"
-          className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
+          className="rounded p-1 text-muted hover:bg-bg-overlay hover:text-subtle transition-colors"
           onClick={onCancel}
           aria-label={translations['automation.ruleBuilder.backAriaLabel']}
         >
           <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
         </button>
-        <h3 className="text-sm font-semibold text-slate-200">
+        <h3 className="text-sm font-semibold text-foreground">
           {initialAutomation ? translations['automation.ruleBuilder.editTitle'] : translations['automation.ruleBuilder.newTitle']}
         </h3>
       </div>
@@ -154,7 +154,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
         </section>
 
         {error && (
-          <p className="text-sm text-red-400" role="alert">
+          <p className="text-sm text-danger" role="alert">
             {error}
           </p>
         )}

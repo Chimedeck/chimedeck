@@ -15,8 +15,8 @@ import { dispatchEvent } from '../../../../../mods/events/dispatch';
 import type { ActionHandler, ActionContext } from '../../../common/types';
 
 const configSchema = z.object({
-  targetBoardId: z.string().uuid(),
-  targetListId: z.string().uuid(),
+  targetBoardId: z.string().min(1),
+  targetListId: z.string().min(1),
   position: z.enum(['top', 'bottom']).optional(),
 });
 

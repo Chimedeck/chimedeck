@@ -1,6 +1,5 @@
 {
-  "App.name": "Taskinate",
-
+  "App.name": "ChimeDeck",
   "Common.loadingLabel": "Loading…",
   "Common.errorGeneric": "Something went wrong. Please try again.",
   "Common.errorBoundaryFallback": "Something went wrong. Please reload.",
@@ -17,7 +16,6 @@
   "Common.avatarAlt": "Avatar",
   "Common.switchToLightMode": "Switch to light mode",
   "Common.switchToDarkMode": "Switch to dark mode",
-
   "CommandPalette.ariaLabel": "Search",
   "CommandPalette.inputAriaLabel": "Search",
   "CommandPalette.scopeTabsAriaLabel": "Search scope",
@@ -39,7 +37,6 @@
   "CommandPalette.footerOpen": "open",
   "CommandPalette.footerEscPrefix": "Press",
   "CommandPalette.footerEscClose": "to close",
-
   "Sidebar.searchLabel": "Search",
   "Sidebar.searchAriaLabel": "Search (⌘K)",
   "Sidebar.pluginDocsLabel": "Plugin Docs",
@@ -49,10 +46,11 @@
   "Sidebar.collapseAriaLabel": "Collapse sidebar",
   "Sidebar.guestBadge": "guest",
   "Sidebar.ariaNavLabel": "Main navigation",
-
   "Layout.sidebarAriaLabel": "Main navigation",
   "Layout.topbarAriaLabel": "Top navigation",
   "Layout.skipToContent": "Skip to main content",
   "Layout.openSidebarAriaLabel": "Open sidebar",
-  "Layout.mobileDrawerAriaLabel": "Navigation"
+  "Layout.mobileDrawerAriaLabel": "Navigation",
+  "Sidebar.administrationSection": "Administration",
+  "Sidebar.pluginsLabel": "Plugins"
 }

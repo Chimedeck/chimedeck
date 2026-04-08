@@ -1,5 +1,6 @@
 // CreateCardForm — inline form for creating a new card at the bottom of a list.
 import { useState } from 'react';
+import Button from '../../../common/components/Button';
 
 interface Props {
   listId: string;
@@ -38,7 +39,7 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <textarea
-        className="w-full rounded border border-gray-300 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+        className="w-full rounded border border-border bg-bg-overlay p-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary resize-none"
         placeholder="Enter a title for this card…"
         rows={2}
         value={title}
@@ -47,22 +48,24 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
         aria-label="New card title"
         disabled={submitting}
       />
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={submitting}
-          className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="px-3 py-1 text-sm"
         >
           Add card
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={onCancel}
-          className="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-200"
+          className="px-3 py-1 text-sm text-muted hover:bg-bg-sunken"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

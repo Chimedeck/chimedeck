@@ -442,13 +442,22 @@ ${SCOUT_SUMMARY}
 Changes made this iteration (in THIS project only):
 ${EXEC_SUMMARY}
 
+MANDATORY RULES — follow without exception:
+- You MUST use Playwright MCP browser tools to open a real browser and visit
+  each affected URL. Do NOT reason statically about what the code 'would' do.
+- NEVER respond with 'tests do not exist' or 'implementation required'. The
+  scenario IS the test. Execute it live in the browser right now.
+- Read specs/tests/TEST_CREDENTIALS.md for all login credentials.
+- 'Tests do not exist' is an invalid response — open the browser and check.
+
 IMPORTANT: Run the dev server in THIS project, not in '${SAMPLE_PROJECT_DIR}/'.
 '${SAMPLE_PROJECT_DIR}/' is a read-only reference and must not be started or modified.
+If the dev server is not running, start it with 'bun run dev' before navigating.
 
 Use Playwright MCP tools to:
 1. Start the dev server in THIS project if not already running.
-2. Navigate to each affected view.
-3. Execute the happy-path scenario.
+2. Navigate to each affected view in the browser.
+3. Execute the happy-path scenario step by step, taking screenshots.
 4. Execute at least one edge/error scenario.
 5. Report PASS or FAIL for each flow with a screenshot reference.
 If a test fails, describe the bug clearly so the next iteration can fix it."

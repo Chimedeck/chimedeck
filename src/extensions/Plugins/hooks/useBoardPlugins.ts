@@ -5,6 +5,7 @@ import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
   fetchBoardPluginsThunk,
   fetchAvailablePluginsThunk,
+  fetchDiscoverablePluginsThunk,
   enablePluginThunk,
   disablePluginThunk,
   optimisticDisable,
@@ -25,7 +26,8 @@ export function useBoardPlugins({ boardId }: { boardId: string }) {
 
   const loadPlugins = useCallback(() => {
     dispatch(fetchBoardPluginsThunk({ boardId })).then(() => {
-      dispatch(fetchAvailablePluginsThunk({ boardId }));
+      // [why] Use board-specific /available endpoint so the Discover list is pre-filtered
+      dispatch(fetchDiscoverablePluginsThunk({ boardId }));
     });
   }, [dispatch, boardId]);
 

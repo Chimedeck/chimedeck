@@ -1,12 +1,13 @@
 // CardModal container — connects Redux cardDetailSlice to the CardModal component.
 // Handles data fetching, optimistic mutations, and URL sync.
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import {
   cardDetailSliceActions,
   fetchCardDetailThunk,
+  fetchCardActivitiesThunk,
   selectCardDetail,
   selectCardDetailLabels,
   selectCardDetailMembers,
@@ -17,6 +18,7 @@ import {
   selectCardDetailMeta,
 } from '../../slices/cardDetailSlice';
 import CardModal from '../../components/CardModal';
+import CopyCardModal from '../../components/CopyCardModal';
 import {
   patchCard,
   archiveCardToggle,
@@ -31,6 +33,7 @@ import {
   postMemberAssign,
   deleteMemberAssign,
   createBoardLabel,
+  updateBoardLabel,
   getBoardLabels,
   getBoardMembers,
   getCardComments,
@@ -42,8 +45,11 @@ import type { Label, Checklist, ChecklistItem } from '../../api';
 import { boardSliceActions, selectBoard } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
+import { printCard } from '../../utils/printCard';
+import { listAttachments } from '~/extensions/Attachments/api';
 
 let _mutationCounter = 0;
 const nextMutationId = () => `m${++_mutationCounter}`;
@@ -64,12 +70,15 @@ const CardModalContainer = () => {
   const { boardId } = meta;
   const currentUser = useAppSelector(selectCurrentUser);
   const board = useAppSelector(selectBoard);
+  const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
   // [why] Derive write permission from the board's callerGuestType so VIEWER guests
   // cannot see comment/attachment/edit controls inside the card modal.
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
+  const [allLabels, setAllLabels] = useState<Label[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);;
 
   const api = apiClient;
 
@@ -91,7 +100,7 @@ const CardModalContainer = () => {
   useEffect(() => {
     if (!boardId) return;
     getBoardLabels({ api, boardId })
-      .then((labels) => { allLabelsRef.current = labels; })
+      .then((labels) => { allLabelsRef.current = labels; setAllLabels(labels); })
       .catch(() => {});
     getBoardMembers({ api, boardId })
       .then((members) => { boardMembersRef.current = members; })
@@ -187,8 +196,14 @@ const CardModalContainer = () => {
     if (!card) return;
     await archiveCardToggle({ api, cardId: card.id });
     dispatch(fetchCardDetailThunk({ cardId: card.id }));
-    // If archiving (not unarchiving) close modal
-    if (!card.archived) handleClose();
+    if (card.archived) {
+      // Unarchiving: put the card back in the board view
+      dispatch(boardSliceActions.updateCard({ card: { ...card, archived: false } }));
+    } else {
+      // Archiving: remove card from the board kanban view immediately
+      dispatch(boardSliceActions.removeCard({ cardId: card.id, listId: card.list_id }));
+      handleClose();
+    }
   }, [api, card, dispatch, handleClose]);
 
   const handleDelete = useCallback(async () => {
@@ -201,6 +216,25 @@ const CardModalContainer = () => {
   const handleCopyLink = useCallback(() => {
     globalThis.navigator.clipboard.writeText(globalThis.location.href).catch(() => {});
   }, []);
+
+  const handleCopyCard = useCallback(() => {
+    setCopyModalOpen(true);
+  }, []);
+
+  const handlePrint = useCallback(async () => {
+    if (!card) return;
+    const { data: attachments } = await listAttachments({ cardId: card.id }).catch(() => ({ data: [] }));
+    printCard({
+      card,
+      listTitle: meta.listTitle,
+      boardTitle: meta.boardTitle,
+      checklists,
+      attachments,
+      comments,
+      labels,
+      members,
+    });
+  }, [card, meta, checklists, comments, labels, members]);
 
   // ── Checklist group CRUD ────────────────────────────────────────────────
   const handleCreateChecklist = useCallback(
@@ -287,11 +321,14 @@ const CardModalContainer = () => {
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { checked } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+        // [why] Checklist toggles generate an activity event server-side; re-fetch to keep the feed in sync
+        // since the WebSocket may not be available in all environments.
+        if (card?.id) dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
     },
-    [api, dispatch],
+    [api, card, dispatch],
   );
 
   const handleItemRename = useCallback(
@@ -329,40 +366,60 @@ const CardModalContainer = () => {
       const label = allLabelsRef.current.find((l) => l.id === labelId);
       if (!label) return;
       const mutationId = nextMutationId();
+      const updatedLabels = labels.some((l) => l.id === labelId) ? labels : [...labels, label];
       dispatch(cardDetailSliceActions.applyOptimisticLabelAssign({ mutationId, label }));
+      // [why] Keep the board card in sync so the kanban view reflects the new label immediately
+      dispatch(boardSliceActions.updateCard({ card: { ...card, labels: updatedLabels } }));
       try {
         await postLabelAssign({ api, cardId: card.id, labelId });
         dispatch(cardDetailSliceActions.confirmLabel({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackLabel({ mutationId }));
+        dispatch(boardSliceActions.updateCard({ card: { ...card, labels } }));
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, labels],
   );
 
   const handleLabelDetach = useCallback(
     async (labelId: string) => {
       if (!card) return;
       const mutationId = nextMutationId();
+      const updatedLabels = labels.filter((l) => l.id !== labelId);
       dispatch(cardDetailSliceActions.applyOptimisticLabelDetach({ mutationId, labelId }));
+      // [why] Keep the board card in sync so the kanban view reflects the removed label immediately
+      dispatch(boardSliceActions.updateCard({ card: { ...card, labels: updatedLabels } }));
       try {
         await deleteLabelAssign({ api, cardId: card.id, labelId });
         dispatch(cardDetailSliceActions.confirmLabel({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackLabel({ mutationId }));
+        dispatch(boardSliceActions.updateCard({ card: { ...card, labels } }));
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, labels],
   );
 
   const handleLabelCreate = useCallback(
     async (name: string, color: string) => {
       if (!card || !boardId) return;
       const newLabel = await createBoardLabel({ api, boardId, name, color });
-      allLabelsRef.current = [...allLabelsRef.current, newLabel];
+      const updated = [...allLabelsRef.current, newLabel];
+      allLabelsRef.current = updated;
+      setAllLabels(updated);
       await handleLabelAttach(newLabel.id);
     },
     [api, card, boardId, handleLabelAttach],
+  );
+
+  const handleLabelUpdate = useCallback(
+    async (labelId: string, name: string, color: string) => {
+      const updated = await updateBoardLabel({ api, labelId, name, color });
+      const newList = allLabelsRef.current.map((l) => (l.id === labelId ? updated : l));
+      allLabelsRef.current = newList;
+      setAllLabels(newList);
+    },
+    [api],
   );
 
   // ── Member assign / remove ──────────────────────────────────────────────
@@ -481,6 +538,8 @@ const CardModalContainer = () => {
       if (!card) return;
       const comment = await postCardComment({ api, cardId: card.id, content });
       dispatch(cardDetailSliceActions.addComment(comment));
+      // [why] Keep the card tile comment counter in sync without a full board re-fetch.
+      dispatch(boardSliceActions.updateCard({ card: { ...card, comment_count: (card.comment_count ?? 0) + 1 } }));
     },
     [api, card, dispatch],
   );
@@ -497,8 +556,22 @@ const CardModalContainer = () => {
     async (commentId: string) => {
       await deleteComment({ api, commentId });
       dispatch(cardDetailSliceActions.removeComment({ commentId }));
+      // [why] Keep the card tile comment counter in sync without a full board re-fetch.
+      if (card) {
+        dispatch(boardSliceActions.updateCard({ card: { ...card, comment_count: Math.max(0, (card.comment_count ?? 0) - 1) } }));
+      }
     },
-    [api, dispatch],
+    [api, card, dispatch],
+  );
+
+  // [why] When the attachment list changes inside AttachmentPanel (add, delete, initial load),
+  // immediately update the board card tile so the counter reflects the live count.
+  const handleAttachmentCountChange = useCallback(
+    ({ fileCount, linkedCardCount }: { fileCount: number; linkedCardCount: number }) => {
+      if (!card) return;
+      dispatch(boardSliceActions.updateCard({ card: { ...card, attachment_count: fileCount, linked_card_count: linkedCardCount } }));
+    },
+    [card, dispatch],
   );
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -507,7 +580,7 @@ const CardModalContainer = () => {
   if (status === 'loading' && !card) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div className="text-slate-400 animate-pulse">Loading card…</div>
+        <div className="text-subtle animate-pulse">Loading card…</div>
       </div>
     );
   }
@@ -515,7 +588,7 @@ const CardModalContainer = () => {
   if (status === 'error') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-        <div className="bg-slate-900 rounded-xl p-8 text-red-400">
+        <div className="bg-bg-surface rounded-xl p-8 text-danger">
           Failed to load card.{' '}
           <button className="underline" onClick={handleClose}>
             Close
@@ -528,14 +601,15 @@ const CardModalContainer = () => {
   if (!card) return null;
 
   return (
-    <CardModal
+    <>
+      <CardModal
       open={!!cardId}
       boardId={boardId ?? ''}
       card={card}
       listTitle={meta.listTitle}
       boardTitle={meta.boardTitle}
       labels={labels}
-      allLabels={allLabelsRef.current}
+      allLabels={allLabels}
       members={members}
       boardMembers={boardMembersRef.current}
       checklists={checklists}
@@ -551,6 +625,8 @@ const CardModalContainer = () => {
       onArchive={handleArchive}
       onDelete={handleDelete}
       onCopyLink={handleCopyLink}
+      onCopyCard={handleCopyCard}
+      onPrint={handlePrint}
       onCreateChecklist={handleCreateChecklist}
       onRenameChecklist={handleRenameChecklist}
       onDeleteChecklist={handleDeleteChecklist}
@@ -561,6 +637,7 @@ const CardModalContainer = () => {
       onLabelAttach={handleLabelAttach}
       onLabelDetach={handleLabelDetach}
       onLabelCreate={handleLabelCreate}
+      onLabelUpdate={handleLabelUpdate}
       onMemberAssign={handleMemberAssign}
       onMemberRemove={handleMemberRemove}
       onAddComment={handleAddComment}
@@ -570,8 +647,27 @@ const CardModalContainer = () => {
       onCoverColorChange={handleCoverColorChange}
       onCoverSizeChange={handleCoverSizeChange}
       onCoverAttachmentChange={handleCoverAttachmentChange}
+      onAttachmentCountChange={handleAttachmentCountChange}
       isViewerGuest={isViewerGuest}
-    />
+      />
+      {copyModalOpen && card && activeWorkspaceId && (
+        <CopyCardModal
+          cardId={card.id}
+          cardTitle={card.title}
+          checklistCount={checklists.length}
+          memberCount={members.length}
+          currentBoardId={boardId}
+          currentListId={card.list_id}
+          workspaceId={activeWorkspaceId}
+          api={api}
+          onClose={() => setCopyModalOpen(false)}
+          onSuccess={(newCard) => {
+            setCopyModalOpen(false);
+            dispatch(boardSliceActions.addCard({ card: newCard }));
+          }}
+        />
+      )}
+    </>
   );
 };
 

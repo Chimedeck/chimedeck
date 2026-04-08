@@ -14,13 +14,13 @@ import BoardNotificationTypePreferences from './BoardNotificationTypePreferences
 
 interface Props {
   onClose: () => void;
-  /** When true, the entire panel is suppressed (workspace GUEST role). */
+  /** When true, the user is a workspace GUEST — cannot change board-level settings (visibility, background, etc.) but can adjust their notifications. */
   isGuest?: boolean;
+  /** When true, the user is a VIEWER guest — can only adjust their notification settings. */
+  isViewerGuest?: boolean;
 }
 
-const BoardSettings = ({ onClose, isGuest = false }: Props) => {
-  // [why] GUEST users must not access board settings — return nothing to prevent render.
-  if (isGuest) return null;
+const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false }: Props) => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);
@@ -66,16 +66,16 @@ const BoardSettings = ({ onClose, isGuest = false }: Props) => {
     >
       {/* Panel — stop click propagation so clicks inside don't close */}
       <div
-        className="absolute right-0 top-0 h-full w-80 bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl"
+        className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-label="Board Settings"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <h2 className="text-slate-100 font-semibold text-sm">Board Settings</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 className="text-base font-semibold text-sm">Board Settings</h2>
           <button
-            className="text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-muted hover:text-subtle transition-colors"
             onClick={onClose}
             aria-label="Close settings panel"
           >
@@ -85,36 +85,43 @@ const BoardSettings = ({ onClose, isGuest = false }: Props) => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {/* Visibility */}
-          <VisibilitySelector
-            value={visibility}
-            onChange={handleVisibilityChange}
-            disabled={saving}
-          />
+          {/* Visibility — MEMBER guests and full members only; VIEWER guests cannot change board visibility */}
+          {!isGuest && (
+            <VisibilitySelector
+              value={visibility}
+              onChange={handleVisibilityChange}
+              disabled={saving}
+            />
+          )}
 
-          <div className="border-t border-slate-700 pt-4">
-            <BackgroundPicker boardId={boardId ?? ''} />
-          </div>
+          {/* Background, Custom Fields, Plugins — full members only */}
+          {!isGuest && (
+            <>
+              <div className="border-t border-border pt-4">
+                <BackgroundPicker boardId={boardId ?? ''} />
+              </div>
 
-          <div className="border-t border-slate-700 pt-4">
-            <BoardCustomFieldsPanel />
-          </div>
+              <div className="border-t border-border pt-4">
+                <BoardCustomFieldsPanel />
+              </div>
 
-          <div className="border-t border-slate-700 pt-4">
-            <button
-              onClick={handlePluginsClick}
-              className="w-full text-left px-3 py-2 rounded text-sm text-slate-200 hover:bg-slate-800 flex items-center gap-2 transition-colors"
-            >
-              <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>Plugins</span>
-            </button>
-          </div>
+              <div className="border-t border-border pt-4">
+                <button
+                  onClick={handlePluginsClick}
+                  className="w-full text-left px-3 py-2 rounded text-sm text-subtle hover:bg-bg-surface flex items-center gap-2 transition-colors"
+                >
+                  <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Plugins</span>
+                </button>
+              </div>
+            </>
+          )}
 
-          {/* User settings — per-board preferences for the current user */}
-          <div className="border-t border-slate-700 pt-4">
+          {/* User settings — per-board notification preferences; available to all roles */}
+          <div className={isGuest ? '' : 'border-t border-border pt-4'}>
             <div className="flex items-center gap-2 mb-3">
-              <UserCircleIcon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <UserCircleIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
                 User settings
               </h3>
             </div>

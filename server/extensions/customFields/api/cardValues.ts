@@ -322,7 +322,49 @@ function buildValuePayload(
   }
 }
 
-// GET /api/v1/boards/:boardId/custom-field-values?cardIds=id1,id2,...
+async function parseBatchCardIds(req: Request): Promise<string[] | Response> {
+  if (req.method === 'GET') {
+    const url = new URL(req.url);
+    const cardIdsParam = url.searchParams.get('cardIds') ?? '';
+    return cardIdsParam
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+  }
+
+  if (req.method === 'POST') {
+    let body: { cardIds?: unknown };
+    try {
+      body = (await req.json()) as { cardIds?: unknown };
+    } catch {
+      return Response.json(
+        { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
+        { status: 400 },
+      );
+    }
+
+    if (!Array.isArray(body.cardIds)) {
+      return Response.json(
+        { error: { name: 'bad-request', data: { message: 'cardIds must be an array of strings' } } },
+        { status: 400 },
+      );
+    }
+
+    const invalid = body.cardIds.some((id) => typeof id !== 'string');
+    if (invalid) {
+      return Response.json(
+        { error: { name: 'bad-request', data: { message: 'cardIds must be an array of strings' } } },
+        { status: 400 },
+      );
+    }
+
+    return body.cardIds.map((id) => id.trim()).filter(Boolean);
+  }
+
+  return [];
+}
+
+// GET/POST /api/v1/boards/:boardId/custom-field-values
 // [why] Fetches values for multiple cards in a single DB query instead of N
 //       individual requests — prevents the board page from DDoSing the server
 //       when every card tile independently calls the single-card endpoint.
@@ -342,9 +384,9 @@ export async function handleBatchCardFieldValues(req: Request, boardId: string):
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id as string);
   if (membershipError) return membershipError;
 
-  const url = new URL(req.url);
-  const cardIdsParam = url.searchParams.get('cardIds') ?? '';
-  const requestedIds = cardIdsParam.split(',').map((id) => id.trim()).filter(Boolean);
+  const parsedIds = await parseBatchCardIds(req);
+  if (parsedIds instanceof Response) return parsedIds;
+  const requestedIds = parsedIds;
 
   if (requestedIds.length === 0) {
     return Response.json({ data: [] });

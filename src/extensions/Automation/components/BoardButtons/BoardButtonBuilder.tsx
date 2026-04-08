@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { XMarkIcon, BoltIcon } from '@heroicons/react/24/outline';
 import type { FC } from 'react';
+import Button from '../../../../common/components/Button';
 import IconPicker, { BUTTON_ICONS, type ButtonIconName } from '../shared/IconPicker';
 import ActionList from '../AutomationPanel/RuleBuilder/ActionList';
 import type { ActionItemData } from '../AutomationPanel/RuleBuilder/ActionItem';
@@ -114,26 +115,27 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
       aria-modal="true"
       aria-label={existing ? translations['automation.boardButtonBuilder.ariaEdit'] : translations['automation.boardButtonBuilder.ariaCreate']}
     >
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-5 p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-bg-base border border-border rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-5 p-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center gap-2">
           <BoltIcon className="h-5 w-5 text-blue-400 flex-shrink-0" aria-hidden="true" />
-          <h2 className="flex-1 text-base font-semibold text-slate-100">
+          <h2 className="flex-1 text-base font-semibold text-base">
             {existing ? translations['automation.boardButtonBuilder.titleEdit'] : translations['automation.boardButtonBuilder.titleCreate']}
           </h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
             aria-label={translations['automation.boardButtonBuilder.close']}
           >
             <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
 
         {/* Name */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="board-btn-name" className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+          <label htmlFor="board-btn-name" className="text-xs font-medium text-muted uppercase tracking-wide">
             {translations['automation.boardButtonBuilder.nameLabel']}
           </label>
           <input
@@ -143,19 +145,19 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
             onChange={(e) => setName(e.target.value)}
             placeholder={translations['automation.boardButtonBuilder.namePlaceholder']}
             maxLength={80}
-            className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-base placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         {/* Icon picker */}
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{translations['automation.boardButtonBuilder.iconLabel']}</span>
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">{translations['automation.boardButtonBuilder.iconLabel']}</span>
           <IconPicker value={icon} onChange={setIcon} />
         </div>
 
         {/* Scope selector */}
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{translations['automation.boardButtonBuilder.scopeLabel']}</span>
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">{translations['automation.boardButtonBuilder.scopeLabel']}</span>
           <div className="flex gap-2">
             {(['board', 'list', 'filter'] as ScopeType[]).map((s) => (
               <button
@@ -165,8 +167,8 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
                 className={[
                   'flex-1 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors border',
                   scope === s
-                    ? 'bg-blue-600 border-blue-500 text-white'
-                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600',
+                    ? 'bg-primary border-primary text-white' // [theme-exception] text-white on active primary button
+                    : 'bg-bg-surface border-border text-muted hover:text-subtle hover:border-border',
                 ].join(' ')}
               >
                 {s}
@@ -176,7 +178,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
 
           {scope === 'list' && (
             <div className="flex flex-col gap-1">
-              <label htmlFor="scope-list-id" className="text-xs text-slate-500">
+              <label htmlFor="scope-list-id" className="text-xs text-muted">
                 {translations['automation.boardButtonBuilder.listIdLabel']}
               </label>
               <input
@@ -185,19 +187,19 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
                 value={listId}
                 onChange={(e) => setListId(e.target.value)}
                 placeholder={translations['automation.boardButtonBuilder.listIdPlaceholder']}
-                className="rounded-md bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-base placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
 
           {scope === 'filter' && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               {translations['automation.boardButtonBuilder.filterHint']}
             </p>
           )}
 
           {scope === 'board' && (
-            <p className="text-xs text-slate-500">{translations['automation.boardButtonBuilder.boardScopeHint']}</p>
+            <p className="text-xs text-muted">{translations['automation.boardButtonBuilder.boardScopeHint']}</p>
           )}
         </div>
 
@@ -206,25 +208,25 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
           <ActionList actions={actions} onChange={setActions} />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-1">
-          <button
+          <Button
+            variant="secondary"
             type="button"
             onClick={onClose}
-            className="rounded-md px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
           >
             {translations['automation.boardButtonBuilder.cancel']}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             type="button"
             disabled={!isValid || saving}
             onClick={handleSave}
-            className="rounded-md px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? translations['automation.boardButtonBuilder.saving'] : existing ? translations['automation.boardButtonBuilder.saveChanges'] : translations['automation.boardButtonBuilder.create']}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

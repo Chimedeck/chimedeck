@@ -10,6 +10,7 @@ import {
 } from '../containers/WorkspacePage/WorkspacePage.duck';
 import type { WorkspaceMember, Role } from '../api';
 import RoleBadge from './RoleBadge';
+import Button from '../../../common/components/Button';
 
 const ASSIGNABLE_ROLES: Role[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'];
 
@@ -65,31 +66,31 @@ const MemberList = ({
   })();
 
   if (members.length === 0) {
-    return <p className="text-sm text-gray-500">No members found.</p>;
+    return <p className="text-sm text-muted">No members found.</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       {(removeErrorMessage || updateRoleError) && (
-        <p role="alert" className="mb-2 text-sm text-red-600">
+        <p role="alert" className="mb-2 text-sm text-danger">
           {removeErrorMessage ?? 'Role update failed. Please try again.'}
         </p>
       )}
 
-      <table className="min-w-full divide-y divide-gray-700 text-sm">
+      <table className="min-w-full divide-y divide-border text-sm">
         <thead>
           <tr>
-            <th className="px-4 py-2 text-left font-medium text-gray-300">Email</th>
-            <th className="px-4 py-2 text-left font-medium text-gray-300">Role</th>
+            <th className="px-4 py-2 text-left font-medium text-muted">Email</th>
+            <th className="px-4 py-2 text-left font-medium text-muted">Role</th>
             {canManageMembers && (
-              <th className="px-4 py-2 text-left font-medium text-gray-300">Actions</th>
+              <th className="px-4 py-2 text-left font-medium text-muted">Actions</th>
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-700">
+        <tbody className="divide-y divide-border">
           {members.map((member) => (
             <tr key={member.userId}>
-              <td className="px-4 py-2 text-gray-100">{member.email}</td>
+              <td className="px-4 py-2 text-base">{member.email}</td>
               <td className="px-4 py-2">
                 {canManageMembers && member.userId !== currentUserId ? (
                   <select
@@ -98,7 +99,7 @@ const MemberList = ({
                       handleRoleChange(member.userId, e.target.value as Role)
                     }
                     aria-label={`Change role for ${member.email}`}
-                    className="rounded border border-gray-600 bg-gray-700 text-gray-100 px-2 py-0.5 text-xs"
+                    className="rounded border border-border bg-bg-overlay text-base px-2 py-0.5 text-xs"
                   >
                     {ASSIGNABLE_ROLES.map((r) => (
                       <option key={r} value={r}>
@@ -116,14 +117,14 @@ const MemberList = ({
                   {member.userId !== currentUserId && !isLastOwner(member) && (
                     <button
                       onClick={() => handleRemoveConfirm(member.userId)}
-                      className="text-red-600 hover:underline"
+                      className="text-danger hover:underline"
                       aria-label={`Remove ${member.email}`}
                     >
                       Remove
                     </button>
                   )}
                   {isLastOwner(member) && (
-                    <span className="text-xs text-gray-400">Last owner</span>
+                    <span className="text-xs text-muted">Last owner</span>
                   )}
                 </td>
               )}
@@ -140,26 +141,28 @@ const MemberList = ({
           aria-labelledby="confirm-remove-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
         >
-          <div className="rounded-lg bg-white p-6 shadow-xl">
+          <div className="rounded-lg bg-bg-surface p-6 shadow-xl">
             <h3 id="confirm-remove-title" className="mb-2 font-semibold">
               Remove member?
             </h3>
-            <p className="mb-4 text-sm text-gray-600">
+            <p className="mb-4 text-sm text-muted">
               Are you sure you want to remove this member from the workspace?
             </p>
             <div className="flex justify-end gap-2">
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setConfirmRemoveUserId(null)}
-                className="rounded border border-gray-300 px-4 py-2 text-sm"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
                 onClick={handleRemove}
-                className="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
               >
                 Remove
-              </button>
+              </Button>
             </div>
           </div>
         </div>

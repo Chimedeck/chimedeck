@@ -29,8 +29,8 @@ const TimelineZoomControl = ({ zoom, onZoomChange }: TimelineZoomControlProps) =
             i === 0 ? 'rounded-l' : i === ZOOM_LEVELS.length - 1 ? 'rounded-r' : ''
           } ${
             zoom === level
-              ? 'bg-blue-600 text-white'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-blue-600 text-white' // [theme-exception]
+              : 'text-subtle hover:text-subtle'
           }`}
         >
           {ZOOM_LABELS[level]}

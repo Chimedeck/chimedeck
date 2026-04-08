@@ -16,13 +16,13 @@ export interface ActivityEventContext {
 
 const EVENT_LABELS: Record<string, ActivityEventMeta> = {
   'card.member.added': { label: 'added a member', dotColor: 'bg-blue-500' },
-  'card.member.removed': { label: 'removed a member', dotColor: 'bg-slate-500' },
+  'card.member.removed': { label: 'removed a member', dotColor: 'bg-bg-sunken' },
   'card.due_date.set': { label: 'set the due date', dotColor: 'bg-yellow-500' },
-  'card.due_date.cleared': { label: 'cleared the due date', dotColor: 'bg-slate-500' },
+  'card.due_date.cleared': { label: 'cleared the due date', dotColor: 'bg-bg-sunken' },
   'card.money.updated': { label: 'updated the value', dotColor: 'bg-green-500' },
 };
 
-const FALLBACK: ActivityEventMeta = { label: 'Activity', dotColor: 'bg-slate-600' };
+const FALLBACK: ActivityEventMeta = { label: 'Activity', dotColor: 'bg-bg-sunken' };
 
 export function getActivityEventMeta(
   eventType: string,
@@ -59,11 +59,11 @@ export function getActivityEventMeta(
     const userId = typeof payload?.userId === 'string' ? payload.userId : null;
     const isSelf = userId != null && userId === context?.currentUserId;
     if (isSelf) {
-      return { label: 'removed themselves from this card', dotColor: 'bg-slate-500' };
+      return { label: 'removed themselves from this card', dotColor: 'bg-bg-sunken' };
     }
     const name = userId ? (context?.resolveName?.(userId) ?? null) : null;
     const who = name ?? 'a member';
-    return { label: `removed ${who} from this card`, dotColor: 'bg-slate-500' };
+    return { label: `removed ${who} from this card`, dotColor: 'bg-bg-sunken' };
   }
 
   // --- Attachment events ---
@@ -74,7 +74,42 @@ export function getActivityEventMeta(
   }
   if (eventType === 'attachment_removed') {
     const name = typeof payload?.name === 'string' ? payload.name : 'a file';
-    return { label: `removed attachment ${name}`, dotColor: 'bg-slate-500' };
+    return { label: `removed attachment ${name}`, dotColor: 'bg-bg-sunken' };
+  }
+
+  if (eventType === 'card_archived') {
+    return { label: 'archived this card', dotColor: 'bg-orange-500' };
+  }
+
+  if (eventType === 'card_unarchived') {
+    return { label: 'restored this card from archive', dotColor: 'bg-emerald-500' };
+  }
+
+  if (eventType === 'card_deleted') {
+    const title = typeof payload?.cardTitle === 'string' && payload.cardTitle ? ` "${payload.cardTitle}"` : '';
+    return { label: `deleted card${title}`, dotColor: 'bg-red-500' };
+  }
+
+  if (eventType === 'checklist_created') {
+    const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
+    return { label: `added checklist "${title}"`, dotColor: 'bg-emerald-500' };
+  }
+
+  if (eventType === 'checklist_deleted') {
+    const title = typeof payload?.checklistTitle === 'string' ? payload.checklistTitle : 'a checklist';
+    return { label: `deleted checklist "${title}"`, dotColor: 'bg-red-500' };
+  }
+
+  if (eventType === 'checklist_item_checked') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
+    return { label: `completed "${item}"${cl}`, dotColor: 'bg-emerald-500' };
+  }
+
+  if (eventType === 'checklist_item_unchecked') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
+    return { label: `unchecked "${item}"${cl}`, dotColor: 'bg-bg-sunken' };
   }
 
   return EVENT_LABELS[eventType] ?? FALLBACK;

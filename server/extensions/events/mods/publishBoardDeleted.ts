@@ -57,7 +57,7 @@ export async function publishBoardDeleted({
     .select('user_id');
 
   for (const member of members) {
-    publishToUser(member.user_id, message);
+    await publishToUser(member.user_id, message);
   }
 
   return { eventId: event.id };

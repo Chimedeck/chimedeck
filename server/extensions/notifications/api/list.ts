@@ -2,7 +2,7 @@
 // Supports ?unread=true and cursor pagination (?limit=20&cursor=<created_at>).
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import { resolveAvatarUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 export async function handleListNotifications(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -60,13 +60,9 @@ export async function handleListNotifications(req: Request): Promise<Response> {
 
   const rows = await query;
   const hasMore = rows.length > limit;
-  const avatarCache = new Map<string, string | null>();
   const data = await Promise.all(
     rows.slice(0, limit).map(async (row) => {
       const actorAvatarUrl = row.actor_avatar_url ?? null;
-      if (actorAvatarUrl && !avatarCache.has(actorAvatarUrl)) {
-        avatarCache.set(actorAvatarUrl, await resolveAvatarUrl({ avatarUrl: actorAvatarUrl }));
-      }
 
       return {
         id: row.id,
@@ -82,7 +78,9 @@ export async function handleListNotifications(req: Request): Promise<Response> {
           id: row.actor_id,
           nickname: row.actor_nickname ?? null,
           name: row.actor_name ?? null,
-          avatar_url: actorAvatarUrl ? (avatarCache.get(actorAvatarUrl) ?? null) : null,
+          avatar_url: row.actor_id
+            ? buildAvatarProxyUrl({ userId: row.actor_id, avatarUrl: actorAvatarUrl })
+            : null,
         },
         read: row.read,
         created_at: row.created_at,

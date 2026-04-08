@@ -160,13 +160,13 @@ export default function InviteExternalUserModal() {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl focus:outline-none"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-bg-base p-6 shadow-2xl focus:outline-none"
           aria-describedby="invite-modal-description"
         >
           {/* Close button */}
           <Dialog.Close asChild>
             <button
-              className="absolute right-4 top-4 rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              className="absolute right-4 top-4 rounded p-1 text-muted hover:bg-bg-surface hover:text-base transition-colors"
               aria-label={translations['AdminInvite.closeButton']}
             >
               <XMarkIcon className="h-5 w-5" aria-hidden="true" />
@@ -186,12 +186,12 @@ export default function InviteExternalUserModal() {
           ) : (
             // ── Invite form ─────────────────────────────────────────────────
             <>
-              <Dialog.Title className="mb-1 text-lg font-bold text-white">
+              <Dialog.Title className="mb-1 text-lg font-bold text-base">
                 {translations['AdminInvite.modalTitle']}
               </Dialog.Title>
               <p
                 id="invite-modal-description"
-                className="mb-5 text-sm text-slate-400"
+                className="mb-5 text-sm text-muted"
               >
                 {translations['AdminInvite.modalDescription']}
               </p>
@@ -201,7 +201,7 @@ export default function InviteExternalUserModal() {
                 <div className="mb-4">
                   <label
                     htmlFor="invite-email"
-                    className="mb-1.5 block text-sm font-medium text-slate-300"
+                    className="mb-1.5 block text-sm font-medium text-subtle"
                   >
                     {translations['AdminInvite.emailLabel']}
                   </label>
@@ -213,11 +213,11 @@ export default function InviteExternalUserModal() {
                     placeholder={translations['AdminInvite.emailPlaceholder']}
                     required
                     autoFocus
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                   className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-describedby={fieldErrors.email ? 'invite-email-error' : undefined}
                   />
                   {fieldErrors.email && (
-                    <p id="invite-email-error" className="mt-1 text-xs text-red-400">
+                    <p id="invite-email-error" className="mt-1 text-xs text-danger">
                       {fieldErrors.email}
                     </p>
                   )}
@@ -227,7 +227,7 @@ export default function InviteExternalUserModal() {
                 <div className="mb-4">
                   <label
                     htmlFor="invite-display-name"
-                    className="mb-1.5 block text-sm font-medium text-slate-300"
+                    className="mb-1.5 block text-sm font-medium text-subtle"
                   >
                     {translations['AdminInvite.displayNameLabel']}
                   </label>
@@ -238,13 +238,13 @@ export default function InviteExternalUserModal() {
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder={translations['AdminInvite.displayNamePlaceholder']}
                     required
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-describedby={
                       fieldErrors.displayName ? 'invite-display-name-error' : undefined
                     }
                   />
                   {fieldErrors.displayName && (
-                    <p id="invite-display-name-error" className="mt-1 text-xs text-red-400">
+                    <p id="invite-display-name-error" className="mt-1 text-xs text-danger">
                       {fieldErrors.displayName}
                     </p>
                   )}
@@ -252,11 +252,11 @@ export default function InviteExternalUserModal() {
 
                 {/* Password mode */}
                 <fieldset className="mb-4">
-                  <legend className="mb-1.5 text-sm font-medium text-slate-300">
+                  <legend className="mb-1.5 text-sm font-medium text-subtle">
                     {translations['AdminInvite.passwordModeLabel']}
                   </legend>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-subtle cursor-pointer">
                       <input
                         type="radio"
                         name="password-mode"
@@ -267,7 +267,7 @@ export default function InviteExternalUserModal() {
                       />
                       {translations['AdminInvite.passwordModeAuto']}
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm text-subtle cursor-pointer">
                       <input
                         type="radio"
                         name="password-mode"
@@ -286,7 +286,7 @@ export default function InviteExternalUserModal() {
                   <div className="mb-4">
                     <label
                       htmlFor="invite-password"
-                      className="mb-1.5 block text-sm font-medium text-slate-300"
+                      className="mb-1.5 block text-sm font-medium text-subtle"
                     >
                       {translations['AdminInvite.passwordLabel']}
                     </label>
@@ -296,7 +296,7 @@ export default function InviteExternalUserModal() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                       aria-describedby="invite-password-strength"
                     />
                     {/* Strength bar */}
@@ -307,18 +307,18 @@ export default function InviteExternalUserModal() {
                             <div
                               key={i}
                               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                                i < score ? STRENGTH_COLORS[score - 1] : 'bg-slate-700'
+                                i < score ? STRENGTH_COLORS[score - 1] : 'bg-bg-overlay'
                               }`}
                             />
                           ))}
                         </div>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-subtle">
                           {STRENGTH_LABELS[score > 0 ? score - 1 : 0]}
                         </p>
                       </div>
                     )}
                     {fieldErrors.password && (
-                      <p className="mt-1 text-xs text-red-400">{fieldErrors.password}</p>
+                      <p className="mt-1 text-xs text-danger">{fieldErrors.password}</p>
                     )}
                   </div>
                 )}
@@ -326,7 +326,7 @@ export default function InviteExternalUserModal() {
                 {/* Send email toggle — only when both SES and invite email are enabled */}
                 {showEmailToggle && (
                   <div className="mb-4">
-                    <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer">
+                    <label className="flex items-center gap-2.5 text-sm text-subtle cursor-pointer">
                       <input
                         type="checkbox"
                         checked={sendEmail}
@@ -341,7 +341,7 @@ export default function InviteExternalUserModal() {
                 {/* Auto-verify email — hidden when email verification is disabled globally */}
                 {emailVerificationEnabled && (
                   <div className="mb-5">
-                    <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer">
+                    <label className="flex items-center gap-2.5 text-sm text-subtle cursor-pointer">
                       <input
                         type="checkbox"
                         checked={autoVerifyEmail}
@@ -356,7 +356,7 @@ export default function InviteExternalUserModal() {
 
                 {/* Server error */}
                 {serverError && (
-                  <p className="mb-3 rounded-md bg-red-900/30 px-3 py-2 text-sm text-red-400">
+                  <p className="mb-3 rounded-md bg-red-900/30 px-3 py-2 text-sm text-danger">
                     {serverError}
                   </p>
                 )}
@@ -365,7 +365,7 @@ export default function InviteExternalUserModal() {
                   <Dialog.Close asChild>
                     <button
                       type="button"
-                      className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                      className="rounded-lg px-4 py-2 text-sm font-medium text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
                     >
                       {translations['AdminInvite.cancelButton']}
                     </button>
@@ -376,7 +376,7 @@ export default function InviteExternalUserModal() {
                       loading ||
                       (passwordMode === 'manual' && !isStrongPassword(password))
                     }
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 transition-colors" // [theme-exception] text-white on primary button
                   >
                     {loading ? translations['AdminInvite.creatingButton'] : translations['AdminInvite.submitButton']}
                   </button>

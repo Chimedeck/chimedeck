@@ -6,7 +6,7 @@ import { s3Client, s3Config } from '../../../attachment/common/config/s3';
 import { env } from '../../../../config/env';
 import { resizeAvatar, avatarExtension, isValidAvatarFile } from '../../../../mods/imageProcessor';
 import { deleteObject } from '../../../attachment/mods/s3/deleteObject';
-import { extractS3KeyFromAvatarUrl, resolveAvatarUrl } from '../../../../common/avatar/resolveAvatarUrl';
+import { extractS3KeyFromAvatarUrl, buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleUploadAvatar(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -84,7 +84,8 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
     .update({ avatar_url: avatarUrl })
     .returning('*');
 
-  const signedAvatarUrl = await resolveAvatarUrl({ avatarUrl: user.avatar_url ?? null });
+  // [why] Return stable proxy path — never expose short-lived presigned S3 URLs to the client.
+  const proxyAvatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
 
-  return Response.json({ data: { avatar_url: signedAvatarUrl } });
+  return Response.json({ data: { avatar_url: proxyAvatarUrl } });
 }

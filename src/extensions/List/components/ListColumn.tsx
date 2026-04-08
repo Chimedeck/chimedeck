@@ -25,7 +25,7 @@ const ListColumn = ({
 }: Props) => {
   return (
     <div
-      className="flex w-64 shrink-0 flex-col rounded-lg bg-gray-100 shadow"
+      className="flex w-64 shrink-0 flex-col rounded-lg bg-bg-overlay shadow"
       style={style}
       aria-label={`List: ${list.title}`}
     >

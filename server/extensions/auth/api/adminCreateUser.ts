@@ -97,7 +97,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
     const inviterName = callerUser?.name ?? callerEmail;
     const loginUrl = `${env.APP_URL}/login`;
 
-    const emailContent = adminInviteEmail({
+    const emailContent = await adminInviteEmail({
       inviterName,
       newUserEmail: normalizedEmail,
       plainPassword,

@@ -42,16 +42,16 @@ const EditProfilePage = () => {
     `px-4 py-2 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
       activeTab === tab
         ? 'border-indigo-500 text-indigo-400'
-        : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-600'
+        : 'border-transparent text-subtle hover:text-base hover:border-border'
     }`;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-slate-100 p-8">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 max-w-md w-full space-y-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-bg-base text-base p-8">
+      <div className="bg-bg-surface border border-border rounded-xl p-8 max-w-md w-full space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <button
-            className="text-slate-400 hover:text-slate-200 transition-colors text-sm"
+            className="text-subtle hover:text-base transition-colors text-sm"
             onClick={() => navigate(-1)}
           >
             {translations['UserProfile.backButton']}
@@ -60,7 +60,7 @@ const EditProfilePage = () => {
         </div>
 
         {/* Tab navigation */}
-        <nav className="flex gap-1 border-b border-slate-800 -mx-8 px-8" role="tablist" aria-label="Profile settings tabs">
+        <nav className="flex gap-1 border-b border-border -mx-8 px-8" role="tablist" aria-label="Profile settings tabs">
           <button
             role="tab"
             aria-selected={activeTab === 'profile'}
@@ -86,11 +86,11 @@ const EditProfilePage = () => {
           <div id="tab-panel-profile" role="tabpanel" className="space-y-6">
             {/* Current account info */}
             <div className="space-y-1">
-              <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">{translations['UserProfile.signedInAs']}</p>
-              <p className="text-sm text-slate-300">{displayEmail}</p>
+              <p className="text-xs text-muted uppercase tracking-wide font-medium">{translations['UserProfile.signedInAs']}</p>
+              <p className="text-sm text-subtle">{displayEmail}</p>
             </div>
 
-            <hr className="border-slate-800" />
+            <hr className="border-border" />
 
             <section>
               <ChangeEmailForm
@@ -108,7 +108,7 @@ const EditProfilePage = () => {
 
             {notificationPreferencesEnabled && (
               <>
-                <hr className="border-slate-800" />
+                <hr className="border-border" />
                 <NotificationPreferencesPanel />
               </>
             )}

@@ -91,7 +91,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     boardId: board.id,
     action: 'attachment_added',
     actorId,
-    payload: { attachmentId: attachment.id, cardId, name: attachment.name },
+    payload: { attachmentId: attachment.id, cardId, name: attachment.name, cardTitle: card.title },
   });
 
   publisher

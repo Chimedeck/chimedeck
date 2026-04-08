@@ -75,7 +75,7 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
     boardId: board.id,
     action: 'attachment_removed',
     actorId,
-    payload: { attachmentId, name: attachment.name },
+    payload: { attachmentId, name: attachment.name, cardTitle: card?.title ?? '' },
   });
 
   publisher

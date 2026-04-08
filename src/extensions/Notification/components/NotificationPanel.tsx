@@ -39,13 +39,13 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
 
   return (
     <div
-      className="absolute right-0 top-12 w-[380px] max-h-[480px] overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50"
+      className="absolute right-0 top-12 w-[380px] max-h-[480px] overflow-y-auto bg-bg-base border border-border rounded-xl shadow-2xl z-50"
       role="dialog"
       aria-label={translations['Notifications.title']}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 sticky top-0 bg-slate-900">
-        <h2 className="text-sm font-semibold text-slate-100">{translations['Notifications.title']}</h2>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-bg-base">
+        <h2 className="text-sm font-semibold text-base">{translations['Notifications.title']}</h2>
         <button
           onClick={handleMarkAllRead}
           className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -56,12 +56,12 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
 
       {/* Content */}
       {notifications.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-slate-400 text-center">
+        <p className="px-4 py-6 text-sm text-muted text-center">
           {translations['Notifications.empty']}
         </p>
       ) : (
         <>
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-border">
             {notifications.map((n) => (
               <NotificationItem key={n.id} notification={n} onNavigate={handleNavigate} />
             ))}

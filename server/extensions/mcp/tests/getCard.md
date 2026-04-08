@@ -4,8 +4,8 @@
 Call the `get_card` MCP tool with a valid `cardId` to verify the card's full details are returned.
 
 ## Preconditions
-- Taskinate is running at `http://localhost:3000`
-- A valid `TASKINATE_TOKEN` is set
+- ChimeDeck is running at `http://localhost:3000`
+- A valid `CHIMEDECK_TOKEN` is set
 - A board exists with at least one card; record the card's ID as `CARD_ID`
 
 ## Steps

@@ -1,6 +1,7 @@
 // ChecklistItem — single checklist row with toggle, rename, and delete.
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
 import type { ChecklistItem as ChecklistItemType } from '../api';
 
 interface Props {
@@ -32,12 +33,12 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         checked={item.checked}
         onChange={(e) => onToggle(item.id, e.target.checked)}
         disabled={disabled}
-        className="mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-500 bg-white dark:bg-slate-800"
+        className="mt-0.5 h-4 w-4 rounded border-border-strong text-blue-500 bg-bg-surface"
         aria-label={`Toggle: ${item.title}`}
       />
       {editing ? (
         <input
-          className="flex-1 rounded border border-blue-400 px-1 py-0.5 text-sm focus:outline-none bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200"
+          className="flex-1 rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={submitRename}
@@ -46,7 +47,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         />
       ) : (
         <span
-          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-gray-400 dark:text-slate-500 line-through' : 'text-gray-800 dark:text-slate-200'}`}
+          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-muted line-through' : 'text-base'}`}
           onClick={() => !disabled && setEditing(true)}
           role="button"
           tabIndex={0}
@@ -57,14 +58,16 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         </span>
       )}
       {!disabled && (
-        <button
+        <Button
           type="button"
-          className="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 focus:outline-none"
+          variant="ghost"
+          size="icon"
+          className="text-muted hover:text-danger"
           onClick={() => onDelete(item.id)}
           aria-label={`Delete checklist item: ${item.title}`}
         >
           <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       )}
     </div>
   );
