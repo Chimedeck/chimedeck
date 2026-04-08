@@ -12,7 +12,10 @@ import { env } from '../../../config/env';
 import { execute } from '../engine/index';
 
 const dbUrl = new URL(env.DATABASE_URL);
-const isLocal = dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1';
+const isLocal =
+  dbUrl.hostname === 'localhost' ||
+  dbUrl.hostname === '127.0.0.1' ||
+  dbUrl.hostname === 'postgres';
 const sslConfig = isLocal ? false : { rejectUnauthorized: false };
 
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;

@@ -4,7 +4,10 @@ import type { Knex } from 'knex';
 const DATABASE_URL = process.env['DATABASE_URL'] ?? 'postgresql://chimedeck:chimedeck@localhost:5432/chimedeck_dev';
 
 const dbUrl = new URL(DATABASE_URL);
-const isLocal = dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1';
+const isLocal =
+  dbUrl.hostname === 'localhost' ||
+  dbUrl.hostname === '127.0.0.1' ||
+  dbUrl.hostname === 'postgres';
 
 const config: Knex.Config = {
   client: 'pg',
@@ -12,7 +15,7 @@ const config: Knex.Config = {
     ? DATABASE_URL
     : {
         host: dbUrl.hostname,
-        port: parseInt(dbUrl.port || '5432', 10),
+        port: Number.parseInt(dbUrl.port || '5432', 10),
         user: decodeURIComponent(dbUrl.username),
         password: decodeURIComponent(dbUrl.password),
         database: dbUrl.pathname.slice(1),

@@ -91,12 +91,15 @@ const memberMapper = new Map(
 // ---------------------------------------------------------------------------
 
 const _dbUrl = new URL(DATABASE_URL);
-const _isLocal = _dbUrl.hostname === 'localhost' || _dbUrl.hostname === '127.0.0.1';
+const _isLocal =
+  _dbUrl.hostname === 'localhost' ||
+  _dbUrl.hostname === '127.0.0.1' ||
+  _dbUrl.hostname === 'postgres';
 const _dbConnection = _isLocal
   ? DATABASE_URL
   : {
       host: _dbUrl.hostname,
-      port: parseInt(_dbUrl.port || '5432', 10),
+      port: Number.parseInt(_dbUrl.port || '5432', 10),
       user: decodeURIComponent(_dbUrl.username),
       password: decodeURIComponent(_dbUrl.password),
       database: _dbUrl.pathname.slice(1),

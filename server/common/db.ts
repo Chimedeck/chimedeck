@@ -4,7 +4,10 @@ import Knex from 'knex';
 import { env } from '../config/env';
 
 const dbUrl = new URL(env.DATABASE_URL);
-const isLocal = dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1';
+const isLocal =
+  dbUrl.hostname === 'localhost' ||
+  dbUrl.hostname === '127.0.0.1' ||
+  dbUrl.hostname === 'postgres';
 
 export const db = Knex({
   client: 'pg',
@@ -12,7 +15,7 @@ export const db = Knex({
     ? env.DATABASE_URL
     : {
         host: dbUrl.hostname,
-        port: parseInt(dbUrl.port || '5432', 10),
+        port: Number.parseInt(dbUrl.port || '5432', 10),
         user: decodeURIComponent(dbUrl.username),
         password: decodeURIComponent(dbUrl.password),
         database: dbUrl.pathname.slice(1),
