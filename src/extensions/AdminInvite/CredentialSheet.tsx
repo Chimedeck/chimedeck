@@ -73,7 +73,7 @@ export default function CredentialSheet({
           <span className="text-muted">{translations['AdminInvite.credentialFieldPassword']}&nbsp;</span>
           {plainPassword}
         </p>
-        <p>
+        <p className="break-all">
           <span className="text-muted">{translations['AdminInvite.credentialFieldLoginUrl']}&nbsp;</span>
           {loginUrl}
         </p>
