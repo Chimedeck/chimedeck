@@ -1,7 +1,9 @@
 {
   "name": "chimedeck",
-  "version": "0.1.0",
-  "description": "chimedeck — server",
+  "version": "1.0.0",
+  "description": "chimedeck",
+  "author": "tam.vu@journeyh.io",
+  "license": "AGPL-3.0-or-later",
   "module": "server/index.ts",
   "type": "module",
   "bin": {
