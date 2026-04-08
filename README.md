@@ -1,7 +1,6 @@
 # ChimeDeck
 
-A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.  
-This repo also contains the agent loop that builds it sprint by sprint.
+A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.
 
 ## Application Setup
 
@@ -111,7 +110,7 @@ The production image is a single self-contained Docker container (Vite client bu
 ### What the Docker build does
 
 1. **Stage 1 — deps**: `bun install --frozen-lockfile`
-2. **Stage 2 — build**: `vite build` (client bundle → `dist/`) + `tsc --noEmit` (typecheck)
+2. **Stage 2 — build**: `bun run build:client`
 3. **Stage 3 — runtime**: copies `node_modules`, `server/`, `db/`, `dist/`, and `entrypoint.sh` into a minimal Alpine image; runs as a non-root user
 
 ### CI pipeline (build & push to ECR)
@@ -472,3 +471,21 @@ All conventions are embedded in `.github/copilot-instructions.md` and are enforc
 - **Security** — deny-first auth, single identity provider, config-module env access
 
 Refer to [.github/copilot-instructions.md](.github/copilot-instructions.md) for the full reference.
+
+## Final Words from a Human (the creator)
+
+So just before we end this...this is a real human message (above are all AI-ish messages) (._.!)
+
+The projects would obviously have lots of improvement and lots of sh*t codes... Because you know why *ahem*... ٩(ˊᗜˋ*)و
+
+It would be great if you guys can help contributing to the project and let me know if there are things that needed to be improved on, it's impossible to catch all the things the AI written out. ᕙ(  •̀ ᗜ •́  )ᕗ
+
+Hope that this would serve as a good boilerplate so everyone can reduce the cost SaaS trying to charge... ▄︻デ══━一💥
+
+All that money spent... and I could have bought multiple CR7 auto trading card with that if those money were to divide into bonus .·°՞(っ-ᯅ-ς)՞°·.
+
+I think this message will slip out unnotice...my boss will not see this (≖⩊≖) as I add them in the last section where nobody read (ㅅ´ ˘ `)
+
+SIUUU~~
+
+Godspeed everyone.
