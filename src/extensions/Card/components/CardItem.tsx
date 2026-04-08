@@ -242,6 +242,7 @@ const CardItem = ({
       style={style}
       {...attributes}
       {...listeners}
+      data-dnd-card-id={card.id}
       className={`bg-bg-surface hover:bg-bg-overlay border border-border rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90' : ''
       }`}
