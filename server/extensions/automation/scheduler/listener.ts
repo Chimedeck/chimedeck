@@ -11,12 +11,16 @@ import pg from 'pg';
 import { env } from '../../../config/env';
 import { execute } from '../engine/index';
 
+const dbUrl = new URL(env.DATABASE_URL);
+const isLocal = dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1';
+const sslConfig = isLocal ? false : { rejectUnauthorized: false };
+
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function connect(): Promise<void> {
   const client = new pg.Client({
     connectionString: env.DATABASE_URL,
-    ssl: env.DATABASE_URL.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
+    ssl: sslConfig,
   });
 
   try {
