@@ -229,7 +229,9 @@ const BoardCanvas = ({
             const translatedCenterY = translatedRect
               ? translatedRect.top + translatedRect.height / 2
               : null;
-            const effectiveY = pointerY ?? translatedCenterY;
+            // WHY: prefer translatedCenterY (current drag position) over
+            // pointerY (activatorEvent Y = drag-start position, not current).
+            const effectiveY = translatedCenterY ?? pointerY;
             const isBelowOverCard =
               effectiveY != null &&
               effectiveY > over.rect.top + over.rect.height / 2;
@@ -284,7 +286,9 @@ const BoardCanvas = ({
           const translatedCenterY = translatedRect
             ? translatedRect.top + translatedRect.height / 2
             : null;
-          const effectiveY = pointerY ?? translatedCenterY;
+          // WHY: prefer translatedCenterY (current drag position) over
+          // pointerY (activatorEvent Y = drag-start position, not current).
+          const effectiveY = translatedCenterY ?? pointerY;
           const isBelowOverCard =
             effectiveY != null &&
             effectiveY > over.rect.top + over.rect.height / 2;
@@ -395,7 +399,13 @@ const BoardCanvas = ({
           resolvedNewIndex = Math.max(0, Math.min(dragPlaceholder.index, targetWithoutActive.length));
         }
 
-        if (!(disableLiveDragPreview && dragPlaceholder) && cards[overId]) {
+        // WHY: these fallback blocks recalculate position from overId and are only
+        // needed when disableLiveDragPreview=true and the placeholder was not set
+        // (edge case). For live-preview mode (disableLiveDragPreview=false),
+        // finalCardsByList already contains the correct order from handleDragOver,
+        // so re-entering here would double-count the move and produce the wrong index
+        // (e.g. same-list drag from 0→1 would set resolvedNewIndex back to 0).
+        if (disableLiveDragPreview && !dragPlaceholder && cards[overId]) {
           const hoverListId = dragCardToList?.[overId] ?? findListForCard(overId, finalCardsByList) ?? resolvedToListId;
           const sourceCardsInHoverList = finalCardsByList[hoverListId] ?? [];
           const fromIdxInHover = sourceCardsInHoverList.indexOf(activeId);
@@ -410,16 +420,18 @@ const BoardCanvas = ({
               const translatedRect = active.rect.current.translated;
               const translatedCenterY = translatedRect
                 ? translatedRect.top + translatedRect.height / 2
-                : over.rect.top;
-              const effectiveY = pointerY ?? translatedCenterY;
+                : null;
+              // WHY: prefer translatedCenterY (current drag position) over
+              // pointerY (activatorEvent Y = drag-start position, not current).
+              const effectiveY = translatedCenterY ?? pointerY ?? over.rect.top;
               const isBelowHoverCard = effectiveY > over.rect.top + over.rect.height / 2;
               resolvedNewIndex = hoverIndex + (isBelowHoverCard ? 1 : 0);
             }
           }
-        } else if (!(disableLiveDragPreview && dragPlaceholder) && lists[overId]) {
+        } else if (disableLiveDragPreview && !dragPlaceholder && lists[overId]) {
           resolvedToListId = overId;
           resolvedNewIndex = (finalCardsByList[overId] ?? []).length;
-        } else if (!(disableLiveDragPreview && dragPlaceholder) && overContainerId && lists[overContainerId]) {
+        } else if (disableLiveDragPreview && !dragPlaceholder && overContainerId && lists[overContainerId]) {
           resolvedToListId = overContainerId;
           resolvedNewIndex = (finalCardsByList[overContainerId] ?? []).length;
         }

@@ -204,8 +204,7 @@ const BoardHeader = ({
           />
         )}
 
-        {/* Settings menu — hidden for workspace GUESTs */}
-        {!isGuest && (
+        {/* Settings menu — visible for all users; destructive actions gated below */}
         <div className="relative" ref={menuContainerRef}>
           <button
             className="rounded p-1.5 text-muted hover:bg-bg-surface hover:text-subtle transition-colors"
@@ -245,7 +244,6 @@ const BoardHeader = ({
             </div>
           )}
         </div>
-        )}
       </div>
     </header>
   );

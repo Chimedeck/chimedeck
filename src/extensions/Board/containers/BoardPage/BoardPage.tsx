@@ -450,11 +450,11 @@ const BoardPage = () => {
         {...(initialBoardSearch ? { initialSearchQuery: initialBoardSearch } : {})}
         onSearchResultSelect={handleSearchResultSelect}
         onSearchQueryChange={handleSearchQueryChange}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenMembers={() => setMembersOpen(true)}
         {...(!isGuest && {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
-          onOpenSettings: () => setSettingsOpen(true),
-          onOpenMembers: () => setMembersOpen(true),
         })}
       />
       {board.state === 'ARCHIVED' && (
@@ -593,6 +593,7 @@ const BoardPage = () => {
         <BoardSettings
           onClose={() => setSettingsOpen(false)}
           isGuest={isGuest}
+          isViewerGuest={isViewerGuest}
         />
       )}
       {/* Board members panel (Sprint 79) */}
