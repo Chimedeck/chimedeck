@@ -50,6 +50,9 @@ export interface ChecklistItem {
   title: string;
   checked: boolean;
   position: string;
+  assigned_member_id?: string | null;
+  due_date?: string | null;
+  linked_card_id?: string | null;
 }
 
 export interface Checklist {

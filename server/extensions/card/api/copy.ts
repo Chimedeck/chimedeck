@@ -45,13 +45,16 @@ async function copyChecklists(sourceCardId: string, newCardId: string): Promise<
       .orderBy('position', 'asc');
     if (items.length > 0) {
       await db('checklist_items').insert(
-        items.map((item: { title: string; position: string }) => ({
+        items.map((item: { title: string; position: string; assigned_member_id?: string | null; due_date?: string | null }) => ({
           id: randomUUID(),
           card_id: newCardId,
           checklist_id: newChecklistId,
           title: item.title,
           checked: false,
           position: item.position,
+          assigned_member_id: item.assigned_member_id ?? null,
+          due_date: item.due_date ?? null,
+          linked_card_id: null,
         })),
       );
     }

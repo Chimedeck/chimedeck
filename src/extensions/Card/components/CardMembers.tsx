@@ -7,6 +7,7 @@ interface BoardMember {
   id: string;
   email: string;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 interface Props {
@@ -21,7 +22,19 @@ interface Props {
 
 const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, onRemove, disabled }: Props) => {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(new Set());
   const assignedIds = new Set(members.map((m) => m.id));
+
+  const isAvatarFailed = (memberId: string): boolean => failedAvatarIds.has(memberId);
+
+  const markAvatarFailed = (memberId: string) => {
+    setFailedAvatarIds((previous) => {
+      if (previous.has(memberId)) return previous;
+      const next = new Set(previous);
+      next.add(memberId);
+      return next;
+    });
+  };
 
   const handleToggle = async (member: BoardMember) => {
     if (assignedIds.has(member.id)) {
@@ -71,15 +84,29 @@ const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, o
                 {boardMembers.map((member) => {
                   const assigned = assignedIds.has(member.id);
                   const name = member.name ?? member.email;
+                  const initials = name.slice(0, 2).toUpperCase();
                   return (
                     <button
                       key={member.id}
                       type="button"
                       className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
-                      onClick={() => handleToggle(member)}
+                      onClick={() => {
+                        void handleToggle(member);
+                      }}
                     >
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white flex-shrink-0"> // [theme-exception] text-white on indigo-600 avatar background
-                        {name.slice(0, 2).toUpperCase()}
+                      <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+                        {member.avatar_url && !isAvatarFailed(member.id) ? (
+                          <img
+                            src={member.avatar_url}
+                            alt={name}
+                            className="h-full w-full object-cover"
+                            onError={() => {
+                              markAvatarFailed(member.id);
+                            }}
+                          />
+                        ) : (
+                          initials
+                        )}
                       </span>
                       <span className="flex-1 truncate">{name}</span>
                       {assigned && <span className="text-emerald-400">✓</span>}

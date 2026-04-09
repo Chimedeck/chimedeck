@@ -8,23 +8,31 @@ import { ChecklistProgress } from './ChecklistProgress';
 
 interface Props {
   checklist: Checklist;
+  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
   onRename: (title: string) => Promise<void>;
   onDelete: () => Promise<void>;
   onItemAdd: (title: string) => Promise<void>;
   onItemToggle: (itemId: string, checked: boolean) => Promise<void>;
   onItemRename: (itemId: string, title: string) => Promise<void>;
   onItemDelete: (itemId: string) => Promise<void>;
+  onItemAssign: (itemId: string, memberId: string | null) => Promise<void>;
+  onItemDueDateChange: (itemId: string, dueDate: string | null) => Promise<void>;
+  onItemConvertToCard: (itemId: string) => Promise<void>;
   disabled?: boolean;
 }
 
 export const ChecklistSection = ({
   checklist,
+  boardMembers,
   onRename,
   onDelete,
   onItemAdd,
   onItemToggle,
   onItemRename,
   onItemDelete,
+  onItemAssign,
+  onItemDueDateChange,
+  onItemConvertToCard,
   disabled,
 }: Props) => {
   const { items } = checklist;
@@ -122,7 +130,11 @@ export const ChecklistSection = ({
             onToggle={onItemToggle}
             onRename={onItemRename}
             onDelete={onItemDelete}
-            disabled={disabled}
+            onAssign={onItemAssign}
+            onDueDateChange={onItemDueDateChange}
+            onConvertToCard={onItemConvertToCard}
+            boardMembers={boardMembers}
+            {...(disabled === undefined ? {} : { disabled })}
           />
         ))}
       </div>

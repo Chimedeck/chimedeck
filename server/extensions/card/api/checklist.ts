@@ -4,6 +4,7 @@
 // DELETE /api/v1/checklist-items/:id          — delete item; min role MEMBER
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
@@ -13,8 +14,17 @@ import {
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { writeActivity } from '../../activity/mods/write';
 import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
+import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
 interface CardContext { boardId: string; workspaceId: string; }
+
+interface ChecklistItemPatchBody {
+  title?: string;
+  checked?: boolean;
+  position?: string;
+  assigned_member_id?: string | null;
+  due_date?: string | null;
+}
 
 async function resolveContextFromCard(cardId: string): Promise<CardContext | null> {
   const card = await db('cards').where({ id: cardId }).first();
@@ -125,7 +135,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, updateContext.boardId);
   if (roleError) return roleError;
 
-  let body: { title?: string; checked?: boolean; position?: string };
+  let body: ChecklistItemPatchBody;
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -135,7 +145,13 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     );
   }
 
-  const updates: { title?: string; checked?: boolean; position?: string } = {};
+  const updates: {
+    title?: string;
+    checked?: boolean;
+    position?: string;
+    assigned_member_id?: string | null;
+    due_date?: string | null;
+  } = {};
 
   if (body.title !== undefined) {
     if (typeof body.title !== 'string' || body.title.trim() === '') {
@@ -165,6 +181,50 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
       );
     }
     updates.position = body.position;
+  }
+
+  if (body.assigned_member_id !== undefined) {
+    if (body.assigned_member_id !== null && typeof body.assigned_member_id !== 'string') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'assigned_member_id must be a string or null' } },
+        { status: 400 },
+      );
+    }
+
+    if (typeof body.assigned_member_id === 'string') {
+      const boardMember = await db('board_members')
+        .where({ board_id: updateContext.boardId, user_id: body.assigned_member_id })
+        .first();
+      if (!boardMember) {
+        return Response.json(
+          { error: { code: 'bad-request', message: 'assigned_member_id must be a member of this board' } },
+          { status: 400 },
+        );
+      }
+    }
+
+    updates.assigned_member_id = body.assigned_member_id;
+  }
+
+  if (body.due_date !== undefined) {
+    if (body.due_date !== null && typeof body.due_date !== 'string') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'due_date must be an ISO date string or null' } },
+        { status: 400 },
+      );
+    }
+    if (typeof body.due_date === 'string') {
+      const parsed = new Date(body.due_date);
+      if (Number.isNaN(parsed.getTime())) {
+        return Response.json(
+          { error: { code: 'bad-request', message: 'due_date must be a valid ISO date string or null' } },
+          { status: 400 },
+        );
+      }
+      updates.due_date = parsed.toISOString();
+    } else {
+      updates.due_date = null;
+    }
   }
 
   if (Object.keys(updates).length > 0) {
@@ -228,4 +288,105 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
 
   await db('checklist_items').where({ id: itemId }).delete();
   return new Response(null, { status: 204 });
+}
+
+// POST /api/v1/checklist-items/:id/convert — convert checklist item into a card
+export async function handleConvertChecklistItemToCard(req: Request, itemId: string): Promise<Response> {
+  const authError = await authenticate(req as AuthenticatedRequest);
+  if (authError) return authError;
+
+  const item = await db('checklist_items').where({ id: itemId }).first();
+  if (!item) {
+    return Response.json(
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
+      { status: 404 },
+    );
+  }
+
+  const { context } = await resolveContextFromItem(itemId);
+  if (!context) {
+    return Response.json(
+      { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
+      { status: 404 },
+    );
+  }
+
+  const scopedReq = req as WorkspaceScopedRequest;
+  const membershipError = await requireWorkspaceMembership(scopedReq, context.workspaceId);
+  if (membershipError) return membershipError;
+
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, context.boardId);
+  if (roleError) return roleError;
+
+  if (item.linked_card_id) {
+    const existingCard = await db('cards').where({ id: item.linked_card_id }).first();
+    if (existingCard) {
+      const existingWithCover = await resolveCoverImageUrl(
+        existingCard as { id: string; cover_attachment_id?: string | null },
+      );
+      return Response.json(
+        {
+          error: { code: 'checklist-item-already-converted', message: 'Checklist item has already been converted' },
+          data: { item, card: existingWithCover },
+        },
+        { status: 409 },
+      );
+    }
+  }
+
+  const parentCard = await db('cards').where({ id: item.card_id }).first();
+  if (!parentCard) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Parent card not found' } },
+      { status: 404 },
+    );
+  }
+
+  const lastCard = await db('cards')
+    .where({ list_id: parentCard.list_id, archived: false })
+    .orderBy('position', 'desc')
+    .first();
+  const position = between(lastCard ? lastCard.position : '', HIGH_SENTINEL);
+
+  const newCardId = randomUUID();
+  await db('cards').insert({
+    id: newCardId,
+    list_id: parentCard.list_id,
+    title: item.title,
+    description: null,
+    position,
+    archived: false,
+  });
+
+  await db('checklist_items').where({ id: itemId }).delete();
+
+  const createdCard = await db('cards').where({ id: newCardId }).first();
+  const cardWithCover = await resolveCoverImageUrl(
+    createdCard as { id: string; cover_attachment_id?: string | null },
+  );
+
+  const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+  await dispatchEvent({
+    type: 'card.created',
+    boardId: context.boardId,
+    entityId: newCardId,
+    actorId,
+    payload: {
+      card: cardWithCover,
+      listId: parentCard.list_id,
+      source: 'checklist-item-conversion',
+      checklistItemId: itemId,
+    },
+  });
+
+  return Response.json(
+    {
+      data: {
+        card: cardWithCover,
+        removedItemId: itemId,
+        removedChecklistId: item.checklist_id,
+      },
+    },
+    { status: 201 },
+  );
 }

@@ -290,6 +290,22 @@ const cardDetailSlice = createSlice({
       if (item) item.title = title;
     },
 
+    applyOptimisticChecklistItemPatch(
+      state,
+      action: PayloadAction<{
+        mutationId: string;
+        checklistId: string;
+        itemId: string;
+        fields: Partial<Pick<ChecklistItem, 'assigned_member_id' | 'due_date' | 'linked_card_id'>>;
+      }>,
+    ) {
+      const { mutationId, checklistId, itemId, fields } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      const item = cl?.items.find((i) => i.id === itemId);
+      if (item) Object.assign(item, fields);
+    },
+
     // ── Optimistic label assign/unassign ────────────────────────────────────
     applyOptimisticLabelAssign(
       state,

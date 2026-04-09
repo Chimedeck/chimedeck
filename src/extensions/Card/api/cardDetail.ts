@@ -9,7 +9,7 @@ export type ApiClient = {
   delete: <T>(url: string) => Promise<T>;
 };
 
-import type { Card, ChecklistItem, Checklist, Label } from '../api';
+import type { Card, ChecklistItem, Checklist, Label, CardMember } from '../api';
 
 // NOTE: The apiClient interceptor auto-unwraps response.data, so all API calls
 // return the inner payload directly (e.g. Card, not { data: Card }).
@@ -60,10 +60,21 @@ export async function patchChecklistItem({
 }: {
   api: ApiClient;
   itemId: string;
-  fields: Partial<Pick<ChecklistItem, 'title' | 'checked'>>;
+  fields: Partial<Pick<ChecklistItem, 'title' | 'checked' | 'assigned_member_id' | 'due_date'>>;
 }): Promise<ChecklistItem> {
   const res = await api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, fields);
   return (res as unknown as { data: ChecklistItem }).data;
+}
+
+export async function convertChecklistItemToCard({
+  api,
+  itemId,
+}: {
+  api: ApiClient;
+  itemId: string;
+}): Promise<{ card: Card; removedItemId: string; removedChecklistId: string | null }> {
+  const res = await api.post<{ data: { card: Card; removedItemId: string; removedChecklistId: string | null } }>(`/checklist-items/${itemId}/convert`, {});
+  return (res as unknown as { data: { card: Card; removedItemId: string; removedChecklistId: string | null } }).data;
 }
 
 export async function deleteChecklistItemById({
@@ -220,12 +231,13 @@ export async function getBoardMembers({
 }: {
   api: ApiClient;
   boardId: string;
-}): Promise<Array<{ id: string; email: string; name: string | null }>> {
-  const res = await api.get<{ data: Array<{ user_id: string; email: string; display_name: string | null }> }>(`/boards/${boardId}/members`);
-  return (res as unknown as { data: Array<{ user_id: string; email: string; display_name: string | null }> }).data.map((m) => ({
+}): Promise<CardMember[]> {
+  const res = await api.get<{ data: Array<{ user_id: string; email: string; display_name: string | null; avatar_url?: string | null }> }>(`/boards/${boardId}/members`);
+  return (res as unknown as { data: Array<{ user_id: string; email: string; display_name: string | null; avatar_url?: string | null }> }).data.map((m) => ({
     id: m.user_id,
     email: m.email,
     name: m.display_name,
+    avatar_url: m.avatar_url ?? null,
   }));
 }
 

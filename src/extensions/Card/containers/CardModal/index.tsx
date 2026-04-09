@@ -28,6 +28,7 @@ import {
   patchChecklist,
   deleteChecklistById,
   postChecklistItemInGroup,
+  convertChecklistItemToCard,
   postLabelAssign,
   deleteLabelAssign,
   postMemberAssign,
@@ -41,7 +42,7 @@ import {
   patchComment,
   deleteComment,
 } from '../../api/cardDetail';
-import type { Label, Checklist, ChecklistItem } from '../../api';
+import type { Label, Checklist, ChecklistItem, CardMember } from '../../api';
 import { boardSliceActions, selectBoard } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
@@ -77,7 +78,7 @@ const CardModalContainer = () => {
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
   const [allLabels, setAllLabels] = useState<Label[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
-  const boardMembersRef = useRef<Array<{ id: string; email: string; name: string | null }>>([]);
+  const boardMembersRef = useRef<CardMember[]>([]);
   const [copyModalOpen, setCopyModalOpen] = useState(false);;
 
   const api = apiClient;
@@ -302,6 +303,9 @@ const CardModalContainer = () => {
         title,
         checked: false,
         position: String(Date.now()),
+        assigned_member_id: null,
+        due_date: null,
+        linked_card_id: null,
       };
       dispatch(cardDetailSliceActions.applyOptimisticChecklistItemAdd({ mutationId: tempId, checklistId, item: tempItem }));
       try {
@@ -352,6 +356,59 @@ const CardModalContainer = () => {
       try {
         await deleteChecklistItemById({ api, itemId });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  const handleItemAssign = useCallback(
+    async (checklistId: string, itemId: string, assigned_member_id: string | null) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
+        mutationId,
+        checklistId,
+        itemId,
+        fields: { assigned_member_id },
+      }));
+      try {
+        const item = await patchChecklistItem({ api, itemId, fields: { assigned_member_id } });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  const handleItemDueDateChange = useCallback(
+    async (checklistId: string, itemId: string, due_date: string | null) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
+        mutationId,
+        checklistId,
+        itemId,
+        fields: { due_date },
+      }));
+      try {
+        const item = await patchChecklistItem({ api, itemId, fields: { due_date } });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
+  const handleConvertChecklistItemToCard = useCallback(
+    async (checklistId: string, itemId: string) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemDelete({ mutationId, checklistId, itemId }));
+      try {
+        const result = await convertChecklistItemToCard({ api, itemId });
+        dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
+        dispatch(boardSliceActions.addCard({ card: result.card }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }
@@ -634,6 +691,9 @@ const CardModalContainer = () => {
       onItemToggle={handleItemToggle}
       onItemRename={handleItemRename}
       onItemDelete={handleItemDelete}
+      onItemAssign={handleItemAssign}
+      onItemDueDateChange={handleItemDueDateChange}
+      onItemConvertToCard={handleConvertChecklistItemToCard}
       onLabelAttach={handleLabelAttach}
       onLabelDetach={handleLabelDetach}
       onLabelCreate={handleLabelCreate}

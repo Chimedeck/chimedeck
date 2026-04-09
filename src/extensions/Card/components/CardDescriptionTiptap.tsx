@@ -564,7 +564,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           </div>
 
           {editMode === 'rich' ? (
-            <div className="flex max-h-[55vh] flex-col overflow-visible rounded-lg border border-border bg-bg-surface">
+            <div className="flex max-h-[55vh] flex-col overflow-visible rounded-lg border border-border bg-bg-surface" data-upload-drop-exclude="true">
               {/* Single-line toolbar: primary controls always visible, secondary behind + */}
               <div className="relative">
                 <OneLineToolbar

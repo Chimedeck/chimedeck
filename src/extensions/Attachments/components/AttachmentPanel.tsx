@@ -268,7 +268,15 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   };
 
   return (
-    <AttachmentDropZone onFiles={canWrite ? upload : () => {}}>
+    <AttachmentDropZone
+      onFiles={canWrite ? upload : () => {}}
+      scope="both"
+      activeWithinSelector="[data-card-modal-content='true']"
+      excludeSelectors={[
+        "[data-upload-drop-exclude='true']",
+        "[data-attachment-dropzone-root='true']",
+      ]}
+    >
       {/* Invisible paste listener — only active when the user can write */}
       <PasteListener enabled={canWrite} onFiles={upload} onLink={handlePasteLink} />
 

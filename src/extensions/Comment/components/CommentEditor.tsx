@@ -538,7 +538,7 @@ const CommentEditor = ({
   const currentMarkdown = editor ? buildCommentMarkdown(editor, cardAttachmentsRef.current) : '';
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-upload-drop-exclude="true">
       {/* Hidden file input for attachment upload */}
       <input
         ref={fileInputRef}

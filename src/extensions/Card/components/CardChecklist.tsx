@@ -8,6 +8,7 @@ import Button from '../../../common/components/Button';
 
 interface Props {
   checklists: Checklist[];
+  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
   onCreateChecklist: (title?: string) => Promise<void>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
@@ -15,11 +16,15 @@ interface Props {
   onItemToggle: (checklistId: string, itemId: string, checked: boolean) => Promise<void>;
   onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
   onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
+  onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
+  onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
+  onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
   disabled?: boolean;
 }
 
 const CardChecklist = ({
   checklists,
+  boardMembers,
   onCreateChecklist,
   onRenameChecklist,
   onDeleteChecklist,
@@ -27,6 +32,9 @@ const CardChecklist = ({
   onItemToggle,
   onItemRename,
   onItemDelete,
+  onItemAssign,
+  onItemDueDateChange,
+  onItemConvertToCard,
   disabled,
 }: Props) => {
   const [addingChecklist, setAddingChecklist] = useState(false);
@@ -51,7 +59,9 @@ const CardChecklist = ({
           <button
             type="button"
             className="flex items-center gap-1 rounded bg-bg-sunken px-2 py-0.5 text-xs text-base hover:bg-bg-sunken"
-            onClick={() => setAddingChecklist((v) => !v)}
+            onClick={() => {
+              setAddingChecklist((v) => !v);
+            }}
           >
             <PlusIcon className="h-3 w-3" />
             Add checklist
@@ -65,9 +75,11 @@ const CardChecklist = ({
             className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             placeholder="Checklist title (optional)"
             value={newChecklistTitle}
-            onChange={(e) => setNewChecklistTitle(e.target.value)}
+            onChange={(e) => {
+              setNewChecklistTitle(e.target.value);
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreateChecklist();
+              if (e.key === 'Enter') void handleCreateChecklist();
               if (e.key === 'Escape') { setAddingChecklist(false); setNewChecklistTitle(''); }
             }}
             autoFocus
@@ -76,7 +88,9 @@ const CardChecklist = ({
             variant="primary"
             size="sm"
             type="button"
-            onClick={handleCreateChecklist}
+            onClick={() => {
+              void handleCreateChecklist();
+            }}
           >
             Create
           </Button>
@@ -101,7 +115,11 @@ const CardChecklist = ({
             onItemToggle={(itemId, checked) => onItemToggle(cl.id, itemId, checked)}
             onItemRename={(itemId, title) => onItemRename(cl.id, itemId, title)}
             onItemDelete={(itemId) => onItemDelete(cl.id, itemId)}
-            disabled={disabled}
+            onItemAssign={(itemId, memberId) => onItemAssign(cl.id, itemId, memberId)}
+            onItemDueDateChange={(itemId, dueDate) => onItemDueDateChange(cl.id, itemId, dueDate)}
+            onItemConvertToCard={(itemId) => onItemConvertToCard(cl.id, itemId)}
+            boardMembers={boardMembers}
+            {...(disabled === undefined ? {} : { disabled })}
           />
         ))}
       </div>

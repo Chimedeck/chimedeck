@@ -1,15 +1,13 @@
 // GET /api/v1/boards/:id/members — list explicit board members from the board_members table.
 // Board ADMIN+ or workspace OWNER/ADMIN can list members.
 // Workspace MEMBER/VIEWER who are board members can also list.
-import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
-import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import type { BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { buildAvatarProxyUrlsInCollection } from '../../../../common/avatar/resolveAvatarUrl';
+import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleGetBoardMembers(req: Request, boardId: string): Promise<Response> {
   const scopedReq = req as BoardVisibilityScopedRequest;
@@ -46,9 +44,14 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
     )
     .orderBy('bm.created_at', 'asc');
 
-  const data = buildAvatarProxyUrlsInCollection(
-    members as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
-  );
+  const data = (members as Array<Record<string, unknown>>).map((member) => {
+    const userId = typeof member['user_id'] === 'string' ? member['user_id'] : '';
+    const avatarUrl = (member['avatar_url'] as string | null | undefined) ?? null;
+    return {
+      ...member,
+      avatar_url: userId ? buildAvatarProxyUrl({ userId, avatarUrl }) : null,
+    };
+  });
 
   return Response.json({ data });
 }

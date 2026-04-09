@@ -25,6 +25,7 @@ interface BoardMember {
   id: string;
   email: string;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 interface Props {
@@ -59,6 +60,9 @@ interface Props {
   onItemToggle: (checklistId: string, itemId: string, checked: boolean) => Promise<void>;
   onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
   onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
+  onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
+  onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
+  onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
@@ -123,6 +127,9 @@ const CardModal = ({
   onItemToggle,
   onItemRename,
   onItemDelete,
+  onItemAssign,
+  onItemDueDateChange,
+  onItemConvertToCard,
   onLabelAttach,
   onLabelDetach,
   onLabelCreate,
@@ -214,7 +221,7 @@ const CardModal = ({
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]">
+          <div className="bg-bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]" data-card-modal-content="true">
             <input
               ref={coverInputRef}
               type="file"
@@ -411,6 +418,10 @@ const CardModal = ({
                       onItemToggle={onItemToggle}
                       onItemRename={onItemRename}
                       onItemDelete={onItemDelete}
+                      onItemAssign={onItemAssign}
+                      onItemDueDateChange={onItemDueDateChange}
+                      onItemConvertToCard={onItemConvertToCard}
+                      boardMembers={boardMembers}
                       disabled={isReadOnly}
                     />
 
@@ -479,6 +490,10 @@ const CardModal = ({
                     onItemToggle={onItemToggle}
                     onItemRename={onItemRename}
                     onItemDelete={onItemDelete}
+                    onItemAssign={onItemAssign}
+                    onItemDueDateChange={onItemDueDateChange}
+                    onItemConvertToCard={onItemConvertToCard}
+                    boardMembers={boardMembers}
                     disabled={isReadOnly}
                   />
 

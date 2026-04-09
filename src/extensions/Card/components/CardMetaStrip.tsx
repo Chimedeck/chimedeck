@@ -25,6 +25,7 @@ interface BoardMember {
   id: string;
   email: string;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 export interface CardMetaStripProps {
@@ -398,6 +399,18 @@ const MemberSection = ({
   const assignedIds = new Set(members.map((m) => m.id));
   const visibleMembers = members.slice(0, MAX_VISIBLE);
   const overflow = members.length - MAX_VISIBLE;
+  const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(new Set());
+
+  const isAvatarFailed = (memberId: string): boolean => failedAvatarIds.has(memberId);
+
+  const markAvatarFailed = (memberId: string) => {
+    setFailedAvatarIds((previous) => {
+      if (previous.has(memberId)) return previous;
+      const next = new Set(previous);
+      next.add(memberId);
+      return next;
+    });
+  };
 
   const handleToggle = async (member: BoardMember) => {
     if (assignedIds.has(member.id)) await onRemove(member.id);
@@ -412,9 +425,20 @@ const MemberSection = ({
           <span
             key={m.id}
             title={name}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-bg-surface" // [theme-exception] text-white on indigo-600 avatar background
+            className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-indigo-600 text-[10px] font-bold text-white ring-2 ring-bg-surface"
           >
-            {getInitials(m.name, m.email ?? '')}
+            {m.avatar_url && !isAvatarFailed(m.id) ? (
+              <img
+                src={m.avatar_url}
+                alt={name}
+                className="h-full w-full object-cover"
+                onError={() => {
+                  markAvatarFailed(m.id);
+                }}
+              />
+            ) : (
+              getInitials(m.name, m.email ?? '')
+            )}
           </span>
         );
       })}
@@ -450,10 +474,23 @@ const MemberSection = ({
                   key={member.id}
                   type="button"
                   className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
-                  onClick={() => handleToggle(member)}
+                  onClick={() => {
+                    void handleToggle(member);
+                  }}
                 >
-                                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white flex-shrink-0"> // [theme-exception] text-white on indigo-600 avatar background
-                    {getInitials(member.name, member.email)}
+                  <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+                    {member.avatar_url && !isAvatarFailed(member.id) ? (
+                      <img
+                        src={member.avatar_url}
+                        alt={name}
+                        className="h-full w-full object-cover"
+                        onError={() => {
+                          markAvatarFailed(member.id);
+                        }}
+                      />
+                    ) : (
+                      getInitials(member.name, member.email)
+                    )}
                   </span>
                   <span className="flex-1 truncate">{name}</span>
                   {assigned && <span className="text-emerald-400">✓</span>}

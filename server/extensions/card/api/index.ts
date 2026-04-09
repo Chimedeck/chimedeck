@@ -16,7 +16,12 @@ import { handleCopyCard } from './copy';
 import { handleDeleteCard } from './delete';
 import { handleAttachLabel, handleDetachLabel } from './labels';
 import { handleAssignMember, handleRemoveMember } from './members';
-import { handleCreateChecklistItem, handleUpdateChecklistItem, handleDeleteChecklistItem } from './checklist';
+import {
+  handleCreateChecklistItem,
+  handleUpdateChecklistItem,
+  handleDeleteChecklistItem,
+  handleConvertChecklistItemToCard,
+} from './checklist';
 import {
   handleCreateChecklist,
   handleUpdateChecklist,
@@ -50,17 +55,19 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     return handleListDueCards(req, dueDateMatch[1] as string);
   }
 
-  // Checklist item routes: /api/v1/checklist-items/:id
-  const checklistItemMatch = pathname.match(/^\/api\/v1\/checklist-items\/([^/]+)$/);
+  // Checklist item routes: /api/v1/checklist-items/:id[/...]
+  const checklistItemMatch = pathname.match(/^\/api\/v1\/checklist-items\/([^/]+)(\/.*)?$/);
   if (checklistItemMatch) {
     const itemId = checklistItemMatch[1] as string;
+    const sub = checklistItemMatch[2] ?? '';
 
     // Enforce board visibility by resolving the board from the checklist item.
     const visibilityError = await applyBoardVisibilityFromChecklistItem(req, itemId);
     if (visibilityError) return visibilityError;
 
-    if (req.method === 'PATCH') return handleUpdateChecklistItem(req, itemId);
-    if (req.method === 'DELETE') return handleDeleteChecklistItem(req, itemId);
+    if (sub === '' && req.method === 'PATCH') return handleUpdateChecklistItem(req, itemId);
+    if (sub === '' && req.method === 'DELETE') return handleDeleteChecklistItem(req, itemId);
+    if (sub === '/convert' && req.method === 'POST') return handleConvertChecklistItemToCard(req, itemId);
   }
 
   // Checklist group routes: /api/v1/checklists/:id[/...]
