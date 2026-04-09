@@ -77,7 +77,7 @@ export const ChecklistSection = ({
         ) : (
           <button
             type="button"
-            className="flex-1 text-left text-sm font-semibold text-base hover:text-blue-500 dark:hover:text-blue-400 transition-colors truncate"
+            className="min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-semibold text-base hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
             onClick={() => !disabled && setEditingTitle(true)}
             title="Click to rename"
             disabled={disabled}

@@ -27,7 +27,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
   };
 
   return (
-    <div className="flex items-start gap-2 py-1">
+    <div className="flex min-w-0 items-start gap-2 py-1">
       <input
         type="checkbox"
         checked={item.checked}
@@ -38,7 +38,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
       />
       {editing ? (
         <input
-          className="flex-1 rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
+          className="min-w-0 flex-1 rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={submitRename}
@@ -47,7 +47,7 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
         />
       ) : (
         <span
-          className={`flex-1 cursor-text text-sm ${item.checked ? 'text-muted line-through' : 'text-base'}`}
+          className={`min-w-0 flex-1 cursor-text whitespace-normal break-words text-sm ${item.checked ? 'text-muted line-through' : 'text-base'}`}
           onClick={() => !disabled && setEditing(true)}
           role="button"
           tabIndex={0}
