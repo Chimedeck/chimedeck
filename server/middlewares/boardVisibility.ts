@@ -9,7 +9,7 @@
 // | Workspace MEMBER without board_members  | 403     | allow     | allow    |
 // | Workspace VIEWER with board_members row | allow   | allow     | allow    |
 // | Workspace VIEWER without board_members  | 403     | allow     | allow    |
-// | GUEST with board_guest_access row       | allow   | 403       | allow    |
+// | GUEST with board_guest_access row       | allow   | allow     | allow    |
 // | GUEST without board_guest_access row    | 403     | 403       | allow    |
 import { db } from '../common/db';
 import { authenticate, type AuthenticatedRequest } from '../extensions/auth/middlewares/authentication';
@@ -73,14 +73,8 @@ export async function applyBoardVisibility(
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
   // Guests only have access to boards they have been explicitly invited to.
-  // WORKSPACE boards are never accessible to guests.
+  // Applies to PRIVATE and WORKSPACE boards.
   if (callerRole === 'GUEST') {
-    if (board.visibility === 'WORKSPACE') {
-      return Response.json(
-        { error: { code: 'board-access-denied', message: 'Guests cannot access workspace-visibility boards' } },
-        { status: 403 },
-      );
-    }
     const guestAccess = await db('board_guest_access')
       .where({ user_id: userId, board_id: boardId })
       .first();
