@@ -1,6 +1,7 @@
 // Single comment with inline edit/delete controls
 import { useState } from 'react';
 import { marked } from 'marked';
+import emojiData from '@emoji-mart/data';
 import type { Attachment } from '~/extensions/Attachments/types';
 import {
   hydrateCommentAttachmentMarkdown,
@@ -12,6 +13,33 @@ import translations from '../translations/en.json';
 
 // Configure marked: soft line breaks become <br>, no mangling
 marked.setOptions({ breaks: true, gfm: true });
+
+// Build once so shortcode replacement is O(1) per token during render.
+const SHORTCODE_TO_NATIVE = (() => {
+  const map = new Map<string, string>();
+  const emojis = emojiData.emojis as Record<string, { skins?: Array<{ native?: string }> }>;
+  const aliases = (emojiData.aliases ?? {}) as Record<string, string>;
+
+  for (const [shortcode, value] of Object.entries(emojis)) {
+    const native = value.skins?.[0]?.native;
+    if (!native) continue;
+    map.set(shortcode.toLowerCase(), native);
+  }
+
+  for (const [alias, canonical] of Object.entries(aliases)) {
+    const native = emojis[canonical]?.skins?.[0]?.native;
+    if (!native) continue;
+    map.set(alias.toLowerCase(), native);
+  }
+
+  return map;
+})();
+
+function replaceEmojiShortcodes(text: string): string {
+  return text.replace(/:([a-z0-9_+-]+):/gi, (full, shortcode: string) => {
+    return SHORTCODE_TO_NATIVE.get(shortcode.toLowerCase()) ?? full;
+  });
+}
 
 export interface Comment {
   id: string;
@@ -79,9 +107,10 @@ function renderContent(text: string, attachments: Attachment[]): string {
   const hydrated = attachments.length > 0
     ? hydrateCommentAttachmentMarkdown(text, attachments)
     : stripCommentAttachmentPlaceholders(text);
+  const withNativeEmoji = replaceEmojiShortcodes(hydrated);
   // [why] Legacy/server-sanitized comments may store blockquote markers as
   // "&gt;". Convert marker positions back to markdown so rendering matches editor.
-  const normalized = hydrated.replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>');
+  const normalized = withNativeEmoji.replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>');
   // Convert markdown → HTML
   const html = marked.parse(normalized) as string;
   // Wrap @mentions in a styled chip

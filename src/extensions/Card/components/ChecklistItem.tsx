@@ -1,8 +1,42 @@
 // ChecklistItem — single checklist row with toggle, rename, and delete.
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { marked } from 'marked';
+import emojiData from '@emoji-mart/data';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import type { ChecklistItem as ChecklistItemType } from '../api';
+
+marked.setOptions({ breaks: true, gfm: true });
+
+const SHORTCODE_TO_NATIVE = (() => {
+  const map = new Map<string, string>();
+  const emojis = emojiData.emojis as Record<string, { skins?: Array<{ native?: string }> }>;
+  const aliases = (emojiData.aliases ?? {}) as Record<string, string>;
+
+  for (const [shortcode, value] of Object.entries(emojis)) {
+    const native = value.skins?.[0]?.native;
+    if (!native) continue;
+    map.set(shortcode.toLowerCase(), native);
+  }
+
+  for (const [alias, canonical] of Object.entries(aliases)) {
+    const native = emojis[canonical]?.skins?.[0]?.native;
+    if (!native) continue;
+    map.set(alias.toLowerCase(), native);
+  }
+
+  return map;
+})();
+
+function replaceEmojiShortcodes(text: string): string {
+  return text.replaceAll(/:([a-z0-9_+-]+):/gi, (full, shortcode: string) => {
+    return SHORTCODE_TO_NATIVE.get(shortcode.toLowerCase()) ?? full;
+  });
+}
+
+function renderChecklistTitle(text: string): string {
+  return marked.parseInline(replaceEmojiShortcodes(text)) as string;
+}
 
 interface Props {
   item: ChecklistItemType;
@@ -15,6 +49,7 @@ interface Props {
 export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
+  const renderedTitle = useMemo(() => renderChecklistTitle(item.title), [item.title]);
 
   const submitRename = async () => {
     const trimmed = title.trim();
@@ -46,16 +81,15 @@ export const ChecklistItem = ({ item, onToggle, onRename, onDelete, disabled }: 
           autoFocus
         />
       ) : (
-        <span
-          className={`min-w-0 flex-1 cursor-text whitespace-normal break-words text-sm ${item.checked ? 'text-muted line-through' : 'text-base'}`}
+        <button
+          type="button"
+          className={`min-w-0 flex-1 cursor-text whitespace-normal break-words bg-transparent p-0 text-left text-sm [&_a]:underline [&_a]:decoration-dotted [&_a]:underline-offset-2 ${item.checked ? 'text-muted line-through' : 'text-base'}`}
           onClick={() => !disabled && setEditing(true)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter') setEditing(true); }}
+          disabled={disabled}
           aria-label={`Edit: ${item.title}`}
-        >
-          {item.title}
-        </span>
+          // [why] Render markdown + emoji shortcodes in checklist text for parity with comments.
+          dangerouslySetInnerHTML={{ __html: renderedTitle }}
+        />
       )}
       {!disabled && (
         <Button
