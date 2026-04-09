@@ -6,11 +6,14 @@ import {
   DragOverlay,
   PointerSensor,
   KeyboardSensor,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
   type DragStartEvent,
   type DragOverEvent,
   type DragEndEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -140,6 +143,22 @@ function getOverCardViewportMidY(overId: string): number | null {
   return (r.top + r.bottom) / 2;
 }
 
+function getInsertIndexFromPointerY(cardIds: string[], pointerY: number | null): number {
+  if (pointerY == null || cardIds.length === 0) return cardIds.length;
+  let insertIndex = 0;
+  for (let i = 0; i < cardIds.length; i += 1) {
+    const cardId = cardIds[i];
+    const mid = cardId == null ? null : getOverCardViewportMidY(cardId);
+    if (mid == null) continue;
+    if (pointerY >= mid - DRAG_MIDPOINT_TOLERANCE_PX) {
+      insertIndex = i + 1;
+      continue;
+    }
+    break;
+  }
+  return insertIndex;
+}
+
 function normalizePlaceholderHeight(value: number | null | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 24) {
     return 72;
@@ -158,6 +177,14 @@ function getSortableContainerId(
   const data = over?.data?.current as { sortable?: { containerId?: unknown } } | undefined;
   const containerId = data?.sortable?.containerId;
   return typeof containerId === 'string' ? containerId : null;
+}
+
+function getBoardListIdFromElement(element: Element | null): string | null {
+  const listEl = element?.closest('[id^="board-list-"]');
+  if (!listEl || !(listEl instanceof HTMLElement) || !listEl.id.startsWith('board-list-')) {
+    return null;
+  }
+  return listEl.id.slice('board-list-'.length);
 }
 
 const BoardCanvas = ({
@@ -204,6 +231,7 @@ const BoardCanvas = ({
   // active.rect.current.translated uses an internal coordinate system that can
   // differ from viewport coordinates (e.g. due to DnD Kit scroll adjustments).
   const livePointerYRef = useRef<number | null>(null);
+  const livePointerXRef = useRef<number | null>(null);
   // WHY: snapshot each card's viewport midpoint at drag-start (before DnD Kit
   // applies sorting transforms) so the pointermove handler can compare the live
   // pointer Y against STABLE positions rather than the transformed ones.
@@ -222,6 +250,7 @@ const BoardCanvas = ({
 
   useEffect(() => {
     const handler = (e: PointerEvent) => {
+      livePointerXRef.current = e.clientX;
       livePointerYRef.current = e.clientY;
 
       // WHY: update the drag placeholder index on every pointermove rather than
@@ -232,6 +261,12 @@ const BoardCanvas = ({
       const activeId = dragActiveIdRef.current;
       const fromListId = fromListIdRef.current;
       if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) return;
+
+      // WHY: when the pointer is over another list, cross-list placeholder is
+      // resolved by handleDragOver. Skipping same-list midpoint logic here
+      // prevents it from immediately overriding that destination placeholder.
+      const pointerListId = getBoardListIdFromElement(document.elementFromPoint(e.clientX, e.clientY));
+      if (pointerListId && pointerListId !== fromListId) return;
 
       const targetCards = (cardsByListRef.current[fromListId] ?? []).filter(
         (id) => id !== activeId,
@@ -277,6 +312,25 @@ const BoardCanvas = ({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  // WHY: on dense boards the default collision detection can keep resolving
+  // card drags to the source list even when the pointer is clearly over a
+  // different column. Prefer pointer-based collisions for cards so cross-list
+  // drops resolve to the destination under the cursor.
+  const collisionDetection = useCallback<CollisionDetection>(
+    (args) => {
+      const activeId = String(args.active.id);
+      if (!cards[activeId]) {
+        return rectIntersection(args);
+      }
+      const pointerCollisions = pointerWithin(args);
+      if (pointerCollisions.length > 0) {
+        return pointerCollisions;
+      }
+      return rectIntersection(args);
+    },
+    [cards],
   );
 
   const handleDragStart = useCallback(
@@ -329,16 +383,15 @@ const BoardCanvas = ({
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
       const { active, over } = event;
-      if (!over) return;
       // WHY: use the globally tracked live pointer Y (viewport coordinates).
       // DnD Kit's activatorEvent.clientY is fixed at drag-activation time and
       // active.rect translation deltas are in an internal coordinate system that
       // does NOT map 1:1 to viewport pixels. The pointermove listener gives us
       // the true viewport Y at any point during the drag.
       const pointerY = livePointerYRef.current;
+      const pointerX = livePointerXRef.current;
 
       const activeId = String(active.id);
-      const overId = String(over.id);
 
       // Only handle card-over-card or card-over-column (not list reorder)
       if (!cards[activeId]) return;
@@ -346,8 +399,42 @@ const BoardCanvas = ({
         const sourceListId = fromListIdRef.current ?? findListForCard(activeId, cardsByList);
         if (!sourceListId) return;
 
+        const pointerListId =
+          pointerX != null && pointerY != null
+            ? getBoardListIdFromElement(document.elementFromPoint(pointerX, pointerY))
+            : null;
+
+        if (!over) {
+          if (!pointerListId || !lists[pointerListId] || pointerListId === sourceListId) return;
+          const targetCards = (cardsByList[pointerListId] ?? []).filter((id) => id !== activeId);
+          const insertIndex = getInsertIndexFromPointerY(targetCards, pointerY);
+          const placeholderHeight = normalizePlaceholderHeight(
+            active.rect.current.initial?.height
+            ?? active.rect.current.translated?.height
+            ?? 72,
+          );
+          setDragPlaceholder((prev) => {
+            if (
+              prev?.listId === pointerListId
+              && prev.index === insertIndex
+              && Math.abs(prev.height - placeholderHeight) < 1
+            ) {
+              return prev;
+            }
+            const next = { listId: pointerListId, index: insertIndex, height: placeholderHeight };
+            dragPlaceholderRef.current = next;
+            return next;
+          });
+          return;
+        }
+
+        const overId = String(over.id);
+
         const overContainerId = getSortableContainerId(over);
         let toListId = overContainerId ?? overId;
+        if (pointerListId && lists[pointerListId]) {
+          toListId = pointerListId;
+        }
         if (!lists[toListId]) {
           toListId = findListForCard(overId, cardsByList) ?? sourceListId;
         }
@@ -359,7 +446,7 @@ const BoardCanvas = ({
         if (toListId === sourceListId) return;
 
         const targetCards = (cardsByList[toListId] ?? []).filter((id) => id !== activeId);
-        let insertIndex = targetCards.length;
+        let insertIndex = getInsertIndexFromPointerY(targetCards, pointerY);
         const placeholderHeight = normalizePlaceholderHeight(
           active.rect.current.initial?.height
           ?? active.rect.current.translated?.height
@@ -397,6 +484,10 @@ const BoardCanvas = ({
         });
         return;
       }
+
+      if (!over) return;
+
+      const overId = String(over.id);
 
       // WHY: update local drag state only — no Redux dispatch here.
       // Dispatching onCardMove on every drag-over event triggers a Redux
@@ -544,6 +635,22 @@ const BoardCanvas = ({
           resolvedNewIndex = Math.max(0, Math.min(latestPlaceholder.index, targetWithoutActive.length));
         }
 
+        // WHY: on large boards DnD Kit can miss a final cross-list `over` update
+        // near drop-time. If that happens, `latestPlaceholder` may still point to
+        // the source list. Use the live pointer position as the final source of
+        // truth for destination-list and insertion index.
+        const pointerX = livePointerXRef.current;
+        const pointerY = livePointerYRef.current;
+        const pointerListId =
+          pointerX != null && pointerY != null
+            ? getBoardListIdFromElement(document.elementFromPoint(pointerX, pointerY))
+            : null;
+        if (disableLiveDragPreview && pointerListId && lists[pointerListId] && pointerListId !== fromListId) {
+          const targetWithoutActive = (finalCardsByList[pointerListId] ?? []).filter((id) => id !== activeId);
+          resolvedToListId = pointerListId;
+          resolvedNewIndex = getInsertIndexFromPointerY(targetWithoutActive, pointerY);
+        }
+
         // WHY: these fallback blocks recalculate position from overId and are only
         // needed when disableLiveDragPreview=true and the placeholder was not set
         // (edge case). For live-preview mode (disableLiveDragPreview=false),
@@ -622,6 +729,7 @@ const BoardCanvas = ({
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}

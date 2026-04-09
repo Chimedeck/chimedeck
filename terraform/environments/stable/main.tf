@@ -101,8 +101,9 @@ module "ecr" {
 module "s3" {
   source = "../../modules/s3"
 
-  bucket_name = var.s3_bucket_name
-  tags        = var.tags
+  bucket_name          = var.s3_bucket_name
+  cors_allowed_origins = var.s3_cors_allowed_origins
+  tags                 = var.tags
 }
 
 module "security_groups" {

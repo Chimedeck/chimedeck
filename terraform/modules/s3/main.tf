@@ -41,3 +41,18 @@ resource "aws_s3_bucket_versioning" "this" {
     status = var.versioning_enabled ? "Enabled" : "Suspended"
   }
 }
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+
+resource "aws_s3_bucket_cors_configuration" "this" {
+  count  = length(var.cors_allowed_origins) > 0 ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+
+  cors_rule {
+    allowed_origins = var.cors_allowed_origins
+    allowed_methods = var.cors_allowed_methods
+    allowed_headers = var.cors_allowed_headers
+    expose_headers  = var.cors_expose_headers
+    max_age_seconds = var.cors_max_age_seconds
+  }
+}

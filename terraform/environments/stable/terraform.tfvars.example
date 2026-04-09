@@ -117,6 +117,11 @@ ecr_image_tag = "latest"
 # Must be globally unique across all AWS accounts.
 s3_bucket_name = "myapp-stable-assets-UNIQUE_SUFFIX"
 
+# Browser origins allowed to use pre-signed S3 URLs (PUT/GET/HEAD).
+s3_cors_allowed_origins = [
+  "https://app.example.com",
+]
+
 # ─────────────────────────────────────────────
 # RDS PostgreSQL
 # ─────────────────────────────────────────────

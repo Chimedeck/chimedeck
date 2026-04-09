@@ -131,6 +131,12 @@ variable "s3_bucket_name" {
   type        = string
 }
 
+variable "s3_cors_allowed_origins" {
+  description = "Allowed browser origins for direct S3 uploads/downloads via presigned URLs."
+  type        = list(string)
+  default     = []
+}
+
 # ─────────────────────────────────────────────
 # RDS PostgreSQL
 # ─────────────────────────────────────────────

@@ -14,3 +14,33 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "cors_allowed_origins" {
+  description = "Allowed origins for browser access to this bucket. Empty disables bucket CORS configuration."
+  type        = list(string)
+  default     = []
+}
+
+variable "cors_allowed_methods" {
+  description = "Allowed methods for bucket CORS rules used by browser uploads and reads."
+  type        = list(string)
+  default     = ["GET", "HEAD", "PUT"]
+}
+
+variable "cors_allowed_headers" {
+  description = "Allowed request headers for bucket CORS preflight checks."
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "cors_expose_headers" {
+  description = "Response headers exposed to browser JavaScript. ETag is required for multipart upload completion."
+  type        = list(string)
+  default     = ["ETag", "x-amz-request-id", "x-amz-id-2"]
+}
+
+variable "cors_max_age_seconds" {
+  description = "How long browsers cache successful preflight responses."
+  type        = number
+  default     = 3000
+}
