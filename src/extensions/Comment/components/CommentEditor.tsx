@@ -10,6 +10,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
 import Link from '@tiptap/extension-link';
 import type { Editor } from '@tiptap/react';
+import { TextSelection } from '@tiptap/pm/state';
 import type { Attachment } from '~/extensions/Attachments/types';
 import InlineImage from '../extensions/InlineImage';
 import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
@@ -324,7 +325,7 @@ const CommentEditor = ({
     extensions: [
       StarterKit,
       Markdown,
-      Link.configure({ openOnClick: false, autolink: true }),
+      Link.configure({ openOnClick: false, enableClickSelection: true, autolink: true }),
       // [why] InlineImage now includes markdown parse/render support.
       InlineImage,
       // [why] CardReference converts pasted card URLs into interactive chip nodes.
@@ -360,6 +361,25 @@ const CommentEditor = ({
         const ids = uploadFilesRef.current?.(files) ?? [];
         ids.forEach((id) => insertPosMap.current.set(id, pos));
         return true;
+      },
+      // [why] In editable mode, clicking links should select them for editing,
+      // not navigate away from the page.
+      handleDOMEvents: {
+        click(view, event) {
+          const target = event.target as HTMLElement | null;
+          const anchor = target?.closest('a');
+          if (!anchor) return false;
+
+          event.preventDefault();
+
+          const from = view.posAtDOM(anchor, 0);
+          const linkTextLength = Math.max(anchor.textContent?.length ?? 0, 1);
+          const to = Math.min(from + linkTextLength, view.state.doc.content.size);
+
+          view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, from, to)));
+          view.focus();
+          return true;
+        },
       },
     },
   });

@@ -56,10 +56,14 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     const href = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
+    const isInsideLink = editor.isActive('link');
 
     if (hasSelection) {
       // Apply link mark to existing selection
-      editor.chain().focus().setLink({ href }).run();
+      editor.chain().focus().setLink({ href, target: '_blank' }).run();
+    } else if (isInsideLink) {
+      // Update the active link mark when cursor is inside an existing link.
+      editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank' }).run();
     } else if (displayText.trim()) {
       // Insert new text node with link mark
       editor
