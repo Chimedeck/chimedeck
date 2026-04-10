@@ -43,7 +43,7 @@ import {
   deleteComment,
 } from '../../api/cardDetail';
 import type { Label, Checklist, ChecklistItem, CardMember } from '../../api';
-import { boardSliceActions, selectBoard } from '../../../Board/slices/boardSlice';
+import { boardSliceActions, selectBoard, selectCards } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
@@ -71,6 +71,7 @@ const CardModalContainer = () => {
   const { boardId } = meta;
   const currentUser = useAppSelector(selectCurrentUser);
   const board = useAppSelector(selectBoard);
+  const boardCards = useAppSelector(selectCards);
   const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
   // [why] Derive write permission from the board's callerGuestType so VIEWER guests
@@ -637,9 +638,17 @@ const CardModalContainer = () => {
       const comment = await postCardComment({ api, cardId: card.id, content });
       dispatch(cardDetailSliceActions.addComment(comment));
       // [why] Keep the card tile comment counter in sync without a full board re-fetch.
-      dispatch(boardSliceActions.updateCard({ card: { ...card, comment_count: (card.comment_count ?? 0) + 1 } }));
+      const boardCard = boardCards[card.id] ?? card;
+      dispatch(
+        boardSliceActions.updateCard({
+          card: {
+            ...boardCard,
+            comment_count: (boardCard.comment_count ?? 0) + 1,
+          },
+        }),
+      );
     },
-    [api, card, dispatch],
+    [api, boardCards, card, dispatch],
   );
 
   const handleEditComment = useCallback(
@@ -656,10 +665,18 @@ const CardModalContainer = () => {
       dispatch(cardDetailSliceActions.removeComment({ commentId }));
       // [why] Keep the card tile comment counter in sync without a full board re-fetch.
       if (card) {
-        dispatch(boardSliceActions.updateCard({ card: { ...card, comment_count: Math.max(0, (card.comment_count ?? 0) - 1) } }));
+        const boardCard = boardCards[card.id] ?? card;
+        dispatch(
+          boardSliceActions.updateCard({
+            card: {
+              ...boardCard,
+              comment_count: Math.max(0, (boardCard.comment_count ?? 0) - 1),
+            },
+          }),
+        );
       }
     },
-    [api, card, dispatch],
+    [api, boardCards, card, dispatch],
   );
 
   // [why] When the attachment list changes inside AttachmentPanel (add, delete, initial load),

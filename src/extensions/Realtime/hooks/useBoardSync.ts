@@ -3,16 +3,19 @@
 //
 // WHY: kept separate from useWebSocket so the dispatch logic can be tested
 // in isolation without needing a live WebSocket.
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
+import { useAppSelector } from '~/hooks/useAppSelector';
 import type { RealtimeEvent } from '../client/socket';
 import { listSliceActions } from '../../List/listSlice';
 import { cardSliceActions } from '../../Card/cardSlice';
-import { boardSliceActions } from '../../Board/slices/boardSlice';
+import { boardSliceActions, selectCards } from '../../Board/slices/boardSlice';
 import { cardDetailSliceActions } from '../../Card/slices/cardDetailSlice';
 import type { List } from '../../List/api';
 import type { Card } from '../../Card/api';
 import type { CommentData } from '../../Card/api/cardDetail';
+import { selectCurrentUser } from '~/slices/authSlice';
+import type { ActivityData } from '../../Card/slices/cardDetailSlice';
 
 export interface UseBoardSyncOptions {
   boardId: string;
@@ -27,9 +30,59 @@ export interface UseBoardSyncResult {
 
 export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResult {
   const dispatch = useAppDispatch();
+  const cards = useAppSelector(selectCards);
+  const currentUser = useAppSelector(selectCurrentUser);
   // Deduplication set: "entityId:sequence" → prevent double-apply
   const seen = useRef<Set<string>>(new Set());
   const lastSeqRef = useRef(0);
+  const cardsRef = useRef(cards);
+  const currentUserIdRef = useRef<string | null>(currentUser?.id ?? null);
+
+  useEffect(() => {
+    cardsRef.current = cards;
+  }, [cards]);
+
+  useEffect(() => {
+    currentUserIdRef.current = currentUser?.id ?? null;
+  }, [currentUser?.id]);
+
+  const applyRemoteCommentAdded = useCallback(
+    ({
+      comment,
+      cardId,
+      actorId,
+    }: {
+      comment: CommentData | undefined;
+      cardId: string | undefined;
+      actorId: string | undefined;
+    }) => {
+      if (comment) {
+        dispatch(cardDetailSliceActions.addComment(comment));
+      }
+
+      // Keep board card badge counts in sync for realtime updates.
+      const targetCardId = comment?.card_id ?? cardId;
+      const currentUserId = currentUserIdRef.current;
+      const isOwnComment =
+        (comment?.user_id != null && comment.user_id === currentUserId) ||
+        (actorId != null && actorId === currentUserId);
+
+      if (!isOwnComment && targetCardId) {
+        const boardCard = cardsRef.current[targetCardId];
+        if (boardCard) {
+          dispatch(
+            boardSliceActions.updateCard({
+              card: {
+                ...boardCard,
+                comment_count: (boardCard.comment_count ?? 0) + 1,
+              },
+            }),
+          );
+        }
+      }
+    },
+    [dispatch],
+  );
 
   const handleEvent = useCallback(
     (event: RealtimeEvent) => {
@@ -38,7 +91,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
 
       // Deduplication: skip events we've already applied
       if (sequence !== undefined) {
-        const dedupeKey = `${type}:${sequence}`;
+        const dedupeKey = `${type}:${String(sequence)}`;
         if (seen.current.has(dedupeKey)) return;
         seen.current.add(dedupeKey);
         // Keep set bounded to avoid unbounded growth
@@ -68,7 +121,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           dispatch(listSliceActions.remoteReorder(payload as Parameters<typeof listSliceActions.remoteReorder>[0]));
           // Derive new order from authoritative positions list
           const newOrder = [...p.lists]
-            .sort((a, b) => (String(a.position) < String(b.position) ? -1 : 1))
+            .sort((a, b) => (a.position < b.position ? -1 : 1))
             .map((l) => l.id);
           dispatch(boardSliceActions.applyOptimisticListReorder({ newOrder }));
           break;
@@ -104,8 +157,12 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
 
         // ── Comment events ────────────────────────────────────────────────
         case 'comment_added': {
-          const { comment } = payload as { comment: CommentData };
-          dispatch(cardDetailSliceActions.addComment(comment));
+          const { comment, cardId } = payload as { comment?: CommentData; cardId?: string };
+          applyRemoteCommentAdded({
+            comment,
+            cardId,
+            actorId: (event as { actor_id?: string }).actor_id,
+          });
           break;
         }
         case 'comment_updated': {
@@ -122,7 +179,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         // ── Card activity events ──────────────────────────────────────────
         case 'card_activity_created': {
           // [why] Reducer filters by openCardId so cross-card events are silently ignored.
-          const { activity } = payload as { activity: import('../../Card/slices/cardDetailSlice').ActivityData };
+          const { activity } = payload as { activity: ActivityData };
           dispatch(cardDetailSliceActions.addActivity(activity));
           break;
         }
@@ -151,7 +208,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         dispatch({ type: 'realtime/wsConfirmed', payload: { type, sequence, boardId } });
       }
     },
-    [dispatch, boardId],
+    [applyRemoteCommentAdded, dispatch, boardId],
   );
 
   return { handleEvent, lastSequence: lastSeqRef.current };
