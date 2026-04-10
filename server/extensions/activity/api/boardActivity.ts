@@ -15,7 +15,10 @@ type ActivityRow = {
   id: string;
   entity_type: string;
   entity_id: string;
-  payload: unknown;
+  payload: Record<string, unknown> | null;
+  created_at: string | Date;
+  actor_name?: string | null;
+  [key: string]: unknown;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -32,49 +35,40 @@ function getCardIdFromActivity(row: ActivityRow): string | null {
   return typeof payloadCardId === 'string' && payloadCardId.length > 0 ? payloadCardId : null;
 }
 
-async function applyCursorFilter(query: ReturnType<typeof db>, cursor: string): Promise<ReturnType<typeof db>> {
-  const cursorRow = await db('activities').where({ id: cursor }).first();
-  if (!cursorRow) return query;
-
-  return query.where(function () {
-    this.where('activities.created_at', '<', cursorRow.created_at).orWhere(function () {
-      this.where('activities.created_at', '=', cursorRow.created_at).andWhere(
-        'activities.id',
-        '<',
-        cursor
-      );
-    });
-  });
-}
-
 async function enrichRowsWithCardTitle(rows: unknown[]): Promise<unknown[]> {
+  const typedRows = rows as ActivityRow[];
   const cardIds = Array.from(
     new Set(
-      rows
-        .map((row) => getCardIdFromActivity(row as ActivityRow))
+      typedRows
+        .map((row) => getCardIdFromActivity(row))
         .filter((id): id is string => Boolean(id))
     )
   );
 
   const cardsById = new Map<string, string>();
   if (cardIds.length > 0) {
-    const cardRows = await db('cards').whereIn('id', cardIds).select('id', 'title');
+    const cardRows = await db('cards')
+      .whereIn('id', cardIds)
+      .select('id', 'title') as Array<{ id: string; title: string | null }>;
+
     for (const card of cardRows) {
-      if (typeof card.id === 'string' && typeof card.title === 'string') {
+      if (card.title) {
         cardsById.set(card.id, card.title);
       }
     }
   }
 
-  return rows.map((row) => {
-    const cardId = getCardIdFromActivity(row as ActivityRow);
+  return typedRows.map((row) => {
+    const cardId = getCardIdFromActivity(row);
     if (!cardId) return row;
 
     const cardTitle = cardsById.get(cardId);
     if (!cardTitle) return row;
 
-    const payload = isRecord((row as ActivityRow).payload) ? (row as ActivityRow).payload : {};
-    if (typeof payload.cardTitle === 'string' && payload.cardTitle.trim().length > 0) {
+    const payload: Record<string, unknown> = isRecord(row.payload) ? row.payload : {};
+    const existingTitle = payload.cardTitle;
+
+    if (typeof existingTitle === 'string' && existingTitle.trim().length > 0) {
       return row;
     }
 
@@ -94,7 +88,13 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
   if (visibilityError) return visibilityError;
 
   const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const board = scopedReq.board;
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
 
   if (board.visibility !== 'PUBLIC') {
     const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -103,7 +103,7 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
 
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;
-  const limitParam = parseInt(url.searchParams.get('limit') ?? `${DEFAULT_LIMIT}`, 10);
+  const limitParam = parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10);
   const limit = Math.min(
     isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam,
     MAX_LIMIT
@@ -118,9 +118,27 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
     .orderBy('activities.id', 'desc')
     .limit(limit + 1); // fetch one extra to determine hasMore
 
-  if (cursor) query = await applyCursorFilter(query, cursor);
+  if (cursor) {
+    const cursorRow = await db('activities')
+      .where({ id: cursor })
+      .select('created_at')
+      .first<{ created_at: string | Date }>();
+    const cursorCreatedAt = (cursorRow as { created_at?: string | Date } | undefined)?.created_at;
 
-  const rows = await query;
+    if (cursorCreatedAt) {
+      query = query.where(function () {
+        this.where('activities.created_at', '<', cursorCreatedAt).orWhere(function () {
+          this.where('activities.created_at', '=', cursorCreatedAt).andWhere(
+            'activities.id',
+            '<',
+            cursor
+          );
+        });
+      });
+    }
+  }
+
+  const rows = (await query) as ActivityRow[];
   const hasMore = rows.length > limit;
   const data = hasMore ? rows.slice(0, limit) : rows;
 
