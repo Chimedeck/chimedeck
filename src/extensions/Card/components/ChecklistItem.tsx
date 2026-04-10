@@ -239,7 +239,14 @@ export const ChecklistItem = ({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={submitRename}
-          onKeyDown={(e) => { if (e.key === 'Enter') submitRename(); if (e.key === 'Escape') { setTitle(item.title); setEditing(false); } }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') submitRename();
+            if (e.key === 'Escape') {
+              setTitle(item.title);
+              setEditing(false);
+            }
+          }}
           autoFocus
         />
       ) : (

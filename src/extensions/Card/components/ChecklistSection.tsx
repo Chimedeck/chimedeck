@@ -215,6 +215,7 @@ export const ChecklistSection = ({
             onChange={(e) => { setTitleDraft(e.target.value); }}
             onBlur={() => { void handleTitleCommit(); }}
             onKeyDown={(e) => {
+              e.stopPropagation();
               if (e.key === 'Enter') void handleTitleCommit();
               if (e.key === 'Escape') { setEditingTitle(false); setTitleDraft(checklist.title); }
             }}
@@ -295,6 +296,7 @@ export const ChecklistSection = ({
             value={newTitle}
             onChange={(e) => { setNewTitle(e.target.value); }}
             onKeyDown={(e) => {
+              e.stopPropagation();
               if (e.key === 'Enter') void handleItemAdd();
               if (e.key === 'Escape') setAdding(false);
             }}
