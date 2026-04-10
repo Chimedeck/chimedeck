@@ -6,7 +6,6 @@ import {
   AtSymbolIcon,
   RectangleStackIcon,
   ArrowRightIcon,
-  ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftIcon,
   UserPlusIcon,
   UserMinusIcon,
@@ -16,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { markReadThunk, deleteNotificationThunk } from '../slices/notificationSlice';
-import type { Notification, NotificationType } from '../api';
+import type { Notification } from '../api';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -55,7 +54,7 @@ function buildCopy(notification: Notification): string {
   const actor = notification.actor.nickname ?? notification.actor.name ?? 'Someone';
   const card = notification.card_title ?? 'a card';
 
-  switch (notification.type as NotificationType | string) {
+  switch (notification.type) {
     case 'card_created':
       return `${actor} created "${card}" in ${notification.board_title ?? 'a board'}`;
     case 'card_moved':

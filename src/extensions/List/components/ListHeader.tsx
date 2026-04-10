@@ -30,6 +30,9 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackgro
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // [why] The header is wrapped by dnd-kit keyboard listeners; stop bubbling so
+    // typing (especially Space) edits the input instead of triggering drag behavior.
+    e.stopPropagation();
     if (e.key === 'Enter') commitRename();
     if (e.key === 'Escape') { setTitle(list.title); setEditing(false); }
   };
@@ -41,7 +44,9 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackgro
           autoFocus
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+          }}
           onBlur={commitRename}
           onKeyDown={handleKeyDown}
           className="bg-transparent text-base font-semibold text-sm focus:outline-none focus:bg-bg-overlay rounded px-1 py-0.5 w-full"
@@ -63,7 +68,9 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackgro
       <div className="relative ml-2">
         <button
           className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
-          onClick={() => setMenuOpen((v) => !v)}
+          onClick={() => {
+            setMenuOpen((v) => !v);
+          }}
           aria-label="List options"
           aria-haspopup="true"
           aria-expanded={menuOpen}

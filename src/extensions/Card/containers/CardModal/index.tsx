@@ -321,7 +321,22 @@ const CardModalContainer = () => {
   const handleItemToggle = useCallback(
     async (checklistId: string, itemId: string, checked: boolean) => {
       const mutationId = nextMutationId();
+      const prevChecklistDone = card?.checklist_done ?? 0;
+      const nextChecklistDone = checklists.reduce((sum, checklist) => {
+        return sum + checklist.items.reduce((itemSum, item) => {
+          const isChecked = item.id === itemId ? checked : item.checked;
+          return itemSum + (isChecked ? 1 : 0);
+        }, 0);
+      }, 0);
+
       dispatch(cardDetailSliceActions.applyOptimisticChecklistToggle({ mutationId, checklistId, itemId, checked }));
+      if (card?.id) {
+        dispatch(boardSliceActions.optimisticUpdateCardField({
+          cardId: card.id,
+          field: 'checklist_done',
+          value: nextChecklistDone,
+        }));
+      }
       try {
         const item = await patchChecklistItem({ api, itemId, fields: { checked } });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
@@ -330,9 +345,16 @@ const CardModalContainer = () => {
         if (card?.id) dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+        if (card?.id) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_done',
+            value: prevChecklistDone,
+          }));
+        }
       }
     },
-    [api, card, dispatch],
+    [api, card, checklists, dispatch],
   );
 
   const handleItemRename = useCallback(

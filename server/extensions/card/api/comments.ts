@@ -2,12 +2,14 @@
 // [why] Thin wrapper that accepts { text } (external API contract) and returns the slim
 //       { data: { id, cardId, userId, text, createdAt } } shape for MCP/CLI consumers.
 //       The richer internal endpoint at comment/api/create.ts handles UI-facing flows.
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { sanitizeRichText } from '../../../common/sanitize';
+import { syncMentions } from '../../../common/mentions/sync';
+import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import {
   requireWorkspaceMembership,
   requireMemberOrBoardGuestMember,
@@ -64,21 +66,45 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   const content = sanitizeRichText(rawText.trim());
   const now = new Date().toISOString();
 
-  await db('comments').insert({
-    id,
-    card_id: cardId,
-    user_id: actorId,
-    content,
-    version: 1,
-    deleted: false,
-    created_at: now,
-    updated_at: now,
+  const card = await db('cards').where({ id: cardId }).select('title').first();
+
+  await db.transaction(async (trx) => {
+    await trx('comments').insert({
+      id,
+      card_id: cardId,
+      user_id: actorId,
+      content,
+      version: 1,
+      deleted: false,
+      created_at: now,
+      updated_at: now,
+    });
+
+    const { addedUserIds } = await syncMentions({
+      trx,
+      sourceType: 'comment',
+      sourceId: id,
+      text: content,
+      boardId: board.id,
+      mentionedByUserId: actorId,
+    });
+
+    await createNotificationsForMentions({
+      trx,
+      addedUserIds,
+      actorId,
+      sourceType: 'comment',
+      sourceId: id,
+      cardId,
+      boardId: board.id,
+      cardTitle: card?.title,
+      boardName: board.title,
+    });
   });
 
-  const card = await db('cards').where({ id: cardId }).select('title').first();
   const author = await db('users').where({ id: actorId }).select('name', 'email', 'avatar_url').first();
 
-  const rawPreview = content.replace(/<[^>]+>/g, '');
+  const rawPreview = content.replaceAll(/<[^>]+>/g, '');
   const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
 
   await Promise.all([
