@@ -19,6 +19,7 @@ interface Props {
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
   onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
+  onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
   disabled?: boolean;
 }
 
@@ -35,6 +36,7 @@ const CardChecklist = ({
   onItemAssign,
   onItemDueDateChange,
   onItemConvertToCard,
+  onItemReorder,
   disabled,
 }: Props) => {
   const [addingChecklist, setAddingChecklist] = useState(false);
@@ -118,6 +120,7 @@ const CardChecklist = ({
             onItemAssign={(itemId, memberId) => onItemAssign(cl.id, itemId, memberId)}
             onItemDueDateChange={(itemId, dueDate) => onItemDueDateChange(cl.id, itemId, dueDate)}
             onItemConvertToCard={(itemId) => onItemConvertToCard(cl.id, itemId)}
+            onItemReorder={(itemId, position) => onItemReorder(cl.id, itemId, position)}
             boardMembers={boardMembers}
             {...(disabled === undefined ? {} : { disabled })}
           />

@@ -63,6 +63,7 @@ interface Props {
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
   onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
+  onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
@@ -130,6 +131,7 @@ const CardModal = ({
   onItemAssign,
   onItemDueDateChange,
   onItemConvertToCard,
+  onItemReorder,
   onLabelAttach,
   onLabelDetach,
   onLabelCreate,
@@ -421,6 +423,7 @@ const CardModal = ({
                       onItemAssign={onItemAssign}
                       onItemDueDateChange={onItemDueDateChange}
                       onItemConvertToCard={onItemConvertToCard}
+                      onItemReorder={onItemReorder}
                       boardMembers={boardMembers}
                       disabled={isReadOnly}
                     />
@@ -493,6 +496,7 @@ const CardModal = ({
                     onItemAssign={onItemAssign}
                     onItemDueDateChange={onItemDueDateChange}
                     onItemConvertToCard={onItemConvertToCard}
+                    onItemReorder={onItemReorder}
                     boardMembers={boardMembers}
                     disabled={isReadOnly}
                   />

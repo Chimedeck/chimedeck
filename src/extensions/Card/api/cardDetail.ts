@@ -60,7 +60,7 @@ export async function patchChecklistItem({
 }: {
   api: ApiClient;
   itemId: string;
-  fields: Partial<Pick<ChecklistItem, 'title' | 'checked' | 'assigned_member_id' | 'due_date'>>;
+  fields: Partial<Pick<ChecklistItem, 'title' | 'checked' | 'assigned_member_id' | 'due_date' | 'position'>>;
 }): Promise<ChecklistItem> {
   const res = await api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, fields);
   return (res as unknown as { data: ChecklistItem }).data;

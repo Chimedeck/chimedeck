@@ -296,7 +296,7 @@ const cardDetailSlice = createSlice({
         mutationId: string;
         checklistId: string;
         itemId: string;
-        fields: Partial<Pick<ChecklistItem, 'assigned_member_id' | 'due_date' | 'linked_card_id'>>;
+        fields: Partial<Pick<ChecklistItem, 'assigned_member_id' | 'due_date' | 'linked_card_id' | 'position'>>;
       }>,
     ) {
       const { mutationId, checklistId, itemId, fields } = action.payload;
