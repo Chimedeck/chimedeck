@@ -85,7 +85,9 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   if (includes.includes('activities')) {
     const rows = await db('activities')
       .where({ entity_id: cardId })
-      .whereIn('action', VISIBLE_EVENT_TYPES)
+      .andWhere((qb) => {
+        qb.whereIn('action', VISIBLE_EVENT_TYPES).orWhere('action', 'card.description.updated');
+      })
       .orderBy('created_at', 'asc');
 
     const actorIds = [...new Set(rows.map((a) => a.actor_id))];

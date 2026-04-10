@@ -149,7 +149,7 @@ const ActivityFeed = ({
 
   // Convert system activity events to feed items (exclude comment-type events)
   const eventItems: FeedItem[] = activities
-    .filter((a) => VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action))
+    .filter((a) => VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action) || a.action === 'card.description.updated')
     .map((a) => ({ kind: 'event', ts: a.created_at, activity: a }));
 
   // Merge and sort descending (newest first)

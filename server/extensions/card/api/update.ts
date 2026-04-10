@@ -58,6 +58,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     );
   }
 
+  const existingCard = await db('cards').where({ id: cardId }).first();
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (body.title !== undefined) {
@@ -196,13 +198,15 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   // Default currency to USD when amount is set but no currency provided or stored
   if (updates.amount != null && updates.currency === undefined) {
-    const existing = await db('cards').where({ id: cardId }).first();
-    if (!existing?.currency) {
+    if (!existingCard?.currency) {
       updates.currency = 'USD';
     }
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+  const descriptionChanged =
+    body.description !== undefined &&
+    ((updates.description ?? null) !== ((existingCard as { description?: string | null } | undefined)?.description ?? null));
 
   // Wrap card update + mention sync in a single transaction
   const updated = await db.transaction(async (trx) => {
@@ -259,6 +263,18 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       action: 'card.money.updated',
       actorId,
       payload: { amount: cardWithCover.amount, currency: cardWithCover.currency },
+    });
+  }
+
+  // Emit activity event when description changes
+  if (descriptionChanged) {
+    await writeActivity({
+      entityType: 'card',
+      entityId: cardId,
+      boardId: board.id,
+      action: 'card.description.updated',
+      actorId,
+      payload: { cardId, cardTitle: (cardRow.title as string) ?? '' },
     });
   }
 

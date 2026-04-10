@@ -15,6 +15,7 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   'card.member.removed',
   'card.due_date.set',
   'card.due_date.cleared',
+  'card.description.updated',
   'card.money.updated',
   'attachment_added',
   'card_link_attached',

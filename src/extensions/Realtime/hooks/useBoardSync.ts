@@ -134,7 +134,8 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           dispatch(boardSliceActions.addCard({ card }));
           break;
         }
-        case 'card_updated': {
+        case 'card_updated':
+        case 'card.updated': {
           const card = (payload as { card: Card }).card;
           dispatch(cardSliceActions.remoteUpdate(payload as Parameters<typeof cardSliceActions.remoteUpdate>[0]));
           dispatch(boardSliceActions.updateCard({ card }));

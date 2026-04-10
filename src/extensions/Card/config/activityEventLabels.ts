@@ -19,6 +19,7 @@ const EVENT_LABELS: Record<string, ActivityEventMeta> = {
   'card.member.removed': { label: 'removed a member', dotColor: 'bg-bg-sunken' },
   'card.due_date.set': { label: 'set the due date', dotColor: 'bg-yellow-500' },
   'card.due_date.cleared': { label: 'cleared the due date', dotColor: 'bg-bg-sunken' },
+  'card.description.updated': { label: 'updated the description', dotColor: 'bg-blue-500' },
   'card.money.updated': { label: 'updated the value', dotColor: 'bg-green-500' },
 };
 

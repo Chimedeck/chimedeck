@@ -127,7 +127,11 @@ const cardDetailSlice = createSlice({
 
     updateComment(state, action: PayloadAction<CommentData>) {
       const idx = state.comments.findIndex((c) => c.id === action.payload.id);
-      if (idx !== -1) state.comments[idx] = action.payload;
+      if (idx !== -1) {
+        // [why] Some update payloads may omit joined author fields; preserve existing
+        // values so avatar/name don't disappear until a full refresh.
+        state.comments[idx] = { ...state.comments[idx], ...action.payload };
+      }
     },
 
     removeComment(state, action: PayloadAction<{ commentId: string }>) {

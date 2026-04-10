@@ -11,6 +11,37 @@ import { publisher } from '../../../mods/pubsub/publisher';
 import { syncMentions } from '../../../common/mentions/sync';
 import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
+import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
+
+async function loadCommentWithAuthor(commentId: string): Promise<Record<string, unknown> | null> {
+  const row = await db('comments')
+    .leftJoin('users', 'comments.user_id', 'users.id')
+    .where('comments.id', commentId)
+    .select(
+      'comments.id',
+      'comments.card_id',
+      'comments.user_id',
+      'comments.content',
+      'comments.version',
+      'comments.deleted',
+      'comments.parent_id',
+      'comments.created_at',
+      'comments.updated_at',
+      db.raw('COALESCE(users.name, users.email) as author_name'),
+      'users.email as author_email',
+      'users.avatar_url as author_avatar_url',
+    )
+    .first();
+
+  if (!row) return null;
+
+  const avatarUrl = buildAvatarProxyUrl({
+    userId: ((row as Record<string, unknown>).user_id as string) ?? null,
+    avatarUrl: ((row as Record<string, unknown>).author_avatar_url as string | null) ?? null,
+  });
+
+  return { ...row, author_avatar_url: avatarUrl } as Record<string, unknown>;
+}
 
 export async function handleUpdateComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -78,8 +109,16 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
     );
   }
 
-  const newVersion = comment.version + 1;
   const trimmedContent = sanitizeRichText(body.content.trim());
+
+  // [why] No-op edits should not bump version or emit edit activity/events.
+  // This keeps the (edited) marker only for actual content changes.
+  if (trimmedContent === comment.content) {
+    const unchanged = await loadCommentWithAuthor(commentId);
+    return Response.json({ data: unchanged ?? comment });
+  }
+
+  const newVersion = comment.version + 1;
 
   await db.transaction(async (trx) => {
     await trx('comments').where({ id: commentId }).update({
@@ -110,7 +149,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
     });
   });
 
-  const updated = await db('comments').where({ id: commentId }).first();
+  const updated = await loadCommentWithAuthor(commentId);
 
   await Promise.all([
     writeEvent({
