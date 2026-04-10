@@ -156,6 +156,7 @@ const CardModal = ({
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const coverMenuRef = useRef<HTMLDivElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const backdropPointerDownRef = useRef(false);
   // [why] Shared ref so AttachmentPanel's Comment action can insert markdown into the
   // CommentEditor in ActivityFeed without prop-drilling through intermediate components.
   const insertMarkdownRef = useRef<((md: string) => void) | null>(null);
@@ -219,7 +220,17 @@ const CardModal = ({
         <Dialog.Content
           className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pb-8"
           aria-label={`Card: ${card.title}`}
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+          onPointerDown={(e) => {
+            // [why] Treat as an outside click only when the press started on the
+            // backdrop itself. This prevents drag-selection releases outside the
+            // card from closing the modal.
+            backdropPointerDownRef.current = e.target === e.currentTarget;
+          }}
+          onClick={(e) => {
+            const shouldClose = e.target === e.currentTarget && backdropPointerDownRef.current;
+            backdropPointerDownRef.current = false;
+            if (shouldClose) onClose();
+          }}
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
