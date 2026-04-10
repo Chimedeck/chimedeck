@@ -243,6 +243,12 @@ export async function getBoardMembers({
 
 // ── Comment API ────────────────────────────────────────────────────────────────
 
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+}
+
 export interface CommentData {
   id: string;
   card_id: string;
@@ -255,6 +261,7 @@ export interface CommentData {
   author_name?: string | null;
   author_email?: string | null;
   author_avatar_url?: string | null;
+  reactions?: ReactionSummary[];
 }
 
 export async function getCardComments({

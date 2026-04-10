@@ -4,7 +4,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
 import type { Card, Label, CardMember, ChecklistItem, Checklist, CardDetail } from '../api';
-import type { CommentData } from '../api/cardDetail';
+import type { CommentData, ReactionSummary } from '../api/cardDetail';
 
 export interface ActivityData {
   id: string;
@@ -130,6 +130,44 @@ const cardDetailSlice = createSlice({
       // Mark as deleted (soft delete per schema) rather than removing
       const comment = state.comments.find((c) => c.id === action.payload.commentId);
       if (comment) comment.deleted = true;
+    },
+
+    // ── Comment reactions ────────────────────────────────────────────────────
+    addReaction(
+      state,
+      action: PayloadAction<{ commentId: string; emoji: string; userId: string }>,
+    ) {
+      const { commentId, emoji } = action.payload;
+      const comment = state.comments.find((c) => c.id === commentId);
+      if (!comment) return;
+      comment.reactions = comment.reactions ?? [];
+      const existing = comment.reactions.find((r) => r.emoji === emoji);
+      if (existing) {
+        // Guard: don't double-count if already reacted
+        if (!existing.reactedByMe) {
+          existing.count += 1;
+          existing.reactedByMe = true;
+        }
+      } else {
+        comment.reactions.push({ emoji, count: 1, reactedByMe: true } satisfies ReactionSummary);
+      }
+    },
+
+    removeReaction(
+      state,
+      action: PayloadAction<{ commentId: string; emoji: string; userId: string }>,
+    ) {
+      const { commentId, emoji } = action.payload;
+      const comment = state.comments.find((c) => c.id === commentId);
+      if (!comment || !comment.reactions) return;
+      const existing = comment.reactions.find((r) => r.emoji === emoji);
+      if (!existing || !existing.reactedByMe) return;
+      existing.count -= 1;
+      existing.reactedByMe = false;
+      // Remove pill entirely when count drops to zero
+      if (existing.count <= 0) {
+        comment.reactions = comment.reactions.filter((r) => r.emoji !== emoji);
+      }
     },
 
     // ── Activity ─────────────────────────────────────────────────────────────

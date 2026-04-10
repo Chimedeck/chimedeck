@@ -176,6 +176,18 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           break;
         }
 
+        // ── Comment reaction events ───────────────────────────────────────
+        case 'comment_reaction_added': {
+          const { commentId, emoji, userId } = payload as { commentId: string; emoji: string; userId: string };
+          dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId }));
+          break;
+        }
+        case 'comment_reaction_removed': {
+          const { commentId, emoji, userId } = payload as { commentId: string; emoji: string; userId: string };
+          dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId }));
+          break;
+        }
+
         // ── Card activity events ──────────────────────────────────────────
         case 'card_activity_created': {
           // [why] Reducer filters by openCardId so cross-card events are silently ignored.

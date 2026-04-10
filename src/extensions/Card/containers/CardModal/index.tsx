@@ -42,6 +42,7 @@ import {
   patchComment,
   deleteComment,
 } from '../../api/cardDetail';
+import { addReaction, removeReaction } from '~/extensions/Comment/api';
 import type { Label, Checklist, ChecklistItem, CardMember } from '../../api';
 import { boardSliceActions, selectBoard, selectCards } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
@@ -679,6 +680,36 @@ const CardModalContainer = () => {
     [api, boardCards, card, dispatch],
   );
 
+  const handleAddReaction = useCallback(
+    async (commentId: string, emoji: string) => {
+      if (!currentUser) return;
+      // Optimistic update
+      dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id }));
+      try {
+        await addReaction({ api, commentId, emoji });
+      } catch {
+        // Rollback on failure
+        dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id }));
+      }
+    },
+    [api, currentUser, dispatch],
+  );
+
+  const handleRemoveReaction = useCallback(
+    async (commentId: string, emoji: string) => {
+      if (!currentUser) return;
+      // Optimistic update
+      dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id }));
+      try {
+        await removeReaction({ api, commentId, emoji });
+      } catch {
+        // Rollback on failure
+        dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id }));
+      }
+    },
+    [api, currentUser, dispatch],
+  );
+
   // [why] When the attachment list changes inside AttachmentPanel (add, delete, initial load),
   // immediately update the board card tile so the counter reflects the live count.
   const handleAttachmentCountChange = useCallback(
@@ -762,6 +793,8 @@ const CardModalContainer = () => {
       onAddComment={handleAddComment}
       onEditComment={handleEditComment}
       onDeleteComment={handleDeleteComment}
+      onAddReaction={handleAddReaction}
+      onRemoveReaction={handleRemoveReaction}
       onMoneySave={handleMoneySave}
       onCoverColorChange={handleCoverColorChange}
       onCoverSizeChange={handleCoverSizeChange}

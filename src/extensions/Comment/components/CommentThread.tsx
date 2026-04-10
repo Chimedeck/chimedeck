@@ -11,6 +11,8 @@ interface Props {
   onAddComment: (content: string) => Promise<void>;
   onEditComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
+  onRemoveReaction?: (commentId: string, emoji: string) => Promise<void>;
 }
 
 const CommentThread = ({
@@ -21,6 +23,8 @@ const CommentThread = ({
   onAddComment,
   onEditComment,
   onDeleteComment,
+  onAddReaction,
+  onRemoveReaction,
 }: Props) => {
   return (
     <div className="flex flex-col gap-3">
@@ -39,6 +43,8 @@ const CommentThread = ({
             isAdmin={isAdmin}
             onEdit={onEditComment}
             onDelete={onDeleteComment}
+            {...(onAddReaction ? { onAddReaction } : {})}
+            {...(onRemoveReaction ? { onRemoveReaction } : {})}
           />
         ))}
       </div>

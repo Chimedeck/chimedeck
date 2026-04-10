@@ -42,5 +42,7 @@
   "comment.assetPicker.uploadNew": "Upload from computer",
   "comment.assetPicker.existingTitle": "Card attachments",
   "comment.assetPicker.empty": "No attachments yet",
-  "comment.assetPicker.insert": "Insert"
+  "comment.assetPicker.insert": "Insert",
+  "comment.reactions.add": "Add reaction",
+  "comment.reactions.aria.pill": "{{emoji}} {{count}} reaction, {{state}}"
 }

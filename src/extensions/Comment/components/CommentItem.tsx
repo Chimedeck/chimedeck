@@ -9,6 +9,7 @@ import {
 } from '~/extensions/Comment/utils/attachmentMarkdown';
 import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
+import CommentReactions from './CommentReactions';
 import translations from '../translations/en.json';
 
 // Configure marked: soft line breaks become <br>, no mangling
@@ -41,6 +42,12 @@ function replaceEmojiShortcodes(text: string): string {
   });
 }
 
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+}
+
 export interface Comment {
   id: string;
   card_id: string;
@@ -54,6 +61,7 @@ export interface Comment {
   author_name?: string | null;
   author_email?: string | null;
   author_avatar_url?: string | null;
+  reactions?: ReactionSummary[];
 }
 
 interface Props {
@@ -64,6 +72,8 @@ interface Props {
   isAdmin?: boolean;
   onEdit: (commentId: string, content: string) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
+  onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
+  onRemoveReaction?: (commentId: string, emoji: string) => Promise<void>;
 }
 
 /** Generate initials from a display name or email. */
@@ -120,7 +130,7 @@ function renderContent(text: string, attachments: Attachment[]): string {
   );
 }
 
-const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete }: Props) => {
+const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete, onAddReaction, onRemoveReaction }: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -197,6 +207,15 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
             />
           </div>
+        )}
+
+        {/* Reaction pills */}
+        {!editing && (onAddReaction || onRemoveReaction) && (
+          <CommentReactions
+            reactions={comment.reactions ?? []}
+            onAdd={(emoji) => onAddReaction?.(comment.id, emoji) ?? Promise.resolve()}
+            onRemove={(emoji) => onRemoveReaction?.(comment.id, emoji) ?? Promise.resolve()}
+          />
         )}
 
         {/* Inline action links */}
