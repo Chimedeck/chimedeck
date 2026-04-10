@@ -14,6 +14,7 @@ import { requireCardWritable, type CardScopedRequest } from '../middlewares/requ
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
+import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 
 // ISO 4217 3-letter currency code regex
 const CURRENCY_RE = /^[A-Z]{3}$/;
@@ -256,7 +257,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   // Emit activity event when money fields change
   if (body.amount !== undefined || (body.currency !== undefined && body.amount !== null)) {
-    await writeActivity({
+    const activity = await writeActivity({
       entityType: 'card',
       entityId: cardId,
       boardId: board.id,
@@ -264,11 +265,12 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       actorId,
       payload: { amount: cardWithCover.amount, currency: cardWithCover.currency },
     });
+    publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
   }
 
   // Emit activity event when description changes
   if (descriptionChanged) {
-    await writeActivity({
+    const activity = await writeActivity({
       entityType: 'card',
       entityId: cardId,
       boardId: board.id,
@@ -276,6 +278,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       actorId,
       payload: { cardId, cardTitle: (cardRow.title as string) ?? '' },
     });
+    publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
   }
 
   return Response.json({ data: cardWithCover });

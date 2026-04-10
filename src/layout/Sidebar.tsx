@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  Squares2X2Icon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -204,11 +203,19 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
         <div className="flex h-14 shrink-0 items-center border-b border-border">
           {collapsed ? (
             <div className="flex flex-1 items-center justify-center">
-              <Squares2X2Icon className="h-6 w-6 text-indigo-400" aria-hidden="true" />
+              <img
+                src="/apple-touch-icon.png"
+                alt={layoutTranslations['App.name']}
+                className="h-6 w-6 rounded-sm object-contain"
+              />
             </div>
           ) : (
             <div className="flex flex-1 items-center gap-2 px-4 overflow-hidden">
-              <Squares2X2Icon className="h-6 w-6 shrink-0 text-indigo-400" aria-hidden="true" />
+              <img
+                src="/apple-touch-icon.png"
+                alt={layoutTranslations['App.name']}
+                className="h-6 w-6 shrink-0 rounded-sm object-contain"
+              />
               <span className="text-base font-bold truncate">{layoutTranslations['App.name']}</span>
             </div>
           )}

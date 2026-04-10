@@ -14,6 +14,7 @@ import {
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { writeActivity } from '../../activity/mods/write';
 import { dispatchEvent } from '../../../mods/events/dispatch';
+import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 import { syncMentions } from '../../../common/mentions/sync';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import { sanitizeRichText } from '../../../common/sanitize';
@@ -126,6 +127,15 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
     return rows;
   });
 
+  const activityPromise = writeActivity({
+    entityType: 'card',
+    entityId: cardId,
+    boardId: board.id,
+    action: 'card.description.updated',
+    actorId,
+    payload: { cardId, cardTitle: updatedRows[0]?.title },
+  });
+
   await Promise.all([
     dispatchEvent({
       type: 'card.updated',
@@ -134,15 +144,12 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
       actorId,
       payload: { card: updatedRows[0] },
     }),
-    writeActivity({
-      entityType: 'card',
-      entityId: cardId,
-      boardId: board.id,
-      action: 'card.description.updated',
-      actorId,
-      payload: { cardId, cardTitle: updatedRows[0]?.title },
-    }),
+    activityPromise,
   ]);
+
+  activityPromise
+    .then((activity) => publishCardActivityEvent({ activity, boardId: board.id }))
+    .catch(() => {});
 
   return Response.json({ data: updatedRows[0] });
 }
