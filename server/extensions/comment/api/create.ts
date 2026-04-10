@@ -58,7 +58,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
-  let body: { content?: string; idempotency_key?: string; parent_id?: string };
+  let body: { content?: string; idempotency_key?: string; parent_id?: string; parentId?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -77,14 +77,23 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
 
   // [why] Enforce max one level of threading — replies to replies are not allowed.
   let parentId: string | null = null;
-  if (body.parent_id !== undefined) {
-    if (typeof body.parent_id !== 'string' || body.parent_id.trim() === '') {
+  // [why] Some clients/middleware layers may provide camelCase keys; accept both.
+  let rawParentId: string | undefined;
+  if (typeof body.parent_id === 'string') {
+    rawParentId = body.parent_id;
+  } else if (typeof body.parentId === 'string') {
+    rawParentId = body.parentId;
+  }
+
+  if (rawParentId !== undefined) {
+    if (rawParentId.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'parent_id must be a non-empty string' } },
         { status: 400 }
       );
     }
-    const parentComment = await db('comments').where({ id: body.parent_id.trim() }).first();
+    const normalizedParentId = rawParentId.trim();
+    const parentComment = await db('comments').where({ id: normalizedParentId }).first();
     if (!parentComment) {
       return Response.json(
         { error: { code: 'comment-not-found', message: 'Parent comment not found' } },
@@ -103,7 +112,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
         { status: 422 }
       );
     }
-    parentId = body.parent_id.trim();
+    parentId = normalizedParentId;
   }
 
   // [why] If the client provided an idempotency_key (e.g. during offline replay), check

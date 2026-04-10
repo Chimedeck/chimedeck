@@ -47,6 +47,8 @@ export interface ReactionSummary {
   emoji: string;
   count: number;
   reactedByMe: boolean;
+  /** Names of users who reacted — populated from initial fetch; may lag on WS-only updates */
+  reactors?: Array<{ userId: string; name: string | null }>;
 }
 
 export interface Comment {
@@ -219,18 +221,20 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
           </div>
         )}
 
-        {/* Reaction pills */}
-        {!editing && (onAddReaction || onRemoveReaction) && (
-          <CommentReactions
-            reactions={comment.reactions ?? []}
-            onAdd={(emoji) => onAddReaction?.(comment.id, emoji) ?? Promise.resolve()}
-            onRemove={(emoji) => onRemoveReaction?.(comment.id, emoji) ?? Promise.resolve()}
-          />
-        )}
-
-        {/* Inline action links */}
+        {/* Reactions + inline action links on one row */}
         {!editing && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-muted">
+          <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
+            {(onAddReaction || onRemoveReaction) && (
+              <CommentReactions
+                className="mt-0"
+                reactions={comment.reactions ?? []}
+                onAdd={(emoji) => onAddReaction?.(comment.id, emoji) ?? Promise.resolve()}
+                onRemove={(emoji) => onRemoveReaction?.(comment.id, emoji) ?? Promise.resolve()}
+              />
+            )}
+
+            {(onAddReaction || onRemoveReaction) && (canEdit || canDelete || (onAddReply && !comment.parent_id)) && <span>·</span>}
+
             {canEdit && (
               <button
                 onClick={() => setEditing(true)}

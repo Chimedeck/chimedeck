@@ -31,7 +31,6 @@ import {
 import { handleListDueCards } from './dueDate';
 import { handlePatchCardDescription } from './patch';
 import { handlePatchCardMoney } from './money';
-import { handleCreateCardComment } from './comments';
 
 // Returns a Response if the path matches a card route, otherwise null.
 export async function cardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -115,8 +114,9 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     // PATCH /api/v1/cards/:id/money — update amount, currency, label
     if (sub === '/money' && req.method === 'PATCH') return handlePatchCardMoney(req, cardId);
 
-    // POST /api/v1/cards/:id/comments — external API comment creation (slim response)
-    if (sub === '/comments' && req.method === 'POST') return handleCreateCardComment(req, cardId);
+    // POST /api/v1/cards/:id/comments is handled by commentRouter.
+    // [why] Threading support (parent_id, replies, depth guards, WS reply event)
+    // is implemented in extensions/comment/api/create.ts.
 
     // PATCH /api/v1/cards/:id/move
     if (sub === '/move' && req.method === 'PATCH') return handleMoveCard(req, cardId);

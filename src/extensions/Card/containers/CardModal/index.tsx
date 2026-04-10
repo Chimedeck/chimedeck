@@ -683,22 +683,22 @@ const CardModalContainer = () => {
   const handleAddReply = useCallback(
     async (parentId: string, content: string) => {
       if (!card) return;
-      const reply = await postReply({ api, cardId: card.id, parentId, content });
-      dispatch(cardDetailSliceActions.addReply({ parentId, reply }));
+      await postReply({ api, cardId: card.id, parentId, content });
     },
-    [api, card, dispatch],
+    [api, card],
   );
 
   const handleAddReaction = useCallback(
     async (commentId: string, emoji: string) => {
       if (!currentUser) return;
-      // Optimistic update
-      dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id }));
+      // Optimistic update — include actor name for the hover tooltip
+      const actorName = (currentUser as { name?: string | null }).name ?? (currentUser as { email?: string | null }).email ?? null;
+      dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true, actorName }));
       try {
         await addReaction({ api, commentId, emoji });
       } catch {
         // Rollback on failure
-        dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id }));
+        dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true }));
       }
     },
     [api, currentUser, dispatch],
@@ -708,12 +708,13 @@ const CardModalContainer = () => {
     async (commentId: string, emoji: string) => {
       if (!currentUser) return;
       // Optimistic update
-      dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id }));
+      dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true }));
       try {
         await removeReaction({ api, commentId, emoji });
       } catch {
         // Rollback on failure
-        dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id }));
+        const actorName = (currentUser as { name?: string | null }).name ?? (currentUser as { email?: string | null }).email ?? null;
+        dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId: currentUser.id, reactedByMe: true, actorName }));
       }
     },
     [api, currentUser, dispatch],

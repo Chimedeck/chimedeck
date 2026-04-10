@@ -7,6 +7,7 @@ export const NOTIFICATION_TYPES = [
   'card_created',
   'card_moved',
   'card_commented',
+  'comment_reaction',
   'card_member_assigned',
   'card_member_unassigned',
   'card_updated',

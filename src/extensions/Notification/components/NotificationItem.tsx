@@ -31,6 +31,7 @@ const TYPE_ICON: Record<string, HeroIcon> = {
   card_created: RectangleStackIcon as HeroIcon,
   card_moved: ArrowRightIcon as HeroIcon,
   card_commented: ChatBubbleLeftIcon as HeroIcon,
+  comment_reaction: ChatBubbleLeftIcon as HeroIcon,
   card_member_assigned: UserPlusIcon as HeroIcon,
   card_member_unassigned: UserMinusIcon as HeroIcon,
   card_updated: PencilSquareIcon as HeroIcon,
@@ -43,6 +44,7 @@ const TYPE_ACCENT: Record<string, string> = {
   card_created: 'text-emerald-400',
   card_moved: 'text-sky-400',
   card_commented: 'text-indigo-400',
+  comment_reaction: 'text-amber-400',
   card_member_assigned: 'text-violet-400',
   card_member_unassigned: 'text-rose-400',
   card_updated: 'text-indigo-400',
@@ -63,6 +65,10 @@ function buildCopy(notification: Notification): string {
         : `${actor} moved "${card}"`;
     case 'card_commented':
       return `${actor} commented on "${card}"`;
+    case 'comment_reaction': {
+      const emoji = (notification as unknown as { emoji?: string }).emoji ?? '❤️';
+      return `${actor} reacted ${emoji} to your comment on "${card}"`;
+    }
     case 'card_member_assigned':
       return `${actor} was assigned to "${card}"`;
     case 'card_member_unassigned':

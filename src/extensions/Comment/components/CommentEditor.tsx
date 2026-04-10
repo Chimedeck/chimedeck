@@ -199,10 +199,16 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
   return true;
 }
 
+// [why] Stable reference for the default empty attachments prop. Using an inline
+// `[]` default would create a new array identity every render, causing the
+// `useEffect(..., [availableAttachments])` sync to fire on every single render
+// and enter a setState→re-render→setState infinite loop.
+const EMPTY_ATTACHMENTS: Attachment[] = [];
+
 const CommentEditor = ({
   boardId,
   cardId,
-  availableAttachments = [],
+  availableAttachments = EMPTY_ATTACHMENTS,
   initialValue = '',
   placeholder = translations['comment.editor.placeholder'],
   onSubmit,
@@ -538,7 +544,7 @@ const CommentEditor = ({
   const currentMarkdown = editor ? buildCommentMarkdown(editor, cardAttachmentsRef.current) : '';
 
   return (
-    <div className="flex flex-col gap-2" data-upload-drop-exclude="true">
+    <div className="flex w-full min-w-0 flex-col gap-2" data-upload-drop-exclude="true">
       {/* Hidden file input for attachment upload */}
       <input
         ref={fileInputRef}
@@ -573,7 +579,7 @@ const CommentEditor = ({
       )}
 
       <div
-        className="rounded-lg border border-border bg-bg-base overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
+        className="w-full min-w-0 rounded-lg border border-border bg-bg-base overflow-visible focus-within:ring-2 focus-within:ring-blue-400"
         onKeyDown={handleKeyDown}
       >
         {/* Single-line toolbar — never wraps */}

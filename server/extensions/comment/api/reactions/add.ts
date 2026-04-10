@@ -6,6 +6,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { publisher } from '../../../../mods/pubsub/publisher';
+import { createReactionNotification } from '../../../notifications/mods/createReactionNotification';
 
 export async function handleAddReaction(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -66,15 +67,36 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
     .onConflict(['comment_id', 'user_id', 'emoji'])
     .ignore();
 
+  // Fetch actor name for WS payload so clients can show reactor names in tooltips immediately.
+  const actor = await db('users')
+    .where({ id: actorId })
+    .select(db.raw("COALESCE(name, email) as display_name"))
+    .first();
+
   publisher
     .publish(
       board.id,
       JSON.stringify({
         type: 'comment_reaction_added',
-        payload: { card_id: comment.card_id, comment_id: commentId, emoji, user_id: actorId },
+        payload: {
+          card_id: comment.card_id,
+          comment_id: commentId,
+          emoji,
+          user_id: actorId,
+          actor_name: actor?.display_name ?? null,
+        },
       }),
     )
     .catch(() => {});
+
+  // Fire-and-forget notification to the comment author (respects their opt-out preferences)
+  createReactionNotification({
+    commentId,
+    actorId,
+    emoji,
+    cardId: comment.card_id,
+    boardId: board.id,
+  }).catch(() => {});
 
   return Response.json({ data: { comment_id: commentId, emoji, user_id: actorId } });
 }

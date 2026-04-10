@@ -34,6 +34,8 @@ export interface CardDetailState {
   comments: CommentData[];
   activities: ActivityData[];
   status: 'idle' | 'loading' | 'error';
+  /** Reply IDs already counted in reply_count — prevents double-increment when both POST response and WS event dispatch addReply */
+  seenReplyIds: string[];
   /** Optimistic snapshots by mutationId for rollback */
   snapshots: Record<
     string,
@@ -58,6 +60,7 @@ const initialState: CardDetailState = {
   comments: [],
   activities: [],
   status: 'idle',
+  seenReplyIds: [],
   snapshots: {},
 };
 
@@ -107,6 +110,7 @@ const cardDetailSlice = createSlice({
       state.activities = [];
       state.status = 'idle';
       state.snapshots = {};
+      state.seenReplyIds = [];
     },
 
     // ── Comments ────────────────────────────────────────────────────────────────
@@ -135,35 +139,43 @@ const cardDetailSlice = createSlice({
     // ── Comment reactions ────────────────────────────────────────────────────
     addReaction(
       state,
-      action: PayloadAction<{ commentId: string; emoji: string; userId: string }>,
+      action: PayloadAction<{ commentId: string; emoji: string; userId: string; reactedByMe?: boolean; actorName?: string | null }>,
     ) {
-      const { commentId, emoji } = action.payload;
+      const { commentId, emoji, userId, reactedByMe = true, actorName = null } = action.payload;
       const comment = state.comments.find((c) => c.id === commentId);
       if (!comment) return;
       comment.reactions = comment.reactions ?? [];
       const existing = comment.reactions.find((r) => r.emoji === emoji);
       if (existing) {
-        // Guard: don't double-count if already reacted
-        if (!existing.reactedByMe) {
+        // Guard: don't double-count if this user already has their reaction tracked
+        const alreadyListed = (existing.reactors ?? []).some((r) => r.userId === userId);
+        if (!alreadyListed) {
           existing.count += 1;
-          existing.reactedByMe = true;
+          existing.reactors = [...(existing.reactors ?? []), { userId, name: actorName }];
         }
+        if (reactedByMe) existing.reactedByMe = true;
       } else {
-        comment.reactions.push({ emoji, count: 1, reactedByMe: true } satisfies ReactionSummary);
+        comment.reactions.push({
+          emoji,
+          count: 1,
+          reactedByMe,
+          reactors: [{ userId, name: actorName }],
+        } satisfies ReactionSummary);
       }
     },
 
     removeReaction(
       state,
-      action: PayloadAction<{ commentId: string; emoji: string; userId: string }>,
+      action: PayloadAction<{ commentId: string; emoji: string; userId: string; reactedByMe?: boolean }>,
     ) {
-      const { commentId, emoji } = action.payload;
+      const { commentId, emoji, userId, reactedByMe = true } = action.payload;
       const comment = state.comments.find((c) => c.id === commentId);
       if (!comment || !comment.reactions) return;
       const existing = comment.reactions.find((r) => r.emoji === emoji);
-      if (!existing || !existing.reactedByMe) return;
-      existing.count -= 1;
-      existing.reactedByMe = false;
+      if (!existing) return;
+      existing.count = Math.max(0, existing.count - 1);
+      existing.reactors = (existing.reactors ?? []).filter((r) => r.userId !== userId);
+      if (reactedByMe) existing.reactedByMe = false;
       // Remove pill entirely when count drops to zero
       if (existing.count <= 0) {
         comment.reactions = comment.reactions.filter((r) => r.emoji !== emoji);
@@ -176,13 +188,16 @@ const cardDetailSlice = createSlice({
       action: PayloadAction<{ parentId: string; reply: CommentData }>,
     ) {
       const { parentId, reply } = action.payload;
+      // [why] Both the POST response (handleAddReply) and the WS event (comment_reply_added)
+      // dispatch addReply for the submitting user. Guard against double-counting using seenReplyIds.
+      if (state.seenReplyIds.includes(reply.id)) return;
+      state.seenReplyIds.push(reply.id);
       // Increment parent's reply_count so the toggle shows the correct count
       const parent = state.comments.find((c) => c.id === parentId);
       if (parent) {
         parent.reply_count = (parent.reply_count ?? 0) + 1;
       }
-      // Guard against duplicates (own post vs. WS event arriving back)
-      void reply; // replies live in CommentReplyThread local state; slice only tracks count
+      // Replies live in CommentReplyThread local state; slice only tracks count.
     },
 
     // ── Activity ─────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 // CommentReplyThread — load-on-demand threaded replies for a single parent comment.
 // Replies are fetched when the user expands the thread; reply editor opens inline.
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient } from '~/common/api/client';
 import { getReplies } from '../api';
 import type { Comment } from './CommentItem';
@@ -45,19 +45,33 @@ const CommentReplyThread = ({
   const [loading, setLoading] = useState(false);
   // [why] Track local reply_count so we can increment optimistically on new reply.
   const [localReplyCount, setLocalReplyCount] = useState(parentComment.reply_count ?? 0);
+  // [why] Guard against the Maximum Update Depth error: without this ref, having
+  // `loading` or `replies.length` in the effect deps causes a loop when the fetch
+  // returns empty results — the effect fires again as soon as loading flips back to false.
+  const hasFetchedRef = useRef(false);
 
   // Sync localReplyCount when parent prop changes (e.g. from Redux state update)
   useEffect(() => {
     setLocalReplyCount(parentComment.reply_count ?? 0);
   }, [parentComment.reply_count]);
 
+  // Reset fetch guard when the parent comment changes identity
+  useEffect(() => {
+    hasFetchedRef.current = false;
+    setReplies([]);
+  }, [parentComment.id]);
+
   const loadReplies = useCallback(async () => {
+    // Mark fetch as attempted immediately to prevent the effect from firing again
+    // while this async operation is in flight or after it completes with 0 rows.
+    hasFetchedRef.current = true;
     setLoading(true);
     try {
       const data = await getReplies({ api: apiClient as Parameters<typeof getReplies>[0]['api'], commentId: parentComment.id });
       setReplies(data as Comment[]);
     } catch {
-      // non-critical; user can try expanding again
+      // Allow retry on explicit user action (e.g. expand toggle) by resetting the guard
+      hasFetchedRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -65,23 +79,27 @@ const CommentReplyThread = ({
 
   // Fetch replies when expanding for the first time
   useEffect(() => {
-    if (expanded && replies.length === 0 && !loading) {
+    if (expanded && !hasFetchedRef.current) {
       void loadReplies();
     }
-  }, [expanded, replies.length, loading, loadReplies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded, loadReplies]);
 
   // Also fetch when the reply editor is shown and there are existing replies to display
   useEffect(() => {
-    if (showReplyEditor && localReplyCount > 0 && replies.length === 0 && !loading) {
+    if (showReplyEditor && localReplyCount > 0 && !hasFetchedRef.current) {
       void loadReplies();
     }
-  }, [showReplyEditor, localReplyCount, replies.length, loading, loadReplies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showReplyEditor, localReplyCount, loadReplies]);
 
   const handleSubmitReply = async (content: string) => {
     await onAddReply(parentComment.id, content);
     onHideReplyEditor();
-    // Optimistically increment count and refresh thread
+    // [why] Own submit updates local thread count immediately; realtime echo is ignored.
     setLocalReplyCount((prev) => prev + 1);
+    // Reset fetch guard so loadReplies always runs after a new reply is submitted
+    hasFetchedRef.current = false;
     void loadReplies();
   };
 
@@ -106,7 +124,7 @@ const CommentReplyThread = ({
 
       {/* Thread container */}
       {(showThread || showReplyEditor) && (
-        <div className="border-l-2 border-border ml-9 pl-3 mt-2 flex flex-col gap-3">
+        <div className="border-l-2 border-border ml-9 pl-3 mt-2 flex min-w-0 flex-col gap-3">
           {loading && <p className="text-xs text-muted animate-pulse">Loading replies…</p>}
 
           {!loading && replies.map((reply) => (
@@ -127,14 +145,16 @@ const CommentReplyThread = ({
 
           {/* Inline reply composer */}
           {showReplyEditor && (
-            <CommentEditor
-              {...(boardId !== undefined ? { boardId } : {})}
-              cardId={cardId}
-              placeholder={translations['comment.reply.placeholder']}
-              onSubmit={handleSubmitReply}
-              onCancel={onHideReplyEditor}
-              submitLabel={translations['comment.reply.submit']}
-            />
+            <div className="w-full min-w-0">
+              <CommentEditor
+                {...(boardId !== undefined ? { boardId } : {})}
+                cardId={cardId}
+                placeholder={translations['comment.reply.placeholder']}
+                onSubmit={handleSubmitReply}
+                onCancel={onHideReplyEditor}
+                submitLabel={translations['comment.reply.submit']}
+              />
+            </div>
           )}
         </div>
       )}

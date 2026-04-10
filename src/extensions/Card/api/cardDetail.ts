@@ -247,6 +247,7 @@ export interface ReactionSummary {
   emoji: string;
   count: number;
   reactedByMe: boolean;
+  reactors?: Array<{ userId: string; name: string | null }>;
 }
 
 export interface CommentData {

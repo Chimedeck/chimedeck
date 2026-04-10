@@ -7,10 +7,18 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+interface ReactionRow {
+  comment_id: string;
+  emoji: string;
+  user_id: string;
+  reactor_name: string | null;
+}
+
 interface ReactionSummary {
   emoji: string;
   count: number;
   reactedByMe: boolean;
+  reactors: Array<{ userId: string; name: string | null }>;
 }
 
 export async function handleListComments(req: Request, cardId: string): Promise<Response> {
@@ -71,17 +79,24 @@ export async function handleListComments(req: Request, cardId: string): Promise<
   // Single extra query — no N+1; group reactions in-process.
   const reactionRows = commentIds.length
     ? await db('comment_reactions')
+        .leftJoin('users as reactor', 'comment_reactions.user_id', 'reactor.id')
         .whereIn('comment_id', commentIds)
-        .select('comment_id', 'emoji', 'user_id')
+        .select(
+          'comment_reactions.comment_id',
+          'comment_reactions.emoji',
+          'comment_reactions.user_id',
+          db.raw("COALESCE(reactor.name, reactor.email) as reactor_name"),
+        )
     : [];
 
-  // Build Map<commentId, Map<emoji, { count, meReacted }>>
-  const reactionMap = new Map<string, Map<string, { count: number; meReacted: boolean }>>();
-  for (const row of reactionRows as { comment_id: string; emoji: string; user_id: string }[]) {
+  // Build Map<commentId, Map<emoji, { count, meReacted, reactors }>>
+  const reactionMap = new Map<string, Map<string, { count: number; meReacted: boolean; reactors: Array<{ userId: string; name: string | null }> }>>();
+  for (const row of reactionRows as ReactionRow[]) {
     if (!reactionMap.has(row.comment_id)) reactionMap.set(row.comment_id, new Map());
     const emojiMap = reactionMap.get(row.comment_id)!;
-    const existing = emojiMap.get(row.emoji) ?? { count: 0, meReacted: false };
+    const existing = emojiMap.get(row.emoji) ?? { count: 0, meReacted: false, reactors: [] };
     existing.count += 1;
+    existing.reactors.push({ userId: row.user_id, name: row.reactor_name ?? null });
     if (row.user_id === callerUserId) existing.meReacted = true;
     emojiMap.set(row.emoji, existing);
   }
@@ -91,7 +106,7 @@ export async function handleListComments(req: Request, cardId: string): Promise<
     const emojiMap = reactionMap.get(commentId);
     const reactions: ReactionSummary[] = emojiMap
       ? Array.from(emojiMap.entries())
-          .map(([emoji, { count, meReacted }]) => ({ emoji, count, reactedByMe: meReacted }))
+          .map(([emoji, { count, meReacted, reactors }]) => ({ emoji, count, reactedByMe: meReacted, reactors }))
           .sort((a, b) => b.count - a.count)
       : [];
 

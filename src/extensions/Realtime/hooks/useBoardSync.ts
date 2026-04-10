@@ -178,19 +178,27 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
 
         // ── Comment reaction events ───────────────────────────────────────
         case 'comment_reaction_added': {
-          const { commentId, emoji, userId } = payload as { commentId: string; emoji: string; userId: string };
-          dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId }));
+          // [why] Server emits snake_case keys (comment_id, user_id) — destructure accordingly.
+          const { comment_id: commentId, emoji, user_id: userId, actor_name: actorName } =
+            payload as { comment_id: string; emoji: string; user_id: string; actor_name?: string | null };
+          const reactedByMe = userId === currentUserIdRef.current;
+          dispatch(cardDetailSliceActions.addReaction({ commentId, emoji, userId, reactedByMe, actorName: actorName ?? null }));
           break;
         }
         case 'comment_reaction_removed': {
-          const { commentId, emoji, userId } = payload as { commentId: string; emoji: string; userId: string };
-          dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId }));
+          const { comment_id: commentId, emoji, user_id: userId } =
+            payload as { comment_id: string; emoji: string; user_id: string };
+          const reactedByMe = userId === currentUserIdRef.current;
+          dispatch(cardDetailSliceActions.removeReaction({ commentId, emoji, userId, reactedByMe }));
           break;
         }
 
         // ── Comment reply events ──────────────────────────────────────────
         case 'comment_reply_added': {
           const { parent_comment_id, reply } = payload as { parent_comment_id: string; reply: CommentData };
+          // [why] The author path already updates reply_count after POST success.
+          // Ignore our own WS echo to avoid counting the same reply twice.
+          if (reply?.user_id && reply.user_id === currentUserIdRef.current) break;
           dispatch(cardDetailSliceActions.addReply({ parentId: parent_comment_id, reply }));
           break;
         }

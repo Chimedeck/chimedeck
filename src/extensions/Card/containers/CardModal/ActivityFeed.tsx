@@ -141,9 +141,10 @@ const ActivityFeed = ({
 
   const memberMap = new Map(boardMembers.map((m) => [m.id, m]));
 
-  // Convert comments to feed items
+  // Convert comments to feed items — exclude replies (parent_id set) from the top-level feed.
+  // Replies are rendered inside CommentReplyThread, not in the main timeline.
   const commentItems: FeedItem[] = comments
-    .filter(Boolean)
+    .filter((c) => Boolean(c) && !c.parent_id)
     .map((c) => ({ kind: 'comment', ts: c.created_at, comment: c as Comment }));
 
   // Convert system activity events to feed items (exclude comment-type events)
