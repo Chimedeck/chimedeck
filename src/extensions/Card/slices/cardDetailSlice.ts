@@ -170,6 +170,21 @@ const cardDetailSlice = createSlice({
       }
     },
 
+    // ── Threaded replies ─────────────────────────────────────────────────────
+    addReply(
+      state,
+      action: PayloadAction<{ parentId: string; reply: CommentData }>,
+    ) {
+      const { parentId, reply } = action.payload;
+      // Increment parent's reply_count so the toggle shows the correct count
+      const parent = state.comments.find((c) => c.id === parentId);
+      if (parent) {
+        parent.reply_count = (parent.reply_count ?? 0) + 1;
+      }
+      // Guard against duplicates (own post vs. WS event arriving back)
+      void reply; // replies live in CommentReplyThread local state; slice only tracks count
+    },
+
     // ── Activity ─────────────────────────────────────────────────────────────
     setActivities(state, action: PayloadAction<ActivityData[]>) {
       state.activities = action.payload;

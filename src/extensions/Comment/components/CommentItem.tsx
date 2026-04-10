@@ -10,6 +10,7 @@ import {
 import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
 import CommentReactions from './CommentReactions';
+import CommentReplyThread from './CommentReplyThread';
 import translations from '../translations/en.json';
 
 // Configure marked: soft line breaks become <br>, no mangling
@@ -62,6 +63,8 @@ export interface Comment {
   author_email?: string | null;
   author_avatar_url?: string | null;
   reactions?: ReactionSummary[];
+  parent_id?: string | null;
+  reply_count?: number;
 }
 
 interface Props {
@@ -74,6 +77,11 @@ interface Props {
   onDelete: (commentId: string) => Promise<void>;
   onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
   onRemoveReaction?: (commentId: string, emoji: string) => Promise<void>;
+  onReply?: (commentId: string) => void;
+  onAddReply?: (parentId: string, content: string) => Promise<void>;
+  onEditReply?: (commentId: string, content: string) => Promise<void>;
+  onDeleteReply?: (commentId: string) => Promise<void>;
+  cardId?: string;
 }
 
 /** Generate initials from a display name or email. */
@@ -130,9 +138,11 @@ function renderContent(text: string, attachments: Attachment[]): string {
   );
 }
 
-const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete, onAddReaction, onRemoveReaction }: Props) => {
+const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [replyExpanded, setReplyExpanded] = useState(false);
+  const [showReplyEditor, setShowReplyEditor] = useState(false);
 
   if (comment.deleted) {
     return <CommentDeletedItem commentId={comment.id} createdAt={comment.created_at} />;
@@ -239,7 +249,39 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
               </button>
             )}
+            {/* Reply button — only on top-level comments (no parent_id) */}
+            {onAddReply && !comment.parent_id && (
+              <>
+                {(canEdit || canDelete) && <span>·</span>}
+                <button
+                  onClick={() => setShowReplyEditor((prev) => !prev)}
+                  className="hover:text-subtle hover:underline"
+                >
+                  {translations['comment.action.reply']}
+                </button>
+              </>
+            )}
           </div>
+        )}
+
+        {/* Reply thread — only on top-level comments */}
+        {!comment.parent_id && ((comment.reply_count ?? 0) > 0 || showReplyEditor) && onAddReply && cardId && (
+          <CommentReplyThread
+            parentComment={comment}
+            cardId={cardId}
+            {...(boardId !== undefined ? { boardId } : {})}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+            expanded={replyExpanded}
+            showReplyEditor={showReplyEditor}
+            onExpandToggle={setReplyExpanded}
+            onHideReplyEditor={() => setShowReplyEditor(false)}
+            onAddReply={onAddReply}
+            onEditReply={onEditReply ?? (() => Promise.resolve())}
+            onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
+            {...(onAddReaction ? { onAddReaction } : {})}
+            {...(onRemoveReaction ? { onRemoveReaction } : {})}
+          />
         )}
       </div>
     </div>

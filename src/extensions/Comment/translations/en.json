@@ -44,5 +44,11 @@
   "comment.assetPicker.empty": "No attachments yet",
   "comment.assetPicker.insert": "Insert",
   "comment.reactions.add": "Add reaction",
-  "comment.reactions.aria.pill": "{{emoji}} {{count}} reaction, {{state}}"
+  "comment.reactions.aria.pill": "{{emoji}} {{count}} reaction, {{state}}",
+  "comment.action.reply": "Reply",
+  "comment.replies.viewOne": "View 1 reply",
+  "comment.replies.viewMany": "View {{count}} replies",
+  "comment.replies.hide": "Hide replies",
+  "comment.reply.placeholder": "Write a reply…",
+  "comment.reply.submit": "Reply"
 }

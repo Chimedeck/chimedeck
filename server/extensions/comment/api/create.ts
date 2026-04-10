@@ -58,7 +58,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
-  let body: { content?: string; idempotency_key?: string };
+  let body: { content?: string; idempotency_key?: string; parent_id?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -73,6 +73,37 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       { error: { code: 'bad-request', message: 'content is required' } },
       { status: 400 }
     );
+  }
+
+  // [why] Enforce max one level of threading — replies to replies are not allowed.
+  let parentId: string | null = null;
+  if (body.parent_id !== undefined) {
+    if (typeof body.parent_id !== 'string' || body.parent_id.trim() === '') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'parent_id must be a non-empty string' } },
+        { status: 400 }
+      );
+    }
+    const parentComment = await db('comments').where({ id: body.parent_id.trim() }).first();
+    if (!parentComment) {
+      return Response.json(
+        { error: { code: 'comment-not-found', message: 'Parent comment not found' } },
+        { status: 404 }
+      );
+    }
+    if (parentComment.card_id !== cardId) {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'Parent comment does not belong to this card' } },
+        { status: 400 }
+      );
+    }
+    if (parentComment.parent_id !== null && parentComment.parent_id !== undefined) {
+      return Response.json(
+        { error: { name: 'reply-depth-exceeded', message: 'Replies to replies are not allowed' } },
+        { status: 422 }
+      );
+    }
+    parentId = body.parent_id.trim();
   }
 
   // [why] If the client provided an idempotency_key (e.g. during offline replay), check
@@ -128,6 +159,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       user_id: actorId,
       content: trimmedContent,
       idempotency_key: idempotencyKey,
+      parent_id: parentId,
       version: 1,
       deleted: false,
       created_at: new Date().toISOString(),
@@ -166,6 +198,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       'comments.content',
       'comments.version',
       'comments.deleted',
+      'comments.parent_id',
       'comments.created_at',
       'comments.updated_at',
       db.raw('COALESCE(users.name, users.email) as author_name'),
@@ -179,6 +212,10 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     avatarUrl: ((comment as Record<string, unknown>).author_avatar_url as string | null) ?? null,
   });
   const commentData = { ...comment, author_avatar_url: authorAvatarUrl };
+
+  // commentPreview strips HTML tags and truncates to 120 chars.
+  const rawPreview = trimmedContent.replace(/<[^>]+>/g, '');
+  const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
 
   await Promise.all([
     dispatchEvent({
@@ -198,15 +235,24 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     }),
   ]);
 
-  // Broadcast WS event to board subscribers
-  publisher
-    .publish(board.id, JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }))
-    .catch(() => {});
+  // [why] Emit different WS events for top-level comments vs replies so clients can handle each case.
+  if (parentId) {
+    publisher
+      .publish(
+        board.id,
+        JSON.stringify({
+          type: 'comment_reply_added',
+          payload: { card_id: cardId, parent_comment_id: parentId, reply: commentData },
+        }),
+      )
+      .catch(() => {});
+  } else {
+    publisher
+      .publish(board.id, JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }))
+      .catch(() => {});
+  }
 
   // Fire-and-forget card_commented notification for all board members (except commenter).
-  // commentPreview strips HTML tags and truncates to 120 chars.
-  const rawPreview = trimmedContent.replace(/<[^>]+>/g, '');
-  const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
   dispatchDirectCardNotification({
     payload: { type: 'card_commented', cardTitle: card.title, commentPreview, commentId: id },
     boardId: board.id,

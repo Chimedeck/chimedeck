@@ -75,6 +75,7 @@ interface Props {
   onDeleteComment: (commentId: string) => Promise<void>;
   onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
   onRemoveReaction?: (commentId: string, emoji: string) => Promise<void>;
+  onAddReply?: (parentId: string, content: string) => Promise<void>;
   onMoneySave: (amount: string | null, currency: string) => Promise<void>;
   onCoverColorChange: (color: string | null) => void;
   onCoverSizeChange: (size: 'SMALL' | 'FULL') => void;
@@ -145,6 +146,7 @@ const CardModal = ({
   onDeleteComment,
   onAddReaction,
   onRemoveReaction,
+  onAddReply,
   onMoneySave,
   onCoverColorChange,
   onCoverSizeChange,
@@ -478,6 +480,7 @@ const CardModal = ({
                       onDeleteComment={onDeleteComment}
                       {...(onAddReaction ? { onAddReaction } : {})}
                       {...(onRemoveReaction ? { onRemoveReaction } : {})}
+                      {...(onAddReply ? { onAddReply } : {})}
                       canAddComment={!isViewerGuest}
                       insertMarkdownRef={insertMarkdownRef}
                     />

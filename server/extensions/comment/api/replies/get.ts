@@ -1,31 +1,26 @@
-// GET /api/v1/cards/:id/comments — list comments for a card; min role: MEMBER.
-import { db } from '../../../common/db';
-import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
-import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+// GET /api/v1/comments/:commentId/replies — fetch all direct replies to a comment.
+import { db } from '../../../../common/db';
+import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
+import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
-} from '../../../middlewares/permissionManager';
+} from '../../../../middlewares/permissionManager';
 
-interface ReactionSummary {
-  emoji: string;
-  count: number;
-  reactedByMe: boolean;
-}
-
-export async function handleListComments(req: Request, cardId: string): Promise<Response> {
+export async function handleGetReplies(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
-  if (!card) {
+  const comment = await db('comments').where({ id: commentId }).first();
+  if (!comment) {
     return Response.json(
-      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { error: { code: 'comment-not-found', message: 'Comment not found' } },
       { status: 404 },
     );
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const card = await db('cards').where({ id: comment.card_id }).first();
+  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json(
@@ -34,17 +29,16 @@ export async function handleListComments(req: Request, cardId: string): Promise<
     );
   }
 
-  // Verify workspace membership
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
     board.workspace_id,
   );
   if (membershipError) return membershipError;
 
-  const comments = await db('comments')
+  const replies = await db('comments')
     .leftJoin('users', 'comments.user_id', 'users.id')
-    .where('comments.card_id', cardId)
-    .whereNull('comments.parent_id')
+    .where('comments.parent_id', commentId)
+    .where('comments.deleted', false)
     .orderBy('comments.created_at', 'asc')
     .select(
       'comments.id',
@@ -59,23 +53,17 @@ export async function handleListComments(req: Request, cardId: string): Promise<
       db.raw("COALESCE(users.name, users.email) as author_name"),
       'users.email as author_email',
       'users.avatar_url as author_avatar_url',
-      // [why] reply_count computed as a subquery to avoid N+1
-      db.raw(
-        '(SELECT COUNT(*) FROM comments AS replies WHERE replies.parent_id = comments.id AND replies.deleted = false)::int AS reply_count',
-      ),
     );
 
   const callerUserId = (req as AuthenticatedRequest).currentUser!.id;
-  const commentIds = comments.map((c) => (c as Record<string, unknown>).id as string);
+  const replyIds = replies.map((r) => (r as Record<string, unknown>).id as string);
 
-  // Single extra query — no N+1; group reactions in-process.
-  const reactionRows = commentIds.length
+  const reactionRows = replyIds.length
     ? await db('comment_reactions')
-        .whereIn('comment_id', commentIds)
+        .whereIn('comment_id', replyIds)
         .select('comment_id', 'emoji', 'user_id')
     : [];
 
-  // Build Map<commentId, Map<emoji, { count, meReacted }>>
   const reactionMap = new Map<string, Map<string, { count: number; meReacted: boolean }>>();
   for (const row of reactionRows as { comment_id: string; emoji: string; user_id: string }[]) {
     if (!reactionMap.has(row.comment_id)) reactionMap.set(row.comment_id, new Map());
@@ -86,20 +74,20 @@ export async function handleListComments(req: Request, cardId: string): Promise<
     emojiMap.set(row.emoji, existing);
   }
 
-  const data = comments.map((c) => {
-    const commentId = (c as Record<string, unknown>).id as string;
-    const emojiMap = reactionMap.get(commentId);
-    const reactions: ReactionSummary[] = emojiMap
+  const data = replies.map((r) => {
+    const replyId = (r as Record<string, unknown>).id as string;
+    const emojiMap = reactionMap.get(replyId);
+    const reactions = emojiMap
       ? Array.from(emojiMap.entries())
           .map(([emoji, { count, meReacted }]) => ({ emoji, count, reactedByMe: meReacted }))
           .sort((a, b) => b.count - a.count)
       : [];
 
     return {
-      ...c,
+      ...r,
       author_avatar_url: buildAvatarProxyUrl({
-        userId: (c as Record<string, unknown>).user_id as string,
-        avatarUrl: (c as Record<string, unknown>).author_avatar_url as string | null ?? null,
+        userId: (r as Record<string, unknown>).user_id as string,
+        avatarUrl: (r as Record<string, unknown>).author_avatar_url as string | null ?? null,
       }),
       reactions,
     };

@@ -150,6 +150,14 @@
 | [117](./sprint-117.md) | Secure Attachment Proxy + Alias & Comment/Edit Actions | Authenticated proxy endpoints replace raw S3 presigned URLs; `alias` DB column + `PATCH` endpoint for rename; Edit (inline rename) and Comment (insert markdown link) action buttons on attachment rows | ⬜ Needs 12 + 59 + 60 |
 | [121](./sprint-121.md) | Email Template Centralisation & Handlebars Migration | Extract all email HTML into `templates/html/*.html` files; `renderTemplate` Handlebars helper with `Bun.file` + compile cache; replace `${var}` interpolation with `{{var}}`; update call sites to `await` async builders | ⬜ Needs 23 |
 | [123](./sprint-123.md) | Sentry Monitoring: Client + Server | Add Sentry SDK wiring for React client and Bun server, unified release/environment tagging, source map upload, and error-boundary capture with trace propagation | ⬜ Needs 15 + 03 + 58 |
+| **— Comments Enhancements —** | | | |
+| [129](./sprint-129.md) | Comment Emoji Reactions: DB + API | `comment_reactions` table; `POST/DELETE /api/v1/comments/:id/reactions`; reactions joined onto comment list response; WS events | ⬜ Needs 11 |
+| [130](./sprint-130.md) | Comment Emoji Reactions: UI | `CommentReactions` pill row; `EmojiPickerPopover` (`@emoji-mart/react`); optimistic toggle; real-time WS sync | ⬜ Needs 129 + 21 |
+| [131](./sprint-131.md) | Comment Threaded Replies: DB + API | `parent_id` on `comments`; one-level-deep guard; `GET /api/v1/comments/:id/replies`; `reply_count` in list; WS event | ⬜ Needs 11 |
+| [132](./sprint-132.md) | Comment Threaded Replies: UI | Reply button on top-level comments; inline `CommentEditor` composer; load-on-demand `CommentReplyThread`; real-time sync | ⬜ Needs 131 + 130 |
+| **— Design System —** | | | |
+| [133](./sprint-133.md) | Design System: Replace Raw Buttons | `link` variant + `IconButton` component; audit + replace all ad-hoc `<button>` elements across Attachment, Workspace, List, Sidebar, Timeline, Table, Auth, Plugins, Comment, Card | ⬜ Needs 15 |
+| [134](./sprint-134.md) | Design Stylesheet Page | `/design-system` route (dev-only, `DESIGN_SYSTEM_ENABLED` flag); colour tokens, typography, all Button variants, comments demo, reactions demo, stubbed components — no API calls | ⬜ Needs 133 |
 
 ---
 
@@ -178,6 +186,7 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `HEALTH_CHECK_ENABLED` | Sprint 115 | Disable all health-check routes and hide the Health Check board tab (default: `false`) |
 | `SENTRY_CLIENT_ENABLED` | Sprint 123 | Skip browser-side Sentry SDK initialisation (no client error/performance events sent) |
 | `SENTRY_SERVER_ENABLED` | Sprint 123 | Skip Bun server Sentry SDK initialisation and server-side capture wrappers |
+| `DESIGN_SYSTEM_ENABLED` | Sprint 134 | Expose `/design-system` route in the client (default: `true` in dev, `false` in production) |
 
 ---
 

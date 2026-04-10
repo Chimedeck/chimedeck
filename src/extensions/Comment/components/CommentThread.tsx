@@ -13,6 +13,10 @@ interface Props {
   onDeleteComment: (commentId: string) => Promise<void>;
   onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
   onRemoveReaction?: (commentId: string, emoji: string) => Promise<void>;
+  onAddReply?: (parentId: string, content: string) => Promise<void>;
+  onEditReply?: (commentId: string, content: string) => Promise<void>;
+  onDeleteReply?: (commentId: string) => Promise<void>;
+  cardId?: string;
 }
 
 const CommentThread = ({
@@ -25,6 +29,10 @@ const CommentThread = ({
   onDeleteComment,
   onAddReaction,
   onRemoveReaction,
+  onAddReply,
+  onEditReply,
+  onDeleteReply,
+  cardId,
 }: Props) => {
   return (
     <div className="flex flex-col gap-3">
@@ -39,12 +47,16 @@ const CommentThread = ({
             key={comment.id}
             comment={comment}
             {...(boardId !== undefined ? { boardId } : {})}
+            {...(cardId !== undefined ? { cardId } : {})}
             currentUserId={currentUserId}
             isAdmin={isAdmin}
             onEdit={onEditComment}
             onDelete={onDeleteComment}
             {...(onAddReaction ? { onAddReaction } : {})}
             {...(onRemoveReaction ? { onRemoveReaction } : {})}
+            {...(onAddReply ? { onAddReply } : {})}
+            {...(onEditReply ? { onEditReply } : {})}
+            {...(onDeleteReply ? { onDeleteReply } : {})}
           />
         ))}
       </div>

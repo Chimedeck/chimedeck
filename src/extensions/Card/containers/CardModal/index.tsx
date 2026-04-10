@@ -42,7 +42,7 @@ import {
   patchComment,
   deleteComment,
 } from '../../api/cardDetail';
-import { addReaction, removeReaction } from '~/extensions/Comment/api';
+import { addReaction, removeReaction, postReply } from '~/extensions/Comment/api';
 import type { Label, Checklist, ChecklistItem, CardMember } from '../../api';
 import { boardSliceActions, selectBoard, selectCards } from '../../../Board/slices/boardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
@@ -680,6 +680,15 @@ const CardModalContainer = () => {
     [api, boardCards, card, dispatch],
   );
 
+  const handleAddReply = useCallback(
+    async (parentId: string, content: string) => {
+      if (!card) return;
+      const reply = await postReply({ api, cardId: card.id, parentId, content });
+      dispatch(cardDetailSliceActions.addReply({ parentId, reply }));
+    },
+    [api, card, dispatch],
+  );
+
   const handleAddReaction = useCallback(
     async (commentId: string, emoji: string) => {
       if (!currentUser) return;
@@ -795,6 +804,7 @@ const CardModalContainer = () => {
       onDeleteComment={handleDeleteComment}
       onAddReaction={handleAddReaction}
       onRemoveReaction={handleRemoveReaction}
+      onAddReply={handleAddReply}
       onMoneySave={handleMoneySave}
       onCoverColorChange={handleCoverColorChange}
       onCoverSizeChange={handleCoverSizeChange}

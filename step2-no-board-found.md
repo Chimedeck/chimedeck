@@ -1,0 +1,80 @@
+- generic [ref=e3]:
+  - navigation "Main navigation" [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img [ref=e8]
+        - generic [ref=e10]: ChimeDeck
+      - button "Collapse sidebar" [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+    - button "Switch workspace" [ref=e16] [cursor=pointer]:
+      - generic [ref=e17]: Journeyhorizon
+      - img [ref=e18]
+    - generic [ref=e20]:
+      - listitem [ref=e22]:
+        - button "Search ⌘K" [ref=e24] [cursor=pointer]:
+          - img [ref=e26]
+          - generic [ref=e28]: Search
+          - generic [ref=e29]: ⌘K
+      - list [ref=e30]:
+        - listitem [ref=e31]:
+          - link "Boards" [ref=e33] [cursor=pointer]:
+            - /url: /workspaces/journeyhorizon/boards
+            - img [ref=e35]
+            - generic [ref=e37]: Boards
+        - listitem [ref=e38]:
+          - link "Members" [ref=e40] [cursor=pointer]:
+            - /url: /workspace/journeyhorizon
+            - img [ref=e42]
+            - generic [ref=e44]: Members
+        - listitem [ref=e45]:
+          - link "All Workspaces" [ref=e47] [cursor=pointer]:
+            - /url: /workspaces
+            - img [ref=e49]
+            - generic [ref=e51]: All Workspaces
+        - listitem [ref=e52]:
+          - link "Plugin Docs" [ref=e54] [cursor=pointer]:
+            - /url: /developer/plugins
+            - img [ref=e56]
+            - generic [ref=e58]: Plugin Docs
+        - listitem [ref=e59]:
+          - link "MCP Docs" [ref=e61] [cursor=pointer]:
+            - /url: /developer/mcp
+            - img [ref=e63]
+            - generic [ref=e65]: MCP Docs
+        - listitem [ref=e66]:
+          - button "Invite External User" [ref=e68] [cursor=pointer]:
+            - img [ref=e70]
+            - generic [ref=e72]: Invite External User
+        - listitem [ref=e73]:
+          - paragraph [ref=e74]: Administration
+        - listitem [ref=e75]:
+          - link "Plugins" [ref=e77] [cursor=pointer]:
+            - /url: /plugins
+            - img [ref=e79]
+            - generic [ref=e81]: Plugins
+    - button "@vuthanhtam1506" [ref=e84] [cursor=pointer]:
+      - img [ref=e85]
+      - generic [ref=e86]: "@vuthanhtam1506"
+      - img [ref=e87]
+  - generic [ref=e89]:
+    - generic [ref=e90]:
+      - button "Switch to dark mode" [ref=e91] [cursor=pointer]:
+        - img [ref=e92]
+      - button "Open notifications" [ref=e95] [cursor=pointer]:
+        - img [ref=e96]
+    - main [ref=e98]:
+      - generic [ref=e99]:
+        - generic [ref=e100]:
+          - heading "Workspaces" [level=1] [ref=e101]
+          - button "+ New Workspace" [ref=e102] [cursor=pointer]
+        - generic [ref=e103]:
+          - generic [ref=e104] [cursor=pointer]:
+            - img [ref=e105]
+            - heading "Journeyhorizon" [level=2] [ref=e107]
+            - paragraph [ref=e108]: Created 25/03/2026
+            - button "Open" [ref=e109]
+          - generic [ref=e110] [cursor=pointer]:
+            - img [ref=e111]
+            - heading "Test" [level=2] [ref=e113]
+            - paragraph [ref=e114]: Created 09/04/2026
+            - button "Open" [ref=e115]

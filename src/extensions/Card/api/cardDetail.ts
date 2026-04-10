@@ -262,6 +262,8 @@ export interface CommentData {
   author_email?: string | null;
   author_avatar_url?: string | null;
   reactions?: ReactionSummary[];
+  parent_id?: string | null;
+  reply_count?: number;
 }
 
 export async function getCardComments({

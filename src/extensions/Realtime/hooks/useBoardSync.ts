@@ -188,6 +188,13 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           break;
         }
 
+        // ── Comment reply events ──────────────────────────────────────────
+        case 'comment_reply_added': {
+          const { parent_comment_id, reply } = payload as { parent_comment_id: string; reply: CommentData };
+          dispatch(cardDetailSliceActions.addReply({ parentId: parent_comment_id, reply }));
+          break;
+        }
+
         // ── Card activity events ──────────────────────────────────────────
         case 'card_activity_created': {
           // [why] Reducer filters by openCardId so cross-card events are silently ignored.
