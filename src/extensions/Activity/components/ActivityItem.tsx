@@ -82,22 +82,34 @@ const ActivityItem = ({ activity, actorName, boardId }: Props) => {
       cardId = payloadCardId;
     }
   }
-  const showCardLink = Boolean(boardId && cardTitle && cardId);
+  const showCardLink = Boolean(boardId && cardId);
 
   const renderDescription = () => {
     if (!showCardLink || !boardId || !cardId) {
       return <span className="text-base">{description}</span>;
     }
 
-    const quotedCardTitle = `"${cardTitle}"`;
-    const titleIndex = description.indexOf(quotedCardTitle);
+    // Prefer linking the card title when it appears in quotes. Some checklist
+    // events don't include cardTitle, so we fall back to the first quoted item.
+    const quotedCardTitle = cardTitle ? `"${cardTitle}"` : '';
+    const titleIndex = quotedCardTitle ? description.indexOf(quotedCardTitle) : -1;
 
-    if (titleIndex === -1) {
-      return <span className="text-base">{description}</span>;
+    let quotedStart = titleIndex;
+    let quotedEnd = titleIndex >= 0 ? titleIndex + quotedCardTitle.length : -1;
+    let quotedValue = quotedCardTitle;
+
+    if (quotedStart === -1) {
+      const firstQuoted = /"[^"]+"/.exec(description);
+      if (firstQuoted?.index == null) {
+        return <span className="text-base">{description}</span>;
+      }
+      quotedStart = firstQuoted.index;
+      quotedValue = firstQuoted[0];
+      quotedEnd = quotedStart + quotedValue.length;
     }
 
-    const before = description.slice(0, titleIndex);
-    const after = description.slice(titleIndex + quotedCardTitle.length);
+    const before = description.slice(0, quotedStart);
+    const after = description.slice(quotedEnd);
 
     return (
       <span className="text-base">
@@ -106,7 +118,7 @@ const ActivityItem = ({ activity, actorName, boardId }: Props) => {
           to={`/boards/${boardId}?card=${cardId}`}
           className="font-medium underline underline-offset-2 transition-opacity hover:opacity-75"
         >
-          &ldquo;{cardTitle}&rdquo;
+          {quotedValue}
         </Link>
         {after}
       </span>
