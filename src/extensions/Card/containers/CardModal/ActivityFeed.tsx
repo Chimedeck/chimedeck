@@ -31,6 +31,8 @@ interface Props {
   onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
   onRemoveReaction?: (commentId: string, emoji: string) => Promise<void>;
   onAddReply?: (parentId: string, content: string) => Promise<void>;
+  onEditReply?: (commentId: string, content: string) => Promise<void>;
+  onDeleteReply?: (commentId: string) => Promise<void>;
   /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
   canAddComment?: boolean;
   /**
@@ -90,6 +92,8 @@ const ActivityFeed = ({
   onAddReaction,
   onRemoveReaction,
   onAddReply,
+  onEditReply,
+  onDeleteReply,
   canAddComment = true,
   insertMarkdownRef,
 }: Props) => {
@@ -194,6 +198,8 @@ const ActivityFeed = ({
                 {...(onAddReaction ? { onAddReaction } : {})}
                 {...(onRemoveReaction ? { onRemoveReaction } : {})}
                 {...(onAddReply ? { onAddReply } : {})}
+                {...(onEditReply ? { onEditReply } : {})}
+                {...(onDeleteReply ? { onDeleteReply } : {})}
               />
             );
           }

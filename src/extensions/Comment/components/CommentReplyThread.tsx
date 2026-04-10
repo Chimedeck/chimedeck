@@ -103,6 +103,16 @@ const CommentReplyThread = ({
     void loadReplies();
   };
 
+  const handleEditReply = async (commentId: string, content: string) => {
+    await onEditReply(commentId, content);
+    // [why] Replies are locally cached in this component, so mirror edits immediately.
+    setReplies((prev) => prev.map((reply) => (
+      reply.id === commentId
+        ? { ...reply, content, version: (reply.version ?? 1) + 1, updated_at: new Date().toISOString() }
+        : reply
+    )));
+  };
+
   const replyCount = localReplyCount;
   const showThread = expanded || (showReplyEditor && replyCount > 0);
 
@@ -135,7 +145,7 @@ const CommentReplyThread = ({
               cardId={cardId}
               currentUserId={currentUserId}
               isAdmin={isAdmin}
-              onEdit={onEditReply}
+              onEdit={handleEditReply}
               onDelete={onDeleteReply}
               // [why] No onAddReply passed — prevents infinite nesting (max depth = 1)
               {...(onAddReaction ? { onAddReaction } : {})}

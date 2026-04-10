@@ -806,6 +806,8 @@ const CardModalContainer = () => {
       onAddReaction={handleAddReaction}
       onRemoveReaction={handleRemoveReaction}
       onAddReply={handleAddReply}
+      onEditReply={handleEditComment}
+      onDeleteReply={handleDeleteComment}
       onMoneySave={handleMoneySave}
       onCoverColorChange={handleCoverColorChange}
       onCoverSizeChange={handleCoverSizeChange}

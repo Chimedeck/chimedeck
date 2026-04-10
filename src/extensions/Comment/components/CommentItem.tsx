@@ -1,5 +1,5 @@
 // Single comment with inline edit/delete controls
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { marked } from 'marked';
 import emojiData from '@emoji-mart/data';
 import type { Attachment } from '~/extensions/Attachments/types';
@@ -145,6 +145,21 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const [deleting, setDeleting] = useState(false);
   const [replyExpanded, setReplyExpanded] = useState(false);
   const [showReplyEditor, setShowReplyEditor] = useState(false);
+  // [why] Keep first locally-created reply thread mounted before parent `reply_count` refreshes.
+  const [hasLocalReplies, setHasLocalReplies] = useState((comment.reply_count ?? 0) > 0);
+
+  useEffect(() => {
+    if ((comment.reply_count ?? 0) > 0) {
+      setHasLocalReplies(true);
+    }
+  }, [comment.reply_count]);
+
+  const handleAddReply = useCallback(async (parentId: string, content: string) => {
+    if (!onAddReply) return;
+    await onAddReply(parentId, content);
+    setHasLocalReplies(true);
+    setReplyExpanded(true);
+  }, [onAddReply]);
 
   if (comment.deleted) {
     return <CommentDeletedItem commentId={comment.id} createdAt={comment.created_at} />;
@@ -269,7 +284,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         )}
 
         {/* Reply thread — only on top-level comments */}
-        {!comment.parent_id && ((comment.reply_count ?? 0) > 0 || showReplyEditor) && onAddReply && cardId && (
+        {!comment.parent_id && ((comment.reply_count ?? 0) > 0 || hasLocalReplies || showReplyEditor) && onAddReply && cardId && (
           <CommentReplyThread
             parentComment={comment}
             cardId={cardId}
@@ -280,7 +295,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             showReplyEditor={showReplyEditor}
             onExpandToggle={setReplyExpanded}
             onHideReplyEditor={() => setShowReplyEditor(false)}
-            onAddReply={onAddReply}
+            onAddReply={handleAddReply}
             onEditReply={onEditReply ?? (() => Promise.resolve())}
             onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
             {...(onAddReaction ? { onAddReaction } : {})}
