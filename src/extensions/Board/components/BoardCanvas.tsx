@@ -187,6 +187,41 @@ function getBoardListIdFromElement(element: Element | null): string | null {
   return listEl.id.slice('board-list-'.length);
 }
 
+function getBoardListIdFromPointer(clientX: number | null, clientY: number | null): string | null {
+  if (clientX == null || clientY == null) return null;
+
+  const hitElement = document.elementFromPoint(clientX, clientY);
+  const hitListId = getBoardListIdFromElement(hitElement);
+  if (hitListId) return hitListId;
+
+  // WHY: on empty columns or near edges, elementFromPoint can briefly resolve
+  // to non-list layers. Fall back to list rectangles to keep cross-column drag
+  // targeting stable.
+  const listElements = Array.from(document.querySelectorAll<HTMLElement>('[id^="board-list-"]'));
+  const containingRect = listElements.find((el) => {
+    const r = el.getBoundingClientRect();
+    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+  });
+  if (containingRect) {
+    return containingRect.id.slice('board-list-'.length);
+  }
+
+  // WHY: if Y exits the list rect while dragging fast, keep destination by
+  // selecting the nearest list horizontally.
+  let nearestListId: string | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  listElements.forEach((el) => {
+    const r = el.getBoundingClientRect();
+    const centerX = (r.left + r.right) / 2;
+    const distance = Math.abs(clientX - centerX);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestListId = el.id.slice('board-list-'.length);
+    }
+  });
+  return nearestListId;
+}
+
 const BoardCanvas = ({
   boardId,
   boardTitle,
@@ -265,8 +300,15 @@ const BoardCanvas = ({
       // WHY: when the pointer is over another list, cross-list placeholder is
       // resolved by handleDragOver. Skipping same-list midpoint logic here
       // prevents it from immediately overriding that destination placeholder.
-      const pointerListId = getBoardListIdFromElement(document.elementFromPoint(e.clientX, e.clientY));
+      const pointerListId = getBoardListIdFromPointer(e.clientX, e.clientY);
+      const placeholderListId = dragPlaceholderRef.current?.listId ?? null;
       if (pointerListId && pointerListId !== fromListId) return;
+      // WHY: when moving across columns, elementFromPoint can briefly return
+      // null (gaps/edges/overlay transitions). If we immediately fall back to
+      // same-list midpoint logic, the indicator snaps back to the source list
+      // even though the cursor is still over another column. Keep the existing
+      // cross-list placeholder until the pointer is positively in source again.
+      if (!pointerListId && placeholderListId && placeholderListId !== fromListId) return;
 
       const targetCards = (cardsByListRef.current[fromListId] ?? []).filter(
         (id) => id !== activeId,
@@ -399,10 +441,7 @@ const BoardCanvas = ({
         const sourceListId = fromListIdRef.current ?? findListForCard(activeId, cardsByList);
         if (!sourceListId) return;
 
-        const pointerListId =
-          pointerX != null && pointerY != null
-            ? getBoardListIdFromElement(document.elementFromPoint(pointerX, pointerY))
-            : null;
+        const pointerListId = getBoardListIdFromPointer(pointerX, pointerY);
 
         if (!over) {
           if (!pointerListId || !lists[pointerListId] || pointerListId === sourceListId) return;
@@ -641,10 +680,7 @@ const BoardCanvas = ({
         // truth for destination-list and insertion index.
         const pointerX = livePointerXRef.current;
         const pointerY = livePointerYRef.current;
-        const pointerListId =
-          pointerX != null && pointerY != null
-            ? getBoardListIdFromElement(document.elementFromPoint(pointerX, pointerY))
-            : null;
+        const pointerListId = getBoardListIdFromPointer(pointerX, pointerY);
         if (disableLiveDragPreview && pointerListId && lists[pointerListId] && pointerListId !== fromListId) {
           const targetWithoutActive = (finalCardsByList[pointerListId] ?? []).filter((id) => id !== activeId);
           resolvedToListId = pointerListId;

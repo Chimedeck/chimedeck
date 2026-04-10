@@ -5,9 +5,9 @@
 function contrastText(bgHex: string): string {
   const hex = bgHex.replace('#', '');
   if (hex.length < 6) return '#0f172a';
-  const r = parseInt(hex.slice(0, 2), 16) / 255;
-  const g = parseInt(hex.slice(2, 4), 16) / 255;
-  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const r = Number.parseInt(hex.slice(0, 2), 16) / 255;
+  const g = Number.parseInt(hex.slice(2, 4), 16) / 255;
+  const b = Number.parseInt(hex.slice(4, 6), 16) / 255;
   const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
   return L > 0.19 ? '#0f172a' : '#ffffff';
@@ -30,9 +30,8 @@ const CardLabelChips = ({ labels, expanded, onToggle }: Props) => {
 
   return (
     <div
-      className="flex flex-wrap gap-1 mb-1.5"
+      className="mb-1.5 flex flex-wrap gap-1 cursor-pointer"
       aria-label="Card labels"
-      aria-expanded={expanded}
       onClick={(e) => {
         e.stopPropagation();
         onToggle();
@@ -43,8 +42,6 @@ const CardLabelChips = ({ labels, expanded, onToggle }: Props) => {
           onToggle();
         }
       }}
-      role="button"
-      tabIndex={0}
       title={expanded ? 'Collapse labels' : 'Expand labels'}
     >
       {labels.map((label) =>
