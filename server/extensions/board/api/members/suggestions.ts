@@ -1,6 +1,9 @@
 // GET /api/v1/boards/:boardId/members/suggestions?q=<query>
-// Returns up to 10 board participants (members + guests) whose nickname or name
-// starts with q (case-insensitive).
+// Returns up to 10 mention candidates whose nickname, name, or email starts with q
+// (case-insensitive).
+// Scope rules:
+// - PRIVATE boards: explicit board participants (members + guests).
+// - WORKSPACE/PUBLIC boards: non-guest workspace members + board guests.
 // The requesting user is excluded from results — you cannot mention yourself.
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
@@ -26,31 +29,53 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
   const url = new URL(req.url);
   const q = (url.searchParams.get('q') ?? '').toLowerCase().trim();
 
+  const board = await db('boards')
+    .where({ id: boardId })
+    .select('workspace_id', 'visibility')
+    .first();
+
+  if (!board) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
+
   const members = await db('users')
     // [deny-first] exclude the requesting user — self-mentions are not meaningful
     .whereNot('users.id', currentUserId)
-    // [why] Mentions should include everyone who can participate on this board,
-    // including board-scoped guests.
+    // [why] Mention candidates depend on board visibility.
     .where((builder) => {
-      builder
-        .whereExists(
+      if (board.visibility === 'PRIVATE') {
+        builder.whereExists(
           db('board_members')
             .select(db.raw('1'))
             .whereRaw('board_members.user_id = users.id')
             .andWhere('board_members.board_id', boardId),
-        )
-        .orWhereExists(
-          db('board_guest_access')
-            .select(db.raw('1'))
-            .whereRaw('board_guest_access.user_id = users.id')
-            .andWhere('board_guest_access.board_id', boardId),
         );
+      } else {
+        builder.whereExists(
+          db('memberships')
+            .select(db.raw('1'))
+            .whereRaw('memberships.user_id = users.id')
+            .andWhere('memberships.workspace_id', board.workspace_id)
+            .whereNot('memberships.role', 'GUEST'),
+        );
+      }
+
+      builder.orWhereExists(
+        db('board_guest_access')
+          .select(db.raw('1'))
+          .whereRaw('board_guest_access.user_id = users.id')
+          .andWhere('board_guest_access.board_id', boardId),
+      );
     })
     .where((builder) => {
       if (q) {
         builder
           .whereRaw('LOWER(users.nickname) LIKE ?', [`${q}%`])
-          .orWhereRaw('LOWER(COALESCE(users.name, users.email)) LIKE ?', [`${q}%`]);
+          .orWhereRaw('LOWER(COALESCE(users.name, users.email)) LIKE ?', [`${q}%`])
+          .orWhereRaw('LOWER(users.email) LIKE ?', [`${q}%`]);
       }
     })
     .select(
