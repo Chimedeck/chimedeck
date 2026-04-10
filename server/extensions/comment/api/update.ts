@@ -157,7 +157,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       boardId: board.id,
       entityId: comment.card_id,
       actorId,
-      payload: { commentId, version: newVersion },
+      payload: { commentId, version: newVersion, cardId: comment.card_id, cardTitle: card?.title ?? null },
     }),
     writeActivity({
       entityType: 'card',
@@ -165,7 +165,14 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       boardId: board.id,
       action: 'comment_edited',
       actorId,
-      payload: { commentId, version: newVersion, before: comment.content, after: trimmedContent },
+      payload: {
+        commentId,
+        version: newVersion,
+        cardId: comment.card_id,
+        cardTitle: card?.title ?? null,
+        before: comment.content,
+        after: trimmedContent,
+      },
     }),
   ]);
 

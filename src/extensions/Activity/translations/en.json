@@ -10,7 +10,7 @@
   "activity.action.card_updated": "{actor} updated card \"{title}\"",
   "activity.action.card_deleted": "{actor} deleted card \"{cardTitle}\"",
   "activity.action.comment_added": "{actor} commented on card \"{cardTitle}\": {commentPreview}",
-  "activity.action.comment_edited": "{actor} edited a comment",
+  "activity.action.comment_edited": "{actor} edited a comment in \"{cardTitle}\"",
   "activity.action.comment_deleted": "{actor} deleted a comment",
   "activity.action.list_created": "{actor} created list \"{title}\"",
   "activity.action.list_updated": "{actor} updated list \"{title}\"",

@@ -76,7 +76,7 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
       boardId: board.id,
       entityId: comment.card_id,
       actorId,
-      payload: { commentId },
+      payload: { commentId, cardId: comment.card_id, cardTitle: card?.title ?? null },
     }),
     writeActivity({
       entityType: 'card',
@@ -84,7 +84,7 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
       boardId: board.id,
       action: 'comment_deleted',
       actorId,
-      payload: { commentId },
+      payload: { commentId, cardId: comment.card_id, cardTitle: card?.title ?? null },
     }),
   ]);
 
