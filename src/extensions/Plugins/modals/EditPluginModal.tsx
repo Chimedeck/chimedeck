@@ -292,14 +292,12 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                 {categories.map((tag) => (
                   <span key={tag} className="flex items-center gap-1 bg-blue-800 text-blue-200 text-xs rounded px-2 py-0.5">
                     {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(tag)}
-                      className="hover:text-base leading-none"
+                    <IconButton
+                      icon={<span aria-hidden className="leading-none">×</span>}
                       aria-label={`Remove ${tag}`}
-                    >
-                      ×
-                    </button>
+                      onClick={() => removeCategory(tag)}
+                      className="h-auto w-auto p-0 hover:text-base"
+                    />
                   </span>
                 ))}
               </div>
@@ -324,14 +322,12 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
                 {whitelistedDomains.map((domain) => (
                   <span key={domain} className="flex items-center gap-1 bg-bg-overlay text-subtle text-xs rounded px-2 py-0.5">
                     {domain}
-                    <button
-                      type="button"
-                      onClick={() => removeDomain(domain)}
-                      className="hover:text-base leading-none"
+                    <IconButton
+                      icon={<span aria-hidden className="leading-none">×</span>}
                       aria-label={`Remove ${domain}`}
-                    >
-                      ×
-                    </button>
+                      onClick={() => removeDomain(domain)}
+                      className="h-auto w-auto p-0 hover:text-base"
+                    />
                   </span>
                 ))}
               </div>

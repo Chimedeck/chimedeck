@@ -275,14 +275,12 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
                 {categories.map((tag) => (
                   <span key={tag} className="flex items-center gap-1 bg-blue-800 text-blue-200 text-xs rounded px-2 py-0.5">
                     {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(tag)}
-                      className="hover:text-base leading-none"
+                    <IconButton
+                      icon={<span aria-hidden className="leading-none">×</span>}
                       aria-label={`Remove ${tag}`}
-                    >
-                      ×
-                    </button>
+                      onClick={() => removeCategory(tag)}
+                      className="h-auto w-auto p-0 hover:text-base"
+                    />
                   </span>
                 ))}
               </div>
