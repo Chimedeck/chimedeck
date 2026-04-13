@@ -10,6 +10,7 @@ import {
   setActiveWorkspace,
 } from '../../duck/workspaceDuck';
 import CreateWorkspaceModal from '../../components/CreateWorkspaceModal';
+import Button from '~/common/components/Button';
 import translations from '../../translations/en.json';
 
 export default function WorkspaceListPage() {
@@ -39,12 +40,13 @@ export default function WorkspaceListPage() {
         <h1 className="text-2xl font-bold text-base">
           {translations['WorkspaceListPage.title']}
         </h1>
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={() => setShowCreateModal(true)}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
         >
           {translations['WorkspaceListPage.newButton']}
-        </button>
+        </Button>
       </div>
 
       {workspaces.length === 0 ? (
@@ -57,12 +59,13 @@ export default function WorkspaceListPage() {
           <p className="mb-6 max-w-xs text-sm text-muted">
             {translations['WorkspaceListPage.emptyBody']}
           </p>
-          <button
+          <Button
+            variant="primary"
+            size="md"
             onClick={() => setShowCreateModal(true)}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
           >
             {translations['WorkspaceListPage.emptyAction']}
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -78,12 +81,14 @@ export default function WorkspaceListPage() {
                 {translations['WorkspaceListPage.createdAt']}{' '}
                 {new Date(ws.createdAt).toLocaleDateString()}
               </p>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={(e) => { e.stopPropagation(); handleOpen(ws.id); }}
-                className="mt-4 rounded-lg bg-bg-overlay px-3 py-1.5 text-xs font-medium text-base hover:bg-bg-sunken dark:hover:bg-slate-700 transition-colors"
+                className="mt-4"
               >
                 {translations['WorkspaceListPage.openButton']}
-              </button>
+              </Button>
             </div>
           ))}
         </div>

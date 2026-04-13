@@ -115,13 +115,15 @@ const MemberList = ({
                 <td className="px-4 py-2">
                   {/* Prevent removing yourself or the last owner */}
                   {member.userId !== currentUserId && !isLastOwner(member) && (
-                    <button
+                    <Button
+                      variant="link"
+                      size="sm"
                       onClick={() => handleRemoveConfirm(member.userId)}
-                      className="text-danger hover:underline"
                       aria-label={`Remove ${member.email}`}
+                      className="!text-danger"
                     >
                       Remove
-                    </button>
+                    </Button>
                   )}
                   {isLastOwner(member) && (
                     <span className="text-xs text-muted">Last owner</span>

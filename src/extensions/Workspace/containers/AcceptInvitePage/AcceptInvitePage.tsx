@@ -8,6 +8,7 @@ import TopbarContainer from '~/containers/TopbarContainer/TopbarContainer';
 import LayoutSingleColumn from '~/layout/LayoutSingleColumn';
 import { inspectInvite, acceptInvite, type Invite } from '../../api';
 import RoleBadge from '../../components/RoleBadge';
+import Button from '~/common/components/Button';
 
 // TODO: replace with real api instance from context/store extras once wired in.
 declare const api: Parameters<typeof inspectInvite>[0]['api'];
@@ -68,12 +69,13 @@ const AcceptInvitePage = () => {
             <p className="text-sm text-muted">
               Invite expires: {new Date(invite.expiresAt).toLocaleString()}
             </p>
-            <button
+            <Button
+              variant="primary"
+              size="md"
               onClick={handleAccept}
-              className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-hover" // [theme-exception] text-white on primary button
             >
               Accept Invitation
-            </button>
+            </Button>
           </div>
         );
       }

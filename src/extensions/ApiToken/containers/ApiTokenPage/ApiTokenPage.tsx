@@ -106,12 +106,14 @@ export default function ApiTokenPage() {
                       : translations['ApiTokenPage.neverExpires']}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setRevokeTarget(token)}
-                      className="rounded px-3 py-1 text-xs font-medium text-danger hover:bg-red-900/30 hover:text-red-300 transition-colors"  // [theme-exception]
+                      className="!text-danger hover:!bg-red-900/30 hover:!text-red-300"
                     >
                       {translations['ApiTokenPage.revokeButton']}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
