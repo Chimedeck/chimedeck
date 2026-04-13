@@ -2,6 +2,7 @@
 // Each section has a stable anchor id for sticky side-nav deep-linking.
 import {
   Section,
+  StickyNav,
   CodeSnippet,
   ColorSwatch,
   TypographySample,
@@ -45,34 +46,35 @@ const NAV_ITEMS = [
 export default function DesignSystemPage() {
   return (
     <div className="flex min-h-full">
-      {/* Sticky side-nav — hidden on mobile, visible on lg+ */}
-      <nav
-        aria-label="Design system sections"
-        className="hidden lg:block sticky top-0 self-start w-52 shrink-0 py-8 pl-6 pr-4 h-screen overflow-y-auto border-r border-border-subtle"
-      >
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-4">
-          Contents
-        </p>
-        <ul className="space-y-1">
-          {NAV_ITEMS.map(({ id, label }) => (
-            <li key={id}>
-              <a
-                href={`#${id}`}
-                className="block text-sm text-text-secondary hover:text-text-primary py-0.5 transition-colors"
-              >
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* Desktop sticky side-nav (lg+) — highlights active section via IntersectionObserver */}
+      <StickyNav items={NAV_ITEMS} />
 
       {/* Main content area */}
       <main className="flex-1 min-w-0 px-6 lg:px-10 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold text-text-primary mb-2">Design System</h1>
-        <p className="text-text-secondary mb-8">
+        <p className="text-text-secondary mb-4">
           A living catalogue of UI tokens and components used across the app.
         </p>
+
+        {/* Mobile section jumper — visible only on < lg */}
+        <div className="lg:hidden mb-8">
+          <label htmlFor="ds-mobile-nav" className="sr-only">Jump to section</label>
+          <select
+            id="ds-mobile-nav"
+            className="w-full rounded-md border border-border-subtle bg-bg-surface text-sm
+                       text-text-primary px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            defaultValue=""
+            onChange={(e) => {
+              const el = document.getElementById(e.target.value);
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            <option value="" disabled>Jump to section…</option>
+            {NAV_ITEMS.map(({ id, label }) => (
+              <option key={id} value={id}>{label}</option>
+            ))}
+          </select>
+        </div>
 
         {/* ── Color Tokens ─────────────────────────────────────── */}
         <Section
