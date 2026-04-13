@@ -1,18 +1,13 @@
 // GET /api/v1/attachments/:id/view
 // Secure proxy endpoint: authenticates the caller, verifies board membership,
-// then 302-redirects to a fresh short-lived (60 s) presigned S3 URL.
-// Never exposes the presigned URL unless the caller is authenticated and authorised.
+// then streams the object from S3 through the server to the browser.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { presignGetUrl } from '../common/presign';
-
-// Very short TTL: the presigned URL is single-use in practice because the browser
-// immediately follows the redirect, and the token expires after 60 seconds.
-const PROXY_TTL_SECONDS = 60;
+import { proxyS3Object } from '../common/proxyS3Object';
 
 export async function handleViewAttachment(req: Request, attachmentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -55,9 +50,9 @@ export async function handleViewAttachment(req: Request, attachmentId: string): 
     return Response.json({ name: 'attachment-key-missing', data: { message: 'No S3 key on attachment' } }, { status: 404 });
   }
 
-  const { url } = await presignGetUrl({ s3Key: attachment.s3_key, ttlSeconds: PROXY_TTL_SECONDS });
-
-  // 302 redirect to the fresh short-lived presigned URL — client downloads directly
-  // from S3 while the token is invisible in the API response body.
-  return Response.redirect(url, 302);
+  return proxyS3Object({
+    s3Key: attachment.s3_key,
+    fallbackContentType: attachment.mime_type,
+    fallbackFilename: attachment.alias ?? attachment.name,
+  });
 }

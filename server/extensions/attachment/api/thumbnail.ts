@@ -7,9 +7,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { presignGetUrl } from '../common/presign';
-
-const PROXY_TTL_SECONDS = 60;
+import { proxyS3Object } from '../common/proxyS3Object';
 
 export async function handleThumbnailAttachment(req: Request, attachmentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -43,7 +41,9 @@ export async function handleThumbnailAttachment(req: Request, attachmentId: stri
     return Response.json({ name: 'attachment-rejected', data: { message: 'Attachment was rejected by virus scan' } }, { status: 422 });
   }
 
-  const { url } = await presignGetUrl({ s3Key: attachment.thumbnail_key, ttlSeconds: PROXY_TTL_SECONDS });
-
-  return Response.redirect(url, 302);
+  return proxyS3Object({
+    s3Key: attachment.thumbnail_key,
+    fallbackContentType: 'image/webp',
+    fallbackFilename: `${attachment.alias ?? attachment.name ?? attachment.id}.webp`,
+  });
 }
