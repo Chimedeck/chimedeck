@@ -10,10 +10,12 @@
 # =============================================================================
 set -euo pipefail
 
-# ── Repo to clone ──────────────────────────────────────────────────────────────
-# Replace this with your actual repository URL before hosting the script.
-REPO_URL="https://github.com/YOUR_ORG/YOUR_REPO.git"
+# ── Repository ────────────────────────────────────────────────────────────────
+REPO_HTTPS="https://github.com/Chimedeck/chimedeck.git"
+REPO_SSH="git@github.com:Chimedeck/chimedeck.git"
+REPO_ZIP="https://github.com/Chimedeck/chimedeck/archive/refs/heads/main.zip"
 INSTALL_DIR="${INSTALL_DIR:-chimedeck}"
+GIT_AVAILABLE=false
 
 # ── Colour helpers ─────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -149,6 +151,83 @@ ensure_compose() {
   info "Compose command: $COMPOSE_CMD"
 }
 
+# ── Git ──────────────────────────────────────────────────────────────────────
+ensure_git() {
+  section "Checking Git"
+  if command -v git &>/dev/null; then
+    info "Git found: $(git --version)"
+    GIT_AVAILABLE=true
+  else
+    warn "Git not found — source code will be downloaded as a zip archive."
+    GIT_AVAILABLE=false
+  fi
+}
+
+# ── Bun ───────────────────────────────────────────────────────────────────────
+ensure_bun() {
+  section "Checking Bun"
+  if command -v bun &>/dev/null; then
+    info "Bun found: $(bun --version)"
+    return
+  fi
+  warn "Bun not found — installing..."
+  curl -fsSL https://bun.sh/install | bash
+  # Make bun available in the current session
+  export BUN_INSTALL="$HOME/.bun"
+  export PATH="$BUN_INSTALL/bin:$PATH"
+  if ! command -v bun &>/dev/null; then
+    error "Bun installation did not complete successfully."
+    error "Please install Bun manually:  https://bun.sh/docs/installation"
+    exit 1
+  fi
+  info "Bun installed: $(bun --version)"
+}
+
+# ── Download / clone source code ───────────────────────────────────────────────
+download_code() {
+  section "Setting up project files"
+
+  # Already cloned — just update
+  if [[ -d "$INSTALL_DIR/.git" ]]; then
+    info "Directory './$INSTALL_DIR' already exists — pulling latest changes..."
+    git -C "$INSTALL_DIR" pull --ff-only
+    return
+  fi
+
+  # Directory exists without .git (e.g. a previous zip extract)
+  if [[ -d "$INSTALL_DIR" ]]; then
+    info "Directory './$INSTALL_DIR' already exists — skipping download."
+    return
+  fi
+
+  if [[ "$GIT_AVAILABLE" == "true" ]]; then
+    # Prefer SSH if the user has a GitHub key configured
+    if ssh -T -o BatchMode=yes -o ConnectTimeout=5 git@github.com 2>&1 \
+        | grep -q 'successfully authenticated'; then
+      info "SSH key detected — cloning via SSH..."
+      git clone "$REPO_SSH" "$INSTALL_DIR"
+    else
+      info "Cloning repository via HTTPS..."
+      git clone "$REPO_HTTPS" "$INSTALL_DIR"
+    fi
+  else
+    # No git — download the zip archive and extract it
+    info "Downloading source archive from GitHub..."
+    curl -fsSL "$REPO_ZIP" -o /tmp/chimedeck-src.zip
+    info "Extracting..."
+    local extract_dir
+    extract_dir="$(mktemp -d)"
+    if command -v unzip &>/dev/null; then
+      unzip -q /tmp/chimedeck-src.zip -d "$extract_dir"
+    else
+      tar -xf /tmp/chimedeck-src.zip -C "$extract_dir"
+    fi
+    mv "$extract_dir/chimedeck-main" "$INSTALL_DIR"
+    rm -rf /tmp/chimedeck-src.zip "$extract_dir"
+    info "Source code extracted to './$INSTALL_DIR'."
+  fi
+}
+
 # ── Prompt (works when piped through curl | bash) ──────────────────────────────
 prompt_required() {
   local var_name="$1"
@@ -223,19 +302,16 @@ main() {
 
   ensure_docker
   ensure_compose
+  ensure_git
+  ensure_bun
 
-  # ── Clone or update repo ───────────────────────────────────────────────────
-  section "Setting up project files"
-
-  if [[ -d "$INSTALL_DIR/.git" ]]; then
-    info "Directory './$INSTALL_DIR' already exists — pulling latest changes..."
-    git -C "$INSTALL_DIR" pull --ff-only
-  else
-    info "Cloning repository into './$INSTALL_DIR'..."
-    git clone "$REPO_URL" "$INSTALL_DIR"
-  fi
-
+  download_code
   cd "$INSTALL_DIR"
+
+  # ── Install host-side dependencies (required for migrations) ───────────────
+  section "Installing dependencies"
+  info "Running bun install..."
+  bun install --frozen-lockfile 2>/dev/null || bun install
 
   # ── Collect required user input ────────────────────────────────────────────
   section "Configuration"
@@ -320,6 +396,23 @@ EOF
   section "Starting services"
   info "Running: $COMPOSE_CMD --profile redis up -d --build"
   $COMPOSE_CMD --profile redis up -d --build
+
+  # ── Run database migrations (host → localhost:5432) ────────────────────────
+  section "Running database migrations"
+  info "Waiting for postgres to be healthy..."
+  local pg_deadline=$(( SECONDS + 60 ))
+  until $COMPOSE_CMD exec -T postgres pg_isready -U "${PG_USER}" &>/dev/null; do
+    if [[ $SECONDS -ge $pg_deadline ]]; then
+      error "Postgres did not become healthy within 60 s."
+      error "Check logs:  $COMPOSE_CMD logs postgres"
+      exit 1
+    fi
+    printf '.'
+    sleep 2
+  done
+  echo ""
+  info "Running migrations against localhost:5432..."
+  DATABASE_URL="postgresql://${PG_USER}:${PG_PASSWORD}@localhost:5432/${PG_DB}" bun run db:migrate
 
   # ── Wait for health endpoint ───────────────────────────────────────────────
   section "Waiting for app to become ready"

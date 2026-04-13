@@ -12,10 +12,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# ── Config ────────────────────────────────────────────────────────────────────
-# Replace this with your actual repository URL before hosting the script.
-$REPO_URL   = "https://github.com/YOUR_ORG/YOUR_REPO.git"
-$INSTALL_DIR = if ($env:INSTALL_DIR) { $env:INSTALL_DIR } else { "chimedeck" }
+# ── Repository ────────────────────────────────────────────────────────────────
+$REPO_HTTPS  = "https://github.com/Chimedeck/chimedeck.git"
+$REPO_SSH    = "git@github.com:Chimedeck/chimedeck.git"
+$REPO_ZIP    = "https://github.com/Chimedeck/chimedeck/archive/refs/heads/main.zip"
+$INSTALL_DIR  = if ($env:INSTALL_DIR) { $env:INSTALL_DIR } else { "chimedeck" }
+$script:GitAvailable = $false
 
 # ── Colour helpers ─────────────────────────────────────────────────────────────
 function Write-Info   { param($msg) Write-Host "[OK] $msg"      -ForegroundColor Green  }
@@ -219,7 +221,86 @@ function Parse-ComposeValues {
     Write-Warn "Could not fully parse docker-compose.yml — using defaults."
   }
 }
+# ── Git ──────────────────────────────────────────────────────────────────────
+function Ensure-Git {
+  Write-Section "Checking Git"
+  $gitCmd = Get-Command git -ErrorAction SilentlyContinue
+  if ($gitCmd) {
+    Write-Info "Git found: $(& git --version)"
+    $script:GitAvailable = $true
+  } else {
+    Write-Warn "Git not found — source code will be downloaded as a zip archive."
+    $script:GitAvailable = $false
+  }
+}
 
+# ── Bun ───────────────────────────────────────────────────────────────────────
+function Ensure-Bun {
+  Write-Section "Checking Bun"
+  $bunCmd = Get-Command bun -ErrorAction SilentlyContinue
+  if ($bunCmd) {
+    Write-Info "Bun found: $(& bun --version)"
+    return
+  }
+  Write-Warn "Bun not found — installing..."
+  # Use bun's official PowerShell installer
+  iwr bun.sh/install.ps1 -UseBasicParsing | iex
+  # Refresh PATH so bun is visible in the current session
+  $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" +
+              [System.Environment]::GetEnvironmentVariable("PATH", "User")
+  $bunCmd = Get-Command bun -ErrorAction SilentlyContinue
+  if (-not $bunCmd) {
+    Write-Err "Bun installation did not complete successfully."
+    Write-Err "Please install Bun manually:  https://bun.sh/docs/installation"
+    exit 1
+  }
+  Write-Info "Bun installed: $(& bun --version)"
+}
+
+# ── Download / clone source code ───────────────────────────────────────────────
+function Download-Code {
+  Write-Section "Setting up project files"
+
+  # Already cloned — just update
+  if (Test-Path (Join-Path $INSTALL_DIR ".git")) {
+    Write-Info "Directory '.\$INSTALL_DIR' already exists — pulling latest changes..."
+    & git -C $INSTALL_DIR pull --ff-only
+    return
+  }
+
+  # Directory exists without .git (previous zip extract)
+  if (Test-Path $INSTALL_DIR) {
+    Write-Info "Directory '.\$INSTALL_DIR' already exists — skipping download."
+    return
+  }
+
+  if ($script:GitAvailable) {
+    # Prefer SSH if the user has a GitHub key configured
+    $useSsh = $false
+    try {
+      $sshResult = & ssh -T -o "BatchMode=yes" -o "ConnectTimeout=5" git@github.com 2>&1
+      $useSsh = ($sshResult -match 'successfully authenticated')
+    } catch { }
+
+    if ($useSsh) {
+      Write-Info "SSH key detected — cloning via SSH..."
+      & git clone $REPO_SSH $INSTALL_DIR
+    } else {
+      Write-Info "Cloning repository via HTTPS..."
+      & git clone $REPO_HTTPS $INSTALL_DIR
+    }
+    if ($LASTEXITCODE -ne 0) { Write-Err "git clone failed."; exit 1 }
+  } else {
+    # No git — download the zip archive and extract it using tar (Windows 10+)
+    Write-Info "Downloading source archive from GitHub..."
+    iwr -Uri $REPO_ZIP -UseBasicParsing -OutFile "$env:TEMP\chimedeck-src.zip"
+    Write-Info "Extracting..."
+    tar -xf "$env:TEMP\chimedeck-src.zip" -C $PWD
+    Rename-Item "chimedeck-main" $INSTALL_DIR -ErrorAction Stop
+    Remove-Item "$env:TEMP\chimedeck-src.zip" -Force
+    Write-Info "Source code extracted to '.\$INSTALL_DIR'."
+  }
+}
 # ── Prompt helper ─────────────────────────────────────────────────────────────
 function Prompt-Required {
   param([string]$Label)
@@ -243,21 +324,17 @@ function Main {
 
   Ensure-Docker
   Ensure-Compose
+  Ensure-Git
+  Ensure-Bun
 
-  # ── Clone or update repo ────────────────────────────────────────────────────
-  Write-Section "Setting up project files"
-
-  if (Test-Path (Join-Path $INSTALL_DIR ".git")) {
-    Write-Info "Directory '.\$INSTALL_DIR' already exists — pulling latest changes..."
-    & git -C $INSTALL_DIR pull --ff-only
-  }
-  else {
-    Write-Info "Cloning repository into '.\$INSTALL_DIR'..."
-    & git clone $REPO_URL $INSTALL_DIR
-    if ($LASTEXITCODE -ne 0) { Write-Err "git clone failed."; exit 1 }
-  }
-
+  Download-Code
   Set-Location $INSTALL_DIR
+
+  # ── Install host-side dependencies (required for migrations) ────────────────
+  Write-Section "Installing dependencies"
+  Write-Info "Running bun install..."
+  & bun install
+  if ($LASTEXITCODE -ne 0) { Write-Err "bun install failed."; exit 1 }
 
   # ── Collect required user input ─────────────────────────────────────────────
   Write-Section "Configuration"
@@ -341,7 +418,30 @@ SEED_TRELLO=false
   Write-Section "Starting services"
   Write-Info "Running: docker compose --profile redis up -d --build"
   Invoke-Compose @("--profile", "redis", "up", "-d", "--build")
-
+  # ── Run database migrations (host → localhost:5432) ──────────────────────────
+  Write-Section "Running database migrations"
+  Write-Info "Waiting for postgres to be healthy..."
+  $pgDeadline = (Get-Date).AddSeconds(60)
+  $pgReady = $false
+  while ((Get-Date) -lt $pgDeadline) {
+    Write-Host "." -NoNewline
+    Start-Sleep -Seconds 2
+    try {
+      & docker compose exec -T postgres pg_isready -U $script:PgUser 2>$null | Out-Null
+      if ($LASTEXITCODE -eq 0) { $pgReady = $true; break }
+    } catch { }
+  }
+  Write-Host ""
+  if (-not $pgReady) {
+    Write-Err "Postgres did not become healthy within 60 s."
+    Write-Err "Check logs:  docker compose logs postgres"
+    exit 1
+  }
+  Write-Info "Running migrations against localhost:5432..."
+  $env:DATABASE_URL = "postgresql://$($script:PgUser):$($script:PgPassword)@localhost:5432/$($script:PgDb)"
+  & bun run db:migrate
+  if ($LASTEXITCODE -ne 0) { throw "db:migrate failed" }
+  Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
   # ── Wait for health endpoint ────────────────────────────────────────────────
   Write-Section "Waiting for app to become ready"
   $appPort = 3000
