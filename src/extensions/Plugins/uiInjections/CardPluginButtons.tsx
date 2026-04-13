@@ -107,6 +107,8 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
       <div className="space-y-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         {buttons.map((btn) => {
           const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
+          // [plugin-button-exception] Plugin-injected buttons use raw <button> to preserve
+          // plugin API compatibility and dynamic prop injection from the bridge.
           return (
             <button
               key={btnKey}
@@ -131,6 +133,8 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
     <div className="mt-1.5 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       {buttons.map((btn) => {
         const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
+        // [plugin-button-exception] Plugin-injected buttons use raw <button> to preserve
+        // plugin API compatibility and dynamic prop injection from the bridge.
         return (
           <button
             key={btnKey}

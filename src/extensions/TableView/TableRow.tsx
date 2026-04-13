@@ -3,6 +3,7 @@
 // Due Date (red if overdue), Start Date, Value.
 import translations from './translations/en.json';
 import type { TableRowData } from './types';
+import Button from '../../common/components/Button';
 
 /** Pick readable text colour (black or white) based on background luminance. */
 function contrastText(bgHex: string): string {
@@ -45,14 +46,15 @@ const TableRow = ({ row, onCardClick }: Props) => {
     >
       {/* Title */}
       <td className="px-4 py-3">
-        <button
-          className="text-sm font-semibold text-base hover:text-primary text-left underline-offset-2 hover:underline focus:outline-none"
+        <Button
+          variant="ghost"
+          className="text-sm font-semibold text-base hover:text-primary justify-start underline-offset-2 hover:underline px-0 py-0"
           onClick={() => onCardClick(row.id)}
           aria-label={`${translations['TableView.ariaOpenCard']} ${row.title}`}
           data-testid={`table-card-title-${row.id}`}
         >
           {row.title}
-        </button>
+        </Button>
       </td>
 
       {/* List — colored by common status keywords for quick scanning */}

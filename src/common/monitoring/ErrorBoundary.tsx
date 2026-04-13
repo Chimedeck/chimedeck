@@ -1,5 +1,6 @@
 import React from 'react';
 import * as Sentry from '@sentry/react';
+import Button from '../components/Button';
 
 interface Props {
   children: React.ReactNode;
@@ -14,18 +15,12 @@ function FallbackUI({ resetError }: { resetError: () => void }) {
         reloading the page.
       </p>
       <div className="flex gap-3">
-        <button
-          onClick={resetError}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
+        <Button variant="primary" size="md" onClick={resetError}>
           Try again
-        </button>
-        <button
-          onClick={() => window.location.reload()}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
-        >
+        </Button>
+        <Button variant="secondary" size="md" onClick={() => window.location.reload()}>
           Reload page
-        </button>
+        </Button>
       </div>
     </div>
   );

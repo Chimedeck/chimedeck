@@ -4,6 +4,7 @@
 // clickable chips below the bar area.
 import { useMemo } from 'react';
 import TimelineBar, { ROW_SLOT_HEIGHT } from './TimelineBar';
+import Button from '../../common/components/Button';
 import { useTimelineDrag } from './useTimelineDrag';
 import translations from './translations/en.json';
 import type { TimelineRowProps } from './types';
@@ -156,14 +157,15 @@ const TimelineRow = ({
           {/* Chips */}
           <div className="flex flex-wrap gap-1 px-2 py-1" style={{ minWidth: totalWidth }}>
             {swimlane.unscheduledCards.map((card) => (
-              <button
+              <Button
                 key={card.id}
+                variant="ghost"
+                className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
                 onClick={() => onCardClick(card.id)}
                 data-testid={`timeline-unscheduled-chip-${card.id}`}
-                className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
               >
                 {card.title}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

@@ -9,6 +9,7 @@ import ListHeader from '../../components/ListHeader';
 import CardItem from '../../../Card/components/CardItem';
 import type { CustomFieldValue } from '../../../CustomFields/types';
 import AddCardForm from '../../../Card/components/AddCardForm';
+import Button from '../../../../common/components/Button';
 
 interface Props {
   list: List;
@@ -168,13 +169,14 @@ const SortableListColumn = ({
             onCancel={() => setAddingCard(false)}
           />
         ) : (
-          <button
-            className="text-muted hover:text-base hover:bg-bg-overlay text-sm rounded-lg px-2 py-1.5 w-full text-left transition-colors"
+          <Button
+            variant="ghost"
+            className="w-full justify-start rounded-lg px-2 py-1.5 text-sm"
             onClick={() => setAddingCard(true)}
             aria-label={`Add a card to ${list.title}`}
           >
             + Add a card
-          </button>
+          </Button>
         ))}
       </div>
     </div>

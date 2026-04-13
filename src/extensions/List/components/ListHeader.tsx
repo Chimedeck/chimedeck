@@ -2,6 +2,7 @@
 // Styled for dark kanban board; supports inline editing with Enter/Escape/blur.
 import { useState } from 'react';
 import type { List } from '../api';
+import Button from '../../../common/components/Button';
 
 interface Props {
   list: List;
@@ -53,8 +54,9 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackgro
           aria-label={`Rename list ${list.title}`}
         />
       ) : (
-        <button
-          className="flex-1 text-left text-sm font-semibold text-base hover:text-base"
+        <Button
+          variant="ghost"
+          className="flex-1 justify-start text-sm font-semibold px-1 py-0.5"
           onClick={() => { setEditing(true); setTitle(list.title); }}
           aria-label={`Rename list ${list.title}`}
         >
@@ -62,12 +64,13 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackgro
           {cardCount !== undefined && (
             <span className="ml-1.5 text-xs font-normal text-muted">({cardCount})</span>
           )}
-        </button>
+        </Button>
       )}
 
       <div className="relative ml-2">
-        <button
-          className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
+        <Button
+          variant="ghost"
+          className="rounded p-1 text-subtle"
           onClick={() => {
             setMenuOpen((v) => !v);
           }}
@@ -76,27 +79,30 @@ const ListHeader = ({ list, cardCount, onRename, onArchive, onDelete, hasBackgro
           aria-expanded={menuOpen}
         >
           ···
-        </button>
+        </Button>
         {menuOpen && (
           <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-border bg-bg-surface py-1 shadow-xl">
-            <button
-              className="block w-full px-4 py-2 text-left text-sm text-base hover:bg-bg-overlay"
+            <Button
+              variant="ghost"
+              className="w-full justify-start px-4 py-2 text-sm rounded-none"
               onClick={() => { setMenuOpen(false); setEditing(true); setTitle(list.title); }}
             >
               Rename
-            </button>
-            <button
-              className="block w-full px-4 py-2 text-left text-sm text-amber-700 dark:text-yellow-400 hover:bg-bg-overlay"
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start px-4 py-2 text-sm text-amber-700 dark:text-yellow-400 hover:text-amber-700 dark:hover:text-yellow-400 rounded-none"
               onClick={() => { setMenuOpen(false); onArchive(); }}
             >
               {list.archived ? 'Unarchive' : 'Archive'}
-            </button>
-            <button
-              className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-bg-overlay"
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start px-4 py-2 text-sm text-danger hover:text-danger rounded-none"
               onClick={() => { setMenuOpen(false); onDelete(); }}
             >
               Delete
-            </button>
+            </Button>
           </div>
         )}
       </div>

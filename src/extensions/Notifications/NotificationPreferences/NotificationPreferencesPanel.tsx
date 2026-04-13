@@ -37,6 +37,9 @@ const ToggleSwitch = ({
 
   return (
     <span title={disabled ? disabledTooltip : undefined}>
+      {/* [switch-exception] role="switch" toggle with transform-based thumb — raw button
+          is intentional to avoid Button's justify-center base class conflicting with the
+          translate-x thumb positioning inside the pill track. */}
       <button
         role="switch"
         aria-checked={enabled}

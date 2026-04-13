@@ -9,6 +9,7 @@ import TimelineRow from './TimelineRow';
 import TimelineZoomControl from './TimelineZoomControl';
 import translations from './translations/en.json';
 import type { TimelineViewProps, ZoomLevel, Swimlane } from './types';
+import Button from '../../common/components/Button';
 
 /** Days to render before today — determines the origin of the date axis. */
 const DAYS_BEFORE_TODAY = 90;
@@ -79,13 +80,15 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
     <div className="flex flex-1 flex-col overflow-hidden" data-testid="timeline-view">
       {/* Toolbar — solid surface */}
       <div className="flex items-center gap-3 border-b border-border bg-bg-surface px-4 py-2">
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
+          className="text-xs text-subtle"
           onClick={scrollToToday}
-          className="rounded border border-border px-3 py-1 text-xs text-subtle hover:bg-bg-overlay"
           data-testid="timeline-today-button"
         >
           {translations['TimelineView.todayMarkerLabel']}
-        </button>
+        </Button>
         <TimelineZoomControl zoom={zoom} onZoomChange={setZoom} />
       </div>
 

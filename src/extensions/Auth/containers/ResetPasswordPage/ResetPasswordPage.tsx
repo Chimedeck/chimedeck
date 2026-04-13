@@ -5,6 +5,7 @@ import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { resetPasswordThunk, selectResetPasswordStatus, selectResetPasswordError } from './ResetPasswordPage.duck';
 import translations from '../../translations/en.json';
+import Button from '~/common/components/Button';
 
 export default function ResetPasswordPage() {
   const dispatch = useAppDispatch();
@@ -141,13 +142,14 @@ export default function ResetPasswordPage() {
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                className="w-full py-2.5 text-sm font-semibold"
                 disabled={status === 'loading'}
-                className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm" // [theme-exception] text-white on primary button
               >
                 {status === 'loading' ? 'Resetting…' : translations.resetPassword.submit}
-              </button>
+              </Button>
             </div>
           </form>
         )}
