@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Button from '../../../common/components/Button';
+import IconButton from '../../../common/components/IconButton';
 import translations from '../translations/en.json';
 import type { Plugin, UpdatePluginBody } from '../api';
 
@@ -164,7 +165,11 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-semibold">{translations['plugins.editModal.title']}</h2>
-          <button onClick={onClose} className="text-muted hover:text-subtle text-lg leading-none" aria-label={translations['plugins.editModal.closeAriaLabel']}>✕</button>
+          <IconButton
+            aria-label={translations['plugins.editModal.closeAriaLabel']}
+            icon={<span aria-hidden="true">✕</span>}
+            onClick={onClose}
+          />
         </div>
 
         {/* Scrollable body */}
@@ -360,13 +365,14 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-5 py-4 border-t border-border flex-shrink-0">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
             disabled={isSubmitting}
-            className="text-sm text-muted hover:text-subtle px-4 py-2"
           >
             {translations['plugins.editModal.cancel']}
-          </button>
+          </Button>
           <Button
             variant="primary"
             size="sm"

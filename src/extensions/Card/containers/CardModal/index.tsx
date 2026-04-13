@@ -19,6 +19,7 @@ import {
 } from '../../slices/cardDetailSlice';
 import CardModal from '../../components/CardModal';
 import CopyCardModal from '../../components/CopyCardModal';
+import Button from '~/common/components/Button';
 import {
   patchCard,
   archiveCardToggle,
@@ -869,9 +870,9 @@ const CardModalContainer = () => {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
         <div className="bg-bg-surface rounded-xl p-8 text-danger">
           Failed to load card.{' '}
-          <button className="underline" onClick={handleClose}>
+          <Button variant="link" size="sm" onClick={handleClose}>
             Close
-          </button>
+          </Button>
         </div>
       </div>
     );
