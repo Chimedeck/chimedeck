@@ -12,6 +12,7 @@ import {
 import NotificationItem from './NotificationItem';
 import type { Notification } from '../api';
 import translations from '../translations/en.json';
+import Button from '~/common/components/Button';
 
 interface Props {
   onClose: () => void;
@@ -46,12 +47,9 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-bg-base">
         <h2 className="text-sm font-semibold text-base">{translations['Notifications.title']}</h2>
-        <button
-          onClick={handleMarkAllRead}
-          className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-        >
+        <Button variant="link" size="sm" onClick={handleMarkAllRead} className="text-indigo-400 hover:text-indigo-300">
           {translations['Notifications.markAllRead']}
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -69,13 +67,15 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
 
           {hasMore && (
             <div className="px-4 py-3 text-center">
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={handleLoadMore}
                 disabled={status === 'loading'}
-                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50"
+                className="text-indigo-400 hover:text-indigo-300"
               >
                 {status === 'loading' ? translations['Notifications.loading'] : translations['Notifications.loadMore']}
-              </button>
+              </Button>
             </div>
           )}
         </>

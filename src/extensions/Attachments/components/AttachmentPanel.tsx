@@ -329,7 +329,6 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
             onClick={handlePickerClick}
             data-testid="attach-file-button"
           >
-            <PaperClipIcon className="h-3.5 w-3.5" aria-hidden="true" />
             {translations['attachments.panel.attachFile']}
           </Button>
         )}

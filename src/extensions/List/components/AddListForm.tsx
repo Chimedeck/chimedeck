@@ -2,6 +2,8 @@
 // Styled per sprint-18 spec §4 (dashed border add-list column).
 import { useState, useRef, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 
 interface Props {
   onSubmit: (title: string) => Promise<void>;
@@ -69,21 +71,16 @@ const AddListForm = ({ onSubmit }: Props) => {
         aria-label="New list title"
       />
       <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          disabled={!title.trim() || submitting}
-          className="rounded-md bg-primary px-3 py-1 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50 transition-colors" // [theme-exception] text-white on primary button
-        >
+        <Button type="submit" variant="primary" size="sm" disabled={!title.trim() || submitting}>
           Add list
-        </button>
-        <button
+        </Button>
+        <IconButton
           type="button"
           onClick={() => { setOpen(false); setTitle(''); }}
-          className="rounded-md px-2 py-1 text-subtle hover:text-base hover:bg-bg-overlay transition-colors"
           aria-label="Cancel"
-        >
-          <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-        </button>
+          icon={<XMarkIcon className="h-4 w-4" aria-hidden="true" />}
+          variant="ghost"
+        />
       </div>
     </form>
   );

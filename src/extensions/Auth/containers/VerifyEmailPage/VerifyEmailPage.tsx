@@ -67,13 +67,15 @@ export default function VerifyEmailPage() {
             {resendStatus === 'sent' ? (
               <p className="text-success text-sm">{translations.verifyEmail.resendSuccess}</p>
             ) : (
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleResend}
                 disabled={resendStatus === 'loading'}
-                className="mt-2 px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors" // [theme-exception] text-white on primary button
+                className="mt-2"
               >
                 {resendStatus === 'loading' ? 'Sending…' : translations.verifyEmail.resend}
-              </button>
+              </Button>
             )}
             {resendStatus === 'error' && (
               <p className="text-danger text-sm mt-2">Failed to resend. Please try again later.</p>

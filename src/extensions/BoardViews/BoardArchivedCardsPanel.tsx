@@ -5,6 +5,7 @@ import { getArchivedCards } from './api';
 import { apiClient } from '~/common/api/client';
 import type { ArchivedCard } from './types';
 import translations from './translations/en.json';
+import Button from '~/common/components/Button';
 
 interface Props {
   boardId: string;
@@ -90,13 +91,15 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
             </button>
             <p className="text-xs text-subtle">{translations['BoardViews.inList']} {card.list_title}</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             disabled={restoringId === card.id}
             onClick={() => handleRestore(card.id)}
-            className="ml-4 rounded px-2 py-1 text-xs text-link hover:bg-bg-overlay disabled:opacity-50"
+            className="ml-4"
           >
             {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
-          </button>
+          </Button>
         </div>
       ))}
     </div>

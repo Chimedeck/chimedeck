@@ -1,6 +1,8 @@
 // HealthCheckRow — single row in the health check dashboard.
 // Displays status dot, service name, URL, response time, last-checked time, and a remove button.
 import { TrashIcon } from '@heroicons/react/24/outline';
+import Spinner from '../../../common/components/Spinner';
+import IconButton from '../../../common/components/IconButton';
 import { HealthCheckStatusDot } from './HealthCheckStatusDot';
 import type { HealthCheck } from '../api';
 
@@ -54,11 +56,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
       {/* Status dot or loading spinner */}
       <div className="flex-shrink-0 w-5 flex items-center justify-center">
         {isProbing ? (
-          <span
-            className="h-3 w-3 rounded-full border-2 border-muted border-t-transparent animate-spin"
-            aria-label="Probing…"
-            role="status"
-          />
+          <Spinner className="h-3 w-3" />
         ) : (
           <HealthCheckStatusDot
             status={result?.status ?? null}
@@ -99,16 +97,16 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
       </span>
 
       {/* Remove button — visible on hover */}
-      <button
+      <IconButton
         type="button"
+        variant="ghost"
         onClick={() => onRemove(entry.id)}
         disabled={isProbing}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded text-muted hover:text-danger hover:bg-bg-overlay transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:cursor-not-allowed"
         aria-label={`Remove ${entry.name}`}
         title={`Remove ${entry.name}`}
-      >
-        <TrashIcon className="h-4 w-4" aria-hidden="true" />
-      </button>
+        icon={<TrashIcon className="h-4 w-4" aria-hidden="true" />}
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-danger"
+      />
     </div>
   );
 }

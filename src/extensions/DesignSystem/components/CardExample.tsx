@@ -19,7 +19,7 @@ const COLORS_MAP: Record<string, string> = {
   purple: 'bg-purple-500',
 };
 
-function StubCard({ title, labels, dueDate, commentCount, attachmentCount, assignees = [] }: CardItemProps) {
+function StubCard({ title, labels, dueDate, commentCount, attachmentCount, assignees = [] }: Readonly<CardItemProps>) {
   return (
     <article
       className="bg-bg-surface rounded-lg border border-border p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -63,9 +63,9 @@ function StubCard({ title, labels, dueDate, commentCount, attachmentCount, assig
 
         {assignees.length > 0 && (
           <div className="flex -space-x-1">
-            {assignees.map((initials, i) => (
+            {assignees.map((initials) => (
               <div
-                key={i}
+                key={initials}
                 aria-label={initials}
                 className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold border border-bg-surface"
               >

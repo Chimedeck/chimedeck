@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { getBoardComments } from './api';
 import type { BoardComment } from './types';
 import translations from './translations/en.json';
+import Button from '~/common/components/Button';
 
 interface Props {
   boardId: string;
@@ -72,12 +73,9 @@ const BoardCommentsPanel = ({ boardId }: Props) => {
       {loading && <p className="text-xs text-subtle">{translations['BoardViews.loadingComments']}</p>}
 
       {hasMore && !loading && (
-        <button
-          onClick={() => loadPage(cursor)}
-          className="rounded px-3 py-1.5 text-xs text-link hover:bg-bg-overlay"
-        >
+        <Button variant="link" size="sm" onClick={() => loadPage(cursor)}>
           {translations['BoardViews.loadMoreComments']}
-        </button>
+        </Button>
       )}
     </div>
   );

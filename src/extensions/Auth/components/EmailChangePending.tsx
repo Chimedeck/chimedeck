@@ -1,6 +1,7 @@
 // EmailChangePending — dismissible banner shown after a change-email request.
 // Remains visible until the user dismisses it or re-logs in after confirmation.
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import IconButton from '~/common/components/IconButton';
 import translations from '../translations/en.json';
 
 interface EmailChangePendingProps {
@@ -17,13 +18,13 @@ export default function EmailChangePending({ pendingEmail, onDismiss }: EmailCha
         <p className="text-indigo-200 text-sm font-medium">{message}</p>
         <p className="text-indigo-300 text-sm mt-1">{translations.changeEmail.pendingDetail}</p>
       </div>
-      <button
+      <IconButton
         onClick={onDismiss}
         aria-label="Dismiss"
-        className="text-indigo-400 hover:text-indigo-200 transition-colors"
-      >
-        <XMarkIcon className="h-5 w-5" />
-      </button>
+        icon={<XMarkIcon className="h-5 w-5" aria-hidden="true" />}
+        variant="ghost"
+        className="text-indigo-400 hover:text-indigo-200"
+      />
     </div>
   );
 }

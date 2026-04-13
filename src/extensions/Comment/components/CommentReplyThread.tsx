@@ -7,6 +7,7 @@ import type { Comment } from './CommentItem';
 import CommentItem from './CommentItem';
 import CommentEditor from './CommentEditor';
 import translations from '../translations/en.json';
+import Button from '~/common/components/Button';
 
 interface Props {
   parentComment: Comment;
@@ -120,16 +121,18 @@ const CommentReplyThread = ({
     <div className="mt-2">
       {/* Expand / collapse toggle */}
       {replyCount > 0 && (
-        <button
+        <Button
+          variant="link"
+          size="sm"
           onClick={() => onExpandToggle(!expanded)}
-          className="mt-1 text-xs font-semibold text-primary hover:underline"
+          className="mt-1"
         >
           {expanded
             ? translations['comment.replies.hide']
             : replyCount === 1
               ? translations['comment.replies.viewOne']
               : translations['comment.replies.viewMany'].replace('{{count}}', String(replyCount))}
-        </button>
+        </Button>
       )}
 
       {/* Thread container */}

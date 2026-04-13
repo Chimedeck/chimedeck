@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { authApi } from '../api/auth';
 import EmailChangePending from './EmailChangePending';
 import translations from '../translations/en.json';
+import Button from '~/common/components/Button';
+import Input from '~/common/components/Input';
+import Spinner from '~/common/components/Spinner';
 
 async function submitChangeEmail({
   email,
@@ -75,50 +78,33 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-lg font-semibold text-base">{translations.changeEmail.title}</h2>
 
-      <div>
-        <label className="block text-sm font-medium text-subtle mb-1" htmlFor="newEmail">
-          {translations.changeEmail.newEmail}
-        </label>
-        <input
-          id="newEmail"
-          type="email"
-          required
-          value={newEmail}
-          onChange={(e) => setNewEmail(e.target.value)}
-          placeholder={currentEmail}
-          className="w-full rounded-lg bg-bg-overlay border border-border text-base px-3 py-2 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
+      <Input
+        id="newEmail"
+        label={translations.changeEmail.newEmail}
+        type="email"
+        required
+        value={newEmail}
+        onChange={(e) => setNewEmail(e.target.value)}
+        placeholder={currentEmail}
+        className="w-full"
+      />
 
-      <div>
-        <label className="block text-sm font-medium text-subtle mb-1" htmlFor="currentPasswordEmail">
-          {translations.changeEmail.currentPassword}
-        </label>
-        <input
-          id="currentPasswordEmail"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg bg-bg-overlay border border-border text-base px-3 py-2 text-sm placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-      </div>
+      <Input
+        id="currentPasswordEmail"
+        label={translations.changeEmail.currentPassword}
+        type="password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full"
+      />
 
       {error && <p className="text-danger text-sm">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-colors" // [theme-exception] text-white on primary button
-      >
-        {submitting && (
-          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> {/* [theme-exception] text-white on primary button spinner */}
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-        )}
+      <Button type="submit" disabled={submitting} className="gap-2">
+        {submitting && <Spinner size="sm" className="text-white" />}
         {submitting ? 'Saving…' : translations.changeEmail.submit}
-      </button>
+      </Button>
     </form>
   );
 }

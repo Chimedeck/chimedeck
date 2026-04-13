@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import Button from '~/common/components/Button';
 import PasswordInput from './PasswordInput';
 import AuthDivider from './AuthDivider';
 import OAuthButton from './OAuthButton';
@@ -89,13 +90,15 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
         )}
 
         {/* Submit */}
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="md"
           disabled={isLoading}
-          className="w-full bg-primary hover:bg-primary-hover active:bg-primary text-white font-medium rounded-lg py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed" // [theme-exception] text-white on primary button
+          className="w-full"
         >
           {isLoading ? translations.actions.signingIn : translations.actions.signIn}
-        </button>
+        </Button>
 
         {(config.oauthGoogleEnabled || config.oauthGithubEnabled) && (
           <>

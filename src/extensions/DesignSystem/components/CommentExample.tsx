@@ -37,7 +37,7 @@ const STUB_COMMENTS: StubComment[] = [
   },
 ];
 
-function CommentAvatar({ initials, color, name }: { initials: string; color: string; name: string }) {
+function CommentAvatar({ initials, color, name }: Readonly<{ initials: string; color: string; name: string }>) {
   return (
     <div
       aria-hidden="true"

@@ -1,6 +1,7 @@
 // MemberAvatarPopover — profile popover shown when clicking a member avatar.
 // Sprint 28 spec: anchored to clicked element, context-aware action buttons.
 import { useEffect, useRef, useState } from 'react';
+import Spinner from '~/common/components/Spinner';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
@@ -162,7 +163,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
           disabled={removing}
         >
           {removing ? (
-            <span className="inline-block h-3 w-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+            <Spinner className="h-3 w-3 text-red-400" />
           ) : null}
           Remove from card
         </button>

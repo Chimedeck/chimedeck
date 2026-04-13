@@ -1,5 +1,6 @@
 // Timeline of activity events for a card or board.
 import ActivityItem, { type Activity } from './ActivityItem';
+import Button from '~/common/components/Button';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -37,12 +38,9 @@ const ActivityFeed = ({ activities, actorNames = {}, hasMore = false, onLoadMore
       )}
 
       {hasMore && !loading && onLoadMore && (
-        <button
-          onClick={onLoadMore}
-          className="mt-2 rounded px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50"
-        >
+        <Button variant="link" size="sm" onClick={onLoadMore} className="mt-2">
           {translations['activity.loadMore']}
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 
 interface Props {
   boardTitle: string;
@@ -33,14 +34,13 @@ const BoardDeleteDialog = ({ boardTitle, listCount, cardCount, onConfirm, onCanc
             <ExclamationTriangleIcon className="w-6 h-6 text-danger shrink-0" />
             <h2 className="text-lg font-semibold text-base">Delete board?</h2>
           </div>
-          <button
+          <IconButton
             type="button"
             onClick={onCancel}
-            className="text-muted hover:text-subtle transition-colors"
             aria-label="Close"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+            icon={<XMarkIcon className="w-5 h-5" aria-hidden="true" />}
+            variant="ghost"
+          />
         </div>
 
         <p className="text-sm text-subtle mb-2">

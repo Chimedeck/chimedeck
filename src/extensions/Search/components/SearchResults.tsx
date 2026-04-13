@@ -10,6 +10,7 @@ import type { AppDispatch } from '~/store';
 import SearchResultItem from './SearchResultItem';
 import { purgeInaccessibleResult } from '../slices/searchSlice';
 import type { SearchResult } from '../api';
+import Spinner from '~/common/components/Spinner';
 
 interface SearchResultsProps {
   results: SearchResult[];
@@ -154,10 +155,9 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               />
               {/* Subtle spinner while access check is in flight */}
               {checkingId === r.id && (
-                <span
-                  aria-hidden="true"
-                  className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin rounded-full border-2 border-border border-t-indigo-500"
-                />
+                <span aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Spinner className="h-3 w-3" />
+                </span>
               )}
             </div>
           ))}

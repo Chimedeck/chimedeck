@@ -247,9 +247,8 @@ export const ChecklistSection = ({
               <Button
                 type="button"
                 variant="secondary"
-                className="px-2 py-0.5 text-xs"
-                onClick={() => { setAdding((v) => !v); }}
-              >
+                size="sm"
+                onClick={() => { setAdding((v) => !v); }}>
                 + Item
               </Button>
               <Button

@@ -22,7 +22,7 @@ const STATUS_BADGE: Record<StubAttachment['status'], { label: string; className:
   error: { label: 'Failed', className: 'bg-danger/10 text-danger' },
 };
 
-function FileIcon({ type }: { type: StubAttachment['type'] }) {
+function FileIcon({ type }: Readonly<{ type: StubAttachment['type'] }>) {
   if (type === 'image') return <PhotoIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />;
   if (type === 'document') return <DocumentIcon className="h-5 w-5 text-red-400" aria-hidden="true" />;
   return <PaperClipIcon className="h-5 w-5 text-text-secondary" aria-hidden="true" />;

@@ -23,6 +23,7 @@ import { useHealthCheckAutoRefresh } from '../../hooks/useHealthCheckAutoRefresh
 import { useHealthCheckProbe } from '../../hooks/useHealthCheckProbe';
 import { HEALTH_CHECK_POLL_INTERVAL_MS } from '../../config/healthCheckConfig';
 import Button from '../../../../common/components/Button';
+import Spinner from '../../../../common/components/Spinner';
 
 const TOTAL_COUNTDOWN_SECONDS = Math.round(HEALTH_CHECK_POLL_INTERVAL_MS / 1000);
 
@@ -166,11 +167,7 @@ export function HealthCheckTab({ boardId }: Props) {
       <div className="flex-1 overflow-y-auto" role="table" aria-label="Health check services">
         {isLoading && entries.length === 0 ? (
           <div className="flex items-center justify-center py-16">
-            <span
-              className="h-6 w-6 rounded-full border-2 border-muted border-t-transparent animate-spin"
-              aria-label="Loading health checks"
-              role="status"
-            />
+            <Spinner className="h-6 w-6" />
           </div>
         ) : isEmpty ? (
           <HealthCheckEmptyState onAddService={() => setAddModalOpen(true)} />

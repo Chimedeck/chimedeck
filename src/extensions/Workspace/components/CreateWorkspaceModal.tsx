@@ -10,6 +10,7 @@ import {
   selectCreateWorkspaceError,
 } from '../duck/workspaceDuck';
 import translations from '../translations/en.json';
+import Button from '~/common/components/Button';
 
 interface CreateWorkspaceModalProps {
   open: boolean;
@@ -79,22 +80,14 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             )}
 
             <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-muted hover:bg-bg-surface hover:text-base transition-colors"
-              >
+              <Button type="button" variant="ghost" size="md" onClick={handleCancel}>
                 {translations['CreateWorkspaceModal.cancelButton']}
-              </button>
-              <button
-                type="submit"
-                disabled={inProgress || !name.trim()}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 transition-colors" // [theme-exception] text-white on primary button
-              >
+              </Button>
+              <Button type="submit" variant="primary" size="md" disabled={inProgress || !name.trim()}>
                 {inProgress
                   ? translations['CreateWorkspaceModal.submitting']
                   : translations['CreateWorkspaceModal.submitButton']}
-              </button>
+              </Button>
             </div>
           </form>
         </Dialog.Content>

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import Button from '~/common/components/Button';
 import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
@@ -82,13 +83,15 @@ export default function ForgotPasswordPage() {
                 )}
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                size="md"
                 disabled={status === 'loading'}
-                className="w-full bg-primary hover:bg-primary-hover disabled:opacity-60 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm" // [theme-exception] text-white on primary button
+                className="w-full"
               >
                 {status === 'loading' ? 'Sending…' : translations.forgotPassword.submit}
-              </button>
+              </Button>
             </div>
 
             <p className="text-muted text-sm text-center mt-6">

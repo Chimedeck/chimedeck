@@ -3,6 +3,8 @@
 // then sends confirm:true in the DELETE request body.
 import { useState } from 'react';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 
 interface Props {
   listTitle: string;
@@ -31,14 +33,13 @@ const ListDeleteDialog = ({ listTitle, cardCount, onConfirm, onCancel }: Props) 
             <ExclamationTriangleIcon className="w-6 h-6 text-danger shrink-0" />
             <h2 className="text-lg font-semibold text-base">Delete list?</h2>
           </div>
-          <button
+          <IconButton
             type="button"
             onClick={onCancel}
-            className="text-subtle hover:text-base transition-colors"
             aria-label="Close"
-          >
-            <XMarkIcon className="w-5 h-5" />
-          </button>
+            icon={<XMarkIcon className="w-5 h-5" aria-hidden="true" />}
+            variant="ghost"
+          />
         </div>
 
         <p className="text-sm text-base mb-2">
@@ -50,21 +51,12 @@ const ListDeleteDialog = ({ listTitle, cardCount, onConfirm, onCancel }: Props) 
         </p>
 
         <div className="flex gap-3 justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg bg-bg-overlay text-base hover:bg-bg-sunken transition-colors"
-          >
+          <Button type="button" variant="secondary" size="md" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={busy}
-            className="px-4 py-2 text-sm rounded-lg bg-danger text-white hover:opacity-90 transition-colors disabled:opacity-50" // [theme-exception] text-white on danger button
-          >
+          </Button>
+          <Button type="button" variant="danger" size="md" onClick={handleConfirm} disabled={busy}>
             {busy ? 'Deleting…' : 'Delete list'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

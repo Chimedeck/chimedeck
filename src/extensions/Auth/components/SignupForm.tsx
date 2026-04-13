@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import Button from '~/common/components/Button';
 import PasswordInput from './PasswordInput';
 import translations from '../translations/en.json';
 
@@ -138,13 +139,15 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
         )}
 
         {/* Submit */}
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          size="md"
           disabled={isLoading}
-          className="w-full bg-primary hover:bg-primary-hover active:bg-primary text-white font-medium rounded-lg py-2.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed" // [theme-exception] text-white on primary button
+          className="w-full"
         >
           {isLoading ? translations.actions.creatingAccount : translations.actions.createAccount}
-        </button>
+        </Button>
       </div>
     </form>
   );

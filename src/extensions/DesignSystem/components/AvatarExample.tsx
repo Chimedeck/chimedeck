@@ -16,8 +16,14 @@ interface AvatarProps {
   label: string;
 }
 
-function Avatar({ initials, colorIndex = 0, size = 'md', label }: AvatarProps) {
-  const sizeClass = size === 'sm' ? 'h-7 w-7 text-xs' : size === 'lg' ? 'h-12 w-12 text-base' : 'h-9 w-9 text-sm';
+const SIZE_CLASSES: Record<'sm' | 'md' | 'lg', string> = {
+  sm: 'h-7 w-7 text-xs',
+  md: 'h-9 w-9 text-sm',
+  lg: 'h-12 w-12 text-base',
+};
+
+function Avatar({ initials, colorIndex = 0, size = 'md', label }: Readonly<AvatarProps>) {
+  const sizeClass = SIZE_CLASSES[size];
   return (
     <div
       aria-label={label}

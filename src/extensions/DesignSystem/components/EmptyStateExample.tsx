@@ -10,7 +10,7 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+function EmptyState({ icon, title, description, action }: Readonly<EmptyStateProps>) {
   return (
     <div className="flex flex-col items-center justify-center text-center px-6 py-10 rounded-lg border border-dashed border-border bg-bg-subtle">
       <div className="h-12 w-12 rounded-full bg-bg-overlay flex items-center justify-center mb-4 text-text-secondary">

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { resendVerificationThunk, selectResendStatus } from '../containers/VerifyEmailPage/VerifyEmailPage.duck';
@@ -29,13 +31,13 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
 
   return (
     <div className="rounded-xl border border-indigo-700 bg-indigo-950/60 p-4 text-sm text-indigo-200 relative">
-      <button
+      <IconButton
         onClick={handleDismiss}
         aria-label="Dismiss"
-        className="absolute top-3 right-3 text-indigo-400 hover:text-base"
-      >
-        <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-      </button>
+        icon={<XMarkIcon className="h-4 w-4" aria-hidden="true" />}
+        variant="ghost"
+        className="absolute top-3 right-3 text-indigo-400 hover:text-indigo-200"
+      />
 
       <p className="mb-3">
         {translations.verifyEmail.pending.replace('{email}', email)}
@@ -44,13 +46,14 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
       {resendStatus === 'sent' ? (
         <p className="text-success">{translations.verifyEmail.resendSuccess}</p>
       ) : (
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={handleResend}
           disabled={resendStatus === 'loading'}
-          className="px-3 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors" // [theme-exception] text-white on primary button
         >
           {resendStatus === 'loading' ? 'Sending…' : translations.verifyEmail.resend}
-        </button>
+        </Button>
       )}
     </div>
   );
