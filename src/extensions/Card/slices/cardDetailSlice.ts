@@ -294,6 +294,16 @@ const cardDetailSlice = createSlice({
       if (cl) cl.title = title;
     },
 
+    applyOptimisticChecklistReorder(
+      state,
+      action: PayloadAction<{ mutationId: string; checklistId: string; position: string }>,
+    ) {
+      const { mutationId, checklistId, position } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+      const cl = state.checklists.find((c) => c.id === checklistId);
+      if (cl) cl.position = position;
+    },
+
     confirmChecklist(state, action: PayloadAction<{ mutationId: string }>) {
       delete state.snapshots[action.payload.mutationId];
     },

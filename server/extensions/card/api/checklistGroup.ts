@@ -143,7 +143,7 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, context.boardId);
   if (roleError) return roleError;
 
-  let body: { title?: string };
+  let body: { title?: string; position?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -153,17 +153,36 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
     );
   }
 
-  if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
+  const updates: { title?: string; position?: string; updated_at: Date } = { updated_at: new Date() };
+
+  if (body.title !== undefined) {
+    if (typeof body.title !== 'string' || body.title.trim() === '') {
+      return Response.json(
+        { error: { name: 'bad-request', data: { message: 'title must be a non-empty string' } } },
+        { status: 400 },
+      );
+    }
+    updates.title = body.title.trim();
+  }
+
+  if (body.position !== undefined) {
+    if (typeof body.position !== 'string' || body.position.trim() === '') {
+      return Response.json(
+        { error: { name: 'bad-request', data: { message: 'position must be a non-empty string' } } },
+        { status: 400 },
+      );
+    }
+    updates.position = body.position;
+  }
+
+  if (!updates.title && !updates.position) {
     return Response.json(
-      { error: { name: 'bad-request', data: { message: 'title is required' } } },
+      { error: { name: 'bad-request', data: { message: 'at least one of title or position is required' } } },
       { status: 400 },
     );
   }
 
-  await db('checklists').where({ id: checklistId }).update({
-    title: body.title.trim(),
-    updated_at: new Date(),
-  });
+  await db('checklists').where({ id: checklistId }).update(updates);
 
   const result = await checklistWithItems(checklistId);
   return Response.json({ data: result });

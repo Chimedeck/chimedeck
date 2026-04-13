@@ -56,6 +56,7 @@ interface Props {
   onCreateChecklist: (title?: string) => Promise<void>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
+  onChecklistReorder: (checklistId: string, position: string) => Promise<void>;
   onItemAdd: (checklistId: string, title: string) => Promise<void>;
   onItemToggle: (checklistId: string, itemId: string, checked: boolean) => Promise<void>;
   onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
@@ -129,6 +130,7 @@ const CardModal = ({
   onCreateChecklist,
   onRenameChecklist,
   onDeleteChecklist,
+  onChecklistReorder,
   onItemAdd,
   onItemToggle,
   onItemRename,
@@ -437,6 +439,7 @@ const CardModal = ({
                       onCreateChecklist={onCreateChecklist}
                       onRenameChecklist={onRenameChecklist}
                       onDeleteChecklist={onDeleteChecklist}
+                      onChecklistReorder={onChecklistReorder}
                       onItemAdd={onItemAdd}
                       onItemToggle={onItemToggle}
                       onItemRename={onItemRename}
@@ -515,6 +518,7 @@ const CardModal = ({
                     onCreateChecklist={onCreateChecklist}
                     onRenameChecklist={onRenameChecklist}
                     onDeleteChecklist={onDeleteChecklist}
+                    onChecklistReorder={onChecklistReorder}
                     onItemAdd={onItemAdd}
                     onItemToggle={onItemToggle}
                     onItemRename={onItemRename}

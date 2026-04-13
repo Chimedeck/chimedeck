@@ -282,6 +282,20 @@ const CardModalContainer = () => {
     [api, dispatch],
   );
 
+  const handleChecklistReorder = useCallback(
+    async (checklistId: string, position: string) => {
+      const mutationId = nextMutationId();
+      dispatch(cardDetailSliceActions.applyOptimisticChecklistReorder({ mutationId, checklistId, position }));
+      try {
+        await patchChecklist({ api, checklistId, position });
+        dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
+      } catch {
+        dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+      }
+    },
+    [api, dispatch],
+  );
+
   const handleDeleteChecklist = useCallback(
     async (checklistId: string) => {
       const mutationId = nextMutationId();
@@ -910,6 +924,7 @@ const CardModalContainer = () => {
       onCreateChecklist={handleCreateChecklist}
       onRenameChecklist={handleRenameChecklist}
       onDeleteChecklist={handleDeleteChecklist}
+      onChecklistReorder={handleChecklistReorder}
       onItemAdd={handleItemAdd}
       onItemToggle={handleItemToggle}
       onItemRename={handleItemRename}

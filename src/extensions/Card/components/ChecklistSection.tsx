@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import type { Checklist, ChecklistItem as ChecklistItemType } from '../api';
 import { ChecklistItem } from './ChecklistItem';
@@ -162,6 +162,7 @@ export const ChecklistSection = ({
   const [newTitle, setNewTitle] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(checklist.title);
+  const [collapsed, setCollapsed] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -217,6 +218,16 @@ export const ChecklistSection = ({
     <section aria-label={`Checklist: ${checklist.title}`} className="space-y-1">
       {/* Title row */}
       <div className="flex items-center justify-between gap-2 mb-1">
+        <button
+          type="button"
+          className="flex-shrink-0 text-muted hover:text-subtle focus:outline-none transition-transform duration-150"
+          style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+          onClick={() => { setCollapsed((v) => !v); }}
+          aria-label={collapsed ? 'Expand checklist' : 'Collapse checklist'}
+          aria-expanded={!collapsed}
+        >
+          <ChevronDownIcon className="h-4 w-4" />
+        </button>
         {editingTitle ? (
           <input
             ref={titleInputRef}
@@ -269,66 +280,70 @@ export const ChecklistSection = ({
 
       {sortedItems.length > 0 && <ChecklistProgress total={sortedItems.length} checked={checked} />}
 
-      <div className="mt-1 space-y-0.5">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={sortedItems.map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {sortedItems.map((item: ChecklistItemType) => (
-              <SortableChecklistItemRow
-                key={item.id}
-                item={item}
-                onItemToggle={onItemToggle}
-                onItemRename={onItemRename}
-                onItemDelete={onItemDelete}
-                onItemAssign={onItemAssign}
-                onItemDueDateChange={onItemDueDateChange}
-                onItemConvertToCard={onItemConvertToCard}
-                boardMembers={boardMembers}
-                {...(disabled === undefined ? {} : { disabled })}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      </div>
+      {!collapsed && (
+        <>
+          <div className="mt-1 space-y-0.5">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sortedItems.map((item) => item.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {sortedItems.map((item: ChecklistItemType) => (
+                  <SortableChecklistItemRow
+                    key={item.id}
+                    item={item}
+                    onItemToggle={onItemToggle}
+                    onItemRename={onItemRename}
+                    onItemDelete={onItemDelete}
+                    onItemAssign={onItemAssign}
+                    onItemDueDateChange={onItemDueDateChange}
+                    onItemConvertToCard={onItemConvertToCard}
+                    boardMembers={boardMembers}
+                    {...(disabled === undefined ? {} : { disabled })}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </div>
 
-      {adding && (
-        <div className="mt-2 flex gap-2">
-          <input
-            className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Add an item…"
-            value={newTitle}
-            onChange={(e) => { setNewTitle(e.target.value); }}
-            onKeyDown={(e) => {
-              e.stopPropagation();
-              if (e.key === 'Enter') void handleItemAdd();
-              if (e.key === 'Escape') setAdding(false);
-            }}
-            autoFocus
-          />
-          <Button
-            type="button"
-            variant="primary"
-            className="px-3 py-1 text-sm"
-            onClick={() => { void handleItemAdd(); }}
-            disabled={!newTitle.trim()}
-          >
-            Add
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="text-sm text-muted hover:text-base"
-            onClick={() => { setAdding(false); }}
-          >
-            Cancel
-          </Button>
-        </div>
+          {adding && (
+            <div className="mt-2 flex gap-2">
+              <input
+                className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Add an item…"
+                value={newTitle}
+                onChange={(e) => { setNewTitle(e.target.value); }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === 'Enter') void handleItemAdd();
+                  if (e.key === 'Escape') setAdding(false);
+                }}
+                autoFocus
+              />
+              <Button
+                type="button"
+                variant="primary"
+                className="px-3 py-1 text-sm"
+                onClick={() => { void handleItemAdd(); }}
+                disabled={!newTitle.trim()}
+              >
+                Add
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-sm text-muted hover:text-base"
+                onClick={() => { setAdding(false); }}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

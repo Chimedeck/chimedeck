@@ -104,12 +104,14 @@ export async function patchChecklist({
   api,
   checklistId,
   title,
+  position,
 }: {
   api: ApiClient;
   checklistId: string;
-  title: string;
+  title?: string;
+  position?: string;
 }): Promise<Checklist> {
-  const res = await api.patch<{ data: Checklist }>(`/checklists/${checklistId}`, { title });
+  const res = await api.patch<{ data: Checklist }>(`/checklists/${checklistId}`, { title, position });
   return (res as unknown as { data: Checklist }).data;
 }
 
