@@ -23,6 +23,7 @@ import {
 import { selectIsGuestInActiveWorkspace } from '../../slices/workspaceSlice';
 import BoardCard from '~/extensions/Board/components/BoardCard';
 import CreateBoardModal from '~/extensions/Board/components/CreateBoardModal';
+import Button from '~/common/components/Button';
 import { StarIcon } from '@heroicons/react/24/solid';
 
 const WorkspaceDashboard = () => {
@@ -113,26 +114,28 @@ const WorkspaceDashboard = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => dispatch(toggleStarredFilter())}
-            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium ${
               showStarredOnly
-                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800'
+                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100'
+                : ''
             }`}
             aria-pressed={showStarredOnly}
           >
             <StarIcon className="h-4 w-4" aria-hidden="true" />
             Starred
-          </button>
+          </Button>
           {/* [why] GUEST users cannot create boards — they are scoped to granted boards only. */}
           {!isGuest && (
-            <button
-              className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
+            <Button
+              variant="primary"
               onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 text-sm" // [theme-exception] text-white on primary button
             >
               Create Board
-            </button>
+            </Button>
           )}
         </div>
       </div>

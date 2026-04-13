@@ -15,6 +15,7 @@ import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import { selectIsGuestInActiveWorkspace } from '../../slices/workspaceSlice';
 import MemberList from '../../components/MemberList';
 import InviteMemberModal from '../../components/InviteMemberModal';
+import Button from '~/common/components/Button';
 
 const WorkspacePage = () => {
   const dispatch = useAppDispatch();
@@ -105,12 +106,13 @@ const WorkspacePage = () => {
           <p className="text-sm text-muted mt-1">Workspace Settings</p>
         </div>
         {currentMember?.role === 'OWNER' && (
-          <button
+          <Button
+            variant="link"
             onClick={handleDeleteWorkspace}
-            className="text-sm text-danger hover:text-danger hover:underline"
+            className="text-sm text-danger underline-offset-4"
           >
             Delete workspace
-          </button>
+          </Button>
         )}
       </div>
 
@@ -119,12 +121,13 @@ const WorkspacePage = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-base">Members</h2>
           {canInvite && (
-            <button
+            <Button
+              variant="primary"
               onClick={() => setShowInviteModal(true)}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover transition-colors" // [theme-exception] text-white on primary button
+              className="px-4 py-2 text-sm" // [theme-exception] text-white on primary button
             >
               + Invite Member
-            </button>
+            </Button>
           )}
         </div>
         <MemberList

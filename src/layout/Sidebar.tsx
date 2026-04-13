@@ -30,6 +30,8 @@ import { selectProfile } from '~/extensions/User/containers/ProfilePage/ProfileP
 import { selectAdminEmailDomains } from '~/slices/featureFlagsSlice';
 import { openInviteModal } from '~/extensions/AdminInvite/adminInvite.slice';
 import CreateWorkspaceModal from '~/extensions/Workspace/components/CreateWorkspaceModal';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 import translations from '~/extensions/Workspace/translations/en.json';
 import layoutTranslations from '~/common/translations/en.json';
 import { useSidebarState } from '~/layout/hooks/useSidebarState';
@@ -109,19 +111,20 @@ function NavButton({ onClick, icon, label, collapsed, badge, 'aria-label': ariaL
   return (
     <li>
       <div className="relative group">
-        <button
+        <Button
+          variant="ghost"
           onClick={handleClick}
           aria-label={collapsed ? (ariaLabel ?? label) : undefined}
           className={
             collapsed
-              ? 'flex w-full items-center justify-center rounded-lg p-2.5 text-muted hover:bg-bg-overlay hover:text-base transition-colors'
-              : 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors'
+              ? 'flex w-full justify-center rounded-lg p-2.5 font-normal'
+              : 'flex w-full items-center gap-2.5 justify-start rounded-lg px-3 py-2 text-sm font-normal'
           }
         >
           <span className="shrink-0">{icon}</span>
           {!collapsed && <span>{label}</span>}
           {!collapsed && badge}
-        </button>
+        </Button>
         {collapsed && <CollapseTooltip label={label} />}
       </div>
     </li>
@@ -221,18 +224,19 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
           )}
           {/* Toggle collapse/expand button — desktop only */}
           {!isMobile && (
-            <button
+            <IconButton
               onClick={toggle}
-              className="mr-1.5 flex shrink-0 items-center justify-center rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
+              icon={
+                collapsed ? (
+                  <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
+                )
+              }
               aria-label={collapsed ? layoutTranslations['Sidebar.expandAriaLabel'] : layoutTranslations['Sidebar.collapseAriaLabel']}
               data-testid="sidebar-toggle"
-            >
-              {collapsed ? (
-                <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
+              className="mr-1.5 text-subtle hover:bg-bg-overlay hover:text-base"
+            />
           )}
         </div>
 
@@ -241,11 +245,12 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
           {collapsed ? (
             // Collapsed: show workspace initial as avatar button with tooltip
             <div className="relative group">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setSwitcherOpen((o) => !o)}
-                className="flex w-full items-center justify-center rounded-lg p-2 text-muted hover:bg-bg-overlay transition-colors"
                 aria-label={translations['WorkspaceSwitcher.label']}
                 aria-expanded={switcherOpen}
+                className="flex w-full justify-center rounded-lg p-2 font-normal"
               >
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/40 text-xs font-bold text-indigo-700 dark:text-indigo-300"
@@ -254,7 +259,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 >
                   {(activeWorkspace?.name ?? '?').charAt(0).toUpperCase()}
                 </span>
-              </button>
+              </Button>
               <CollapseTooltip
                 label={
                   status === 'loading'
@@ -266,12 +271,13 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
           ) : (
             // Expanded: full workspace switcher button
             <div className="relative">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setSwitcherOpen((o) => !o)}
-                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium text-base hover:bg-bg-overlay transition-colors"
                 aria-expanded={switcherOpen}
                 aria-haspopup="listbox"
                 aria-label={translations['WorkspaceSwitcher.label']}
+                className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-medium"
               >
                 <span className="truncate">
                   {status === 'loading'
@@ -284,7 +290,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   )}
                 </span>
                 <ChevronDownIcon className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
-              </button>
+              </Button>
               {switcherOpen && (
                 <ul
                   role="listbox"
@@ -293,23 +299,25 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 >
                   {workspaces.map((ws) => (
                     <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={() => handleSwitchWorkspace(ws.id)}
-                        className="w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
+                        className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                       >
                         {ws.name}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                   <li role="separator" className="my-1 border-t border-border" />
                   <li>
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
-                      className="flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-400 hover:bg-bg-overlay transition-colors"
+                      className="flex w-full items-center gap-1.5 rounded-none px-3 py-1.5 text-sm text-indigo-400 hover:text-indigo-400 font-normal justify-start"
                     >
                       <PlusIcon className="h-4 w-4" aria-hidden="true" />
                       {translations['Sidebar.newWorkspace']}
-                    </button>
+                    </Button>
                   </li>
                 </ul>
               )}
@@ -416,12 +424,13 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             </ul>
           ) : (
             !collapsed && (
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setShowCreateModal(true)}
-                className="mt-2 w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted hover:border-border-strong hover:text-subtle transition-colors"
+                className="mt-2 w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm font-normal text-muted hover:border-border-strong hover:text-subtle"
               >
                 {translations['Sidebar.createFirst']}
-              </button>
+              </Button>
             )
           )}
         </div>
@@ -432,12 +441,13 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             {collapsed ? (
               // Collapsed: avatar-only button with tooltip
               <div className="relative group">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setUserMenuOpen((o) => !o)}
-                  className="flex w-full items-center justify-center rounded-lg p-2 text-base hover:bg-bg-overlay transition-colors"
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
                   aria-label={userDisplayName}
+                  className="flex w-full justify-center rounded-lg p-2 font-normal"
                 >
                   {profile?.avatar_url ? (
                     <img
@@ -455,16 +465,17 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                       {userInitial}
                     </span>
                   )}
-                </button>
+                </Button>
                 <CollapseTooltip label={userDisplayName} />
               </div>
             ) : (
               // Expanded: full user button
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setUserMenuOpen((o) => !o)}
-                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm font-normal justify-start"
               >
                 {profile?.avatar_url ? (
                   <img
@@ -484,7 +495,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 )}
                 <span className="flex-1 truncate text-left">{userDisplayName}</span>
                 <ChevronDownIcon className="h-4 w-4 shrink-0 text-subtle" aria-hidden="true" />
-              </button>
+              </Button>
             )}
 
             {userMenuOpen && (
@@ -518,13 +529,14 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 </li>
                 <li role="separator" className="my-1 border-t border-border" />
                 <li role="none">
-                  <button
+                  <Button
+                    variant="ghost"
                     role="menuitem"
                     onClick={handleLogout}
-                    className="w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
+                    className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                   >
                     {translations['Sidebar.logout']}
-                  </button>
+                  </Button>
                 </li>
               </ul>
             )}

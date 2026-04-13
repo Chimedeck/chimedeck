@@ -3,6 +3,7 @@
 // Desktop: shows action icons only (sidebar provides the primary nav).
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import { ThemeToggle } from '~/common/components/ThemeToggle';
+import IconButton from '~/common/components/IconButton';
 import NotificationContainer from '~/extensions/Notification/containers/NotificationContainer';
 import translations from '~/common/translations/en.json';
 
@@ -18,16 +19,15 @@ export default function TopBar({ onOpenDrawer, drawerOpen }: TopBarProps) {
     <>
       {/* Mobile topbar — hamburger + brand + actions */}
       <div className="flex h-14 shrink-0 items-center border-b border-border bg-bg-surface px-4 md:hidden">
-        <button
+        <IconButton
           onClick={onOpenDrawer}
-          className="mr-3 rounded p-1 text-muted hover:bg-bg-overlay hover:text-base transition-colors"
+          icon={<Bars3Icon className="h-5 w-5" aria-hidden="true" />}
           aria-label={translations['Layout.openSidebarAriaLabel']}
           aria-expanded={drawerOpen}
           aria-controls="mobile-sidebar"
           data-testid="mobile-sidebar-toggle"
-        >
-          <Bars3Icon className="h-5 w-5" aria-hidden="true" />
-        </button>
+          className="mr-3 text-muted hover:bg-bg-overlay hover:text-base"
+        />
         <span className="text-base font-bold">{translations['App.name']}</span>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
