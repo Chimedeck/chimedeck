@@ -39,7 +39,7 @@ const STATUS_LABELS: Record<Attachment['status'], string> = {
   REJECTED: translations['attachments.item.status.rejected'],
 };
 
-export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename, onInsertComment }: Props): React.ReactElement {
+export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename, onInsertComment }: Readonly<Props>): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
 
@@ -55,6 +55,8 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
   const Icon = attachment.type === 'URL' ? LinkIcon : getMimeIcon(attachment.content_type);
   const isUploading = attachment.status === 'PENDING' && uploadProgress != null;
   const isVideo = attachment.type !== 'URL' && attachment.content_type?.startsWith('video/');
+  const openHref = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
+  const canOpenWithLink = attachment.status === 'READY' && !isVideo && Boolean(openHref);
 
   const handleOpen = (): void => {
     if (isVideo) {
@@ -115,38 +117,58 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
     if (ev.key === 'Escape') cancelRename();
   };
 
-  return (
-    <div className="flex flex-col gap-1 py-2 border-b border-border last:border-0">
-      <div className="flex items-center gap-2">
-        {/* File-type icon badge */}
+  let attachmentIdentity: React.ReactNode;
+  if (editing) {
+    attachmentIdentity = (
+      <input
+        ref={renameInputRef}
+        type="text"
+        value={renameValue}
+        onChange={(e) => { setRenameValue(e.target.value); setRenameError(false); }}
+        onKeyDown={handleRenameKeyDown}
+        onBlur={commitRename}
+        placeholder={translations['attachment.rename.placeholder']}
+        aria-label={translations['attachment.rename.placeholder']}
+        className={`flex-1 min-w-0 text-sm bg-bg-overlay text-base placeholder:text-subtle border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 ${
+          renameError
+            ? 'border-danger focus:ring-danger animate-shake'
+            : 'border-border focus:ring-primary'
+        }`}
+        data-testid="attachment-rename-input"
+        autoFocus
+      />
+    );
+  } else if (canOpenWithLink && openHref) {
+    attachmentIdentity = (
+      <a
+        href={openHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex min-w-0 flex-1 items-center gap-2 text-link hover:underline"
+        title={displayName}
+      >
         <span className="flex-shrink-0 text-muted">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
+        <span className="min-w-0 truncate text-sm">{displayName}</span>
+      </a>
+    );
+  } else {
+    attachmentIdentity = (
+      <div className="flex min-w-0 flex-1 items-center gap-2" title={displayName}>
+        <span className="flex-shrink-0 text-muted">
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <span className="min-w-0 truncate text-sm text-base">{displayName}</span>
+      </div>
+    );
+  }
 
-        {/* Name — truncated, or inline rename input when editing */}
-        {editing ? (
-          <input
-            ref={renameInputRef}
-            type="text"
-            value={renameValue}
-            onChange={(e) => { setRenameValue(e.target.value); setRenameError(false); }}
-            onKeyDown={handleRenameKeyDown}
-            onBlur={commitRename}
-            placeholder={translations['attachment.rename.placeholder']}
-            aria-label={translations['attachment.rename.placeholder']}
-            className={`flex-1 min-w-0 text-sm bg-bg-overlay text-base placeholder:text-subtle border rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 ${
-              renameError
-                ? 'border-danger focus:ring-danger animate-shake'
-                : 'border-border focus:ring-primary'
-            }`}
-            data-testid="attachment-rename-input"
-            autoFocus
-          />
-        ) : (
-          <span className="flex-1 min-w-0 text-sm text-base truncate" title={displayName}>
-            {displayName}
-          </span>
-        )}
+  return (
+    <div className="flex flex-col gap-1 py-2 border-b border-border last:border-0">
+      <div className="flex items-center gap-2">
+        {/* Icon + name — linkable for ready non-video attachments */}
+        {attachmentIdentity}
 
         {/* Size */}
         {attachment.size_bytes != null && (

@@ -9,6 +9,7 @@ import {
   getPartUrl,
   completeMultipart,
   abortMultipart,
+  deleteAttachment,
 } from '../api';
 import type { Attachment, UploadEntry, CompletedPart } from '../types';
 import config from '~/config';
@@ -132,7 +133,8 @@ export function useAttachmentUpload({
     (files: File[]) => {
       const validFiles = files.filter((file) => {
         if (file.size > config.maxAttachmentSizeBytes) {
-          onErrorRef.current?.('', `"${file.name}" exceeds the ${config.maxAttachmentSizeBytes / 1024 / 1024} MB size limit`);
+          const maxSizeMb = Math.round(config.maxAttachmentSizeBytes / (1024 * 1024));
+          onErrorRef.current?.('', `File "${file.name}" is too large. It must be under ${maxSizeMb}MB.`);
           return false;
         }
         return true;
@@ -206,6 +208,8 @@ export function useAttachmentUpload({
       const msg = err instanceof Error ? err.message : 'Upload failed';
       updateEntry(clientId, { phase: 'error', error: msg });
       onErrorRef.current?.(clientId, msg);
+      // Remove failed inline rows so they don't linger in "uploading" state.
+      setUploads((prev) => prev.filter((e) => e.clientId !== clientId));
     } finally {
       delete abortRefs.current[clientId];
       // [why] Notify any active flush() Promise that one more upload has settled.
@@ -231,9 +235,15 @@ export function useAttachmentUpload({
 
     updateEntry(clientId, { phase: 'uploading', progress: 0 });
 
-    await singleFileUpload(urlData.uploadUrl, file, (pct) => {
-      if (!signal.aborted) updateEntry(clientId, { progress: pct });
-    });
+    try {
+      await singleFileUpload(urlData.uploadUrl, file, (pct) => {
+        if (!signal.aborted) updateEntry(clientId, { progress: pct });
+      });
+    } catch (error) {
+      // Remove orphaned PENDING attachment row created by upload-url request.
+      await deleteAttachment({ cardId, attachmentId: urlData.attachmentId }).catch(() => {});
+      throw error;
+    }
 
     if (signal.aborted) return;
 
@@ -297,24 +307,32 @@ export function useAttachmentUpload({
       parts = await runConcurrent(partTasks, MAX_CONCURRENT_PARTS);
     } catch (err) {
       // Abort the multipart upload on error
-      await abortMultipart({ cardId, uploadId: mpData.uploadId }).catch(() => {});
+      await abortMultipart({ cardId, uploadId: mpData.uploadId, key: mpData.key }).catch(() => {});
       throw err;
     }
 
     if (signal.aborted) {
-      await abortMultipart({ cardId, uploadId: mpData.uploadId }).catch(() => {});
+      await abortMultipart({ cardId, uploadId: mpData.uploadId, key: mpData.key }).catch(() => {});
       return;
     }
 
     updateEntry(clientId, { phase: 'confirming', progress: 100 });
 
-    const { data: attachment } = await completeMultipart({
-      cardId,
-      uploadId: mpData.uploadId,
-      key: mpData.key,
-      attachmentId: mpData.attachmentId,
-      parts,
-    });
+    let attachment: Attachment;
+    try {
+      const result = await completeMultipart({
+        cardId,
+        uploadId: mpData.uploadId,
+        key: mpData.key,
+        attachmentId: mpData.attachmentId,
+        parts,
+      });
+      attachment = result.data;
+    } catch (error) {
+      // Complete can fail after parts upload; abort to clear pending server row.
+      await abortMultipart({ cardId, uploadId: mpData.uploadId, key: mpData.key }).catch(() => {});
+      throw error;
+    }
 
     updateEntry(clientId, { phase: 'done', attachmentId: attachment.id });
     onSuccessRef.current?.(attachment, clientId);

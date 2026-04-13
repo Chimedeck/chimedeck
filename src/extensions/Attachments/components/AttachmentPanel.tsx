@@ -6,6 +6,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PaperClipIcon, LinkIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
+import ToastRegion from '../../../common/components/ToastRegion';
+import type { ToastItem } from '../../../common/components/ToastRegion';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
 import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment, fetchCardPreview } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
@@ -31,12 +33,13 @@ interface Props {
   onCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange }: Props): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange }: Readonly<Props>): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   // URL-attachment form state
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -48,6 +51,21 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   const [detectingCard, setDetectingCard] = useState(false);
   const [detectError, setDetectError] = useState(false);
   const detectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const pushErrorToast = useCallback((message: string) => {
+    setToasts((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        message,
+        variant: 'error',
+      },
+    ]);
+  }, []);
 
   // Load attachments from the server
   const loadAttachments = useCallback(async () => {
@@ -75,6 +93,9 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
     cardId,
     onSuccess: () => {
       void loadAttachments();
+    },
+    onError: (_clientId, message) => {
+      pushErrorToast(message);
     },
   });
 
@@ -268,15 +289,16 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   };
 
   return (
-    <AttachmentDropZone
-      onFiles={canWrite ? upload : () => {}}
-      scope="both"
-      activeWithinSelector="[data-card-modal-content='true']"
-      excludeSelectors={[
-        "[data-upload-drop-exclude='true']",
-        "[data-attachment-dropzone-root='true']",
-      ]}
-    >
+    <>
+      <AttachmentDropZone
+        onFiles={canWrite ? upload : () => {}}
+        scope="both"
+        activeWithinSelector="[data-card-modal-content='true']"
+        excludeSelectors={[
+          "[data-upload-drop-exclude='true']",
+          "[data-attachment-dropzone-root='true']",
+        ]}
+      >
       {/* Invisible paste listener — only active when the user can write */}
       <PasteListener enabled={canWrite} onFiles={upload} onLink={handlePasteLink} />
 
@@ -530,6 +552,9 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
           )}
         </div>
       )}
-    </AttachmentDropZone>
+      </AttachmentDropZone>
+
+      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
+    </>
   );
 }

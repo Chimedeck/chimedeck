@@ -249,6 +249,7 @@ const CardModalContainer = () => {
         card_id: card.id,
         title: title ?? 'Checklist',
         position: String(Date.now()),
+        created_at: new Date().toISOString(),
         items: [],
       };
       dispatch(cardDetailSliceActions.applyOptimisticChecklistAdd({ mutationId: tempId, checklist: tempChecklist }));
@@ -283,20 +284,53 @@ const CardModalContainer = () => {
   const handleDeleteChecklist = useCallback(
     async (checklistId: string) => {
       const mutationId = nextMutationId();
+      const checklistToDelete = checklists.find((checklist) => checklist.id === checklistId);
+      const removedTotal = checklistToDelete?.items.length ?? 0;
+      const removedDone = checklistToDelete?.items.filter((item) => item.checked).length ?? 0;
+      const prevChecklistTotal = checklists.reduce((sum, checklist) => sum + checklist.items.length, 0);
+      const prevChecklistDone = checklists.reduce(
+        (sum, checklist) => sum + checklist.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0,
+      );
       dispatch(cardDetailSliceActions.applyOptimisticChecklistDelete({ mutationId, checklistId }));
+      if (card?.id) {
+        dispatch(boardSliceActions.optimisticUpdateCardField({
+          cardId: card.id,
+          field: 'checklist_total',
+          value: Math.max(0, prevChecklistTotal - removedTotal),
+        }));
+        dispatch(boardSliceActions.optimisticUpdateCardField({
+          cardId: card.id,
+          field: 'checklist_done',
+          value: Math.max(0, prevChecklistDone - removedDone),
+        }));
+      }
       try {
         await deleteChecklistById({ api, checklistId });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+        if (card?.id) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_total',
+            value: prevChecklistTotal,
+          }));
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_done',
+            value: prevChecklistDone,
+          }));
+        }
       }
     },
-    [api, dispatch],
+    [api, card, checklists, dispatch],
   );
 
   // ── Checklist item CRUD ─────────────────────────────────────────────────
   const handleItemAdd = useCallback(
     async (checklistId: string, title: string) => {
+      const prevChecklistTotal = checklists.reduce((sum, checklist) => sum + checklist.items.length, 0);
       const tempId = `temp-item-${nextMutationId()}`;
       const tempItem: ChecklistItem = {
         id: tempId,
@@ -310,20 +344,37 @@ const CardModalContainer = () => {
         linked_card_id: null,
       };
       dispatch(cardDetailSliceActions.applyOptimisticChecklistItemAdd({ mutationId: tempId, checklistId, item: tempItem }));
+      if (card?.id) {
+        dispatch(boardSliceActions.optimisticUpdateCardField({
+          cardId: card.id,
+          field: 'checklist_total',
+          value: prevChecklistTotal + 1,
+        }));
+      }
       try {
         const item = await postChecklistItemInGroup({ api, checklistId, title });
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId: tempId, checklistId, item }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId: tempId }));
+        if (card?.id) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_total',
+            value: prevChecklistTotal,
+          }));
+        }
       }
     },
-    [api, card, dispatch],
+    [api, card, checklists, dispatch],
   );
 
   const handleItemToggle = useCallback(
     async (checklistId: string, itemId: string, checked: boolean) => {
       const mutationId = nextMutationId();
-      const prevChecklistDone = card?.checklist_done ?? 0;
+      const prevChecklistDone = checklists.reduce(
+        (sum, checklist) => sum + checklist.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0,
+      );
       const nextChecklistDone = checklists.reduce((sum, checklist) => {
         return sum + checklist.items.reduce((itemSum, item) => {
           const isChecked = item.id === itemId ? checked : item.checked;
@@ -376,15 +427,50 @@ const CardModalContainer = () => {
   const handleItemDelete = useCallback(
     async (checklistId: string, itemId: string) => {
       const mutationId = nextMutationId();
+      const checklist = checklists.find((value) => value.id === checklistId);
+      const targetItem = checklist?.items.find((item) => item.id === itemId);
+      const prevChecklistTotal = checklists.reduce((sum, value) => sum + value.items.length, 0);
+      const prevChecklistDone = checklists.reduce(
+        (sum, value) => sum + value.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0,
+      );
       dispatch(cardDetailSliceActions.applyOptimisticChecklistItemDelete({ mutationId, checklistId, itemId }));
+      if (card?.id) {
+        dispatch(boardSliceActions.optimisticUpdateCardField({
+          cardId: card.id,
+          field: 'checklist_total',
+          value: Math.max(0, prevChecklistTotal - 1),
+        }));
+        if (targetItem?.checked) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_done',
+            value: Math.max(0, prevChecklistDone - 1),
+          }));
+        }
+      }
       try {
         await deleteChecklistItemById({ api, itemId });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+        if (card?.id) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_total',
+            value: prevChecklistTotal,
+          }));
+          if (targetItem?.checked) {
+            dispatch(boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_done',
+              value: prevChecklistDone,
+            }));
+          }
+        }
       }
     },
-    [api, dispatch],
+    [api, card, checklists, dispatch],
   );
 
   const handleItemAssign = useCallback(
@@ -447,16 +533,51 @@ const CardModalContainer = () => {
   const handleConvertChecklistItemToCard = useCallback(
     async (checklistId: string, itemId: string) => {
       const mutationId = nextMutationId();
+      const checklist = checklists.find((value) => value.id === checklistId);
+      const targetItem = checklist?.items.find((item) => item.id === itemId);
+      const prevChecklistTotal = checklists.reduce((sum, value) => sum + value.items.length, 0);
+      const prevChecklistDone = checklists.reduce(
+        (sum, value) => sum + value.items.reduce((itemSum, item) => itemSum + (item.checked ? 1 : 0), 0),
+        0,
+      );
       dispatch(cardDetailSliceActions.applyOptimisticChecklistItemDelete({ mutationId, checklistId, itemId }));
+      if (card?.id) {
+        dispatch(boardSliceActions.optimisticUpdateCardField({
+          cardId: card.id,
+          field: 'checklist_total',
+          value: Math.max(0, prevChecklistTotal - 1),
+        }));
+        if (targetItem?.checked) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_done',
+            value: Math.max(0, prevChecklistDone - 1),
+          }));
+        }
+      }
       try {
         const result = await convertChecklistItemToCard({ api, itemId });
         dispatch(cardDetailSliceActions.confirmChecklist({ mutationId }));
         dispatch(boardSliceActions.addCard({ card: result.card }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
+        if (card?.id) {
+          dispatch(boardSliceActions.optimisticUpdateCardField({
+            cardId: card.id,
+            field: 'checklist_total',
+            value: prevChecklistTotal,
+          }));
+          if (targetItem?.checked) {
+            dispatch(boardSliceActions.optimisticUpdateCardField({
+              cardId: card.id,
+              field: 'checklist_done',
+              value: prevChecklistDone,
+            }));
+          }
+        }
       }
     },
-    [api, dispatch],
+    [api, card, checklists, dispatch],
   );
 
   // ── Labels ──────────────────────────────────────────────────────────────
@@ -518,8 +639,10 @@ const CardModalContainer = () => {
       const newList = allLabelsRef.current.map((l) => (l.id === labelId ? updated : l));
       allLabelsRef.current = newList;
       setAllLabels(newList);
+      dispatch(cardDetailSliceActions.updateLabelInCard({ label: updated }));
+      dispatch(boardSliceActions.updateLabelInCards({ label: updated }));
     },
-    [api],
+    [api, dispatch],
   );
 
   // ── Member assign / remove ──────────────────────────────────────────────

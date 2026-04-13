@@ -52,6 +52,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
 
   const checklistRows = await db('checklists')
     .where({ card_id: cardId })
+    .orderBy('created_at', 'asc')
     .orderBy('position', 'asc');
 
   const checklistItems = await db('checklist_items')

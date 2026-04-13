@@ -40,5 +40,5 @@ export const ALLOWED_MIME_TYPES: string[] = [
   'audio/wav',
 ];
 
-/** Hard cap driven by MAX_ATTACHMENT_SIZE_MB env var (default 250 MB). */
+/** Hard cap driven by MAX_ATTACHMENT_SIZE_MB env var (default 50 MB). */
 export const MAX_FILE_SIZE_BYTES = env.MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;

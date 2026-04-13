@@ -147,6 +147,15 @@ const boardSlice = createSlice({
       }
     },
 
+    updateLabelInCards(state, action: PayloadAction<{ label: Card['labels'][number] }>) {
+      const { label } = action.payload;
+      for (const card of Object.values(state.cards)) {
+        if (card.labels?.some((l) => l.id === label.id)) {
+          card.labels = card.labels.map((l) => (l.id === label.id ? label : l));
+        }
+      }
+    },
+
     /** Remove a card from local board state (e.g. after delete) */
     removeCard(state, action: PayloadAction<{ cardId: string; listId: string }>) {
       const { cardId, listId } = action.payload;

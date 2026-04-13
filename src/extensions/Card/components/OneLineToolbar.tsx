@@ -282,7 +282,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
     <div
       role="toolbar"
       aria-label="Text formatting"
-      className="z-20 flex w-full min-w-0 items-center gap-1 overflow-x-auto border-b border-border bg-bg-surface p-2 shadow-md"
+      className="z-20 flex w-full min-w-0 items-center gap-1 overflow-visible border-b border-border bg-bg-surface p-2 shadow-md"
     >
       {/* Text styles (heading) dropdown — always first */}
       <HeadingDropdown editor={editor} />

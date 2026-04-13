@@ -79,5 +79,6 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
     return Response.json({ name: 's3-error', data: { message: 'Failed to generate part URL' } }, { status: 502 });
   }
 
-  return Response.json({ data: { partUrl, partNumber: body.partNumber } }, { status: 200 });
+  // [why] Client expects `url`; keep `partUrl` for backward compatibility.
+  return Response.json({ data: { url: partUrl, partUrl, partNumber: body.partNumber } }, { status: 200 });
 }

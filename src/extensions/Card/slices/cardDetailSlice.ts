@@ -174,14 +174,13 @@ const cardDetailSlice = createSlice({
     ) {
       const { commentId, emoji, userId, reactedByMe = true } = action.payload;
       const comment = state.comments.find((c) => c.id === commentId);
-      if (!comment || !comment.reactions) return;
-      const existing = comment.reactions.find((r) => r.emoji === emoji);
+      const existing = comment?.reactions?.find((r) => r.emoji === emoji);
       if (!existing) return;
       existing.count = Math.max(0, existing.count - 1);
       existing.reactors = (existing.reactors ?? []).filter((r) => r.userId !== userId);
       if (reactedByMe) existing.reactedByMe = false;
       // Remove pill entirely when count drops to zero
-      if (existing.count <= 0) {
+      if (existing.count <= 0 && comment?.reactions) {
         comment.reactions = comment.reactions.filter((r) => r.emoji !== emoji);
       }
     },
@@ -397,6 +396,17 @@ const cardDetailSlice = createSlice({
       const { mutationId, labelId } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
       state.labels = state.labels.filter((l) => l.id !== labelId);
+    },
+
+    updateLabelInCard(state, action: PayloadAction<{ label: Label }>) {
+      const { label } = action.payload;
+      state.labels = state.labels.map((l) => (l.id === label.id ? label : l));
+      if (state.card) {
+        const currentCardLabels = Array.isArray(state.card.labels)
+          ? state.card.labels
+          : state.labels;
+        state.card.labels = currentCardLabels.map((l) => (l.id === label.id ? label : l));
+      }
     },
 
     confirmLabel(state, action: PayloadAction<{ mutationId: string }>) {

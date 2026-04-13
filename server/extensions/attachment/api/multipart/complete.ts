@@ -15,7 +15,9 @@ import { writeEvent } from '../../../../mods/events/write';
 
 interface CompletedPart {
   partNumber: number;
-  eTag: string;
+  eTag?: string;
+  etag?: string;
+  ETag?: string;
 }
 
 export async function handleMultipartComplete(req: Request, cardId: string): Promise<Response> {
@@ -64,7 +66,24 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
 
   const completeParts = body.parts
     .sort((a, b) => a.partNumber - b.partNumber)
-    .map((p) => ({ PartNumber: p.partNumber, ETag: p.eTag }));
+    .map((part) => {
+      const rawETag = part.eTag ?? part.etag ?? part.ETag;
+      const normalizedETag = typeof rawETag === 'string' ? rawETag.trim() : '';
+      return {
+        PartNumber: part.partNumber,
+        ETag: normalizedETag,
+      };
+    });
+
+  if (completeParts.some((part) => !part.ETag)) {
+    return Response.json(
+      {
+        name: 'invalid-multipart-parts',
+        data: { message: 'Each multipart part must include a non-empty ETag' },
+      },
+      { status: 400 },
+    );
+  }
 
   try {
     await s3Client.send(

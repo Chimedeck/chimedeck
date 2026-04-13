@@ -12,6 +12,7 @@ import { ChecklistProgress } from './ChecklistProgress';
 const LOW_SENTINEL = '';
 const HIGH_SENTINEL = '~';
 const BASE = 95;
+const NUMERIC_POSITION_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 const toDigit = (char: string): number => (char.codePointAt(0) ?? 32) - 32;
 const toChar = (digit: number): string => String.fromCodePoint(digit + 32);
@@ -57,6 +58,15 @@ const betweenPositions = (left: string, right: string): string => {
   }
 
   return fromDigits(output);
+};
+
+const compareChecklistItemPosition = (left: string, right: string): number => {
+  if (left === right) return 0;
+  if (NUMERIC_POSITION_PATTERN.test(left) && NUMERIC_POSITION_PATTERN.test(right)) {
+    const delta = Number(left) - Number(right);
+    if (delta !== 0) return delta;
+  }
+  return left < right ? -1 : 1;
 };
 
 interface SortableChecklistItemRowProps {
@@ -145,7 +155,7 @@ export const ChecklistSection = ({
   disabled,
 }: Props) => {
   const sortedItems = useMemo(
-    () => [...checklist.items].sort((left, right) => left.position.localeCompare(right.position)),
+    () => [...checklist.items].sort((left, right) => compareChecklistItemPosition(left.position, right.position)),
     [checklist.items],
   );
   const [adding, setAdding] = useState(false);

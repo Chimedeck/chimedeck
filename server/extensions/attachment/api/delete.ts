@@ -47,12 +47,18 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
     );
   }
 
-  // Delete S3 object for FILE attachments (best-effort; continue even on failure)
-  if (attachment.type === 'FILE' && attachment.s3_key) {
-    try {
-      await deleteObject({ s3Key: attachment.s3_key });
-    } catch {
-      // Log in production; do not block the delete
+  // Delete S3 objects for FILE attachments (best-effort; continue even on failure)
+  if (attachment.type === 'FILE') {
+    const keysToDelete = [attachment.s3_key, attachment.thumbnail_key].filter(
+      (key): key is string => typeof key === 'string' && key.length > 0,
+    );
+
+    for (const s3Key of keysToDelete) {
+      try {
+        await deleteObject({ s3Key });
+      } catch {
+        // Log in production; do not block the delete
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 // CardChecklist — renders all named checklist groups + "Add checklist" button.
 // Each group is a ChecklistSection. Optimistic mutations handled in parent container.
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { ChecklistSection } from './ChecklistSection';
 import type { Checklist } from '../api';
@@ -41,6 +41,22 @@ const CardChecklist = ({
 }: Props) => {
   const [addingChecklist, setAddingChecklist] = useState(false);
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
+
+  const orderedChecklists = useMemo(() => {
+    return [...checklists].sort((left, right) => {
+      const leftCreated = left.created_at ? Date.parse(left.created_at) : Number.NaN;
+      const rightCreated = right.created_at ? Date.parse(right.created_at) : Number.NaN;
+      const leftHasCreated = Number.isFinite(leftCreated);
+      const rightHasCreated = Number.isFinite(rightCreated);
+
+      if (leftHasCreated && rightHasCreated && leftCreated !== rightCreated) {
+        return leftCreated - rightCreated;
+      }
+
+      if (left.position === right.position) return 0;
+      return left.position < right.position ? -1 : 1;
+    });
+  }, [checklists]);
 
   const handleCreateChecklist = async () => {
     const trimmed = newChecklistTitle.trim() || undefined;
@@ -107,7 +123,7 @@ const CardChecklist = ({
       )}
 
       <div className="space-y-6">
-        {checklists.map((cl) => (
+        {orderedChecklists.map((cl) => (
           <ChecklistSection
             key={cl.id}
             checklist={cl}

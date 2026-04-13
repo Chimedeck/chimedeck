@@ -1,7 +1,7 @@
 // AttachmentThumbnail — renders a clickable image preview card.
 // Uses thumbnailUrl when available; falls back to the full download url.
 // AttachmentThumbnail is for image/* and VideoThumbnail is for video/*.
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PhotoIcon, FilmIcon, PlayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Attachment } from '../types';
 import translations from '../translations/en.json';
@@ -11,21 +11,48 @@ interface Props {
 }
 
 function ImageLightbox({ src, name, onClose }: { src: string; name: string; onClose: () => void }): React.ReactElement {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    rootRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      onClose();
+    };
+
+    globalThis.addEventListener('keydown', handleEscape, true);
+    return () => {
+      globalThis.removeEventListener('keydown', handleEscape, true);
+    };
+  }, [onClose]);
+
   const handleBackdropClick = (e: React.MouseEvent): void => {
     if (e.target === e.currentTarget) onClose();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
   };
 
   return (
     <div
+      ref={rootRef}
       role="dialog"
       aria-modal="true"
       aria-label={name}
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80"
       onClick={handleBackdropClick}
+      onKeyDownCapture={handleKeyDown}
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
@@ -53,29 +80,49 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
   const src = attachment.thumbnail_url ?? attachment.view_url;
   const fullSrc = attachment.view_url ?? src;
 
+  const displayName = attachment.alias ?? attachment.name;
+
   if (!src) {
     // Placeholder when thumbnail URL is not yet available
     return (
-      <div className="flex items-center justify-center w-24 h-16 rounded bg-bg-overlay text-muted">
-        <PhotoIcon className="h-8 w-8" aria-hidden="true" />
+      <div className="w-24">
+        <div className="flex items-center justify-center h-16 rounded bg-bg-overlay text-muted">
+          <PhotoIcon className="h-8 w-8" aria-hidden="true" />
+        </div>
+        <p className="mt-1 truncate text-[10px] text-muted" title={displayName}>
+          {displayName}
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <button
-        onClick={() => setLightboxOpen(true)}
-        className="relative w-24 h-16 rounded overflow-hidden border border-border hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label={translations['attachments.thumbnail.image.preview.ariaLabel'].replace('{name}', attachment.name)}
-      >
-        <img
-          src={src}
-          alt={attachment.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-      </button>
+      <div className="w-24">
+        <button
+          onClick={() => setLightboxOpen(true)}
+          className="relative h-16 w-full rounded overflow-hidden border border-border hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label={translations['attachments.thumbnail.image.preview.ariaLabel'].replace('{name}', attachment.name)}
+        >
+          <img
+            src={src}
+            alt={attachment.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </button>
+        {fullSrc && (
+          <a
+            href={fullSrc}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 block truncate text-[10px] text-link hover:underline"
+            title={displayName}
+          >
+            {displayName}
+          </a>
+        )}
+      </div>
       {lightboxOpen && fullSrc && (
         <ImageLightbox src={fullSrc} name={attachment.name} onClose={() => setLightboxOpen(false)} />
       )}
@@ -94,21 +141,48 @@ export function VideoLightbox({
   name: string;
   onClose: () => void;
 }): React.ReactElement {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    rootRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      onClose();
+    };
+
+    globalThis.addEventListener('keydown', handleEscape, true);
+    return () => {
+      globalThis.removeEventListener('keydown', handleEscape, true);
+    };
+  }, [onClose]);
+
   const handleBackdropClick = (e: React.MouseEvent): void => {
     if (e.target === e.currentTarget) onClose();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
   };
 
   return (
     <div
+      ref={rootRef}
       role="dialog"
       aria-modal="true"
       aria-label={name}
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90"
       onClick={handleBackdropClick}
+      onKeyDownCapture={handleKeyDown}
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
@@ -150,7 +224,8 @@ export function VideoThumbnail({ attachment }: Props): React.ReactElement {
         aria-label={translations['attachments.thumbnail.video.play.ariaLabel'].replace('{name}', attachment.name)}
       >
         <FilmIcon className="h-6 w-6 text-muted group-hover:text-subtle transition-colors" aria-hidden="true" />
-        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" /> // [theme-exception] text-white on media overlay
+        {/* [theme-exception] text-white on media overlay */}
+        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" />
       </button>
       {lightboxOpen && (
         <VideoLightbox src={src} name={attachment.name} onClose={() => setLightboxOpen(false)} />

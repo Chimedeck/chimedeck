@@ -13,9 +13,13 @@ export async function cleanupOrphanAttachments(): Promise<void> {
     .where('created_at', '<', cutoff);
 
   for (const attachment of orphans) {
-    if (attachment.s3_key) {
+    const keysToDelete = [attachment.s3_key, attachment.thumbnail_key].filter(
+      (key): key is string => typeof key === 'string' && key.length > 0,
+    );
+
+    for (const s3Key of keysToDelete) {
       try {
-        await deleteObject({ s3Key: attachment.s3_key });
+        await deleteObject({ s3Key });
       } catch {
         // Best-effort S3 deletion — proceed to remove DB row regardless
       }

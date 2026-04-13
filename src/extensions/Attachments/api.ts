@@ -77,11 +77,13 @@ export async function completeMultipart({
 export async function abortMultipart({
   cardId,
   uploadId,
+  key,
 }: {
   cardId: string;
   uploadId: string;
+  key: string;
 }): Promise<void> {
-  return apiClient.delete(`/cards/${cardId}/attachments/multipart/${uploadId}`);
+  return apiClient.delete(`/cards/${cardId}/attachments/multipart/${uploadId}?key=${encodeURIComponent(key)}`);
 }
 
 // ---------- URL attachment ----------

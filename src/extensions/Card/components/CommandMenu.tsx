@@ -9,7 +9,6 @@ import {
   FaceSmileIcon,
   CodeBracketIcon,
   ChatBubbleLeftEllipsisIcon,
-  NumberedListIcon,
 } from '@heroicons/react/24/outline';
 
 interface CommandDef {
@@ -64,42 +63,6 @@ const COMMANDS: CommandDef[] = [
     icon: <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5 shrink-0" />,
     execute: (editor) => {
       editor.chain().focus().toggleBlockquote().run();
-    },
-  },
-  {
-    id: 'numbered-list',
-    label: 'Numbered list',
-    keywords: ['numbered', 'list', 'ordered', '1.'],
-    icon: <NumberedListIcon className="h-3.5 w-3.5 shrink-0" />,
-    execute: (editor) => {
-      editor.chain().focus().toggleOrderedList().run();
-    },
-  },
-  {
-    id: 'heading-1',
-    label: 'Heading 1',
-    keywords: ['heading', 'h1', 'title', '#'],
-    icon: <span className="text-xs font-bold shrink-0 w-3.5 text-center">H1</span>,
-    execute: (editor) => {
-      editor.chain().focus().toggleHeading({ level: 1 }).run();
-    },
-  },
-  {
-    id: 'heading-2',
-    label: 'Heading 2',
-    keywords: ['heading', 'h2', 'subtitle', '##'],
-    icon: <span className="text-xs font-bold shrink-0 w-3.5 text-center">H2</span>,
-    execute: (editor) => {
-      editor.chain().focus().toggleHeading({ level: 2 }).run();
-    },
-  },
-  {
-    id: 'heading-3',
-    label: 'Heading 3',
-    keywords: ['heading', 'h3', '###'],
-    icon: <span className="text-xs font-semibold shrink-0 w-3.5 text-center">H3</span>,
-    execute: (editor) => {
-      editor.chain().focus().toggleHeading({ level: 3 }).run();
     },
   },
 ];
@@ -162,7 +125,6 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
         e.preventDefault();
         const cmd = filtered[activeIndex];
         if (cmd) executeCommand(cmd);
-        return;
       }
     },
     [activeIndex, filtered, executeCommand, onClose],
@@ -176,16 +138,13 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
 
   const isActive = (cmd: CommandDef) =>
     (cmd.id === 'code-snippet' && editor?.isActive('codeBlock')) ||
-    (cmd.id === 'quote' && editor?.isActive('blockquote')) ||
-    (cmd.id === 'numbered-list' && editor?.isActive('orderedList')) ||
-    (cmd.id === 'heading-1' && editor?.isActive('heading', { level: 1 })) ||
-    (cmd.id === 'heading-2' && editor?.isActive('heading', { level: 2 })) ||
-    (cmd.id === 'heading-3' && editor?.isActive('heading', { level: 3 }));
+    (cmd.id === 'quote' && editor?.isActive('blockquote'));
 
   return (
     <div
       role="menu"
       aria-label="Command menu"
+      tabIndex={-1}
       className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-border bg-bg-surface shadow-lg"
       onKeyDown={handleKeyDown}
     >
@@ -215,7 +174,6 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
               variant="ghost"
               role="menuitem"
               data-index={idx}
-              aria-selected={idx === activeIndex}
               className={[
                 'flex w-full items-center gap-2 px-3 py-1.5 text-xs transition-colors',
                 idx === activeIndex
