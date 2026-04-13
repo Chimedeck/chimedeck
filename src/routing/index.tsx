@@ -5,6 +5,8 @@ import PublicRoute from './PublicRoute';
 import GuestBlockedRoute from './GuestBlockedRoute';
 import Spinner from '~/common/components/Spinner';
 import AppShell from '~/layout/AppShell';
+import config from '~/config';
+import { DESIGN_SYSTEM_PATH } from '~/extensions/DesignSystem/routes';
 
 // All pages are lazy-loaded — the router shell renders immediately while page chunks load
 const LoginPage = lazy(() =>
@@ -95,6 +97,14 @@ const ApiTokenPage = lazy(() =>
     default: m.default,
   }))
 );
+// Lazy-loaded only when the flag is enabled — avoids bundling in production builds.
+const DesignSystemPage = config.designSystemEnabled
+  ? lazy(() =>
+      import('~/extensions/DesignSystem/DesignSystemPage').then((m) => ({
+        default: m.default,
+      }))
+    )
+  : null;
 
 const LoadingFallback = () => (
   <div className="flex h-screen items-center justify-center bg-bg-base">
@@ -146,6 +156,10 @@ export default function AppRouter() {
               <Route path="/profile/edit" element={<EditProfilePage />} />
               <Route path="/developer/plugins" element={<PluginDocsPage />} />
               <Route path="/developer/mcp" element={<McpDocsPage />} />
+              {/* Design System page — only registered when DESIGN_SYSTEM_ENABLED is true (dev by default). */}
+              {config.designSystemEnabled && DesignSystemPage && (
+                <Route path={DESIGN_SYSTEM_PATH} element={<DesignSystemPage />} />
+              )}
             </Route>
           </Route>
 

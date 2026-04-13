@@ -124,6 +124,13 @@ export const env = {
   /** Response time threshold (ms) above which a 2xx response is classified amber. Default: 1 000 ms. */
   HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000', 10),
 
+  // Design System dev page — enabled by default in development, disabled in production.
+  // Set DESIGN_SYSTEM_ENABLED=true to force-enable in production (not recommended).
+  DESIGN_SYSTEM_ENABLED:
+    Bun.env['NODE_ENV'] !== 'production'
+      ? Bun.env['DESIGN_SYSTEM_ENABLED'] !== 'false'
+      : Bun.env['DESIGN_SYSTEM_ENABLED'] === 'true',
+
   // Sentry server-side monitoring
   /** Set SENTRY_SERVER_ENABLED=true and provide SENTRY_SERVER_DSN to activate capture. */
   SENTRY_SERVER_ENABLED: Bun.env['SENTRY_SERVER_ENABLED'] === 'true',

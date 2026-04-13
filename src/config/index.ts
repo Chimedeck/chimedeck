@@ -26,6 +26,11 @@ const config = {
   sentryRelease: (import.meta.env['VITE_SENTRY_RELEASE'] as string | undefined) ?? '',
   /** Set VITE_SENTRY_REPLAY_ENABLED=true to activate Session Replay (bandwidth-intensive). */
   sentryReplayEnabled: import.meta.env['VITE_SENTRY_REPLAY_ENABLED'] === 'true',
+
+  // Design System dev page — enabled by default in development (import.meta.env.DEV),
+  // disabled in production unless VITE_DESIGN_SYSTEM_ENABLED=true is explicitly set.
+  designSystemEnabled:
+    import.meta.env.DEV || import.meta.env['VITE_DESIGN_SYSTEM_ENABLED'] === 'true',
 };
 
 export default config;
