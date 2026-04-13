@@ -1,8 +1,16 @@
-// DesignSystemPage — scaffold for the living design-system reference.
-// The page renders inside AppShell (via <Outlet />) so it inherits the
-// sidebar + topbar chrome automatically.  Each section of the catalogue
-// is backed by a stable anchor id so the sticky side-nav can deep-link.
-import { Section, CodeSnippet, ColorSwatch, TypographySample } from './components';
+// DesignSystemPage — living design-system reference rendered inside AppShell.
+// Each section has a stable anchor id for sticky side-nav deep-linking.
+import {
+  Section,
+  CodeSnippet,
+  ColorSwatch,
+  TypographySample,
+  BadgeSample,
+  FormInputSample,
+} from './components';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
+import { XMarkIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 /** Nav entries drive both the sticky sidebar list and section ids. */
 const NAV_ITEMS = [
@@ -55,15 +63,52 @@ export default function DesignSystemPage() {
         <Section
           id="colors"
           title="Color Tokens"
-          description="Semantic CSS variables for backgrounds, text, borders, and brand colours."
+          description="Semantic CSS variables for backgrounds, text, borders, and brand colours. Values shown are light-mode defaults."
         >
-          <div className="flex flex-wrap gap-6">
-            <ColorSwatch variable="--color-bg-base" label="bg-base" />
-            <ColorSwatch variable="--color-bg-subtle" label="bg-subtle" />
-            <ColorSwatch variable="--color-text-primary" label="text-primary" />
-            <ColorSwatch variable="--color-text-secondary" label="text-secondary" />
-            <ColorSwatch variable="--color-border-subtle" label="border-subtle" />
-            <ColorSwatch variable="--color-brand-primary" label="brand-primary" />
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Brand</p>
+              <div className="flex flex-wrap gap-6">
+                <ColorSwatch variable="--color-primary" label="primary" />
+                <ColorSwatch variable="--color-primary-hover" label="primary-hover" />
+                <ColorSwatch variable="--color-secondary" label="secondary" />
+                <ColorSwatch variable="--color-accent" label="accent" />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Status</p>
+              <div className="flex flex-wrap gap-6">
+                <ColorSwatch variable="--color-danger" label="danger" />
+                <ColorSwatch variable="--color-success" label="success" />
+                <ColorSwatch variable="--color-warning" label="warning" />
+                <ColorSwatch variable="--color-info" label="info" />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Backgrounds</p>
+              <div className="flex flex-wrap gap-6">
+                <ColorSwatch variable="--bg-base" label="bg-base" />
+                <ColorSwatch variable="--bg-surface" label="bg-surface" />
+                <ColorSwatch variable="--bg-overlay" label="bg-overlay" />
+                <ColorSwatch variable="--bg-sunken" label="bg-sunken" />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Text</p>
+              <div className="flex flex-wrap gap-6">
+                <ColorSwatch variable="--text-base" label="text-base" />
+                <ColorSwatch variable="--text-muted" label="text-muted" />
+                <ColorSwatch variable="--text-subtle" label="text-subtle" />
+                <ColorSwatch variable="--text-link" label="text-link" />
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">Borders</p>
+              <div className="flex flex-wrap gap-6">
+                <ColorSwatch variable="--border" label="border" />
+                <ColorSwatch variable="--border-strong" label="border-strong" />
+              </div>
+            </div>
           </div>
         </Section>
 
@@ -83,40 +128,164 @@ export default function DesignSystemPage() {
           </div>
         </Section>
 
-        {/* ── Buttons (stub — content in Iteration 10) ─────────── */}
+        {/* ── Buttons ──────────────────────────────────────────── */}
         <Section
           id="buttons"
           title="Buttons"
-          description="Primary, secondary, ghost, danger, and link variants."
+          description="Primary, secondary, ghost, danger, success, and link variants in three sizes."
         >
-          <CodeSnippet code={`import { Button } from '~/common/components';\n\n<Button variant="primary">Save</Button>`} />
+          {/* Variants row */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+              Variants
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="primary">Primary</Button>
+              <Button variant="secondary">Secondary</Button>
+              <Button variant="ghost">Ghost</Button>
+              <Button variant="danger">Danger</Button>
+              <Button variant="success">Success</Button>
+              <Button variant="link">Link</Button>
+            </div>
+          </div>
+
+          {/* Sizes row */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+              Sizes
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="primary" size="lg">Large</Button>
+              <Button variant="primary" size="md">Medium</Button>
+              <Button variant="primary" size="sm">Small</Button>
+            </div>
+          </div>
+
+          {/* Disabled row */}
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+              Disabled state
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="primary" disabled>Primary</Button>
+              <Button variant="secondary" disabled>Secondary</Button>
+              <Button variant="ghost" disabled>Ghost</Button>
+              <Button variant="danger" disabled>Danger</Button>
+            </div>
+          </div>
+
+          <CodeSnippet
+            code={`import Button from '~/common/components/Button';
+
+<Button variant="primary">Save</Button>
+<Button variant="secondary" size="sm">Cancel</Button>
+<Button variant="danger" disabled>Delete</Button>`}
+          />
         </Section>
 
-        {/* ── Icon Buttons (stub) ───────────────────────────────── */}
+        {/* ── Icon Buttons ──────────────────────────────────────── */}
         <Section
           id="icon-buttons"
           title="Icon Buttons"
-          description="Square icon-only action buttons with mandatory aria-label."
+          description="Square icon-only buttons — aria-label is required for accessibility."
         >
-          <CodeSnippet code={`import { IconButton } from '~/common/components';\n\n<IconButton aria-label="Close"><XMarkIcon /></IconButton>`} />
+          {/* Variants */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+              Variants
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <IconButton
+                aria-label="Close (ghost)"
+                icon={<XMarkIcon className="h-4 w-4" />}
+                variant="ghost"
+              />
+              <IconButton
+                aria-label="Edit (secondary)"
+                icon={<PencilIcon className="h-4 w-4" />}
+                variant="secondary"
+              />
+              <IconButton
+                aria-label="Delete (danger)"
+                icon={<TrashIcon className="h-4 w-4" />}
+                variant="danger"
+              />
+              <IconButton
+                aria-label="Add (primary)"
+                icon={<PlusIcon className="h-4 w-4" />}
+                variant="primary"
+              />
+            </div>
+          </div>
+
+          {/* Disabled */}
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-3">
+              Disabled state
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <IconButton
+                aria-label="Close (disabled)"
+                icon={<XMarkIcon className="h-4 w-4" />}
+                disabled
+              />
+            </div>
+          </div>
+
+          <CodeSnippet
+            code={`import IconButton from '~/common/components/IconButton';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+
+<IconButton
+  aria-label="Close"
+  icon={<XMarkIcon className="h-4 w-4" />}
+  variant="ghost"
+/>`}
+          />
         </Section>
 
-        {/* ── Badges (stub) ────────────────────────────────────── */}
+        {/* ── Badges ───────────────────────────────────────────── */}
         <Section
           id="badges"
           title="Badges"
-          description="Status and label pills."
+          description="Inline status pills built from semantic CSS tokens. No dedicated Badge component — use the class pattern directly."
         >
-          <p className="text-sm text-text-secondary italic">Coming in Iteration 10.</p>
+          <div className="mb-6">
+            <BadgeSample />
+          </div>
+          <CodeSnippet
+            code={`{/* Badge — use inline span with token-based classes */}
+<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-success text-white">
+  Success
+</span>
+
+<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-danger text-white">
+  Danger
+</span>`}
+          />
         </Section>
 
-        {/* ── Form Inputs (stub) ───────────────────────────────── */}
+        {/* ── Form Inputs ───────────────────────────────────────── */}
         <Section
           id="forms"
           title="Form Inputs"
-          description="Text inputs, selects, and checkboxes."
+          description="Text inputs, selects, checkboxes, and radios using shared Input component and token-styled native controls."
         >
-          <CodeSnippet code={`import Input from '~/common/components/Input';\n\n<Input placeholder="Enter value" />`} />
+          <div className="mb-6">
+            <FormInputSample />
+          </div>
+          <CodeSnippet
+            code={`import Input from '~/common/components/Input';
+
+{/* Basic text input */}
+<Input label="Title" placeholder="Enter value" />
+
+{/* Error state */}
+<Input label="Email" error="Invalid email address" />
+
+{/* Disabled */}
+<Input label="Read only" disabled defaultValue="Locked" />`}
+          />
         </Section>
 
         {/* ── Spinners (stub) ──────────────────────────────────── */}
