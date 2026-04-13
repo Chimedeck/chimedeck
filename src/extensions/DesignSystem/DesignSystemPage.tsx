@@ -7,6 +7,16 @@ import {
   TypographySample,
   BadgeSample,
   FormInputSample,
+  SpinnerExample,
+  ModalExample,
+  AvatarExample,
+  CardExample,
+  CommentExample,
+  ReactionExample,
+  AttachmentExample,
+  NotificationExample,
+  TooltipExample,
+  EmptyStateExample,
 } from './components';
 import Button from '~/common/components/Button';
 import IconButton from '~/common/components/IconButton';
@@ -21,7 +31,12 @@ const NAV_ITEMS = [
   { id: 'badges', label: 'Badges' },
   { id: 'forms', label: 'Form Inputs' },
   { id: 'spinners', label: 'Spinners' },
-  { id: 'toasts', label: 'Toasts' },
+  { id: 'comments', label: 'Comments' },
+  { id: 'reactions', label: 'Reactions' },
+  { id: 'attachments', label: 'Attachments' },
+  { id: 'notifications', label: 'Notifications' },
+  { id: 'tooltips', label: 'Tooltips' },
+  { id: 'empty-states', label: 'Empty States' },
   { id: 'modals', label: 'Modals' },
   { id: 'avatars', label: 'Avatars' },
   { id: 'cards', label: 'Cards' },
@@ -288,33 +303,239 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
           />
         </Section>
 
-        {/* ── Spinners (stub) ──────────────────────────────────── */}
+        {/* ── Spinners ─────────────────────────────────────────── */}
         <Section
           id="spinners"
           title="Spinners"
-          description="Loading indicators."
+          description="Accessible loading indicators with three sizes. Uses role=status and aria-label from translations."
         >
-          <CodeSnippet code={`import Spinner from '~/common/components/Spinner';\n\n<Spinner />`} />
+          <div className="mb-6">
+            <SpinnerExample />
+          </div>
+          <CodeSnippet
+            code={`import Spinner from '~/common/components/Spinner';
+
+<Spinner size="sm" />
+<Spinner size="md" />
+<Spinner size="lg" />`}
+          />
         </Section>
 
-        {/* ── Toasts (stub) ────────────────────────────────────── */}
-        <Section id="toasts" title="Toasts" description="Transient feedback messages.">
-          <p className="text-sm text-text-secondary italic">Coming in Iteration 11.</p>
+        {/* ── Comments ─────────────────────────────────────────── */}
+        <Section
+          id="comments"
+          title="Comments"
+          description="Thread-style comment list with avatar, author, timestamp, and reply input stub."
+        >
+          <div className="mb-6">
+            <CommentExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Comment item layout */}
+<article className="flex gap-3" aria-label="Comment by Alice Brown">
+  <div className="h-8 w-8 rounded-full bg-blue-500 …">AB</div>
+  <div>
+    <span className="text-sm font-semibold">Alice Brown</span>
+    <span className="text-xs text-text-secondary">2h ago</span>
+    <p className="text-sm">Comment body text…</p>
+  </div>
+</article>`}
+          />
         </Section>
 
-        {/* ── Modals (stub) ────────────────────────────────────── */}
-        <Section id="modals" title="Modals" description="Dialog overlays.">
-          <p className="text-sm text-text-secondary italic">Coming in Iteration 11.</p>
+        {/* ── Reactions ────────────────────────────────────────── */}
+        <Section
+          id="reactions"
+          title="Reactions"
+          description="Emoji reaction pills with toggle state (aria-pressed). Click a pill to toggle."
+        >
+          <div className="mb-6">
+            <ReactionExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Reaction pill — active when user has reacted */}
+<button
+  type="button"
+  aria-label="thumbs up: 4 reactions"
+  aria-pressed={reactedByMe}
+  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm border …"
+>
+  👍 <span>4</span>
+</button>`}
+          />
         </Section>
 
-        {/* ── Avatars (stub) ───────────────────────────────────── */}
-        <Section id="avatars" title="Avatars" description="User profile pictures and initials.">
-          <p className="text-sm text-text-secondary italic">Coming in Iteration 11.</p>
+        {/* ── Attachments ──────────────────────────────────────── */}
+        <Section
+          id="attachments"
+          title="Attachments"
+          description="File attachment list with type icon, size, and upload status badge."
+        >
+          <div className="mb-6">
+            <AttachmentExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Attachment list item */}
+<li className="flex items-center gap-3 px-4 py-3 bg-bg-surface …">
+  <PhotoIcon className="h-5 w-5 text-blue-400" />
+  <div>
+    <p className="text-sm font-medium">design-mockup.png</p>
+    <p className="text-xs text-text-secondary">2.4 MB</p>
+  </div>
+  <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success">Ready</span>
+</li>`}
+          />
         </Section>
 
-        {/* ── Cards (stub) ─────────────────────────────────────── */}
-        <Section id="cards" title="Cards" description="Board and task card surfaces.">
-          <p className="text-sm text-text-secondary italic">Coming in Iteration 11.</p>
+        {/* ── Notifications ────────────────────────────────────── */}
+        <Section
+          id="notifications"
+          title="Notifications"
+          description="In-app notification feed with read/unread state and severity icons."
+        >
+          <div className="mb-6">
+            <NotificationExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Notification item — unread has highlighted background */}
+<li
+  className={unread ? 'bg-bg-subtle' : 'bg-bg-surface'}
+  aria-label={unread ? \`Unread: \${title}\` : title}
+>
+  <InformationCircleIcon className="h-5 w-5 text-info" />
+  <div>
+    <p className="text-sm font-medium">{title}</p>
+    <p className="text-xs text-text-secondary">{body}</p>
+  </div>
+</li>`}
+          />
+        </Section>
+
+        {/* ── Tooltips ─────────────────────────────────────────── */}
+        <Section
+          id="tooltips"
+          title="Tooltips"
+          description="CSS group-hover tooltip pattern for top, bottom, and right positions. Hover the buttons below."
+        >
+          <div className="mb-6">
+            <TooltipExample />
+          </div>
+          <CodeSnippet
+            code={`{/* CSS-only tooltip via Tailwind group-hover */}
+<div className="relative inline-flex group">
+  <button>Hover me</button>
+  <span
+    role="tooltip"
+    className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2
+               whitespace-nowrap rounded px-2 py-1 bg-gray-900 text-white text-xs
+               opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity"
+  >
+    Tooltip text
+  </span>
+</div>`}
+          />
+        </Section>
+
+        {/* ── Empty States ─────────────────────────────────────── */}
+        <Section
+          id="empty-states"
+          title="Empty States"
+          description="Centred placeholder layout with icon, heading, description, and optional action."
+        >
+          <div className="mb-6">
+            <EmptyStateExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Empty state — dashed border container */}
+<div className="flex flex-col items-center text-center px-6 py-10
+                rounded-lg border border-dashed border-border bg-bg-subtle">
+  <FolderOpenIcon className="h-6 w-6 text-text-secondary mb-4" />
+  <h3 className="text-sm font-semibold text-text-primary mb-1">No cards yet</h3>
+  <p className="text-xs text-text-secondary mb-4">Add your first card to get started.</p>
+  <Button variant="primary" size="sm">Add card</Button>
+</div>`}
+          />
+        </Section>
+
+        {/* ── Modals ───────────────────────────────────────────── */}
+        <Section
+          id="modals"
+          title="Modals"
+          description="Fixed-overlay dialog with backdrop, header, body, and footer action row. Click 'Open Modal' to preview."
+        >
+          <div className="mb-6">
+            <ModalExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Modal backdrop + panel */}
+<div
+  className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+>
+  <div className="bg-bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+    <h3 id="modal-title">Modal Title</h3>
+    <p>Modal body content.</p>
+    <div className="flex justify-end gap-2">
+      <Button variant="ghost">Cancel</Button>
+      <Button variant="primary">Confirm</Button>
+    </div>
+  </div>
+</div>`}
+          />
+        </Section>
+
+        {/* ── Avatars ──────────────────────────────────────────── */}
+        <Section
+          id="avatars"
+          title="Avatars"
+          description="Initials-based user avatars in three sizes, plus stacked member row with overflow count."
+        >
+          <div className="mb-6">
+            <AvatarExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Avatar — initials with semantic colour */}
+<div
+  aria-label="Alice Brown"
+  className="h-9 w-9 rounded-full bg-blue-500 flex items-center
+             justify-center text-white text-sm font-semibold"
+>
+  AB
+</div>
+
+{/* Stacked row with overflow */}
+<div className="flex -space-x-2">
+  {members.map((m) => <Avatar key={m.id} {...m} />)}
+  <div className="h-9 w-9 rounded-full bg-bg-subtle … text-xs">+3</div>
+</div>`}
+          />
+        </Section>
+
+        {/* ── Cards ────────────────────────────────────────────── */}
+        <Section
+          id="cards"
+          title="Cards"
+          description="Board card surface with label chips, due date, comment/attachment counters, and assignee avatars."
+        >
+          <div className="mb-6">
+            <CardExample />
+          </div>
+          <CodeSnippet
+            code={`{/* Board card */}
+<article
+  className="bg-bg-surface rounded-lg border border-border p-3 shadow-sm hover:shadow-md …"
+  aria-label={\`Card: \${title}\`}
+>
+  {/* Label colour chips */}
+  <div className="flex gap-1 mb-2">
+    <span className="h-1.5 w-8 rounded-full bg-blue-500" title="Design" />
+  </div>
+  <p className="text-sm font-medium">{title}</p>
+  {/* Footer: due date · comments · attachments · assignees */}
+</article>`}
+          />
         </Section>
       </main>
     </div>
