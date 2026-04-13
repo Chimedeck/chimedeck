@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon, PencilIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
+import IconButton from '../../../common/components/IconButton';
 import type { Attachment } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
@@ -254,26 +255,30 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         {/* Save / Cancel buttons while editing */}
         {editing && (
           <>
-            <button
+            <Button
+              variant="link"
+              size="sm"
+              className="flex-shrink-0 p-0 text-xs text-blue-400 hover:text-blue-300"
               onClick={commitRename}
-              className="flex-shrink-0 text-xs text-blue-400 hover:text-blue-300"
               aria-label={translations['attachment.rename.save']}
               data-testid="attachment-rename-save"
               // Prevent onBlur from firing before click registers
               onMouseDown={(e) => e.preventDefault()}
             >
               {translations['attachment.rename.save']}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="link"
+              size="sm"
+              className="flex-shrink-0 p-0 text-xs text-muted hover:text-subtle"
               onClick={cancelRename}
-              className="flex-shrink-0 text-xs text-muted hover:text-subtle"
               aria-label={translations['attachment.rename.cancel']}
               data-testid="attachment-rename-cancel"
               // Prevent onBlur from firing commit before cancel registers
               onMouseDown={(e) => e.preventDefault()}
             >
               {translations['attachment.rename.cancel']}
-            </button>
+            </Button>
           </>
         )}
 
@@ -281,24 +286,31 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         {!editing && (confirming ? (
           <span className="flex items-center gap-1 text-xs">
             <span className="text-subtle">{translations['attachments.item.delete.confirm']}</span>
-            <button
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 text-xs font-medium text-danger hover:text-danger"
               onClick={handleDeleteConfirm}
-              className="text-danger hover:text-danger font-medium"
             >
               {translations['attachments.item.delete.yes']}
-            </button>
-            <button onClick={handleDeleteCancel} className="text-muted hover:text-subtle">
+            </Button>
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 text-xs text-muted hover:text-subtle"
+              onClick={handleDeleteCancel}
+            >
               {translations['attachments.item.delete.no']}
-            </button>
+            </Button>
           </span>
         ) : (
-          <button
+          <IconButton
             onClick={handleDeleteClick}
             className="flex-shrink-0 text-muted hover:text-danger transition-colors"
             aria-label={translations['attachments.item.action.delete.ariaLabel']}
-          >
-            <TrashIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
+            icon={<TrashIcon className="h-4 w-4" aria-hidden="true" />}
+            variant="ghost"
+          />
         ))}
       </div>
 

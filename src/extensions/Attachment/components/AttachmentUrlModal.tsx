@@ -1,5 +1,6 @@
 // AttachmentUrlModal — form for adding an external URL attachment.
 import React, { useState } from 'react';
+import Button from '../../../common/components/Button';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -59,8 +60,8 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
         </label>
         {error && <span style={{ color: '#ef4444', fontSize: 13 }}>{error}</span>}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} disabled={submitting}>{translations['attachment.urlModal.cancel']}</button>
-          <button type="submit" disabled={submitting}>{submitting ? translations['attachment.urlModal.submitting'] : translations['attachment.urlModal.submit']}</button>
+          <Button variant="secondary" size="sm" type="button" onClick={onClose} disabled={submitting}>{translations['attachment.urlModal.cancel']}</Button>
+          <Button variant="primary" size="sm" type="submit" disabled={submitting}>{submitting ? translations['attachment.urlModal.submitting'] : translations['attachment.urlModal.submit']}</Button>
         </div>
       </form>
     </div>

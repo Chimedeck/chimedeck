@@ -1,6 +1,8 @@
 // AttachmentItem — renders a single attachment row with name, status, and actions.
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Button from '../../../common/components/Button';
+import IconButton from '../../../common/components/IconButton';
 import { AttachmentStatusBadge } from './AttachmentStatusBadge';
 import translations from '../translations/en.json';
 
@@ -32,17 +34,17 @@ export function AttachmentItem({ attachment, onDelete, onDownload }: Props): Rea
       <span style={{ flex: 1, fontSize: 14 }}>{attachment.name}</span>
       {attachment.type === 'FILE' && <AttachmentStatusBadge status={attachment.status} />}
       {(attachment.type === 'URL' || attachment.status === 'READY') && (
-        <button onClick={handleDownload} style={{ fontSize: 12, cursor: 'pointer' }}>
+        <Button variant="secondary" size="sm" onClick={handleDownload}>
           {attachment.type === 'URL' ? translations['attachment.item.action.open'] : translations['attachment.item.action.download']}
-        </button>
+        </Button>
       )}
-      <button
+      <IconButton
         onClick={() => onDelete(attachment.id)}
-        style={{ fontSize: 12, color: '#ef4444', cursor: 'pointer', background: 'none', border: 'none' }}
         aria-label={translations['attachment.item.action.delete.ariaLabel']}
-      >
-        <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-      </button>
+        icon={<XMarkIcon className="h-4 w-4" aria-hidden="true" />}
+        variant="ghost"
+        className="text-danger hover:text-danger"
+      />
     </div>
   );
 }

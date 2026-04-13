@@ -7,6 +7,7 @@ import {
   hydrateCommentAttachmentMarkdown,
   stripCommentAttachmentPlaceholders,
 } from '~/extensions/Comment/utils/attachmentMarkdown';
+import Button from '~/common/components/Button';
 import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
 import CommentReactions from './CommentReactions';
@@ -251,33 +252,36 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             {(onAddReaction || onRemoveReaction) && (canEdit || canDelete || (onAddReply && !comment.parent_id)) && <span>·</span>}
 
             {canEdit && (
-              <button
+              <Button
+                variant="link"
+                className="p-0 text-xs text-muted hover:text-subtle"
                 onClick={() => setEditing(true)}
-                className="hover:text-subtle hover:underline"
               >
                 {translations['comment.action.edit']}
-              </button>
+              </Button>
             )}
             {canEdit && canDelete && <span>·</span>}
             {canDelete && (
-              <button
+              <Button
+                variant="link"
+                className="p-0 text-xs text-muted hover:text-danger"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="hover:text-danger hover:underline disabled:opacity-50"
               >
                 {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
-              </button>
+              </Button>
             )}
             {/* Reply button — only on top-level comments (no parent_id) */}
             {onAddReply && !comment.parent_id && (
               <>
                 {(canEdit || canDelete) && <span>·</span>}
-                <button
+                <Button
+                  variant="link"
+                  className="p-0 text-xs text-muted hover:text-subtle"
                   onClick={() => setShowReplyEditor((prev) => !prev)}
-                  className="hover:text-subtle hover:underline"
                 >
                   {translations['comment.action.reply']}
-                </button>
+                </Button>
               </>
             )}
           </div>
