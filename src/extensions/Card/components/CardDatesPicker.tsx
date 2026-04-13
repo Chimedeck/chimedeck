@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { CheckIcon } from '@heroicons/react/24/solid';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 
 // ─── helpers ───────────────────────────────────────────────────────────────
@@ -47,13 +47,9 @@ const DPC: Partial<Record<string, string>> = {
   root: 'select-none w-full',
   months: 'flex',
   month: 'w-full',
-  month_caption: 'flex items-center justify-center h-8 relative mb-1',
-  caption_label: 'text-sm font-semibold text-subtle',
-  nav: 'absolute inset-x-0 top-0 flex justify-between items-center pointer-events-none',
-  button_previous:
-    'h-8 w-8 flex items-center justify-center rounded text-muted hover:bg-bg-sunken hover:text-subtle transition-colors pointer-events-auto',
-  button_next:
-    'h-8 w-8 flex items-center justify-center rounded text-muted hover:bg-bg-sunken hover:text-subtle transition-colors pointer-events-auto',
+  month_caption: 'hidden',
+  caption_label: 'hidden',
+  nav: 'hidden',
   month_grid: 'w-full border-collapse',
   weekdays: '',
   weekday: 'text-center text-[11px] font-medium text-muted pb-1 w-9',
@@ -99,6 +95,16 @@ export const CardDatesPicker = ({
 
   const [month, setMonth] = useState<Date>(initDue ?? initStart ?? new Date());
   const [activeField, setActiveField] = useState<'start' | 'due'>('due');
+
+  const monthLabel = month.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+
+  const shiftMonth = useCallback((delta: number) => {
+    setMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
+  }, []);
+
+  const shiftYear = useCallback((delta: number) => {
+    setMonth((current) => new Date(current.getFullYear() + delta, current.getMonth(), 1));
+  }, []);
 
   // Calendar day click
   const handleDayClick = useCallback(
@@ -198,6 +204,48 @@ export const CardDatesPicker = ({
 
       {/* Calendar */}
       <div className="px-2 pt-2 pb-1">
+        <div className="mb-1 flex items-center justify-between px-1">
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
+              onClick={() => shiftYear(-1)}
+              aria-label="Previous year"
+            >
+              <ChevronDoubleLeftIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
+              onClick={() => shiftMonth(-1)}
+              aria-label="Previous month"
+            >
+              <ChevronLeftIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+
+          <p className="text-sm font-semibold text-base">{monthLabel}</p>
+
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
+              onClick={() => shiftMonth(1)}
+              aria-label="Next month"
+            >
+              <ChevronRightIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
+              onClick={() => shiftYear(1)}
+              aria-label="Next year"
+            >
+              <ChevronDoubleRightIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
         <DayPicker
           classNames={DPC}
           month={month}
