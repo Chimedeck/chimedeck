@@ -55,6 +55,10 @@ const config: Config = {
         subtle:  'var(--text-subtle)',
         inverse: 'var(--text-inverse)',
         link:    'var(--text-link)',
+        // Aliases used by design-system components (text-text-primary / text-text-secondary)
+        // These mirror 'base' and 'muted' so both naming styles are valid.
+        'text-primary':   'var(--text-base)',
+        'text-secondary': 'var(--text-muted)',
       },
     },
   },

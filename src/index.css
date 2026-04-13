@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Global base text colour ─────────────────────────────────────────────────
+   Set the default text colour to the primary text token so that any element
+   without an explicit Tailwind text class still reads correctly in dark mode.
+   This is the only place `color` is set at the document level. ----------- */
+body {
+  color: var(--text-base);
+}
+
+/* ── Explicit utilities for design-system alias classes ──────────────────────
+   The design-system components use text-text-primary / text-text-secondary.
+   These are also registered as textColor aliases in tailwind.config.ts, but
+   adding them here ensures they always work even if Tailwind's JIT misses the
+   config change during HMR. ---------------------------------------------- */
+@layer utilities {
+  .text-text-primary   { color: var(--text-base); }
+  .text-text-secondary { color: var(--text-muted); }
+}
+
 /* CSS custom properties for light/dark palettes — single source of truth for all design tokens */
 :root {
   /* ── Brand ─────────────────────────────────────────── */
