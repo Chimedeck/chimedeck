@@ -1,4 +1,6 @@
 // @ts-check
+// Prefer <Button> and <IconButton> from src/common/components over raw <button> elements.
+// Raw <button> usage is only permitted inside plugin-injected UI (mark with // [plugin-button-exception]).
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
