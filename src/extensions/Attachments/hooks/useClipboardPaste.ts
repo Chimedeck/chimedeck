@@ -40,7 +40,7 @@ export function useClipboardPaste({ enabled, onFiles, onLink }: UseClipboardPast
         imageFiles.push(new File([blob], `pasted-image-${timestamp}.png`, { type: 'image/png' }));
       }
 
-      if (imageFiles.length > 0) {
+      if (imageFiles.length > 0 && !isTextInputFocused()) {
         ev.preventDefault();
         onFiles(imageFiles);
         return;

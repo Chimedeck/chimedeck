@@ -368,6 +368,22 @@ const CommentEditor = ({
         ids.forEach((id) => insertPosMap.current.set(id, pos));
         return true;
       },
+      // [why] Clipboard image snapshots should follow the same upload + insert flow
+      // as dropped files, so pasted screenshots are embedded in the comment.
+      handlePaste(view, event) {
+        const files = Array.from(event.clipboardData?.files ?? []);
+        if (files.length === 0) return false;
+        event.preventDefault();
+        const pos = view.state.selection.from;
+        const ids = uploadFilesRef.current?.(files) ?? [];
+        ids.forEach((id) => insertPosMap.current.set(id, pos));
+        void flushUploads()
+          .then(() => loadCardAttachments())
+          .catch(() => {
+            setError(translations['comment.editor.error.uploadFailed']);
+          });
+        return true;
+      },
       // [why] In editable mode, clicking links should select them for editing,
       // not navigate away from the page.
       handleDOMEvents: {
