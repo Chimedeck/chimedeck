@@ -1,14 +1,14 @@
 // AttachmentItem — single attachment row: type icon, name, size, status chip, progress bar,
 // and delete/edit action buttons with inline confirmation and inline rename input.
 import React, { useRef, useState } from 'react';
-import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon, PencilIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon, PencilIcon, ChatBubbleLeftIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import IconButton from '../../../common/components/IconButton';
 import type { Attachment } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
 import { UploadProgressBar } from './UploadProgressBar';
-import { VideoLightbox } from './AttachmentThumbnail';
+import { VideoLightbox, PdfLightbox } from './AttachmentThumbnail';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -43,6 +43,7 @@ const STATUS_LABELS: Record<Attachment['status'], string> = {
 export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename, onInsertComment }: Readonly<Props>): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   // Inline rename state
   const [editing, setEditing] = useState(false);
@@ -56,12 +57,17 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
   const Icon = attachment.type === 'URL' ? LinkIcon : getMimeIcon(attachment.content_type);
   const isUploading = attachment.status === 'PENDING' && uploadProgress != null;
   const isVideo = attachment.type !== 'URL' && attachment.content_type?.startsWith('video/');
+  const isPdf = attachment.type !== 'URL' && attachment.content_type === 'application/pdf';
   const openHref = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
-  const canOpenWithLink = attachment.status === 'READY' && !isVideo && Boolean(openHref);
+  const canOpenWithLink = attachment.status === 'READY' && !isVideo && !isPdf && Boolean(openHref);
 
   const handleOpen = (): void => {
     if (isVideo) {
       setVideoOpen(true);
+      return;
+    }
+    if (isPdf) {
+      setPdfOpen(true);
       return;
     }
     // Use proxy view_url for file attachments; external_url for URL-type
@@ -211,6 +217,19 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
               </Button>
             );
           }
+          if (isPdf) {
+            return (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleOpen}
+                className="flex-shrink-0"
+                aria-label={translations['attachments.item.action.previewPdf.ariaLabel']}
+              >
+                <EyeIcon className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            );
+          }
           return (
             <Button
               variant="ghost"
@@ -320,6 +339,11 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
       {/* Video player overlay — use proxy view_url */}
       {videoOpen && isVideo && attachment.view_url && (
         <VideoLightbox src={attachment.view_url} name={attachment.name} onClose={() => setVideoOpen(false)} />
+      )}
+
+      {/* PDF preview overlay — use proxy view_url */}
+      {pdfOpen && isPdf && attachment.view_url && (
+        <PdfLightbox src={attachment.view_url} name={attachment.name} onClose={() => setPdfOpen(false)} />
       )}
     </div>
   );

@@ -1,13 +1,54 @@
 // AttachmentThumbnail — renders a clickable image preview card.
 // Uses thumbnailUrl when available; falls back to the full download url.
 // AttachmentThumbnail is for image/* and VideoThumbnail is for video/*.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PhotoIcon, FilmIcon, PlayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Attachment } from '../types';
 import translations from '../translations/en.json';
 
 interface Props {
   attachment: Attachment;
+}
+
+// [why] Shared keyboard / escape handling for all lightbox overlays to avoid
+// duplicate function implementations (sonarqube no-identical-functions rule).
+function useLightboxKeyboard(onClose: () => void): {
+  handleBackdropClick: (e: React.MouseEvent) => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
+} {
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      onClose();
+    };
+    globalThis.addEventListener('keydown', handleEscape, true);
+    return () => {
+      globalThis.removeEventListener('keydown', handleEscape, true);
+    };
+  }, [onClose]);
+
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent): void => {
+      if (e.target === e.currentTarget) onClose();
+    },
+    [onClose],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }
+    },
+    [onClose],
+  );
+
+  return { handleBackdropClick, handleKeyDown };
 }
 
 function ImageLightbox({ src, name, onClose }: { src: string; name: string; onClose: () => void }): React.ReactElement {
@@ -17,32 +58,7 @@ function ImageLightbox({ src, name, onClose }: { src: string; name: string; onCl
     rootRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      onClose();
-    };
-
-    globalThis.addEventListener('keydown', handleEscape, true);
-    return () => {
-      globalThis.removeEventListener('keydown', handleEscape, true);
-    };
-  }, [onClose]);
-
-  const handleBackdropClick = (e: React.MouseEvent): void => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      onClose();
-    }
-  };
+  const { handleBackdropClick, handleKeyDown } = useLightboxKeyboard(onClose);
 
   return (
     <div
@@ -147,32 +163,7 @@ export function VideoLightbox({
     rootRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      onClose();
-    };
-
-    globalThis.addEventListener('keydown', handleEscape, true);
-    return () => {
-      globalThis.removeEventListener('keydown', handleEscape, true);
-    };
-  }, [onClose]);
-
-  const handleBackdropClick = (e: React.MouseEvent): void => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      onClose();
-    }
-  };
+  const { handleBackdropClick, handleKeyDown } = useLightboxKeyboard(onClose);
 
   return (
     <div
@@ -200,6 +191,89 @@ export function VideoLightbox({
         autoPlay
         className="max-w-[90vw] max-h-[85vh] rounded shadow-2xl outline-none"
       />
+    </div>
+  );
+}
+
+export function PdfLightbox({
+  src,
+  name,
+  onClose,
+}: {
+  src: string;
+  name: string;
+  onClose: () => void;
+}): React.ReactElement {
+  const rootRef = useRef<HTMLDivElement>(null);
+  // [why] Directly embedding an authenticated API URL in an <iframe> src fails because
+  // the browser's iframe security context cannot carry the session cookie through the
+  // server's internal redirect. Fetching as a blob (using the same credentials as every
+  // other API call) and then creating a blob: URL sidesteps this restriction entirely.
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    rootRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    setLoadError(false);
+    setBlobUrl(null);
+
+    fetch(src, { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error('fetch failed');
+        return res.blob();
+      })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+      })
+      .catch(() => {
+        setLoadError(true);
+      });
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [src]);
+
+  const { handleBackdropClick, handleKeyDown } = useLightboxKeyboard(onClose);
+
+  return (
+    <div
+      ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={name}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-8"
+      onClick={handleBackdropClick}
+      onKeyDownCapture={handleKeyDown}
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white/70 hover:text-white focus:outline-none" // [theme-exception] text-white on media overlay
+        aria-label={translations['attachments.thumbnail.pdf.close.ariaLabel']}
+      >
+        <XMarkIcon className="h-8 w-8" />
+      </button>
+      {loadError && (
+        <p className="text-white/80 text-sm">{translations['attachments.thumbnail.pdf.loadError']}</p>
+      )}
+      {!blobUrl && !loadError && (
+        <p className="text-white/60 text-sm">{translations['attachments.thumbnail.pdf.loading']}</p>
+      )}
+      {blobUrl && (
+        <iframe
+          src={blobUrl}
+          title={name}
+          className="w-full h-full rounded shadow-2xl bg-white"
+          style={{ maxWidth: '90vw', maxHeight: '90vh' }}
+        />
+      )}
     </div>
   );
 }
