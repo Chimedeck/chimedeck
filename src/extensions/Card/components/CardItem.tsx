@@ -17,6 +17,14 @@ import CardCustomFieldBadges from './CardCustomFieldBadges';
 
 import type { CustomFieldValue } from '../../CustomFields/types';
 
+const CARD_ITEM_SHADOW = [
+  '0 3px 8px 0 rgba(0, 0, 0, 0.05)',
+  '0 10px 15px 0 rgba(0, 0, 0, 0.04)',
+  '0 23px 20px 0 rgba(0, 0, 0, 0.03)',
+  '0 42px 24px 0 rgba(0, 0, 0, 0.01)',
+  '0 65px 26px 0 rgba(0, 0, 0, 0)',
+].join(', ');
+
 export interface CardItemProps {
   card: Card;
   isOverlay?: boolean;
@@ -231,6 +239,7 @@ const CardItem = ({
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging && !isOverlay ? 0 : 1,
+      boxShadow: isOverlay ? undefined : CARD_ITEM_SHADOW,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, isOverlay],

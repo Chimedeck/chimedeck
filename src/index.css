@@ -29,7 +29,7 @@ body {
   --color-accent:        #06b6d4;   /* cyan-500 */
 
   /* ── Surfaces (Softer Light Mode) ──────────────────── */
-  --bg-base:     #f4f4f5;   /* zinc-100 — "Paper" feel, less glare */
+  --bg-base:     #f0f1f3;   /* zinc-100 — "Paper" feel, less glare */
   --bg-surface:  #fafafa;   /* off-white — softer on the eyes than pure #fff */
   --bg-overlay:  #e4e4e7;   /* zinc-200 */
   --bg-sunken:   #d4d4d8;   /* zinc-300 */
@@ -61,7 +61,7 @@ body {
 
   /* ── Surfaces (Vibrant Dark Mode) ──────────────────── */
   /* Using a deep navy-indigo mix instead of cold slate */
-  --bg-base:     #09090b;   /* zinc-950 - very deep base */
+  --bg-base:     #1c1e21;   /* zinc-950 - very deep base */
   --bg-surface:  #18181b;   /* zinc-900 - card surface */
   --bg-overlay:  #27272a;   /* zinc-800 - hover state */
   --bg-sunken:   #3f3f46;   /* zinc-700 - wells/inputs */
