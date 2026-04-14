@@ -220,7 +220,7 @@ Returns `204 No Content` on success.
 
 | Tool | Description | Endpoint |
 |---|---|---|
-| `move_card` | Move a card to a different list, optionally at a specific position | `PATCH /api/v1/cards/:cardId/move` |
+| `move_card` | Move a card to a different list, optionally after a specific card | `PATCH /api/v1/cards/:cardId/move` |
 | `write_comment` | Post a comment on a card | `POST /api/v1/cards/:cardId/comments` |
 | `create_card` | Create a new card in a list | `POST /api/v1/lists/:listId/cards` |
 | `edit_card_description` | Update the description of a card | `PATCH /api/v1/cards/:cardId/description` |
@@ -237,13 +237,15 @@ Returns `204 No Content` on success.
 |---|---|---|---|
 | `cardId` | string | ✅ | ID of the card to move |
 | `targetListId` | string | ✅ | ID of the destination list |
-| `position` | number | No | Zero-based position within the target list |
+| `afterCardId` | string \| null | No | Insert after this card ID (`null` places at the top) |
+| `position` | number | No | Deprecated alias. Only `0` is supported and maps to top |
 
 #### `write_comment`
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `cardId` | string | ✅ | ID of the card to comment on |
-| `text` | string | ✅ | Comment body text |
+| `content` | string | ✅ | Comment body text |
+| `text` | string | No | Deprecated alias for `content` |
 
 #### `create_card`
 | Parameter | Type | Required | Description |
@@ -279,14 +281,16 @@ Returns `204 No Content` on success.
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `workspaceId` | string | ✅ | ID of the workspace to search within |
-| `q` | string | ✅ | Full-text search query |
+| `query` | string | ✅ | Full-text search query |
+| `q` | string | No | Deprecated alias for `query` |
 | `limit` | number | No | Maximum number of results to return (default: 20) |
 
 #### `search_board`
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `boardId` | string | ✅ | ID of the board to search within |
-| `q` | string | ✅ | Full-text search query |
+| `query` | string | ✅ | Full-text search query |
+| `q` | string | No | Deprecated alias for `query` |
 | `limit` | number | No | Maximum number of results to return |
 
 #### `get_card`

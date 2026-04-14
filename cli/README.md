@@ -140,19 +140,20 @@ The default is `https://app.chimedeck.com`. The `--api-url` flag overrides this 
 Move a card to a different list.
 
 ```sh
-chimedeck move-card --card <cardId> --list <listId> [--position <number>]
+chimedeck move-card --card <cardId> --list <listId> [--after <cardId>]
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--card` | ✓ | ID of the card to move |
 | `--list` | ✓ | ID of the destination list |
-| `--position` | | 0-based position in the list |
+| `--after` | | Insert after this card ID in the destination list |
+| `--position` | | Deprecated. Only `0` is supported (moves to top) |
 
 **Example:**
 
 ```sh
-chimedeck move-card --card card_abc123 --list list_xyz789 --position 0
+chimedeck move-card --card card_abc123 --list list_xyz789 --after card_prev456
 # ✓ Card card_abc123 moved to list list_xyz789
 ```
 
