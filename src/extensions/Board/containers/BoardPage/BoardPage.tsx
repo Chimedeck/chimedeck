@@ -50,6 +50,7 @@ import ListDeleteDialog from '../../../List/components/ListDeleteDialog';
 import AutomationPanel from '../../../Automation/components/AutomationPanel';
 import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel';
 import BoardMembersPanel from '../../components/BoardMembersPanel';
+import { BoardMemberFilter } from '../../components/BoardMemberFilter';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { canBoardGuestWrite } from '../../mods/guestPermissions';
@@ -118,6 +119,44 @@ const BoardPage = () => {
   // ── Board members panel ───────────────────────────────────────────────────
   const [membersOpen, setMembersOpen] = useState(false);
   const { data: boardMembers = [] } = useGetBoardMembersQuery(boardId ?? '', { skip: !boardId });
+
+  // ── Member filter ─────────────────────────────────────────────────────────
+  const [filterMemberIds, setFilterMemberIds] = useState<ReadonlySet<string>>(new Set());
+
+  const toggleMemberFilter = useCallback((userId: string) => {
+    setFilterMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearMemberFilter = useCallback(() => setFilterMemberIds(new Set()), []);
+
+  // Derive filtered card maps — only applied when at least one member is selected.
+  const filteredCardsByList: Record<string, string[]> = filterMemberIds.size === 0
+    ? cardsByList
+    : Object.fromEntries(
+        Object.entries(cardsByList).map(([listId, cardIds]) => [
+          listId,
+          cardIds.filter((cardId) => {
+            const card = cards[cardId];
+            return card?.members?.some((m) => filterMemberIds.has(m.id));
+          }),
+        ]),
+      );
+
+  const filteredCards: Record<string, import('../../../Card/api').Card> = filterMemberIds.size === 0
+    ? cards
+    : Object.fromEntries(
+        Object.entries(cards).filter(([, card]) =>
+          card.members?.some((m) => filterMemberIds.has(m.id)),
+        ),
+      );
 
   // ── Automation panel (Sprint 65) ─────────────────────────────────────────
   const automationPanel = useAutomationPanel();
@@ -484,11 +523,28 @@ const BoardPage = () => {
             );
           })}
         </div>
-        {/* Thin divider + view switcher — only on Board tab */}
+        {/* Thin divider + view switcher + member filter — only on Board tab */}
         {activeTab === 'board' && (
           <>
             <div className={`mx-4 h-4 w-px flex-shrink-0 ${board.background ? 'bg-white/30' : 'bg-border'}`} aria-hidden="true" />
             <BoardViewSwitcher boardId={boardId ?? ''} hasBackground={!!board.background} segmented />
+            {boardMembers.length > 0 && (
+              <>
+                <div className={`mx-4 h-4 w-px flex-shrink-0 ${board.background ? 'bg-white/30' : 'bg-border'}`} aria-hidden="true" />
+                <BoardMemberFilter
+                  members={boardMembers.map((m) => ({
+                    user_id: m.user_id,
+                    display_name: m.display_name,
+                    email: m.email,
+                    avatar_url: m.avatar_url,
+                  }))}
+                  selectedIds={filterMemberIds}
+                  onToggle={toggleMemberFilter}
+                  onClear={clearMemberFilter}
+                  hasBackground={!!board.background}
+                />
+              </>
+            )}
           </>
         )}
       </div>
@@ -506,8 +562,8 @@ const BoardPage = () => {
               boardTitle={board.title}
               listOrder={listOrder}
               lists={lists}
-              cardsByList={cardsByList}
-              cards={cards}
+              cardsByList={filteredCardsByList}
+              cards={filteredCards}
               onCardMove={handleCardMove}
               onListReorder={handleListReorder}
               onDragStart={handleDragStart}
@@ -526,20 +582,20 @@ const BoardPage = () => {
             />
           ) : activeView === 'TABLE' ? (
             <TableView
-              cards={Object.values(cards)}
+              cards={Object.values(filteredCards)}
               lists={lists}
               onCardClick={handleCardClick}
             />
           ) : activeView === 'CALENDAR' ? (
             <CalendarView
-              cards={Object.values(cards)}
+              cards={Object.values(filteredCards)}
               lists={lists}
               onCardClick={handleCardClick}
               addToast={addToast}
             />
           ) : activeView === 'TIMELINE' ? (
             <TimelineView
-              cards={Object.values(cards)}
+              cards={Object.values(filteredCards)}
               lists={lists}
               onCardClick={handleCardClick}
               addToast={addToast}
