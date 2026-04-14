@@ -8,11 +8,20 @@ export function registerSearchCards(server: McpServer, token: string): void {
     'Full-text search over cards within a workspace.',
     {
       workspaceId: z.string().describe('ID of the workspace to search within'),
-      q: z.string().describe('Full-text search query'),
+      query: z.string().optional().describe('Full-text search query'),
+      q: z.string().optional().describe('Deprecated alias for full-text search query'),
       limit: z.number().optional().describe('Maximum number of results to return (default: 20)'),
     },
-    async ({ workspaceId, q, limit }) => {
-      const params = new URLSearchParams({ q });
+    async ({ workspaceId, query, q, limit }) => {
+      const resolvedQuery = query ?? q;
+      if (!resolvedQuery || resolvedQuery.trim() === '') {
+        return {
+          content: [{ type: 'text', text: 'Error: bad-request (query is required)' }],
+          isError: true,
+        };
+      }
+
+      const params = new URLSearchParams({ query: resolvedQuery });
       if (limit !== undefined) params.set('limit', String(limit));
 
       const result = await apiCall<{ data: unknown[] }>({

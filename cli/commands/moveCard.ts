@@ -6,12 +6,13 @@ const USAGE = `
 chimedeck move-card — Move a card to a different list
 
 Usage:
-  chimedeck move-card --card <cardId> --list <listId> [--position <number>]
+  chimedeck move-card --card <cardId> --list <listId> [--after <cardId>]
 
 Options:
   --card <cardId>      ID of the card to move (required)
   --list <listId>      ID of the destination list (required)
-  --position <number>  Position in the list (optional, 0-based)
+  --after <cardId>     Insert after this card ID in the destination list (optional)
+  --position <number>  Deprecated. Only 0 is supported and maps to moving to the top.
   --help, -h           Print this help message
 `.trim();
 
@@ -31,6 +32,7 @@ export async function runMoveCard({
 
   const cardId = argv.card as string | undefined;
   const listId = argv.list as string | undefined;
+  const afterCardId = argv.after as string | undefined;
   const position = argv.position as number | undefined;
 
   if (!cardId) {
@@ -42,8 +44,18 @@ export async function runMoveCard({
     process.exit(1);
   }
 
-  const body: Record<string, unknown> = { listId };
-  if (position !== undefined) body.position = position;
+  const body: Record<string, unknown> = { targetListId: listId };
+  if (afterCardId !== undefined) {
+    body.afterCardId = afterCardId;
+  } else if (position !== undefined) {
+    if (position !== 0) {
+      console.error(
+        "Error: --position is deprecated and only supports 0. Use --after <cardId> for explicit placement.\nRun 'chimedeck move-card --help' for usage.",
+      );
+      process.exit(1);
+    }
+    body.afterCardId = null;
+  }
 
   const result = await call<unknown>({
     config,

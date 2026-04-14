@@ -8,13 +8,22 @@ export function registerWriteComment(server: McpServer, token: string): void {
     'Post a comment on a card.',
     {
       cardId: z.string().describe('ID of the card to comment on'),
-      text: z.string().describe('Comment body text'),
+      content: z.string().optional().describe('Comment body text'),
+      text: z.string().optional().describe('Deprecated alias for comment body text'),
     },
-    async ({ cardId, text }) => {
+    async ({ cardId, content, text }) => {
+      const commentContent = content ?? text;
+      if (!commentContent || commentContent.trim() === '') {
+        return {
+          content: [{ type: 'text', text: 'Error: bad-request (content is required)' }],
+          isError: true,
+        };
+      }
+
       const result = await apiCall<{ data: unknown }>({
         method: 'POST',
         path: `/api/v1/cards/${cardId}/comments`,
-        body: { text },
+        body: { content: commentContent },
         token,
       });
 

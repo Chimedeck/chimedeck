@@ -44,7 +44,7 @@ export async function runComment({
     config,
     method: 'POST',
     path: `/api/v1/cards/${cardId}/comments`,
-    body: { text },
+    body: { content: text },
   });
 
   if (jsonMode) {

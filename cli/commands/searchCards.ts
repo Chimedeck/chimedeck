@@ -30,7 +30,7 @@ export async function runSearchCards({
   }
 
   const workspaceId = argv.workspace as string | undefined;
-  const query = argv.query as string | undefined;
+  const query = (argv.query as string | undefined) ?? (argv.q as string | undefined);
   const limit = argv.limit as number | undefined;
 
   if (!workspaceId) {
@@ -42,7 +42,7 @@ export async function runSearchCards({
     process.exit(1);
   }
 
-  const params = new URLSearchParams({ q: query });
+  const params = new URLSearchParams({ query });
   if (limit !== undefined) params.set('limit', String(limit));
 
   const result = await call<unknown>({

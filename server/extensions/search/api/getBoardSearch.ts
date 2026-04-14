@@ -25,11 +25,11 @@ export async function handleBoardSearch(req: Request, boardId: string): Promise<
   searchLog.boardSearchRequest({ boardId, userId });
 
   const url = new URL(req.url);
-  const q = url.searchParams.get('q') ?? '';
+  const q = url.searchParams.get('query') ?? url.searchParams.get('q') ?? '';
   const limitParam = url.searchParams.get('limit');
 
   const opts: { boardId: string; q: string; limit?: number } = { boardId, q };
-  if (limitParam) opts.limit = parseInt(limitParam, 10);
+  if (limitParam) opts.limit = Number.parseInt(limitParam, 10);
 
   const result = await queryBoardSearch(opts);
 

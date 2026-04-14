@@ -56,7 +56,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   }
 
   const url = new URL(req.url);
-  const q = url.searchParams.get('q') ?? '';
+  const q = url.searchParams.get('query') ?? url.searchParams.get('q') ?? '';
   const rawType = url.searchParams.get('type');
   const type = rawType === 'board' || rawType === 'card' ? rawType : null;
   const cursor = url.searchParams.get('cursor');
