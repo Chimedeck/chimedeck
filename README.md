@@ -1,6 +1,7 @@
 # ChimeDeck
 
 A real-time collaborative board platform built with Bun, PostgreSQL, and WebSockets.
+<img width="1674" height="942" alt="image" src="https://github.com/user-attachments/assets/2bd77ae7-5cfe-4665-8efd-2e0fa2e71764" />
 
 ## Application Setup
 
