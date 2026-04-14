@@ -58,7 +58,7 @@ function buildCopy(notification: Notification): string {
 
   switch (notification.type) {
     case 'card_created':
-      return `${actor} created "${card}" in ${notification.board_title ?? 'a board'}`;
+      return `${actor} created "${card}"`;
     case 'card_moved':
       return notification.list_title
         ? `${actor} moved "${card}" to ${notification.list_title}`
@@ -85,24 +85,42 @@ function buildCopy(notification: Notification): string {
   }
 }
 
+function formatNotificationTime(notification: Notification): string | null {
+  const notificationPayload = notification as unknown as {
+    created_at?: string;
+    createdAt?: string;
+    timestamp?: string;
+  };
+  // Some realtime payloads may use camelCase/time aliases.
+  const rawCreatedAt = notificationPayload.created_at ?? notificationPayload.createdAt ?? notificationPayload.timestamp;
+
+  if (!rawCreatedAt) return null;
+
+  const date = new Date(rawCreatedAt);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toLocaleString();
+}
+
 const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
   const dispatch = useAppDispatch();
 
   const handleClick = () => {
     if (!notification.read) {
-      dispatch(markReadThunk({ id: notification.id }));
+      void dispatch(markReadThunk({ id: notification.id }));
     }
     onNavigate(notification);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    dispatch(deleteNotificationThunk({ id: notification.id }));
+    void dispatch(deleteNotificationThunk({ id: notification.id }));
   };
 
   const Icon = TYPE_ICON[notification.type] ?? AtSymbolIcon;
   const iconAccent = TYPE_ACCENT[notification.type] ?? 'text-indigo-400';
   const copy = buildCopy(notification);
+  const createdTime = formatNotificationTime(notification);
 
   return (
     <div
@@ -112,7 +130,11 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          handleClick();
+        }
+      }}
     >
       {/* Type icon */}
       <div className="mt-0.5 shrink-0">
@@ -130,9 +152,7 @@ const NotificationItem: FC<Props> = ({ notification, onNavigate }) => {
         {notification.board_title && (
           <p className="text-xs text-muted mt-0.5">{notification.board_title}</p>
         )}
-        <p className="text-xs text-muted mt-0.5">
-          {new Date(notification.created_at).toLocaleString()}
-        </p>
+        {createdTime && <p className="text-xs text-muted mt-0.5">{createdTime}</p>}
       </div>
 
       <button

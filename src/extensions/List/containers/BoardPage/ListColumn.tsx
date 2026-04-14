@@ -35,6 +35,8 @@ interface Props {
   dragPlaceholderIndex?: number;
   /** Measured height of the currently dragged card for exact placeholder dimensions. */
   dragPlaceholderHeight?: number;
+  /** Active dragged card id so we can hide source slot and avoid double gaps. */
+  activeDragCardId?: string | null;
 }
 
 const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldValue[] = [];
@@ -57,6 +59,7 @@ const SortableListColumn = ({
   hasBackground = false,
   dragPlaceholderIndex,
   dragPlaceholderHeight,
+  activeDragCardId = null,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -86,14 +89,27 @@ const SortableListColumn = ({
 
   const listCardObjects = useMemo(
     () => cardIds
+      .filter((id) => id !== activeDragCardId)
       .map((id) => cards[id])
       .filter((c): c is Card => c !== undefined),
-    [cardIds, cards],
+    [activeDragCardId, cardIds, cards],
   );
   const resolvedPlaceholderHeight =
     typeof dragPlaceholderHeight === 'number' && Number.isFinite(dragPlaceholderHeight) && dragPlaceholderHeight >= 24
       ? dragPlaceholderHeight
       : 72;
+  const normalizedPlaceholderIndex =
+    typeof dragPlaceholderIndex === 'number' && Number.isFinite(dragPlaceholderIndex)
+      ? Math.max(0, Math.min(Math.floor(dragPlaceholderIndex), listCardObjects.length))
+      : null;
+
+  const placeholderNode = (
+    <div
+      className="shrink-0 rounded-lg border border-border bg-bg-surface/70"
+      style={{ height: resolvedPlaceholderHeight }}
+      aria-hidden="true"
+    />
+  );
 
   return (
     <div
@@ -119,15 +135,9 @@ const SortableListColumn = ({
       {/* Cards — vertically sortable */}
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]">
         <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-          {typeof dragPlaceholderIndex === 'number' && dragPlaceholderIndex <= 0 && (
-            <div
-              className="rounded-lg border border-border bg-bg-surface/70"
-              style={{ height: resolvedPlaceholderHeight }}
-              aria-hidden="true"
-            />
-          )}
           {listCardObjects.map((card, idx) => (
             <Fragment key={card.id}>
+              {normalizedPlaceholderIndex === idx && placeholderNode}
               <CardItem
                 card={card}
                 listTitle={list.title}
@@ -138,22 +148,9 @@ const SortableListColumn = ({
                 {...(onCardClick ? { onClick: onCardClick } : {})}
                 {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
               />
-              {typeof dragPlaceholderIndex === 'number' && dragPlaceholderIndex === idx + 1 && (
-                <div
-                  className="rounded-lg border border-border bg-bg-surface/70"
-                  style={{ height: resolvedPlaceholderHeight }}
-                  aria-hidden="true"
-                />
-              )}
             </Fragment>
           ))}
-          {typeof dragPlaceholderIndex === 'number' && dragPlaceholderIndex >= listCardObjects.length && (
-            <div
-              className="rounded-lg border border-border bg-bg-surface/70"
-              style={{ height: resolvedPlaceholderHeight }}
-              aria-hidden="true"
-            />
-          )}
+          {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
         </SortableContext>
       </div>
 
@@ -199,7 +196,9 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.customFieldValuesMap === next.customFieldValuesMap
     && prev.isViewerGuest === next.isViewerGuest
     && prev.hasBackground === next.hasBackground
-    && prev.dragPlaceholderIndex === next.dragPlaceholderIndex;
+    && prev.dragPlaceholderIndex === next.dragPlaceholderIndex
+    && prev.dragPlaceholderHeight === next.dragPlaceholderHeight
+    && prev.activeDragCardId === next.activeDragCardId;
 }
 
 export default memo(SortableListColumn, areEqual);

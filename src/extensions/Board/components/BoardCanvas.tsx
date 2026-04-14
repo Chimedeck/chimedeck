@@ -797,6 +797,7 @@ const BoardCanvas = ({
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
                 isViewerGuest={isViewerGuest}
                 hasBackground={hasBackground}
+                activeDragCardId={activeCardId}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderIndex: dragPlaceholder.index } : {})}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderHeight: dragPlaceholder.height } : {})}
               />
