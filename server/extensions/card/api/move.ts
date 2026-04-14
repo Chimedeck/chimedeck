@@ -1,4 +1,4 @@
-// PATCH /api/v1/cards/:id/move — move card to another list (or reorder within same list); min role: MEMBER.
+// PATCH /api/v1/cards/:id/move — move card to any accessible list (same or different board); min role: MEMBER.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
@@ -64,10 +64,10 @@ async function validateMoveLists({
   }
 
   const sourceList = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
-  if (sourceList?.board_id !== targetList.board_id) {
+  if (!sourceList) {
     return Response.json(
-      { error: { code: 'cross-board-move', message: 'Cannot move card to a list on a different board' } },
-      { status: 400 },
+      { error: { code: 'source-list-not-found', message: 'Source list not found' } },
+      { status: 404 },
     );
   }
 
@@ -188,6 +188,20 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   if (listsOrError instanceof Response) return listsOrError;
   const { targetList, sourceList } = listsOrError;
 
+  // For cross-board moves, verify the caller has write access on the target board too.
+  const isCrossBoard = sourceList.board_id !== targetList.board_id;
+  if (isCrossBoard) {
+    const targetBoard = await db('boards').where({ id: targetList.board_id }).first();
+    if (!targetBoard) {
+      return Response.json({ error: { name: 'target-board-not-found' } }, { status: 404 });
+    }
+    const targetScopedReq = req as WorkspaceScopedRequest;
+    const targetMembershipError = await requireWorkspaceMembership(targetScopedReq, targetBoard.workspace_id);
+    if (targetMembershipError) return targetMembershipError;
+    const targetRoleError = await requireMemberOrBoardGuestMember(targetScopedReq, targetBoard.id);
+    if (targetRoleError) return targetRoleError;
+  }
+
   // Compute new position within target list
   const targetCards = (await db('cards')
     .where({ list_id: body.targetListId, archived: false })
@@ -257,11 +271,19 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     }),
   ]);
 
-  // Broadcast to all other board subscribers so their kanban updates in real time
+  // Broadcast to the source board so its kanban view removes/moves the card in real time.
   publisher.publish(
     board.id,
     JSON.stringify({ type: 'card_moved', payload: { card: updatedCard, fromListId } }),
   ).catch(() => {});
+
+  // For cross-board moves also notify the target board's subscribers.
+  if (isCrossBoard) {
+    publisher.publish(
+      targetList.board_id,
+      JSON.stringify({ type: 'card_moved', payload: { card: updatedCard, fromListId } }),
+    ).catch(() => {});
+  }
 
   return Response.json({ data: updatedCard });
 }

@@ -7,7 +7,7 @@ A real-time collaborative board platform built with Bun, PostgreSQL, and WebSock
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) ≥ 1.0
+- [Bun](https://bun.sh/) ≥ 1.3.5
 - Docker + Docker Compose
 
 ### Quick start (local dev — no Redis required)

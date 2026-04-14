@@ -19,6 +19,7 @@ import {
 } from '../../slices/cardDetailSlice';
 import CardModal from '../../components/CardModal';
 import CopyCardModal from '../../components/CopyCardModal';
+import MoveCardModal from '../../components/MoveCardModal';
 import Button from '~/common/components/Button';
 import {
   patchCard,
@@ -45,7 +46,8 @@ import {
 } from '../../api/cardDetail';
 import { addReaction, removeReaction, postReply } from '~/extensions/Comment/api';
 import type { Label, Checklist, ChecklistItem, CardMember } from '../../api';
-import { boardSliceActions, selectBoard, selectCards } from '../../../Board/slices/boardSlice';
+import { boardSliceActions, selectBoard, selectCards, selectLists } from '../../../Board/slices/boardSlice';
+import { cardSliceActions } from '../../cardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
@@ -74,6 +76,7 @@ const CardModalContainer = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const board = useAppSelector(selectBoard);
   const boardCards = useAppSelector(selectCards);
+  const boardLists = useAppSelector(selectLists);
   const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
   // [why] Derive write permission from the board's callerGuestType so VIEWER guests
@@ -82,7 +85,8 @@ const CardModalContainer = () => {
   const [allLabels, setAllLabels] = useState<Label[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<CardMember[]>([]);
-  const [copyModalOpen, setCopyModalOpen] = useState(false);;
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
 
   const api = apiClient;
 
@@ -223,6 +227,10 @@ const CardModalContainer = () => {
 
   const handleCopyCard = useCallback(() => {
     setCopyModalOpen(true);
+  }, []);
+
+  const handleMoveCard = useCallback(() => {
+    setMoveModalOpen(true);
   }, []);
 
   const handlePrint = useCallback(async () => {
@@ -920,6 +928,7 @@ const CardModalContainer = () => {
       onDelete={handleDelete}
       onCopyLink={handleCopyLink}
       onCopyCard={handleCopyCard}
+      onMoveCard={handleMoveCard}
       onPrint={handlePrint}
       onCreateChecklist={handleCreateChecklist}
       onRenameChecklist={handleRenameChecklist}
@@ -968,6 +977,30 @@ const CardModalContainer = () => {
           onSuccess={(newCard) => {
             setCopyModalOpen(false);
             dispatch(boardSliceActions.addCard({ card: newCard }));
+          }}
+        />
+      )}
+      {moveModalOpen && card && activeWorkspaceId && (
+        <MoveCardModal
+          cardId={card.id}
+          currentBoardId={boardId}
+          currentListId={card.list_id}
+          workspaceId={activeWorkspaceId}
+          api={api}
+          onClose={() => setMoveModalOpen(false)}
+          onSuccess={(movedCard) => {
+            setMoveModalOpen(false);
+            const isSameBoard = movedCard.list_id in boardLists;
+            if (isSameBoard) {
+              // Mirror exactly what the WS card_moved handler does so the kanban
+              // reflects the correct sorted position immediately.
+              dispatch(cardSliceActions.remoteMove({ card: movedCard, fromListId: card.list_id }));
+              dispatch(boardSliceActions.remoteCardMove({ card: movedCard, fromListId: card.list_id }));
+            } else {
+              // Cross-board: remove from this board's kanban and close the card modal
+              dispatch(boardSliceActions.removeCard({ cardId: card.id, listId: card.list_id }));
+              handleClose();
+            }
           }}
         />
       )}

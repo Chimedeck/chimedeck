@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArchiveBoxIcon,
   ArchiveBoxXMarkIcon,
+  ArrowRightIcon,
   BoltIcon,
   ChevronUpIcon,
   DocumentDuplicateIcon,
@@ -34,6 +35,7 @@ interface Props {
   onDelete: () => Promise<void>;
   onCopyLink: () => void;
   onCopyCard: () => void;
+  onMoveCard: () => void;
   onPrint: () => void;
 }
 
@@ -84,6 +86,7 @@ const CardModalBottomBar = ({
   onDelete,
   onCopyLink,
   onCopyCard,
+  onMoveCard,
   onPrint,
 }: Props) => {
   const powerUps = usePopover();
@@ -180,6 +183,13 @@ const CardModalBottomBar = ({
                 onClick={() => { actions.setOpen(false); onCopyCard(); }}
               >
                 <DocumentDuplicateIcon className="w-4 h-4 shrink-0" /> Copy card
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
+                onClick={() => { actions.setOpen(false); onMoveCard(); }}
+              >
+                <ArrowRightIcon className="w-4 h-4 shrink-0" /> Move card
               </button>
               <button
                 type="button"
