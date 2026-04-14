@@ -3,7 +3,7 @@ import type { Label } from '../api';
 import Button from '../../../common/components/Button';
 
 /** Pick readable text colour (black or white) based on background luminance. */
-function contrastText(bgHex: string): string {
+export function contrastText(bgHex: string): string {
   const hex = bgHex.trim().replace('#', '');
   const normalized =
     hex.length === 3

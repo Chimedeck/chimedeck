@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CalendarIcon, UserIcon, TagIcon } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import type { Label, CardMember } from '../api';
-import { LabelChip } from './LabelChip';
+import { LabelChip, contrastText } from './LabelChip';
 import { CardDatesPicker } from './CardDatesPicker';
 import CardValue from './CardValue';
 
@@ -301,8 +301,8 @@ const LabelSection = ({
                       />
                       <button
                         type="button"
-                        className="flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 min-w-0 truncate" // [theme-exception] text-white on dynamically-colored label button
-                        style={{ backgroundColor: label.color }}
+                        className="flex-1 flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-semibold transition-opacity hover:opacity-90 min-w-0 truncate"
+                        style={{ backgroundColor: label.color, color: contrastText(label.color) }}
                         onClick={() => void handleToggle(label)}
                         title={label.name}
                       >
@@ -336,8 +336,8 @@ const LabelSection = ({
               <div className="p-3 space-y-3">
                 {/* Preview */}
                 <div
-                  className="w-full rounded-md px-3 py-2 text-sm font-semibold text-white text-center truncate" // [theme-exception] text-white on dynamically-colored label preview
-                  style={{ backgroundColor: formColor }}
+                  className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center truncate" // [theme-exception] color computed from background luminance
+                  style={{ backgroundColor: formColor, color: contrastText(formColor) }}
                 >
                   {formName || (isEditingLabel ? editingLabel?.name : 'Label preview')}
                 </div>
