@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
 
 export interface UiState {
-  theme: 'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven';
+  theme: 'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven' | 'hc-light' | 'hc-dark';
   sidebarOpen: boolean;
   activeModal: string | null;
 }
@@ -17,7 +17,7 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    setTheme(state, action: PayloadAction<'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven'>) {
+    setTheme(state, action: PayloadAction<'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven' | 'hc-light' | 'hc-dark'>) {
       state.theme = action.payload;
     },
     toggleSidebar(state) {

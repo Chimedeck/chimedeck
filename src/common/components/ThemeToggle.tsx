@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import type { Theme } from '../hooks/useTheme';
 
-const THEME_ORDER: Theme[] = ['light', 'dark', 'elegant', 'elegant-dark', 'paper', 'nordic', 'archive', 'macintosh', 'obsidian', 'next', 'bauhaus', 'moss', 'vapor', 'cyberpunk', 'the-seven'];
+const THEME_ORDER: Theme[] = ['light', 'dark', 'elegant', 'elegant-dark', 'paper', 'nordic', 'archive', 'macintosh', 'obsidian', 'next', 'bauhaus', 'moss', 'vapor', 'cyberpunk', 'the-seven', 'hc-light', 'hc-dark'];
 
 const THEME_META: Record<Theme, { icon: React.ReactNode; label: string }> = {
   light:          { icon: <SunIcon className="w-4 h-4" />,                label: 'Light' },
@@ -21,6 +21,8 @@ const THEME_META: Record<Theme, { icon: React.ReactNode; label: string }> = {
   vapor:          { icon: <BoltIcon className="w-4 h-4" />,               label: 'Vapor' },
   cyberpunk:      { icon: <BoltIcon className="w-4 h-4" />,               label: 'Night City' },
   'the-seven':    { icon: <StarIcon className="w-4 h-4" />,               label: 'The Seven' },
+  'hc-light':     { icon: <SunIcon className="w-4 h-4" />,                label: 'HC Light' },
+  'hc-dark':      { icon: <MoonIcon className="w-4 h-4" />,               label: 'HC Dark' },
 };
 
 export function ThemeToggle() {

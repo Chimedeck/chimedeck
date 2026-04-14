@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-export type Theme = 'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven';
+export type Theme = 'light' | 'dark' | 'elegant' | 'elegant-dark' | 'paper' | 'nordic' | 'archive' | 'macintosh' | 'obsidian' | 'next' | 'bauhaus' | 'moss' | 'vapor' | 'cyberpunk' | 'the-seven' | 'hc-light' | 'hc-dark';
 
-const THEME_CYCLE: Theme[] = ['light', 'dark', 'elegant', 'elegant-dark', 'paper', 'nordic', 'archive', 'macintosh', 'obsidian', 'next', 'bauhaus', 'moss', 'vapor', 'cyberpunk', 'the-seven'];
-const ALL_THEME_CLASSES = ['dark', 'elegant', 'elegant-dark', 'theme-paper', 'theme-nordic', 'theme-archive', 'theme-macintosh', 'theme-obsidian', 'theme-next', 'theme-bauhaus', 'theme-moss', 'theme-vapor', 'theme-cyberpunk', 'theme-the-seven'];
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'elegant', 'elegant-dark', 'paper', 'nordic', 'archive', 'macintosh', 'obsidian', 'next', 'bauhaus', 'moss', 'vapor', 'cyberpunk', 'the-seven', 'hc-light', 'hc-dark'];
+const ALL_THEME_CLASSES = ['dark', 'elegant', 'elegant-dark', 'theme-paper', 'theme-nordic', 'theme-archive', 'theme-macintosh', 'theme-obsidian', 'theme-next', 'theme-bauhaus', 'theme-moss', 'theme-vapor', 'theme-cyberpunk', 'theme-the-seven', 'theme-hc-light', 'theme-hc-dark'];
 
 function applyTheme(theme: Theme) {
   const html = document.documentElement;
@@ -41,6 +41,10 @@ function applyTheme(theme: Theme) {
     html.classList.add('dark', 'theme-cyberpunk');
   } else if (theme === 'the-seven') {
     html.classList.add('dark', 'theme-the-seven');
+  } else if (theme === 'hc-light') {
+    html.classList.add('theme-hc-light');
+  } else if (theme === 'hc-dark') {
+    html.classList.add('dark', 'theme-hc-dark');
   }
   // 'light' = no extra class (bare :root)
 }

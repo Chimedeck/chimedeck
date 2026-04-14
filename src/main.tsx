@@ -19,7 +19,7 @@ initSentry();
 // Default to dark when no preference is stored.
 const savedTheme = localStorage.getItem('theme');
 const html = document.documentElement;
-html.classList.remove('dark', 'elegant', 'elegant-dark', 'theme-paper', 'theme-nordic', 'theme-archive', 'theme-macintosh', 'theme-obsidian', 'theme-next', 'theme-bauhaus', 'theme-moss', 'theme-vapor', 'theme-cyberpunk', 'theme-the-seven');
+html.classList.remove('dark', 'elegant', 'elegant-dark', 'theme-paper', 'theme-nordic', 'theme-archive', 'theme-macintosh', 'theme-obsidian', 'theme-next', 'theme-bauhaus', 'theme-moss', 'theme-vapor', 'theme-cyberpunk', 'theme-the-seven', 'theme-hc-light', 'theme-hc-dark');
 if (savedTheme === 'dark') {
   html.classList.add('dark');
 } else if (savedTheme === 'elegant') {
@@ -48,6 +48,10 @@ if (savedTheme === 'dark') {
   html.classList.add('dark', 'theme-cyberpunk');
 } else if (savedTheme === 'the-seven') {
   html.classList.add('dark', 'theme-the-seven');
+} else if (savedTheme === 'hc-light') {
+  html.classList.add('theme-hc-light');
+} else if (savedTheme === 'hc-dark') {
+  html.classList.add('dark', 'theme-hc-dark');
 } else if (savedTheme !== 'light') {
   // Default: dark
   html.classList.add('dark');

@@ -552,6 +552,60 @@ body {
   border-color: var(--border-strong);
 }
 
+/* ── High Contrast Light ─────────────────────────────────────────────────────── */
+.theme-hc-light {
+  --color-primary:       #18181b;
+  --color-primary-hover: #000000;
+  --color-secondary:     #52525b;
+  --color-accent:        #007aff;
+
+  --bg-base:     #f2f2f7;
+  --bg-surface:  #ffffff;
+  --bg-overlay:  #e5e5ea;
+  --bg-sunken:   #d1d1d6;
+
+  --text-base:    #1c1c1e;
+  --text-muted:   #636366;
+  --text-subtle:  #8e8e93;
+  --text-inverse: #ffffff;
+  --text-link:    #007aff;
+
+  --border:       #d1d1d6;
+  --border-strong:#aeaeb2;
+
+  --color-danger:   #ff3b30;
+  --color-success:  #34c759;
+  --color-warning:  #ff9500;
+  --color-info:     #007aff;
+}
+
+/* ── High Contrast Dark ──────────────────────────────────────────────────────── */
+.theme-hc-dark {
+  --color-primary:       #ffffff;
+  --color-primary-hover: #e4e4e7;
+  --color-secondary:     #71717a;
+  --color-accent:        #0a84ff;
+
+  --bg-base:     #000000;
+  --bg-surface:  #1c1c1e;
+  --bg-overlay:  #2c2c2e;
+  --bg-sunken:   #121212;
+
+  --text-base:    #ffffff;
+  --text-muted:   #a1a1aa;
+  --text-subtle:  #71717a;
+  --text-inverse: #000000;
+  --text-link:    #0a84ff;
+
+  --border:       #3a3a3c;
+  --border-strong:#48484a;
+
+  --color-danger:   #ff453a;
+  --color-success:  #32d74b;
+  --color-warning:  #ff9f0a;
+  --color-info:     #0a84ff;
+}
+
 /* TipTap editor list/heading styles — applied here to cover both the
    ProseMirror (editing) surface and any .prose (read-only preview) wrapper.
    These rules complement @tailwindcss/typography and remain consistent
