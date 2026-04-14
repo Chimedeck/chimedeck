@@ -3,14 +3,18 @@
 
 /** Pick readable text colour (black or white) based on background luminance. */
 function contrastText(bgHex: string): string {
-  const hex = bgHex.replace('#', '');
-  if (hex.length < 6) return '#0f172a';
-  const r = Number.parseInt(hex.slice(0, 2), 16) / 255;
-  const g = Number.parseInt(hex.slice(2, 4), 16) / 255;
-  const b = Number.parseInt(hex.slice(4, 6), 16) / 255;
+  const hex = bgHex.trim().replace('#', '');
+  const normalized =
+    hex.length === 3
+      ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+      : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return 'var(--text-inverse)';
+  const r = Number.parseInt(normalized.slice(0, 2), 16) / 255;
+  const g = Number.parseInt(normalized.slice(2, 4), 16) / 255;
+  const b = Number.parseInt(normalized.slice(4, 6), 16) / 255;
   const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-  return L > 0.19 ? '#0f172a' : '#ffffff';
+  return L > 0.3 ? 'var(--text-base)' : 'var(--text-inverse)';
 }
 
 interface LabelChip {

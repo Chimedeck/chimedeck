@@ -351,6 +351,20 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           .catch(() => {});
         return true;
       },
+      // [why] Clipboard snapshots should be uploaded and inserted at cursor
+      // position so paste behavior matches drag/drop and file picker insertion.
+      handlePaste(view, event) {
+        const files = Array.from(event.clipboardData?.files ?? []);
+        if (files.length === 0) return false;
+        event.preventDefault();
+        const pos = view.state.selection.from;
+        const ids = uploadFilesRef.current?.(files) ?? [];
+        ids.forEach((id) => insertPosMap.current.set(id, pos));
+        void flushUploads()
+          .then(() => loadCardAttachments())
+          .catch(() => {});
+        return true;
+      },
     },
   });
   editorRef.current = editor;
