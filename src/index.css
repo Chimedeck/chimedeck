@@ -84,6 +84,474 @@ body {
   --color-info:     #38bdf8;  /* sky-400 */
 }
 
+/* ── Elegant Light — Pure & Purposeful ─────────────────────────────────────── */
+.elegant {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #007aff;   /* Apple System Blue */
+  --color-primary-hover: #0063cc;
+  --color-secondary:     #8e8e93;
+  --color-accent:        #5856d6;   /* Indigo for secondary accents */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #f2f2f7;   /* Soft gray background for the workspace */
+  --bg-surface:  #ffffff;   /* Pure white for the card itself */
+  --bg-overlay:  #e5e5ea;   /* Hover state */
+  --bg-sunken:   #f2f2f7;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #1c1c1e;
+  --text-muted:   #636366;
+  --text-subtle:  #8e8e93;
+  --text-inverse: #ffffff;  /* White text on primary blue button */
+  --text-link:    #007aff;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #d1d1d6;
+  --border-strong:#c7c7cc;
+
+  /* ── Semantic: System Colours ───────────────────────── */
+  --color-danger:   #ff3b30;
+  --color-success:  #34c759;
+  --color-warning:  #ff9500;
+  --color-info:     #007aff;
+}
+
+/* ── Elegant Dark — Depth without Distraction ───────────────────────────────── */
+.elegant-dark {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #e4e4e7;   /* Zinc 200 - never pure white */
+  --color-primary-hover: #f4f4f5;   /* Slightly brighter gray — no glowing */
+  --color-secondary:     #71717a;
+  --color-accent:        #3b82f6;   /* San Francisco Blue */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #000000;   /* Pure Black - the void */
+  --bg-surface:  #1c1c1e;   /* The "Plate" - dark gray */
+  --bg-overlay:  #2c2c2e;   /* The "Layer" */
+  --bg-sunken:   #09090b;   /* The "Well" */
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #f4f4f5;  /* Off-white — prevents blooming */
+  --text-muted:   #8e8e93;
+  --text-subtle:  #48484a;
+  --text-inverse: #000000;  /* Obsidian on light button backgrounds */
+  --text-link:    #60a5fa;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #2c2c2e;
+  --border-strong:#3a3a3c;
+
+  /* ── Semantic: System Colours ───────────────────────── */
+  --color-danger:   #ff453a;  /* System Red */
+  --color-success:  #32d74b;  /* System Green */
+  --color-warning:  #ff9f0a;  /* System Orange */
+  --color-info:     #0a84ff;  /* System Blue */
+}
+
+/* ── Paper — Sepia / Reading Mode ───────────────────────────────────────────── */
+.theme-paper {
+  --color-primary:       #433422;   /* Deep Espresso */
+  --color-primary-hover: #5a4630;
+  --color-secondary:     #8c7e6d;
+  --color-accent:        #945d25;   /* Burnt Sienna - functional but warm */
+
+  --bg-base:     #f4f0e8;   /* Warm Paper */
+  --bg-surface:  #faf7f2;   /* Elevated Paper */
+  --bg-overlay:  #ece8df;   /* Hover state */
+  --bg-sunken:   #e8e3d9;   /* Wells / Inputs */
+
+  --text-base:    #433422;  /* Ink */
+  --text-muted:   #8c7e6d;
+  --text-subtle:  #b5a898;
+  --text-inverse: #faf7f2;  /* Light paper on espresso button */
+  --text-link:    #945d25;
+
+  --border:       #e2dcd0;
+  --border-strong:#ccc5b5;
+
+  --color-danger:   #c0392b;
+  --color-success:  #27ae60;
+  --color-warning:  #d68910;
+  --color-info:     #2471a3;
+}
+
+/* ── Nordic Night — Deep Slate ───────────────────────────────────────────────── */
+.theme-nordic {
+  --color-primary:       #38bdf8;   /* Sky Blue accent */
+  --color-primary-hover: #7dd3fc;
+  --color-secondary:     #94a3b8;
+  --color-accent:        #818cf8;   /* Soft Indigo */
+
+  --bg-base:     #0f172a;   /* Deep Slate Navy */
+  --bg-surface:  #1e293b;   /* Steel Surface */
+  --bg-overlay:  #334155;
+  --bg-sunken:   #0b1120;   /* Deepest well */
+
+  --text-base:    #f1f5f9;  /* Crisp Ice text */
+  --text-muted:   #94a3b8;
+  --text-subtle:  #64748b;
+  --text-inverse: #0f172a;  /* Navy on sky-blue button */
+  --text-link:    #38bdf8;
+
+  --border:       #334155;
+  --border-strong:#475569;
+
+  --color-danger:   #f87171;
+  --color-success:  #4ade80;
+  --color-warning:  #fbbf24;
+  --color-info:     #38bdf8;
+}
+
+/* ── Archive — Matcha / Sage Green ──────────────────────────────────────────── */
+.theme-archive {
+  --color-primary:       #3a4a3b;   /* Forest Green */
+  --color-primary-hover: #4d6350;
+  --color-secondary:     #6b776a;
+  --color-accent:        #5d7a5c;
+
+  --bg-base:     #ebede9;   /* Soft Sage Wash */
+  --bg-surface:  #f1f3f0;
+  --bg-overlay:  #dfe3dd;   /* Hover state */
+  --bg-sunken:   #e4e8e2;   /* Wells / Inputs */
+
+  --text-base:    #242c23;
+  --text-muted:   #6b776a;
+  --text-subtle:  #9aaa98;
+  --text-inverse: #ffffff;  /* White on forest green button */
+  --text-link:    #5d7a5c;
+
+  --border:       #d1d7d0;
+  --border-strong:#bcc4ba;
+
+  --color-danger:   #c0392b;
+  --color-success:  #27ae60;
+  --color-warning:  #d68910;
+  --color-info:     #2471a3;
+}
+
+/* ── 1984 Macintosh — Aluminum & Ink ────────────────────────────────────────── */
+.theme-macintosh {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #000000;
+  --color-primary-hover: #1d1d1f;
+  --color-secondary:     #86868b;
+  --color-accent:        #000000;
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #f5f5f7;   /* Apple Gray (Aluminum) */
+  --bg-surface:  #ffffff;
+  --bg-overlay:  #e8e8ed;
+  --bg-sunken:   #f5f5f7;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #1d1d1f;  /* San Francisco Black */
+  --text-muted:   #6e6e73;
+  --text-subtle:  #a1a1aa;
+  --text-inverse: #ffffff;
+  --text-link:    #0066cc;  /* Classic interactive blue */
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #d2d2d7;
+  --border-strong:#86868b;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #ff3b30;
+  --color-success:  #34c759;
+  --color-warning:  #ff9500;
+  --color-info:     #007aff;
+}
+
+/* ── Obsidian Glass — Polished Midnight ──────────────────────────────────────── */
+.theme-obsidian {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #ffffff;
+  --color-primary-hover: #f5f5f7;
+  --color-secondary:     #424245;
+  --color-accent:        #0071e3;   /* Electric Blue */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #000000;   /* Deepest Black */
+  --bg-surface:  #161617;   /* Polished Glass */
+  --bg-overlay:  #2d2d2e;
+  --bg-sunken:   #000000;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #f5f5f7;
+  --text-muted:   #a1a1a6;
+  --text-subtle:  #6e6e73;
+  --text-inverse: #000000;  /* Sharp black on glowing white button */
+  --text-link:    #2997ff;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #333336;
+  --border-strong:#424245;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #ff453a;
+  --color-success:  #32d74b;
+  --color-warning:  #ff9f0a;
+  --color-info:     #0a84ff;
+}
+
+/* ── NeXT Stationery — Industrial Concrete ───────────────────────────────────── */
+.theme-next {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #2c2c2c;   /* Industrial Charcoal */
+  --color-primary-hover: #000000;
+  --color-secondary:     #6e6e73;
+  --color-accent:        #bf4800;   /* Caution Orange */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #d1d1d6;   /* Concrete Base */
+  --bg-surface:  #e5e5e7;   /* Lighter Concrete */
+  --bg-overlay:  #c7c7cc;
+  --bg-sunken:   #aeaeb2;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #1d1d1f;
+  --text-muted:   #424245;
+  --text-subtle:  #86868b;
+  --text-inverse: #ffffff;
+  --text-link:    #bf4800;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #aeaeb2;
+  --border-strong:#86868b;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #ff3b30;
+  --color-success:  #34c759;
+  --color-warning:  #ff9500;
+  --color-info:     #007aff;
+}
+
+/* ── Per-theme border-radius overrides ──────────────────────────────────────── */
+/* Higher specificity than Tailwind's single-class utilities — no !important needed */
+
+/* Macintosh: tight mechanical 4px everywhere */
+.theme-macintosh .rounded-sm,
+.theme-macintosh .rounded,
+.theme-macintosh .rounded-md,
+.theme-macintosh .rounded-lg,
+.theme-macintosh .rounded-xl,
+.theme-macintosh .rounded-2xl { border-radius: 4px; }
+
+/* Obsidian: generous 12px iPhone-feel, scaling up for larger surfaces */
+.theme-obsidian .rounded-sm,
+.theme-obsidian .rounded    { border-radius: 8px; }
+.theme-obsidian .rounded-md,
+.theme-obsidian .rounded-lg { border-radius: 12px; }
+.theme-obsidian .rounded-xl,
+.theme-obsidian .rounded-2xl { border-radius: 16px; }
+
+/* NeXT: absolute 0px — uncompromising */
+.theme-next .rounded-sm,
+.theme-next .rounded,
+.theme-next .rounded-md,
+.theme-next .rounded-lg,
+.theme-next .rounded-xl,
+.theme-next .rounded-2xl { border-radius: 0; }
+
+/* ── Bauhaus — Graphic & Structural ─────────────────────────────────────────── */
+.theme-bauhaus {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #e63946;   /* Crimson Red */
+  --color-primary-hover: #bd2f3a;
+  --color-secondary:     #457b9d;   /* Steel Blue */
+  --color-accent:        #f1faee;
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #f1faee;   /* Soft Gallery White */
+  --bg-surface:  #ffffff;
+  --bg-overlay:  #a8dadc;   /* Soft Teal hover */
+  --bg-sunken:   #e1e5e0;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #1d3557;  /* Deep Navy Ink */
+  --text-muted:   #457b9d;
+  --text-subtle:  #a8dadc;
+  --text-inverse: #ffffff;  /* White on Crimson button */
+  --text-link:    #e63946;
+
+  /* ── Borders: bold graphic lines ───────────────────── */
+  --border:       #1d3557;
+  --border-strong:#000000;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #e63946;
+  --color-success:  #2dc653;
+  --color-warning:  #f4a261;
+  --color-info:     #457b9d;
+}
+
+/* ── Nordic Moss — Analog & Warm ─────────────────────────────────────────────── */
+.theme-moss {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #4a5d4e;   /* Deep Forest */
+  --color-primary-hover: #3b4a3e;
+  --color-secondary:     #8fa38e;
+  --color-accent:        #d4a373;   /* Raw Sienna */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #e9edc9;   /* Pale Moss */
+  --bg-surface:  #fefae0;   /* Creamy Light */
+  --bg-overlay:  #ccd5ae;
+  --bg-sunken:   #d4d4d8;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #283618;  /* Dark Olive */
+  --text-muted:   #606c38;
+  --text-subtle:  #a3ad91;
+  --text-inverse: #fefae0;
+  --text-link:    #bc6c25;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #ccd5ae;
+  --border-strong:#a3ad91;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #c0392b;
+  --color-success:  #27ae60;
+  --color-warning:  #d68910;
+  --color-info:     #457b9d;
+}
+
+/* ── Cyber-Vapor — Neon Dark ─────────────────────────────────────────────────── */
+.theme-vapor {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #d946ef;   /* Fuchsia Neon */
+  --color-primary-hover: #c026d3;
+  --color-secondary:     #8b5cf6;   /* Violet */
+  --color-accent:        #22d3ee;   /* Electric Cyan */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #0f172a;   /* Midnight Slate */
+  --bg-surface:  #1e293b;
+  --bg-overlay:  #334155;
+  --bg-sunken:   #020617;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #f8fafc;
+  --text-muted:   #94a3b8;
+  --text-subtle:  #475569;
+  --text-inverse: #ffffff;
+  --text-link:    #22d3ee;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #334155;
+  --border-strong:#475569;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #f43f5e;
+  --color-success:  #4ade80;
+  --color-warning:  #fbbf24;
+  --color-info:     #22d3ee;
+}
+
+/* ── Per-theme border-radius and effect overrides ───────────────────────────── */
+
+/* Bauhaus: 1px sharp — poster graphic */
+.theme-bauhaus .rounded-sm,
+.theme-bauhaus .rounded,
+.theme-bauhaus .rounded-md,
+.theme-bauhaus .rounded-lg,
+.theme-bauhaus .rounded-xl,
+.theme-bauhaus .rounded-2xl { border-radius: 2px; }
+
+/* Moss: soft 12px — analog warmth */
+.theme-moss .rounded-sm,
+.theme-moss .rounded    { border-radius: 8px; }
+.theme-moss .rounded-md,
+.theme-moss .rounded-lg { border-radius: 12px; }
+.theme-moss .rounded-xl,
+.theme-moss .rounded-2xl { border-radius: 16px; }
+
+/* Vapor: primary button neon glow */
+.theme-vapor .bg-primary {
+  box-shadow: 0 0 15px var(--color-primary);
+}
+.theme-vapor .bg-primary:hover {
+  box-shadow: 0 0 22px var(--color-primary);
+}
+
+/* ── Night City (Cyberpunk) — Neon on Void ───────────────────────────────────── */
+.theme-cyberpunk {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #f3e600;   /* Iconic Cyberpunk Yellow */
+  --color-primary-hover: #d1c500;
+  --color-secondary:     #00ff9f;   /* Neo-Mint */
+  --color-accent:        #ff003c;   /* Trauma Team Red */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #050505;   /* Absolute Void */
+  --bg-surface:  #101010;   /* Carbon Fiber */
+  --bg-overlay:  #1a1a1a;
+  --bg-sunken:   #000000;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #00ff9f;  /* Data-Green - high legibility on black */
+  --text-muted:   #00cc7e;
+  --text-subtle:  #004d30;
+  --text-inverse: #050505;  /* Black on bright yellow button */
+  --text-link:    #f3e600;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #f3e600;  /* Yellow outlines — high-tech */
+  --border-strong:#ff003c;
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #ff003c;
+  --color-success:  #00ff9f;
+  --color-warning:  #f3e600;
+  --color-info:     #3700ff;
+}
+
+/* ── Top Of The World (the seven) — Gallery & Gold ─────────────────────────────────── */
+.theme-the-seven {
+  /* ── Brand ─────────────────────────────────────────── */
+  --color-primary:       #9b1b30;   /* Portugal Crimson */
+  --color-primary-hover: #7a1526;
+  --color-secondary:     #c5a059;   /* Metallic Gold */
+  --color-accent:        #114232;   /* Portugal Green */
+
+  /* ── Surfaces ───────────────────────────────────────── */
+  --bg-base:     #0a0a0a;   /* Museum gallery */
+  --bg-surface:  #151515;   /* Display plinth */
+  --bg-overlay:  #1f1f1f;
+  --bg-sunken:   #050505;
+
+  /* ── Text ───────────────────────────────────────────── */
+  --text-base:    #ffffff;
+  --text-muted:   #a1a1aa;
+  --text-subtle:  #71717a;
+  --text-inverse: #ffffff;  /* White on Crimson button */
+  --text-link:    #c5a059;
+
+  /* ── Borders ────────────────────────────────────────── */
+  --border:       #1f1f1f;
+  --border-strong:#c5a059;  /* Gold borders */
+
+  /* ── Semantic ───────────────────────────────────────── */
+  --color-danger:   #ef4444;
+  --color-success:  #22c55e;
+  --color-warning:  #c5a059;
+  --color-info:     #3b82f6;
+}
+
+/* ── Cyberpunk: yellow button glow + uppercase terminal labels ─────────────── */
+.theme-cyberpunk .bg-primary {
+  box-shadow: 0 0 10px rgba(243, 230, 0, 0.5);
+}
+.theme-cyberpunk .bg-primary:hover {
+  box-shadow: 0 0 18px rgba(243, 230, 0, 0.7);
+}
+
+/* ── The Seven: 2px gold card borders ──────────────────────────────────────── */
+.theme-the-seven .border {
+  border-width: 2px;
+  border-color: var(--border-strong);
+}
+
 /* TipTap editor list/heading styles — applied here to cover both the
    ProseMirror (editing) surface and any .prose (read-only preview) wrapper.
    These rules complement @tailwindcss/typography and remain consistent

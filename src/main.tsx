@@ -18,10 +18,39 @@ initSentry();
 // Apply saved theme before React renders to prevent flash of wrong theme.
 // Default to dark when no preference is stored.
 const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'light') {
-  document.documentElement.classList.remove('dark');
-} else {
-  document.documentElement.classList.add('dark');
+const html = document.documentElement;
+html.classList.remove('dark', 'elegant', 'elegant-dark', 'theme-paper', 'theme-nordic', 'theme-archive', 'theme-macintosh', 'theme-obsidian', 'theme-next', 'theme-bauhaus', 'theme-moss', 'theme-vapor', 'theme-cyberpunk', 'theme-the-seven');
+if (savedTheme === 'dark') {
+  html.classList.add('dark');
+} else if (savedTheme === 'elegant') {
+  html.classList.add('elegant');
+} else if (savedTheme === 'elegant-dark') {
+  html.classList.add('dark', 'elegant-dark');
+} else if (savedTheme === 'paper') {
+  html.classList.add('theme-paper');
+} else if (savedTheme === 'nordic') {
+  html.classList.add('dark', 'theme-nordic');
+} else if (savedTheme === 'archive') {
+  html.classList.add('theme-archive');
+} else if (savedTheme === 'macintosh') {
+  html.classList.add('theme-macintosh');
+} else if (savedTheme === 'obsidian') {
+  html.classList.add('dark', 'theme-obsidian');
+} else if (savedTheme === 'next') {
+  html.classList.add('theme-next');
+} else if (savedTheme === 'bauhaus') {
+  html.classList.add('theme-bauhaus');
+} else if (savedTheme === 'moss') {
+  html.classList.add('theme-moss');
+} else if (savedTheme === 'vapor') {
+  html.classList.add('dark', 'theme-vapor');
+} else if (savedTheme === 'cyberpunk') {
+  html.classList.add('dark', 'theme-cyberpunk');
+} else if (savedTheme === 'the-seven') {
+  html.classList.add('dark', 'theme-the-seven');
+} else if (savedTheme !== 'light') {
+  // Default: dark
+  html.classList.add('dark');
 }
 
 // Wire up the API client with store access — done here to avoid circular deps

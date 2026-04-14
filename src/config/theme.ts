@@ -6,7 +6,7 @@
 export const buttonVariants = {
   // ── Solid variants ──────────────────────────────────────
   primary:
-    'bg-primary text-white hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed', // [theme-exception] text-white on primary-colored button
+    'bg-primary text-inverse hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
   secondary:
     'bg-bg-overlay text-base border border-border hover:bg-bg-sunken focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
   ghost:
