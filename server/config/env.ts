@@ -99,6 +99,14 @@ export const env = {
   // Set to "false" to disable the restriction entirely.
   EMAIL_DOMAIN_RESTRICTION_ENABLED: Bun.env['EMAIL_DOMAIN_RESTRICTION_ENABLED'] !== 'false',
 
+  // Webhooks — AES-256-GCM key used to encrypt signing secrets at rest.
+  // Generate with: openssl rand -hex 32
+  // Must be exactly 64 hex characters (= 32 bytes). Required when WEBHOOKS_ENABLED=true.
+  WEBHOOK_SECRET_ENCRYPTION_KEY: Bun.env['WEBHOOK_SECRET_ENCRYPTION_KEY'] ?? '',
+
+  // Webhooks feature gate — when false, all /api/v1/webhooks* routes return 501.
+  WEBHOOKS_ENABLED: Bun.env['WEBHOOKS_ENABLED'] === 'true',
+
   // Comma-separated list of email domains whose users may create accounts on behalf of others.
   // Intentionally separate from ALLOWED_EMAIL_DOMAINS (self-registration allowlist).
   // Falls back to "journeyh.io" when not set.
@@ -140,4 +148,8 @@ export const env = {
   SENTRY_ENV: Bun.env['SENTRY_ENV'] ?? 'development',
   /** Release identifier sent to Sentry, typically a git SHA or semver tag. */
   SENTRY_RELEASE: Bun.env['SENTRY_RELEASE'] ?? '',
+
+  // Webhooks feature flag — disabled by default in local dev, enabled in staging/prod.
+  // Set WEBHOOKS_ENABLED=true to activate all /api/v1/webhooks routes.
+  WEBHOOKS_ENABLED: Bun.env['WEBHOOKS_ENABLED'] === 'true',
 } as const;

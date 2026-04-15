@@ -3,6 +3,7 @@
   "Sidebar.members": "Members",
   "Sidebar.settings": "Settings",
   "Sidebar.apiTokens": "API Tokens",
+  "Sidebar.webhooks": "Webhooks",
   "Sidebar.allWorkspaces": "All Workspaces",
   "Sidebar.newWorkspace": "New workspace",
   "Sidebar.createFirst": "+ Create your first workspace",

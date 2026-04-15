@@ -158,6 +158,9 @@
 | **— Design System —** | | | |
 | [133](./sprint-133.md) | Design System: Replace Raw Buttons | `link` variant + `IconButton` component; audit + replace all ad-hoc `<button>` elements across Attachment, Workspace, List, Sidebar, Timeline, Table, Auth, Plugins, Comment, Card | ⬜ Needs 15 |
 | [134](./sprint-134.md) | Design Stylesheet Page | `/design-system` route (dev-only, `DESIGN_SYSTEM_ENABLED` flag); colour tokens, typography, all Button variants, comments demo, reactions demo, stubbed components — no API calls | ⬜ Needs 133 |
+| **— Webhooks —** | | | |
+| [135](./sprint-135.md) | Webhooks: DB + API Infrastructure | `webhooks` + `webhook_deliveries` tables; `POST/GET/PATCH/DELETE /api/v1/webhooks`; HMAC-SHA256 `v0` signing; fire-and-forget dispatch; SSRF guard; `WEBHOOKS_ENABLED` flag | ⬜ Needs 101 |
+| [136](./sprint-136.md) | Webhooks: Register UI (`WebhooksRegisterPage`) | `/settings/webhooks` page (mirrors `ApiTokenPage`); register-endpoint modal with event-type checklist; one-time signing-secret reveal modal; edit + delete dialogs; `SignatureVerificationSnippet` JS code guide | ⬜ Needs 135 + 102 |
 
 ---
 
@@ -178,6 +181,7 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `PLUGINS_ENABLED` | Sprint 34 | Disable plugin routes and SDK endpoint entirely (off by default in dev until Sprint 34) |
 | `EMAIL_DOMAIN_RESTRICTION_ENABLED` | Sprint 43 | Reject registration / email-change for domains not in `ALLOWED_EMAIL_DOMAINS` (default: `true`) |
 | `ADMIN_INVITE_EMAIL_ENABLED` | Sprint 44 | Send invitation email to externally created users via SES (requires `SES_ENABLED` also `true`) |
+| `WEBHOOKS_ENABLED` | Sprint 135 | Return `501 Not Implemented` on all `/api/v1/webhooks*` routes (off by default in local dev) |
 | `NOTIFICATION_PREFERENCES_ENABLED` | Sprint 70 | When `false`, all notification channels are treated as enabled for all users (backward-compatible with Sprint 26) |
 | `EMAIL_NOTIFICATIONS_ENABLED` | Sprint 72 | Enable SES email dispatch for notification events — requires `SES_ENABLED` also `true` |
 | `AUTOMATION_ENABLED` | Sprint 61 | Disable all automation routes and the event-pipeline evaluation hook |

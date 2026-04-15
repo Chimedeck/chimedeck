@@ -21,4 +21,5 @@ export { boardMembersApi } from './extensions/Board/slices/boardMembersSlice';
 export { boardGuestsApi } from './extensions/Board/slices/boardGuestsSlice';
 export { default as searchReducer } from './extensions/Search/slices/searchSlice';
 export { apiTokenApi } from './extensions/ApiToken/apiToken.slice';
+export { webhooksApi } from './extensions/Webhooks/webhooks.slice';
 export { healthCheckTabReducer } from './extensions/HealthCheck/reducers';

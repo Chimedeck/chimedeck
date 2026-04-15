@@ -527,6 +527,16 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     {translations['Sidebar.apiTokens']}
                   </NavLink>
                 </li>
+                <li role="none">
+                  <NavLink
+                    to="/settings/webhooks"
+                    role="menuitem"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
+                  >
+                    {translations['Sidebar.webhooks']}
+                  </NavLink>
+                </li>
                 <li role="separator" className="my-1 border-t border-border" />
                 <li role="none">
                   <Button

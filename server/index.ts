@@ -36,6 +36,7 @@ import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 import { apiTokenRouter } from './extensions/apiToken/api/index';
+import { webhooksRouter } from './extensions/webhooks/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 // Register all automation trigger handlers at startup.
@@ -154,6 +155,9 @@ async function router(req: Request): Promise<Response> {
 
   const apiTokenResponse = await apiTokenRouter(req, path);
   if (apiTokenResponse) return apiTokenResponse;
+
+  const webhooksResponse = await webhooksRouter(req, path);
+  if (webhooksResponse) return webhooksResponse;
 
   const healthCheckResponse = await healthCheckExtensionRouter(req, path);
   if (healthCheckResponse) return healthCheckResponse;

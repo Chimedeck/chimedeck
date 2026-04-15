@@ -97,6 +97,11 @@ const ApiTokenPage = lazy(() =>
     default: m.default,
   }))
 );
+const WebhooksRegisterPage = lazy(() =>
+  import('~/extensions/Webhooks/containers/WebhooksRegisterPage/WebhooksRegisterPage').then(
+    (m) => ({ default: m.default }),
+  )
+);
 // Lazy-loaded only when the flag is enabled — avoids bundling in production builds.
 const DesignSystemPage = config.designSystemEnabled
   ? lazy(() =>
@@ -153,6 +158,7 @@ export default function AppRouter() {
               <Route path="/plugins" element={<PluginRegistryPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />
               <Route path="/settings/api-tokens" element={<ApiTokenPage />} />
+              <Route path="/settings/webhooks" element={<WebhooksRegisterPage />} />
               <Route path="/profile/edit" element={<EditProfilePage />} />
               <Route path="/developer/plugins" element={<PluginDocsPage />} />
               <Route path="/developer/mcp" element={<McpDocsPage />} />
