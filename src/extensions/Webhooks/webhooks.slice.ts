@@ -44,8 +44,8 @@ export const webhooksApi = createApi({
   }),
   tagTypes: ['Webhook'],
   endpoints: (builder) => ({
-    listWebhooks: builder.query<WebhookItem[], string>({
-      query: (workspaceId) => `/webhooks?workspaceId=${workspaceId}`,
+    listWebhooks: builder.query<WebhookItem[], void>({
+      query: () => '/webhooks',
       transformResponse: (res: { data: WebhookItem[] }) => res.data,
       providesTags: ['Webhook'],
     }),

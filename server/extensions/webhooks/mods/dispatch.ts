@@ -38,7 +38,7 @@ export async function dispatchWebhook({
 
   // [why] async IIFE so we never await the fetch at the call site — truly fire-and-forget.
   // The outer try/catch ensures ALL errors (including DB update failures) are swallowed silently.
-  (async () => {
+  void (async () => {
     try {
       const res = await fetch(endpoint, {
         method: 'POST',

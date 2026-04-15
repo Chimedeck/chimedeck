@@ -18,9 +18,11 @@ interface Props {
   isGuest?: boolean;
   /** When true, the user is a VIEWER guest — can only adjust their notification settings. */
   isViewerGuest?: boolean;
+  /** When false, the user can see the board but has not joined it — notification settings are hidden. */
+  isBoardMember?: boolean;
 }
 
-const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false }: Props) => {
+const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoardMember = true }: Props) => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);
@@ -117,7 +119,8 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false }: Prop
             </>
           )}
 
-          {/* User settings — per-board notification preferences; available to all roles */}
+          {/* User settings — per-board notification preferences; only shown when the user is a board member */}
+          {isBoardMember && (
           <div className={isGuest ? '' : 'border-t border-border pt-4'}>
             <div className="flex items-center gap-2 mb-3">
               <UserCircleIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
@@ -134,6 +137,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false }: Prop
               </>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>

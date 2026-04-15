@@ -8,7 +8,6 @@ import type { WebhookEventType } from '../common/eventTypes';
 
 interface ActiveWebhook {
   id: string;
-  workspace_id: string;
   created_by: string;
   label: string;
   endpoint_url: string;
@@ -17,19 +16,17 @@ interface ActiveWebhook {
   is_active: boolean;
 }
 
-// Returns all active webhooks for a workspace that subscribe to the given event type,
+// Returns all active webhooks that subscribe to the given event type,
 // with signing_secret decrypted and ready for HMAC use.
 export async function getActiveWebhooksForEvent({
   knex,
-  workspaceId,
   eventType,
 }: {
   knex: Knex;
-  workspaceId: string;
   eventType: WebhookEventType;
 }): Promise<ActiveWebhook[]> {
   const rows = await knex('webhooks')
-    .where({ workspace_id: workspaceId, is_active: true })
+    .where({ is_active: true })
     .whereRaw('event_types @> ?::jsonb', [JSON.stringify([eventType])]);
 
   // [why] decrypt here so dispatch.ts stays pure and testable with a plaintext secret

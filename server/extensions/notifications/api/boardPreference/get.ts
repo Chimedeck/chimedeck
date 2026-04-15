@@ -14,6 +14,12 @@ export async function handleGetBoardNotificationPreference(
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
+  // [why] Notifications only apply to board members. Non-members (e.g. admins who
+  // can see a board via workspace visibility but haven't joined) default to OFF.
+  const boardMember = await db('board_members')
+    .where({ board_id: boardId, user_id: userId })
+    .first();
+
   const row = await db('board_notification_preferences')
     .where({ user_id: userId, board_id: boardId })
     .select('notifications_enabled', 'updated_at')
@@ -21,7 +27,7 @@ export async function handleGetBoardNotificationPreference(
 
   return Response.json({
     data: {
-      notifications_enabled: row ? row.notifications_enabled : true,
+      notifications_enabled: row ? row.notifications_enabled : !!boardMember,
       updated_at: row ? row.updated_at : null,
     },
   });

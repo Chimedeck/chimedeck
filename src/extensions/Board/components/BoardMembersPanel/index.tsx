@@ -17,6 +17,7 @@ import {
   useAddBoardMemberMutation,
   useUpdateBoardMemberMutation,
   useRemoveBoardMemberMutation,
+  useJoinBoardMutation,
   type BoardMemberRole,
 } from '../../slices/boardMembersSlice';
 import MemberRow from './MemberRow';
@@ -54,6 +55,22 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   const [addMember] = useAddBoardMemberMutation();
   const [updateMember] = useUpdateBoardMemberMutation();
   const [removeMember] = useRemoveBoardMemberMutation();
+  const [joinBoard, { isLoading: isJoining }] = useJoinBoardMutation();
+
+  // Whether the current user is already an explicit board member.
+  const isSelfMember = useMemo(
+    () => boardMembers.some((m) => m.user_id === currentUser?.id),
+    [boardMembers, currentUser],
+  );
+
+  // Show join button when the caller is a workspace member but not yet in board_members.
+  // ADMIN/OWNER can join any board (including PRIVATE); MEMBER/VIEWER only open boards.
+  const canSelfJoin =
+    !isSelfMember &&
+    (workspaceRole === 'ADMIN' || workspaceRole === 'OWNER'
+      ? true
+      : board?.visibility !== 'PRIVATE') &&
+    (workspaceRole === 'MEMBER' || workspaceRole === 'VIEWER' || workspaceRole === 'ADMIN' || workspaceRole === 'OWNER');
 
   // Determine if the current user can manage board members.
   // [why] Workspace OWNER/ADMIN have authority over all boards even if not explicitly
@@ -94,6 +111,11 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   const handleAdd = async (userId: string, role: BoardMemberRole) => {
     if (!boardId) return;
     await addMember({ boardId, userId, role });
+  };
+
+  const handleJoin = async () => {
+    if (!boardId) return;
+    await joinBoard(boardId);
   };
 
   const handleRoleChange = async (userId: string, role: BoardMemberRole) => {
@@ -174,6 +196,23 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
                     Add member
                   </p>
                   <AddMemberInput candidates={candidates} onAdd={handleAdd} />
+                </div>
+              )}
+
+              {/* Join button — workspace member not yet on this board */}
+              {canSelfJoin && (
+                <div className="rounded-md border border-border bg-bg-overlay px-4 py-3">
+                  <p className="mb-2 text-sm text-muted">
+                    You are not a member of this board yet. Join to appear in @mention suggestions.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isJoining}
+                    onClick={handleJoin}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50"
+                  >
+                    {isJoining ? 'Joining…' : 'Join this board'}
+                  </button>
                 </div>
               )}
 

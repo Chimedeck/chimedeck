@@ -1,14 +1,10 @@
-// POST /api/v1/webhooks — register a new webhook for a workspace.
+// POST /api/v1/webhooks — register a new webhook.
 // signing_secret is returned exactly once in this response, never again.
 import { randomBytes, randomUUID } from 'node:crypto';
 import { encryptSecret } from '../../../common/crypto';
 import { db } from '../../../common/db';
 import { env } from '../../../config/env';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import {
-  requireWorkspaceMembership,
-  type WorkspaceScopedRequest,
-} from '../../../middlewares/permissionManager';
 import { WEBHOOK_EVENT_TYPES, type WebhookEventType } from '../common/eventTypes';
 import { isEndpointAllowed } from './ssrfGuard';
 
@@ -17,7 +13,6 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
   if (authError) return authError;
 
   let body: {
-    workspaceId?: string;
     label?: string;
     endpointUrl?: string;
     eventTypes?: WebhookEventType[];
@@ -31,14 +26,9 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
     );
   }
 
-  const { workspaceId, label, endpointUrl, eventTypes } = body;
+  const { label, endpointUrl, eventTypes } = body;
 
-  if (!workspaceId || typeof workspaceId !== 'string') {
-    return Response.json(
-      { name: 'bad-request', data: { message: 'workspaceId is required' } },
-      { status: 400 },
-    );
-  }
+  const userId = (req as AuthenticatedRequest).currentUser!.id;
 
   if (!label || typeof label !== 'string' || label.trim() === '') {
     return Response.json(
@@ -78,11 +68,6 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
     );
   }
 
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
-  if (membershipError) return membershipError;
-
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
   const signingSecret = randomBytes(32).toString('hex');
   // [why] encrypt before persisting — DB dump alone cannot reconstruct the secret
   const encryptedSecret = encryptSecret({
@@ -94,7 +79,6 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
 
   await db('webhooks').insert({
     id,
-    workspace_id: workspaceId,
     created_by: userId,
     label: label.trim(),
     endpoint_url: endpointUrl,

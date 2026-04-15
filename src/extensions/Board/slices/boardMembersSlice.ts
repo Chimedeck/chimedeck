@@ -78,6 +78,16 @@ export const boardMembersApi = createApi({
       }),
       invalidatesTags: (_result, _err, { boardId }) => [{ type: 'BoardMembers', id: boardId }],
     }),
+
+    // POST /api/v1/boards/:boardId/members/join — self-join a WORKSPACE or PUBLIC board
+    joinBoard: builder.mutation<BoardMember, string>({
+      query: (boardId) => ({
+        url: `/boards/${boardId}/members/join`,
+        method: 'POST',
+      }),
+      transformResponse: (response: { data: BoardMember }) => response.data,
+      invalidatesTags: (_result, _err, boardId) => [{ type: 'BoardMembers', id: boardId }],
+    }),
   }),
 });
 
@@ -86,4 +96,5 @@ export const {
   useAddBoardMemberMutation,
   useUpdateBoardMemberMutation,
   useRemoveBoardMemberMutation,
+  useJoinBoardMutation,
 } = boardMembersApi;

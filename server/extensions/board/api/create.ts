@@ -7,7 +7,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import type { BoardVisibility } from '../types';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 
@@ -75,7 +75,7 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const board = await db('boards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  await writeEvent({ type: 'board_created', boardId: id, entityId: id, actorId: creatorId, payload: { workspaceId } });
+  await dispatchEvent({ type: 'board_created', boardId: id, entityId: id, actorId: creatorId, payload: { workspaceId } });
 
   return Response.json({ data: board }, { status: 201 });
 }

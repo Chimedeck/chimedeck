@@ -9,7 +9,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { publisher } from '../../../mods/pubsub/publisher';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 
 // Private/internal IP ranges that must not be targeted (SSRF prevention).
@@ -137,7 +137,7 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
 
   const activityAction = referencedCardId ? 'card_link_attached' : 'attachment_added';
 
-  await writeEvent({
+  await dispatchEvent({
     type: 'attachment_added',
     boardId: board.id,
     entityId: cardId,

@@ -155,7 +155,7 @@ export default function SignatureVerificationSnippet() {
             >
               {copied ? (
                 <>
-                  <CheckIcon className="h-3.5 w-3.5 text-green-400" aria-hidden="true" />
+                  <CheckIcon className="h-3.5 w-3.5 text-success" aria-hidden="true" />
                   {translations['SignatureSnippet.copied']}
                 </>
               ) : (

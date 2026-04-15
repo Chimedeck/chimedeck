@@ -34,7 +34,7 @@ import { moveCard } from '../../api/card';
 import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
 import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
 import { usePollingFallback } from '../../../Realtime/PollingFallback';
-import { selectAuthToken } from '../../../Auth/duck/authDuck';
+import { selectAuthToken, selectAuthUser } from '../../../Auth/duck/authDuck';
 import { apiClient } from '~/common/api/client';
 import PluginIframeContainer from '../../../Plugins/iframeHost/PluginIframeContainer';
 import BoardActivityPanel from '../../../BoardViews/BoardActivityPanel';
@@ -83,6 +83,7 @@ const BoardPage = () => {
   const cards = useAppSelector(selectCards);
   const status = useAppSelector(selectBoardStatus);
   const accessToken = useAppSelector(selectAuthToken);
+  const currentUser = useAppSelector(selectAuthUser);
   // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
@@ -119,6 +120,8 @@ const BoardPage = () => {
   // ── Board members panel ───────────────────────────────────────────────────
   const [membersOpen, setMembersOpen] = useState(false);
   const { data: boardMembers = [] } = useGetBoardMembersQuery(boardId ?? '', { skip: !boardId });
+  // [why] Notifications should only be active for users who have explicitly joined the board.
+  const isBoardMember = boardMembers.some((m) => m.user_id === currentUser?.id);
 
   // ── Member filter ─────────────────────────────────────────────────────────
   const [filterMemberIds, setFilterMemberIds] = useState<ReadonlySet<string>>(new Set());
@@ -650,6 +653,7 @@ const BoardPage = () => {
           onClose={() => setSettingsOpen(false)}
           isGuest={isGuest}
           isViewerGuest={isViewerGuest}
+          isBoardMember={isBoardMember}
         />
       )}
       {/* Board members panel (Sprint 79) */}

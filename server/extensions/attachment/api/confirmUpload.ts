@@ -10,7 +10,7 @@ import {
 import { headObject } from '../mods/s3/headObject';
 import { enqueueScan } from '../mods/virusScan/enqueue';
 import { publisher } from '../../../mods/pubsub/publisher';
-import { writeEvent } from '../../../mods/events/write';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 
 export async function handleConfirmUpload(req: Request, cardId: string): Promise<Response> {
@@ -77,7 +77,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   // Enqueue virus scan (no-op when VIRUS_SCAN_ENABLED=false)
   await enqueueScan({ attachmentId: attachment.id });
 
-  await writeEvent({
+  await dispatchEvent({
     type: 'attachment_added',
     boardId: board.id,
     entityId: cardId,

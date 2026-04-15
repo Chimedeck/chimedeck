@@ -50,8 +50,8 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
         {/* Body */}
         <div className="space-y-4 px-6 py-5">
           {/* Success banner */}
-          <div className="rounded-md bg-green-900/30 px-4 py-3">
-            <p className="text-sm font-medium text-green-400">
+          <div className="rounded-md bg-success/10 px-4 py-3">
+            <p className="text-sm font-medium text-success">
               {translations['WebhookCreatedModal.successBanner']}
             </p>
           </div>
@@ -83,8 +83,8 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
           </div>
 
           {/* Warning callout */}
-          <div className="rounded-md border border-yellow-700/40 bg-yellow-900/20 px-4 py-3">
-            <p className="text-sm text-yellow-300">
+          <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3">
+            <p className="text-sm text-warning">
               {translations['WebhookCreatedModal.secretWarning']}
             </p>
           </div>

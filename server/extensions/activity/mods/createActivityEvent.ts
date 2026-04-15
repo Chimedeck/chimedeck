@@ -4,6 +4,40 @@
 import { writeActivity } from './write';
 import { publishCardActivityEvent } from '../events/publishCardActivityEvent';
 import { mapActivityToNotification } from './mapActivityToNotification';
+import { db } from '../../../common/db';
+import { env } from '../../../config/env';
+import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
+import { dispatchWebhook } from '../../webhooks/mods/dispatch';
+import type { WebhookEventType } from '../../webhooks/common/eventTypes';
+
+// [why] extracted helper — card member events go through writeActivity (not dispatchEvent)
+// so webhooks must be fired here rather than in the central dispatch hook.
+async function fireCardMemberWebhook({
+  boardId,
+  cardId,
+  actorId,
+  eventType,
+  payload,
+}: {
+  boardId: string;
+  cardId: string;
+  actorId: string;
+  eventType: WebhookEventType;
+  payload: Record<string, unknown>;
+}): Promise<void> {
+  if (!env.WEBHOOKS_ENABLED) return;
+  const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType });
+  for (const wh of webhooks) {
+    dispatchWebhook({
+      endpoint: wh.endpoint_url,
+      signingSecret: wh.signing_secret,
+      eventType,
+      payload: { ...payload, boardId, cardId, actorId },
+      webhookId: wh.id,
+      knex: db,
+    });
+  }
+}
 
 export interface CardCreatedPayload {
   cardId: string;
@@ -111,6 +145,13 @@ export async function emitCardMemberAssigned({
   });
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
   mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
+  fireCardMemberWebhook({
+    boardId: payload.boardId,
+    cardId: payload.cardId,
+    actorId,
+    eventType: 'card.member_assigned',
+    payload: { userId: payload.userId, assigneeName: payload.assigneeName, cardTitle: payload.cardTitle },
+  }).catch(() => {});
   return activity;
 }
 
@@ -145,5 +186,12 @@ export async function emitCardMemberUnassigned({
   });
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
   mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
+  fireCardMemberWebhook({
+    boardId: payload.boardId,
+    cardId: payload.cardId,
+    actorId,
+    eventType: 'card.member_removed',
+    payload: { userId: payload.userId, assigneeName: payload.assigneeName, cardTitle: payload.cardTitle },
+  }).catch(() => {});
   return activity;
 }

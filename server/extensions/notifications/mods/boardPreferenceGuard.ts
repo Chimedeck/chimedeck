@@ -14,8 +14,17 @@ export async function boardPreferenceGuard({
     .select('notifications_enabled')
     .first();
 
-  // Missing row → opt-out model: notifications are enabled by default.
-  return row ? row.notifications_enabled : true;
+  if (row) return row.notifications_enabled;
+
+  // [why] No preference row means the user has never explicitly opted in or out.
+  // Only fire notifications by default when the user is an actual board member —
+  // workspace/admin users who can see the board but have not joined should not receive
+  // activity for boards they haven't subscribed to.
+  const isMember = await db('board_members')
+    .where({ user_id: userId, board_id: boardId })
+    .first();
+
+  return !!isMember;
 }
 
 /**

@@ -12,6 +12,7 @@ import { handleGetBoardEvents } from '../../realtime/api/events';
 import { handleGetPresence } from '../../realtime/api/presence';
 import { handleGetBoardLabels, handleCreateBoardLabel } from './labels';
 import { handleGetBoardMembers, handleAddBoardMember, handleUpdateBoardMember, handleRemoveBoardMember } from './members';
+import { handleJoinBoard } from './members/join';
 import { handleGetMemberSuggestions } from './members/suggestions';
 import { handleStarBoard, handleUnstarBoard } from './star';
 import { handleFollowBoard, handleUnfollowBoard } from './follow';
@@ -87,6 +88,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/members/suggestions?q=
     if (sub === '/members/suggestions' && req.method === 'GET') return handleGetMemberSuggestions(req, boardId);
+
+    // POST /api/v1/boards/:id/members/join — self-join a WORKSPACE or PUBLIC board
+    if (sub === '/members/join' && req.method === 'POST') return handleJoinBoard(req, boardId);
 
     // Member sub-routes: PATCH/DELETE /api/v1/boards/:id/members/:userId
     const boardMemberMatch = sub.match(/^\/members\/([^/]+)$/);

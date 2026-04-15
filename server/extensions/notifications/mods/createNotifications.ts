@@ -12,7 +12,38 @@ import { boardPreferenceGuard } from './boardPreferenceGuard';
 import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
+import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
+import { dispatchWebhook } from '../../webhooks/mods/dispatch';
 import type { Knex } from 'knex';
+
+// [why] extracted to keep createNotificationsForMentions within the cognitive complexity limit.
+async function fireMentionWebhooks({
+  boardId,
+  cardId,
+  sourceType,
+  sourceId,
+  actorId,
+  recipients,
+}: {
+  boardId: string;
+  cardId: string | null;
+  sourceType: string;
+  sourceId: string;
+  actorId: string;
+  recipients: string[];
+}): Promise<void> {
+  const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType: 'mention' });
+  for (const wh of webhooks) {
+    dispatchWebhook({
+      endpoint: wh.endpoint_url,
+      signingSecret: wh.signing_secret,
+      eventType: 'mention',
+      payload: { boardId, cardId, sourceType, sourceId, actorId, mentionedUserIds: recipients },
+      webhookId: wh.id,
+      knex: db,
+    });
+  }
+}
 
 interface CreateNotificationsParams {
   trx: Knex.Transaction;
@@ -25,6 +56,88 @@ interface CreateNotificationsParams {
   // Optional context for mention email dispatch
   cardTitle?: string;
   boardName?: string;
+}
+
+// [why] extracted to keep createNotificationsForMentions within the cognitive complexity limit.
+async function notifyMentionedUser({
+  trx,
+  userId,
+  boardId,
+  sourceType,
+  sourceId,
+  cardId,
+  actorId,
+  actorPayload,
+  cardTitle,
+  boardName,
+  now,
+}: {
+  trx: Knex.Transaction;
+  userId: string;
+  boardId: string;
+  sourceType: 'card_description' | 'comment';
+  sourceId: string;
+  cardId: string | null;
+  actorId: string;
+  actorPayload: Record<string, unknown>;
+  cardTitle: string;
+  boardName: string;
+  now: string;
+}): Promise<void> {
+  try {
+    const [globalEnabled, boardEnabled] = await Promise.all([
+      globalPreferenceGuard({ userId }),
+      boardPreferenceGuard({ userId, boardId }),
+    ]);
+    if (!globalEnabled || !boardEnabled) return;
+  } catch {
+    // Fail open: if guard lookup fails, proceed with notification
+  }
+
+  let inAppEnabled = true;
+  if (env.NOTIFICATION_PREFERENCES_ENABLED) {
+    try {
+      const pref = await preferenceGuard({ userId, type: 'mention' });
+      inAppEnabled = pref.in_app_enabled;
+    } catch {
+      inAppEnabled = true;
+    }
+  }
+  if (!inAppEnabled) return;
+
+  const [inserted] = await trx('notifications').insert(
+    {
+      user_id: userId,
+      type: 'mention',
+      source_type: sourceType,
+      source_id: sourceId,
+      card_id: cardId,
+      board_id: boardId,
+      actor_id: actorId,
+      read: false,
+      created_at: now,
+    },
+    ['*'],
+  );
+
+  await publishToUser(userId, {
+    type: 'notification_created',
+    payload: { notification: { ...inserted, actor: actorPayload } },
+  });
+
+  if (cardId) {
+    const cardUrl = `/boards/${boardId}/cards/${cardId}`;
+    dispatchNotificationEmail({
+      recipientId: userId,
+      type: 'mention',
+      templateData: {
+        actorName: (actorPayload.name as string | null) ?? 'Someone',
+        cardTitle,
+        boardName,
+        cardUrl,
+      },
+    }).catch(() => {});
+  }
 }
 
 export async function createNotificationsForMentions({
@@ -60,73 +173,26 @@ export async function createNotificationsForMentions({
   const now = new Date().toISOString();
 
   for (const userId of recipients) {
-    // Board-scoped and global opt-out guards — mirrors boardActivityDispatch.
-    // Both use opt-out model: missing row = enabled.
-    try {
-      const [globalEnabled, boardEnabled] = await Promise.all([
-        globalPreferenceGuard({ userId }),
-        boardPreferenceGuard({ userId, boardId }),
-      ]);
-      if (!globalEnabled || !boardEnabled) continue;
-    } catch {
-      // Fail open: if guard lookup fails, proceed with notification
-    }
-
-    // Check preferences before inserting or publishing.
-    // When the feature flag is off, treat all channels as enabled (fail-open fallback).
-    let inAppEnabled = true;
-    if (env.NOTIFICATION_PREFERENCES_ENABLED) {
-      try {
-        const pref = await preferenceGuard({ userId, type: 'mention' });
-        inAppEnabled = pref.in_app_enabled;
-      } catch {
-        // Guard failure → fail open: deliver notification as if enabled
-        inAppEnabled = true;
-      }
-    }
-
-    if (!inAppEnabled) continue;
-
-    const [inserted] = await trx('notifications').insert(
-      {
-        user_id: userId,
-        type: 'mention',
-        source_type: sourceType,
-        source_id: sourceId,
-        card_id: cardId,
-        board_id: boardId,
-        actor_id: actorId,
-        read: false,
-        created_at: now,
-      },
-      ['*'],
-    );
-
-    await publishToUser(userId, {
-      type: 'notification_created',
-      payload: {
-        notification: {
-          ...inserted,
-          actor: actorPayload,
-        },
-      },
+    await notifyMentionedUser({
+      trx,
+      userId,
+      boardId,
+      sourceType,
+      sourceId,
+      cardId,
+      actorId,
+      actorPayload: actorPayload as Record<string, unknown>,
+      cardTitle: cardTitle ?? '',
+      boardName: boardName ?? '',
+      now,
     });
+  }
 
-    // Fire-and-forget mention email notification — must not block the transaction.
-    if (cardId) {
-      const cardUrl = `/boards/${boardId}/cards/${cardId}`;
-      dispatchNotificationEmail({
-        recipientId: userId,
-        type: 'mention',
-        templateData: {
-          actorName: (actorPayload.name as string | null) ?? 'Someone',
-          cardTitle: cardTitle ?? '',
-          boardName: boardName ?? '',
-          cardUrl,
-        },
-      }).catch(() => {
-        // Email dispatch failures must never break the notification flow.
-      });
-    }
+  // Fire-and-forget mention webhook — dispatched once per mention event (not per recipient).
+  // [why] webhook subscribers receive the full mention context rather than a per-user notification.
+  if (env.WEBHOOKS_ENABLED) {
+    fireMentionWebhooks({ boardId, cardId, sourceType, sourceId, actorId, recipients }).catch(() => {
+      // Webhook errors must never propagate to the caller.
+    });
   }
 }

@@ -1,5 +1,7 @@
 // WebhooksRegisterPage — lists registered webhooks in a table with empty state handling.
 import { useState } from 'react';
+import { useAppSelector } from '~/hooks/useAppSelector';
+import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import {
   useListWebhooksQuery,
   type WebhookItem,
@@ -14,17 +16,10 @@ import EditWebhookModal from './EditWebhookModal';
 import DeleteWebhookDialog from './DeleteWebhookDialog';
 import SignatureVerificationSnippet from './SignatureVerificationSnippet';
 
-function useWorkspaceId(): string {
-  // [why] Workspace ID is read from URL path so the page stays shareable.
-  const match = window.location.pathname.match(/workspaces\/([^/]+)/);
-  return match ? match[1] ?? '' : '';
-}
-
 export default function WebhooksRegisterPage() {
-  const workspaceId = useWorkspaceId();
-  const { data: webhooks, isLoading } = useListWebhooksQuery(workspaceId, {
-    skip: !workspaceId,
-  });
+  // [why] workspaceId passed to RegisterWebhookModal for display only; list derives from auth server-side
+  const workspaceId = useAppSelector(selectActiveWorkspaceId) ?? '';
+  const { data: webhooks, isLoading } = useListWebhooksQuery();
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [createdWebhook, setCreatedWebhook] = useState<CreateWebhookResponse | null>(null);
@@ -165,7 +160,7 @@ function WebhookRow({
         <span
           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
             webhook.isActive
-              ? 'bg-green-900/30 text-green-400'
+              ? 'bg-success/10 text-success'
               : 'bg-bg-overlay text-muted'
           }`}
         >

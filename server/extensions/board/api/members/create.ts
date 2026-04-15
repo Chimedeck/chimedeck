@@ -9,7 +9,7 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { writeEvent } from '../../../../mods/events/index';
+import { dispatchEvent } from '../../../../mods/events/dispatch';
 
 type BoardMemberRole = 'ADMIN' | 'MEMBER';
 const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
@@ -85,7 +85,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     )
     .first();
 
-  writeEvent({
+  dispatchEvent({
     type: 'board_member_added',
     boardId,
     entityId: boardId,
