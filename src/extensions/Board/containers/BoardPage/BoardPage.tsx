@@ -89,6 +89,8 @@ const BoardPage = () => {
   const accessToken = useAppSelector(selectAuthToken);
   const currentUser = useAppSelector(selectAuthUser);
   const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
+  const boardWorkspaceId =
+    board?.workspaceId ?? (board as { workspace_id?: string } | null)?.workspace_id;
   // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
@@ -211,12 +213,12 @@ const BoardPage = () => {
   }, [dispatch, boardId]);
 
   useEffect(() => {
-    if (!board?.workspaceId) return;
-    if (board.workspaceId === activeWorkspaceId) return;
+    if (!boardWorkspaceId) return;
+    if (boardWorkspaceId === activeWorkspaceId) return;
 
     // [why] Board route has no workspace param; sync shell workspace from loaded board.
-    dispatch(setActiveWorkspace(board.workspaceId));
-  }, [activeWorkspaceId, board?.workspaceId, dispatch]);
+    dispatch(setActiveWorkspace(boardWorkspaceId));
+  }, [activeWorkspaceId, boardWorkspaceId, dispatch]);
 
   // Open card modal via URL param
   const handleCardClick = useCallback(
