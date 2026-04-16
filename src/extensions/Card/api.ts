@@ -16,6 +16,10 @@ export interface Card {
   cover_color?: string | null;
   cover_size?: 'SMALL' | 'FULL';
   cover_image_url?: string | null;
+  /** Derived from attachment dimensions: '16:9' for wide images, '1:1' for square/portrait, null when no image. */
+  cover_aspect_ratio?: '16:9' | '1:1' | null;
+  /** True when the cover attachment is a GIF (served via /view to preserve animation). */
+  cover_is_gif?: boolean;
   created_at: string;
   updated_at: string;
   labels: Array<{ id: string; name: string; color: string }>;

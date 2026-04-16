@@ -71,7 +71,11 @@ const CardItemContent = memo(({
   const labels = card.labels ?? [];
   const members = card.members ?? [];
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
-  const coverHeightClass = card.cover_size === 'FULL' ? 'h-28' : 'h-20';
+  // WHY: image covers use an aspect-ratio container so the full image is visible without cropping.
+  // Color-only covers keep the fixed strip height from cover_size.
+  const coverClass = card.cover_image_url
+    ? (card.cover_aspect_ratio === '16:9' ? 'aspect-video' : 'aspect-square')
+    : (card.cover_size === 'FULL' ? 'h-28' : 'h-20');
 
   const hasChecklist = (card.checklist_total ?? 0) > 0;
   const checklistDone = card.checklist_done ?? 0;
@@ -90,7 +94,7 @@ const CardItemContent = memo(({
     <>
       {hasCover && (
         <div
-          className={`w-full ${coverHeightClass}`}
+          className={`w-full overflow-hidden ${coverClass}`}
           style={card.cover_image_url
             ? undefined
             : { backgroundColor: card.cover_color ?? '#334155' }}
@@ -99,7 +103,7 @@ const CardItemContent = memo(({
             <img
               src={card.cover_image_url}
               alt="Card cover"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               loading="lazy"
             />
           )}
