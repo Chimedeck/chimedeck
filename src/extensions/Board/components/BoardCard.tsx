@@ -2,6 +2,7 @@
 import type { Board } from '../api';
 import BoardStateChip from './BoardStateChip';
 import VisibilityBadge from './VisibilityBadge';
+import translations from '../translations/en.json';
 
 interface Props {
   board: Board;
@@ -41,10 +42,22 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
     }
   };
 
+  // [why] role="link" semantics: links activate on Enter only; Space is reserved for buttons/scrolling.
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className="flex cursor-pointer flex-col gap-2 rounded-lg border border-border bg-bg-surface shadow-sm hover:shadow-md overflow-hidden"
       onClick={onClick}
+      onKeyDown={handleCardKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label={`${translations.Board.openBoard} ${board.title}`}
     >
       {/* Background thumbnail — shown when board has a background image */}
       {board.background ? (
