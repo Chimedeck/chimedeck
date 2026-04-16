@@ -42,8 +42,9 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
     }
   };
 
+  // [why] role="link" semantics: links activate on Enter only; Space is reserved for buttons/scrolling.
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === 'Enter') {
       e.preventDefault();
       onClick();
     }
