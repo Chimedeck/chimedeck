@@ -648,9 +648,20 @@ async function main() {
   }
   console.log('');
 
-  // email and password_hash are excluded — preserve any changes the user made.
+  // email, password_hash and avatar_url are excluded — preserve any changes the user made.
   // email_verified is included so re-seeding fixes previously imported users.
-  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'avatar_url', 'email_verified']);
+  await batchUpsert('users', memberRows, 'id', ['name', 'nickname', 'email_verified']);
+
+  // [why] Only update avatar_url for rows where we actually got a new S3 URL.
+  // If avatar download failed (e.g. network blocked in Docker), we must NOT
+  // overwrite an existing avatar with null.
+  const avatarUpdateRows = memberRows.filter(
+    (r: any) => r.avatar_url != null,
+  );
+  if (avatarUpdateRows.length > 0) {
+    await batchUpsert('users', avatarUpdateRows, 'id', ['avatar_url']);
+    console.log(`    updated avatar_url for ${avatarUpdateRows.length} users`);
+  }
 
   // -------------------------------------------------------------------------
   // 4. Workspaces
@@ -1184,8 +1195,9 @@ async function downloadAndUploadAvatar(member: TrelloMember): Promise<string | n
     );
 
     return `${S3_BASE_URL}/${s3Key}`;
-  } catch {
+  } catch (err) {
     // Non-fatal: avatar failures should not block the import
+    console.warn(`    ⚠️  avatar download/upload failed for ${member.id} (${member.username}): ${toErrorMessage(err)}`);
     return null;
   } finally {
     // Always clean up the temp file
