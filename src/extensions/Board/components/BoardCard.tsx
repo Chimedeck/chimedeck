@@ -41,10 +41,21 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
     }
   };
 
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className="flex cursor-pointer flex-col gap-2 rounded-lg border border-border bg-bg-surface shadow-sm hover:shadow-md overflow-hidden"
       onClick={onClick}
+      onKeyDown={handleCardKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label={`Open board ${board.title}`}
     >
       {/* Background thumbnail — shown when board has a background image */}
       {board.background ? (
