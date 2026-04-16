@@ -146,7 +146,7 @@ export function useWebSocket({
 
     return () => {
       unsubscribe();
-      socket.disconnect();
+      socket.disconnect({ boardId });
     };
     // We intentionally only reconnect when boardId/token change
     // eslint-disable-next-line react-hooks/exhaustive-deps

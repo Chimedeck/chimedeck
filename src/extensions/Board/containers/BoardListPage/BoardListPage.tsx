@@ -8,6 +8,10 @@ import { StarIcon } from '@heroicons/react/24/solid';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { selectAuthToken } from '../../../Auth/duck/authDuck';
+import {
+  selectActiveWorkspaceId,
+  setActiveWorkspace,
+} from '~/extensions/Workspace/duck/workspaceDuck';
 import { useWorkspaceSync } from '../../realtime';
 import BoardCard from '../../components/BoardCard';
 import CreateBoardModal from '../../components/CreateBoardModal';
@@ -40,6 +44,7 @@ const BoardListPage = () => {
   const loading = useAppSelector(fetchBoardsInProgressSelector);
   const error = useAppSelector(fetchBoardsErrorSelector);
   const accessToken = useAppSelector(selectAuthToken);
+  const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
 
   // Subscribe to workspace-scoped board_deleted events so remote deletions are
   // reflected immediately for all users without a page reload.
@@ -68,6 +73,13 @@ const BoardListPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    // [why] Keep sidebar workspace selection aligned with URL workspace on reload/deep-link.
+    if (workspaceId && workspaceId !== activeWorkspaceId) {
+      dispatch(setActiveWorkspace(workspaceId));
+    }
+  }, [activeWorkspaceId, dispatch, workspaceId]);
 
   useEffect(() => {
     if (workspaceId) dispatch(fetchBoardsThunk({ workspaceId }));

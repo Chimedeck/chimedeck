@@ -35,8 +35,9 @@ const POLLING_FALLBACK_THRESHOLD = 3;
 
 class RealtimeSocket {
   private ws: WebSocket | null = null;
-  private boardId: string | null = null;
   private token: string | null = null;
+  private connectionRefCount = 0;
+  private readonly boardRefCounts: Map<string, number> = new Map();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private backoffMs = 1_000;
   private intentionalClose = false;
@@ -64,15 +65,42 @@ class RealtimeSocket {
   // ---------- Public API ----------
 
   connect({ boardId, token }: { boardId?: string; token: string }) {
-    this.boardId = boardId ?? null;
+    this.connectionRefCount += 1;
     this.token = token;
     this.intentionalClose = false;
+
+    if (boardId) {
+      this._addBoardRef(boardId);
+    }
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      if (boardId) {
+        this.send({ type: 'subscribe', board_id: boardId });
+      }
+      return;
+    }
+
+    if (this.ws?.readyState === WebSocket.CONNECTING) {
+      return;
+    }
+
     this._open();
   }
 
-  disconnect() {
+  disconnect({ boardId }: { boardId?: string } = {}) {
+    if (boardId) {
+      this._removeBoardRef(boardId);
+    }
+
+    this.connectionRefCount = Math.max(0, this.connectionRefCount - 1);
+
+    if (this.connectionRefCount > 0) {
+      return;
+    }
+
     this.intentionalClose = true;
     this._clearReconnect();
+    this.failedAttempts = 0;
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -107,7 +135,10 @@ class RealtimeSocket {
   // ---------- Internal ----------
 
   private _open() {
-    if (!this.token) return;
+    if (!this.token || this.connectionRefCount === 0) return;
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
 
     const url = `${this._wsBase()}/api/v1/ws?token=${encodeURIComponent(this.token)}`;
     this.ws = new WebSocket(url);
@@ -116,9 +147,9 @@ class RealtimeSocket {
       const wasPolling = this.failedAttempts >= POLLING_FALLBACK_THRESHOLD;
       this.backoffMs = 1_000;
       this.failedAttempts = 0;
-      // Subscribe to the board room after authentication handshake (only when boardId is set)
-      if (this.boardId) {
-        this.send({ type: 'subscribe', board_id: this.boardId });
+      // Re-join all active board rooms after authentication handshake.
+      for (const activeBoardId of this.boardRefCounts.keys()) {
+        this.send({ type: 'subscribe', board_id: activeBoardId });
       }
       this.openHandlers.forEach((h) => h());
       // Notify that polling is no longer needed now that WS is back
@@ -137,6 +168,7 @@ class RealtimeSocket {
     });
 
     this.ws.addEventListener('close', (ev: CloseEvent) => {
+      this.ws = null;
       // Code 4001 = server-initiated forced logout (session revoked)
       if (ev.code === 4001) {
         this.intentionalClose = true;
@@ -145,7 +177,7 @@ class RealtimeSocket {
       }
       this.failedAttempts++;
       this.closeHandlers.forEach((h) => h());
-      if (!this.intentionalClose) {
+      if (!this.intentionalClose && this.connectionRefCount > 0) {
         // Activate polling fallback once threshold is reached
         if (this.failedAttempts === POLLING_FALLBACK_THRESHOLD) {
           this.pollingActiveHandlers.forEach((h) => h());
@@ -162,6 +194,9 @@ class RealtimeSocket {
   private _scheduleReconnect() {
     this._clearReconnect();
     this.reconnectTimer = setTimeout(() => {
+      if (this.connectionRefCount === 0) {
+        return;
+      }
       this.backoffMs = Math.min(this.backoffMs * 2, MAX_BACKOFF_MS);
       this._open();
     }, this.backoffMs);
@@ -178,6 +213,26 @@ class RealtimeSocket {
     if (typeof window === 'undefined') return 'ws://localhost:3000';
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${proto}//${window.location.host}`;
+  }
+
+  private _addBoardRef(boardId: string) {
+    const count = this.boardRefCounts.get(boardId) ?? 0;
+    this.boardRefCounts.set(boardId, count + 1);
+  }
+
+  private _removeBoardRef(boardId: string) {
+    const count = this.boardRefCounts.get(boardId);
+    if (!count) return;
+
+    if (count === 1) {
+      this.boardRefCounts.delete(boardId);
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.send({ type: 'unsubscribe', board_id: boardId });
+      }
+      return;
+    }
+
+    this.boardRefCounts.set(boardId, count - 1);
   }
 }
 
