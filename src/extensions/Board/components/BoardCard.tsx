@@ -2,6 +2,7 @@
 import type { Board } from '../api';
 import BoardStateChip from './BoardStateChip';
 import VisibilityBadge from './VisibilityBadge';
+import translations from '../translations/en.json';
 
 interface Props {
   board: Board;
@@ -55,7 +56,7 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
       onKeyDown={handleCardKeyDown}
       role="link"
       tabIndex={0}
-      aria-label={`Open board ${board.title}`}
+      aria-label={`${translations.Board.openBoard} ${board.title}`}
     >
       {/* Background thumbnail — shown when board has a background image */}
       {board.background ? (

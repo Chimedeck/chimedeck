@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, mock } from 'bun:test';
 import type { ReactElement } from 'react';
 import BoardCard from '../BoardCard';
 import type { Board } from '../../api';
@@ -17,22 +17,22 @@ const baseBoard: Board = {
 
 describe('BoardCard', () => {
   it('exposes a keyboard-focusable control for opening the board', () => {
-    const onClick = vi.fn();
+    const onClick = mock();
 
     const tree = BoardCard({
       board: baseBoard,
       onClick,
-      onArchive: vi.fn(),
-      onDelete: vi.fn(),
-      onDuplicate: vi.fn(),
+      onArchive: mock(),
+      onDelete: mock(),
+      onDuplicate: mock(),
     }) as ReactElement;
 
     expect(tree.props.role).toBe('link');
     expect(tree.props.tabIndex).toBe(0);
     expect(tree.props['aria-label']).toBe('Open board Bug Board');
 
-    const enterEvent = { key: 'Enter', preventDefault: vi.fn() };
-    const spaceEvent = { key: ' ', preventDefault: vi.fn() };
+    const enterEvent = { key: 'Enter', preventDefault: mock() };
+    const spaceEvent = { key: ' ', preventDefault: mock() };
 
     tree.props.onKeyDown(enterEvent);
     tree.props.onKeyDown(spaceEvent);
