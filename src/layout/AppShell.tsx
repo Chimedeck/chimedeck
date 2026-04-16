@@ -3,7 +3,11 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import { fetchWorkspacesThunk, selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import {
+  fetchWorkspacesThunk,
+  selectActiveWorkspaceId,
+  setActiveWorkspace,
+} from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectAuthToken } from '~/extensions/Auth/duck/authDuck';
 import { fetchProfileThunk } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
 import { fetchFeatureFlagsThunk } from '~/slices/featureFlagsSlice';
@@ -89,6 +93,11 @@ export default function AppShell() {
 
   // Navigate when a search result is selected
   const handleSearchSelect = useCallback((result: SearchResult) => {
+    // [why] Keep sidebar workspace selection consistent while board pages load.
+    if (result.workspaceId) {
+      dispatch(setActiveWorkspace(result.workspaceId));
+    }
+
     if (result.type === 'board') {
       navigate(`/boards/${result.id}`);
     } else {
@@ -98,7 +107,7 @@ export default function AppShell() {
         navigate(`/boards/${boardId}?card=${result.id}`);
       }
     }
-  }, [navigate]);
+  }, [dispatch, navigate]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-base">

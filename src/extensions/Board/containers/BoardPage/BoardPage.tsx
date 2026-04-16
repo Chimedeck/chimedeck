@@ -53,6 +53,10 @@ import BoardMembersPanel from '../../components/BoardMembersPanel';
 import { BoardMemberFilter } from '../../components/BoardMemberFilter';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import {
+  selectActiveWorkspaceId,
+  setActiveWorkspace,
+} from '~/extensions/Workspace/duck/workspaceDuck';
 import { canBoardGuestWrite } from '../../mods/guestPermissions';
 import type { BoardSearchResult } from '~/extensions/Search/api';
 import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
@@ -84,6 +88,7 @@ const BoardPage = () => {
   const status = useAppSelector(selectBoardStatus);
   const accessToken = useAppSelector(selectAuthToken);
   const currentUser = useAppSelector(selectAuthUser);
+  const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
   // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
@@ -204,6 +209,14 @@ const BoardPage = () => {
   useEffect(() => {
     if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
   }, [dispatch, boardId]);
+
+  useEffect(() => {
+    if (!board?.workspaceId) return;
+    if (board.workspaceId === activeWorkspaceId) return;
+
+    // [why] Board route has no workspace param; sync shell workspace from loaded board.
+    dispatch(setActiveWorkspace(board.workspaceId));
+  }, [activeWorkspaceId, board?.workspaceId, dispatch]);
 
   // Open card modal via URL param
   const handleCardClick = useCallback(
