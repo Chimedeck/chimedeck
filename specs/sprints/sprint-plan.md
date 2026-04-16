@@ -161,6 +161,8 @@
 | **— Webhooks —** | | | |
 | [135](./sprint-135.md) | Webhooks: DB + API Infrastructure | `webhooks` + `webhook_deliveries` tables; `POST/GET/PATCH/DELETE /api/v1/webhooks`; HMAC-SHA256 `v0` signing; fire-and-forget dispatch; SSRF guard; `WEBHOOKS_ENABLED` flag | ⬜ Needs 101 |
 | [136](./sprint-136.md) | Webhooks: Register UI (`WebhooksRegisterPage`) | `/settings/webhooks` page (mirrors `ApiTokenPage`); register-endpoint modal with event-type checklist; one-time signing-secret reveal modal; edit + delete dialogs; `SignatureVerificationSnippet` JS code guide | ⬜ Needs 135 + 102 |
+| **— Card Cover —** | | | |
+| [137](./sprint-137.md) | Card Cover: Aspect Ratio & GIF Support | Auto 16:9 / 1:1 aspect ratio from image dimensions; `object-contain` rendering; GIF covers skip WebP thumbnail and loop natively; `width`/`height` stored on attachments | ⬜ Needs 90 |
 
 ---
 

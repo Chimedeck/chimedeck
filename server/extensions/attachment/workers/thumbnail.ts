@@ -43,6 +43,16 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
   const image = sharp(buffer);
   const metadata = await image.metadata();
 
+  // GIFs must not be converted to WebP — animation would be lost.
+  // Persist dimensions and return without generating a thumbnail_key.
+  if (mimeType === 'image/gif') {
+    await db('attachments').where({ id: attachmentId }).update({
+      width: metadata.width ?? null,
+      height: metadata.height ?? null,
+    });
+    return;
+  }
+
   const resized = await image
     .resize(THUMBNAIL_MAX_WIDTH, THUMBNAIL_MAX_HEIGHT, {
       fit: 'inside',

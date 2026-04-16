@@ -211,11 +211,14 @@ const CardModal = ({
 
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
 
+  const ALLOWED_COVER_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
   const handlePickCoverFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setCoverUploadError('Only image files can be used as a card cover.');
+    // WHY: explicit allowlist ensures GIF animation is preserved and unsupported formats (e.g. SVG) are rejected.
+    if (!ALLOWED_COVER_TYPES.includes(file.type)) {
+      setCoverUploadError('Only JPEG, PNG, GIF, or WebP images can be used as a card cover.');
       event.target.value = '';
       return;
     }
@@ -252,7 +255,7 @@ const CardModal = ({
             <input
               ref={coverInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/gif,image/webp"
               className="hidden"
               onChange={handlePickCoverFile}
             />
@@ -269,7 +272,7 @@ const CardModal = ({
                     <img
                       src={card.cover_image_url}
                       alt="Card cover"
-                      className="h-full w-full bg-slate-900/60 object-contain" // [theme-exception] dark overlay for media lightbox
+                      className="h-full w-full object-contain"
                       loading="eager"
                       draggable={false}
                     />
