@@ -87,12 +87,20 @@ const SortableListColumn = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // WHY: in normal drag mode we keep the active item in the sortable collection
+  // so dnd-kit can animate sibling displacement (clear push/drop indicator).
+  // In placeholder mode we remove it to avoid rendering a double gap.
+  const usePlaceholderMode =
+    typeof dragPlaceholderIndex === 'number' && Number.isFinite(dragPlaceholderIndex);
+  const visibleCardIds = useMemo(
+    () => (usePlaceholderMode ? cardIds.filter((id) => id !== activeDragCardId) : cardIds),
+    [activeDragCardId, cardIds, usePlaceholderMode],
+  );
   const listCardObjects = useMemo(
-    () => cardIds
-      .filter((id) => id !== activeDragCardId)
+    () => visibleCardIds
       .map((id) => cards[id])
       .filter((c): c is Card => c !== undefined),
-    [activeDragCardId, cardIds, cards],
+    [visibleCardIds, cards],
   );
   const resolvedPlaceholderHeight =
     typeof dragPlaceholderHeight === 'number' && Number.isFinite(dragPlaceholderHeight) && dragPlaceholderHeight >= 24
@@ -134,7 +142,7 @@ const SortableListColumn = ({
 
       {/* Cards — vertically sortable */}
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]">
-        <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
+        <SortableContext items={visibleCardIds} strategy={verticalListSortingStrategy}>
           {listCardObjects.map((card, idx) => (
             <Fragment key={card.id}>
               {normalizedPlaceholderIndex === idx && placeholderNode}

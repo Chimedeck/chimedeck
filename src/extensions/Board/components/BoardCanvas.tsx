@@ -245,11 +245,9 @@ const BoardCanvas = ({
   isViewerGuest = false,
   customFieldValuesMap,
 }: Props) => {
-  const totalCards = Object.keys(cards).length;
-  // WHY: live reordering during drag-over updates React state on nearly every
-  // pointer move. On very large boards this causes visible jank, so we switch
-  // to drop-time commit only for smoother dragging.
-  const disableLiveDragPreview = totalCards >= 120;
+  // WHY: use one consistent drag-preview model across all boards so users
+  // always see the same card-sized drop placeholder regardless of board size.
+  const disableLiveDragPreview = true;
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [dragPlaceholder, setDragPlaceholder] = useState<DragPlaceholder | null>(null);
