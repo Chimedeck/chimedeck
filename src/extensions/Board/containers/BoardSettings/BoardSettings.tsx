@@ -9,6 +9,7 @@ import { patchBoardVisibility } from '../../api';
 import VisibilitySelector, { type BoardVisibility } from './VisibilitySelector';
 import BoardCustomFieldsPanel from '~/extensions/CustomFields/BoardCustomFieldsPanel';
 import BackgroundPicker from './BackgroundPicker';
+import BoardLabelsPanel from './BoardLabelsPanel';
 import BoardNotificationToggle from './BoardNotificationToggle';
 import BoardNotificationTypePreferences from './BoardNotificationTypePreferences';
 
@@ -105,6 +106,10 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
 
               <div className="border-t border-border pt-4">
                 <BoardCustomFieldsPanel />
+              </div>
+
+              <div className="border-t border-border pt-4">
+                {boardId && <BoardLabelsPanel boardId={boardId} />}
               </div>
 
               <div className="border-t border-border pt-4">

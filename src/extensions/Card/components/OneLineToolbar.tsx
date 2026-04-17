@@ -14,6 +14,7 @@ import {
   ChevronDownIcon,
   QuestionMarkCircleIcon,
   LinkIcon,
+  NumberedListIcon,
 } from '@heroicons/react/24/outline';
 import EditorHelpModal from './EditorHelpModal';
 import CommandMenu from './CommandMenu';
@@ -75,6 +76,112 @@ const HEADING_OPTIONS: Array<{
     labelClass: 'text-sm font-semibold text-subtle',
   },
 ];
+
+// ---------------------------------------------------------------------------
+// ListDropdown — bullet/numbered list picker matching the mockup design
+// ---------------------------------------------------------------------------
+
+interface ListDropdownProps {
+  editor: Editor | null;
+}
+
+const ListDropdown = ({ editor }: ListDropdownProps) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const { isBullet, isOrdered } = useEditorState({
+    editor,
+    selector: (ctx) => ({
+      isBullet: ctx.editor?.isActive('bulletList') ?? false,
+      isOrdered: ctx.editor?.isActive('orderedList') ?? false,
+    }),
+  }) ?? { isBullet: false, isOrdered: false };
+
+  const isAnyActive = isBullet || isOrdered;
+
+  const btn =
+    'p-1.5 text-xs rounded border border-border text-base hover:bg-bg-overlay transition-colors';
+  const btnActive = 'bg-primary/10 text-primary';
+
+  return (
+    <div ref={ref} className="relative">
+      {/* Trigger — shows current active list icon or default bullet icon */}
+      <button
+        type="button"
+        title="List"
+        aria-label="List"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`flex items-center gap-0.5 ${btn} ${isAnyActive ? btnActive : ''}`}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+      >
+        {isOrdered ? (
+          <NumberedListIcon className="h-3.5 w-3.5" />
+        ) : (
+          <ListBulletIcon className="h-3.5 w-3.5" />
+        )}
+        <ChevronDownIcon className="h-3 w-3 shrink-0 opacity-60" />
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          role="menu"
+          aria-label="List type"
+          className="absolute left-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-lg border border-border bg-bg-surface shadow-xl"
+        >
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={isBullet}
+            className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors hover:bg-bg-overlay ${isBullet ? 'bg-primary/10' : ''}`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              editor?.chain().focus().toggleBulletList().run();
+              setOpen(false);
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <ListBulletIcon className="h-3.5 w-3.5 shrink-0" />
+              Bullet list
+            </span>
+            <kbd className="ml-3 shrink-0 rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[10px] text-subtle">⌘⇧8</kbd>
+          </button>
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={isOrdered}
+            className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-sm transition-colors hover:bg-bg-overlay ${isOrdered ? 'bg-primary/10' : ''}`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              editor?.chain().focus().toggleOrderedList().run();
+              setOpen(false);
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <NumberedListIcon className="h-3.5 w-3.5 shrink-0" />
+              Numbered list
+            </span>
+            <kbd className="ml-3 shrink-0 rounded bg-bg-overlay px-1.5 py-0.5 font-mono text-[10px] text-subtle">⌘⇧7</kbd>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface HeadingDropdownProps {
   editor: Editor | null;
@@ -318,15 +425,9 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
       >
         <StrikethroughIcon className="h-3.5 w-3.5" />
       </button>
-      <button
-        type="button"
-        aria-label="Bullet list"
-        title="Bullet list"
-        className={`${btn} ${editor?.isActive('bulletList') ? btnActive : ''}`}
-        onMouseDown={runCmd(() => editor?.chain().focus().toggleBulletList().run() ?? false)}
-      >
-        <ListBulletIcon className="h-3.5 w-3.5" />
-      </button>
+
+      {/* List dropdown — bullet + numbered */}
+      <ListDropdown editor={editor} />
 
       {/* Hyperlink button */}
       <button
