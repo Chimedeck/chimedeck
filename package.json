@@ -100,7 +100,7 @@
     "react-dom": "^18",
     "react-redux": "^9",
     "react-router-dom": "^6",
-    "sanitize-html": "^2.17.1",
+    "sanitize-html": "^2.17.3",
     "sharp": "^0.34.5",
     "tailwind-merge": "^2",
     "tippy.js": "^6.3.7",
