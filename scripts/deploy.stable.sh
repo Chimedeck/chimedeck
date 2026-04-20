@@ -67,6 +67,9 @@ if [ "$USE_SSM_DEPLOYMENT" == "TRUE" ]; then
         --region ${INSTANCE_REGION} \
         --query "StandardOutputContent" \
         --output text
+
+      echo "Waiting 60s for $INSTANCE_ID to stabilise before deploying next instance..."
+      sleep 60
     done
   else
     echo -e "${COLOR}:::::::::::::No instance IDs provided, skipping SSM deploy::::::::::::::${NC}"
