@@ -92,9 +92,9 @@ resource "aws_lb_target_group" "this" {
   health_check {
     path                = "/health"
     healthy_threshold   = 2
-    unhealthy_threshold = 3
-    interval            = 30
-    timeout             = 5
+    unhealthy_threshold = 2
+    interval            = 5
+    timeout             = 4
   }
 
   tags = merge(
