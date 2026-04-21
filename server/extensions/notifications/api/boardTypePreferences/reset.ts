@@ -3,7 +3,7 @@
 // After deletion the user's preferences fall back to their master config (user-level or default).
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility } from '../../../../middlewares/boardVisibility';
+import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 
 export async function handleResetBoardTypePreferences(
   req: Request,
@@ -11,10 +11,11 @@ export async function handleResetBoardTypePreferences(
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
+  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
-  await db('board_notification_type_preferences').where({ user_id: userId, board_id: boardId }).delete();
+  await db('board_notification_type_preferences').where({ user_id: userId, board_id: resolvedBoardId }).delete();
 
   return Response.json({ data: {} });
 }

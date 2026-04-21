@@ -2,6 +2,7 @@
 // Accepts drag-and-drop via @dnd-kit/sortable attributes passed from the parent.
 import type { List } from '../api';
 import ListHeader from './ListHeader';
+import type { ListSortBy } from '../types';
 
 interface Props {
   list: List;
@@ -11,6 +12,7 @@ interface Props {
   onRename: (listId: string, title: string) => void;
   onArchive: (listId: string) => void;
   onDelete: (listId: string) => void;
+  onSortBy?: (listId: string, sortBy: ListSortBy) => void;
   children?: React.ReactNode;
 }
 
@@ -21,6 +23,7 @@ const ListColumn = ({
   onRename,
   onArchive,
   onDelete,
+  onSortBy,
   children,
 }: Props) => {
   return (
@@ -36,6 +39,9 @@ const ListColumn = ({
           onRename={(title) => onRename(list.id, title)}
           onArchive={() => onArchive(list.id)}
           onDelete={() => onDelete(list.id)}
+          onSortBy={(sortBy) => {
+            if (onSortBy) onSortBy(list.id, sortBy);
+          }}
         />
       </div>
 

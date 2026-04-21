@@ -122,7 +122,15 @@ async function notifyMentionedUser({
 
   await publishToUser(userId, {
     type: 'notification_created',
-    payload: { notification: { ...inserted, actor: actorPayload } },
+    payload: {
+      notification: {
+        ...inserted,
+        card_title: cardTitle,
+        board_title: boardName,
+        list_title: null,
+        actor: actorPayload,
+      },
+    },
   });
 
   if (cardId) {

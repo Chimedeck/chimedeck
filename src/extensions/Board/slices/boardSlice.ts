@@ -4,6 +4,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
 import { getBoard, listCardsByListBatch, type Board, type ListCardHydration } from '../api';
 import type { List } from '../../List/api';
+import type { ListSortBy } from '../../List/types';
 import type { Card } from '../../Card/api';
 
 const INITIAL_CARDS_PER_LIST = 50;
@@ -273,6 +274,76 @@ const boardSlice = createSlice({
         existing.splice(insertIdx, 0, card.id);
       }
       state.cardsByList[card.list_id] = existing;
+    },
+
+    /** Sort cards in a single list by a selected user criterion. */
+    sortCardsInList(
+      state,
+      action: PayloadAction<{ listId: string; sortBy: ListSortBy }>,
+    ) {
+      const { listId, sortBy } = action.payload;
+      const listCardIds = state.cardsByList[listId];
+      if (!listCardIds || listCardIds.length < 2) return;
+
+      const toTime = (value: string | null | undefined): number => {
+        if (!value) return Number.POSITIVE_INFINITY;
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? Number.POSITIVE_INFINITY : parsed;
+      };
+
+      const toAmount = (value: string | null | undefined): number => {
+        if (!value) return Number.NEGATIVE_INFINITY;
+        const parsed = Number.parseFloat(value);
+        return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+      };
+
+      const sortedIds = [...listCardIds].sort((leftId, rightId) => {
+        const left = state.cards[leftId];
+        const right = state.cards[rightId];
+        if (!left || !right) return 0;
+
+        if (sortBy === 'created-desc') {
+          return toTime(right.created_at) - toTime(left.created_at);
+        }
+
+        if (sortBy === 'created-asc') {
+          return toTime(left.created_at) - toTime(right.created_at);
+        }
+
+        if (sortBy === 'card-name') {
+          return left.title.localeCompare(right.title, undefined, { sensitivity: 'base' });
+        }
+
+        if (sortBy === 'due-date') {
+          const dueCompare = toTime(left.due_date) - toTime(right.due_date);
+          if (dueCompare !== 0) return dueCompare;
+          return toTime(right.created_at) - toTime(left.created_at);
+        }
+
+        const priceCompare = toAmount(right.amount) - toAmount(left.amount);
+        if (priceCompare !== 0) return priceCompare;
+        return toTime(right.created_at) - toTime(left.created_at);
+      });
+
+      state.cardsByList[listId] = sortedIds;
+    },
+
+    /** Apply server-authoritative sorted order and positions for one list. */
+    applySortedListFromServer(
+      state,
+      action: PayloadAction<{
+        listId: string;
+        cards: Array<{ id: string; list_id: string; position: string }>;
+      }>,
+    ) {
+      const { listId, cards } = action.payload;
+      state.cardsByList[listId] = cards.map((card) => card.id);
+      cards.forEach((card) => {
+        const existing = state.cards[card.id];
+        if (!existing) return;
+        existing.list_id = card.list_id;
+        existing.position = card.position;
+      });
     },
   },
   extraReducers: (builder) => {

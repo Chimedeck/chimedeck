@@ -126,6 +126,14 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           dispatch(boardSliceActions.applyOptimisticListReorder({ newOrder }));
           break;
         }
+        case 'list_cards_sorted': {
+          const p = payload as {
+            listId: string;
+            cards: Array<{ id: string; list_id: string; position: string }>;
+          };
+          dispatch(boardSliceActions.applySortedListFromServer({ listId: p.listId, cards: p.cards }));
+          break;
+        }
 
         // ── Card events ──────────────────────────────────────────────────
         case 'card_created': {

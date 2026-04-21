@@ -8,9 +8,9 @@ import type { Card } from '../../../Card/api';
 import ListHeader from '../../components/ListHeader';
 import CardItem from '../../../Card/components/CardItem';
 import type { CustomFieldValue } from '../../../CustomFields/types';
-import type { ListCardHydration } from '../../../Board/api';
 import AddCardForm from '../../../Card/components/AddCardForm';
 import Button from '../../../../common/components/Button';
+import type { ListSortBy } from '../../types';
 
 interface Props {
   list: List;
@@ -21,6 +21,7 @@ interface Props {
   onRename: (listId: string, title: string) => void;
   onArchive: (listId: string) => void;
   onDelete: (listId: string) => void;
+  onSortBy: (listId: string, sortBy: ListSortBy) => void;
   onAddCard: (listId: string, title: string) => Promise<void>;
   onCardClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
@@ -38,7 +39,7 @@ interface Props {
   dragPlaceholderHeight?: number;
   /** Active dragged card id so we can hide source slot and avoid double gaps. */
   activeDragCardId?: string | null;
-  hydration?: (ListCardHydration & { loading: boolean; error: boolean }) | undefined;
+  hydration?: { loading: boolean; error: boolean };
 }
 
 const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldValue[] = [];
@@ -52,6 +53,7 @@ const SortableListColumn = ({
   onRename,
   onArchive,
   onDelete,
+  onSortBy,
   onAddCard,
   onCardClick,
   labelsExpanded,
@@ -70,7 +72,6 @@ const SortableListColumn = ({
   const noopRef = useRef(() => {});
   const stableToggleLabels = useCallback(
     onToggleLabels ?? noopRef.current,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [onToggleLabels],
   );
 
@@ -136,9 +137,10 @@ const SortableListColumn = ({
         <ListHeader
           list={list}
           cardCount={cardIds.length}
-          onRename={(title) => onRename(list.id, title)}
-          onArchive={() => onArchive(list.id)}
-          onDelete={() => onDelete(list.id)}
+          onRename={(title) => { onRename(list.id, title); }}
+          onArchive={() => { onArchive(list.id); }}
+          onDelete={() => { onDelete(list.id); }}
+          onSortBy={(sortBy) => { onSortBy(list.id, sortBy); }}
           hasBackground={hasBackground}
         />
       </div>
@@ -177,13 +179,13 @@ const SortableListColumn = ({
               await onAddCard(listId, title);
               setAddingCard(false);
             }}
-            onCancel={() => setAddingCard(false)}
+            onCancel={() => { setAddingCard(false); }}
           />
         ) : (
           <Button
             variant="ghost"
             className="w-full justify-start rounded-lg px-2 py-1.5 text-sm"
-            onClick={() => setAddingCard(true)}
+            onClick={() => { setAddingCard(true); }}
             aria-label={`Add a card to ${list.title}`}
           >
             + Add a card
@@ -203,6 +205,7 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.onRename === next.onRename
     && prev.onArchive === next.onArchive
     && prev.onDelete === next.onDelete
+    && prev.onSortBy === next.onSortBy
     && prev.onAddCard === next.onAddCard
     && prev.onCardClick === next.onCardClick
     && prev.labelsExpanded === next.labelsExpanded

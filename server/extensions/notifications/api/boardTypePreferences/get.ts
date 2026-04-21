@@ -4,7 +4,7 @@
 // The 'source' field indicates which level provided the value.
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility } from '../../../../middlewares/boardVisibility';
+import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 import { NOTIFICATION_TYPES } from '../../mods/preferenceGuard';
 
 export async function handleGetBoardTypePreferences(
@@ -13,12 +13,13 @@ export async function handleGetBoardTypePreferences(
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
+  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
   const [boardRows, userRows] = await Promise.all([
     db('board_notification_type_preferences')
-      .where({ user_id: userId, board_id: boardId })
+      .where({ user_id: userId, board_id: resolvedBoardId })
       .select('type', 'in_app_enabled', 'email_enabled'),
     db('notification_preferences')
       .where({ user_id: userId })

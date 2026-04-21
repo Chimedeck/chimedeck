@@ -141,6 +141,8 @@ export async function handleBoardActivityNotification({
                 payload: {
                   notification: {
                     ...inserted,
+                    card_title: templateData.cardTitle ?? null,
+                    board_title: board.title,
                     list_title: listTitle,
                     actor: actorPayload,
                   },
@@ -260,6 +262,7 @@ export async function dispatchDirectCardNotification({
 
     const notificationType = payload.type;
     const now = new Date().toISOString();
+    const cardTitle = payload.cardTitle;
 
     // For card_commented: resolve email template data and store commentId in source_id
     let emailTemplateData: Record<string, string> | null = null;
@@ -352,6 +355,9 @@ export async function dispatchDirectCardNotification({
                 payload: {
                   notification: {
                     ...inserted,
+                    card_title: cardTitle,
+                    board_title: emailTemplateData?.boardName ?? null,
+                    list_title: null,
                     actor: actorPayloadData,
                   },
                 },

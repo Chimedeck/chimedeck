@@ -29,7 +29,8 @@ import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
 import { updateBoard, archiveBoard, deleteBoard, starBoard, unstarBoard } from '../../api';
-import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
+import { createList, updateList, archiveList, deleteList, reorderLists, sortListCards } from '../../../List/api';
+import type { ListSortBy } from '../../../List/types';
 import { createCard, getCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
 import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
@@ -412,6 +413,20 @@ const BoardPage = () => {
     [api, boardId, dispatch, lists, addToast],
   );
 
+  const handleSortList = useCallback(
+    async (listId: string, sortBy: ListSortBy) => {
+      dispatch(boardSliceActions.sortCardsInList({ listId, sortBy }));
+      try {
+        const response = await sortListCards({ api, listId, sortBy });
+        dispatch(boardSliceActions.applySortedListFromServer({ listId, cards: response.data }));
+      } catch {
+        if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
+        addToast('Failed to sort list.', 'error');
+      }
+    },
+    [addToast, api, boardId, dispatch],
+  );
+
   // ── Board archive / delete ─────────────────────────────────────────────
   const handleBoardArchive = useCallback(async () => {
     if (!boardId || !board) return;
@@ -643,6 +658,7 @@ const BoardPage = () => {
               onRenameList={handleRenameList}
               onArchiveList={handleArchiveList}
               onDeleteList={handleDeleteList}
+              onSortList={handleSortList}
               onCardClick={handleCardClick}
               isReadOnly={board.state === 'ARCHIVED'}
               isViewerGuest={isViewerGuest}

@@ -24,6 +24,7 @@ import type { List } from '../../List/api';
 import type { Card } from '../../Card/api';
 import type { CustomFieldValue } from '../../CustomFields/types';
 import SortableListColumn from '../../List/containers/BoardPage/ListColumn';
+import type { ListSortBy } from '../../List/types';
 import CardItem from '../../Card/components/CardItem';
 import AddListForm from '../../List/components/AddListForm';
 import { useCardLabelExpanded } from '../../Card/hooks/useCardLabelExpanded';
@@ -66,6 +67,7 @@ interface Props {
   onRenameList: (listId: string, title: string) => void;
   onArchiveList: (listId: string) => void;
   onDeleteList: (listId: string) => void;
+  onSortList: (listId: string, sortBy: ListSortBy) => void;
   onCardClick?: (cardId: string) => void;
   isReadOnly?: boolean;
   /** True when the current user is a GUEST with guestType=VIEWER — hides write-action controls. */
@@ -245,6 +247,7 @@ const BoardCanvas = ({
   onRenameList,
   onArchiveList,
   onDeleteList,
+  onSortList,
   onCardClick,
   isReadOnly = false,
   isViewerGuest = false,
@@ -385,6 +388,7 @@ const BoardCanvas = ({
     globalThis.addEventListener('pointermove', handler, { passive: true });
     return () => globalThis.removeEventListener('pointermove', handler);
   }, []);
+
   // WHY: track card ordering locally during drag instead of dispatching to Redux
   // on every onDragOver. Dispatching applyOptimisticCardMove each frame causes
   // DnD-kit to re-fire onDragOver after the re-render (with shifted indices),
@@ -838,6 +842,7 @@ const BoardCanvas = ({
                 onRename={onRenameList}
                 onArchive={onArchiveList}
                 onDelete={onDeleteList}
+                onSortBy={onSortList}
                 onAddCard={onAddCard}
                 labelsExpanded={labelsExpanded}
                 onToggleLabels={onToggleLabels}

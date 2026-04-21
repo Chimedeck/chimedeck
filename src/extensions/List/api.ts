@@ -1,4 +1,5 @@
 // Client API for all list-related endpoints.
+import type { ListSortBy } from './types';
 
 export interface List {
   id: string;
@@ -78,4 +79,19 @@ export async function reorderLists({
   order: string[];
 }): Promise<{ data: List[] }> {
   return api.post<{ data: List[] }>(`/boards/${boardId}/lists/reorder`, { order });
+}
+
+export async function sortListCards({
+  api,
+  listId,
+  sortBy,
+}: {
+  api: { patch: <T>(url: string, data: unknown) => Promise<T> };
+  listId: string;
+  sortBy: ListSortBy;
+}): Promise<{ data: Array<{ id: string; list_id: string; position: string }> }> {
+  return api.patch<{ data: Array<{ id: string; list_id: string; position: string }> }>(
+    `/lists/${listId}/sort`,
+    { sortBy },
+  );
 }

@@ -1,9 +1,9 @@
 // PATCH /api/v1/boards/:boardId/notification-preference
 // Upserts the board-scoped notification preference for the authenticated user.
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility } from '../../../../middlewares/boardVisibility';
+import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 
 interface PatchBody {
   notifications_enabled?: unknown;
@@ -15,6 +15,7 @@ export async function handleUpdateBoardNotificationPreference(
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
+  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
@@ -44,19 +45,19 @@ export async function handleUpdateBoardNotificationPreference(
 
   const now = new Date().toISOString();
   const existing = await db('board_notification_preferences')
-    .where({ user_id: userId, board_id: boardId })
+    .where({ user_id: userId, board_id: resolvedBoardId })
     .first();
 
   let row: Record<string, unknown>;
 
   if (existing) {
     const [updated] = await db('board_notification_preferences')
-      .where({ user_id: userId, board_id: boardId })
+      .where({ user_id: userId, board_id: resolvedBoardId })
       .update({ notifications_enabled, updated_at: now }, ['notifications_enabled', 'updated_at']);
     row = updated;
   } else {
     const [inserted] = await db('board_notification_preferences').insert(
-      { id: randomUUID(), user_id: userId, board_id: boardId, notifications_enabled, updated_at: now },
+      { id: randomUUID(), user_id: userId, board_id: resolvedBoardId, notifications_enabled, updated_at: now },
       ['notifications_enabled', 'updated_at'],
     );
     row = inserted;

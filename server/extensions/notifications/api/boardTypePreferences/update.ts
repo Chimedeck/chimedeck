@@ -1,10 +1,10 @@
 // PATCH /api/v1/boards/:boardId/notification-preferences/types
 // Upserts a single board_notification_type_preferences row for the authenticated user.
 // Returns the updated full list (same shape as GET).
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility } from '../../../../middlewares/boardVisibility';
+import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 import { NOTIFICATION_TYPES } from '../../mods/preferenceGuard';
 import { handleGetBoardTypePreferences } from './get';
 
@@ -20,6 +20,7 @@ export async function handleUpdateBoardTypePreference(
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
+  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
@@ -85,7 +86,7 @@ export async function handleUpdateBoardTypePreference(
 
   const now = new Date().toISOString();
   const existing = await db('board_notification_type_preferences')
-    .where({ user_id: userId, board_id: boardId, type })
+    .where({ user_id: userId, board_id: resolvedBoardId, type })
     .first();
 
   if (existing) {
@@ -94,13 +95,13 @@ export async function handleUpdateBoardTypePreference(
     if (email_enabled !== undefined) updates.email_enabled = email_enabled;
 
     await db('board_notification_type_preferences')
-      .where({ user_id: userId, board_id: boardId, type })
+      .where({ user_id: userId, board_id: resolvedBoardId, type })
       .update(updates);
   } else {
     await db('board_notification_type_preferences').insert({
       id: randomUUID(),
       user_id: userId,
-      board_id: boardId,
+      board_id: resolvedBoardId,
       type,
       in_app_enabled: in_app_enabled ?? true,
       email_enabled: email_enabled ?? true,
@@ -109,5 +110,5 @@ export async function handleUpdateBoardTypePreference(
   }
 
   // Return the updated full list (same shape as GET).
-  return handleGetBoardTypePreferences(req, boardId);
+  return handleGetBoardTypePreferences(req, resolvedBoardId);
 }
