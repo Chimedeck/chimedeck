@@ -59,8 +59,8 @@ const S3_BASE_URL  = S3_ENDPOINT
 // When using LocalStack (S3_ENDPOINT is set), any non-empty credentials are
 // accepted — fall back to 'test'/'test' so the SDK doesn't reject empty strings.
 // For real AWS both vars must be explicitly set.
-const AWS_ACCESS_KEY_ID     = Bun.env['AWS_ACCESS_KEY_ID']     || (S3_ENDPOINT ? 'test' : '');
-const AWS_SECRET_ACCESS_KEY = Bun.env['AWS_SECRET_ACCESS_KEY'] || (S3_ENDPOINT ? 'test' : '');
+const AWS_ACCESS_KEY_ID     = Bun.env['S3_AWS_ACCESS_KEY_ID']     || (S3_ENDPOINT ? 'test' : '');
+const AWS_SECRET_ACCESS_KEY = Bun.env['S3_AWS_SECRET_ACCESS_KEY'] || (S3_ENDPOINT ? 'test' : '');
 
 const s3 = new S3Client({
   region: S3_REGION,
