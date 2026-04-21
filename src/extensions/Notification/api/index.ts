@@ -61,4 +61,8 @@ export const notificationApi = {
   deleteOne({ id }: { id: string }): Promise<void> {
     return apiClient.delete(`/notifications/${id}`);
   },
+
+  deleteAll(): Promise<void> {
+    return apiClient.delete('/notifications');
+  },
 };

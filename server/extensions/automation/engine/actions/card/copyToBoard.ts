@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { between, HIGH_SENTINEL } from '../../../../list/mods/fractional';
 import { broadcast } from '../../../../realtime/mods/rooms/broadcast';
 import { dispatchEvent } from '../../../../../mods/events/dispatch';
+import { env } from '../../../../../config/env';
 import type { ActionHandler, ActionContext } from '../../../common/types';
 
 const configSchema = z.object({
@@ -85,6 +86,27 @@ export const cardCopyToBoardAction: ActionHandler = {
     });
 
     const newCard = await trx('cards').where({ id: newCardId }).first();
+
+    // Attach a link to the original card on the copied card so it is traceable.
+    const sourceBoard = await trx('boards')
+      .join('lists', 'lists.board_id', 'boards.id')
+      .where('lists.id', card.list_id)
+      .select('boards.id as board_id')
+      .first();
+    if (sourceBoard) {
+      const sourceCardUrl = `${env.APP_BASE_URL}/boards/${sourceBoard.board_id}/cards/${cardId}`;
+      await trx('attachments').insert({
+        id: randomUUID(),
+        card_id: newCardId,
+        uploaded_by: actorId ?? null,
+        name: card.title,
+        type: 'URL',
+        url: sourceCardUrl,
+        status: 'READY',
+        referenced_card_id: cardId,
+        created_at: new Date().toISOString(),
+      });
+    }
 
     // Fire event + broadcast for the target board after commit so triggers and
     // websocket clients on the target board are notified. The actorId is used as-is

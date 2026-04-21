@@ -8,13 +8,15 @@ interface Props {
   /** Number of currently enabled automations on this board. */
   activeCount: number;
   onClick: () => void;
+  /** When true the button sits inside a glassmorphic container over a board background image. */
+  hasBackground?: boolean;
 }
 
-const AutomationHeaderButton = ({ activeCount, onClick }: Props) => (
+const AutomationHeaderButton = ({ activeCount, onClick, hasBackground = false }: Props) => (
   <Button
     variant="ghost"
     size="icon"
-    className="relative"
+    className={`relative${hasBackground ? ' text-white/90 hover:bg-white/20 hover:text-white' : ''}`}
     onClick={onClick}
     aria-label={translations['automation.headerButton.ariaLabel']}
     title={translations['automation.panel.title']}

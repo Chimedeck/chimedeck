@@ -31,9 +31,11 @@ interface Props {
   insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
   /** Called whenever the persisted attachment count changes (add, delete, or initial load). */
   onCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
+  /** Called whenever the full attachment list changes — useful for features that need to reference attachments by id. */
+  onAttachmentsChange?: (attachments: Attachment[]) => void;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange }: Readonly<Props>): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange, onAttachmentsChange }: Readonly<Props>): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -87,6 +89,12 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   useEffect(() => {
     void loadAttachments();
   }, [loadAttachments]);
+
+  // [why] Propagate the full attachment list to the parent whenever it changes so
+  // features like checklist item attachment previews can look up attachments by id.
+  useEffect(() => {
+    onAttachmentsChange?.(attachments);
+  }, [attachments, onAttachmentsChange]);
 
   // Upload hook — refreshes the server list when a new upload completes
   const { uploads, upload, removeEntry } = useAttachmentUpload({

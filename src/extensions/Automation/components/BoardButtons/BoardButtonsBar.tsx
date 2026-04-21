@@ -10,13 +10,15 @@ import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
+  /** When true the bar sits inside a glassmorphic container over a board background image. */
+  hasBackground?: boolean;
 }
 
 const MAX_VISIBLE = 5;
 type RunStateMap = Record<string, RunState>;
 const RESET_DELAY_MS = 3000;
 
-const BoardButtonsBar: FC<Props> = ({ boardId }) => {
+const BoardButtonsBar: FC<Props> = ({ boardId, hasBackground = false }) => {
   const [buttons, setButtons] = useState<Automation[]>([]);
   const [runStates, setRunStates] = useState<RunStateMap>({});
 
@@ -60,6 +62,7 @@ const BoardButtonsBar: FC<Props> = ({ boardId }) => {
           automation={btn}
           runState={runStates[btn.id] ?? 'idle'}
           onRun={() => handleRun(btn)}
+          hasBackground={hasBackground}
         />
       ))}
       {overflowCount > 0 && (

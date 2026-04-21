@@ -127,7 +127,13 @@ const profileSlice = createSlice({
       })
       .addCase(uploadAvatarThunk.fulfilled, (state, action: PayloadAction<{ avatar_url: string }>) => {
         state.avatarUploading = false;
-        if (state.user) state.user.avatar_url = action.payload.avatar_url;
+        if (state.user) {
+          // [why] The proxy URL is stable (/api/v1/users/:id/avatar) so the browser caches
+          // the old image and never refetches it. Append a timestamp to bust the cache
+          // whenever a new avatar is uploaded.
+          const url = action.payload.avatar_url;
+          state.user.avatar_url = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+        }
       })
       .addCase(uploadAvatarThunk.rejected, (state) => {
         state.avatarUploading = false;

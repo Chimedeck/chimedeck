@@ -8,6 +8,7 @@ import {
   selectNotificationStatus,
   markAllReadThunk,
   fetchMoreNotificationsThunk,
+  clearAllNotificationsThunk,
 } from '../slices/notificationSlice';
 import NotificationItem from './NotificationItem';
 import type { Notification } from '../api';
@@ -29,6 +30,10 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
     dispatch(markAllReadThunk());
   };
 
+  const handleClearAll = () => {
+    dispatch(clearAllNotificationsThunk());
+  };
+
   const handleLoadMore = () => {
     dispatch(fetchMoreNotificationsThunk());
   };
@@ -47,9 +52,14 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-bg-base">
         <h2 className="text-sm font-semibold text-base">{translations['Notifications.title']}</h2>
-        <Button variant="link" size="sm" onClick={handleMarkAllRead} className="text-indigo-400 hover:text-indigo-300">
-          {translations['Notifications.markAllRead']}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="link" size="sm" onClick={handleClearAll} className="text-subtle hover:text-base">
+            {translations['Notifications.clearAll']}
+          </Button>
+          <Button variant="link" size="sm" onClick={handleMarkAllRead} className="text-indigo-400 hover:text-indigo-300">
+            {translations['Notifications.markAllRead']}
+          </Button>
+        </div>
       </div>
 
       {/* Content */}

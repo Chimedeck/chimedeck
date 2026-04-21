@@ -120,10 +120,20 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   // render write-action controls without a second round-trip.
   const callerGuestType = (scopedReq.guestType as string | undefined) ?? null;
 
+  // [why] Include isStarred so the board header can show the correct star state on load.
+  const currentUserId = (scopedReq.currentUser as { id?: string } | undefined)?.id ?? null;
+  let isStarred = false;
+  if (currentUserId) {
+    const star = await db('board_stars')
+      .where({ board_id: boardId, user_id: currentUserId })
+      .first();
+    isStarred = !!star;
+  }
+
   const backgroundUrl = resolveBackgroundUrl({ boardId, backgroundUrl: board.background });
 
   return Response.json({
-    data: { ...board, background: backgroundUrl, callerGuestType },
+    data: { ...board, background: backgroundUrl, callerGuestType, isStarred },
     includes: { lists, cards: cardsWithResolvedCovers, activities },
   });
 }

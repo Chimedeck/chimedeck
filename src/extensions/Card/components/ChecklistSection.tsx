@@ -8,6 +8,7 @@ import Button from '../../../common/components/Button';
 import type { Checklist, ChecklistItem as ChecklistItemType } from '../api';
 import { ChecklistItem } from './ChecklistItem';
 import { ChecklistProgress } from './ChecklistProgress';
+import type { Attachment } from '../../Attachments/types';
 
 const LOW_SENTINEL = '';
 const HIGH_SENTINEL = '~';
@@ -79,6 +80,7 @@ interface SortableChecklistItemRowProps {
   onItemDueDateChange: (itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (itemId: string) => Promise<void>;
   disabled?: boolean;
+  attachments?: Attachment[];
 }
 
 const SortableChecklistItemRow = ({
@@ -91,6 +93,7 @@ const SortableChecklistItemRow = ({
   onItemDueDateChange,
   onItemConvertToCard,
   disabled,
+  attachments,
 }: SortableChecklistItemRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -117,7 +120,9 @@ const SortableChecklistItemRow = ({
         onDueDateChange={onItemDueDateChange}
         onConvertToCard={onItemConvertToCard}
         boardMembers={boardMembers}
+        showDragHandle={!disabled}
         {...(disabled === undefined ? {} : { disabled })}
+        {...(attachments === undefined ? {} : { attachments })}
       />
     </div>
   );
@@ -137,6 +142,8 @@ interface Props {
   onItemConvertToCard: (itemId: string) => Promise<void>;
   onItemReorder: (itemId: string, position: string) => Promise<void>;
   disabled?: boolean;
+  /** Forwarded to each ChecklistItem to enable attachment-reference previews in titles. */
+  attachments?: Attachment[];
 }
 
 export const ChecklistSection = ({
@@ -153,6 +160,7 @@ export const ChecklistSection = ({
   onItemConvertToCard,
   onItemReorder,
   disabled,
+  attachments,
 }: Props) => {
   const sortedItems = useMemo(
     () => [...checklist.items].sort((left, right) => compareChecklistItemPosition(left.position, right.position)),
@@ -304,6 +312,7 @@ export const ChecklistSection = ({
                     onItemConvertToCard={onItemConvertToCard}
                     boardMembers={boardMembers}
                     {...(disabled === undefined ? {} : { disabled })}
+                    {...(attachments === undefined ? {} : { attachments })}
                   />
                 ))}
               </SortableContext>

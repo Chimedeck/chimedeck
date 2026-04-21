@@ -59,7 +59,26 @@ export async function searchWorkspace({
     throw err;
   }
 
-  return res.json() as Promise<SearchResponse>;
+  const json = await res.json() as {
+    data: Array<Record<string, unknown>>;
+    metadata: { cursor: string | null; hasMore: boolean };
+  };
+
+  // [why] The server returns snake_case fields (board_id, workspace_id, list_id) because
+  // they come directly from Knex/PostgreSQL column names. The client SearchResult type
+  // and all navigation handlers expect camelCase, so we remap here at the API boundary.
+  const data: SearchResult[] = json.data.map((item) => ({
+    id: item.id as string,
+    title: item.title as string,
+    type: item.type as 'board' | 'card',
+    boardId: (item.boardId ?? item.board_id) as string | undefined,
+    workspaceId: (item.workspaceId ?? item.workspace_id) as string | undefined,
+    listId: (item.listId ?? item.list_id) as string | undefined,
+    archived: item.archived as boolean | undefined,
+    background: (item.background ?? null) as string | null | undefined,
+  }));
+
+  return { data, metadata: json.metadata };
 }
 
 export async function searchBoard({

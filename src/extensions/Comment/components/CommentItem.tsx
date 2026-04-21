@@ -14,6 +14,17 @@ import CommentReactions from './CommentReactions';
 import CommentReplyThread from './CommentReplyThread';
 import translations from '../translations/en.json';
 
+/**
+ * Add target="_blank" rel="noopener noreferrer" to external links that don't already
+ * have a target attribute and whose href is not a bare anchor (#...).
+ */
+function addLinkTargetBlank(html: string): string {
+  return html.replace(
+    /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
+    '<a target="_blank" rel="noopener noreferrer"',
+  );
+}
+
 // Configure marked: soft line breaks become <br>, no mangling
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -135,10 +146,13 @@ function renderContent(text: string, attachments: Attachment[]): string {
   // Convert markdown → HTML
   const html = marked.parse(normalized) as string;
   // Wrap @mentions in a styled chip
-  return html.replaceAll(
+  const withMentions = html.replaceAll(
     /(@\w[\w.+-]*)/g,
     '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>',
   );
+  // [why] Ensure all links open in a new tab so the user is never navigated away
+  // from the board view.
+  return addLinkTargetBlank(withMentions);
 }
 
 const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
@@ -228,7 +242,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         ) : (
           <div className="border border-border rounded-md px-3 py-2 bg-surface">
             <div
-              className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base
+              className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base break-words
                 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
               // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
               // Input is from authenticated users only (internal tool), so XSS risk is accepted.

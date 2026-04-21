@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import emojiData from '@emoji-mart/data';
 import {
   ArrowTopRightOnSquareIcon,
+  Bars2Icon,
   CheckIcon,
   ClockIcon,
   EllipsisHorizontalIcon,
@@ -12,6 +13,12 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import type { ChecklistItem as ChecklistItemType } from '../api';
+import type { Attachment } from '../../Attachments/types';
+import {
+  ImageLightbox,
+  VideoLightbox,
+  PdfLightbox,
+} from '../../Attachments/components/AttachmentThumbnail';
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -45,8 +52,62 @@ function replaceEmojiShortcodes(text: string): string {
   });
 }
 
-function renderChecklistTitle(text: string): string {
-  return marked.parseInline(replaceEmojiShortcodes(text)) as string;
+function renderChecklistTitle(text: string, attachments: Attachment[] = []): string {
+  const raw = marked.parseInline(replaceEmojiShortcodes(text)) as string;
+  // Replace attachment: placeholder links with data-attachment-id anchors for click-to-preview
+  const withAttachments = processAttachmentLinks(raw, attachments);
+  // Add target="_blank" to all remaining external links
+  return addLinkTargetBlank(withAttachments);
+}
+
+/** Classify attachment MIME type for preview routing. */
+function getAttachmentMediaType(contentType: string | null): 'image' | 'video' | 'pdf' | 'other' {
+  if (!contentType) return 'other';
+  if (contentType.startsWith('image/')) return 'image';
+  if (contentType.startsWith('video/')) return 'video';
+  if (contentType === 'application/pdf') return 'pdf';
+  return 'other';
+}
+
+/**
+ * Convert `<a href="attachment:encoded-name">` links produced by marked into
+ * `<a data-attachment-id="...">` anchors so clicks can open a preview lightbox.
+ * Non-previewable attachments fall through to a plain new-tab link.
+ */
+function processAttachmentLinks(html: string, attachments: Attachment[]): string {
+  if (!html.includes('attachment:') || attachments.length === 0) return html;
+  const byName = new Map(attachments.map((a) => [a.name, a]));
+  return html.replaceAll(
+    /<a\b([^>]*?)\bhref="attachment:([^"]*?)"([^>]*)>([\s\S]*?)<\/a>/gi,
+    (_full: string, _before: string, encoded: string, _after: string, inner: string): string => {
+      let name: string;
+      try { name = decodeURIComponent(encoded); } catch { name = encoded; }
+      const att = byName.get(name);
+      if (att?.status !== 'READY') {
+        // [why] Attachment deleted or not yet scanned — render as struck-through text so the
+        // item title is still readable without a dangling broken link.
+        return `<span class="line-through text-muted" title="Attachment not found">${inner}</span>`;
+      }
+      const mediaType = getAttachmentMediaType(att.content_type);
+      if (mediaType === 'other') {
+        // Non-previewable file — open the proxy view URL in a new tab
+        const href = att.view_url ?? '#';
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="underline decoration-dotted underline-offset-2">${inner}</a>`;
+      }
+      return `<a data-attachment-id="${att.id}" data-attachment-type="${mediaType}" href="#" class="underline decoration-dotted underline-offset-2 cursor-pointer">${inner}</a>`;
+    },
+  );
+}
+
+/**
+ * Add target="_blank" rel="noopener noreferrer" to external links that don't already
+ * have a target and whose href is not a bare anchor (#...).
+ */
+function addLinkTargetBlank(html: string): string {
+  return html.replaceAll(
+    /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
+    '<a target="_blank" rel="noopener noreferrer"',
+  );
 }
 
 interface Props {
@@ -58,7 +119,13 @@ interface Props {
   onDueDateChange: (itemId: string, dueDate: string | null) => Promise<void>;
   onConvertToCard: (itemId: string) => Promise<void>;
   onDelete: (itemId: string) => Promise<void>;
+  // [why] Renders a cosmetic Bars2Icon grip so users know the row is draggable.
+  // Actual drag is on the whole SortableChecklistItemRow — only the edit input
+  // stops pointer propagation to prevent dnd-kit from intercepting text selection.
+  showDragHandle?: boolean;
   disabled?: boolean;
+  /** Card attachments — when provided, attachment: links in titles open a preview lightbox. */
+  attachments?: Attachment[];
 }
 
 function toDateInputValue(date: Date): string {
@@ -110,7 +177,9 @@ export const ChecklistItem = ({
   onDueDateChange,
   onConvertToCard,
   onDelete,
+  showDragHandle,
   disabled,
+  attachments = [],
 }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
@@ -120,13 +189,15 @@ export const ChecklistItem = ({
   const [memberQuery, setMemberQuery] = useState('');
   const [converting, setConverting] = useState(false);
   const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(new Set());
+  // Preview state for attachment links embedded in the checklist title
+  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
 
   const currentDueDate = item.due_date ? new Date(item.due_date) : null;
   const [dueDateInput, setDueDateInput] = useState(currentDueDate ? toDateInputValue(currentDueDate) : '');
   const [dueTimeInput, setDueTimeInput] = useState(currentDueDate ? toTimeInputValue(currentDueDate) : '12:00');
 
   const rootRef = useRef<HTMLDivElement>(null);
-  const renderedTitle = useMemo(() => renderChecklistTitle(item.title), [item.title]);
+  const renderedTitle = useMemo(() => renderChecklistTitle(item.title, attachments), [item.title, attachments]);
 
   useEffect(() => {
     if (!dueOpen) return;
@@ -224,7 +295,19 @@ export const ChecklistItem = ({
   };
 
   return (
+    <>
     <div ref={rootRef} className="group relative flex min-w-0 items-start gap-2 py-1">
+      {showDragHandle && !disabled && (
+        // [why] Cosmetic grip icon — drag activates from the entire SortableChecklistItemRow
+        // wrapper div. The icon tells users the row is draggable without being the sole
+        // drag target, so drag works from anywhere on the row.
+        <span
+          className="mt-0.5 shrink-0 cursor-grab text-muted opacity-0 group-hover:opacity-100"
+          aria-hidden="true"
+        >
+          <Bars2Icon className="h-3.5 w-3.5" />
+        </span>
+      )}
       <input
         type="checkbox"
         checked={item.checked}
@@ -239,6 +322,9 @@ export const ChecklistItem = ({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={submitRename}
+          // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
+          // capture the pointer-down and turn text selection into an item drag.
+          onPointerDown={(e) => { e.stopPropagation(); }}
           onKeyDown={(e) => {
             e.stopPropagation();
             if (e.key === 'Enter') submitRename();
@@ -254,11 +340,35 @@ export const ChecklistItem = ({
           <button
             type="button"
             className={`min-w-0 w-full cursor-text whitespace-normal break-words bg-transparent p-0 text-left text-sm [&_a]:underline [&_a]:decoration-dotted [&_a]:underline-offset-2 ${item.checked ? 'text-muted line-through' : 'text-base'}`}
-            onClick={() => !disabled && setEditing(true)}
             disabled={disabled}
             aria-label={`Edit: ${item.title}`}
             // [why] Render markdown + emoji shortcodes in checklist text for parity with comments.
+            // The div intercepts link clicks: attachment links open the preview lightbox;
+            // external links open in a new tab via window.open (reliable inside a button);
+            // unhandled clicks activate edit mode.
             dangerouslySetInnerHTML={{ __html: renderedTitle }}
+            onClick={(e) => {
+              if (disabled) return;
+              const link = (e.target as HTMLElement).closest('a');
+              if (link instanceof HTMLAnchorElement) {
+                const attachmentId = link.dataset.attachmentId;
+                if (attachmentId) {
+                  e.preventDefault();
+                  const att = attachments.find((a) => a.id === attachmentId);
+                  if (att) setPreviewAttachment(att);
+                } else {
+                  // Regular external link — open in new tab; prevent default to avoid issues
+                  // with <a> inside <button> behaviour across browsers.
+                  const href = link.getAttribute('href');
+                  if (href && href !== '#') {
+                    e.preventDefault();
+                    window.open(href, '_blank', 'noopener,noreferrer');
+                  }
+                }
+                return; // Don't activate edit mode when any link is clicked
+              }
+              setEditing(true);
+            }}
           />
           {(item.due_date || assignedMember) && (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -503,5 +613,18 @@ export const ChecklistItem = ({
         </div>
       )}
     </div>
+    {/* Attachment preview lightbox — rendered outside the row div so it overlays the full screen */}
+    {previewAttachment?.status === 'READY' && (() => {
+      const mediaType = getAttachmentMediaType(previewAttachment.content_type);
+      const src = previewAttachment.view_url ?? '';
+      const name = previewAttachment.alias ?? previewAttachment.name;
+      const close = () => { setPreviewAttachment(null); };
+      if (!src) return null;
+      if (mediaType === 'image') return <ImageLightbox src={src} name={name} onClose={close} />;
+      if (mediaType === 'video') return <VideoLightbox src={src} name={name} onClose={close} />;
+      if (mediaType === 'pdf') return <PdfLightbox src={src} name={name} onClose={close} />;
+      return null;
+    })()}
+  </>
   );
 };

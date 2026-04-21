@@ -24,6 +24,7 @@ import {
 import { ChecklistSection } from './ChecklistSection';
 import type { Checklist } from '../api';
 import Button from '../../../common/components/Button';
+import type { Attachment } from '../../Attachments/types';
 
 // Fractional position helpers — same algorithm as ChecklistSection item ordering.
 const LOW_SENTINEL = '';
@@ -122,6 +123,7 @@ interface SortableChecklistRowProps {
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
   onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
   disabled?: boolean;
+  attachments?: Attachment[];
 }
 
 const SortableChecklistRow = ({
@@ -142,6 +144,7 @@ const SortableChecklistRow = ({
   onItemConvertToCard,
   onItemReorder,
   disabled,
+  attachments,
 }: SortableChecklistRowProps) => {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: checklist.id,
@@ -203,6 +206,7 @@ const SortableChecklistRow = ({
             onItemReorder={(itemId, position) => onItemReorder(checklist.id, itemId, position)}
             boardMembers={boardMembers}
             {...(disabled === undefined ? {} : { disabled })}
+            {...(attachments === undefined ? {} : { attachments })}
           />
         </div>
       </div>
@@ -226,6 +230,8 @@ interface Props {
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
   onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
   disabled?: boolean;
+  /** Attachments for the card — forwarded to checklist items to enable attachment-reference previews. */
+  attachments?: Attachment[];
 }
 
 const CardChecklist = ({
@@ -244,6 +250,7 @@ const CardChecklist = ({
   onItemConvertToCard,
   onItemReorder,
   disabled,
+  attachments,
 }: Props) => {
   const [addingChecklist, setAddingChecklist] = useState(false);
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
@@ -394,6 +401,7 @@ const CardChecklist = ({
                 onItemConvertToCard={onItemConvertToCard}
                 onItemReorder={onItemReorder}
                 {...(disabled === undefined ? {} : { disabled })}
+                {...(attachments === undefined ? {} : { attachments })}
               />
             ))}
           </div>

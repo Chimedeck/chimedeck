@@ -745,4 +745,34 @@ body {
   margin-bottom: 8px;
 }
 
+/* ── Prose blockquote — callout style ───────────────────────────────────────── */
+/* Override Tailwind Typography's default italic/indented blockquote with a
+   code-block-like callout that has a coloured left border + tinted background. */
+.prose blockquote,
+.prose-sm blockquote {
+  font-style: normal;
+  font-weight: inherit;
+  color: inherit;
+  border-left: 3px solid var(--color-primary);
+  background-color: var(--bg-overlay);
+  border-radius: 0 4px 4px 0;
+  padding: 0.5rem 0.75rem;
+  margin-left: 0;
+  margin-right: 0;
+  quotes: none;
+}
+
+.prose blockquote p,
+.prose-sm blockquote p {
+  margin: 0;
+}
+
+/* Remove the decorative quote marks Tailwind Typography injects */
+.prose blockquote p::before,
+.prose blockquote p::after,
+.prose-sm blockquote p::before,
+.prose-sm blockquote p::after {
+  content: none;
+}
+
 

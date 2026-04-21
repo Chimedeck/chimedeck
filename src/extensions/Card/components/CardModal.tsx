@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Card, Label, CardMember, Checklist } from '../api';
+import type { Attachment } from '../../Attachments/types';
 import CardTitle from './CardTitle';
 import CardDescriptionTiptap from './CardDescriptionTiptap';
 import CardChecklist from './CardChecklist';
@@ -175,6 +176,9 @@ const CardModal = ({
   // CommentEditor in ActivityFeed without prop-drilling through intermediate components.
   const insertMarkdownRef = useRef<((md: string) => void) | null>(null);
 
+  // [why] cardAttachments is populated by AttachmentPanel via onAttachmentsChange and
+  // forwarded to CardChecklist so checklist item titles can preview attachment references.
+  const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
   const { uploads: coverUploads, upload: uploadCover } = useAttachmentUpload({
     cardId: card.id,
     onSuccess: (attachment) => {
@@ -455,6 +459,7 @@ const CardModal = ({
                       onItemReorder={onItemReorder}
                       boardMembers={boardMembers}
                       disabled={isReadOnly}
+                      attachments={cardAttachments}
                     />
 
                     <CardPluginSection
@@ -463,7 +468,7 @@ const CardModal = ({
                       boardId={boardId}
                     />
 
-                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} />
+                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} onAttachmentsChange={setCardAttachments} />
 
                     {/* Plugin detail badges */}
                     <div className="flex flex-wrap gap-3">
@@ -534,6 +539,7 @@ const CardModal = ({
                     onItemReorder={onItemReorder}
                     boardMembers={boardMembers}
                     disabled={isReadOnly}
+                    attachments={cardAttachments}
                   />
 
                   <CardPluginSection
@@ -542,7 +548,7 @@ const CardModal = ({
                     boardId={boardId}
                   />
 
-                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} />
+                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} onAttachmentsChange={setCardAttachments} />
 
                   {/* Plugin detail badges */}
                   <div className="flex flex-wrap gap-3">

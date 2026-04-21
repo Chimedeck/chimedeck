@@ -7,6 +7,17 @@ import { marked } from 'marked';
 import MentionInput from '~/common/components/MentionInput/MentionInput';
 import Button from '../../../common/components/Button';
 
+/**
+ * Add target="_blank" rel="noopener noreferrer" to external links that don't already
+ * have a target attribute and whose href is not a bare anchor (#...).
+ */
+function addLinkTargetBlank(html: string): string {
+  return html.replace(
+    /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
+    '<a target="_blank" rel="noopener noreferrer"',
+  );
+}
+
 interface Props {
   boardId: string;
   description: string;
@@ -55,7 +66,25 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
     [handleSave, handleCancel],
   );
 
-  const previewHtml = marked.parse(draft || '') as string;
+  const handleDescriptionClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const link = (e.target as HTMLElement).closest('a');
+      if (link) {
+        // [why] Intercept link clicks so they open in a new tab and don't trigger
+        // edit mode. window.open is used for cross-browser reliability.
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+          e.preventDefault();
+          window.open(href, '_blank', 'noopener,noreferrer');
+        }
+        return;
+      }
+      handleEnterEdit();
+    },
+    [handleEnterEdit],
+  );
+
+  const previewHtml = addLinkTargetBlank(marked.parse(draft || '') as string);
   const isEmpty = !draft.trim();
   const isLong = draft.length > SHOW_MORE_THRESHOLD;
 
@@ -114,7 +143,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
                 isLong && !expanded ? 'overflow-hidden' : '',
               ].join(' ')}
               style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
-              onClick={handleEnterEdit}
+              onClick={handleDescriptionClick}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();

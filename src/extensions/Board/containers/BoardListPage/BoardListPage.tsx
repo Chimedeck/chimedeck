@@ -51,6 +51,7 @@ const BoardListPage = () => {
   useWorkspaceSync({ workspaceId: workspaceId ?? '', token: accessToken ?? '' });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filterText, setFilterText] = useState('');
 
   // ── Toast notifications ───────────────────────────────────────────────────
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -104,6 +105,10 @@ const BoardListPage = () => {
   const handleStar = (boardId: string) => dispatch(starBoardThunk({ boardId }));
   const handleUnstar = (boardId: string) => dispatch(unstarBoardThunk({ boardId }));
 
+  const filteredBoards = filterText.trim()
+    ? boards.filter((b) => b.title.toLowerCase().includes(filterText.toLowerCase()))
+    : boards;
+
   const pageContent = (() => {
     if (loading) return <p className="text-muted">Loading boards…</p>;
     if (error) return <p className="text-danger">Failed to load boards.</p>;
@@ -116,9 +121,12 @@ const BoardListPage = () => {
         </p>
       );
     }
+    if (!filteredBoards.length) {
+      return <p className="text-muted">No boards match your search.</p>;
+    }
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {boards.map((board) => (
+        {filteredBoards.map((board) => (
           <BoardCard
             key={board.id}
             board={board}
@@ -141,6 +149,18 @@ const BoardListPage = () => {
         <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
           Create Board
         </Button>
+      </div>
+
+      {/* Search / filter row */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          placeholder="Filter boards…"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          className="h-8 w-56 rounded border border-border bg-bg-overlay px-3 text-sm text-base placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Filter boards by name"
+        />
       </div>
 
       {/* Filter chips — radio-group style so current state is always explicit */}

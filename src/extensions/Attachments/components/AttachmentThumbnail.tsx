@@ -51,7 +51,7 @@ function useLightboxKeyboard(onClose: () => void): {
   return { handleBackdropClick, handleKeyDown };
 }
 
-function ImageLightbox({ src, name, onClose }: { src: string; name: string; onClose: () => void }): React.ReactElement {
+export function ImageLightbox({ src, name, onClose }: { src: string; name: string; onClose: () => void }): React.ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

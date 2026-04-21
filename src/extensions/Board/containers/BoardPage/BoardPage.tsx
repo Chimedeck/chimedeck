@@ -27,7 +27,7 @@ import CardModalContainer from '../../../Card/containers/CardModal';
 import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
-import { updateBoard, archiveBoard, deleteBoard } from '../../api';
+import { updateBoard, archiveBoard, deleteBoard, starBoard, unstarBoard } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
 import { createCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
@@ -449,7 +449,34 @@ const BoardPage = () => {
     }
   }, [api, boardId, board, navigate, addToast, automationPanel]);
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Star / unstar board ────────────────────────────────────────────────
+  const [starredOverride, setStarredOverride] = useState<boolean | null>(null);
+
+  // [why] Reset override when navigating to a different board so the fresh
+  // isStarred value from the server is used rather than the previous board's state.
+  useEffect(() => { setStarredOverride(null); }, [boardId]);
+
+  const handleStar = useCallback(async () => {
+    if (!boardId) return;
+    setStarredOverride(true);
+    try {
+      await starBoard({ api, boardId });
+    } catch {
+      setStarredOverride(null);
+      addToast('Failed to star board.', 'error');
+    }
+  }, [api, boardId, addToast]);
+
+  const handleUnstar = useCallback(async () => {
+    if (!boardId) return;
+    setStarredOverride(false);
+    try {
+      await unstarBoard({ api, boardId });
+    } catch {
+      setStarredOverride(null);
+      addToast('Failed to unstar board.', 'error');
+    }
+  }, [api, boardId, addToast]);
 
   if (status === 'loading' && !board) {
     return (
@@ -494,7 +521,7 @@ const BoardPage = () => {
           preventing the header dropdown from being hidden behind kanban column elements */}
       <div className={`relative z-10 border-b border-border${board.background ? ' bg-bg-surface/75 backdrop-blur-2xl' : ' bg-bg-surface'}`}>
       <BoardHeader
-        board={board}
+        board={starredOverride === null ? board : { ...board, isStarred: starredOverride }}
         members={boardMembers.map((m) => ({ id: m.user_id, display_name: m.display_name, email: m.email, avatar_url: m.avatar_url }))}
         connectionState={connectionState}
         pollingActive={pollingActive}
@@ -513,6 +540,8 @@ const BoardPage = () => {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
         })}
+        onStar={handleStar}
+        onUnstar={handleUnstar}
       />
       {board.state === 'ARCHIVED' && (
         <div className="mx-6 mt-1 rounded border border-yellow-700 bg-yellow-900/30 px-4 py-2 text-sm text-yellow-400">

@@ -82,6 +82,17 @@ export const deleteNotificationThunk = createAppAsyncThunk(
   },
 );
 
+export const clearAllNotificationsThunk = createAppAsyncThunk(
+  'notifications/clearAll',
+  async (_, { rejectWithValue }) => {
+    try {
+      await notificationApi.deleteAll();
+    } catch {
+      return rejectWithValue('clear-all-failed');
+    }
+  },
+);
+
 // ---------- Slice ----------
 
 const notificationSlice = createSlice({
@@ -145,6 +156,12 @@ const notificationSlice = createSlice({
             state.unreadCount = Math.max(0, state.unreadCount - 1);
           }
         }
+      })
+      .addCase(clearAllNotificationsThunk.fulfilled, (state) => {
+        state.notifications = [];
+        state.unreadCount = 0;
+        state.hasMore = false;
+        state.cursor = null;
       });
   },
 });

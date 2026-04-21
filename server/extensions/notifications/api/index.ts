@@ -3,6 +3,7 @@ import { handleListNotifications } from './list';
 import { handleMarkRead } from './markRead';
 import { handleMarkAllRead } from './markAllRead';
 import { handleDeleteNotification } from './delete';
+import { handleDeleteAllNotifications } from './deleteAll';
 import { preferencesRouter } from './preferences';
 import { boardPreferenceRouter } from './boardPreference';
 import { globalPreferenceRouter } from './globalPreference';
@@ -39,6 +40,11 @@ export async function notificationsRouter(req: Request, pathname: string): Promi
   const markReadMatch = pathname.match(/^\/api\/v1\/notifications\/([^/]+)\/read$/);
   if (markReadMatch && req.method === 'PATCH') {
     return handleMarkRead(req, markReadMatch[1] as string);
+  }
+
+  // DELETE /api/v1/notifications — clear all notifications for current user
+  if (pathname === '/api/v1/notifications' && req.method === 'DELETE') {
+    return handleDeleteAllNotifications(req);
   }
 
   // DELETE /api/v1/notifications/:id

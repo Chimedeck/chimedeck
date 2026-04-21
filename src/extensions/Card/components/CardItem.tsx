@@ -103,7 +103,7 @@ const CardItemContent = memo(({
             <img
               src={card.cover_image_url}
               alt="Card cover"
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
               loading="lazy"
             />
           )}

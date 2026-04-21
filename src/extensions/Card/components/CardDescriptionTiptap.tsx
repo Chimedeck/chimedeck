@@ -34,6 +34,19 @@ import {
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 
+/**
+ * Add target="_blank" rel="noopener noreferrer" to external links that don't already
+ * have a target attribute and whose href is not a bare anchor (#...).
+ * [why] marked.parse() output does not carry Tiptap's Link extension HTMLAttributes,
+ * so the preview HTML needs this post-processing pass.
+ */
+function addLinkTargetBlank(html: string): string {
+  return html.replaceAll(
+    /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
+    '<a target="_blank" rel="noopener noreferrer"',
+  );
+}
+
 interface Props {
   boardId: string;
   cardId?: string;
@@ -55,8 +68,17 @@ function draftStatusLabel(status: DraftStatus): string | null {
   }
 }
 
+// [why] Tiptap's Markdown extension HTML-encodes blockquote markers as &gt; (and
+// double-encodes them as &amp;gt; after round-trips). Normalise them back to bare
+// `>` so marked.parse() renders them as <blockquote> elements.
+function normalizeEscapedBlockquoteMarkers(markdown: string): string {
+  return markdown
+    .replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>')
+    .replaceAll(/^(\s*)&amp;gt;(?=\s|$)/gm, '$1>');
+}
+
 function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): string {
-  let markdown = editor.getMarkdown() || '';
+  let markdown = normalizeEscapedBlockquoteMarkers(editor.getMarkdown() || '');
   const imageSnippets: string[] = [];
 
   editor.state.doc.descendants((node) => {
@@ -103,15 +125,17 @@ function insertSnippetAt(editor: Editor, pos: number, snippet: string): void {
 
 function resolvePendingHydratedContent(pendingContent: string | null, attachments: Attachment[]): string | null {
   if (!pendingContent) return null;
-  if (hasAttachmentPlaceholder(pendingContent) && attachments.length === 0) return null;
-  return hydrateCommentAttachmentMarkdown(pendingContent, attachments);
+  const normalized = normalizeEscapedBlockquoteMarkers(pendingContent);
+  if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) return null;
+  return hydrateCommentAttachmentMarkdown(normalized, attachments);
 }
 
 function getInitialEditorContent(initialValue: string, attachments: Attachment[]): string {
-  if (hasAttachmentPlaceholder(initialValue) && attachments.length === 0) {
-    return stripCommentAttachmentPlaceholders(initialValue);
+  const normalized = normalizeEscapedBlockquoteMarkers(initialValue);
+  if (hasAttachmentPlaceholder(normalized) && attachments.length === 0) {
+    return stripCommentAttachmentPlaceholders(normalized);
   }
-  const hydrated = hydrateCommentAttachmentMarkdown(initialValue, attachments);
+  const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
   // [why] Legacy content may contain raw S3 presigned URLs from before the secure
   // proxy migration. Rewrite them to the authenticated proxy path before rendering.
   return rewriteS3UrlsToProxy(hydrated, attachments);
@@ -192,12 +216,13 @@ function buildDescriptionSaveMarkdown(
 }
 
 function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): string {
+  const normalized = normalizeEscapedBlockquoteMarkers(markdown);
   if (attachments.length > 0) {
-    const hydrated = hydrateCommentAttachmentMarkdown(markdown, attachments);
+    const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
     return rewriteS3UrlsToProxy(hydrated, attachments);
   }
 
-  return stripCommentAttachmentPlaceholders(markdown);
+  return stripCommentAttachmentPlaceholders(normalized);
 }
 
 const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled }: Props) => {
@@ -537,7 +562,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
   const isLong = draft.length > 400;
-  const previewHtml = marked.parse(hydratedPreviewMarkdown) as string;
+  const previewHtml = addLinkTargetBlank(marked.parse(hydratedPreviewMarkdown) as string);
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
   return (
@@ -607,7 +632,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   />
                 )}
               </div>
-              <div className="relative min-h-[180px] flex-1 overflow-y-auto overscroll-contain rounded-b-lg">
+              <div className="relative min-h-[180px] flex-1 overflow-y-auto rounded-b-lg">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent" />
                 <EditorContent
                   editor={editor}
@@ -732,7 +757,20 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           <button
             type="button"
             aria-label={isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'}
-            onClick={disabled ? undefined : handleEnterEdit}
+            onClick={disabled ? undefined : (e) => {
+              // [why] Intercept link clicks so they open in a new tab and don't
+              // trigger edit mode — same pattern as CardDescription.tsx.
+              const link = (e.target as HTMLElement).closest('a');
+              if (link) {
+                const href = link.getAttribute('href');
+                if (href && href !== '#') {
+                  e.preventDefault();
+                  window.open(href, '_blank', 'noopener,noreferrer');
+                }
+                return;
+              }
+              handleEnterEdit();
+            }}
             disabled={disabled}
             className={[
               'w-full text-left rounded-lg p-3 min-h-[80px] transition-colors',

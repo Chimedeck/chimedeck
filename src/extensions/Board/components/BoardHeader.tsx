@@ -47,6 +47,10 @@ interface Props {
   onSearchResultSelect?: (result: BoardSearchResult) => void;
   /** Called when the active search query changes (for URL sync) */
   onSearchQueryChange?: (query: string) => void;
+  /** Called when user stars the board */
+  onStar?: () => void;
+  /** Called when user unstars the board */
+  onUnstar?: () => void;
 }
 
 const BoardHeader = ({
@@ -69,6 +73,8 @@ const BoardHeader = ({
   initialSearchQuery,
   onSearchResultSelect,
   onSearchQueryChange,
+  onStar,
+  onUnstar,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -120,14 +126,22 @@ const BoardHeader = ({
     }
   };
 
-  let headerBgClass: string;
-  if (useParentGlass) {
+  let headerBgClass: string;  if (useParentGlass) {
     // Parent owns the surface — header is fully transparent, no border
     headerBgClass = '';
   } else if (hasBackground) {
     headerBgClass = ' [backdrop-filter:blur(20px)] border-b border-[#eee]';
   } else {
     headerBgClass = '';
+  }
+
+  let starBtnClass: string;
+  if (board.isStarred) {
+    starBtnClass = 'shrink-0 rounded p-1 transition-colors text-yellow-400 hover:text-yellow-300';
+  } else if (hasBackground) {
+    starBtnClass = 'shrink-0 rounded p-1 transition-colors text-white/60 hover:text-yellow-300';
+  } else {
+    starBtnClass = 'shrink-0 rounded p-1 transition-colors text-muted hover:text-yellow-400';
   }
 
   return (
@@ -152,6 +166,32 @@ const BoardHeader = ({
           aria-label="Click to edit board title"
         >
           {board.title}
+        </button>
+      )}
+
+      {/* Favourite star button — visible next to the board title */}
+      {(onStar != null || onUnstar != null) && (
+        <button
+          type="button"
+          onClick={() => { board.isStarred ? onUnstar?.() : onStar?.(); }}
+          aria-label={board.isStarred ? 'Remove from favourites' : 'Add to favourites'}
+          className={starBtnClass}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill={board.isStarred ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth={1.5}
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+            />
+          </svg>
         </button>
       )}
 
@@ -193,56 +233,64 @@ const BoardHeader = ({
           </>
         )}
 
-        {/* Board buttons bar — left of automation header button */}
-        {onOpenAutomation && <BoardButtonsBar boardId={board.id} />}
+        {/* Action buttons — frosted glass pill when a background image is present so
+            icons don't blend into the background noise (glassmorphism). */}
+        <div className={hasBackground
+          ? 'flex items-center gap-0.5 rounded-lg px-1.5 py-1 bg-white/15 backdrop-blur-md border border-white/20 shadow-sm'
+          : 'flex items-center gap-0.5'
+        }>
+          {/* Board buttons bar — left of automation header button */}
+          {onOpenAutomation && <BoardButtonsBar boardId={board.id} hasBackground={hasBackground} />}
 
-        {/* Automation button — left of the ··· settings menu */}
-        {onOpenAutomation && (
-          <AutomationHeaderButton
-            activeCount={activeAutomationCount}
-            onClick={onOpenAutomation}
-          />
-        )}
-
-        {/* Settings menu — visible for all users; destructive actions gated below */}
-        <div className="relative" ref={menuContainerRef}>
-          <button
-            className="rounded p-1.5 text-muted hover:bg-bg-surface hover:text-subtle transition-colors"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Board settings"
-            aria-haspopup="true"
-            aria-expanded={menuOpen}
-          >
-            ···
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 mt-1 w-48 rounded-md border border-border bg-bg-surface py-1 shadow-xl z-50">
-              {onOpenSettings && (
-                <button
-                  className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
-                  onClick={() => { setMenuOpen(false); onOpenSettings(); }}
-                >
-                  Board settings
-                </button>
-              )}
-              {onArchive && (
-                <button
-                  className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
-                  onClick={() => { setMenuOpen(false); onArchive(); }}
-                >
-                  {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-bg-overlay"
-                  onClick={() => { setMenuOpen(false); onDelete(); }}
-                >
-                  Delete board
-                </button>
-              )}
-            </div>
+          {/* Automation button — left of the ··· settings menu */}
+          {onOpenAutomation && (
+            <AutomationHeaderButton
+              activeCount={activeAutomationCount}
+              onClick={onOpenAutomation}
+              hasBackground={hasBackground}
+            />
           )}
+
+          {/* Settings menu — visible for all users; destructive actions gated below */}
+          <div className="relative" ref={menuContainerRef}>
+            <button
+              className={`rounded p-1.5 transition-colors${hasBackground ? ' text-white/90 hover:bg-white/20 hover:text-white' : ' text-muted hover:bg-bg-surface hover:text-subtle'}`}
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Board settings"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+            >
+              ···
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-1 w-48 rounded-md border border-border bg-bg-surface py-1 shadow-xl z-50">
+                {onOpenSettings && (
+                  <button
+                    className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
+                    onClick={() => { setMenuOpen(false); onOpenSettings(); }}
+                  >
+                    Board settings
+                  </button>
+                )}
+                {onArchive && (
+                  <button
+                    className="block w-full px-4 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
+                    onClick={() => { setMenuOpen(false); onArchive(); }}
+                  >
+                    {board.state === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="block w-full px-4 py-2 text-left text-sm text-danger hover:bg-bg-overlay"
+                    onClick={() => { setMenuOpen(false); onDelete(); }}
+                  >
+                    Delete board
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
