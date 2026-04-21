@@ -5,10 +5,11 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { TagIcon } from '@heroicons/react/24/outline';
 import type { Label } from '~/extensions/Card/api';
 import { contrastText } from '~/extensions/Card/components/LabelChip';
-import { getBoardLabels, createBoardLabel, updateBoardLabel } from '~/extensions/Card/api/cardDetail';
+import { getBoardLabels, createBoardLabel, updateBoardLabel, deleteBoardLabel } from '~/extensions/Card/api/cardDetail';
 import { apiClient } from '~/common/api/client';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { boardSliceActions } from '~/extensions/Board/slices/boardSlice';
+// boardSliceActions used: updateLabelInCards, removeLabelFromCards
 
 const PRESET_COLORS = [
   { name: 'Dark green', hex: '#1f6835' },
@@ -94,6 +95,8 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
   const [formName, setFormName] = useState('');
   const [formColor, setFormColor] = useState(PRESET_COLORS[6]?.hex ?? '#22c55e');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -131,17 +134,20 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
     setSearchQuery('');
     setFormName('');
     setFormColor(PRESET_COLORS[6]?.hex ?? '#22c55e');
+    setConfirmDelete(false);
   };
 
   const openCreate = () => {
     setFormName('');
     setFormColor(PRESET_COLORS[6]?.hex ?? '#22c55e');
+    setConfirmDelete(false);
     setView('create');
   };
 
   const openEdit = (label: Label) => {
     setFormName(label.name);
     setFormColor(label.color);
+    setConfirmDelete(false);
     setView({ editId: label.id });
   };
 
@@ -172,6 +178,20 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
       setView('list');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteLabel = async () => {
+    if (typeof view !== 'object') return;
+    setDeleting(true);
+    try {
+      await deleteBoardLabel({ api: apiClient, labelId: view.editId });
+      dispatch(boardSliceActions.removeLabelFromCards({ labelId: view.editId }));
+      setLabels((prev) => prev.filter((l) => l.id !== (view as { editId: string }).editId));
+      setView('list');
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -385,6 +405,45 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                   {!saving && view === 'create' ? 'Create' : null}
                   {!saving && view !== 'create' ? 'Save' : null}
                 </button>
+
+                {/* Delete — only on edit view */}
+                {isEditView && !confirmDelete && (
+                  <button
+                    type="button"
+                    className="w-full rounded-lg border border-danger/40 text-danger hover:bg-danger/10 text-sm py-2 transition-colors"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    Delete label
+                  </button>
+                )}
+
+                {/* Confirmation prompt */}
+                {isEditView && confirmDelete && (
+                  <div className="rounded-lg border border-danger/40 bg-danger/5 p-3 space-y-2">
+                    <p className="text-xs text-danger font-medium">Delete this label?</p>
+                    <p className="text-xs text-muted">
+                      This will permanently remove the label from all cards. This action cannot be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="flex-1 rounded-lg bg-danger hover:bg-red-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50"
+                        onClick={() => void handleDeleteLabel()}
+                        disabled={deleting}
+                      >
+                        {deleting ? 'Deleting…' : 'Yes, delete'}
+                      </button>
+                      <button
+                        type="button"
+                        className="flex-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
+                        onClick={() => setConfirmDelete(false)}
+                        disabled={deleting}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             </div>

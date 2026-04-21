@@ -72,6 +72,8 @@ interface Props {
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
   /** True when the board has a background image — columns render solid, headers get frosted-glass. */
   hasBackground?: boolean;
+  /** When true, lists whose filtered card count is 0 are hidden from the board. */
+  collapseEmptyLists?: boolean;
 }
 
 /** Find which list contains a given card ID */
@@ -243,6 +245,7 @@ const BoardCanvas = ({
   onCardClick,
   isReadOnly = false,
   isViewerGuest = false,
+  collapseEmptyLists = false,
   customFieldValuesMap,
 }: Props) => {
   // WHY: use one consistent drag-preview model across all boards so users
@@ -777,6 +780,8 @@ const BoardCanvas = ({
           {listOrder.map((listId) => {
             const list = lists[listId];
             if (!list) return null;
+            // [why] hide lists with 0 visible cards when the collapse toggle is active
+            if (collapseEmptyLists && (effectiveCardsByList[listId]?.length ?? 0) === 0) return null;
             return (
               <SortableListColumn
                 key={listId}

@@ -227,6 +227,16 @@ export async function getBoardLabels({
   return (res as unknown as { data: Label[] }).data;
 }
 
+export async function deleteBoardLabel({
+  api,
+  labelId,
+}: {
+  api: ApiClient;
+  labelId: string;
+}): Promise<void> {
+  await api.delete(`/labels/${labelId}`);
+}
+
 export async function getBoardMembers({
   api,
   boardId,

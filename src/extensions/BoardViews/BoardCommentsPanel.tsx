@@ -7,9 +7,10 @@ import Button from '~/common/components/Button';
 
 interface Props {
   boardId: string;
+  onCardClick?: (cardId: string) => void;
 }
 
-const BoardCommentsPanel = ({ boardId }: Props) => {
+const BoardCommentsPanel = ({ boardId, onCardClick }: Props) => {
   const [comments, setComments] = useState<BoardComment[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -59,7 +60,18 @@ const BoardCommentsPanel = ({ boardId }: Props) => {
             <span className="font-medium text-subtle">
               {comment.author_name ?? comment.author_email ?? 'Unknown'}
             </span>
-            <span className="ml-2 text-muted">{comment.card_title}</span>
+            {onCardClick ? (
+              <button
+                type="button"
+                className="ml-2 truncate max-w-[40%] text-primary hover:underline text-xs"
+                onClick={() => onCardClick(comment.card_id)}
+                title={comment.card_title ?? undefined}
+              >
+                {comment.card_title}
+              </button>
+            ) : (
+              <span className="ml-2 text-muted">{comment.card_title}</span>
+            )}
             <span className="ml-auto">{new Date(comment.created_at).toLocaleString()}</span>
           </div>
           {comment.deleted ? (

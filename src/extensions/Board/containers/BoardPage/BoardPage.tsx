@@ -7,7 +7,7 @@
 // Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
 // Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
 // Sprint 116: Health Check fifth tab (HEALTH_CHECK_ENABLED flag).
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
@@ -50,7 +50,12 @@ import ListDeleteDialog from '../../../List/components/ListDeleteDialog';
 import AutomationPanel from '../../../Automation/components/AutomationPanel';
 import { useAutomationPanel } from '../../../Automation/hooks/useAutomationPanel';
 import BoardMembersPanel from '../../components/BoardMembersPanel';
-import { BoardMemberFilter } from '../../components/BoardMemberFilter';
+import BoardFilterPanel, {
+  type BoardFilters,
+  DEFAULT_FILTERS,
+  countActiveFilters,
+  applyBoardFilter,
+} from '../../components/BoardFilterPanel';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import {
@@ -58,7 +63,7 @@ import {
   setActiveWorkspace,
 } from '~/extensions/Workspace/duck/workspaceDuck';
 import { canBoardGuestWrite } from '../../mods/guestPermissions';
-import type { BoardSearchResult } from '~/extensions/Search/api';
+import { FunnelIcon } from '@heroicons/react/24/outline';
 import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
 import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthCheckConfig';
 
@@ -74,11 +79,7 @@ const BoardPage = () => {
   const dispatch = useAppDispatch();
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // ── Board-scoped search state ─────────────────────────────────────────────
-  // Restore search query from URL on mount; reset when boardId changes.
-  const initialBoardSearch = searchParams.get('boardSearch') ?? '';
+  const [, setSearchParams] = useSearchParams();
 
   const board = useAppSelector(selectBoard);
   const listOrder = useAppSelector(selectListOrder);
@@ -130,43 +131,44 @@ const BoardPage = () => {
   // [why] Notifications should only be active for users who have explicitly joined the board.
   const isBoardMember = boardMembers.some((m) => m.user_id === currentUser?.id);
 
-  // ── Member filter ─────────────────────────────────────────────────────────
-  const [filterMemberIds, setFilterMemberIds] = useState<ReadonlySet<string>>(new Set());
+  // ── Board filters ─────────────────────────────────────────────────────────
+  const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
 
-  const toggleMemberFilter = useCallback((userId: string) => {
-    setFilterMemberIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) {
-        next.delete(userId);
-      } else {
-        next.add(userId);
+  // Reset filters when navigating to a different board
+  useEffect(() => { setFilters(DEFAULT_FILTERS); setFilterPanelOpen(false); }, [boardId]);
+
+  // Derive unique labels from cards for the filter panel label list
+  const boardLabels = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; color: string }>();
+    for (const card of Object.values(cards)) {
+      for (const label of card.labels) {
+        if (!map.has(label.id)) map.set(label.id, { id: label.id, name: label.name, color: label.color });
       }
-      return next;
-    });
-  }, []);
+    }
+    return Array.from(map.values());
+  }, [cards]);
 
-  const clearMemberFilter = useCallback(() => setFilterMemberIds(new Set()), []);
-
-  // Derive filtered card maps — only applied when at least one member is selected.
-  const filteredCardsByList: Record<string, string[]> = filterMemberIds.size === 0
-    ? cardsByList
-    : Object.fromEntries(
+  // Apply all active filters to card maps
+  const isFiltering = countActiveFilters(filters) > 0;
+  const filteredCardsByList: Record<string, string[]> = isFiltering
+    ? Object.fromEntries(
         Object.entries(cardsByList).map(([listId, cardIds]) => [
           listId,
           cardIds.filter((cardId) => {
             const card = cards[cardId];
-            return card?.members?.some((m) => filterMemberIds.has(m.id));
+            return card ? applyBoardFilter(card, filters, currentUser?.id) : false;
           }),
         ]),
-      );
+      )
+    : cardsByList;
 
-  const filteredCards: Record<string, import('../../../Card/api').Card> = filterMemberIds.size === 0
-    ? cards
-    : Object.fromEntries(
-        Object.entries(cards).filter(([, card]) =>
-          card.members?.some((m) => filterMemberIds.has(m.id)),
-        ),
-      );
+  const filteredCards = isFiltering
+    ? Object.fromEntries(
+        Object.entries(cards).filter(([, card]) => applyBoardFilter(card, filters, currentUser?.id)),
+      )
+    : cards;
 
   // ── Automation panel (Sprint 65) ─────────────────────────────────────────
   const automationPanel = useAutomationPanel();
@@ -228,42 +230,6 @@ const BoardPage = () => {
         next.set('card', cardId);
         return next;
       });
-    },
-    [setSearchParams],
-  );
-
-  // ── Board search result selection ────────────────────────────────────────
-  // Card results: open the card modal via the ?card= URL param.
-  // List results: scroll the list column into view.
-  const handleSearchResultSelect = useCallback(
-    (result: BoardSearchResult) => {
-      if (result.type === 'card') {
-        handleCardClick(result.id);
-      } else {
-        const el = document.getElementById(`board-list-${result.id}`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        el?.focus({ preventScroll: true });
-      }
-    },
-    [handleCardClick],
-  );
-
-  // Sync the active search query into the URL as ?boardSearch= so it survives refresh.
-  // An empty string removes the param entirely to keep URLs clean.
-  const handleSearchQueryChange = useCallback(
-    (query: string) => {
-      setSearchParams(
-        (p) => {
-          const next = new URLSearchParams(p);
-          if (query) {
-            next.set('boardSearch', query);
-          } else {
-            next.delete('boardSearch');
-          }
-          return next;
-        },
-        { replace: true },
-      );
     },
     [setSearchParams],
   );
@@ -530,10 +496,6 @@ const BoardPage = () => {
         hasBackground={!!board.background}
         useParentGlass={!!board.background}
         isGuest={isGuest}
-        {...(accessToken ? { searchToken: accessToken } : {})}
-        {...(initialBoardSearch ? { initialSearchQuery: initialBoardSearch } : {})}
-        onSearchResultSelect={handleSearchResultSelect}
-        onSearchQueryChange={handleSearchQueryChange}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenMembers={() => setMembersOpen(true)}
         {...(!isGuest && {
@@ -570,28 +532,56 @@ const BoardPage = () => {
             );
           })}
         </div>
-        {/* Thin divider + view switcher + member filter — only on Board tab */}
+        {/* Thin divider + view switcher + filter button — only on Board tab */}
         {activeTab === 'board' && (
           <>
             <div className={`mx-4 h-4 w-px flex-shrink-0 ${board.background ? 'bg-white/30' : 'bg-border'}`} aria-hidden="true" />
             <BoardViewSwitcher boardId={boardId ?? ''} hasBackground={!!board.background} segmented />
-            {boardMembers.length > 0 && (
-              <>
-                <div className={`mx-4 h-4 w-px flex-shrink-0 ${board.background ? 'bg-white/30' : 'bg-border'}`} aria-hidden="true" />
-                <BoardMemberFilter
-                  members={boardMembers.map((m) => ({
-                    user_id: m.user_id,
-                    display_name: m.display_name,
-                    email: m.email,
-                    avatar_url: m.avatar_url,
-                  }))}
-                  selectedIds={filterMemberIds}
-                  onToggle={toggleMemberFilter}
-                  onClear={clearMemberFilter}
-                  hasBackground={!!board.background}
+            <div ref={filterContainerRef} className="relative ml-2">
+              {/* Filter button — shows active filter count as a badge */}
+              {(() => {
+                const activeCount = countActiveFilters(filters);
+                const hasActiveFilters = activeCount > 0;
+                const btnBase = 'inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary';
+                let btnVariant: string;
+                if (hasActiveFilters && board.background) {
+                  btnVariant = 'bg-white/25 text-white hover:bg-white/30';
+                } else if (hasActiveFilters) {
+                  btnVariant = 'bg-bg-overlay text-base hover:bg-bg-sunken';
+                } else if (board.background) {
+                  btnVariant = 'text-white/80 hover:text-white hover:bg-white/15';
+                } else {
+                  btnVariant = 'text-muted hover:text-base hover:bg-bg-overlay';
+                }
+                const badgeClass = board.background
+                  ? 'rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none bg-white/30 text-white'
+                  : 'rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none bg-primary text-white';
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setFilterPanelOpen((v) => !v)}
+                    className={`${btnBase} ${btnVariant}`}
+                  >
+                    <FunnelIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                    Filter
+                    {hasActiveFilters && (
+                      <span className={badgeClass}>{activeCount}</span>
+                    )}
+                  </button>
+                );
+              })()}
+              {filterPanelOpen && (
+                <BoardFilterPanel
+                  containerRef={filterContainerRef}
+                  onClose={() => setFilterPanelOpen(false)}
+                  filters={filters}
+                  onChange={setFilters}
+                  boardMembers={boardMembers}
+                  boardLabels={boardLabels}
+                  {...(currentUser?.id ? { currentUserId: currentUser.id } : {})}
                 />
-              </>
-            )}
+              )}
+            </div>
           </>
         )}
       </div>
@@ -626,6 +616,7 @@ const BoardPage = () => {
               isViewerGuest={isViewerGuest}
               customFieldValuesMap={customFieldValuesMap}
               hasBackground={!!board.background}
+              collapseEmptyLists={filters.collapseLists && isFiltering}
             />
           ) : activeView === 'TABLE' ? (
             <TableView
@@ -669,7 +660,7 @@ const BoardPage = () => {
       ) : activeTab === 'comments' ? (
         <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
           <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
-            <BoardCommentsPanel boardId={boardId ?? ''} />
+            <BoardCommentsPanel boardId={boardId ?? ''} onCardClick={handleCardClick} />
           </div>
         </div>
       ) : activeTab === 'health-check' ? (
