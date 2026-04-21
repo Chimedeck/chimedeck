@@ -12,6 +12,7 @@ import BackgroundPicker from './BackgroundPicker';
 import BoardLabelsPanel from './BoardLabelsPanel';
 import BoardNotificationToggle from './BoardNotificationToggle';
 import BoardNotificationTypePreferences from './BoardNotificationTypePreferences';
+import { boardPath } from '~/common/routing/shortUrls';
 
 interface Props {
   onClose: () => void;
@@ -57,7 +58,8 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
 
   const handlePluginsClick = () => {
     onClose();
-    navigate(`/boards/${boardId}/settings/plugins`);
+    if (!boardId) return;
+    navigate(`${boardPath({ id: boardId })}/settings/plugins`);
   };
 
   return (

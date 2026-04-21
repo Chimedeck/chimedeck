@@ -11,6 +11,7 @@ import {
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { between, HIGH_SENTINEL } from '../mods/fractional';
 import { sanitizeText } from '../../../common/sanitize';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 export async function handleCreateList(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -21,6 +22,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   if (writableError) return writableError;
 
   const board = boardReq.board!;
+  const canonicalBoardId = board.id;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -48,7 +50,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
 
   // Resolve position: insert after the specified list (or at the end)
   const activeLists = await db('lists')
-    .where({ board_id: boardId, archived: false })
+    .where({ board_id: canonicalBoardId, archived: false })
     .orderBy('position', 'asc');
 
   let position: string;
@@ -70,9 +72,11 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   }
 
   const id = randomUUID();
+  const shortId = await generateUniqueShortId('lists');
   await db('lists').insert({
     id,
-    board_id: boardId,
+    short_id: shortId,
+    board_id: canonicalBoardId,
     title: sanitizeText(body.title.trim()),
     position,
     archived: false,
@@ -81,7 +85,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   const list = await db('lists').where({ id }).first();
 
   // Broadcast full list object so clients can update their local state
-  await writeEvent({ type: 'list_created', boardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list } });
+  await writeEvent({ type: 'list_created', boardId: canonicalBoardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list } });
 
   return Response.json({ data: list }, { status: 201 });
 }

@@ -12,10 +12,17 @@ import {
 import { presignPut } from '../mods/s3/presignPut';
 import { s3Config } from '../common/config/s3';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../config/allowedTypes';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 export async function handleRequestUploadUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
+  }
 
   // Parse and validate body early — before any DB lookup so validation errors
   // are returned cheaply without hitting the database.
@@ -46,7 +53,7 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
     );
   }
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
   }
@@ -65,11 +72,13 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const attachmentId = randomUUID();
-  const s3Key = `attachments/${cardId}/${attachmentId}/${body.filename}`;
+  const shortId = await generateUniqueShortId('attachments');
+  const s3Key = `attachments/${resolvedCardId}/${attachmentId}/${body.filename}`;
 
   await db('attachments').insert({
     id: attachmentId,
-    card_id: cardId,
+    short_id: shortId,
+    card_id: resolvedCardId,
     uploaded_by: actorId,
     name: body.filename,
     type: 'FILE',

@@ -8,12 +8,21 @@ import {
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../config/visibleEventTypes';
 import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleCardActivity(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 },
+    );
+  }
+
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -35,7 +44,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   if (membershipError) return membershipError;
 
   const activities = await db('activities')
-    .where({ entity_id: cardId })
+    .where({ entity_id: resolvedCardId })
     .whereIn('action', VISIBLE_EVENT_TYPES)
     // [why] Secondary sort by id ensures deterministic ordering when two events share
     //       the same created_at timestamp (e.g. batch-emitted events or test fixtures).

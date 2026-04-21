@@ -6,6 +6,7 @@ export type BoardVisibility = 'PUBLIC' | 'PRIVATE' | 'WORKSPACE';
 
 export interface Board {
   id: string;
+  short_id?: string;
   workspaceId: string;
   title: string;
   state: BoardState;
@@ -16,6 +17,13 @@ export interface Board {
   /** Sub-type of the caller's GUEST role on this board. null when caller is a
    *  regular workspace member (OWNER/ADMIN/MEMBER/VIEWER). */
   callerGuestType?: 'VIEWER' | 'MEMBER' | null;
+}
+
+export interface ListCardHydration {
+  loaded: number;
+  total: number;
+  hasMore: boolean;
+  nextOffset: number | null;
 }
 
 // ---------- Board CRUD ----------
@@ -33,11 +41,49 @@ export async function listBoards({
 export async function getBoard({
   api,
   boardId,
+  initialCardsPerList,
 }: {
   api: { get: <T>(url: string) => Promise<T> };
   boardId: string;
-}): Promise<{ data: Board; includes: { lists: unknown[]; cards: unknown[] } }> {
-  return api.get(`/boards/${boardId}`);
+  initialCardsPerList?: number;
+}): Promise<{
+  data: Board;
+  includes: {
+    lists: unknown[];
+    cards: unknown[];
+    card_hydration?: Record<string, ListCardHydration>;
+  };
+}> {
+  const params =
+    typeof initialCardsPerList === 'number' && initialCardsPerList > 0
+      ? `?initialCardsPerList=${encodeURIComponent(String(initialCardsPerList))}`
+      : '';
+  return api.get(`/boards/${boardId}${params}`);
+}
+
+export async function listCardsByListBatch({
+  api,
+  listId,
+  limit,
+  offset,
+}: {
+  api: { get: <T>(url: string) => Promise<T> };
+  listId: string;
+  limit: number;
+  offset: number;
+}): Promise<{
+  data: unknown[];
+  metadata: {
+    total: number;
+    limit: number;
+    offset: number;
+    nextOffset: number | null;
+    hasMore: boolean;
+  };
+}> {
+  return api.get(
+    `/lists/${listId}/cards?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
+  );
 }
 
 export async function createBoard({

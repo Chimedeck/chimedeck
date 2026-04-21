@@ -10,7 +10,7 @@ export const routes: RouteConfig[] = [
     auth: true,
   },
   {
-    path: '/boards/:boardId',
+    path: '/b/:boardId',
     component: () =>
       import('./containers/BoardPage/BoardPage').then((m) => m.default),
     name: 'BoardPage',

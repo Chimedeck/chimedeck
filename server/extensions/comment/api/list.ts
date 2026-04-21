@@ -6,6 +6,7 @@ import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 interface ReactionRow {
   comment_id: string;
@@ -25,7 +26,15 @@ export async function handleListComments(req: Request, cardId: string): Promise<
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 },
+    );
+  }
+
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -51,7 +60,7 @@ export async function handleListComments(req: Request, cardId: string): Promise<
 
   const comments = await db('comments')
     .leftJoin('users', 'comments.user_id', 'users.id')
-    .where('comments.card_id', cardId)
+    .where('comments.card_id', resolvedCardId)
     .whereNull('comments.parent_id')
     .orderBy('comments.created_at', 'asc')
     .select(

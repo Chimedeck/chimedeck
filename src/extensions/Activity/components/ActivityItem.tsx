@@ -1,6 +1,7 @@
 // Human-readable description for a single activity event.
 import { Link } from 'react-router-dom';
 import translations from '../translations/en.json';
+import { cardPath } from '~/common/routing/shortUrls';
 
 export interface Activity {
   id: string;
@@ -16,7 +17,7 @@ export interface Activity {
 interface Props {
   activity: Activity;
   actorName?: string; // display name for actor_id if available
-  /** Board id — when supplied, card title in activity text becomes a clickable link. */
+  /** Legacy prop kept for backward compatibility; no longer used for card links. */
   boardId?: string;
 }
 
@@ -115,7 +116,7 @@ const ActivityItem = ({ activity, actorName, boardId }: Props) => {
       <span className="text-base">
         {before}
         <Link
-          to={`/boards/${boardId}?card=${cardId}`}
+          to={cardPath({ id: cardId })}
           className="font-medium underline underline-offset-2 transition-opacity hover:opacity-75"
         >
           {quotedValue}

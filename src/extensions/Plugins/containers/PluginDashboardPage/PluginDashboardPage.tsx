@@ -40,6 +40,7 @@ import {
   selectUpdateError,
 } from './PluginDashboardPage.duck';
 import type { BoardPlugin, Plugin, RegisterPluginBody, UpdatePluginBody } from '../../api';
+import { boardPath } from '~/common/routing/shortUrls';
 
 const defaultSettingsModal: PluginModalState = {
   open: false,
@@ -110,7 +111,7 @@ const PluginDashboardPage = () => {
   // Board members (MEMBER+) get no error and stay on the page normally.
   useEffect(() => {
     if (error && (error.includes('not-board-member') || error.includes('not-board-admin') || error.includes('403'))) {
-      navigate(`/boards/${boardId}`);
+      if (boardId) navigate(boardPath({ id: boardId }));
     }
   }, [error, boardId, navigate]);
 
@@ -221,7 +222,7 @@ const PluginDashboardPage = () => {
       <div className="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <button
-            onClick={() => navigate(`/boards/${boardId}`)}
+            onClick={() => boardId && navigate(boardPath({ id: boardId }))}
             className="text-subtle hover:text-base text-sm mb-1 flex items-center gap-1"
           >
             {translations['plugins.dashboard.backToBoard']}

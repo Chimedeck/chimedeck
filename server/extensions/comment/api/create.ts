@@ -15,12 +15,22 @@ import { syncMentions } from '../../../common/mentions/sync';
 import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 }
+    );
+  }
+
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -100,7 +110,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
         { status: 404 }
       );
     }
-    if (parentComment.card_id !== cardId) {
+    if (parentComment.card_id !== resolvedCardId) {
       return Response.json(
         { error: { code: 'bad-request', message: 'Parent comment does not belong to this card' } },
         { status: 400 }
@@ -158,13 +168,15 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   }
 
   const id = randomUUID();
+  const shortId = await generateUniqueShortId('comments');
   const trimmedContent = sanitizeRichText(body.content.trim());
   const idempotencyKey = body.idempotency_key?.trim() ?? null;
 
   await db.transaction(async (trx) => {
     await trx('comments').insert({
       id,
-      card_id: cardId,
+      short_id: shortId,
+      card_id: resolvedCardId,
       user_id: actorId,
       content: trimmedContent,
       idempotency_key: idempotencyKey,
@@ -190,7 +202,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       actorId,
       sourceType: 'comment',
       sourceId: id,
-      cardId,
+      cardId: resolvedCardId,
       boardId: board.id,
       cardTitle: card.title,
       boardName: board.title,
@@ -223,24 +235,24 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   const commentData = { ...comment, author_avatar_url: authorAvatarUrl };
 
   // commentPreview strips HTML tags and truncates to 120 chars.
-  const rawPreview = trimmedContent.replace(/<[^>]+>/g, '');
+  const rawPreview = trimmedContent.replaceAll(/<[^>]+>/g, '');
   const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
 
   await Promise.all([
     dispatchEvent({
       type: 'comment_added',
       boardId: board.id,
-      entityId: cardId,
+      entityId: resolvedCardId,
       actorId,
-      payload: { commentId: id, cardId, cardTitle: card.title },
+      payload: { commentId: id, cardId: resolvedCardId, cardTitle: card.title },
     }),
     writeActivity({
       entityType: 'card',
-      entityId: cardId,
+      entityId: resolvedCardId,
       boardId: board.id,
       action: 'comment_added',
       actorId,
-      payload: { commentId: id, cardId, cardTitle: card.title, commentPreview },
+      payload: { commentId: id, cardId: resolvedCardId, cardTitle: card.title, commentPreview },
     }),
   ]);
 
@@ -251,7 +263,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
         board.id,
         JSON.stringify({
           type: 'comment_reply_added',
-          payload: { card_id: cardId, parent_comment_id: parentId, reply: commentData },
+          payload: { card_id: resolvedCardId, parent_comment_id: parentId, reply: commentData },
         }),
       )
       .catch(() => {});
@@ -265,7 +277,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   dispatchDirectCardNotification({
     payload: { type: 'card_commented', cardTitle: card.title, commentPreview, commentId: id },
     boardId: board.id,
-    cardId,
+    cardId: resolvedCardId,
     actorId,
   }).catch(() => {});
 

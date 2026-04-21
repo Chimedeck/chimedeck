@@ -59,10 +59,15 @@ import { listAttachments } from '~/extensions/Attachments/api';
 let _mutationCounter = 0;
 const nextMutationId = () => `m${++_mutationCounter}`;
 
-const CardModalContainer = () => {
+interface CardModalContainerProps {
+  forcedCardId?: string;
+  onCloseCard?: () => void;
+}
+
+const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerProps) => {
   const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
-  const cardId = searchParams.get('card');
+  const cardId = forcedCardId ?? searchParams.get('card');
 
   const card = useAppSelector(selectCardDetail);
   const labels = useAppSelector(selectCardDetailLabels);
@@ -116,12 +121,16 @@ const CardModalContainer = () => {
   }, [boardId, api]);
 
   const handleClose = useCallback(() => {
+    if (onCloseCard) {
+      onCloseCard();
+      return;
+    }
     setSearchParams((p) => {
       const next = new URLSearchParams(p);
       next.delete('card');
       return next;
     });
-  }, [setSearchParams]);
+  }, [onCloseCard, setSearchParams]);
 
   // ── Title / description / due date ─────────────────────────────────────
   const handleTitleSave = useCallback(

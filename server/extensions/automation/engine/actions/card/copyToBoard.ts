@@ -14,6 +14,7 @@ import { broadcast } from '../../../../realtime/mods/rooms/broadcast';
 import { dispatchEvent } from '../../../../../mods/events/dispatch';
 import { env } from '../../../../../config/env';
 import type { ActionHandler, ActionContext } from '../../../common/types';
+import { generateUniqueShortId } from '../../../../../common/ids/shortId';
 
 const configSchema = z.object({
   targetBoardId: z.string().min(1),
@@ -73,8 +74,10 @@ export const cardCopyToBoardAction: ActionHandler = {
 
     // Insert the copied card on the target board.
     const newCardId = randomUUID();
+    const shortId = await generateUniqueShortId('cards');
     await trx('cards').insert({
       id: newCardId,
+      short_id: shortId,
       list_id: config.targetListId,
       title: card.title,
       description: card.description ?? null,
@@ -95,8 +98,10 @@ export const cardCopyToBoardAction: ActionHandler = {
       .first();
     if (sourceBoard) {
       const sourceCardUrl = `${env.APP_BASE_URL}/boards/${sourceBoard.board_id}/cards/${cardId}`;
+      const attachmentShortId = await generateUniqueShortId('attachments');
       await trx('attachments').insert({
         id: randomUUID(),
+        short_id: attachmentShortId,
         card_id: newCardId,
         uploaded_by: actorId ?? null,
         name: card.title,

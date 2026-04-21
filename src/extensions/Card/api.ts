@@ -2,6 +2,7 @@
 
 export interface Card {
   id: string;
+  short_id?: string;
   list_id: string;
   title: string;
   description: string | null;
@@ -74,7 +75,7 @@ export interface Checklist {
 export interface CardDetail extends Card {
   includes: {
     list: { id: string; title: string; board_id: string; position: string; archived: boolean };
-    board: { id: string; title: string };
+    board: { id: string; short_id?: string; title: string };
     labels: Label[];
     members: CardMember[];
     checklists: Checklist[];

@@ -12,12 +12,18 @@ import { enqueueScan } from '../mods/virusScan/enqueue';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleConfirmUpload(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
+  }
+
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
   }
@@ -46,7 +52,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   }
 
   const attachment = await db('attachments')
-    .where({ id: body.attachmentId, card_id: cardId, type: 'FILE' })
+    .where({ id: body.attachmentId, card_id: resolvedCardId, type: 'FILE' })
     .first();
 
   if (!attachment) {
@@ -80,24 +86,24 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   await dispatchEvent({
     type: 'attachment_added',
     boardId: board.id,
-    entityId: cardId,
+    entityId: resolvedCardId,
     actorId,
-    payload: { attachmentId: attachment.id, cardId, name: attachment.name },
+    payload: { attachmentId: attachment.id, cardId: resolvedCardId, name: attachment.name },
   });
 
   await writeActivity({
     entityType: 'card',
-    entityId: cardId,
+    entityId: resolvedCardId,
     boardId: board.id,
     action: 'attachment_added',
     actorId,
-    payload: { attachmentId: attachment.id, cardId, name: attachment.name, cardTitle: card.title },
+    payload: { attachmentId: attachment.id, cardId: resolvedCardId, name: attachment.name, cardTitle: card.title },
   });
 
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_added', entity_id: cardId, payload: { attachmentId: attachment.id } }),
+      JSON.stringify({ type: 'attachment_added', entity_id: resolvedCardId, payload: { attachmentId: attachment.id } }),
     )
     .catch(() => {});
 

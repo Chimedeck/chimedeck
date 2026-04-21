@@ -1,5 +1,5 @@
 // Tiptap inline atom node for card-URL references.
-// When the user pastes a card URL (e.g. /boards/{id}?card={id}) it renders
+// When the user pastes a card URL (e.g. /c/{id}) it renders
 // as a card chip showing the card title and list status instead of a raw link.
 // The chip can be selected (click / arrow keys) and a BubbleMenu appears.
 import { Node, mergeAttributes, nodePasteRule } from '@tiptap/core';
@@ -7,16 +7,14 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import CardReferenceChip from '../components/CardReferenceChip';
 
 // Matches full card URLs pasted as plain text.
-// e.g. http://localhost:5173/boards/abc123?card=def456
-//  or  http://host/boards/abc123?foo=1&card=def456
-const CARD_URL_PASTE_RE =
-  /https?:\/\/[^\s/]*\/boards\/[a-zA-Z0-9]+(?:\?[^\s#]*&?card=[a-zA-Z0-9]+[^\s]*)/g;
+// e.g. http://localhost:5173/c/Ab12Cd34
+const CARD_URL_PASTE_RE = /https?:\/\/[^\s/]*\/c\/[a-zA-Z0-9]+(?:[/?#][^\s]*)?/g;
 
-/** Returns true when `url` points to a card detail (has /boards/{id}?…card={id}). */
+/** Returns true when `url` points to a card detail URL (/c/{cardId}). */
 export function isCardUrl(url: string): boolean {
   try {
     const u = new URL(url, 'http://x');
-    return u.pathname.includes('/boards/') && !!u.searchParams.get('card');
+    return /^\/c\/[A-Za-z0-9]+$/.test(u.pathname);
   } catch {
     return false;
   }
@@ -25,7 +23,9 @@ export function isCardUrl(url: string): boolean {
 /** Extracts the cardId query param from a card URL, or returns null. */
 export function parseCardIdFromUrl(url: string): string | null {
   try {
-    return new URL(url, 'http://x').searchParams.get('card');
+    const pathname = new URL(url, 'http://x').pathname;
+    const match = pathname.match(/^\/c\/([A-Za-z0-9]+)$/);
+    return match?.[1] ?? null;
   } catch {
     return null;
   }

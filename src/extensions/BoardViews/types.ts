@@ -47,3 +47,7 @@ export interface PaginatedResponse<T> {
     hasMore: boolean;
   };
 }
+
+export type BoardTimelineItem =
+  | { kind: 'activity'; data: BoardActivityEntry }
+  | { kind: 'comment'; data: BoardComment };

@@ -12,6 +12,7 @@ import VisibilitySelector, { type BoardVisibility } from './VisibilitySelector';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
 import BackgroundPicker from '~/extensions/Board/containers/BoardSettings/BackgroundPicker';
 import BoardCustomFieldsPanel from '~/extensions/CustomFields/BoardCustomFieldsPanel';
+import { boardPath } from '~/common/routing/shortUrls';
 
 interface Props {
   onClose: () => void;
@@ -68,7 +69,8 @@ const BoardSettings = ({ onClose, currentUserId, isGuest = false }: Props) => {
 
   const handlePluginsClick = () => {
     onClose();
-    navigate(`/boards/${boardId}/settings/plugins`);
+    if (!boardId) return;
+    navigate(`${boardPath({ id: boardId })}/settings/plugins`);
   };
 
   return (

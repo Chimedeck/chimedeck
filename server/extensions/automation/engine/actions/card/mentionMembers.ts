@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import type { ActionHandler, ActionContext } from '../../../common/types';
+import { generateUniqueShortId } from '../../../../../common/ids/shortId';
 
 const configSchema = z.object({
   memberIds: z.array(z.string().min(1)).min(1),
@@ -30,9 +31,11 @@ export const cardMentionMembersAction: ActionHandler = {
       .join(' ');
 
     const content = config.text ? `${mentions} ${config.text}` : mentions;
+    const shortId = await generateUniqueShortId('comments');
 
     await trx('comments').insert({
       id: randomUUID(),
+      short_id: shortId,
       card_id: cardId,
       user_id: evalContext.actorId ?? null,
       content,

@@ -9,6 +9,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { s3Client, s3Config } from '../../common/config/s3';
+import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 
 export async function handleMultipartAbort(
   req: Request,
@@ -17,6 +18,11 @@ export async function handleMultipartAbort(
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
+  }
 
   // The S3 key is required to abort — clients pass it as a query param
   const url = new URL(req.url);
@@ -28,7 +34,7 @@ export async function handleMultipartAbort(
     );
   }
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
@@ -46,7 +52,9 @@ export async function handleMultipartAbort(
   if (roleError) return roleError;
 
   // Verify the S3 key belongs to a pending attachment on this card
-  const attachment = await db('attachments').where({ card_id: cardId, s3_key: s3Key, status: 'PENDING' }).first();
+  const attachment = await db('attachments')
+    .where({ card_id: resolvedCardId, s3_key: s3Key, status: 'PENDING' })
+    .first();
   if (!attachment) {
     return Response.json(
       { name: 'attachment-not-found', data: { message: 'No pending attachment matches the provided key' } },

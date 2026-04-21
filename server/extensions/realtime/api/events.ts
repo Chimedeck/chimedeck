@@ -3,12 +3,14 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { readEventsSince } from '../../../mods/events/read';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleGetBoardEvents(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const resolvedBoardId = await resolveBoardId(boardId);
+  const board = resolvedBoardId ? await db('boards').where({ id: resolvedBoardId }).first() : null;
   if (!board) {
     return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
@@ -17,7 +19,7 @@ export async function handleGetBoardEvents(req: Request, boardId: string): Promi
   const sinceParam = url.searchParams.get('since') ?? '0';
   const since = isNaN(Number(sinceParam)) ? 0 : Number(sinceParam);
 
-  const events = await readEventsSince({ boardId, since, limit: 100 });
+  const events = await readEventsSince({ boardId: resolvedBoardId, since, limit: 100 });
   const hasMore = events.length === 100;
   const latestSequence = events.length > 0 ? events[events.length - 1]!.sequence.toString() : sinceParam;
 

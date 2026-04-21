@@ -13,13 +13,21 @@ import { handleGetPlugin } from './registry/get';
 import { handleCreatePlugin } from './registry/create';
 import { handleUpdatePlugin } from './registry/update';
 import { handleDeletePlugin } from './registry/delete';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a plugin route, otherwise null.
 export async function pluginsRouter(req: Request, pathname: string): Promise<Response | null> {
   // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId[/allowed-domains|/token]]
   const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?(\/allowed-domains|\/token)?$/);
   if (boardPluginsMatch) {
-    const boardId = boardPluginsMatch[1] as string;
+    const boardIdentifier = boardPluginsMatch[1] as string;
+    const boardId = await resolveBoardId(boardIdentifier);
+    if (!boardId) {
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 },
+      );
+    }
     const pluginSegment = boardPluginsMatch[2] ?? '';
     const subResource = boardPluginsMatch[3] ?? '';
 

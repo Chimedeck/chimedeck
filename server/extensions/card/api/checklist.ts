@@ -11,6 +11,7 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { writeActivity } from '../../activity/mods/write';
 import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
@@ -349,8 +350,10 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
   const position = between(lastCard ? lastCard.position : '', HIGH_SENTINEL);
 
   const newCardId = randomUUID();
+  const shortId = await generateUniqueShortId('cards');
   await db('cards').insert({
     id: newCardId,
+    short_id: shortId,
     list_id: parentCard.list_id,
     title: item.title,
     description: null,

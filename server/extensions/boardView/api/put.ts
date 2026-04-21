@@ -4,6 +4,7 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { db } from '../../../common/db';
 import { upsertViewPreference } from '../model';
 import { VALID_VIEW_TYPES, type ViewType } from '../types';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function handlePutViewPreference(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -11,7 +12,8 @@ export async function handlePutViewPreference(req: Request, boardId: string): Pr
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const resolvedBoardId = await resolveBoardId(boardId);
+  const board = resolvedBoardId ? await db('boards').where({ id: resolvedBoardId }).first() : null;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -38,7 +40,7 @@ export async function handlePutViewPreference(req: Request, boardId: string): Pr
     );
   }
 
-  await upsertViewPreference({ userId, boardId, viewType: viewType as ViewType });
+  await upsertViewPreference({ userId, boardId: board.id, viewType: viewType as ViewType });
 
   return Response.json({ data: { viewType } });
 }

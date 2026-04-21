@@ -2,10 +2,12 @@
 // Sprint 18: provides { board, listOrder, lists, cardsByList, cards, status }.
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
-import { getBoard } from '../api';
-import type { Board } from '../api';
+import { getBoard, listCardsByListBatch, type Board, type ListCardHydration } from '../api';
 import type { List } from '../../List/api';
 import type { Card } from '../../Card/api';
+
+const INITIAL_CARDS_PER_LIST = 50;
+const DEFAULT_HYDRATION_BATCH_SIZE = 50;
 
 // ---------- State ----------
 
@@ -16,6 +18,7 @@ export interface BoardState {
   cardsByList: Record<string, string[]>; // listId → ordered card IDs
   cards: Record<string, Card>;
   status: 'idle' | 'loading' | 'error';
+  listHydration: Record<string, ListCardHydration & { loading: boolean; error: boolean }>;
   /** Snapshot taken at drag-start; used for rollback on API failure */
   dragSnapshot: {
     listOrder: string[];
@@ -30,6 +33,7 @@ const initialState: BoardState = {
   cardsByList: {},
   cards: {},
   status: 'idle',
+  listHydration: {},
   dragSnapshot: null,
 };
 
@@ -38,7 +42,36 @@ const initialState: BoardState = {
 export const fetchBoardDataThunk = createAppAsyncThunk(
   'board/fetchData',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    return getBoard({ api: (extra as { api: { get: <T>(url: string) => Promise<T> } }).api, boardId });
+    return getBoard({
+      api: (extra as { api: { get: <T>(url: string) => Promise<T> } }).api,
+      boardId,
+      initialCardsPerList: INITIAL_CARDS_PER_LIST,
+    });
+  },
+);
+
+export const fetchListCardsBatchThunk = createAppAsyncThunk(
+  'board/fetchListCardsBatch',
+  async (
+    {
+      listId,
+      limit = DEFAULT_HYDRATION_BATCH_SIZE,
+      offset,
+    }: { listId: string; limit?: number; offset: number },
+    { extra },
+  ) => {
+    const response = await listCardsByListBatch({
+      api: (extra as { api: { get: <T>(url: string) => Promise<T> } }).api,
+      listId,
+      limit,
+      offset,
+    });
+
+    return {
+      listId,
+      data: response.data as Card[],
+      metadata: response.metadata,
+    };
   },
 );
 
@@ -265,15 +298,85 @@ const boardSlice = createSlice({
         // Normalise cards
         state.cards = Object.fromEntries(rawCards.map((c) => [c.id, c]));
         state.cardsByList = {};
+        state.listHydration = {};
         for (const list of sortedLists) {
-          state.cardsByList[list.id] = rawCards
+          const cardsInList = rawCards
             .filter((c) => c.list_id === list.id && !c.archived)
             .sort((a, b) => (String(a.position) < String(b.position) ? -1 : 1))
             .map((c) => c.id);
+          state.cardsByList[list.id] = cardsInList;
+
+          const hydrationFromServer = action.payload.includes.card_hydration?.[list.id];
+          if (hydrationFromServer) {
+            state.listHydration[list.id] = {
+              ...hydrationFromServer,
+              loading: false,
+              error: false,
+            };
+            continue;
+          }
+
+          state.listHydration[list.id] = {
+            loaded: cardsInList.length,
+            total: cardsInList.length,
+            hasMore: false,
+            nextOffset: null,
+            loading: false,
+            error: false,
+          };
         }
       })
       .addCase(fetchBoardDataThunk.rejected, (state) => {
         state.status = 'error';
+      })
+      .addCase(fetchListCardsBatchThunk.pending, (state, action) => {
+        const { listId } = action.meta.arg;
+        const current = state.listHydration[listId];
+        state.listHydration[listId] = {
+          loaded: current?.loaded ?? 0,
+          total: current?.total ?? 0,
+          hasMore: current?.hasMore ?? true,
+          nextOffset: current?.nextOffset ?? action.meta.arg.offset,
+          loading: true,
+          error: false,
+        };
+      })
+      .addCase(fetchListCardsBatchThunk.fulfilled, (state, action) => {
+        const { listId, data, metadata } = action.payload;
+        const currentIds = state.cardsByList[listId] ?? [];
+        const mergedIds = [...currentIds];
+
+        data.forEach((card) => {
+          state.cards[card.id] = card;
+          if (!mergedIds.includes(card.id)) mergedIds.push(card.id);
+        });
+
+        mergedIds.sort((a, b) => {
+          const left = state.cards[a];
+          const right = state.cards[b];
+          if (!left || !right) return 0;
+          return String(left.position) < String(right.position) ? -1 : 1;
+        });
+
+        state.cardsByList[listId] = mergedIds;
+        state.listHydration[listId] = {
+          loaded: mergedIds.length,
+          total: metadata.total,
+          hasMore: metadata.hasMore,
+          nextOffset: metadata.nextOffset,
+          loading: false,
+          error: false,
+        };
+      })
+      .addCase(fetchListCardsBatchThunk.rejected, (state, action) => {
+        const { listId } = action.meta.arg;
+        const current = state.listHydration[listId];
+        if (!current) return;
+        state.listHydration[listId] = {
+          ...current,
+          loading: false,
+          error: true,
+        };
       });
   },
 });
@@ -293,3 +396,5 @@ export const selectCardsByList = (state: unknown) =>
   (state as StateWithBoard).board.cardsByList;
 export const selectCards = (state: unknown) => (state as StateWithBoard).board.cards;
 export const selectBoardStatus = (state: unknown) => (state as StateWithBoard).board.status;
+export const selectListHydration = (state: unknown) =>
+  (state as StateWithBoard).board.listHydration;

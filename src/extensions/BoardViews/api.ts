@@ -4,6 +4,7 @@ import { apiClient } from '~/common/api/client';
 import type {
   BoardActivityEntry,
   BoardComment,
+  BoardTimelineItem,
   ArchivedCard,
   PaginatedResponse,
 } from './types';
@@ -34,6 +35,20 @@ export async function getBoardComments({
   const params = new URLSearchParams({ limit: String(limit) });
   if (cursor) params.set('cursor', cursor);
   return apiClient.get(`/boards/${boardId}/comments?${params}`);
+}
+
+export async function getBoardActivities({
+  boardId,
+  cursor,
+  limit = 50,
+}: {
+  boardId: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<PaginatedResponse<BoardTimelineItem>> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) params.set('cursor', cursor);
+  return apiClient.get(`/boards/${boardId}/activities?${params}`);
 }
 
 export async function getArchivedCards({

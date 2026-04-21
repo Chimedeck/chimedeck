@@ -12,6 +12,7 @@ import { s3Client, s3Config } from '../../common/config/s3';
 import { enqueueScan } from '../../mods/virusScan/enqueue';
 import { publisher } from '../../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../../mods/events/write';
+import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 
 interface CompletedPart {
   partNumber: number;
@@ -23,6 +24,11 @@ interface CompletedPart {
 export async function handleMultipartComplete(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
+  }
 
   let body: { uploadId?: string; key?: string; parts?: CompletedPart[] };
   try {
@@ -38,7 +44,7 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
     );
   }
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
@@ -56,7 +62,9 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   if (roleError) return roleError;
 
   // Verify the S3 key belongs to a pending attachment on this card
-  const attachment = await db('attachments').where({ card_id: cardId, s3_key: body.key, status: 'PENDING' }).first();
+  const attachment = await db('attachments')
+    .where({ card_id: resolvedCardId, s3_key: body.key, status: 'PENDING' })
+    .first();
   if (!attachment) {
     return Response.json(
       { name: 'attachment-not-found', data: { message: 'No pending attachment matches the provided key' } },
@@ -110,15 +118,15 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   await writeEvent({
     type: 'attachment_added',
     boardId: board.id,
-    entityId: cardId,
+    entityId: resolvedCardId,
     actorId,
-    payload: { attachmentId: attachment.id, cardId },
+    payload: { attachmentId: attachment.id, cardId: resolvedCardId },
   });
 
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_added', entity_id: cardId, payload: { attachmentId: attachment.id } }),
+      JSON.stringify({ type: 'attachment_added', entity_id: resolvedCardId, payload: { attachmentId: attachment.id } }),
     )
     .catch(() => {});
 

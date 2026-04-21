@@ -4,17 +4,23 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { cache } from '../../../mods/cache/index';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleGetPresence(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const resolvedBoardId = await resolveBoardId(boardId);
+  if (!resolvedBoardId) {
+    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+  }
+
+  const board = await db('boards').where({ id: resolvedBoardId }).first();
   if (!board) {
     return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
 
-  const keys = await cache.keys(`presence:${boardId}:*`);
+  const keys = await cache.keys(`presence:${resolvedBoardId}:*`);
   const userIds = keys.map((k) => k.split(':')[2]).filter(Boolean) as string[];
 
   // Sprint 13: return full User objects including avatarUrl

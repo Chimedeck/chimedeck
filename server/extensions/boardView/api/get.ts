@@ -4,6 +4,7 @@
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { db } from '../../../common/db';
 import { getViewPreference } from '../model';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleGetViewPreference(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -11,7 +12,8 @@ export async function handleGetViewPreference(req: Request, boardId: string): Pr
 
   const userId = (req as AuthenticatedRequest).currentUser!.id;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const resolvedBoardId = await resolveBoardId(boardId);
+  const board = resolvedBoardId ? await db('boards').where({ id: resolvedBoardId }).first() : null;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -19,7 +21,7 @@ export async function handleGetViewPreference(req: Request, boardId: string): Pr
     );
   }
 
-  const pref = await getViewPreference({ userId, boardId });
+  const pref = await getViewPreference({ userId, boardId: board.id });
   const viewType = pref?.view_type ?? 'KANBAN';
 
   return Response.json({ data: { viewType } });

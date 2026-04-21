@@ -21,6 +21,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   if (writableError) return writableError;
 
   const board = boardReq.board!;
+  const canonicalBoardId = board.id;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -47,7 +48,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   }
 
   // Fetch active lists for this board
-  const activeLists = await db('lists').where({ board_id: boardId, archived: false });
+  const activeLists = await db('lists').where({ board_id: canonicalBoardId, archived: false });
 
   // Validate count matches — archived lists are excluded (requirements §5.4)
   if (body.order.length !== activeLists.length) {
@@ -85,11 +86,11 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   });
 
   const updatedLists = await db('lists')
-    .where({ board_id: boardId, archived: false })
+    .where({ board_id: canonicalBoardId, archived: false })
     .orderBy('position', 'asc');
 
   // Send full lists array so client can reorder from authoritative positions
-  await writeEvent({ type: 'list_reordered', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { boardId, lists: updatedLists } });
+  await writeEvent({ type: 'list_reordered', boardId: canonicalBoardId, entityId: canonicalBoardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { boardId: canonicalBoardId, lists: updatedLists } });
 
   return Response.json({ data: updatedLists });
 }

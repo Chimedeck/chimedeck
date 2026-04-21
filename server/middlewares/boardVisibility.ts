@@ -19,6 +19,7 @@ import {
   type Role,
 } from './permissionManager';
 import type { BoardVisibility, GuestType } from '../extensions/board/types';
+import { resolveBoardId, resolveCardId, resolveListId } from '../common/ids/resolveEntityId';
 
 export interface BoardVisibilityScopedRequest extends WorkspaceScopedRequest {
   // Set when the authenticated caller is a GUEST; reflects their sub-type on this board.
@@ -45,7 +46,15 @@ export async function applyBoardVisibility(
   req: Request,
   boardId: string,
 ): Promise<Response | null> {
-  const board = await db('boards').where({ id: boardId }).first();
+  const resolvedBoardId = await resolveBoardId(boardId);
+  if (!resolvedBoardId) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 },
+    );
+  }
+
+  const board = await db('boards').where({ id: resolvedBoardId }).first();
 
   if (!board) {
     return Response.json(
@@ -76,7 +85,7 @@ export async function applyBoardVisibility(
   // Applies to PRIVATE and WORKSPACE boards.
   if (callerRole === 'GUEST') {
     const guestAccess = await db('board_guest_access')
-      .where({ user_id: userId, board_id: boardId })
+      .where({ user_id: userId, board_id: resolvedBoardId })
       .first();
     if (!guestAccess) {
       return Response.json(
@@ -97,7 +106,7 @@ export async function applyBoardVisibility(
   // PRIVATE boards: workspace MEMBER and VIEWER require an explicit board_members entry.
   if (board.visibility === 'PRIVATE') {
     const boardMember = await db('board_members')
-      .where({ user_id: userId, board_id: boardId })
+      .where({ user_id: userId, board_id: resolvedBoardId })
       .first();
     if (!boardMember) {
       return Response.json(
@@ -117,7 +126,8 @@ export async function applyBoardVisibilityFromList(
   req: Request,
   listId: string,
 ): Promise<Response | null> {
-  const list = await db('lists').where({ id: listId }).first();
+  const resolvedListId = await resolveListId(listId);
+  const list = resolvedListId ? await db('lists').where({ id: resolvedListId }).first() : null;
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -133,7 +143,15 @@ export async function applyBoardVisibilityFromCard(
   req: Request,
   cardId: string,
 ): Promise<Response | null> {
-  const card = await db('cards').where({ id: cardId }).first();
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 },
+    );
+  }
+
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },

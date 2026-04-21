@@ -31,6 +31,7 @@ import {
 import { handleListDueCards } from './dueDate';
 import { handlePatchCardDescription } from './patch';
 import { handlePatchCardMoney } from './money';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a card route, otherwise null.
 export async function cardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -89,7 +90,14 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
   // Card-scoped routes: /api/v1/cards/:id[/...]
   const cardMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)(\/.*)?$/);
   if (cardMatch) {
-    const cardId = cardMatch[1] as string;
+    const cardIdentifier = cardMatch[1] as string;
+    const cardId = await resolveCardId(cardIdentifier);
+    if (!cardId) {
+      return Response.json(
+        { error: { code: 'card-not-found', message: 'Card not found' } },
+        { status: 404 },
+      );
+    }
     const sub = cardMatch[2] ?? '';
 
     // Enforce board visibility by resolving the board from the card.

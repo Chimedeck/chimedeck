@@ -32,13 +32,27 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
+  const url = new URL(req.url);
+  const rawLimit = Number.parseInt(url.searchParams.get('limit') ?? '0', 10);
+  const rawOffset = Number.parseInt(url.searchParams.get('offset') ?? '0', 10);
+  const hasPagination = Number.isFinite(rawLimit) && rawLimit > 0;
+  const limit = hasPagination ? Math.min(rawLimit, 100) : null;
+  const offset = hasPagination && Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0;
+
+  const totalRow = await db('cards')
+    .where({ list_id: listId, archived: false })
+    .count<{ count: string }[]>('* as count')
+    .first();
+  const total = Number(totalRow?.count ?? 0);
+
   // WHY: aggregate labels and members in a single query so card tiles have
   // all data needed for Sprint 27 (label chips) and Sprint 28 (member avatars).
-  const rows = await db('cards as c')
+  const cardsBaseQuery = db('cards as c')
     .where({ 'c.list_id': listId, 'c.archived': false })
     .orderBy('c.position', 'asc')
     .select(
       'c.id',
+      'c.short_id',
       'c.list_id',
       'c.title',
       'c.description',
@@ -75,6 +89,12 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
     .leftJoin('users as u', 'u.id', 'cm.user_id')
     .groupBy('c.id');
 
+  if (hasPagination && limit !== null) {
+    cardsBaseQuery.limit(limit).offset(offset);
+  }
+
+  const rows = await cardsBaseQuery;
+
   const data = await Promise.all(
     rows.map(async (row) => ({
       ...row,
@@ -90,5 +110,21 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
     data as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
   );
 
-  return Response.json({ data: cardsWithCovers });
+  if (!hasPagination || limit === null) {
+    return Response.json({ data: cardsWithCovers });
+  }
+
+  const loaded = offset + cardsWithCovers.length;
+  const hasMore = loaded < total;
+
+  return Response.json({
+    data: cardsWithCovers,
+    metadata: {
+      total,
+      limit,
+      offset,
+      nextOffset: hasMore ? loaded : null,
+      hasMore,
+    },
+  });
 }

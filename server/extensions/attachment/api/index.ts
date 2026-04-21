@@ -12,6 +12,7 @@ import { handleMultipartStart } from './multipart/start';
 import { handleMultipartPartUrl } from './multipart/partUrl';
 import { handleMultipartComplete } from './multipart/complete';
 import { handleMultipartAbort } from './multipart/abort';
+import { resolveAttachmentId } from '../../../common/ids/resolveEntityId';
 
 export async function attachmentRouter(req: Request, pathname: string): Promise<Response | null> {
   // POST /api/v1/cards/:id/attachments/multipart/start
@@ -65,25 +66,42 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   // GET /api/v1/attachments/:id/view — secure file proxy (auth required)
   const viewMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/view$/);
   if (viewMatch && req.method === 'GET') {
-    return handleViewAttachment(req, viewMatch[1] as string);
+    const attachmentId = await resolveAttachmentId(viewMatch[1] as string);
+    if (!attachmentId) {
+      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+    }
+    return handleViewAttachment(req, attachmentId);
   }
 
   // GET /api/v1/attachments/:id/thumbnail — secure thumbnail proxy (auth required)
   const thumbnailMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)\/thumbnail$/);
   if (thumbnailMatch && req.method === 'GET') {
-    return handleThumbnailAttachment(req, thumbnailMatch[1] as string);
+    const attachmentId = await resolveAttachmentId(thumbnailMatch[1] as string);
+    if (!attachmentId) {
+      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+    }
+    return handleThumbnailAttachment(req, attachmentId);
   }
 
   // PATCH /api/v1/attachments/:id — update alias
   const patchMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)$/);
   if (patchMatch && req.method === 'PATCH') {
-    return handlePatchAttachment(req, patchMatch[1] as string);
+    const attachmentId = await resolveAttachmentId(patchMatch[1] as string);
+    if (!attachmentId) {
+      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+    }
+    return handlePatchAttachment(req, attachmentId);
   }
 
   // DELETE /api/v1/attachments/:id
-  const deleteMatch = pathname.match(/^\/api\/v1\/attachments\/([^/]+)$/);
+  const deleteRe = /^\/api\/v1\/attachments\/([^/]+)$/;
+  const deleteMatch = deleteRe.exec(pathname);
   if (deleteMatch && req.method === 'DELETE') {
-    return handleDeleteAttachment(req, deleteMatch[1] as string);
+    const attachmentId = await resolveAttachmentId(deleteMatch[1] as string);
+    if (!attachmentId) {
+      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+    }
+    return handleDeleteAttachment(req, attachmentId);
   }
 
   // GET /api/v1/link-preview?url=...

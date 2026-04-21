@@ -25,6 +25,7 @@ import BoardCard from '~/extensions/Board/components/BoardCard';
 import CreateBoardModal from '~/extensions/Board/components/CreateBoardModal';
 import Button from '~/common/components/Button';
 import { StarIcon } from '@heroicons/react/24/solid';
+import { boardPath } from '~/common/routing/shortUrls';
 
 const WorkspaceDashboard = () => {
   const dispatch = useAppDispatch();
@@ -89,7 +90,7 @@ const WorkspaceDashboard = () => {
             )}
             <BoardCard
               board={board}
-              onClick={() => navigate(`/boards/${board.id}`)}
+              onClick={() => navigate(boardPath(board))}
               onArchive={() => handleArchive(board.id)}
               onDelete={() => handleDelete(board.id)}
               onDuplicate={() => handleDuplicate(board.id)}

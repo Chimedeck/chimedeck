@@ -8,6 +8,7 @@ import type { Card } from '../../../Card/api';
 import ListHeader from '../../components/ListHeader';
 import CardItem from '../../../Card/components/CardItem';
 import type { CustomFieldValue } from '../../../CustomFields/types';
+import type { ListCardHydration } from '../../../Board/api';
 import AddCardForm from '../../../Card/components/AddCardForm';
 import Button from '../../../../common/components/Button';
 
@@ -37,6 +38,7 @@ interface Props {
   dragPlaceholderHeight?: number;
   /** Active dragged card id so we can hide source slot and avoid double gaps. */
   activeDragCardId?: string | null;
+  hydration?: (ListCardHydration & { loading: boolean; error: boolean }) | undefined;
 }
 
 const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldValue[] = [];
@@ -60,6 +62,7 @@ const SortableListColumn = ({
   dragPlaceholderIndex,
   dragPlaceholderHeight,
   activeDragCardId = null,
+  hydration,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
@@ -164,6 +167,9 @@ const SortableListColumn = ({
 
       {/* Add card footer — hidden for VIEWER guests */}
       <div className="px-1 pb-2">
+        {hydration?.loading && (
+          <p className="mb-2 px-2 text-xs text-muted">Loading more cards...</p>
+        )}
         {!isViewerGuest && (addingCard ? (
           <AddCardForm
             listId={list.id}

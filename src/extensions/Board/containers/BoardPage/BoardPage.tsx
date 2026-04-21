@@ -8,7 +8,7 @@
 // Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
 // Sprint 116: Health Check fifth tab (HEALTH_CHECK_ENABLED flag).
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
@@ -20,7 +20,8 @@ import {
   selectCardsByList,
   selectCards,
   selectBoardStatus,
-} from '../../slices/boardSlice';import BoardHeader from '../../components/BoardHeader';
+} from '../../slices/boardSlice';
+import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
 import { useBoardCardFieldValues } from '../../../CustomFields/api';
 import CardModalContainer from '../../../Card/containers/CardModal';
@@ -29,7 +30,7 @@ import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
 import { updateBoard, archiveBoard, deleteBoard, starBoard, unstarBoard } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists } from '../../../List/api';
-import { createCard } from '../../../Card/api';
+import { createCard, getCard } from '../../../Card/api';
 import { moveCard } from '../../api/card';
 import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
 import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
@@ -37,8 +38,7 @@ import { usePollingFallback } from '../../../Realtime/PollingFallback';
 import { selectAuthToken, selectAuthUser } from '../../../Auth/duck/authDuck';
 import { apiClient } from '~/common/api/client';
 import PluginIframeContainer from '../../../Plugins/iframeHost/PluginIframeContainer';
-import BoardActivityPanel from '../../../BoardViews/BoardActivityPanel';
-import BoardCommentsPanel from '../../../BoardViews/BoardCommentsPanel';
+import BoardActivitiesPanel from '../../../BoardViews/BoardActivitiesPanel';
 import BoardArchivedCardsPanel from '../../../BoardViews/BoardArchivedCardsPanel';
 import BoardViewSwitcher from '../../../BoardViewSwitcher/BoardViewSwitcher';
 import { selectActiveView } from '../../../BoardViewSwitcher/viewPreference.slice';
@@ -66,20 +66,16 @@ import { canBoardGuestWrite } from '../../mods/guestPermissions';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
 import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthCheckConfig';
-
-// Injected by app bootstrap (same pattern as other containers)
-declare const __api__: {
-  get: <T>(url: string) => Promise<T>;
-  post: <T>(url: string, data: unknown) => Promise<T>;
-  patch: <T>(url: string, data?: unknown) => Promise<T>;
-  delete: <T>(url: string) => Promise<T>;
-};
+import { boardPath, cardPath } from '~/common/routing/shortUrls';
 
 const BoardPage = () => {
   const dispatch = useAppDispatch();
-  const { boardId } = useParams<{ boardId: string }>();
+  const { boardId: boardRouteId, cardId: cardRouteId } = useParams<{ boardId?: string; cardId?: string }>();
   const navigate = useNavigate();
-  const [, setSearchParams] = useSearchParams();
+  const [resolvedBoardId, setResolvedBoardId] = useState<string | null>(null);
+  const [resolvedBoardRouteId, setResolvedBoardRouteId] = useState<string | null>(null);
+
+  const boardId = boardRouteId ?? resolvedBoardId ?? undefined;
 
   const board = useAppSelector(selectBoard);
   const listOrder = useAppSelector(selectListOrder);
@@ -92,6 +88,7 @@ const BoardPage = () => {
   const activeWorkspaceId = useAppSelector(selectActiveWorkspaceId);
   const boardWorkspaceId =
     board?.workspaceId ?? (board as { workspace_id?: string } | null)?.workspace_id;
+  const realtimeBoardId = board?.id ?? '';
   // Active board view type (KANBAN/TABLE/CALENDAR/TIMELINE) — managed by BoardViewSwitcher
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
@@ -108,18 +105,44 @@ const BoardPage = () => {
   // Use the shared axios client instead of a globalThis reference
   const api = apiClient;
 
+  // /c/:cardId route: resolve the parent board first so the board page can load.
+  useEffect(() => {
+    if (!cardRouteId || boardRouteId) return;
+    let cancelled = false;
+    getCard({ api, cardId: cardRouteId })
+      .then((res: { includes: { board: { id: string; short_id?: string | null } } }) => {
+        if (cancelled) return;
+        const resolvedId = res.includes.board.id;
+        const resolvedRouteId =
+          typeof res.includes.board.short_id === 'string' && res.includes.board.short_id.length > 0
+            ? res.includes.board.short_id
+            : resolvedId;
+        setResolvedBoardId(resolvedId);
+        setResolvedBoardRouteId(resolvedRouteId);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setResolvedBoardId(null);
+        setResolvedBoardRouteId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, boardRouteId, cardRouteId]);
+
   // ── Toast notifications ───────────────────────────────────────────────────
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const addToast = useCallback((message: string, variant: ToastItem['variant'] = 'error') => {
+  const addToast = useCallback((message: string, variant: ToastItem['variant'] | 'success' = 'error') => {
+    const normalizedVariant: ToastItem['variant'] = variant === 'success' ? 'info' : variant;
     const id = crypto.randomUUID();
-    setToasts((prev) => [...prev, { id, message, variant }]);
+    setToasts((prev) => [...prev, { id, message, variant: normalizedVariant }]);
   }, []);
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   // ── Active tab ────────────────────────────────────────────────────────────
-  type BoardTab = 'board' | 'activity' | 'comments' | 'archived-cards' | 'health-check';
+  type BoardTab = 'board' | 'activities' | 'archived-cards' | 'health-check';
   const [activeTab, setActiveTab] = useState<BoardTab>('board');
 
   // ── Board settings panel ─────────────────────────────────────────────────
@@ -188,9 +211,9 @@ const BoardPage = () => {
   } | null>(null);
 
   // ── Real-time sync (sprint-20) ────────────────────────────────────────────
-  const { handleEvent, lastSequence } = useBoardSync({ boardId: boardId ?? '' });
+  const { handleEvent, lastSequence } = useBoardSync({ boardId: realtimeBoardId });
   const { connectionState, pollingActive } = useWebSocket({
-    boardId: boardId ?? '',
+    boardId: realtimeBoardId,
     token: accessToken ?? '',
     lastSequence,
     onEvent: handleEvent,
@@ -204,7 +227,7 @@ const BoardPage = () => {
 
   // HTTP polling fallback: activates when WS has failed 3+ times
   usePollingFallback({
-    boardId: boardId ?? '',
+    boardId: realtimeBoardId,
     active: pollingActive,
     lastSequence,
     onEvents: (events) => { events.forEach(handleEvent); },
@@ -225,14 +248,24 @@ const BoardPage = () => {
   // Open card modal via URL param
   const handleCardClick = useCallback(
     (cardId: string) => {
-      setSearchParams((p) => {
-        const next = new URLSearchParams(p);
-        next.set('card', cardId);
-        return next;
-      });
+      const targetCard = cards[cardId] as { short_id?: string | null; title?: string | null } | undefined;
+      navigate(cardPath({
+        id: cardId,
+        ...(targetCard?.short_id ? { short_id: targetCard.short_id } : {}),
+        ...(targetCard?.title ? { title: targetCard.title } : {}),
+      }));
     },
-    [setSearchParams],
+    [cards, navigate],
   );
+
+  const handleRouteCardClose = useCallback(() => {
+    const boardRouteTarget = (board?.short_id as string | undefined) ?? resolvedBoardRouteId ?? boardId;
+    if (!boardRouteTarget) return;
+    navigate(boardPath({
+      id: boardRouteTarget,
+      ...(board?.title ? { title: board.title } : {}),
+    }));
+  }, [board, resolvedBoardRouteId, boardId, navigate]);
 
   // ── Board title ─────────────────────────────────────────────────────────
   const handleTitleSave = useCallback(async (title: string) => {
@@ -464,8 +497,7 @@ const BoardPage = () => {
 
   const tabs = [
     { id: 'board' as const, label: 'Board' },
-    { id: 'activity' as const, label: 'Activity' },
-    { id: 'comments' as const, label: 'Comments' },
+    { id: 'activities' as const, label: 'Activities' },
     { id: 'archived-cards' as const, label: 'Archived Cards' },
     // Health Check tab — only visible when feature flag is enabled (Sprint 116)
     ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
@@ -651,16 +683,10 @@ const BoardPage = () => {
           <ToastRegion toasts={toasts} onDismiss={dismissToast} />
         </PluginIframeContainer>
         </div>
-      ) : activeTab === 'activity' ? (
+      ) : activeTab === 'activities' ? (
         <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
           <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
-            <BoardActivityPanel boardId={boardId ?? ''} />
-          </div>
-        </div>
-      ) : activeTab === 'comments' ? (
-        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
-          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
-            <BoardCommentsPanel boardId={boardId ?? ''} onCardClick={handleCardClick} />
+            <BoardActivitiesPanel boardId={boardId ?? ''} onCardClick={handleCardClick} />
           </div>
         </div>
       ) : activeTab === 'health-check' ? (
@@ -680,7 +706,10 @@ const BoardPage = () => {
       )}
 
       {/* Card detail modal — always mounted so ?card= links work from any tab */}
-      <CardModalContainer />
+      <CardModalContainer
+        {...(cardRouteId ? { forcedCardId: cardRouteId } : {})}
+        {...(cardRouteId ? { onCloseCard: handleRouteCardClose } : {})}
+      />
 
       {/* Board settings panel */}
       {settingsOpen && (

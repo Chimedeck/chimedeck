@@ -17,6 +17,7 @@ import CommandPalette from '~/common/components/CommandPalette';
 import InviteExternalUserModal from '~/extensions/AdminInvite/InviteExternalUserModal';
 import type { SearchResult } from '~/extensions/Search/api';
 import translations from '~/common/translations/en.json';
+import { boardPath, cardPath } from '~/common/routing/shortUrls';
 
 export default function AppShell() {
   const dispatch = useAppDispatch();
@@ -99,12 +100,25 @@ export default function AppShell() {
     }
 
     if (result.type === 'board') {
-      navigate(`/boards/${result.id}`);
+      navigate(boardPath({
+        id: result.id,
+        ...(result.short_id ? { short_id: result.short_id } : {}),
+        title: result.title,
+      }));
+    } else if (result.id) {
+      navigate(cardPath({
+        id: result.id,
+        ...(result.short_id ? { short_id: result.short_id } : {}),
+        title: result.title,
+      }));
     } else {
-      // Card: navigate to its board with card modal open
       const boardId = result.boardId;
       if (boardId) {
-        navigate(`/boards/${boardId}?card=${result.id}`);
+        navigate(boardPath({
+          id: boardId,
+          ...(result.board_short_id ? { short_id: result.board_short_id } : {}),
+          title: result.title,
+        }));
       }
     }
   }, [dispatch, navigate]);

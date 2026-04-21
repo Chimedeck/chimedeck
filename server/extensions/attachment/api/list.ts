@@ -6,15 +6,20 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleListAttachments(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json({ name: 'card-not-found', data: { message: 'Card not found' } }, { status: 404 });
+  }
+
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { message: 'Card not found' } }, { status: 404 });
   }
@@ -30,7 +35,7 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
   if (membershipError) return membershipError;
 
   const attachments = await db('attachments')
-    .where({ card_id: cardId })
+    .where({ card_id: resolvedCardId })
     .orderBy('created_at', 'desc');
 
   // Resolve referenced card data for internal card-link attachments.
@@ -38,15 +43,18 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
     .map((a) => a.referenced_card_id as string | null)
     .filter((id): id is string => Boolean(id));
 
-  let refCardMap: Record<string, {
-    id: string;
-    title: string;
-    board_id: string | null;
-    board_name: string | null;
-    list_id: string | null;
-    list_name: string | null;
-    labels: Array<{ id: string; name: string; color: string }>;
-  }> = {};
+  let refCardMap: Record<
+    string,
+    {
+      id: string;
+      title: string;
+      board_id: string | null;
+      board_name: string | null;
+      list_id: string | null;
+      list_name: string | null;
+      labels: Array<{ id: string; name: string; color: string }>;
+    }
+  > = {};
 
   if (referencedCardIds.length > 0) {
     const refCards = await db('cards').whereIn('id', referencedCardIds);
@@ -80,13 +88,12 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
 
   const data = attachments.map((attachment) => {
     // URL-type attachments expose their external URL directly (user-supplied, not S3).
-    // FILE-type attachments use the authenticated proxy paths — never raw presigned URLs.
+    // FILE-type attachments use the authenticated proxy paths; never raw presigned URLs.
     const view_url =
       attachment.type === 'URL'
         ? (attachment.url ?? attachment.external_url ?? null)
         : `/api/v1/attachments/${attachment.id}/view`;
 
-    // thumbnail_url is only set when a thumbnail has been generated for this attachment
     const thumbnail_url = attachment.thumbnail_key
       ? `/api/v1/attachments/${attachment.id}/thumbnail`
       : null;

@@ -27,6 +27,9 @@ import SortableListColumn from '../../List/containers/BoardPage/ListColumn';
 import CardItem from '../../Card/components/CardItem';
 import AddListForm from '../../List/components/AddListForm';
 import { useCardLabelExpanded } from '../../Card/hooks/useCardLabelExpanded';
+import { useAppDispatch } from '~/hooks/useAppDispatch';
+import { useAppSelector } from '~/hooks/useAppSelector';
+import { fetchListCardsBatchThunk } from '../slices/boardSlice';
 
 interface DragPlaceholder {
   listId: string;
@@ -248,6 +251,47 @@ const BoardCanvas = ({
   collapseEmptyLists = false,
   customFieldValuesMap,
 }: Props) => {
+  const dispatch = useAppDispatch();
+  const listHydration = useAppSelector((state) => state.board.listHydration);
+
+  // Progressive hydration: fetch additional card batches after first paint.
+  // Visible columns are prioritized so users perceive a complete board sooner.
+  useEffect(() => {
+    const pending = listOrder.filter((listId) => {
+      const hydration = listHydration[listId];
+      return Boolean(
+        hydration
+        && hydration.hasMore
+        && !hydration.loading
+        && typeof hydration.nextOffset === 'number',
+      );
+    });
+
+    if (pending.length === 0) return;
+
+    const isVisible = (listId: string): boolean => {
+      const el = document.getElementById(`board-list-${listId}`);
+      if (!el) return false;
+      const rect = el.getBoundingClientRect();
+      return rect.right >= 0 && rect.left <= window.innerWidth;
+    };
+
+    const prioritized = [
+      ...pending.filter((listId) => isVisible(listId)),
+      ...pending.filter((listId) => !isVisible(listId)),
+    ];
+
+    prioritized.slice(0, 2).forEach((listId) => {
+      const hydration = listHydration[listId];
+      if (!hydration || typeof hydration.nextOffset !== 'number') return;
+      void dispatch(fetchListCardsBatchThunk({
+        listId,
+        offset: hydration.nextOffset,
+        limit: 50,
+      }));
+    });
+  }, [dispatch, listHydration, listOrder]);
+
   // WHY: use one consistent drag-preview model across all boards so users
   // always see the same card-sized drop placeholder regardless of board size.
   const disableLiveDragPreview = true;
@@ -788,6 +832,7 @@ const BoardCanvas = ({
                 list={list}
                 cardIds={effectiveCardsByList[listId] ?? []}
                 cards={cards}
+                hydration={listHydration?.[list.id]}
                 boardId={boardId}
                 {...(boardTitle ? { boardTitle } : {})}
                 onRename={onRenameList}

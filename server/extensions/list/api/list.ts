@@ -6,12 +6,14 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleListLists(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const resolvedBoardId = await resolveBoardId(boardId);
+  const board = resolvedBoardId ? await db('boards').where({ id: resolvedBoardId }).first() : null;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -24,7 +26,7 @@ export async function handleListLists(req: Request, boardId: string): Promise<Re
   if (membershipError) return membershipError;
 
   const lists = await db('lists')
-    .where({ board_id: boardId, archived: false })
+    .where({ board_id: board.id, archived: false })
     .orderBy('position', 'asc');
 
   return Response.json({ data: lists });

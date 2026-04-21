@@ -35,6 +35,8 @@ export interface WorkspaceSearchResult {
   id: string;
   title: string;
   type: 'board' | 'card';
+  short_id?: string;
+  board_short_id?: string;
   workspace_id?: string;
   board_id?: string;
   list_id?: string;
@@ -140,7 +142,7 @@ export async function queryWorkspaceSearch({
     const boardQ = db('boards')
       .select(
         db.raw(
-          `boards.id, boards.title, boards.workspace_id, boards.state,
+          `boards.id, boards.short_id, boards.title, boards.workspace_id, boards.state,
            boards.background, 'board' as type,
            ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) AS rank`,
           [tsquery],
@@ -172,7 +174,8 @@ export async function queryWorkspaceSearch({
       .join('boards', 'lists.board_id', 'boards.id')
       .select(
         db.raw(
-          `cards.id, cards.title, cards.list_id, boards.id as board_id,
+          `cards.id, cards.short_id, cards.title, cards.list_id, boards.id as board_id,
+           boards.short_id as board_short_id,
            boards.workspace_id, cards.archived, 'card' as type,
            ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
           [tsquery],

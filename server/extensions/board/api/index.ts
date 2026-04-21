@@ -19,12 +19,14 @@ import { handleFollowBoard, handleUnfollowBoard } from './follow';
 import { handleGetMeStarredBoards } from './me-starred-boards';
 import { handleGetBoardActivity } from './activity';
 import { handleGetBoardComments } from './comments';
+import { handleGetBoardActivities } from './boardActivities';
 import { handleGetArchivedCards } from './archived-cards';
 import { handleInviteGuest, handleRevokeGuest, handleListGuests, handleUpdateGuestType } from './guests/index';
 import { handleGetWorkspaceBoards } from './workspaceBoards';
 import { handleUploadBackground } from './uploadBackground';
 import { handleDeleteBackground } from './deleteBackground';
 import { handleGetBackground } from './backgroundProxy';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -45,7 +47,14 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
   // Board-scoped routes: /api/v1/boards/:id[/sub]
   const boardMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)(\/.*)?$/);
   if (boardMatch) {
-    const boardId = boardMatch[1] as string;
+    const boardIdentifier = boardMatch[1] as string;
+    const boardId = await resolveBoardId(boardIdentifier);
+    if (!boardId) {
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 },
+      );
+    }
     const sub = boardMatch[2] ?? '';
 
     // Enforce board visibility before dispatching to any board-scoped handler.
@@ -117,6 +126,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/comments — paginated comments across all cards in the board
     if (sub === '/comments' && req.method === 'GET') return handleGetBoardComments(req, boardId);
+
+    // GET /api/v1/boards/:id/activities — merged activity + comments timeline, sorted by created_at
+    if (sub === '/activities' && req.method === 'GET') return handleGetBoardActivities(req, boardId);
 
     // GET /api/v1/boards/:id/archived-cards — all archived cards in the board
     if (sub === '/archived-cards' && req.method === 'GET') return handleGetArchivedCards(req, boardId);

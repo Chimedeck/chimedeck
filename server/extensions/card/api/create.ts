@@ -13,6 +13,7 @@ import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { emitCardCreated } from '../../activity/mods/createActivityEvent';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -82,8 +83,10 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const position = between(lastCard ? lastCard.position : '', HIGH_SENTINEL);
 
   const id = randomUUID();
+  const shortId = await generateUniqueShortId('cards');
   await db('cards').insert({
     id,
+    short_id: shortId,
     list_id: listId,
     title: sanitizeText(body.title.trim()),
     description: body.description ? sanitizeRichText(body.description.trim()) : null,

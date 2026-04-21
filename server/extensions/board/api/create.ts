@@ -10,6 +10,7 @@ import {
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import type { BoardVisibility } from '../types';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
@@ -50,11 +51,13 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
 
   const creatorId = (req as AuthenticatedRequest).currentUser!.id;
   const id = randomUUID();
+  const shortId = await generateUniqueShortId('boards');
 
   // Wrap board creation + initial member insert in a transaction so no partial state is persisted.
   await db.transaction(async (trx) => {
     await trx('boards').insert({
       id,
+      short_id: shortId,
       workspace_id: workspaceId,
       title: sanitizeText(body.title.trim()),
       state: 'ACTIVE',

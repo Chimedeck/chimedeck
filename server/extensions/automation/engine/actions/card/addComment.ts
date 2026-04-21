@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { substituteVariables } from '../variables';
 import type { ActionHandler, ActionContext } from '../../../common/types';
+import { generateUniqueShortId } from '../../../../../common/ids/shortId';
 
 const configSchema = z.object({
   // text supports {cardName}, {boardName}, {listName}, {date}, {dueDate}, {triggerMember}
@@ -28,8 +29,11 @@ export const cardAddCommentAction: ActionHandler = {
       trx,
     });
 
+    const shortId = await generateUniqueShortId('comments');
+
     await trx('comments').insert({
       id: randomUUID(),
+      short_id: shortId,
       card_id: cardId,
       user_id: evalContext.actorId ?? null,
       content: resolvedText,

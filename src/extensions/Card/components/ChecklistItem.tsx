@@ -317,20 +317,35 @@ export const ChecklistItem = ({
         aria-label={`Toggle: ${item.title}`}
       />
       {editing ? (
-        <input
-          className="min-w-0 flex-1 rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
+        <textarea
+          className="min-w-0 flex-1 resize-none overflow-hidden rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          rows={1}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            // [why] Auto-resize the textarea to fit all content so long items are fully visible while editing.
+            e.target.style.height = 'auto';
+            e.target.style.height = `${e.target.scrollHeight}px`;
+          }}
           onBlur={submitRename}
           // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
           // capture the pointer-down and turn text selection into an item drag.
           onPointerDown={(e) => { e.stopPropagation(); }}
           onKeyDown={(e) => {
             e.stopPropagation();
-            if (e.key === 'Enter') submitRename();
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              submitRename();
+            }
             if (e.key === 'Escape') {
               setTitle(item.title);
               setEditing(false);
+            }
+          }}
+          ref={(el) => {
+            if (el) {
+              el.style.height = 'auto';
+              el.style.height = `${el.scrollHeight}px`;
             }
           }}
           autoFocus

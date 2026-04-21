@@ -10,12 +10,18 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { s3Client, s3Config } from '../../common/config/s3';
+import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 
 const PART_URL_TTL_SECONDS = 5 * 60; // 5 minutes — enough for a single-part upload
 
 export async function handleMultipartPartUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+
+  const resolvedCardId = await resolveCardId(cardId);
+  if (!resolvedCardId) {
+    return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
+  }
 
   let body: { uploadId?: string; key?: string; partNumber?: number };
   try {
@@ -38,7 +44,7 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
     );
   }
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
@@ -56,7 +62,9 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
   if (roleError) return roleError;
 
   // Verify the S3 key belongs to an attachment on this card (prevents key injection)
-  const attachment = await db('attachments').where({ card_id: cardId, s3_key: body.key, status: 'PENDING' }).first();
+  const attachment = await db('attachments')
+    .where({ card_id: resolvedCardId, s3_key: body.key, status: 'PENDING' })
+    .first();
   if (!attachment) {
     return Response.json(
       { name: 'attachment-not-found', data: { message: 'No pending attachment matches the provided key' } },

@@ -17,6 +17,7 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 export async function handleCreateCardComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -63,6 +64,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const id = randomUUID();
+  const shortId = await generateUniqueShortId('comments');
   const content = sanitizeRichText(rawText.trim());
   const now = new Date().toISOString();
 
@@ -71,6 +73,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   await db.transaction(async (trx) => {
     await trx('comments').insert({
       id,
+      short_id: shortId,
       card_id: cardId,
       user_id: actorId,
       content,

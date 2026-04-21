@@ -153,8 +153,9 @@ export default function AppRouter() {
                   element={<WorkspacePage />}
                 />
               </Route>
-              <Route path="/boards/:boardId" element={<BoardPage />} />
-              <Route path="/boards/:boardId/settings/plugins" element={<PluginDashboardPage />} />
+              <Route path="/b/:boardId/:slug?" element={<BoardPage />} />
+              <Route path="/c/:cardId/:slug?" element={<BoardPage />} />
+              <Route path="/b/:boardId/settings/plugins" element={<PluginDashboardPage />} />
               <Route path="/plugins" element={<PluginRegistryPage />} />
               <Route path="/settings/profile" element={<ProfilePage />} />
               <Route path="/settings/api-tokens" element={<ApiTokenPage />} />

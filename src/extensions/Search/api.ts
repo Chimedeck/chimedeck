@@ -5,6 +5,8 @@ export interface SearchResult {
   id: string;
   title: string;
   type: 'board' | 'card';
+  short_id?: string;
+  board_short_id?: string;
   workspaceId?: string;
   listId?: string;
   boardId?: string;
@@ -67,16 +69,26 @@ export async function searchWorkspace({
   // [why] The server returns snake_case fields (board_id, workspace_id, list_id) because
   // they come directly from Knex/PostgreSQL column names. The client SearchResult type
   // and all navigation handlers expect camelCase, so we remap here at the API boundary.
-  const data: SearchResult[] = json.data.map((item) => ({
-    id: item.id as string,
-    title: item.title as string,
-    type: item.type as 'board' | 'card',
-    boardId: (item.boardId ?? item.board_id) as string | undefined,
-    workspaceId: (item.workspaceId ?? item.workspace_id) as string | undefined,
-    listId: (item.listId ?? item.list_id) as string | undefined,
-    archived: item.archived as boolean | undefined,
-    background: (item.background ?? null) as string | null | undefined,
-  }));
+  const data: SearchResult[] = json.data.map((item) => {
+    const boardId = (item.boardId ?? item.board_id) as string | undefined;
+    const workspaceId = (item.workspaceId ?? item.workspace_id) as string | undefined;
+    const listId = (item.listId ?? item.list_id) as string | undefined;
+    const archived = item.archived as boolean | undefined;
+    const background = (item.background ?? null) as string | null;
+
+    return {
+      id: item.id as string,
+      title: item.title as string,
+      type: item.type as 'board' | 'card',
+      ...(typeof item.short_id === 'string' ? { short_id: item.short_id } : {}),
+      ...(typeof item.board_short_id === 'string' ? { board_short_id: item.board_short_id } : {}),
+      ...(typeof boardId === 'string' ? { boardId } : {}),
+      ...(typeof workspaceId === 'string' ? { workspaceId } : {}),
+      ...(typeof listId === 'string' ? { listId } : {}),
+      ...(typeof archived === 'boolean' ? { archived } : {}),
+      ...(background === null ? {} : { background }),
+    };
+  });
 
   return { data, metadata: json.metadata };
 }

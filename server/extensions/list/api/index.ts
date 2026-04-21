@@ -6,13 +6,21 @@ import { handleUpdateList } from './update';
 import { handleArchiveList } from './archive';
 import { handleDeleteList } from './delete';
 import { handleReorderLists } from './reorder';
+import { resolveBoardId, resolveListId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a list route, otherwise null.
 export async function listRouter(req: Request, pathname: string): Promise<Response | null> {
   // Board-scoped list routes: /api/v1/boards/:boardId/lists[/reorder]
   const boardListsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/lists(\/.*)?$/);
   if (boardListsMatch) {
-    const boardId = boardListsMatch[1] as string;
+    const boardIdentifier = boardListsMatch[1] as string;
+    const boardId = await resolveBoardId(boardIdentifier);
+    if (!boardId) {
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 },
+      );
+    }
     const sub = boardListsMatch[2] ?? '';
 
     // Enforce board visibility before dispatching to any board-scoped list handler.
@@ -32,7 +40,14 @@ export async function listRouter(req: Request, pathname: string): Promise<Respon
   // List-scoped routes: /api/v1/lists/:id[/archive]
   const listMatch = pathname.match(/^\/api\/v1\/lists\/([^/]+)(\/.*)?$/);
   if (listMatch) {
-    const listId = listMatch[1] as string;
+    const listIdentifier = listMatch[1] as string;
+    const listId = await resolveListId(listIdentifier);
+    if (!listId) {
+      return Response.json(
+        { error: { code: 'list-not-found', message: 'List not found' } },
+        { status: 404 },
+      );
+    }
     const sub = listMatch[2] ?? '';
 
     // Enforce board visibility by resolving the board from the list.

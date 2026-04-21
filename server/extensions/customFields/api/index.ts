@@ -15,12 +15,20 @@ import {
   handleDeleteCardFieldValue,
   handleBatchCardFieldValues,
 } from './cardValues';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function customFieldsRouter(req: Request, pathname: string): Promise<Response | null> {
   // /api/v1/boards/:boardId/custom-fields[/:fieldId]
   const boardFieldsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/custom-fields(\/([^/]+))?$/);
   if (boardFieldsMatch) {
-    const boardId = boardFieldsMatch[1] as string;
+    const boardIdentifier = boardFieldsMatch[1] as string;
+    const boardId = await resolveBoardId(boardIdentifier);
+    if (!boardId) {
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 },
+      );
+    }
     const fieldId = boardFieldsMatch[3] as string | undefined;
 
     if (!fieldId) {
@@ -41,7 +49,14 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
   //       (custom-field-values vs custom-fields) — placed here for clarity.
   const boardBatchValuesMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/custom-field-values$/);
   if (boardBatchValuesMatch && (req.method === 'GET' || req.method === 'POST')) {
-    const boardId = boardBatchValuesMatch[1] as string;
+    const boardIdentifier = boardBatchValuesMatch[1] as string;
+    const boardId = await resolveBoardId(boardIdentifier);
+    if (!boardId) {
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 },
+      );
+    }
     return handleBatchCardFieldValues(req, boardId);
   }
 

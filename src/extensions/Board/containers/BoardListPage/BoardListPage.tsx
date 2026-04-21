@@ -18,6 +18,7 @@ import CreateBoardModal from '../../components/CreateBoardModal';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
 import Button from '~/common/components/Button';
+import { boardPath } from '~/common/routing/shortUrls';
 import {
   visibleBoardsSelector,
   showStarredOnlySelector,
@@ -130,7 +131,7 @@ const BoardListPage = () => {
           <BoardCard
             key={board.id}
             board={board}
-            onClick={() => navigate(`/boards/${board.id}`)}
+            onClick={() => navigate(boardPath(board))}
             onArchive={() => handleArchive(board.id)}
             onDelete={() => handleDelete(board.id)}
             onDuplicate={() => handleDuplicate(board.id)}

@@ -112,7 +112,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     data: cardWithCover,
     includes: {
       list,
-      board: { id: board.id, title: board.title },
+      board: { id: board.id, short_id: board.short_id, title: board.title },
       labels: labelRows,
       members,
       checklists,

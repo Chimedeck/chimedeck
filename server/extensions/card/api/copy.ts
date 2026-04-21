@@ -11,6 +11,7 @@ import {
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { between, LOW_SENTINEL, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 type CardRow = {
   cover_color?: string | null;
@@ -123,6 +124,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
 
   const newPosition = computePosition(targetCards, positionIdx);
   const newId = randomUUID();
+  const shortId = await generateUniqueShortId('cards');
   const title =
     typeof body.title === 'string' && body.title.trim() ? body.title.trim() : card.title;
 
@@ -131,6 +133,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
 
   await db('cards').insert({
     id: newId,
+    short_id: shortId,
     list_id: body.targetListId,
     title,
     description: card.description,

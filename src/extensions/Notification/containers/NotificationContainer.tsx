@@ -8,6 +8,7 @@ import { useNotificationSync } from '../hooks/useNotificationSync';
 import NotificationBell from '../components/NotificationBell';
 import NotificationPanel from '../components/NotificationPanel';
 import type { Notification } from '../api';
+import { boardPath, cardPath } from '~/common/routing/shortUrls';
 
 export default function NotificationContainer() {
   const dispatch = useAppDispatch();
@@ -38,10 +39,11 @@ export default function NotificationContainer() {
 
   const handleNavigate = useCallback(
     (notification: Notification) => {
+      const n = notification as Notification & { board_short_id?: string | null; card_short_id?: string | null };
       if (notification.board_id && notification.card_id) {
-        navigate(`/boards/${notification.board_id}?card=${notification.card_id}`);
+        navigate(cardPath({ id: notification.card_id, short_id: n.card_short_id ?? undefined }));
       } else if (notification.board_id) {
-        navigate(`/boards/${notification.board_id}`);
+        navigate(boardPath({ id: notification.board_id, short_id: n.board_short_id ?? undefined }));
       }
     },
     [navigate],

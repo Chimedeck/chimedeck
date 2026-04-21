@@ -14,6 +14,7 @@ import {
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
 import { randomUUID } from 'crypto';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function handleGetBoardLabels(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
@@ -28,7 +29,7 @@ export async function handleGetBoardLabels(req: Request, boardId: string): Promi
   }
 
   const labels = await db('labels')
-    .where({ board_id: boardId })
+    .where({ board_id: board.id })
     .orderBy('name', 'asc');
 
   return Response.json({ data: labels });
@@ -38,8 +39,16 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
+  const resolvedBoardId = await resolveBoardId(boardId);
+  if (!resolvedBoardId) {
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 }
+    );
+  }
+
   const boardReq = req as BoardScopedRequest;
-  const accessError = await requireBoardAccess(boardReq, boardId);
+  const accessError = await requireBoardAccess(boardReq, resolvedBoardId);
   if (accessError) return accessError;
 
   const board = boardReq.board!;
@@ -72,7 +81,7 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
 
   const label = {
     id: randomUUID(),
-    board_id: boardId,
+    board_id: board.id,
     name: body.name.trim(),
     color: body.color ?? '#6b7280',
   };

@@ -2,6 +2,7 @@
 // Labels, checklist items, and comments are NOT copied (sprint 07/10 scope).
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
+import { generateUniqueShortId } from '../../../../common/ids/shortId';
 
 export interface DuplicateBoardParams {
   originalBoardId: string;
@@ -22,11 +23,13 @@ export async function duplicateBoard({
 }: DuplicateBoardParams): Promise<DuplicateBoardResult> {
   try {
     const newBoardId = randomUUID();
+    const newBoardShortId = await generateUniqueShortId('boards');
 
     await db.transaction(async (trx) => {
       // 1. Create new board with ACTIVE state.
       await trx('boards').insert({
         id: newBoardId,
+        short_id: newBoardShortId,
         workspace_id: workspaceId,
         title: `Copy of ${originalTitle}`,
         state: 'ACTIVE',
@@ -42,8 +45,10 @@ export async function duplicateBoard({
 
       for (const list of lists) {
         const newListId = randomUUID();
+        const newListShortId = await generateUniqueShortId('lists');
         await trx('lists').insert({
           id: newListId,
+          short_id: newListShortId,
           board_id: newBoardId,
           title: list.title,
           position: list.position,
@@ -58,8 +63,10 @@ export async function duplicateBoard({
           .orderBy('position', 'asc');
 
         for (const card of cards) {
+          const newCardShortId = await generateUniqueShortId('cards');
           await trx('cards').insert({
             id: randomUUID(),
+            short_id: newCardShortId,
             list_id: newListId,
             title: card.title,
             description: card.description,

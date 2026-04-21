@@ -11,6 +11,7 @@ import {
 import { requireCardWritable, type CardScopedRequest } from '../middlewares/requireCardWritable';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
+import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 export async function handleDuplicateCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -40,8 +41,10 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
   const position = between(card.position, cardsAfter ? cardsAfter.position : HIGH_SENTINEL);
 
   const newId = randomUUID();
+  const shortId = await generateUniqueShortId('cards');
   await db('cards').insert({
     id: newId,
+    short_id: shortId,
     list_id: card.list_id,
     title: card.title,
     description: card.description,
