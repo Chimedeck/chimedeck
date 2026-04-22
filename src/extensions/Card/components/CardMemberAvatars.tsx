@@ -1,6 +1,6 @@
 // CardMemberAvatars — interactive avatar stack; clicking opens MemberAvatarPopover.
 // Sprint 28: each avatar is a button that triggers the profile popover.
-import { useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import type { CardMember } from '../api';
 import { MemberAvatarPopover } from './MemberAvatarPopover';
 
@@ -12,13 +12,13 @@ interface Props {
   onRemoveMember?: (cardId: string, memberId: string) => Promise<void>;
 }
 
-export const CardMemberAvatars = ({
+function CardMemberAvatarsComponent({
   members,
   maxVisible = 4,
   cardId,
   currentUserId,
   onRemoveMember,
-}: Props) => {
+}: Props) {
   const visible = members.slice(0, maxVisible);
   const overflow = members.length - maxVisible;
 
@@ -91,4 +91,31 @@ export const CardMemberAvatars = ({
       )}
     </div>
   );
-};
+}
+
+export const CardMemberAvatars = memo(
+  CardMemberAvatarsComponent,
+  (prev, next) => {
+    if (prev === next) return true;
+    if (prev.cardId !== next.cardId) return false;
+    if (prev.currentUserId !== next.currentUserId) return false;
+    if (prev.maxVisible !== next.maxVisible) return false;
+    if (prev.onRemoveMember !== next.onRemoveMember) return false;
+    if (prev.members === next.members) return true;
+    if (prev.members.length !== next.members.length) return false;
+
+    for (let i = 0; i < prev.members.length; i += 1) {
+      const prevMember = prev.members[i];
+      const nextMember = next.members[i];
+      if (
+        prevMember.id !== nextMember.id
+        || prevMember.name !== nextMember.name
+        || prevMember.email !== nextMember.email
+        || prevMember.avatar_url !== nextMember.avatar_url
+      ) {
+        return false;
+      }
+    }
+    return true;
+  },
+);

@@ -1,7 +1,7 @@
 // cardDetailSlice — modal state, card detail, checklist, labels, members, comments, activities.
 // Sprint 19: optimistic updates with rollback per architecture spec.
 // Sprint 29: activities sideloaded via ?include=activities.
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
 import type { Card, Label, CardMember, ChecklistItem, Checklist, CardDetail } from '../api';
 import type { CommentData, ReactionSummary } from '../api/cardDetail';
@@ -527,11 +527,12 @@ export const selectCardDetailChecklist = (s: { cardDetail: CardDetailState }) =>
 export const selectCardDetailComments = (s: { cardDetail: CardDetailState }) => s.cardDetail.comments;
 export const selectCardDetailActivities = (s: { cardDetail: CardDetailState }) => s.cardDetail.activities;
 export const selectCardDetailStatus = (s: { cardDetail: CardDetailState }) => s.cardDetail.status;
-export const selectCardDetailMeta = (s: { cardDetail: CardDetailState }) => ({
-  listTitle: s.cardDetail.listTitle,
-  boardTitle: s.cardDetail.boardTitle,
-  boardId: s.cardDetail.boardId,
-});
+export const selectCardDetailMeta = createSelector(
+  (s: { cardDetail: CardDetailState }) => s.cardDetail.listTitle,
+  (s: { cardDetail: CardDetailState }) => s.cardDetail.boardTitle,
+  (s: { cardDetail: CardDetailState }) => s.cardDetail.boardId,
+  (listTitle, boardTitle, boardId) => ({ listTitle, boardTitle, boardId }),
+);
 
 export const cardDetailSliceActions = cardDetailSlice.actions;
 export default cardDetailSlice.reducer;

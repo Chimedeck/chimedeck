@@ -42,22 +42,30 @@ export async function getBoard({
   api,
   boardId,
   initialCardsPerList,
+  includeActivities,
 }: {
   api: { get: <T>(url: string) => Promise<T> };
   boardId: string;
   initialCardsPerList?: number;
+  includeActivities?: boolean;
 }): Promise<{
   data: Board;
   includes: {
     lists: unknown[];
     cards: unknown[];
     card_hydration?: Record<string, ListCardHydration>;
+    activities?: unknown[];
   };
 }> {
-  const params =
-    typeof initialCardsPerList === 'number' && initialCardsPerList > 0
-      ? `?initialCardsPerList=${encodeURIComponent(String(initialCardsPerList))}`
-      : '';
+  const searchParams = new URLSearchParams();
+  if (typeof initialCardsPerList === 'number' && initialCardsPerList > 0) {
+    searchParams.set('initialCardsPerList', String(initialCardsPerList));
+  }
+  if (includeActivities) {
+    searchParams.set('include', 'activities');
+  }
+  const query = searchParams.toString();
+  const params = query.length > 0 ? `?${query}` : '';
   return api.get(`/boards/${boardId}${params}`);
 }
 

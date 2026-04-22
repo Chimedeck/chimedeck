@@ -1,6 +1,6 @@
 // boardSlice — full kanban board state: board, lists, cards, and optimistic drag support.
 // Sprint 18: provides { board, listOrder, lists, cardsByList, cards, status }.
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { createAppAsyncThunk } from '~/utils/redux';
 import { getBoard, listCardsByListBatch, type Board, type ListCardHydration } from '../api';
 import type { List } from '../../List/api';
@@ -42,11 +42,20 @@ const initialState: BoardState = {
 
 export const fetchBoardDataThunk = createAppAsyncThunk(
   'board/fetchData',
-  async ({ boardId }: { boardId: string }, { extra }) => {
+  async (
+    {
+      boardId,
+      initialCardsPerList,
+    }: { boardId: string; initialCardsPerList?: number },
+    { extra },
+  ) => {
     return getBoard({
       api: (extra as { api: { get: <T>(url: string) => Promise<T> } }).api,
       boardId,
-      initialCardsPerList: INITIAL_CARDS_PER_LIST,
+      initialCardsPerList:
+        typeof initialCardsPerList === 'number' && initialCardsPerList > 0
+          ? initialCardsPerList
+          : INITIAL_CARDS_PER_LIST,
     });
   },
 );
@@ -469,3 +478,13 @@ export const selectCards = (state: unknown) => (state as StateWithBoard).board.c
 export const selectBoardStatus = (state: unknown) => (state as StateWithBoard).board.status;
 export const selectListHydration = (state: unknown) =>
   (state as StateWithBoard).board.listHydration;
+
+export const makeSelectCardIdsByListId = (listId: string) =>
+  createSelector(selectCardsByList, (cardsByList) => cardsByList[listId] ?? []);
+
+export const makeSelectCardsForListId = (listId: string) =>
+  createSelector([makeSelectCardIdsByListId(listId), selectCards], (cardIds, cardsById) =>
+    cardIds
+      .map((cardId) => cardsById[cardId])
+      .filter((card): card is Card => card !== undefined),
+  );

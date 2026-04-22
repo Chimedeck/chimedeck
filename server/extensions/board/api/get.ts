@@ -29,6 +29,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
 
   const scopedReq = req as BoardVisibilityScopedRequest;
   const board = scopedReq.board!;
+  const resolvedBoardId = board.id;
 
   searchLog.boardAccessChecked({
     boardId,
@@ -43,7 +44,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
 
   // Load active lists now that the lists table exists (sprint 06)
   const lists = await db('lists')
-    .where({ board_id: boardId, archived: false })
+    .where({ board_id: resolvedBoardId, archived: false })
     .orderBy('position', 'asc');
 
   const listIds = lists.map((l: { id: string }) => l.id);
@@ -56,6 +57,30 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
 
   async function loadCards(cardIds?: string[]): Promise<Array<Record<string, unknown>>> {
     if (listIds.length === 0) return [];
+
+    const commentCountsQuery = db('comments')
+      .select('card_id')
+      .count('* as comment_count')
+      .where({ deleted: false })
+      .groupBy('card_id')
+      .as('cc');
+
+    const attachmentCountsQuery = db('attachments')
+      .select('card_id')
+      .select(
+        db.raw(`SUM(CASE WHEN status = 'READY' AND referenced_card_id IS NULL THEN 1 ELSE 0 END) as attachment_count`),
+        db.raw(`SUM(CASE WHEN status = 'READY' AND referenced_card_id IS NOT NULL THEN 1 ELSE 0 END) as linked_card_count`),
+      )
+      .groupBy('card_id')
+      .as('ac');
+
+    const checklistCountsQuery = db('checklists as ch')
+      .join('checklist_items as ci', 'ci.checklist_id', 'ch.id')
+      .select('ch.card_id')
+      .count('* as checklist_total')
+      .sum({ checklist_done: db.raw("CASE WHEN ci.checked = true THEN 1 ELSE 0 END") })
+      .groupBy('ch.card_id')
+      .as('kc');
 
     const cardsQuery = db('cards as c')
       .whereIn('c.list_id', listIds)
@@ -85,17 +110,19 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
         db.raw(
           `COALESCE(json_agg(DISTINCT jsonb_build_object('id', u.id, 'email', u.email, 'name', u.name, 'avatar_url', u.avatar_url)) FILTER (WHERE u.id IS NOT NULL), '[]'::json) as members`
         ),
-        // [why] Inline sub-counts avoid N+1 queries on subsequent per-card fetches.
-        db.raw(`(SELECT COUNT(*) FROM comments WHERE card_id = c.id AND deleted = false)::int AS comment_count`),
-        db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY' AND referenced_card_id IS NULL)::int AS attachment_count`),
-        db.raw(`(SELECT COUNT(*) FROM attachments WHERE card_id = c.id AND status = 'READY' AND referenced_card_id IS NOT NULL)::int AS linked_card_count`),
-        db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id)::int AS checklist_total`),
-        db.raw(`(SELECT COUNT(*) FROM checklist_items ci JOIN checklists ch ON ci.checklist_id = ch.id WHERE ch.card_id = c.id AND ci.checked = true)::int AS checklist_done`),
+        db.raw('MAX(CAST(COALESCE(cc.comment_count, 0) AS INTEGER)) AS comment_count'),
+        db.raw('MAX(CAST(COALESCE(ac.attachment_count, 0) AS INTEGER)) AS attachment_count'),
+        db.raw('MAX(CAST(COALESCE(ac.linked_card_count, 0) AS INTEGER)) AS linked_card_count'),
+        db.raw('MAX(CAST(COALESCE(kc.checklist_total, 0) AS INTEGER)) AS checklist_total'),
+        db.raw('MAX(CAST(COALESCE(kc.checklist_done, 0) AS INTEGER)) AS checklist_done'),
       )
       .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
       .leftJoin('labels as l', 'l.id', 'cl.label_id')
       .leftJoin('card_members as cm', 'cm.card_id', 'c.id')
       .leftJoin('users as u', 'u.id', 'cm.user_id')
+      .leftJoin(commentCountsQuery, 'cc.card_id', 'c.id')
+      .leftJoin(attachmentCountsQuery, 'ac.card_id', 'c.id')
+      .leftJoin(checklistCountsQuery, 'kc.card_id', 'c.id')
       .groupBy('c.id');
 
     if (cardIds && cardIds.length > 0) {
@@ -124,21 +151,31 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
       totalRows.map((row) => [row.list_id, Number(row.count ?? 0)]),
     ) as Record<string, number>;
 
-    const initialRows = await Promise.all(
-      listIds.map(async (listId) => {
-        const rows = await db('cards')
-          .where({ list_id: listId, archived: false })
-          .orderBy('position', 'asc')
-          .limit(initialCardsPerList)
-          .select('id');
-        return { listId, rows };
-      }),
-    );
+    const rankedCardRows = await db
+      .from(
+        db('cards as c')
+          .whereIn('c.list_id', listIds)
+          .where({ 'c.archived': false })
+          .select(
+            'c.id',
+            'c.list_id',
+            db.raw('ROW_NUMBER() OVER (PARTITION BY c.list_id ORDER BY c.position ASC) as rn'),
+          )
+          .as('ranked_cards'),
+      )
+      .where('rn', '<=', initialCardsPerList)
+      .select('id', 'list_id')
+      .orderBy('list_id', 'asc')
+      .orderBy('rn', 'asc');
 
-    const initialCardIds = initialRows.flatMap((entry) => entry.rows.map((row: { id: string }) => row.id));
+    const initialCardIds = rankedCardRows.map((row: { id: string }) => row.id);
+    const loadedByList = rankedCardRows.reduce<Record<string, number>>((acc, row: { list_id: string }) => {
+      acc[row.list_id] = (acc[row.list_id] ?? 0) + 1;
+      return acc;
+    }, {});
 
     listIds.forEach((listId) => {
-      const loaded = initialRows.find((entry) => entry.listId === listId)?.rows.length ?? 0;
+      const loaded = loadedByList[listId] ?? 0;
       const total = totalsByList[listId] ?? 0;
       const hasMore = loaded < total;
       cardHydration[listId] = {
@@ -166,14 +203,16 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   );
 
   const cardsWithResolvedCovers = await resolveCoverImageUrls(
-    cardsWithResolvedMembers as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
+    cardsWithResolvedMembers as unknown as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
   );
 
   const includes = url.searchParams.get('include')?.split(',') ?? [];
 
   let activities: unknown[] = [];
   if (includes.includes('activities') && listIds.length > 0) {
-    const cardIds = cards.map((c: { id: string }) => c.id);
+    const cardIds = cards
+      .map((c) => (typeof c.id === 'string' ? c.id : null))
+      .filter((id): id is string => id !== null);
     if (cardIds.length > 0) {
       activities = await db('activities')
         .whereIn('entity_id', cardIds)
@@ -191,20 +230,27 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   let isStarred = false;
   if (currentUserId) {
     const star = await db('board_stars')
-      .where({ board_id: boardId, user_id: currentUserId })
+      .where({ board_id: resolvedBoardId, user_id: currentUserId })
       .first();
     isStarred = !!star;
   }
 
-  const backgroundUrl = resolveBackgroundUrl({ boardId, backgroundUrl: board.background });
+  const backgroundUrl = resolveBackgroundUrl({ boardId: resolvedBoardId, backgroundUrl: board.background });
+
+  const includesResponse: {
+    lists: unknown[];
+    cards: unknown[];
+    card_hydration?: Record<string, { loaded: number; total: number; hasMore: boolean; nextOffset: number | null }>;
+    activities?: unknown[];
+  } = {
+    lists,
+    cards: cardsWithResolvedCovers,
+    ...(initialCardsPerList ? { card_hydration: cardHydration } : {}),
+    ...(includes.includes('activities') ? { activities } : {}),
+  };
 
   return Response.json({
     data: { ...board, background: backgroundUrl, callerGuestType, isStarred },
-    includes: {
-      lists,
-      cards: cardsWithResolvedCovers,
-      ...(initialCardsPerList ? { card_hydration: cardHydration } : {}),
-      activities,
-    },
+    includes: includesResponse,
   });
 }

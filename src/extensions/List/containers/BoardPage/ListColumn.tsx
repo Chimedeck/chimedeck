@@ -110,40 +110,48 @@ const SortableListColumn = ({
     isDragging,
   } = useSortable({ id: list.id });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
   const listTextTone = useMemo(() => getListTextTone(listColor), [listColor]);
   const listTextColor = listTextTone === 'light' ? '#FFFFFF' : '#111111';
+  const style = useMemo<React.CSSProperties>(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+      contentVisibility: 'auto',
+      contain: 'layout paint style',
+      containIntrinsicSize: '1px 640px',
+      ...(listColor ? { backgroundColor: listColor, color: listTextColor } : {}),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, listColor, listTextColor],
+  );
   const columnBorderClass = listColor ? 'border-transparent' : 'border-border';
-  const columnSurfaceClass = listColor
-    ? ''
-    : hasBackground
-      ? 'bg-bg-surface'
-      : 'bg-bg-surface/90 backdrop-blur-sm';
-  const loadingTextClass = listColor
-    ? listTextTone === 'light'
-      ? 'text-white/80'
-      : 'text-black/70'
-    : 'text-muted';
-  const addCardButtonToneClass = listColor
-    ? listTextTone === 'light'
+  const columnSurfaceClass = (() => {
+    if (listColor) return '';
+    if (hasBackground) return 'bg-bg-surface';
+    return 'bg-bg-surface/90 backdrop-blur-sm';
+  })();
+  const loadingTextClass = (() => {
+    if (!listColor) return 'text-muted';
+    return listTextTone === 'light' ? 'text-white/80' : 'text-black/70';
+  })();
+  const addCardButtonToneClass = (() => {
+    if (!listColor) return '';
+    return listTextTone === 'light'
       ? 'text-white hover:bg-white/15 hover:text-white'
-      : 'text-black hover:bg-black/10 hover:text-black'
-    : '';
+      : 'text-black hover:bg-black/10 hover:text-black';
+  })();
 
   // WHY: in normal drag mode we keep the active item in the sortable collection
   // so dnd-kit can animate sibling displacement (clear push/drop indicator).
   // In placeholder mode we remove it to avoid rendering a double gap.
   const usePlaceholderMode =
     typeof dragPlaceholderIndex === 'number' && Number.isFinite(dragPlaceholderIndex);
-  const visibleCardIds = useMemo(
-    () => (usePlaceholderMode ? cardIds.filter((id) => id !== activeDragCardId) : cardIds),
-    [activeDragCardId, cardIds, usePlaceholderMode],
-  );
+  const visibleCardIds = useMemo(() => {
+    if (!usePlaceholderMode || !activeDragCardId) return cardIds;
+    const filtered = cardIds.filter((id) => id !== activeDragCardId);
+    return filtered.length === cardIds.length ? cardIds : filtered;
+  }, [activeDragCardId, cardIds, usePlaceholderMode]);
   const listCardObjects = useMemo(
     () => visibleCardIds
       .map((id) => cards[id])
@@ -171,7 +179,7 @@ const SortableListColumn = ({
     <div
       ref={setNodeRef}
       id={`board-list-${list.id}`}
-      style={{ ...style, ...(listColor ? { backgroundColor: listColor, color: listTextColor } : {}) }}
+      style={style}
       className={`w-72 shrink-0 border rounded-xl flex flex-col h-full ${columnBorderClass} ${columnSurfaceClass}`}
       role="listitem"
       aria-label={`List: ${list.title}`}
@@ -199,7 +207,10 @@ const SortableListColumn = ({
       </div>
 
       {/* Cards — vertically sortable */}
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]">
+      <div
+        className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]"
+        style={{ contentVisibility: 'auto', contain: 'layout paint style', containIntrinsicSize: '1px 900px' }}
+      >
         <SortableContext items={visibleCardIds} strategy={verticalListSortingStrategy}>
           {listCardObjects.map((card, idx) => (
             <Fragment key={card.id}>
@@ -250,9 +261,18 @@ const SortableListColumn = ({
 };
 
 function areEqual(prev: Props, next: Props): boolean {
-  return prev.list === next.list
-    && prev.cardIds === next.cardIds
-    && prev.cards === next.cards
+  if (prev === next) return true;
+
+  if (prev.list !== next.list) return false;
+  if (prev.cardIds.length !== next.cardIds.length) return false;
+
+  const hasSameCardsForList =
+    prev.cardIds.every((cardId, index) => {
+      if (next.cardIds[index] !== cardId) return false;
+      return prev.cards[cardId] === next.cards[cardId];
+    });
+
+  return hasSameCardsForList
     && prev.boardId === next.boardId
     && prev.boardTitle === next.boardTitle
     && prev.onRename === next.onRename
@@ -275,7 +295,9 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.hasBackground === next.hasBackground
     && prev.dragPlaceholderIndex === next.dragPlaceholderIndex
     && prev.dragPlaceholderHeight === next.dragPlaceholderHeight
-    && prev.activeDragCardId === next.activeDragCardId;
+    && prev.activeDragCardId === next.activeDragCardId
+    && prev.hydration?.loading === next.hydration?.loading
+    && prev.hydration?.error === next.hydration?.error;
 }
 
 export default memo(SortableListColumn, areEqual);

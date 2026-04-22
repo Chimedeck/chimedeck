@@ -283,6 +283,7 @@ const CardItem = ({
       transition,
       opacity: isDragging && !isOverlay ? 0 : 1,
       boxShadow: isOverlay ? undefined : CARD_ITEM_SHADOW,
+      willChange: transform ? 'transform' : undefined,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, isOverlay],

@@ -1,7 +1,7 @@
 // CardPluginBadges — renders plugin-provided badges on card tiles.
 // Resolves the 'card-badges' capability via the plugin bridge and shows
 // colour-coded badge chips below the card's existing metadata.
-import { useState, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePluginBridgeContext } from '../iframeHost/usePluginBridge';
 
@@ -20,6 +20,12 @@ interface Props {
   boardTitle?: string;
 }
 
+interface BadgeResolvePayload {
+  card: { id: string; name?: string };
+  list: { id: string; name?: string };
+  board: { id: string; name?: string };
+}
+
 const COLOR_MAP: Record<string, string> = {
   green: 'bg-green-100 dark:bg-green-600/20 text-green-700 dark:text-green-400',
   red: 'bg-red-100 dark:bg-red-600/20 text-danger',
@@ -29,7 +35,54 @@ const COLOR_MAP: Record<string, string> = {
   purple: 'bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400',
 };
 
-const CardPluginBadges = ({ cardId, listId, cardTitle, listTitle, boardTitle }: Props) => {
+const badgeResultCache = new Map<string, PluginBadge[]>();
+const badgeInFlightCache = new Map<string, Promise<PluginBadge[]>>();
+
+function makeBadgeCacheKey(args: {
+  boardId: string;
+  cardId: string;
+  listId: string;
+  cardTitle?: string;
+  listTitle?: string;
+  boardTitle?: string;
+}): string {
+  return [
+    args.boardId,
+    args.cardId,
+    args.listId,
+    args.cardTitle ?? '',
+    args.listTitle ?? '',
+    args.boardTitle ?? '',
+  ].join('||');
+}
+
+function normalizeBadgeResults(results: unknown[]): PluginBadge[] {
+  const all: PluginBadge[] = [];
+  for (const result of results) {
+    if (Array.isArray(result)) {
+      all.push(...(result as PluginBadge[]));
+    } else if (result && typeof result === 'object') {
+      all.push(result as PluginBadge);
+    }
+  }
+  return all;
+}
+
+function cacheBadgeResult(key: string, badges: PluginBadge[]): void {
+  badgeResultCache.set(key, badges);
+  if (badgeResultCache.size > 3000) {
+    const firstKey = badgeResultCache.keys().next().value;
+    if (typeof firstKey === 'string') badgeResultCache.delete(firstKey);
+  }
+}
+
+function CardPluginBadgesComponent({
+  cardId,
+  listId,
+  cardTitle,
+  listTitle,
+  boardTitle,
+}: Readonly<Props>) {
   const { boardId } = useParams<{ boardId: string }>();
   const bridge = usePluginBridgeContext();
   const [badges, setBadges] = useState<PluginBadge[]>([]);
@@ -38,22 +91,45 @@ const CardPluginBadges = ({ cardId, listId, cardTitle, listTitle, boardTitle }: 
     if (!bridge || !boardId) return;
     let cancelled = false;
 
-    bridge
-      .resolve('card-badges', {
-        card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
-        list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
-        board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
-      })
-      .then((results) => {
+    const cacheKey = makeBadgeCacheKey({
+      boardId,
+      cardId,
+      listId,
+      cardTitle,
+      listTitle,
+      boardTitle,
+    });
+
+    const cachedBadges = badgeResultCache.get(cacheKey);
+    if (cachedBadges) {
+      setBadges(cachedBadges);
+      return;
+    }
+
+    const payload: BadgeResolvePayload = {
+      card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
+      list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
+      board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
+    };
+
+    const inFlight = badgeInFlightCache.get(cacheKey);
+    const request = inFlight
+      ?? bridge
+        .resolve('card-badges', payload)
+        .then((results) => normalizeBadgeResults(results as unknown[]))
+        .catch(() => [])
+        .finally(() => {
+          badgeInFlightCache.delete(cacheKey);
+        });
+
+    if (!inFlight) {
+      badgeInFlightCache.set(cacheKey, request);
+    }
+
+    request
+      .then((all) => {
         if (cancelled) return;
-        const all: PluginBadge[] = [];
-        for (const result of results) {
-          if (Array.isArray(result)) {
-            all.push(...(result as PluginBadge[]));
-          } else if (result && typeof result === 'object') {
-            all.push(result as PluginBadge);
-          }
-        }
+        cacheBadgeResult(cacheKey, all);
         setBadges(all);
       })
       .catch(() => {
@@ -92,6 +168,15 @@ const CardPluginBadges = ({ cardId, listId, cardTitle, listTitle, boardTitle }: 
       })}
     </div>
   );
-};
+}
+
+const CardPluginBadges = memo(
+  CardPluginBadgesComponent,
+  (prev, next) => prev.cardId === next.cardId
+    && prev.listId === next.listId
+    && prev.cardTitle === next.cardTitle
+    && prev.listTitle === next.listTitle
+    && prev.boardTitle === next.boardTitle,
+);
 
 export default CardPluginBadges;

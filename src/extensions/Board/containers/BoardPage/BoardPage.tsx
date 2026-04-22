@@ -189,23 +189,39 @@ const BoardPage = () => {
 
   // Apply all active filters to card maps
   const isFiltering = countActiveFilters(filters) > 0;
-  const filteredCardsByList: Record<string, string[]> = isFiltering
-    ? Object.fromEntries(
-        Object.entries(cardsByList).map(([listId, cardIds]) => [
-          listId,
-          cardIds.filter((cardId) => {
-            const card = cards[cardId];
-            return card ? applyBoardFilter(card, filters, currentUser?.id) : false;
-          }),
-        ]),
-      )
-    : cardsByList;
+  const filteredCardsByList: Record<string, string[]> = useMemo(
+    () => (
+      isFiltering
+        ? Object.fromEntries(
+            Object.entries(cardsByList).map(([listId, cardIds]) => [
+              listId,
+              cardIds.filter((cardId) => {
+                const card = cards[cardId];
+                return card ? applyBoardFilter(card, filters, currentUser?.id) : false;
+              }),
+            ]),
+          )
+        : cardsByList
+    ),
+    [cardsByList, cards, filters, isFiltering, currentUser?.id],
+  );
 
-  const filteredCards = isFiltering
-    ? Object.fromEntries(
-        Object.entries(cards).filter(([, card]) => applyBoardFilter(card, filters, currentUser?.id)),
-      )
-    : cards;
+  const filteredCards = useMemo(
+    () => (
+      isFiltering
+        ? Object.fromEntries(
+            Object.entries(cards).filter(([, card]) => applyBoardFilter(card, filters, currentUser?.id)),
+          )
+        : cards
+    ),
+    [cards, filters, isFiltering, currentUser?.id],
+  );
+
+  const initialCardsPerList = useMemo(() => {
+    if (globalThis.window === undefined) return 50;
+    if (globalThis.window.innerWidth < 900) return 25;
+    return 50;
+  }, []);
 
   // ── Automation panel (Sprint 65) ─────────────────────────────────────────
   const automationPanel = useAutomationPanel();
@@ -248,8 +264,8 @@ const BoardPage = () => {
   });
 
   useEffect(() => {
-    if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
-  }, [dispatch, boardId]);
+    if (boardId) dispatch(fetchBoardDataThunk({ boardId, initialCardsPerList }));
+  }, [dispatch, boardId, initialCardsPerList]);
 
   useEffect(() => {
     if (!boardWorkspaceId) return;
@@ -644,6 +660,107 @@ const BoardPage = () => {
     ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
   ];
 
+  const tabContent = (() => {
+    if (activeTab === 'board') {
+      return (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <PluginIframeContainer boardId={boardId ?? ''}>
+            {activeView === 'KANBAN' ? (
+              <BoardCanvas
+                boardId={boardId ?? ''}
+                boardTitle={board.title}
+                listOrder={listOrder}
+                lists={lists}
+                cardsByList={filteredCardsByList}
+                cards={filteredCards}
+                onCardMove={handleCardMove}
+                onListReorder={handleListReorder}
+                onDragStart={handleDragStart}
+                onDragCommit={handleDragCommit}
+                onDragRollback={handleDragRollback}
+                onAddCard={handleAddCard}
+                onAddList={handleAddList}
+                onRenameList={handleRenameList}
+                onCopyList={handleCopyList}
+                onMoveList={handleMoveList}
+                onMoveAllCards={handleMoveAllCards}
+                onArchiveList={handleArchiveList}
+                onArchiveAllCards={handleArchiveAllCards}
+                onDeleteList={handleDeleteList}
+                onChangeListColor={handleChangeListColor}
+                onSortList={handleSortList}
+                listColors={listColors}
+                listSummaries={listSummaries}
+                onCardClick={handleCardClick}
+                isReadOnly={board.state === 'ARCHIVED'}
+                isViewerGuest={isViewerGuest}
+                customFieldValuesMap={customFieldValuesMap}
+                hasBackground={!!board.background}
+                collapseEmptyLists={filters.collapseLists && isFiltering}
+              />
+            ) : activeView === 'TABLE' ? (
+              <TableView
+                cards={Object.values(filteredCards)}
+                lists={lists}
+                onCardClick={handleCardClick}
+              />
+            ) : activeView === 'CALENDAR' ? (
+              <CalendarView
+                cards={Object.values(filteredCards)}
+                lists={lists}
+                onCardClick={handleCardClick}
+                addToast={addToast}
+              />
+            ) : activeView === 'TIMELINE' ? (
+              <TimelineView
+                cards={Object.values(filteredCards)}
+                lists={lists}
+                onCardClick={handleCardClick}
+                addToast={addToast}
+              />
+            ) : null}
+            <AutomationPanel
+              boardId={boardId ?? ''}
+              isOpen={automationPanel.isOpen}
+              activeTab={automationPanel.activeTab}
+              onClose={automationPanel.closePanel}
+              onTabChange={automationPanel.setActiveTab}
+            />
+            <ToastRegion toasts={toasts} onDismiss={dismissToast} />
+          </PluginIframeContainer>
+        </div>
+      );
+    }
+
+    if (activeTab === 'activities') {
+      return (
+        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
+            <BoardActivitiesPanel boardId={boardId ?? ''} onCardClick={handleCardClick} />
+          </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'health-check') {
+      return <HealthCheckTab boardId={boardId ?? ''} />;
+    }
+
+    return (
+      <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
+        <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
+          <BoardArchivedCardsPanel
+            boardId={boardId ?? ''}
+            onCardUnarchived={() => {
+              if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
+              setActiveTab('board');
+            }}
+          />
+        </div>
+      </div>
+    );
+  })();
+
   return (
     <div
       className="flex flex-col text-base h-full overflow-hidden relative bg-bg-base bg-cover bg-center"
@@ -690,10 +807,17 @@ const BoardPage = () => {
         <div className="flex items-center">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
-            // Underline-only active state — no background pills
-            const tabClass = isActive
-              ? (board.background ? 'text-white font-medium border-b-2 border-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : 'text-primary font-medium border-b-2 border-primary')
-              : (board.background ? 'text-white/80 border-b-2 border-transparent hover:text-white hover:bg-white/15 rounded transition-colors [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : 'text-muted border-b-2 border-transparent hover:text-base transition-colors');
+            // Underline-only active state — no background pills.
+            let tabClass = '';
+            if (isActive) {
+              tabClass = board.background
+                ? 'text-white font-medium border-b-2 border-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]'
+                : 'text-primary font-medium border-b-2 border-primary';
+            } else {
+              tabClass = board.background
+                ? 'text-white/80 border-b-2 border-transparent hover:text-white hover:bg-white/15 rounded transition-colors [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]'
+                : 'text-muted border-b-2 border-transparent hover:text-base transition-colors';
+            }
             return (
               <button
                 key={tab.id}
@@ -761,98 +885,7 @@ const BoardPage = () => {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'board' ? (
-        /* Hidden plugin iframes + bridge provider for card plugin UI injections */
-        <div className="flex flex-col flex-1 overflow-hidden">
-        <PluginIframeContainer boardId={boardId ?? ''}>
-          {/* Render the active view */}
-          {activeView === 'KANBAN' ? (
-            <BoardCanvas
-              boardId={boardId ?? ''}
-              boardTitle={board.title}
-              listOrder={listOrder}
-              lists={lists}
-              cardsByList={filteredCardsByList}
-              cards={filteredCards}
-              onCardMove={handleCardMove}
-              onListReorder={handleListReorder}
-              onDragStart={handleDragStart}
-              onDragCommit={handleDragCommit}
-              onDragRollback={handleDragRollback}
-              onAddCard={handleAddCard}
-              onAddList={handleAddList}
-              onRenameList={handleRenameList}
-              onCopyList={handleCopyList}
-              onMoveList={handleMoveList}
-              onMoveAllCards={handleMoveAllCards}
-              onArchiveList={handleArchiveList}
-              onArchiveAllCards={handleArchiveAllCards}
-              onDeleteList={handleDeleteList}
-              onChangeListColor={handleChangeListColor}
-              onSortList={handleSortList}
-              listColors={listColors}
-              listSummaries={listSummaries}
-              onCardClick={handleCardClick}
-              isReadOnly={board.state === 'ARCHIVED'}
-              isViewerGuest={isViewerGuest}
-              customFieldValuesMap={customFieldValuesMap}
-              hasBackground={!!board.background}
-              collapseEmptyLists={filters.collapseLists && isFiltering}
-            />
-          ) : activeView === 'TABLE' ? (
-            <TableView
-              cards={Object.values(filteredCards)}
-              lists={lists}
-              onCardClick={handleCardClick}
-            />
-          ) : activeView === 'CALENDAR' ? (
-            <CalendarView
-              cards={Object.values(filteredCards)}
-              lists={lists}
-              onCardClick={handleCardClick}
-              addToast={addToast}
-            />
-          ) : activeView === 'TIMELINE' ? (
-            <TimelineView
-              cards={Object.values(filteredCards)}
-              lists={lists}
-              onCardClick={handleCardClick}
-              addToast={addToast}
-            />
-          ) : null}
-          {/* Automation panel (Sprint 65) */}
-          <AutomationPanel
-            boardId={boardId ?? ''}
-            isOpen={automationPanel.isOpen}
-            activeTab={automationPanel.activeTab}
-            onClose={automationPanel.closePanel}
-            onTabChange={automationPanel.setActiveTab}
-          />
-          {/* Toast notifications (rollback errors, conflicts) */}
-          <ToastRegion toasts={toasts} onDismiss={dismissToast} />
-        </PluginIframeContainer>
-        </div>
-      ) : activeTab === 'activities' ? (
-        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
-          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
-            <BoardActivitiesPanel boardId={boardId ?? ''} onCardClick={handleCardClick} />
-          </div>
-        </div>
-      ) : activeTab === 'health-check' ? (
-        <HealthCheckTab boardId={boardId ?? ''} />
-      ) : (
-        <div className={`flex-1 overflow-y-auto${board.background ? ' px-6 py-4' : ''}`}>
-          <div className={board.background ? 'bg-bg-surface rounded-xl min-h-full' : ''}>
-          <BoardArchivedCardsPanel
-            boardId={boardId ?? ''}
-            onCardUnarchived={() => {
-              if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
-              setActiveTab('board');
-            }}
-          />
-          </div>
-        </div>
-      )}
+      {tabContent}
 
       {/* Card detail modal — always mounted so ?card= links work from any tab */}
       <CardModalContainer
