@@ -1,13 +1,9 @@
 // PATCH /api/v1/webhooks/:id — update label, endpointUrl, eventTypes, or isActive.
-// Caller must be the webhook owner or a workspace OWNER/ADMIN.
+// Caller must be the webhook owner.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import {
-  requireWorkspaceMembership,
-  hasRole,
-  type WorkspaceScopedRequest,
-} from '../../../middlewares/permissionManager';
 import { WEBHOOK_EVENT_TYPES, type WebhookEventType } from '../common/eventTypes';
+import { canManageWebhook } from './mods/webhookPermissions';
 import { isEndpointAllowed } from './ssrfGuard';
 
 export async function handleUpdateWebhook(req: Request, webhookId: string): Promise<Response> {
@@ -22,17 +18,11 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
     );
   }
 
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, webhook.workspace_id);
-  if (membershipError) return membershipError;
-
   const userId = (req as AuthenticatedRequest).currentUser!.id;
-  const isOwner = webhook.created_by === userId;
-  const isAdminOrAbove = scopedReq.callerRole ? hasRole(scopedReq.callerRole, 'ADMIN') : false;
 
-  if (!isOwner && !isAdminOrAbove) {
+  if (!canManageWebhook({ webhookCreatedBy: webhook.created_by, currentUserId: userId })) {
     return Response.json(
-      { name: 'insufficient-permissions', data: { message: 'Only the webhook owner or an admin can update this webhook' } },
+      { name: 'insufficient-permissions', data: { message: 'Only the webhook owner can update this webhook' } },
       { status: 403 },
     );
   }

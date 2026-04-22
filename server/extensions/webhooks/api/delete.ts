@@ -1,12 +1,8 @@
-// DELETE /api/v1/webhooks/:id — remove a webhook; caller must be owner or workspace ADMIN+.
+// DELETE /api/v1/webhooks/:id — remove a webhook; caller must be the owner.
 // webhook_deliveries are cascade-deleted by DB foreign key constraint.
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import {
-  requireWorkspaceMembership,
-  hasRole,
-  type WorkspaceScopedRequest,
-} from '../../../middlewares/permissionManager';
+import { canManageWebhook } from './mods/webhookPermissions';
 
 export async function handleDeleteWebhook(req: Request, webhookId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -20,17 +16,11 @@ export async function handleDeleteWebhook(req: Request, webhookId: string): Prom
     );
   }
 
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, webhook.workspace_id);
-  if (membershipError) return membershipError;
-
   const userId = (req as AuthenticatedRequest).currentUser!.id;
-  const isOwner = webhook.created_by === userId;
-  const isAdminOrAbove = scopedReq.callerRole ? hasRole(scopedReq.callerRole, 'ADMIN') : false;
 
-  if (!isOwner && !isAdminOrAbove) {
+  if (!canManageWebhook({ webhookCreatedBy: webhook.created_by, currentUserId: userId })) {
     return Response.json(
-      { name: 'insufficient-permissions', data: { message: 'Only the webhook owner or an admin can delete this webhook' } },
+      { name: 'insufficient-permissions', data: { message: 'Only the webhook owner can delete this webhook' } },
       { status: 403 },
     );
   }
