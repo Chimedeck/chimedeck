@@ -60,6 +60,8 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
   const isPdf = attachment.type !== 'URL' && attachment.content_type === 'application/pdf';
   const openHref = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
   const canOpenWithLink = attachment.status === 'READY' && !isVideo && !isPdf && Boolean(openHref);
+  const isImage = attachment.type !== 'URL' && Boolean(attachment.content_type?.startsWith('image/'));
+  const imagePreviewSrc = attachment.thumbnail_url ?? attachment.view_url;
 
   const handleOpen = (): void => {
     if (isVideo) {
@@ -124,6 +126,21 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
     if (ev.key === 'Escape') cancelRename();
   };
 
+  const leadingVisual = isImage && imagePreviewSrc ? (
+    <span className="flex h-11 w-11 flex-shrink-0 overflow-hidden rounded-md border border-border bg-bg-overlay">
+      <img
+        src={imagePreviewSrc}
+        alt={attachment.name}
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </span>
+  ) : (
+    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-border bg-bg-overlay text-muted">
+      <Icon className="h-6 w-6" aria-hidden="true" />
+    </span>
+  );
+
   let attachmentIdentity: React.ReactNode;
   if (editing) {
     attachmentIdentity = (
@@ -154,18 +171,14 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         className="flex min-w-0 flex-1 items-center gap-2 text-link hover:underline"
         title={displayName}
       >
-        <span className="flex-shrink-0 text-muted">
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
+        {leadingVisual}
         <span className="min-w-0 truncate text-sm">{displayName}</span>
       </a>
     );
   } else {
     attachmentIdentity = (
       <div className="flex min-w-0 flex-1 items-center gap-2" title={displayName}>
-        <span className="flex-shrink-0 text-muted">
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
+        {leadingVisual}
         <span className="min-w-0 truncate text-sm text-base">{displayName}</span>
       </div>
     );
