@@ -1,5 +1,4 @@
 <div align="left">
-
 <img src="https://github.com/Chimedeck/chimedeck/blob/main/public/android-chrome-512x512.png?raw=true" alt="ChimeDeck Logo" width="60"/>
 
 # Chimedeck: an open-source work management platform  
@@ -38,6 +37,7 @@ Now, it’s yours to use, customize, and grow with.
 
 [WATCH OUR DEMO](https://www.youtube.com/watch?v=j3sUyVmm8Bg)
 
+<img width="2048" height="1365" alt="Chimedeck github" src="https://github.com/user-attachments/assets/127c694c-94cf-4374-9d8b-9e20b2655443" />
 
 ## Documentation
 
