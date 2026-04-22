@@ -249,10 +249,10 @@ const ActivityFeed = ({
               </div>
               {/* Body */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
+                <div className="flex min-w-0 items-baseline gap-2">
                   {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
-                  <span className="text-sm font-semibold text-base">{displayName}</span>
-                  <span className="text-xs text-subtle">{meta.label}</span>
+                  <span className="text-sm font-semibold text-base flex-shrink-0">{displayName}</span>
+                  <span className="min-w-0 break-all text-xs text-subtle">{meta.label}</span>
                   <span className="text-xs text-muted flex-shrink-0">{relativeTime(activity.created_at)}</span>
                 </div>
                 {showThumbnail && (

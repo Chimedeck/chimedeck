@@ -1,6 +1,6 @@
 // AttachmentPanel — full attachment section rendered inside CardDetailModal.
-// Shows a header with file-picker trigger, drag-drop zone, attachment list,
-// image thumbnail grid, and an "Attach a link" external URL form.
+// Shows a header with file-picker trigger, drag-drop zone, unified attachment list,
+// and an "Attach a link" external URL form.
 // Internal card links are shown in a "Cards" section (card preview).
 // External links are shown in a separate "Links" section.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,7 +12,6 @@ import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
 import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment, fetchCardPreview } from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
-import { AttachmentThumbnail } from './AttachmentThumbnail';
 import { CardAttachmentPreview } from './CardAttachmentPreview';
 import { ExternalLinkPreview } from './ExternalLinkPreview';
 import { PasteListener } from './PasteListener';
@@ -286,10 +285,6 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   // Files: all FILE-type attachments.
   const fileAttachments = attachments.filter((a) => a.type === 'FILE');
 
-  const imageAttachments = fileAttachments.filter(
-    (a) => a.status === 'READY' && a.content_type?.startsWith('image/'),
-  );
-
   // Find the progress for a given server attachment id (by matching attachmentId on upload entries)
   const progressForAttachment = (id: string): number | null => {
     const entry = uploads.find((u) => u.attachmentId === id && u.phase === 'uploading');
@@ -400,18 +395,6 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
           />
         ))}
       </div>
-
-      {/* Thumbnail grid — image/* READY attachments */}
-      {imageAttachments.length > 0 && (
-        <div className="mt-3" data-testid="attachment-thumbnail-grid">
-          <p className="text-xs text-muted mb-2">{translations['attachments.panel.imagesSection']}</p>
-          <div className="flex flex-wrap gap-2">
-            {imageAttachments.map((a) => (
-              <AttachmentThumbnail key={a.id} attachment={a} />
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Cards section — internal card-link attachments */}
       {cardLinkAttachments.length > 0 && (

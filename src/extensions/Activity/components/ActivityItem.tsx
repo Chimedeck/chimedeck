@@ -89,7 +89,7 @@ const ActivityItem = ({ activity, actorName, boardId }: Props) => {
 
   const renderDescription = () => {
     if (!showCardLink || !boardId || !cardId) {
-      return <span className="text-base">{description}</span>;
+      return <span className="text-base break-words">{description}</span>;
     }
 
     // Prefer linking the card title when it appears in quotes. Some checklist
@@ -119,7 +119,7 @@ const ActivityItem = ({ activity, actorName, boardId }: Props) => {
         {before}
         <Link
           to={cardPath({ id: cardId })}
-          className="font-medium underline underline-offset-2 transition-opacity hover:opacity-75"
+          className="break-all font-medium underline underline-offset-2 transition-opacity hover:opacity-75"
         >
           {quotedValue}
         </Link>
@@ -131,7 +131,7 @@ const ActivityItem = ({ activity, actorName, boardId }: Props) => {
   return (
     <div className="flex items-start gap-2 py-1.5 text-sm">
       <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         {renderDescription()}
         <span className="ml-2 text-xs text-muted">
           {new Date(activity.created_at).toLocaleString()}
