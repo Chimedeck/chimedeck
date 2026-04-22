@@ -12,15 +12,33 @@ import AddCardForm from '../../../Card/components/AddCardForm';
 import Button from '../../../../common/components/Button';
 import type { ListSortBy } from '../../types';
 
+type ListTextTone = 'light' | 'dark';
+
+function getListTextTone(listColor: string | null): ListTextTone {
+  if (!listColor || !/^#[0-9A-Fa-f]{6}$/.test(listColor)) return 'dark';
+  const r = Number.parseInt(listColor.slice(1, 3), 16);
+  const g = Number.parseInt(listColor.slice(3, 5), 16);
+  const b = Number.parseInt(listColor.slice(5, 7), 16);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance < 0.55 ? 'light' : 'dark';
+}
+
 interface Props {
   list: List;
+  listColor?: string | null;
+  availableLists?: Array<{ id: string; title: string }>;
   cardIds: string[];
   cards: Record<string, Card>;
   boardId?: string;
   boardTitle?: string;
   onRename: (listId: string, title: string) => void;
+  onCopyList: (listId: string) => void;
+  onMoveList: (listId: string, targetIndex: number) => void;
+  onMoveAllCards: (listId: string, targetListId: string) => void;
   onArchive: (listId: string) => void;
+  onArchiveAllCards: (listId: string) => void;
   onDelete: (listId: string) => void;
+  onChangeListColor: (listId: string, color: string | null) => void;
   onSortBy: (listId: string, sortBy: ListSortBy) => void;
   onAddCard: (listId: string, title: string) => Promise<void>;
   onCardClick?: (cardId: string) => void;
@@ -46,13 +64,20 @@ const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldValue[] = [];
 
 const SortableListColumn = ({
   list,
+  listColor = null,
+  availableLists = [],
   cardIds,
   cards,
   boardId,
   boardTitle,
   onRename,
+  onCopyList,
+  onMoveList,
+  onMoveAllCards,
   onArchive,
+  onArchiveAllCards,
   onDelete,
+  onChangeListColor,
   onSortBy,
   onAddCard,
   onCardClick,
@@ -91,6 +116,25 @@ const SortableListColumn = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const listTextTone = useMemo(() => getListTextTone(listColor), [listColor]);
+  const listTextColor = listTextTone === 'light' ? '#FFFFFF' : '#111111';
+  const columnBorderClass = listColor ? 'border-transparent' : 'border-border';
+  const columnSurfaceClass = listColor
+    ? ''
+    : hasBackground
+      ? 'bg-bg-surface'
+      : 'bg-bg-surface/90 backdrop-blur-sm';
+  const loadingTextClass = listColor
+    ? listTextTone === 'light'
+      ? 'text-white/80'
+      : 'text-black/70'
+    : 'text-muted';
+  const addCardButtonToneClass = listColor
+    ? listTextTone === 'light'
+      ? 'text-white hover:bg-white/15 hover:text-white'
+      : 'text-black hover:bg-black/10 hover:text-black'
+    : '';
+
   // WHY: in normal drag mode we keep the active item in the sortable collection
   // so dnd-kit can animate sibling displacement (clear push/drop indicator).
   // In placeholder mode we remove it to avoid rendering a double gap.
@@ -127,8 +171,8 @@ const SortableListColumn = ({
     <div
       ref={setNodeRef}
       id={`board-list-${list.id}`}
-      style={style}
-      className={`w-72 shrink-0 border border-border rounded-xl flex flex-col h-full ${hasBackground ? 'bg-bg-surface' : 'bg-bg-surface/90 backdrop-blur-sm'}`}
+      style={{ ...style, ...(listColor ? { backgroundColor: listColor, color: listTextColor } : {}) }}
+      className={`w-72 shrink-0 border rounded-xl flex flex-col h-full ${columnBorderClass} ${columnSurfaceClass}`}
       role="listitem"
       aria-label={`List: ${list.title}`}
     >
@@ -136,11 +180,20 @@ const SortableListColumn = ({
       <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
         <ListHeader
           list={list}
+          listColor={listColor}
+          availableLists={availableLists}
           cardCount={cardIds.length}
           onRename={(title) => { onRename(list.id, title); }}
+          onAddCard={() => { setAddingCard(true); }}
+          onCopyList={() => { onCopyList(list.id); }}
+          onMoveList={(targetIndex: number) => { onMoveList(list.id, targetIndex); }}
+          onMoveAllCards={(targetListId: string) => { onMoveAllCards(list.id, targetListId); }}
           onArchive={() => { onArchive(list.id); }}
+          onArchiveAllCards={() => { onArchiveAllCards(list.id); }}
           onDelete={() => { onDelete(list.id); }}
-          onSortBy={(sortBy) => { onSortBy(list.id, sortBy); }}
+          onChangeListColor={(color: string | null) => { onChangeListColor(list.id, color); }}
+          onSortBy={(sortBy: ListSortBy) => { onSortBy(list.id, sortBy); }}
+          textTone={listTextTone}
           hasBackground={hasBackground}
         />
       </div>
@@ -170,7 +223,7 @@ const SortableListColumn = ({
       {/* Add card footer — hidden for VIEWER guests */}
       <div className="px-1 pb-2">
         {hydration?.loading && (
-          <p className="mb-2 px-2 text-xs text-muted">Loading more cards...</p>
+          <p className={`mb-2 px-2 text-xs ${loadingTextClass}`}>Loading more cards...</p>
         )}
         {!isViewerGuest && (addingCard ? (
           <AddCardForm
@@ -184,7 +237,7 @@ const SortableListColumn = ({
         ) : (
           <Button
             variant="ghost"
-            className="w-full justify-start rounded-lg px-2 py-1.5 text-sm"
+            className={`w-full justify-start rounded-lg px-2 py-1.5 text-sm ${addCardButtonToneClass}`}
             onClick={() => { setAddingCard(true); }}
             aria-label={`Add a card to ${list.title}`}
           >
@@ -203,14 +256,21 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.boardId === next.boardId
     && prev.boardTitle === next.boardTitle
     && prev.onRename === next.onRename
+    && prev.onCopyList === next.onCopyList
+    && prev.onMoveList === next.onMoveList
+    && prev.onMoveAllCards === next.onMoveAllCards
     && prev.onArchive === next.onArchive
+    && prev.onArchiveAllCards === next.onArchiveAllCards
     && prev.onDelete === next.onDelete
+    && prev.onChangeListColor === next.onChangeListColor
     && prev.onSortBy === next.onSortBy
     && prev.onAddCard === next.onAddCard
     && prev.onCardClick === next.onCardClick
     && prev.labelsExpanded === next.labelsExpanded
     && prev.onToggleLabels === next.onToggleLabels
     && prev.customFieldValuesMap === next.customFieldValuesMap
+    && prev.listColor === next.listColor
+    && prev.availableLists === next.availableLists
     && prev.isViewerGuest === next.isViewerGuest
     && prev.hasBackground === next.hasBackground
     && prev.dragPlaceholderIndex === next.dragPlaceholderIndex

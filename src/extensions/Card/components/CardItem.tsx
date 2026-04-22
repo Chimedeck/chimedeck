@@ -68,33 +68,144 @@ const CardItemContent = memo(({
   currentUserId,
   onRemoveMember,
 }: CardItemContentProps) => {
-  const labels = card.labels ?? [];
-  const members = card.members ?? [];
+  const labels = Array.isArray(card.labels) ? card.labels : [];
+  const members = Array.isArray(card.members) ? card.members : [];
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
-  // WHY: image covers use an aspect-ratio container so the full image is visible without cropping.
+  const selectedCoverSize = card.cover_size ?? 'SMALL';
+  const useBackgroundImageMode = Boolean(card.cover_image_url) && selectedCoverSize === 'SMALL';
+  // WHY: image covers should render at full card width and keep their original ratio.
   // Color-only covers keep the fixed strip height from cover_size.
-  const coverClass = card.cover_image_url
-    ? (card.cover_aspect_ratio === '16:9' ? 'aspect-video' : 'aspect-square')
-    : (card.cover_size === 'FULL' ? 'h-28' : 'h-20');
+  let coverClass = 'h-20';
+  if (!card.cover_image_url && card.cover_size === 'FULL') {
+    coverClass = 'h-28';
+  }
 
   const hasChecklist = (card.checklist_total ?? 0) > 0;
   const checklistDone = card.checklist_done ?? 0;
   const checklistTotal = card.checklist_total ?? 0;
   const checklistComplete = checklistDone === checklistTotal;
+  let checklistTextClass = 'text-muted';
+  if (useBackgroundImageMode) {
+    checklistTextClass = 'text-white';
+  } else if (checklistComplete) {
+    checklistTextClass = 'text-emerald-800 dark:text-emerald-400';
+  }
+  const attachmentCount = card.attachment_count ?? 0;
+  const linkedCardCount = card.linked_card_count ?? 0;
+  const commentCount = card.comment_count ?? 0;
 
   const hasBadges =
     card.description ||
     card.due_date ||
-    (card.comment_count ?? 0) > 0 ||
-    (card.attachment_count ?? 0) > 0 ||
-    (card.linked_card_count ?? 0) > 0 ||
+    commentCount > 0 ||
+    attachmentCount > 0 ||
+    linkedCardCount > 0 ||
     hasChecklist;
+
+  const contentBlock = (
+    <>
+      {labels.length > 0 && (
+        <CardLabelChips
+          labels={labels}
+          expanded={labelsExpanded}
+          onToggle={onToggleLabels ?? (() => {})}
+        />
+      )}
+      <p className={`text-sm leading-snug break-words ${useBackgroundImageMode ? 'text-white' : 'text-base'}`}>{card.title}</p>
+      {card.amount && (
+        <div className="mt-1">
+          <CardMoneyBadge amount={card.amount} currency={card.currency} />
+        </div>
+      )}
+      {hasBadges && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {card.due_date && (() => {
+            const now = Date.now();
+            const due = new Date(card.due_date).getTime();
+            const done = card.due_complete;
+            const overdue = !done && due < now;
+            const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
+            let dueClass = getDuePillClass(done, overdue, dueSoon);
+            if (useBackgroundImageMode) {
+              dueClass = 'text-white bg-black/45';
+            }
+            return (
+              <span className={`inline-flex items-center gap-0.5 rounded px-1 text-xs ${dueClass}`}>
+                <CalendarIcon className="h-3 w-3 shrink-0" />
+                {new Date(card.due_date).toLocaleDateString()}
+              </span>
+            );
+          })()}
+
+          {hasChecklist && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-xs ${checklistTextClass}`}
+              title={`Checklist: ${String(checklistDone)}/${String(checklistTotal)}`}
+            >
+              <QueueListIcon className="h-3 w-3 shrink-0" />
+              {checklistDone}/{checklistTotal}
+            </span>
+          )}
+
+          {attachmentCount > 0 && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-xs ${useBackgroundImageMode ? 'text-white/90' : 'text-muted'}`}
+              title={`${String(attachmentCount)} attachment${attachmentCount > 1 ? 's' : ''}`}
+            >
+              <PaperClipIcon className="h-3 w-3 shrink-0" />
+              {attachmentCount}
+            </span>
+          )}
+
+          {linkedCardCount > 0 && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-xs ${useBackgroundImageMode ? 'text-white/90' : 'text-muted'}`}
+              title={`${String(linkedCardCount)} linked card${linkedCardCount > 1 ? 's' : ''}`}
+            >
+              <RectangleStackIcon className="h-3 w-3 shrink-0" />
+              {linkedCardCount}
+            </span>
+          )}
+
+          {commentCount > 0 && (
+            <span
+              className={`inline-flex items-center gap-0.5 text-xs ${useBackgroundImageMode ? 'text-white/90' : 'text-muted'}`}
+              title={`${String(commentCount)} comment${commentCount > 1 ? 's' : ''}`}
+            >
+              <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />
+              {commentCount}
+            </span>
+          )}
+        </div>
+      )}
+      {members.length > 0 && (
+        <div className="mt-1.5">
+          <CardMemberAvatars
+            members={members}
+            cardId={card.id}
+            currentUserId={currentUserId}
+            onRemoveMember={onRemoveMember}
+          />
+        </div>
+      )}
+      <CardPluginBadges
+        cardId={card.id}
+        listId={card.list_id}
+        cardTitle={card.title}
+        {...(typeof listTitle === 'string' ? { listTitle } : {})}
+        {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+      />
+      {boardId && customFieldValues && (
+        <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
+      )}
+    </>
+  );
 
   return (
     <>
-      {hasCover && (
+      {hasCover && !useBackgroundImageMode && (
         <div
-          className={`w-full overflow-hidden ${coverClass}`}
+          className={`w-full overflow-hidden ${card.cover_image_url ? '' : coverClass}`}
           style={card.cover_image_url
             ? undefined
             : { backgroundColor: card.cover_color ?? '#334155' }}
@@ -103,109 +214,33 @@ const CardItemContent = memo(({
             <img
               src={card.cover_image_url}
               alt="Card cover"
-              className="h-full w-full object-cover"
+              className="block w-full h-auto"
               loading="lazy"
             />
           )}
         </div>
       )}
 
-      <div className="p-2.5">
-        {labels.length > 0 && (
-          <CardLabelChips
-            labels={labels}
-            expanded={labelsExpanded}
-            onToggle={onToggleLabels ?? (() => {})}
+      {useBackgroundImageMode && card.cover_image_url ? (
+        <div className="relative">
+          <img
+            src={card.cover_image_url}
+            alt="Card cover"
+            className="block w-full h-auto"
+            loading="lazy"
           />
-        )}
-        <p className="text-base text-sm leading-snug break-words">{card.title}</p>
-        {card.amount && (
-          <div className="mt-1">
-            <CardMoneyBadge amount={card.amount} currency={card.currency} />
+          <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+          <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
+            <div className="w-full">
+              {contentBlock}
+            </div>
           </div>
-        )}
-        {hasBadges && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-            {card.due_date && (() => {
-              const now = Date.now();
-              const due = new Date(card.due_date).getTime();
-              const done = card.due_complete;
-              const overdue = !done && due < now;
-              const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
-              return (
-                <span className={`inline-flex items-center gap-0.5 rounded px-1 text-xs ${getDuePillClass(done, overdue, dueSoon)}`}>
-                  <CalendarIcon className="h-3 w-3 shrink-0" />
-                  {new Date(card.due_date).toLocaleDateString()}
-                </span>
-              );
-            })()}
-
-            {hasChecklist && (
-              <span
-                className={`inline-flex items-center gap-0.5 text-xs ${
-                  checklistComplete
-                    ? 'text-emerald-800 dark:text-emerald-400'
-                    : 'text-muted'
-                }`}
-                title={`Checklist: ${checklistDone}/${checklistTotal}`}
-              >
-                <QueueListIcon className="h-3 w-3 shrink-0" />
-                {checklistDone}/{checklistTotal}
-              </span>
-            )}
-
-            {(card.attachment_count ?? 0) > 0 && (
-              <span
-                className="inline-flex items-center gap-0.5 text-xs text-muted"
-                title={`${card.attachment_count} attachment${(card.attachment_count ?? 0) > 1 ? 's' : ''}`}
-              >
-                <PaperClipIcon className="h-3 w-3 shrink-0" />
-                {card.attachment_count}
-              </span>
-            )}
-
-            {(card.linked_card_count ?? 0) > 0 && (
-              <span
-                className="inline-flex items-center gap-0.5 text-xs text-muted"
-                title={`${card.linked_card_count} linked card${(card.linked_card_count ?? 0) > 1 ? 's' : ''}`}
-              >
-                <RectangleStackIcon className="h-3 w-3 shrink-0" />
-                {card.linked_card_count}
-              </span>
-            )}
-
-            {(card.comment_count ?? 0) > 0 && (
-              <span
-                className="inline-flex items-center gap-0.5 text-xs text-muted"
-                title={`${card.comment_count} comment${(card.comment_count ?? 0) > 1 ? 's' : ''}`}
-              >
-                <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />
-                {card.comment_count}
-              </span>
-            )}
-          </div>
-        )}
-        {members.length > 0 && (
-          <div className="mt-1.5">
-            <CardMemberAvatars
-              members={members}
-              cardId={card.id}
-              currentUserId={currentUserId}
-              onRemoveMember={onRemoveMember}
-            />
-          </div>
-        )}
-        <CardPluginBadges
-          cardId={card.id}
-          listId={card.list_id}
-          cardTitle={card.title}
-          {...(typeof listTitle === 'string' ? { listTitle } : {})}
-          {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
-        />
-        {boardId && customFieldValues && (
-          <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="p-2.5">
+          {contentBlock}
+        </div>
+      )}
     </>
   );
 });
@@ -221,6 +256,10 @@ const CardItem = ({
   boardId,
   customFieldValues,
 }: CardItemProps) => {
+  const selectedCoverSize = card.cover_size ?? 'SMALL';
+  const hasImageCover = Boolean(card.cover_image_url);
+  const useBackgroundImageMode = Boolean(card.cover_image_url) && selectedCoverSize === 'SMALL';
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
@@ -249,6 +288,12 @@ const CardItem = ({
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, isOverlay],
   );
 
+  let surfaceClass = 'bg-bg-surface hover:bg-bg-overlay border-border';
+  if (useBackgroundImageMode) {
+    surfaceClass = 'bg-transparent hover:bg-transparent border-transparent';
+  }
+  const borderClass = hasImageCover ? '' : 'border';
+
   return (
     <div
       ref={setNodeRef}
@@ -256,7 +301,7 @@ const CardItem = ({
       {...attributes}
       {...listeners}
       data-dnd-card-id={card.id}
-      className={`bg-bg-surface hover:bg-bg-overlay border border-border rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
+      className={`${surfaceClass} ${borderClass} rounded-lg overflow-hidden cursor-pointer transition-colors shrink-0${
         isOverlay ? ' rotate-2 scale-105 shadow-2xl opacity-90 pointer-events-none' : ''
       }`}
       role="button"

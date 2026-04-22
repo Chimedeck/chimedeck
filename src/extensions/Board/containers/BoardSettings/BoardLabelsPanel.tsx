@@ -5,34 +5,12 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { TagIcon } from '@heroicons/react/24/outline';
 import type { Label } from '~/extensions/Card/api';
 import { contrastText } from '~/extensions/Card/components/LabelChip';
+import { DEFAULT_LABEL_COLOR, LABEL_PRESET_COLORS } from '~/extensions/Card/constants/labelPresetColors';
 import { getBoardLabels, createBoardLabel, updateBoardLabel, deleteBoardLabel } from '~/extensions/Card/api/cardDetail';
 import { apiClient } from '~/common/api/client';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { boardSliceActions } from '~/extensions/Board/slices/boardSlice';
 // boardSliceActions used: updateLabelInCards, removeLabelFromCards
-
-const PRESET_COLORS = [
-  { name: 'Dark green', hex: '#1f6835' },
-  { name: 'Dark yellow', hex: '#7d5a00' },
-  { name: 'Dark orange', hex: '#9e3a00' },
-  { name: 'Dark red', hex: '#7c1d22' },
-  { name: 'Dark purple', hex: '#4a1060' },
-  { name: 'Dark slate', hex: '#1d3557' },
-  { name: 'Green', hex: '#22c55e' },
-  { name: 'Yellow', hex: '#eab308' },
-  { name: 'Orange', hex: '#f97316' },
-  { name: 'Red', hex: '#ef4444' },
-  { name: 'Purple', hex: '#a855f7' },
-  { name: 'Indigo', hex: '#6366f1' },
-  { name: 'Subtle lime', hex: '#84cc16' },
-  { name: 'Teal', hex: '#14b8a6' },
-  { name: 'Sky', hex: '#38bdf8' },
-  { name: 'Pink', hex: '#ec4899' },
-  { name: 'Light gray', hex: '#94a3b8' },
-  { name: 'Dark gray', hex: '#475569' },
-  { name: 'Slate', hex: '#64748b' },
-  { name: 'None', hex: '' },
-];
 
 // ------------------------------------------------------------------
 // Color grid
@@ -45,7 +23,7 @@ const ColorGrid = ({
   onChange: (hex: string) => void;
 }) => (
   <div className="grid grid-cols-5 gap-1.5">
-    {PRESET_COLORS.filter((c) => c.hex !== '').map((c) => (
+    {LABEL_PRESET_COLORS.filter((c) => c.hex !== '').map((c) => (
       <button
         key={c.hex}
         type="button"
@@ -93,7 +71,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [formName, setFormName] = useState('');
-  const [formColor, setFormColor] = useState(PRESET_COLORS[6]?.hex ?? '#22c55e');
+  const [formColor, setFormColor] = useState(DEFAULT_LABEL_COLOR);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -133,13 +111,13 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
     setView('list');
     setSearchQuery('');
     setFormName('');
-    setFormColor(PRESET_COLORS[6]?.hex ?? '#22c55e');
+    setFormColor(DEFAULT_LABEL_COLOR);
     setConfirmDelete(false);
   };
 
   const openCreate = () => {
     setFormName('');
-    setFormColor(PRESET_COLORS[6]?.hex ?? '#22c55e');
+    setFormColor(DEFAULT_LABEL_COLOR);
     setConfirmDelete(false);
     setView('create');
   };

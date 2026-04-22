@@ -6,6 +6,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { publisher } from '../../../../mods/pubsub/publisher';
+import { writeActivity } from '../../../activity/mods/write';
 
 export async function handleRemoveReaction(
   req: Request,
@@ -47,6 +48,20 @@ export async function handleRemoveReaction(
     .delete();
 
   if (deleted > 0) {
+    await writeActivity({
+      entityType: 'card',
+      entityId: comment.card_id,
+      boardId: board.id,
+      action: 'comment_reaction_removed',
+      actorId,
+      payload: {
+        commentId,
+        cardId: comment.card_id,
+        cardTitle: card.title,
+        emoji,
+      },
+    });
+
     publisher
       .publish(
         board.id,

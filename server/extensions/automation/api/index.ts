@@ -11,8 +11,13 @@ import { handleRunCardButton } from './runCardButton';
 import { handleRunBoardButton } from './runBoardButton';
 import { handleGetAutomationRuns } from './runs';
 import { handleGetBoardRuns } from './boardRuns';
+import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 // Register all card action handlers so the executor can resolve them by type.
 import '../engine/actions/index';
+
+async function resolveAutomationBoardId(boardIdentifier: string): Promise<string | null> {
+  return resolveBoardId(boardIdentifier);
+}
 
 // Returns a Response if the path matches an automation route, otherwise null.
 export async function automationRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -28,7 +33,9 @@ export async function automationRouter(req: Request, pathname: string): Promise<
   // Match /api/v1/boards/:boardId/automations[/:automationId]
   const listCreate = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/automations$/);
   if (listCreate) {
-    const boardId = listCreate[1] as string;
+    const boardIdentifier = listCreate[1] as string;
+    const boardId = await resolveAutomationBoardId(boardIdentifier);
+    if (!boardId) return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
     if (req.method === 'GET') return handleListAutomations(req, boardId);
     if (req.method === 'POST') return handleCreateAutomation(req, boardId);
     return null;
@@ -36,7 +43,9 @@ export async function automationRouter(req: Request, pathname: string): Promise<
 
   const singleMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/automations\/([^/]+)$/);
   if (singleMatch) {
-    const boardId = singleMatch[1] as string;
+    const boardIdentifier = singleMatch[1] as string;
+    const boardId = await resolveAutomationBoardId(boardIdentifier);
+    if (!boardId) return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
     const automationId = singleMatch[2] as string;
     if (req.method === 'GET') return handleGetAutomation(req, boardId, automationId);
     if (req.method === 'PATCH') return handleUpdateAutomation(req, boardId, automationId);
@@ -49,7 +58,9 @@ export async function automationRouter(req: Request, pathname: string): Promise<
     /^\/api\/v1\/boards\/([^/]+)\/automations\/([^/]+)\/runs$/,
   );
   if (automationRunsMatch && req.method === 'GET') {
-    const boardId = automationRunsMatch[1] as string;
+    const boardIdentifier = automationRunsMatch[1] as string;
+    const boardId = await resolveAutomationBoardId(boardIdentifier);
+    if (!boardId) return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
     const automationId = automationRunsMatch[2] as string;
     return handleGetAutomationRuns(req, boardId, automationId);
   }
@@ -57,7 +68,9 @@ export async function automationRouter(req: Request, pathname: string): Promise<
   // GET /api/v1/boards/:boardId/automation-runs
   const boardRunsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/automation-runs$/);
   if (boardRunsMatch && req.method === 'GET') {
-    const boardId = boardRunsMatch[1] as string;
+    const boardIdentifier = boardRunsMatch[1] as string;
+    const boardId = await resolveAutomationBoardId(boardIdentifier);
+    if (!boardId) return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
     return handleGetBoardRuns(req, boardId);
   }
 
@@ -76,7 +89,9 @@ export async function automationRouter(req: Request, pathname: string): Promise<
     /^\/api\/v1\/boards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/,
   );
   if (runBoardButtonMatch && req.method === 'POST') {
-    const boardId = runBoardButtonMatch[1] as string;
+    const boardIdentifier = runBoardButtonMatch[1] as string;
+    const boardId = await resolveAutomationBoardId(boardIdentifier);
+    if (!boardId) return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
     const automationId = runBoardButtonMatch[2] as string;
     return handleRunBoardButton(req, boardId, automationId);
   }

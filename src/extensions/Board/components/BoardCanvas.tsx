@@ -65,9 +65,16 @@ interface Props {
   onAddCard: (listId: string, title: string) => Promise<void>;
   onAddList: (title: string) => Promise<void>;
   onRenameList: (listId: string, title: string) => void;
+  onCopyList: (listId: string) => void;
+  onMoveList: (listId: string, targetIndex: number) => void;
+  onMoveAllCards: (listId: string, targetListId: string) => void;
   onArchiveList: (listId: string) => void;
+  onArchiveAllCards: (listId: string) => void;
   onDeleteList: (listId: string) => void;
+  onChangeListColor: (listId: string, color: string | null) => void;
   onSortList: (listId: string, sortBy: ListSortBy) => void;
+  listColors?: Record<string, string | null>;
+  listSummaries?: Array<{ id: string; title: string }>;
   onCardClick?: (cardId: string) => void;
   isReadOnly?: boolean;
   /** True when the current user is a GUEST with guestType=VIEWER — hides write-action controls. */
@@ -245,9 +252,16 @@ const BoardCanvas = ({
   onAddCard,
   onAddList,
   onRenameList,
+  onCopyList,
+  onMoveList,
+  onMoveAllCards,
   onArchiveList,
+  onArchiveAllCards,
   onDeleteList,
+  onChangeListColor,
   onSortList,
+  listColors = {},
+  listSummaries = [],
   onCardClick,
   isReadOnly = false,
   isViewerGuest = false,
@@ -834,14 +848,21 @@ const BoardCanvas = ({
               <SortableListColumn
                 key={listId}
                 list={list}
+                listColor={listColors[listId] ?? null}
+                availableLists={listSummaries}
                 cardIds={effectiveCardsByList[listId] ?? []}
                 cards={cards}
                 hydration={listHydration?.[list.id]}
                 boardId={boardId}
                 {...(boardTitle ? { boardTitle } : {})}
                 onRename={onRenameList}
+                onCopyList={onCopyList}
+                onMoveList={onMoveList}
+                onMoveAllCards={onMoveAllCards}
                 onArchive={onArchiveList}
+                onArchiveAllCards={onArchiveAllCards}
                 onDelete={onDeleteList}
+                onChangeListColor={onChangeListColor}
                 onSortBy={onSortList}
                 onAddCard={onAddCard}
                 labelsExpanded={labelsExpanded}

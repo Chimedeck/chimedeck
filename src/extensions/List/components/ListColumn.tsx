@@ -37,8 +37,15 @@ const ListColumn = ({
         <ListHeader
           list={list}
           onRename={(title) => onRename(list.id, title)}
+          onAddCard={() => {}}
+          onCopyList={() => {}}
+          onMoveList={() => {}}
+          onMoveAllCards={() => {}}
           onArchive={() => onArchive(list.id)}
+          onArchiveAllCards={() => {}}
           onDelete={() => onDelete(list.id)}
+          onChangeListColor={() => {}}
+          availableLists={[]}
           onSortBy={(sortBy) => {
             if (onSortBy) onSortBy(list.id, sortBy);
           }}

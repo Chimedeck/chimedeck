@@ -6,6 +6,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { publisher } from '../../../../mods/pubsub/publisher';
+import { writeActivity } from '../../../activity/mods/write';
 import { createReactionNotification } from '../../../notifications/mods/createReactionNotification';
 
 export async function handleAddReaction(req: Request, commentId: string): Promise<Response> {
@@ -61,17 +62,48 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   const emoji = body.emoji.trim();
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
-  // Idempotent upsert — ignore conflict on the unique (comment_id, user_id, emoji) key.
-  await db('comment_reactions')
-    .insert({ comment_id: commentId, user_id: actorId, emoji })
-    .onConflict(['comment_id', 'user_id', 'emoji'])
-    .ignore();
+  const reactionKey = { comment_id: commentId, user_id: actorId, emoji };
+
+  // Duplicate add requests are idempotent and must not emit activity/notifications twice.
+  const existingReaction = await db('comment_reactions').where(reactionKey).first();
+  if (existingReaction) {
+    return Response.json({ data: { comment_id: commentId, emoji, user_id: actorId } });
+  }
+
+  try {
+    await db('comment_reactions').insert(reactionKey);
+  } catch (error) {
+    // Handle race between concurrent add requests safely (idempotent success, no duplicate emit).
+    const dbError = error as { code?: string };
+    if (
+      dbError?.code === '23505' ||
+      dbError?.code === 'SQLITE_CONSTRAINT' ||
+      dbError?.code === 'SQLITE_CONSTRAINT_UNIQUE'
+    ) {
+      return Response.json({ data: { comment_id: commentId, emoji, user_id: actorId } });
+    }
+    throw error;
+  }
 
   // Fetch actor name for WS payload so clients can show reactor names in tooltips immediately.
   const actor = await db('users')
     .where({ id: actorId })
     .select(db.raw("COALESCE(name, email) as display_name"))
     .first();
+
+  await writeActivity({
+    entityType: 'card',
+    entityId: comment.card_id,
+    boardId: board.id,
+    action: 'comment_reaction_added',
+    actorId,
+    payload: {
+      commentId,
+      cardId: comment.card_id,
+      cardTitle: card.title,
+      emoji,
+    },
+  });
 
   publisher
     .publish(

@@ -14,8 +14,19 @@ export async function handleListNotifications(req: Request): Promise<Response> {
   const limit = Math.min(Number.parseInt(url.searchParams.get('limit') ?? '20', 10), 100);
   const cursor = url.searchParams.get('cursor') ?? null;
 
-  // Optional type filter — must be one of the four valid notification types.
-  const VALID_TYPES = new Set(['mention', 'card_created', 'card_moved', 'card_commented']);
+  // Optional type filter — keep in sync with notification type constraints/preferences.
+  const VALID_TYPES = new Set([
+    'mention',
+    'card_created',
+    'card_moved',
+    'card_commented',
+    'comment_reaction',
+    'card_member_assigned',
+    'card_member_unassigned',
+    'card_updated',
+    'card_deleted',
+    'card_archived',
+  ]);
   const typeParam = url.searchParams.get('type') ?? null;
   const typeFilter = typeParam && VALID_TYPES.has(typeParam) ? typeParam : null;
 

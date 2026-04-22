@@ -12,6 +12,8 @@
   "activity.action.comment_added": "{actor} commented on card \"{cardTitle}\": {commentPreview}",
   "activity.action.comment_edited": "{actor} edited a comment in \"{cardTitle}\"",
   "activity.action.comment_deleted": "{actor} deleted a comment",
+  "activity.action.comment_reaction_added": "{actor} reacted {emoji} to a comment on \"{cardTitle}\"",
+  "activity.action.comment_reaction_removed": "{actor} removed reaction {emoji} from a comment on \"{cardTitle}\"",
   "activity.action.list_created": "{actor} created list \"{title}\"",
   "activity.action.list_updated": "{actor} updated list \"{title}\"",
   "activity.action.list_archived": "{actor} archived list \"{title}\"",

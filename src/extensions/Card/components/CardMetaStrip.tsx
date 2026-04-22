@@ -7,17 +7,7 @@ import type { Label, CardMember } from '../api';
 import { LabelChip, contrastText } from './LabelChip';
 import { CardDatesPicker } from './CardDatesPicker';
 import CardValue from './CardValue';
-
-const PRESET_COLORS = [
-  { name: 'Slate', hex: '#64748b' },
-  { name: 'Red', hex: '#ef4444' },
-  { name: 'Orange', hex: '#f97316' },
-  { name: 'Yellow', hex: '#eab308' },
-  { name: 'Green', hex: '#22c55e' },
-  { name: 'Teal', hex: '#14b8a6' },
-  { name: 'Indigo', hex: '#6366f1' },
-  { name: 'Purple', hex: '#a855f7' },
-];
+import { DEFAULT_LABEL_COLOR, LABEL_PRESET_COLORS } from '../constants/labelPresetColors';
 
 const MAX_VISIBLE = 3;
 
@@ -121,8 +111,8 @@ const ColorGrid = ({
   selected: string;
   onChange: (hex: string) => void;
 }) => (
-  <div className="grid grid-cols-4 gap-1.5">
-    {PRESET_COLORS.map((c) => (
+  <div className="grid grid-cols-5 gap-1.5">
+    {LABEL_PRESET_COLORS.filter((c) => c.hex !== '').map((c) => (
       <button
         key={c.hex}
         type="button"
@@ -163,7 +153,7 @@ const LabelSection = ({
   const [view, setView] = useState<string>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [formName, setFormName] = useState('');
-  const [formColor, setFormColor] = useState(PRESET_COLORS[6]?.hex ?? '#6366f1');
+  const [formColor, setFormColor] = useState(DEFAULT_LABEL_COLOR);
   const [saving, setSaving] = useState(false);
 
   const assignedIds = new Set(labels.map((l) => l.id));
@@ -173,7 +163,7 @@ const LabelSection = ({
   const resetToList = () => {
     setView('list');
     setFormName('');
-    setFormColor(PRESET_COLORS[6]?.hex ?? '#6366f1');
+    setFormColor(DEFAULT_LABEL_COLOR);
   };
 
   const openEdit = (label: Label) => {
@@ -324,7 +314,7 @@ const LabelSection = ({
                 <button
                   type="button"
                   className="w-full mt-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
-                  onClick={() => { setFormName(''); setFormColor(PRESET_COLORS[6]?.hex ?? '#6366f1'); setView('create'); }}
+                  onClick={() => { setFormName(''); setFormColor(DEFAULT_LABEL_COLOR); setView('create'); }}
                 >
                   Create a new label
                 </button>

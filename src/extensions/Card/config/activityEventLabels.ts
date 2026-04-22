@@ -30,6 +30,16 @@ export function getActivityEventMeta(
   payload?: Record<string, unknown>,
   context?: ActivityEventContext,
 ): ActivityEventMeta {
+  if (eventType === 'comment_reaction_added') {
+    const emoji = typeof payload?.emoji === 'string' && payload.emoji ? payload.emoji : 'reaction';
+    return { label: `reacted ${emoji} to a comment`, dotColor: 'bg-amber-500' };
+  }
+
+  if (eventType === 'comment_reaction_removed') {
+    const emoji = typeof payload?.emoji === 'string' && payload.emoji ? payload.emoji : 'reaction';
+    return { label: `removed ${emoji} reaction from a comment`, dotColor: 'bg-bg-sunken' };
+  }
+
   // --- Sprint 88: card lifecycle events ---
 
   if (eventType === 'card_created') {

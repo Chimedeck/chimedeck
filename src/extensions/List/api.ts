@@ -7,6 +7,7 @@ export interface List {
   title: string;
   position: string;
   archived: boolean;
+  color?: string | null;
 }
 
 // ---------- List CRUD ----------
@@ -94,4 +95,16 @@ export async function sortListCards({
     `/lists/${listId}/sort`,
     { sortBy },
   );
+}
+
+export async function updateListColor({
+  api,
+  listId,
+  color,
+}: {
+  api: { patch: <T>(url: string, data: unknown) => Promise<T> };
+  listId: string;
+  color: string | null;
+}): Promise<{ data: List }> {
+  return api.patch<{ data: List }>(`/lists/${listId}/color`, { color });
 }

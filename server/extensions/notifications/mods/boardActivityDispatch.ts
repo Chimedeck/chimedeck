@@ -1,8 +1,8 @@
 // boardActivityDispatch.ts — Fire-and-forget notification dispatch for board-level events.
 // Handles both email and in-app channels for card_created, card_moved events (events pipeline).
 // card_commented and direct card mutations are dispatched via dispatchDirectCardNotification.
-// Called from the events pipeline after event persistence. Fetches actual board members
-// (board_members table) and filters out users who opted out at the board or global level.
+// Called from the events pipeline after event persistence. Fetches board participants
+// (joined members + board guests) and filters out users who opted out at the board or global level.
 // Failures are logged and never propagate — this must not block mutations.
 import { db } from '../../../common/db';
 import { dispatchNotificationEmail } from './emailDispatch';
@@ -41,15 +41,26 @@ export async function handleBoardActivityNotification({
     const board = await db('boards').where({ id: boardId }).select('id', 'title', 'workspace_id').first();
     if (!board) return;
 
-    // Fetch board members only — notifications are scoped to board membership, not workspace
-    const members = await db('board_members')
-      .where({ board_id: boardId })
-      .whereNot({ user_id: actorId })
-      .select('user_id');
+    // Fetch all board participants (joined members + explicit board guests), excluding actor.
+    const [members, guests] = await Promise.all([
+      db('board_members')
+        .where({ board_id: boardId })
+        .whereNot({ user_id: actorId })
+        .select('user_id'),
+      db('board_guest_access')
+        .where({ board_id: boardId })
+        .whereNot({ user_id: actorId })
+        .select('user_id'),
+    ]);
 
-    if (members.length === 0) return;
+    const recipientIds = Array.from(
+      new Set([
+        ...members.map((m: { user_id: string }) => m.user_id),
+        ...guests.map((g: { user_id: string }) => g.user_id),
+      ]),
+    );
 
-    const recipientIds = members.map((m: { user_id: string }) => m.user_id);
+    if (recipientIds.length === 0) return;
 
     const templateData = await buildTemplateData({
       eventType: event.type as SupportedEventType,
@@ -239,12 +250,25 @@ export async function dispatchDirectCardNotification({
   actorId: string;
 }): Promise<void> {
   try {
-    const members = await db('board_members')
-      .where({ board_id: boardId })
-      .whereNot({ user_id: actorId })
-      .select('user_id');
+    const [members, guests] = await Promise.all([
+      db('board_members')
+        .where({ board_id: boardId })
+        .whereNot({ user_id: actorId })
+        .select('user_id'),
+      db('board_guest_access')
+        .where({ board_id: boardId })
+        .whereNot({ user_id: actorId })
+        .select('user_id'),
+    ]);
 
-    if (members.length === 0) return;
+    const recipients = Array.from(
+      new Set([
+        ...members.map((m: { user_id: string }) => m.user_id),
+        ...guests.map((g: { user_id: string }) => g.user_id),
+      ]),
+    );
+
+    if (recipients.length === 0) return;
 
     const actor = await db('users')
       .where({ id: actorId })
@@ -308,7 +332,7 @@ export async function dispatchDirectCardNotification({
       };
     }
 
-    for (const { user_id: recipientId } of members) {
+    for (const recipientId of recipients) {
       try {
         const [globalEnabled, boardEnabled] = await Promise.all([
           globalPreferenceGuard({ userId: recipientId }),

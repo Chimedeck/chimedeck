@@ -50,6 +50,7 @@ function describeAction(
   const commentPreview = textValue(payload.commentPreview);
   const name = textValue(payload.name);
   const assigneeName = textValue(payload.assigneeName);
+  const emoji = textValue(payload.emoji);
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
@@ -66,6 +67,7 @@ function describeAction(
     commentPreview,
     name,
     assigneeName,
+    emoji,
   });
 }
 

@@ -7,6 +7,7 @@ import { handleArchiveList } from './archive';
 import { handleDeleteList } from './delete';
 import { handleReorderLists } from './reorder';
 import { handleSortListCards } from './sort';
+import { handleUpdateListColor } from './color';
 import { resolveBoardId, resolveListId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a list route, otherwise null.
@@ -60,6 +61,9 @@ export async function listRouter(req: Request, pathname: string): Promise<Respon
 
     // PATCH /api/v1/lists/:id/sort
     if (sub === '/sort' && req.method === 'PATCH') return handleSortListCards(req, listId);
+
+    // PATCH /api/v1/lists/:id/color
+    if (sub === '/color' && req.method === 'PATCH') return handleUpdateListColor(req, listId);
 
     // DELETE /api/v1/lists/:id
     if (sub === '' && req.method === 'DELETE') return handleDeleteList(req, listId);

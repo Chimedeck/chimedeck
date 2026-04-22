@@ -25,7 +25,7 @@ interface Props {
 
 export const LabelChip = ({ label, onRemove }: Props) => (
   <span
-    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+    className="inline-flex items-center gap-1 rounded-full pl-3 pr-2 py-0.5 text-xs font-medium"
     style={{ backgroundColor: label.color, color: contrastText(label.color) }}
     title={label.name}
   >

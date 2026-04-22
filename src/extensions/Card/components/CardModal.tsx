@@ -104,6 +104,8 @@ const COVER_COLORS = [
   '#6B7280',
 ];
 
+const ALLOWED_COVER_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
 const CardModal = ({
   boardId,
   open,
@@ -214,14 +216,25 @@ const CardModal = ({
   }, [coverMenuOpen]);
 
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
-
-  const ALLOWED_COVER_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  const selectedCoverSize = card.cover_size ?? 'SMALL';
+  let previewSurfaceStyle: React.CSSProperties;
+  if (card.cover_image_url) {
+    previewSurfaceStyle = {
+      backgroundImage: `url(${card.cover_image_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    };
+  } else if (card.cover_color) {
+    previewSurfaceStyle = { backgroundColor: card.cover_color };
+  } else {
+    previewSurfaceStyle = { background: 'linear-gradient(135deg, #64748b 0%, #334155 100%)' };
+  }
 
   const handlePickCoverFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     // WHY: explicit allowlist ensures GIF animation is preserved and unsupported formats (e.g. SVG) are rejected.
-    if (!ALLOWED_COVER_TYPES.includes(file.type)) {
+    if (!ALLOWED_COVER_TYPES.has(file.type)) {
       setCoverUploadError('Only JPEG, PNG, GIF, or WebP images can be used as a card cover.');
       event.target.value = '';
       return;
@@ -319,21 +332,36 @@ const CardModal = ({
                     <div className="mb-3 grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => onCoverSizeChange('SMALL')}
-                        className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'SMALL'
+                        onClick={() => onCoverSizeChange('FULL')}
+                        className={`rounded-md border p-1.5 text-left text-xs transition-colors ${selectedCoverSize === 'FULL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                           : 'border-border text-muted hover:bg-bg-overlay'}`}
+                        aria-label="Show cover image above card"
                       >
-                        Compact
+                        <div className="h-12 w-full overflow-hidden rounded">
+                          <div className="h-5 w-full" style={previewSurfaceStyle} />
+                          <div className="h-7 w-full bg-bg-surface px-1.5 py-1">
+                            <div className="h-1 w-10 rounded bg-border" />
+                            <div className="mt-1 h-1 w-7 rounded bg-border" />
+                          </div>
+                        </div>
                       </button>
                       <button
                         type="button"
-                        onClick={() => onCoverSizeChange('FULL')}
-                        className={`rounded-md border p-2 text-left text-xs transition-colors ${(card.cover_size ?? 'SMALL') === 'FULL'
+                        onClick={() => onCoverSizeChange('SMALL')}
+                        className={`rounded-md border p-1.5 text-left text-xs transition-colors ${selectedCoverSize === 'SMALL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                           : 'border-border text-muted hover:bg-bg-overlay'}`}
+                        aria-label="Show card content on image background"
                       >
-                        Large
+                        <div className="h-12 w-full overflow-hidden rounded px-1.5 py-1" style={previewSurfaceStyle}>
+                          <div className="h-full w-full rounded bg-black/30 p-1 flex items-end">
+                            <div>
+                              <div className="h-1 w-10 rounded bg-white/70" />
+                              <div className="mt-1 h-1 w-8 rounded bg-white/60" />
+                            </div>
+                          </div>
+                        </div>
                       </button>
                     </div>
 

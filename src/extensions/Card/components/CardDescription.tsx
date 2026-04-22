@@ -139,7 +139,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
                   : 'cursor-text hover:bg-bg-overlay',
                 isEmpty
                   ? 'text-muted text-sm italic bg-bg-overlay'
-                  : 'prose dark:prose-invert prose-sm max-w-none text-base',
+                  : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
                 isLong && !expanded ? 'overflow-hidden' : '',
               ].join(' ')}
               style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}

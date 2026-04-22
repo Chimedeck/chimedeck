@@ -73,10 +73,11 @@ function passesMembersFilter(
 ): boolean {
   const { noMembers, assignedToMe, memberIds } = filters;
   if (!noMembers && !assignedToMe && memberIds.size === 0) return true;
+  const members = Array.isArray(card.members) ? card.members : [];
   return (
-    (noMembers && card.members.length === 0) ||
-    (assignedToMe && !!currentUserId && card.members.some((m) => m.id === currentUserId)) ||
-    (memberIds.size > 0 && card.members.some((m) => memberIds.has(m.id)))
+    (noMembers && members.length === 0) ||
+    (assignedToMe && !!currentUserId && members.some((m) => m.id === currentUserId)) ||
+    (memberIds.size > 0 && members.some((m) => memberIds.has(m.id)))
   );
 }
 
@@ -97,9 +98,10 @@ function passesDueDate(card: Card, dueDate: BoardFilters['dueDate']): boolean {
 function passesLabelsFilter(card: Card, filters: BoardFilters): boolean {
   const { noLabels, labelIds } = filters;
   if (!noLabels && labelIds.size === 0) return true;
+  const labels = Array.isArray(card.labels) ? card.labels : [];
   return (
-    (noLabels && card.labels.length === 0) ||
-    (labelIds.size > 0 && card.labels.some((l) => labelIds.has(l.id)))
+    (noLabels && labels.length === 0) ||
+    (labelIds.size > 0 && labels.some((l) => labelIds.has(l.id)))
   );
 }
 

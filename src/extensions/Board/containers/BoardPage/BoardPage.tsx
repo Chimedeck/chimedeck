@@ -29,10 +29,10 @@ import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
 import { updateBoard, archiveBoard, deleteBoard, starBoard, unstarBoard } from '../../api';
-import { createList, updateList, archiveList, deleteList, reorderLists, sortListCards } from '../../../List/api';
+import { createList, updateList, archiveList, deleteList, reorderLists, sortListCards, updateListColor } from '../../../List/api';
 import type { ListSortBy } from '../../../List/types';
-import { createCard, getCard } from '../../../Card/api';
-import { moveCard } from '../../api/card';
+import { createCard, getCard, copyCard } from '../../../Card/api';
+import { moveCard, archiveCard } from '../../api/card';
 import { useWebSocket } from '../../../Realtime/hooks/useWebSocket';
 import { useBoardSync } from '../../../Realtime/hooks/useBoardSync';
 import { usePollingFallback } from '../../../Realtime/PollingFallback';
@@ -103,6 +103,15 @@ const BoardPage = () => {
   const allCardIds = Object.keys(cards);
   const customFieldValuesMap = useBoardCardFieldValues(boardId, allCardIds);
 
+  const listSummaries = useMemo(
+    () => listOrder.map((id) => ({ id, title: lists[id]?.title ?? 'Untitled list' })),
+    [listOrder, lists],
+  );
+  const listColors = useMemo(
+    () => Object.fromEntries(Object.values(lists).map((entry) => [entry.id, entry.color ?? null])) as Record<string, string | null>,
+    [lists],
+  );
+
   // Use the shared axios client instead of a globalThis reference
   const api = apiClient;
 
@@ -152,8 +161,11 @@ const BoardPage = () => {
   // ── Board members panel ───────────────────────────────────────────────────
   const [membersOpen, setMembersOpen] = useState(false);
   const { data: boardMembers = [] } = useGetBoardMembersQuery(boardId ?? '', { skip: !boardId });
-  // [why] Notifications should only be active for users who have explicitly joined the board.
+  // [why] Joined board members are explicit board participants.
   const isBoardMember = boardMembers.some((m) => m.user_id === currentUser?.id);
+  // [why] Board guests are board-scoped participants and should be able to
+  //       configure and receive board notifications like joined members.
+  const canManageOwnBoardNotifications = isBoardMember || isGuest;
 
   // ── Board filters ─────────────────────────────────────────────────────────
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
@@ -167,7 +179,8 @@ const BoardPage = () => {
   const boardLabels = useMemo(() => {
     const map = new Map<string, { id: string; name: string; color: string }>();
     for (const card of Object.values(cards)) {
-      for (const label of card.labels) {
+      const labels = Array.isArray(card.labels) ? card.labels : [];
+      for (const label of labels) {
         if (!map.has(label.id)) map.set(label.id, { id: label.id, name: label.name, color: label.color });
       }
     }
@@ -427,6 +440,119 @@ const BoardPage = () => {
     [addToast, api, boardId, dispatch],
   );
 
+  const handleChangeListColor = useCallback(
+    async (listId: string, color: string | null) => {
+      const list = lists[listId];
+      if (!list) return;
+
+      dispatch(boardSliceActions.updateList({ list: { ...list, color } }));
+      try {
+        await updateListColor({ api, listId, color });
+      } catch {
+        if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
+        addToast('Failed to update list color.', 'error');
+      }
+    },
+    [addToast, api, boardId, dispatch, lists],
+  );
+
+  const handleMoveList = useCallback(
+    async (listId: string, targetIndex: number) => {
+      if (!boardId) return;
+      const currentIndex = listOrder.indexOf(listId);
+      if (currentIndex === -1) return;
+
+      const without = listOrder.filter((id) => id !== listId);
+      const normalizedTarget = Math.max(0, Math.min(targetIndex, listOrder.length - 1));
+      const newOrder = [...without];
+      newOrder.splice(normalizedTarget, 0, listId);
+
+      dispatch(boardSliceActions.applyOptimisticListReorder({ newOrder }));
+      try {
+        await reorderLists({ api, boardId, order: newOrder });
+      } catch {
+        dispatch(fetchBoardDataThunk({ boardId }));
+        addToast('Failed to move list.', 'error');
+      }
+    },
+    [addToast, api, boardId, dispatch, listOrder],
+  );
+
+  const handleMoveAllCards = useCallback(
+    async (fromListId: string, targetListId: string) => {
+      if (!boardId || fromListId === targetListId) return;
+      const sourceCardIds = [...(cardsByList[fromListId] ?? [])];
+      if (sourceCardIds.length === 0) return;
+
+      const targetCardIds = cardsByList[targetListId] ?? [];
+      let afterCardId: string | null = null;
+      if (targetCardIds.length > 0) {
+        const lastIndex = targetCardIds.length - 1;
+        const tailCardId = targetCardIds[lastIndex];
+        afterCardId = tailCardId ?? null;
+      }
+
+      try {
+        for (const cardId of sourceCardIds) {
+          await moveCard({ api, cardId, targetListId, afterCardId });
+          // Chain moves so cards keep their original relative order in the destination list.
+          afterCardId = cardId;
+        }
+        dispatch(fetchBoardDataThunk({ boardId }));
+      } catch {
+        dispatch(fetchBoardDataThunk({ boardId }));
+        addToast('Failed to move all cards.', 'error');
+      }
+    },
+    [addToast, api, boardId, cardsByList, dispatch],
+  );
+
+  const handleArchiveAllCards = useCallback(
+    async (listId: string) => {
+      if (!boardId) return;
+      const cardIds = cardsByList[listId] ?? [];
+      if (cardIds.length === 0) return;
+      try {
+        await Promise.all(cardIds.map((cardId) => archiveCard({ api, cardId })));
+        dispatch(fetchBoardDataThunk({ boardId }));
+      } catch {
+        dispatch(fetchBoardDataThunk({ boardId }));
+        addToast('Failed to archive all cards in this list.', 'error');
+      }
+    },
+    [addToast, api, boardId, cardsByList, dispatch],
+  );
+
+  const handleCopyList = useCallback(
+    async (listId: string) => {
+      if (!boardId) return;
+      const sourceList = lists[listId];
+      if (!sourceList) return;
+      try {
+        const created = await createList({
+          api,
+          boardId,
+          title: `${sourceList.title} (Copy)`,
+          afterId: listId,
+        });
+        const sourceCardIds = cardsByList[listId] ?? [];
+        for (const cardId of sourceCardIds) {
+          await copyCard({
+            api,
+            cardId,
+            targetListId: created.data.id,
+            keepChecklists: true,
+            keepMembers: true,
+          });
+        }
+        dispatch(fetchBoardDataThunk({ boardId }));
+      } catch {
+        addToast('Failed to copy list.', 'error');
+      }
+    },
+    [addToast, api, boardId, cardsByList, dispatch, lists],
+  );
+
   // ── Board archive / delete ─────────────────────────────────────────────
   const handleBoardArchive = useCallback(async () => {
     if (!boardId || !board) return;
@@ -656,9 +782,16 @@ const BoardPage = () => {
               onAddCard={handleAddCard}
               onAddList={handleAddList}
               onRenameList={handleRenameList}
+              onCopyList={handleCopyList}
+              onMoveList={handleMoveList}
+              onMoveAllCards={handleMoveAllCards}
               onArchiveList={handleArchiveList}
+              onArchiveAllCards={handleArchiveAllCards}
               onDeleteList={handleDeleteList}
+              onChangeListColor={handleChangeListColor}
               onSortList={handleSortList}
+              listColors={listColors}
+              listSummaries={listSummaries}
               onCardClick={handleCardClick}
               isReadOnly={board.state === 'ARCHIVED'}
               isViewerGuest={isViewerGuest}
@@ -733,7 +866,7 @@ const BoardPage = () => {
           onClose={() => setSettingsOpen(false)}
           isGuest={isGuest}
           isViewerGuest={isViewerGuest}
-          isBoardMember={isBoardMember}
+          isBoardParticipant={canManageOwnBoardNotifications}
         />
       )}
       {/* Board members panel (Sprint 79) */}
