@@ -3,6 +3,7 @@
 
 # Chimedeck: an open-source work management platform  
 A full-stack workspace and card management app with boards, lists, comments, attachments, pricing tools, CLI commands, and automated tests. Built with React, Bun/TypeScript, and an extensible server/client architecture for fast product iteration.
+
 Developed by Journeyhorizon: https://journeyh.io/
 
 We built it to solve a real problem inside our own company.  
