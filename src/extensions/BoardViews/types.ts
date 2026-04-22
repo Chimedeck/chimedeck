@@ -38,6 +38,7 @@ export interface ArchivedCard {
   created_at: string;
   updated_at: string;
   list_title: string;
+  labels: Array<{ id: string; name: string; color: string }>;
 }
 
 export interface PaginatedResponse<T> {

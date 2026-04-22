@@ -6,6 +6,7 @@ import { apiClient } from '~/common/api/client';
 import type { ArchivedCard } from './types';
 import translations from './translations/en.json';
 import Button from '~/common/components/Button';
+import { contrastText } from '~/extensions/Card/components/LabelChip';
 
 interface Props {
   boardId: string;
@@ -82,9 +83,23 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
           className="flex items-center justify-between rounded border border-border bg-bg-surface px-3 py-2 text-sm"
         >
           <div>
+              {Array.isArray(card.labels) && card.labels.length > 0 && (
+              <div className="mb-1.5 flex flex-wrap gap-1">
+                {card.labels.map((label) => (
+                  <span
+                    key={label.id}
+                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                    style={{ backgroundColor: label.color, color: contrastText(label.color) }}
+                    title={label.name}
+                  >
+                    {label.name}
+                  </span>
+                ))}
+              </div>
+            )}
             <button
               type="button"
-              className="font-medium text-base text-link hover:underline underline-offset-2 text-left"
+              className="font-medium text-link hover:underline underline-offset-2 text-left"
               onClick={() => handleOpenCard(card.id)}
             >
               {card.title}
