@@ -1,13 +1,8 @@
-<div align="center">
+<div align="left">
 
-<img src="https://github.com/Chimedeck/chimedeck/blob/main/public/android-chrome-512x512.png?raw=true" alt="ChimeDeck Logo" width="120"/>
+<img src="https://github.com/Chimedeck/chimedeck/blob/main/public/android-chrome-512x512.png?raw=true" alt="ChimeDeck Logo" width="60"/>
 
-# ChimeDeck
-
-![License](https://img.shields.io/badge/License-AGPL%203.0-blue)
-
-### ChimeDeck - an open-source work management platform  
-designed to give teams full control - without per-user pricing
+# Chimedeck: an open-source work management platform  
 
 Developed by Journeyhorizon: https://journeyh.io/
 
@@ -16,31 +11,16 @@ Now, it’s yours to use, customize, and grow with.
 
 **Contact us for Self-hosted with support or Cloud Host**
 
-</div>
+<div align="left">
 
----
-
-<div align="center">
-<a href="https://www.instagram.com/chimedeck/">
-  <img src="https://img.shields.io/badge/-E4405F?style=flat-square&logo=instagram&logoColor=white"/>
-</a>
 <a href="https://youtube.com/@chimedeck">
   <img src="https://img.shields.io/badge/-FF0000?style=flat-square&logo=youtube&logoColor=white"/>
-</a>
-<a href="#">
-  <img src="https://img.shields.io/badge/-E60023?style=flat-square&logo=dribbble&logoColor=white"/>
 </a>
 <a href="https://www.linkedin.com/company/chimedeck">
   <img src="https://img.shields.io/badge/-0A66C2?style=flat-square&logo=linkedin&logoColor=white"/>
 </a>
 <a href="https://www.facebook.com/chimedeck/">
   <img src="https://img.shields.io/badge/-1877F2?style=flat-square&logo=facebook&logoColor=white"/>
-</a>
-<a href="#">
-  <img src="https://img.shields.io/badge/-BD081C?style=flat-square&logo=pinterest&logoColor=white"/>
-</a>
-<a href="https://www.threads.com/@chimedeck">
-  <img src="https://img.shields.io/badge/-000000?style=flat-square&logo=threads&logoColor=white"/>
 </a>
 <a href="https://x.com/chimedeck_JH">
   <img src="https://img.shields.io/badge/-000000?style=flat-square&logo=x&logoColor=white"/>
@@ -52,28 +32,12 @@ Now, it’s yours to use, customize, and grow with.
   <img src="https://img.shields.io/badge/-0A0A0A?style=flat-square&logo=devdotto&logoColor=white"/>
 </a>
 
-</div>
-
----
-
-<div align="center">
-
-Get started with Cloud hosting  
 
 <br/>
 
-[JOIN OUR DISCORD](https://discord.gg/UMUJwP5fE) • 
+
 [WATCH OUR DEMO](https://www.youtube.com/watch?v=j3sUyVmm8Bg)
 
-</div>
-
----
-
-<div align="center">
-
-Github • Website • Journeyhorizon • Documentation • Changelog • Roadmap • Contributing
-
-</div>
 
 ## Documentation
 
