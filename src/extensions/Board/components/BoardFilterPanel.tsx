@@ -275,6 +275,7 @@ export default function BoardFilterPanel({
   const [memberSearch, setMemberSearch] = useState('');
   const [labelDropdownOpen, setLabelDropdownOpen] = useState(false);
   const [labelSearch, setLabelSearch] = useState('');
+  const hasActiveFilters = countActiveFilters(filters) > 0 || filters.collapseLists;
 
   // Close when clicking outside the container (which includes the trigger button)
   useEffect(() => {
@@ -297,6 +298,18 @@ export default function BoardFilterPanel({
   }, [onClose]);
 
   const set = (patch: Partial<BoardFilters>) => onChange({ ...filters, ...patch });
+
+  const resetFilters = () => {
+    onChange({
+      ...DEFAULT_FILTERS,
+      memberIds: new Set(),
+      labelIds: new Set(),
+    });
+    setMemberDropdownOpen(false);
+    setLabelDropdownOpen(false);
+    setMemberSearch('');
+    setLabelSearch('');
+  };
 
   const toggleMemberId = (id: string) => {
     const next = new Set(filters.memberIds);
@@ -344,14 +357,25 @@ export default function BoardFilterPanel({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
         <span className="text-sm font-semibold text-base">Filter</span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded p-0.5 text-subtle hover:text-base transition-colors"
-          aria-label="Close filter panel"
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
+            className="rounded px-1.5 py-0.5 text-xs font-medium text-subtle hover:text-base transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Reset filters"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded p-0.5 text-subtle hover:text-base transition-colors"
+            aria-label="Close filter panel"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <div className="p-2">

@@ -57,6 +57,34 @@ function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): str
   return 'text-muted';
 }
 
+function hasSameCustomFieldValues(
+  prevValues: CustomFieldValue[] | undefined,
+  nextValues: CustomFieldValue[] | undefined,
+): boolean {
+  if (prevValues === nextValues) return true;
+  if (!prevValues || !nextValues) return false;
+  if (prevValues.length !== nextValues.length) return false;
+
+  for (let i = 0; i < prevValues.length; i += 1) {
+    const prevValue = prevValues[i];
+    const nextValue = nextValues[i];
+    if (!prevValue || !nextValue) return false;
+    if (
+      prevValue.id !== nextValue.id
+      || prevValue.custom_field_id !== nextValue.custom_field_id
+      || prevValue.value_text !== nextValue.value_text
+      || prevValue.value_number !== nextValue.value_number
+      || prevValue.value_date !== nextValue.value_date
+      || prevValue.value_checkbox !== nextValue.value_checkbox
+      || prevValue.value_option_id !== nextValue.value_option_id
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 const CardItemContent = memo(({
   card,
   labelsExpanded,
@@ -243,6 +271,39 @@ const CardItemContent = memo(({
       )}
     </>
   );
+}, (prev, next) => {
+  if (prev === next) return true;
+  if (prev.labelsExpanded !== next.labelsExpanded) return false;
+  if (prev.onToggleLabels !== next.onToggleLabels) return false;
+  if (prev.listTitle !== next.listTitle) return false;
+  if (prev.boardTitle !== next.boardTitle) return false;
+  if (prev.boardId !== next.boardId) return false;
+  if (prev.currentUserId !== next.currentUserId) return false;
+  if (prev.onRemoveMember !== next.onRemoveMember) return false;
+  if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
+
+  const prevCard = prev.card;
+  const nextCard = next.card;
+  if (prevCard === nextCard) return true;
+
+  return prevCard.id === nextCard.id
+    && prevCard.title === nextCard.title
+    && prevCard.list_id === nextCard.list_id
+    && prevCard.cover_image_url === nextCard.cover_image_url
+    && prevCard.cover_color === nextCard.cover_color
+    && prevCard.cover_size === nextCard.cover_size
+    && prevCard.description === nextCard.description
+    && prevCard.due_date === nextCard.due_date
+    && prevCard.due_complete === nextCard.due_complete
+    && prevCard.amount === nextCard.amount
+    && prevCard.currency === nextCard.currency
+    && prevCard.checklist_total === nextCard.checklist_total
+    && prevCard.checklist_done === nextCard.checklist_done
+    && prevCard.attachment_count === nextCard.attachment_count
+    && prevCard.linked_card_count === nextCard.linked_card_count
+    && prevCard.comment_count === nextCard.comment_count
+    && prevCard.labels === nextCard.labels
+    && prevCard.members === nextCard.members;
 });
 
 const CardItem = ({
@@ -285,7 +346,6 @@ const CardItem = ({
       boxShadow: isOverlay ? undefined : CARD_ITEM_SHADOW,
       willChange: transform ? 'transform' : undefined,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, isOverlay],
   );
 
@@ -328,7 +388,42 @@ const CardItem = ({
   );
 };
 
+function areCardItemPropsEqual(prev: CardItemProps, next: CardItemProps): boolean {
+  if (prev === next) return true;
+  if (prev.isOverlay !== next.isOverlay) return false;
+  if (prev.onClick !== next.onClick) return false;
+  if (prev.labelsExpanded !== next.labelsExpanded) return false;
+  if (prev.onToggleLabels !== next.onToggleLabels) return false;
+  if (prev.listTitle !== next.listTitle) return false;
+  if (prev.boardTitle !== next.boardTitle) return false;
+  if (prev.boardId !== next.boardId) return false;
+  if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
+
+  const prevCard = prev.card;
+  const nextCard = next.card;
+  if (prevCard === nextCard) return true;
+
+  return prevCard.id === nextCard.id
+    && prevCard.title === nextCard.title
+    && prevCard.list_id === nextCard.list_id
+    && prevCard.cover_image_url === nextCard.cover_image_url
+    && prevCard.cover_color === nextCard.cover_color
+    && prevCard.cover_size === nextCard.cover_size
+    && prevCard.description === nextCard.description
+    && prevCard.due_date === nextCard.due_date
+    && prevCard.due_complete === nextCard.due_complete
+    && prevCard.amount === nextCard.amount
+    && prevCard.currency === nextCard.currency
+    && prevCard.checklist_total === nextCard.checklist_total
+    && prevCard.checklist_done === nextCard.checklist_done
+    && prevCard.attachment_count === nextCard.attachment_count
+    && prevCard.linked_card_count === nextCard.linked_card_count
+    && prevCard.comment_count === nextCard.comment_count
+    && prevCard.labels === nextCard.labels
+    && prevCard.members === nextCard.members;
+}
+
 // WHY: memo prevents re-renders when parent re-renders with the same props.
 // Without this every optimistic card-move update causes every CardItem to
 // re-render, DnDKit re-measures all of them, and we spin into an update loop.
-export default memo(CardItem);
+export default memo(CardItem, areCardItemPropsEqual);

@@ -122,7 +122,6 @@ const SortableListColumn = ({
       containIntrinsicSize: '1px 640px',
       ...(listColor ? { backgroundColor: listColor, color: listTextColor } : {}),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, listColor, listTextColor],
   );
   const columnBorderClass = listColor ? 'border-transparent' : 'border-border';
@@ -264,15 +263,12 @@ function areEqual(prev: Props, next: Props): boolean {
   if (prev === next) return true;
 
   if (prev.list !== next.list) return false;
-  if (prev.cardIds.length !== next.cardIds.length) return false;
-
-  const hasSameCardsForList =
-    prev.cardIds.every((cardId, index) => {
-      if (next.cardIds[index] !== cardId) return false;
-      return prev.cards[cardId] === next.cards[cardId];
-    });
-
-  return hasSameCardsForList
+  const hasSameNonCardProps =
+    prev.dragPlaceholderIndex === next.dragPlaceholderIndex
+    && prev.dragPlaceholderHeight === next.dragPlaceholderHeight
+    && prev.activeDragCardId === next.activeDragCardId
+    && prev.hydration?.loading === next.hydration?.loading
+    && prev.hydration?.error === next.hydration?.error
     && prev.boardId === next.boardId
     && prev.boardTitle === next.boardTitle
     && prev.onRename === next.onRename
@@ -292,12 +288,21 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.listColor === next.listColor
     && prev.availableLists === next.availableLists
     && prev.isViewerGuest === next.isViewerGuest
-    && prev.hasBackground === next.hasBackground
-    && prev.dragPlaceholderIndex === next.dragPlaceholderIndex
-    && prev.dragPlaceholderHeight === next.dragPlaceholderHeight
-    && prev.activeDragCardId === next.activeDragCardId
-    && prev.hydration?.loading === next.hydration?.loading
-    && prev.hydration?.error === next.hydration?.error;
+    && prev.hasBackground === next.hasBackground;
+
+  if (!hasSameNonCardProps) return false;
+
+  if (prev.cardIds.length !== next.cardIds.length) return false;
+
+  const hasSameCardsForList =
+    (prev.cardIds === next.cardIds && prev.cards === next.cards)
+    ||
+    prev.cardIds.every((cardId, index) => {
+      if (next.cardIds[index] !== cardId) return false;
+      return prev.cards[cardId] === next.cards[cardId];
+    });
+
+  return hasSameCardsForList;
 }
 
 export default memo(SortableListColumn, areEqual);

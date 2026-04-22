@@ -736,6 +736,30 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
+/* High-contrast scrollbar for card-detail columns (Light/Dark). */
+.scrollbar-contrast {
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-muted) var(--bg-sunken);
+}
+
+.scrollbar-contrast::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbar-contrast::-webkit-scrollbar-track {
+  background: var(--bg-sunken);
+}
+
+.scrollbar-contrast::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 9999px;
+  border: 2px solid var(--bg-sunken);
+}
+
+.scrollbar-contrast::-webkit-scrollbar-thumb:hover {
+  background: var(--text-base);
+}
+
 /* Section labels (e.g. DESCRIPTION, ACTIVITY) */
 .ui-label {
   font-size: 11px;

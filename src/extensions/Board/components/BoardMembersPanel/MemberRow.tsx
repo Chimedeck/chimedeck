@@ -1,5 +1,6 @@
 // MemberRow — renders a single board member row with role selector and remove button.
 // The remove button is disabled (with tooltip) when this is the last ADMIN.
+import { useState } from 'react';
 import type { BoardMember, BoardMemberRole } from '../../slices/boardMembersSlice';
 
 const ROLES: BoardMemberRole[] = ['ADMIN', 'MEMBER', 'VIEWER'];
@@ -23,6 +24,8 @@ interface Props {
 
 const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Props) => {
   const label = member.display_name ?? member.email;
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const avatarUrl = avatarFailed ? null : member.avatar_url;
   const removeTitle = isLastAdmin
     ? 'Cannot remove the last board admin'
     : `Remove ${label}`;
@@ -31,10 +34,19 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
     <li className="flex items-center gap-3 py-2">
       {/* Avatar */}
       <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-inverse"
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-inverse overflow-hidden ${avatarUrl ? 'bg-bg-overlay' : 'bg-indigo-600'}`}
         aria-hidden="true"
       >
-        {initials(member)}
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={label}
+            className="h-full w-full object-cover"
+            onError={() => { setAvatarFailed(true); }}
+          />
+        ) : (
+          initials(member)
+        )}
       </div>
 
       {/* Name / email */}

@@ -20,7 +20,7 @@ interface Props {
   boardTitle?: string;
 }
 
-interface BadgeResolvePayload {
+interface BadgeResolvePayload extends Record<string, unknown> {
   card: { id: string; name?: string };
   list: { id: string; name?: string };
   board: { id: string; name?: string };
@@ -76,6 +76,25 @@ function cacheBadgeResult(key: string, badges: PluginBadge[]): void {
   }
 }
 
+function hasSameBadges(prev: PluginBadge[], next: PluginBadge[]): boolean {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i += 1) {
+    const prevBadge = prev[i];
+    const nextBadge = next[i];
+    if (!prevBadge || !nextBadge) return false;
+    if (
+      prevBadge.text !== nextBadge.text
+      || prevBadge.color !== nextBadge.color
+      || prevBadge.icon !== nextBadge.icon
+      || prevBadge.title !== nextBadge.title
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function CardPluginBadgesComponent({
   cardId,
   listId,
@@ -95,14 +114,14 @@ function CardPluginBadgesComponent({
       boardId,
       cardId,
       listId,
-      cardTitle,
-      listTitle,
-      boardTitle,
+      ...(cardTitle ? { cardTitle } : {}),
+      ...(listTitle ? { listTitle } : {}),
+      ...(boardTitle ? { boardTitle } : {}),
     });
 
     const cachedBadges = badgeResultCache.get(cacheKey);
     if (cachedBadges) {
-      setBadges(cachedBadges);
+      setBadges((prev) => (hasSameBadges(prev, cachedBadges) ? prev : cachedBadges));
       return;
     }
 
@@ -116,7 +135,7 @@ function CardPluginBadgesComponent({
     const request = inFlight
       ?? bridge
         .resolve('card-badges', payload)
-        .then((results) => normalizeBadgeResults(results as unknown[]))
+        .then((results) => normalizeBadgeResults(results))
         .catch(() => [])
         .finally(() => {
           badgeInFlightCache.delete(cacheKey);
@@ -130,7 +149,7 @@ function CardPluginBadgesComponent({
       .then((all) => {
         if (cancelled) return;
         cacheBadgeResult(cacheKey, all);
-        setBadges(all);
+        setBadges((prev) => (hasSameBadges(prev, all) ? prev : all));
       })
       .catch(() => {
         // Silent fail — plugin errors must not break the card tile
@@ -139,7 +158,7 @@ function CardPluginBadgesComponent({
     return () => {
       cancelled = true;
     };
-  }, [bridge, boardId, cardId, listId, cardTitle, listTitle, boardTitle]);
+  }, [bridge, boardId, cardId, listId]);
 
   if (badges.length === 0) return null;
 
@@ -173,10 +192,7 @@ function CardPluginBadgesComponent({
 const CardPluginBadges = memo(
   CardPluginBadgesComponent,
   (prev, next) => prev.cardId === next.cardId
-    && prev.listId === next.listId
-    && prev.cardTitle === next.cardTitle
-    && prev.listTitle === next.listTitle
-    && prev.boardTitle === next.boardTitle,
+    && prev.listId === next.listId,
 );
 
 export default CardPluginBadges;

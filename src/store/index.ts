@@ -9,6 +9,8 @@ import { confirmEmailChangeDuckReducer } from '../extensions/Auth/containers/Con
 import { forgotPasswordDuckReducer } from '../extensions/Auth/containers/ForgotPasswordPage/ForgotPasswordPage.duck';
 import { resetPasswordDuckReducer } from '../extensions/Auth/containers/ResetPasswordPage/ResetPasswordPage.duck';
 
+const DISABLE_DEEP_CHECKS_IN_DEV = true;
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -46,6 +48,12 @@ export const store = configureStore({
       // Inject the API client so async thunks can use `extra.api` without
       // importing the client directly (avoids circular dep at module level)
       thunk: { extraArgument: { api: apiClient } },
+      // WHY: large Kanban boards trigger very heavy deep checks in dev-only
+      // middleware and can add noticeable drag latency. Production is already
+      // unaffected (these checks are dev-focused); disabling here keeps UX and
+      // behavior identical while improving local interaction performance.
+      serializableCheck: DISABLE_DEEP_CHECKS_IN_DEV ? false : { warnAfter: 128 },
+      immutableCheck: DISABLE_DEEP_CHECKS_IN_DEV ? false : { warnAfter: 128 },
     }).concat(wsMiddleware, notificationPreferencesApi.middleware, boardMembersApi.middleware, boardGuestsApi.middleware, boardNotificationTypePreferencesApi.middleware, apiTokenApi.middleware, webhooksApi.middleware),
 });
 

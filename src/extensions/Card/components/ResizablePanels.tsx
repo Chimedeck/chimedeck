@@ -140,7 +140,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
   return (
     <div ref={containerRef} className={`flex overflow-hidden ${className}`}>
       {/* Left panel */}
-      <div style={{ width: leftPercent, minWidth: MIN_WIDTH_PX }} className="overflow-y-auto">
+      <div style={{ width: leftPercent, minWidth: MIN_WIDTH_PX }} className="overflow-y-auto scrollbar-contrast">
         {left}
       </div>
 
@@ -172,7 +172,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
       </div>
 
       {/* Right panel */}
-      <div style={{ width: rightPercent, minWidth: MIN_WIDTH_PX }} className="overflow-y-auto">
+      <div style={{ width: rightPercent, minWidth: MIN_WIDTH_PX }} className="overflow-y-auto scrollbar-contrast">
         {right}
       </div>
     </div>

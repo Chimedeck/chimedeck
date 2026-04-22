@@ -100,7 +100,7 @@ const BoardPage = () => {
 
   // Batch-fetch custom field values for all cards on the board in a single request.
   // [why] Prevents N individual requests (one per card tile) when the board renders.
-  const allCardIds = Object.keys(cards);
+  const allCardIds = useMemo(() => Object.keys(cards), [cards]);
   const customFieldValuesMap = useBoardCardFieldValues(boardId, allCardIds);
 
   const listSummaries = useMemo(
