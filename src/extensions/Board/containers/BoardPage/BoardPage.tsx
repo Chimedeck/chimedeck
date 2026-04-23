@@ -669,6 +669,7 @@ const BoardPage = () => {
               <BoardCanvas
                 boardId={boardId ?? ''}
                 boardTitle={board.title}
+                currentUserId={currentUser?.id ?? ''}
                 listOrder={listOrder}
                 lists={lists}
                 cardsByList={filteredCardsByList}

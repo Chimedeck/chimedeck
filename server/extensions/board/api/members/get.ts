@@ -4,6 +4,7 @@
 import { db } from '../../../../common/db';
 import type { BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 import {
+  hasRole,
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
@@ -13,11 +14,16 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
   const scopedReq = req as BoardVisibilityScopedRequest;
   const board = scopedReq.board!;
 
-  // OWNER/ADMIN can always list; others need at least VIEWER workspace role.
-  // (applyBoardVisibility already enforces general access — just need a role check here.)
+  // [why] Board guests should be able to see board participants, but still cannot
+  // manage membership (POST/PATCH/DELETE remain ADMIN-restricted).
+  // applyBoardVisibility already enforces that GUEST callers are explicitly granted
+  // access to this board, so here we allow either VIEWER+ workspace roles or GUEST.
   if (board.visibility !== 'PUBLIC') {
-    const roleError = requireRole(scopedReq as WorkspaceScopedRequest, 'VIEWER');
-    if (roleError) return roleError;
+    const callerRole = scopedReq.callerRole;
+    if (!callerRole || (!hasRole(callerRole, 'VIEWER') && callerRole !== 'GUEST')) {
+      const roleError = requireRole(scopedReq as WorkspaceScopedRequest, 'VIEWER');
+      if (roleError) return roleError;
+    }
   }
 
   const members = await db('board_members as bm')

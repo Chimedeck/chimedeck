@@ -1,6 +1,6 @@
 // BoardPage/ListColumn — sortable list column using @dnd-kit/sortable.
-// Provides drag handle for list reorder and a SortableContext for card items.
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+// Provides drag handle for list reorder and renders draggable card tiles.
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Fragment, memo, useCallback, useMemo, useRef, useState } from 'react';
 import type { List } from '../../api';
@@ -11,6 +11,7 @@ import type { CustomFieldValue } from '../../../CustomFields/types';
 import AddCardForm from '../../../Card/components/AddCardForm';
 import Button from '../../../../common/components/Button';
 import type { ListSortBy } from '../../types';
+import { useAppSelector } from '~/hooks/useAppSelector';
 
 type ListTextTone = 'light' | 'dark';
 
@@ -31,6 +32,7 @@ interface Props {
   cards: Record<string, Card>;
   boardId?: string;
   boardTitle?: string;
+  currentUserId?: string;
   onRename: (listId: string, title: string) => void;
   onCopyList: (listId: string) => void;
   onMoveList: (listId: string, targetIndex: number) => void;
@@ -70,6 +72,7 @@ const SortableListColumn = ({
   cards,
   boardId,
   boardTitle,
+  currentUserId = '',
   onRename,
   onCopyList,
   onMoveList,
@@ -92,6 +95,8 @@ const SortableListColumn = ({
   hydration,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
+  const storeHydration = useAppSelector((state) => state.board.listHydration[list.id]);
+  const effectiveHydration = hydration ?? storeHydration;
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
   // is not provided. An inline `() => {}` creates a new reference every render.
   const noopRef = useRef(() => {});
@@ -205,34 +210,33 @@ const SortableListColumn = ({
         />
       </div>
 
-      {/* Cards — vertically sortable */}
+      {/* Cards — draggable tiles with pointer-resolved insertion preview */}
       <div
         className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]"
         style={{ contentVisibility: 'auto', contain: 'layout paint style', containIntrinsicSize: '1px 900px' }}
       >
-        <SortableContext items={visibleCardIds} strategy={verticalListSortingStrategy}>
-          {listCardObjects.map((card, idx) => (
-            <Fragment key={card.id}>
-              {normalizedPlaceholderIndex === idx && placeholderNode}
-              <CardItem
-                card={card}
-                listTitle={list.title}
-                {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
-                {...(boardId ? { boardId } : {})}
-                labelsExpanded={labelsExpanded ?? false}
-                onToggleLabels={stableToggleLabels}
-                {...(onCardClick ? { onClick: onCardClick } : {})}
-                {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
-              />
-            </Fragment>
-          ))}
-          {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
-        </SortableContext>
+        {listCardObjects.map((card, idx) => (
+          <Fragment key={card.id}>
+            {normalizedPlaceholderIndex === idx && placeholderNode}
+            <CardItem
+              card={card}
+              listTitle={list.title}
+              {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+              {...(boardId ? { boardId } : {})}
+              currentUserId={currentUserId}
+              labelsExpanded={labelsExpanded ?? false}
+              onToggleLabels={stableToggleLabels}
+              {...(onCardClick ? { onClick: onCardClick } : {})}
+              {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
+            />
+          </Fragment>
+        ))}
+        {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
       </div>
 
       {/* Add card footer — hidden for VIEWER guests */}
       <div className="px-1 pb-2">
-        {hydration?.loading && (
+        {effectiveHydration?.loading && (
           <p className={`mb-2 px-2 text-xs ${loadingTextClass}`}>Loading more cards...</p>
         )}
         {!isViewerGuest && (addingCard ? (
@@ -263,14 +267,22 @@ function areEqual(prev: Props, next: Props): boolean {
   if (prev === next) return true;
 
   if (prev.list !== next.list) return false;
+
+  const prevUsesPlaceholderMode =
+    typeof prev.dragPlaceholderIndex === 'number' && Number.isFinite(prev.dragPlaceholderIndex);
+  const nextUsesPlaceholderMode =
+    typeof next.dragPlaceholderIndex === 'number' && Number.isFinite(next.dragPlaceholderIndex);
+  const shouldCompareActiveDragCardId = prevUsesPlaceholderMode || nextUsesPlaceholderMode;
+
   const hasSameNonCardProps =
     prev.dragPlaceholderIndex === next.dragPlaceholderIndex
     && prev.dragPlaceholderHeight === next.dragPlaceholderHeight
-    && prev.activeDragCardId === next.activeDragCardId
+    && (!shouldCompareActiveDragCardId || prev.activeDragCardId === next.activeDragCardId)
     && prev.hydration?.loading === next.hydration?.loading
     && prev.hydration?.error === next.hydration?.error
     && prev.boardId === next.boardId
     && prev.boardTitle === next.boardTitle
+    && prev.currentUserId === next.currentUserId
     && prev.onRename === next.onRename
     && prev.onCopyList === next.onCopyList
     && prev.onMoveList === next.onMoveList

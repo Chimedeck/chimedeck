@@ -22,14 +22,26 @@ type ActivityAction =
   | 'card_created'
   | 'card_moved'
   | 'card_member_assigned'
-  | 'card_member_unassigned';
+  | 'card_member_unassigned'
+  | 'checklist_item_assigned'
+  | 'checklist_item_unassigned'
+  | 'checklist_item_due_date_updated';
 
 const ACTIVITY_TO_NOTIFICATION: Record<ActivityAction, NotificationType> = {
   card_created: 'card_created',
   card_moved: 'card_moved',
   card_member_assigned: 'card_member_assigned',
   card_member_unassigned: 'card_member_unassigned',
+  checklist_item_assigned: 'checklist_item_assigned',
+  checklist_item_unassigned: 'checklist_item_unassigned',
+  checklist_item_due_date_updated: 'checklist_item_due_date_updated',
 };
+
+const CHECKLIST_NOTIFICATION_TYPES = new Set<NotificationType>([
+  'checklist_item_assigned',
+  'checklist_item_unassigned',
+  'checklist_item_due_date_updated',
+]);
 
 const SUPPORTED_ACTIONS = new Set<string>(Object.keys(ACTIVITY_TO_NOTIFICATION));
 
@@ -46,7 +58,7 @@ export async function mapActivityToNotification({
 
   try {
     const notificationType = ACTIVITY_TO_NOTIFICATION[activity.action as ActivityAction];
-    const payload = activity.payload as Record<string, unknown>;
+    const payload = normalisePayload(activity.payload);
 
     const board = await db('boards')
       .where({ id: boardId })
@@ -70,7 +82,29 @@ export async function mapActivityToNotification({
       if (row.user_id !== activity.actor_id) recipientSet.add(row.user_id);
     }
 
-    const recipientIds = Array.from(recipientSet);
+    let recipientIds = Array.from(recipientSet);
+
+    if (CHECKLIST_NOTIFICATION_TYPES.has(notificationType)) {
+      const checklistRecipients = new Set<string>();
+      const currentUserId = typeof payload.userId === 'string' ? payload.userId : null;
+      const previousUserId = typeof payload.previousUserId === 'string' ? payload.previousUserId : null;
+
+      if (notificationType === 'checklist_item_assigned' && currentUserId && currentUserId !== activity.actor_id) {
+        checklistRecipients.add(currentUserId);
+      }
+
+      if (notificationType === 'checklist_item_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
+        checklistRecipients.add(previousUserId);
+      }
+
+      if (notificationType === 'checklist_item_due_date_updated') {
+        if (currentUserId && currentUserId !== activity.actor_id) {
+          checklistRecipients.add(currentUserId);
+        }
+      }
+
+      recipientIds = Array.from(checklistRecipients);
+    }
 
     if (recipientIds.length === 0) return;
 
@@ -177,6 +211,24 @@ export async function mapActivityToNotification({
   }
 }
 
+function normalisePayload(raw: unknown): Record<string, unknown> {
+  if (!raw) return {};
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 function buildEmailTemplateData({
   action,
   payload,
@@ -226,6 +278,11 @@ function buildEmailTemplateData({
         boardName,
         cardUrl,
       };
+
+    case 'checklist_item_assigned':
+    case 'checklist_item_unassigned':
+    case 'checklist_item_due_date_updated':
+      return null;
 
     default:
       return null;

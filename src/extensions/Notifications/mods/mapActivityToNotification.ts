@@ -18,6 +18,9 @@ export type ActivityAction =
   | 'card_commented'
   | 'card_member_assigned'
   | 'card_member_unassigned'
+  | 'checklist_item_assigned'
+  | 'checklist_item_unassigned'
+  | 'checklist_item_due_date_updated'
   | 'card_updated'
   | 'card_deleted'
   | 'card_archived';
@@ -29,6 +32,9 @@ const ACTION_TO_NOTIFICATION_TYPE: Record<ActivityAction, NotificationType | str
   card_commented: 'card_commented',
   card_member_assigned: 'card_member_assigned',
   card_member_unassigned: 'card_member_unassigned',
+  checklist_item_assigned: 'checklist_item_assigned',
+  checklist_item_unassigned: 'checklist_item_unassigned',
+  checklist_item_due_date_updated: 'checklist_item_due_date_updated',
   card_updated: 'card_updated',
   card_deleted: 'card_deleted',
   card_archived: 'card_archived',
@@ -134,6 +140,15 @@ function buildCopy({
 
     case 'card_member_unassigned':
       return `${actorName} was removed from ${card}`;
+
+    case 'checklist_item_assigned':
+      return `${actorName} assigned a checklist item in ${card}`;
+
+    case 'checklist_item_unassigned':
+      return `${actorName} unassigned a checklist item in ${card}`;
+
+    case 'checklist_item_due_date_updated':
+      return `${actorName} updated a checklist due date in ${card}`;
 
     case 'card_updated': {
       const fields = payload.changedFields?.join(', ');

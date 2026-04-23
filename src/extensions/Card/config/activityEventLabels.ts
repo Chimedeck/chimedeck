@@ -123,5 +123,27 @@ export function getActivityEventMeta(
     return { label: `unchecked "${item}"${cl}`, dotColor: 'bg-bg-sunken' };
   }
 
+  if (eventType === 'checklist_item_assigned') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const assigneeName = typeof payload?.assigneeName === 'string' && payload.assigneeName
+      ? payload.assigneeName
+      : 'a member';
+    return { label: `assigned ${assigneeName} to "${item}"`, dotColor: 'bg-blue-400' };
+  }
+
+  if (eventType === 'checklist_item_unassigned') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    return { label: `unassigned item "${item}"`, dotColor: 'bg-bg-sunken' };
+  }
+
+  if (eventType === 'checklist_item_due_date_updated') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const dueDate = typeof payload?.dueDate === 'string' ? payload.dueDate : null;
+    if (!dueDate) {
+      return { label: `cleared due date for "${item}"`, dotColor: 'bg-bg-sunken' };
+    }
+    return { label: `updated due date for "${item}"`, dotColor: 'bg-yellow-500' };
+  }
+
   return EVENT_LABELS[eventType] ?? FALLBACK;
 }

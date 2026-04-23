@@ -253,6 +253,26 @@ export async function getBoardMembers({
   }));
 }
 
+export async function getBoardGuests({
+  api,
+  boardId,
+}: {
+  api: ApiClient;
+  boardId: string;
+}): Promise<CardMember[]> {
+  const res = await api.get<{
+    data: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  }>(`/boards/${boardId}/guests`);
+  return (res as unknown as {
+    data: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  }).data.map((g) => ({
+    id: g.id,
+    email: g.email,
+    name: g.name,
+    avatar_url: g.avatar_url ?? null,
+  }));
+}
+
 // ── Comment API ────────────────────────────────────────────────────────────────
 
 export interface ReactionSummary {

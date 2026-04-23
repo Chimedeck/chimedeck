@@ -16,6 +16,9 @@ export type NotificationType =
   | 'comment_reaction'
   | 'card_member_assigned'
   | 'card_member_unassigned'
+  | 'checklist_item_assigned'
+  | 'checklist_item_unassigned'
+  | 'checklist_item_due_date_updated'
   | 'card_updated'
   | 'card_deleted'
   | 'card_archived';

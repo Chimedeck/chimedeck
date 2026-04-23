@@ -57,6 +57,7 @@ function isSamePlaceholder(a: DragPlaceholder | null | undefined, b: DragPlaceho
 interface Props {
   boardId: string;
   boardTitle?: string;
+  currentUserId?: string;
   listOrder: string[];
   lists: Record<string, List>;
   cardsByList: Record<string, string[]>;
@@ -277,13 +278,8 @@ function getBoardListIdFromPointer(
 ): string | null {
   if (clientX == null || clientY == null) return null;
 
-  const hitElement = document.elementFromPoint(clientX, clientY);
-  const hitListId = getBoardListIdFromElement(hitElement);
-  if (hitListId) return hitListId;
-
-  // WHY: on empty columns or near edges, elementFromPoint can briefly resolve
-  // to non-list layers. Fall back to list rectangles to keep cross-column drag
-  // targeting stable.
+  // WHY: during active drag we pass a snapshot of list rectangles.
+  // Resolving list-by-rect avoids per-frame DOM hit-testing cost.
   if (cachedListRects && cachedListRects.length > 0) {
     const containingRect = cachedListRects.find((r) => (
       clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom
@@ -291,6 +287,10 @@ function getBoardListIdFromPointer(
     if (containingRect) {
       return containingRect.listId;
     }
+
+    const hitElement = document.elementFromPoint(clientX, clientY);
+    const hitListId = getBoardListIdFromElement(hitElement);
+    if (hitListId) return hitListId;
 
     let nearestListId: string | null = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -303,6 +303,10 @@ function getBoardListIdFromPointer(
     });
     return nearestListId;
   }
+
+  const hitElement = document.elementFromPoint(clientX, clientY);
+  const hitListId = getBoardListIdFromElement(hitElement);
+  if (hitListId) return hitListId;
 
   const listElements = Array.from(document.querySelectorAll<HTMLElement>('[id^="board-list-"]'));
   const containingRect = listElements.find((el) => {
@@ -331,10 +335,17 @@ function getBoardListIdFromPointer(
 
 // WHY: Decoupled from BoardCanvas so that listHydration selector updates
 // (batch fetches completing during a drag) don't trigger a BoardCanvas rerender.
-const ProgressiveHydrationDispatcher = ({ listOrder }: { listOrder: string[] }) => {
+const ProgressiveHydrationDispatcher = ({
+  listOrder,
+  isDragActive,
+}: {
+  listOrder: string[];
+  isDragActive: boolean;
+}) => {
   const dispatch = useAppDispatch();
   const listHydration = useAppSelector((state) => state.board.listHydration);
   useEffect(() => {
+    if (isDragActive) return;
     const pending = listOrder.filter((listId) => {
       const hydration = listHydration[listId];
       return Boolean(
@@ -360,13 +371,14 @@ const ProgressiveHydrationDispatcher = ({ listOrder }: { listOrder: string[] }) 
       if (!hydration || typeof hydration.nextOffset !== 'number') return;
       void dispatch(fetchListCardsBatchThunk({ listId, offset: hydration.nextOffset, limit: 50 }));
     });
-  }, [dispatch, listHydration, listOrder]);
+  }, [dispatch, isDragActive, listHydration, listOrder]);
   return null;
 };
 
 const BoardCanvas = ({
   boardId,
   boardTitle,
+  currentUserId = '',
   listOrder,
   lists,
   cardsByList,
@@ -396,8 +408,6 @@ const BoardCanvas = ({
   collapseEmptyLists = false,
   customFieldValuesMap,
 }: Props) => {
-  const listHydration = useAppSelector((state) => state.board.listHydration);
-
   // WHY: use one consistent drag-preview model across all boards so users
   // always see the same card-sized drop placeholder regardless of board size.
   const disableLiveDragPreview = true;
@@ -420,6 +430,7 @@ const BoardCanvas = ({
   // differ from viewport coordinates (e.g. due to DnD Kit scroll adjustments).
   const livePointerYRef = useRef<number | null>(null);
   const livePointerXRef = useRef<number | null>(null);
+  const livePointerListIdRef = useRef<string | null>(null);
   const pointerRafRef = useRef<number | null>(null);
   const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
   // WHY: snapshot each card's viewport midpoint at drag-start (before DnD Kit
@@ -491,7 +502,10 @@ const BoardCanvas = ({
         // to one calculation per animation frame to keep dragging smooth.
         const activeId = dragActiveIdRef.current;
         const fromListId = fromListIdRef.current;
-        if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) return;
+        if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) {
+          livePointerListIdRef.current = null;
+          return;
+        }
 
         // WHY: when the pointer is over another list, cross-list placeholder is
         // resolved by handleDragOver. Skipping same-list midpoint logic here
@@ -501,6 +515,7 @@ const BoardCanvas = ({
           point.y,
           dragStartListRectsRef.current,
         );
+        livePointerListIdRef.current = pointerListId;
         const placeholderListId = dragPlaceholderRef.current?.listId ?? null;
         if (pointerListId && pointerListId !== fromListId) return;
         // WHY: when moving across columns, elementFromPoint can briefly return
@@ -551,6 +566,7 @@ const BoardCanvas = ({
         pointerRafRef.current = null;
       }
       pendingPointerRef.current = null;
+      livePointerListIdRef.current = null;
       resetQueuedDragPlaceholder();
     };
   }, [queueDragPlaceholder, resetQueuedDragPlaceholder]);
@@ -583,11 +599,13 @@ const BoardCanvas = ({
       }
 
       let collisionArgs = args;
-      const pointerListId = getBoardListIdFromPointer(
-        livePointerXRef.current,
-        livePointerYRef.current,
-        dragStartListRectsRef.current,
-      );
+      const pointerListId =
+        livePointerListIdRef.current
+        ?? getBoardListIdFromPointer(
+          livePointerXRef.current,
+          livePointerYRef.current,
+          dragStartListRectsRef.current,
+        );
       const sourceListId = fromListIdRef.current;
       if (pointerListId || sourceListId) {
         const candidateLists = new Set<string>();
@@ -621,6 +639,7 @@ const BoardCanvas = ({
       const id = String(event.active.id);
       const currentCards = cardsRef.current;
       const currentCardsByList = cardsByListRef.current;
+      livePointerListIdRef.current = null;
       // Only set active card if the dragged item is a card (not a list)
       if (currentCards[id]) {
         setActiveCardId(id);
@@ -714,11 +733,13 @@ const BoardCanvas = ({
         const sourceListId = fromListIdRef.current ?? cardToList[activeId] ?? findListForCard(activeId, currentCardsByList);
         if (!sourceListId) return;
 
-        const pointerListId = getBoardListIdFromPointer(
-          pointerX,
-          pointerY,
-          dragStartListRectsRef.current,
-        );
+        const pointerListId =
+          livePointerListIdRef.current
+          ?? getBoardListIdFromPointer(
+            pointerX,
+            pointerY,
+            dragStartListRectsRef.current,
+          );
 
         if (!over) {
           if (!pointerListId || !currentLists[pointerListId] || pointerListId === sourceListId) return;
@@ -870,6 +891,8 @@ const BoardCanvas = ({
       const currentCards = cardsRef.current;
       const currentCardsByList = cardsByListRef.current;
       const currentLists = listsRef.current;
+      const lastPointerListId = livePointerListIdRef.current;
+      livePointerListIdRef.current = null;
       const { active, over } = event;
       setActiveCardId(null);
       // WHY: clear dragActiveIdRef so the pointermove handler stops updating
@@ -963,7 +986,8 @@ const BoardCanvas = ({
         // truth for destination-list and insertion index.
         const pointerX = livePointerXRef.current;
         const pointerY = livePointerYRef.current;
-        const pointerListId = getBoardListIdFromPointer(pointerX, pointerY, dragStartListRectsRef.current);
+        const pointerListId = lastPointerListId
+          ?? getBoardListIdFromPointer(pointerX, pointerY, dragStartListRectsRef.current);
         if (disableLiveDragPreview && pointerListId && currentLists[pointerListId] && pointerListId !== fromListId) {
           const targetWithoutActive = (finalCardsByList[pointerListId] ?? []).filter((id) => id !== activeId);
           resolvedToListId = pointerListId;
@@ -1063,7 +1087,10 @@ const BoardCanvas = ({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <ProgressiveHydrationDispatcher listOrder={listOrder} />
+      <ProgressiveHydrationDispatcher
+        listOrder={listOrder}
+        isDragActive={activeCardId !== null}
+      />
       <SortableContext items={listOrder} strategy={horizontalListSortingStrategy}>
         <div
           className="flex gap-3 p-4 overflow-x-auto overflow-y-hidden flex-1"
@@ -1083,9 +1110,9 @@ const BoardCanvas = ({
                 availableLists={listSummaries}
                 cardIds={effectiveCardsByList[listId] ?? []}
                 cards={cards}
-                {...(listHydration?.[list.id] ? { hydration: listHydration[list.id] } : {})}
                 boardId={boardId}
                 {...(boardTitle ? { boardTitle } : {})}
+                currentUserId={currentUserId}
                 onRename={onRenameList}
                 onCopyList={onCopyList}
                 onMoveList={onMoveList}
@@ -1102,7 +1129,9 @@ const BoardCanvas = ({
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
                 isViewerGuest={isViewerGuest}
                 hasBackground={hasBackground}
-                activeDragCardId={activeCardId}
+                // WHY: only the placeholder list needs active drag card id.
+                // Keeping other columns at null avoids global rerenders on drag start/end.
+                activeDragCardId={dragPlaceholder?.listId === listId ? activeCardId : null}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderIndex: dragPlaceholder.index } : {})}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderHeight: dragPlaceholder.height } : {})}
               />
@@ -1118,6 +1147,7 @@ const BoardCanvas = ({
             card={activeCard}
             isOverlay
             {...overlayProps}
+            currentUserId={currentUserId}
             labelsExpanded={labelsExpanded}
             onToggleLabels={onToggleLabels}
           />

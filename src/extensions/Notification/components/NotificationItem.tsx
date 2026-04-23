@@ -9,6 +9,7 @@ import {
   ChatBubbleLeftIcon,
   UserPlusIcon,
   UserMinusIcon,
+  CalendarDaysIcon,
   PencilSquareIcon,
   TrashIcon,
   ArchiveBoxIcon,
@@ -34,6 +35,9 @@ const TYPE_ICON: Record<string, HeroIcon> = {
   comment_reaction: ChatBubbleLeftIcon as HeroIcon,
   card_member_assigned: UserPlusIcon as HeroIcon,
   card_member_unassigned: UserMinusIcon as HeroIcon,
+  checklist_item_assigned: UserPlusIcon as HeroIcon,
+  checklist_item_unassigned: UserMinusIcon as HeroIcon,
+  checklist_item_due_date_updated: CalendarDaysIcon as HeroIcon,
   card_updated: PencilSquareIcon as HeroIcon,
   card_deleted: TrashIcon as HeroIcon,
   card_archived: ArchiveBoxIcon as HeroIcon,
@@ -47,6 +51,9 @@ const TYPE_ACCENT: Record<string, string> = {
   comment_reaction: 'text-amber-400',
   card_member_assigned: 'text-violet-400',
   card_member_unassigned: 'text-rose-400',
+  checklist_item_assigned: 'text-violet-400',
+  checklist_item_unassigned: 'text-rose-400',
+  checklist_item_due_date_updated: 'text-amber-400',
   card_updated: 'text-indigo-400',
   card_deleted: 'text-danger',
   card_archived: 'text-amber-400',
@@ -73,6 +80,12 @@ function buildCopy(notification: Notification): string {
       return `${actor} was assigned to "${card}"`;
     case 'card_member_unassigned':
       return `${actor} was removed from "${card}"`;
+    case 'checklist_item_assigned':
+      return `${actor} assigned a checklist item in "${card}"`;
+    case 'checklist_item_unassigned':
+      return `${actor} unassigned a checklist item in "${card}"`;
+    case 'checklist_item_due_date_updated':
+      return `${actor} updated a checklist due date in "${card}"`;
     case 'card_updated':
       return `${actor} updated "${card}"`;
     case 'card_deleted':

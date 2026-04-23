@@ -39,6 +39,7 @@ import {
   updateBoardLabel,
   getBoardLabels,
   getBoardMembers,
+  getBoardGuests,
   getCardComments,
   postCardComment,
   patchComment,
@@ -88,6 +89,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   // cannot see comment/attachment/edit controls inside the card modal.
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
   const [allLabels, setAllLabels] = useState<Label[]>([]);
+  const [boardMembers, setBoardMembers] = useState<CardMember[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<CardMember[]>([]);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
@@ -109,14 +111,24 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       .catch(() => {});
   }, [cardId, dispatch, api]);
 
-  // Load board labels and members when boardId is known
+  // Load board labels and participants (members + guests) when boardId is known
   useEffect(() => {
     if (!boardId) return;
     getBoardLabels({ api, boardId })
       .then((labels) => { allLabelsRef.current = labels; setAllLabels(labels); })
       .catch(() => {});
-    getBoardMembers({ api, boardId })
-      .then((members) => { boardMembersRef.current = members; })
+    Promise.allSettled([
+      getBoardMembers({ api, boardId }),
+      getBoardGuests({ api, boardId }),
+    ])
+      .then(([membersResult, guestsResult]) => {
+        const members = membersResult.status === 'fulfilled' ? membersResult.value : [];
+        const guests = guestsResult.status === 'fulfilled' ? guestsResult.value : [];
+        const merged = [...members, ...guests];
+        const uniqueParticipants = Array.from(new Map(merged.map((participant) => [participant.id, participant])).values());
+        boardMembersRef.current = uniqueParticipants;
+        setBoardMembers(uniqueParticipants);
+      })
       .catch(() => {});
   }, [boardId, api]);
 
@@ -922,7 +934,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       labels={labels}
       allLabels={allLabels}
       members={members}
-      boardMembers={boardMembersRef.current}
+      boardMembers={boardMembers}
       checklists={checklists}
       comments={comments}
       activities={activities}

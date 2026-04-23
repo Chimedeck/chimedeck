@@ -30,6 +30,9 @@
   "activity.action.checklist_created": "{actor} added checklist \"{checklistTitle}\" to \"{cardTitle}\"",
   "activity.action.checklist_item_checked": "{actor} completed \"{itemTitle}\" in \"{checklistTitle}\"",
   "activity.action.checklist_item_unchecked": "{actor} unchecked \"{itemTitle}\" in \"{checklistTitle}\"",
+  "activity.action.checklist_item_assigned": "{actor} assigned {assigneeName} to checklist item \"{itemTitle}\" in \"{cardTitle}\"",
+  "activity.action.checklist_item_unassigned": "{actor} unassigned checklist item \"{itemTitle}\" in \"{cardTitle}\"",
+  "activity.action.checklist_item_due_date_updated": "{actor} updated due date for checklist item \"{itemTitle}\" in \"{cardTitle}\"",
   "activity.action.unknown": "{actor} performed {action}",
   "activity.fromList.unknown": "unknown",
   "activity.toList.unknown": "unknown"

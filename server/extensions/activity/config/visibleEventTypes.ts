@@ -31,4 +31,7 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   'checklist_deleted',
   'checklist_item_checked',
   'checklist_item_unchecked',
+  'checklist_item_assigned',
+  'checklist_item_unassigned',
+  'checklist_item_due_date_updated',
 ];
