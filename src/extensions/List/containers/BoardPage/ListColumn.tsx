@@ -129,7 +129,6 @@ const SortableListColumn = ({
     }),
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, listColor, listTextColor],
   );
-  const columnBorderClass = listColor ? 'border-transparent' : 'border-border';
   const columnSurfaceClass = (() => {
     if (listColor) return '';
     if (hasBackground) return 'bg-bg-surface';
@@ -151,6 +150,10 @@ const SortableListColumn = ({
   // In placeholder mode we remove it to avoid rendering a double gap.
   const usePlaceholderMode =
     typeof dragPlaceholderIndex === 'number' && Number.isFinite(dragPlaceholderIndex);
+  const columnBorderClass = (() => {
+    if (usePlaceholderMode) return 'border-primary';
+    return listColor ? 'border-transparent' : 'border-border';
+  })();
   const visibleCardIds = useMemo(() => {
     if (!usePlaceholderMode || !activeDragCardId) return cardIds;
     const filtered = cardIds.filter((id) => id !== activeDragCardId);
