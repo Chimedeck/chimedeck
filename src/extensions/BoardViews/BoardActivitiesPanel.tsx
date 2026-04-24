@@ -38,11 +38,21 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
       setError(null);
       try {
         const res = await getBoardActivities({ boardId, cursor: nextCursor });
-        setItems((prev) => (nextCursor ? [...prev, ...res.data] : res.data));
+        const payload = res as unknown as {
+          data?: unknown;
+          metadata?: { cursor?: string | null; hasMore?: boolean };
+        };
+        const rawItems = Array.isArray(payload.data)
+          ? payload.data
+          : (payload.data as { data?: unknown } | undefined)?.data;
+        const pageItems = Array.isArray(rawItems) ? (rawItems as BoardTimelineItem[]) : [];
+
+        setItems((prev) => (nextCursor ? [...prev, ...pageItems] : pageItems));
         setCursor(res.metadata.cursor);
         setHasMore(res.metadata.hasMore);
       } catch {
         setError(translations['BoardViews.errorLoadActivity']);
+        setItems([]);
       } finally {
         setLoading(false);
       }
@@ -51,8 +61,10 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
   );
 
   useEffect(() => {
-    loadPage(null);
+    void loadPage(null);
   }, [loadPage]);
+
+  const visibleItems = Array.isArray(items) ? items : [];
 
   if (error) {
     return <p className="p-4 text-sm text-danger">{error}</p>;
@@ -60,7 +72,7 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
 
   // Build actor name map for activity items
   const actorNames: Record<string, string> = {};
-  for (const item of items) {
+  for (const item of visibleItems) {
     if (item.kind === 'activity' && item.data.actor_name) {
       actorNames[item.data.actor_id] = item.data.actor_name;
     }
@@ -68,12 +80,12 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
 
   return (
     <div className="p-4">
-      {items.length === 0 && !loading && (
+      {visibleItems.length === 0 && !loading && (
         <p className="text-sm italic text-muted">No activity yet.</p>
       )}
 
       <div className="divide-y divide-border">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           if (item.kind === 'activity') {
             return (
               <ActivityItem
@@ -126,7 +138,7 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
       {loading && <p className="mt-2 text-xs text-muted">{translations['BoardViews.loadingComments']}</p>}
 
       {hasMore && !loading && (
-        <Button variant="link" size="sm" onClick={() => loadPage(cursor)}>
+        <Button variant="link" size="sm" onClick={() => { void loadPage(cursor); }}>
           Load more
         </Button>
       )}

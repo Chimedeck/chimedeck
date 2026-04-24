@@ -32,16 +32,23 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
     setError(null);
     try {
       const res = await getArchivedCards({ boardId });
-      setCards(res.data);
+      const payload = res as unknown as { data?: unknown };
+      const rawCards = Array.isArray(payload.data)
+        ? payload.data
+        : (payload.data as { data?: unknown } | undefined)?.data;
+      setCards(Array.isArray(rawCards) ? (rawCards as ArchivedCard[]) : []);
     } catch {
       setError(translations['BoardViews.errorLoadArchivedCards']);
+      setCards([]);
     } finally {
       setLoading(false);
     }
   }, [boardId]);
 
+  const visibleCards = Array.isArray(cards) ? cards : [];
+
   useEffect(() => {
-    loadCards();
+    void loadCards();
   }, [loadCards]);
 
   const handleRestore = async (cardId: string) => {
@@ -79,11 +86,11 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
 
       {loading && <p className="text-sm text-subtle">{translations['BoardViews.loadingArchivedCards']}</p>}
 
-      {!loading && cards.length === 0 && (
+      {!loading && visibleCards.length === 0 && (
         <p className="text-sm italic text-subtle">{translations['BoardViews.noArchivedCards']}</p>
       )}
 
-      {cards.map((card) => {
+      {visibleCards.map((card) => {
         const archivedAt = formatArchivedAt(card.updated_at);
         return (
           <div
@@ -108,7 +115,9 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
               <button
                 type="button"
                 className="font-medium text-link hover:underline underline-offset-2 text-left"
-                onClick={() => handleOpenCard(card.id)}
+                onClick={() => {
+                  handleOpenCard(card.id);
+                }}
               >
                 {card.title}
               </button>
@@ -123,7 +132,9 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
               variant="ghost"
               size="sm"
               disabled={restoringId === card.id}
-              onClick={() => handleRestore(card.id)}
+              onClick={() => {
+                void handleRestore(card.id);
+              }}
               className="ml-4"
             >
               {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
