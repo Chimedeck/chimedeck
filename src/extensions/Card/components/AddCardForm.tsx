@@ -45,7 +45,7 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 px-2 pb-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 px-2 pt-2 pb-2">
       <textarea
         ref={textareaRef}
         value={title}
@@ -54,7 +54,7 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
         placeholder="Card title…"
         rows={2}
         disabled={submitting}
-        className="w-full rounded-lg bg-bg-overlay border border-border text-base text-sm px-2.5 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-subtle"
+        className="w-full rounded-lg bg-bg-overlay border border-border px-2.5 pt-3 pb-2 text-sm leading-5 text-base resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-subtle"
         aria-label="New card title"
       />
       <div className="flex items-center gap-2">

@@ -34,6 +34,8 @@ describe('Security Headers', () => {
     // Must not contain 'unsafe-inline' for scripts
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
     expect(csp).toContain("script-src 'self'");
+    // Blob iframe previews (e.g. PDF lightbox) require frame-src blob:.
+    expect(csp).toContain("frame-src 'self' blob:");
   });
 
   it('sets Permissions-Policy', () => {

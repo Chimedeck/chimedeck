@@ -291,6 +291,8 @@ function normalizePlaceholderHeight(value: number | null | undefined): number {
 // A tiny tolerance makes midpoint crossing deterministic when the pointer is
 // visually at the middle but differs by a fraction in floating-point math.
 const DRAG_MIDPOINT_TOLERANCE_PX = 1;
+const LIST_EDGE_AUTOSCROLL_TRIGGER_PX = 56;
+const LIST_EDGE_AUTOSCROLL_MAX_STEP_PX = 22;
 
 const DND_MEASURING = {
   droppable: {
@@ -610,6 +612,36 @@ const BoardCanvas = ({
     };
   }, []);
 
+  const applyVerticalEdgeAutoScroll = useCallback((listId: string | null, pointerY: number | null): void => {
+    if (!listId || pointerY == null) return;
+
+    const scroller = getListScrollContainer(listId);
+    if (!scroller) return;
+
+    const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    if (maxScrollTop === 0) return;
+
+    const rect = scroller.getBoundingClientRect();
+    const topEdge = rect.top + LIST_EDGE_AUTOSCROLL_TRIGGER_PX;
+    const bottomEdge = rect.bottom - LIST_EDGE_AUTOSCROLL_TRIGGER_PX;
+    let delta = 0;
+
+    if (pointerY < topEdge && scroller.scrollTop > 0) {
+      const intensity = Math.min(1, (topEdge - pointerY) / LIST_EDGE_AUTOSCROLL_TRIGGER_PX);
+      delta = -Math.ceil(Math.max(1, intensity * LIST_EDGE_AUTOSCROLL_MAX_STEP_PX));
+    } else if (pointerY > bottomEdge && scroller.scrollTop < maxScrollTop) {
+      const intensity = Math.min(1, (pointerY - bottomEdge) / LIST_EDGE_AUTOSCROLL_TRIGGER_PX);
+      delta = Math.ceil(Math.max(1, intensity * LIST_EDGE_AUTOSCROLL_MAX_STEP_PX));
+    }
+
+    if (delta === 0) return;
+
+    const nextScrollTop = Math.max(0, Math.min(maxScrollTop, scroller.scrollTop + delta));
+    if (nextScrollTop !== scroller.scrollTop) {
+      scroller.scrollTop = nextScrollTop;
+    }
+  }, []);
+
   const resolvePointerListId = useCallback(
     (clientX: number | null, clientY: number | null): string | null => {
       if (clientX == null || clientY == null) return null;
@@ -713,6 +745,7 @@ const BoardCanvas = ({
         // over-events do not continuously fire while moving within the column.
         const pointerListId = resolvePointerListId(point.x, point.y);
         livePointerListIdRef.current = pointerListId;
+        applyVerticalEdgeAutoScroll(pointerListId ?? fromListId, point.y);
         const placeholderListId = dragPlaceholderRef.current?.listId ?? null;
         if (pointerListId && pointerListId !== fromListId) {
           if (!listsRef.current[pointerListId]) return;
@@ -791,7 +824,14 @@ const BoardCanvas = ({
       dragSourceListScrollElRef.current = null;
       dragStartSourceListScrollTopRef.current = null;
     };
-  }, [getDragSourceVerticalScrollDelta, queueDragPlaceholder, resetPointerListResolutionCache, resetQueuedDragPlaceholder, resolvePointerListId]);
+  }, [
+    applyVerticalEdgeAutoScroll,
+    getDragSourceVerticalScrollDelta,
+    queueDragPlaceholder,
+    resetPointerListResolutionCache,
+    resetQueuedDragPlaceholder,
+    resolvePointerListId,
+  ]);
 
   // WHY: track card ordering locally during drag instead of dispatching to Redux
   // on every onDragOver. Dispatching applyOptimisticCardMove each frame causes
