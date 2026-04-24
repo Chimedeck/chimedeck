@@ -2,19 +2,29 @@
 // Missing row means notifications are enabled (opt-out model per Sprint 95).
 import { db } from '../../../common/db';
 
-export async function boardPreferenceGuard({
+export interface BoardNotificationPreferenceSettings {
+  notificationsEnabled: boolean;
+  onlyRelatedToMe: boolean;
+}
+
+export async function resolveBoardNotificationPreference({
   userId,
   boardId,
 }: {
   userId: string;
   boardId: string;
-}): Promise<boolean> {
+}): Promise<BoardNotificationPreferenceSettings> {
   const row = await db('board_notification_preferences')
     .where({ user_id: userId, board_id: boardId })
-    .select('notifications_enabled')
+    .select('notifications_enabled', 'only_related_to_me')
     .first();
 
-  if (row) return row.notifications_enabled;
+  if (row) {
+    return {
+      notificationsEnabled: row.notifications_enabled,
+      onlyRelatedToMe: row.only_related_to_me,
+    };
+  }
 
   // [why] No preference row means the user has never explicitly opted in or out.
   // Default ON for board participants (joined members OR board guests), but keep
@@ -24,7 +34,22 @@ export async function boardPreferenceGuard({
     db('board_guest_access').where({ user_id: userId, board_id: boardId }).first(),
   ]);
 
-  return !!isMember || !!hasGuestAccess;
+  return {
+    notificationsEnabled: !!isMember || !!hasGuestAccess,
+    // [why] Related-only mode is explicit opt-in and must not be enabled by default.
+    onlyRelatedToMe: false,
+  };
+}
+
+export async function boardPreferenceGuard({
+  userId,
+  boardId,
+}: {
+  userId: string;
+  boardId: string;
+}): Promise<boolean> {
+  const preference = await resolveBoardNotificationPreference({ userId, boardId });
+  return preference.notificationsEnabled;
 }
 
 /**

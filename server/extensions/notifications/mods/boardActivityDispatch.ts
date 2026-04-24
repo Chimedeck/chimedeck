@@ -6,11 +6,12 @@
 // Failures are logged and never propagate — this must not block mutations.
 import { db } from '../../../common/db';
 import { dispatchNotificationEmail } from './emailDispatch';
-import { boardPreferenceGuard, resolveNotificationChannels } from './boardPreferenceGuard';
+import { resolveBoardNotificationPreference, resolveNotificationChannels } from './boardPreferenceGuard';
 import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { env } from '../../../config/env';
+import { getCardRelatedUserIds, isRecipientRelatedCardNotification } from './relatedCardRecipients';
 import type { WrittenEvent } from '../../../mods/events/index';
 
 type SupportedEventType = 'card.created' | 'card.moved';
@@ -22,7 +23,13 @@ export type DirectCardNotificationPayload =
   | { type: 'card_updated'; cardTitle: string; changedFields: string[] }
   | { type: 'card_deleted'; cardTitle: string }
   | { type: 'card_archived'; cardTitle: string; archived: boolean }
-  | { type: 'card_commented'; cardTitle: string; commentPreview: string; commentId: string };
+  | {
+      type: 'card_commented';
+      cardTitle: string;
+      commentPreview: string;
+      commentId: string;
+      replyToUserId?: string | null;
+    };
 
 const SUPPORTED_EVENTS = new Set<string>(['card.created', 'card.moved']);
 
@@ -96,6 +103,7 @@ export async function handleBoardActivityNotification({
       (payload.cardId as string | undefined) ??
       null
     );
+    const relatedUserIds = await getCardRelatedUserIds({ cardId });
 
     // For card_moved, include the destination list name in the WS payload
     // so the client can render "{actorName} moved {cardTitle} to {listName}" without an extra fetch.
@@ -106,11 +114,22 @@ export async function handleBoardActivityNotification({
       // --- Board-scoped and global opt-out guards (Sprint 95) ---
       // Both checks use opt-out model: missing row = enabled.
       try {
-        const [globalEnabled, boardEnabled] = await Promise.all([
+        const [globalEnabled, boardPreference] = await Promise.all([
           globalPreferenceGuard({ userId: recipientId }),
-          boardPreferenceGuard({ userId: recipientId, boardId }),
+          resolveBoardNotificationPreference({ userId: recipientId, boardId }),
         ]);
-        if (!globalEnabled || !boardEnabled) continue;
+        if (!globalEnabled || !boardPreference.notificationsEnabled) continue;
+
+        if (
+          boardPreference.onlyRelatedToMe
+          && !isRecipientRelatedCardNotification({
+            type: notificationType,
+            recipientId,
+            relatedUserIds,
+          })
+        ) {
+          continue;
+        }
       } catch {
         // Fail open: if guard lookup fails, proceed with notification
       }
@@ -295,6 +314,8 @@ export async function dispatchDirectCardNotification({
     const notificationType = payload.type;
     const now = new Date().toISOString();
     const cardTitle = payload.cardTitle;
+    const relatedUserIds = await getCardRelatedUserIds({ cardId });
+    const replyToUserId = payload.type === 'card_commented' ? (payload.replyToUserId ?? null) : null;
 
     // For direct card events, source_id must always be non-null (notifications schema).
     // Use an event-unique source id for non-comment events so board_activity dedupe
@@ -345,11 +366,23 @@ export async function dispatchDirectCardNotification({
 
     for (const recipientId of recipients) {
       try {
-        const [globalEnabled, boardEnabled] = await Promise.all([
+        const [globalEnabled, boardPreference] = await Promise.all([
           globalPreferenceGuard({ userId: recipientId }),
-          boardPreferenceGuard({ userId: recipientId, boardId }),
+          resolveBoardNotificationPreference({ userId: recipientId, boardId }),
         ]);
-        if (!globalEnabled || !boardEnabled) continue;
+        if (!globalEnabled || !boardPreference.notificationsEnabled) continue;
+
+        if (
+          boardPreference.onlyRelatedToMe
+          && !isRecipientRelatedCardNotification({
+            type: notificationType,
+            recipientId,
+            relatedUserIds,
+            replyToUserId,
+          })
+        ) {
+          continue;
+        }
       } catch {
         // Fail open
       }

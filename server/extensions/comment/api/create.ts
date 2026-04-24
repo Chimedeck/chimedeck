@@ -87,6 +87,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
 
   // [why] Enforce max one level of threading — replies to replies are not allowed.
   let parentId: string | null = null;
+  let replyToUserId: string | null = null;
   // [why] Some clients/middleware layers may provide camelCase keys; accept both.
   let rawParentId: string | undefined;
   if (typeof body.parent_id === 'string') {
@@ -123,6 +124,7 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       );
     }
     parentId = normalizedParentId;
+    replyToUserId = (parentComment.user_id as string | undefined) ?? null;
   }
 
   // [why] If the client provided an idempotency_key (e.g. during offline replay), check
@@ -278,7 +280,13 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
 
   // Fire-and-forget card_commented notification for all board members (except commenter).
   dispatchDirectCardNotification({
-    payload: { type: 'card_commented', cardTitle: card.title, commentPreview, commentId: id },
+    payload: {
+      type: 'card_commented',
+      cardTitle: card.title,
+      commentPreview,
+      commentId: id,
+      replyToUserId,
+    },
     boardId: board.id,
     cardId: resolvedCardId,
     actorId,

@@ -34,6 +34,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
     (board as { visibility?: BoardVisibility } | null)?.visibility ?? 'PRIVATE',
   );
   const [saving, setSaving] = useState(false);
+  const [boardNotificationsEnabled, setBoardNotificationsEnabled] = useState(true);
 
   // Sync local state when the board is loaded (e.g. after initial fetch).
   useEffect(() => {
@@ -137,9 +138,15 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
             </div>
             {boardId && (
               <>
-                <BoardNotificationToggle boardId={boardId} />
+                <BoardNotificationToggle
+                  boardId={boardId}
+                  onMasterEnabledChange={setBoardNotificationsEnabled}
+                />
                 <div className="mt-4">
-                  <BoardNotificationTypePreferences boardId={boardId} />
+                  <BoardNotificationTypePreferences
+                    boardId={boardId}
+                    disabledByBoardNotifications={!boardNotificationsEnabled}
+                  />
                 </div>
               </>
             )}
