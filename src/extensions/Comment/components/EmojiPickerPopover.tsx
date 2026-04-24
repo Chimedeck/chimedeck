@@ -1,5 +1,5 @@
 // EmojiPickerPopover — anchored popover wrapping @emoji-mart/react Picker.
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 
@@ -11,6 +11,56 @@ interface Props {
 
 const EmojiPickerPopover = ({ anchorRef, onSelect, onClose }: Props) => {
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<React.CSSProperties>({
+    position: 'fixed',
+    top: 8,
+    left: 8,
+    zIndex: 90,
+  });
+
+  const updatePosition = useCallback(() => {
+    const anchor = anchorRef.current;
+    const popover = popoverRef.current;
+    if (!anchor || !popover) return;
+
+    const anchorRect = anchor.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+
+    const margin = 8;
+    const gap = 4;
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const popoverWidth = popoverRect.width || 352;
+    const popoverHeight = popoverRect.height || 420;
+
+    const spaceBelow = viewportHeight - anchorRect.bottom;
+    const shouldFlipUp = spaceBelow < popoverHeight + gap + margin;
+
+    const unclampedTop = shouldFlipUp
+      ? anchorRect.top - popoverHeight - gap
+      : anchorRect.bottom + gap;
+
+    const unclampedLeft = anchorRect.left;
+
+    const clampedTop = Math.min(
+      Math.max(margin, unclampedTop),
+      Math.max(margin, viewportHeight - popoverHeight - margin),
+    );
+
+    const clampedLeft = Math.min(
+      Math.max(margin, unclampedLeft),
+      Math.max(margin, viewportWidth - popoverWidth - margin),
+    );
+
+    setStyle({
+      position: 'fixed',
+      top: clampedTop,
+      left: clampedLeft,
+      zIndex: 90,
+    });
+  }, [anchorRef]);
 
   // Close on outside click
   useEffect(() => {
@@ -37,17 +87,21 @@ const EmojiPickerPopover = ({ anchorRef, onSelect, onClose }: Props) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Position below-left of anchor
-  const anchor = anchorRef.current;
-  const rect = anchor?.getBoundingClientRect();
-  const style: React.CSSProperties = rect
-    ? {
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        zIndex: 50,
-      }
-    : { position: 'fixed', top: 0, left: 0, zIndex: 50 };
+  // Position on mount and whenever viewport/scroll context changes.
+  useLayoutEffect(() => {
+    updatePosition();
+  }, [updatePosition]);
+
+  useEffect(() => {
+    const onReposition = () => updatePosition();
+    window.addEventListener('resize', onReposition);
+    // capture=true catches scroll from nested containers (e.g. modal body)
+    window.addEventListener('scroll', onReposition, true);
+    return () => {
+      window.removeEventListener('resize', onReposition);
+      window.removeEventListener('scroll', onReposition, true);
+    };
+  }, [updatePosition]);
 
   return (
     <div ref={popoverRef} style={style}>

@@ -73,7 +73,7 @@ function buildCopy(notification: Notification): string {
     case 'card_commented':
       return `${actor} commented on "${card}"`;
     case 'comment_reaction': {
-      const emoji = (notification as unknown as { emoji?: string }).emoji ?? '❤️';
+      const emoji = notification.emoji ?? '❤️';
       return `${actor} reacted ${emoji} to your comment on "${card}"`;
     }
     case 'card_member_assigned':

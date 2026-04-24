@@ -35,6 +35,8 @@ interface Props {
   onDeleteReply?: (commentId: string) => Promise<void>;
   /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
   canAddComment?: boolean;
+  /** Notifies parent when editor-visible attachments change (e.g. pasted image upload). */
+  onAttachmentsChange?: (attachments: Attachment[]) => void;
   /**
    * When provided, ActivityFeed registers an `insertMarkdown(md)` function on this ref
    * once the CommentEditor mounts. External callers (e.g. AttachmentPanel Comment action)
@@ -95,6 +97,7 @@ const ActivityFeed = ({
   onEditReply,
   onDeleteReply,
   canAddComment = true,
+  onAttachmentsChange,
   insertMarkdownRef,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -171,6 +174,7 @@ const ActivityFeed = ({
           {...buildBoardProps(boardId)}
           cardId={cardId}
           availableAttachments={attachments}
+          {...(onAttachmentsChange ? { onAttachmentsChange } : {})}
           placeholder="Add a comment…"
           onSubmit={handleAddComment}
           submitLabel="Comment"

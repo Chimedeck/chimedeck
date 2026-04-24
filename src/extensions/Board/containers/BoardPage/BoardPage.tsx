@@ -279,13 +279,26 @@ const BoardPage = () => {
   const handleCardClick = useCallback(
     (cardId: string) => {
       const targetCard = cards[cardId] as { short_id?: string | null; title?: string | null } | undefined;
+      const routeCardId = targetCard?.short_id ?? cardId;
+      const boardRouteTarget = (board?.short_id as string | undefined) ?? resolvedBoardRouteId ?? boardId;
+
+      // Keep the board route mounted and open the modal via query param so
+      // board-local UI state (e.g. active filters) is not reset.
+      if (boardRouteTarget) {
+        navigate(`${boardPath({
+          id: boardRouteTarget,
+          ...(board?.title ? { title: board.title } : {}),
+        })}?card=${encodeURIComponent(routeCardId)}`);
+        return;
+      }
+
       navigate(cardPath({
         id: cardId,
         ...(targetCard?.short_id ? { short_id: targetCard.short_id } : {}),
         ...(targetCard?.title ? { title: targetCard.title } : {}),
       }));
     },
-    [cards, navigate],
+    [board, resolvedBoardRouteId, boardId, cards, navigate],
   );
 
   const handleRouteCardClose = useCallback(() => {

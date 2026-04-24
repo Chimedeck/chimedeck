@@ -1,6 +1,6 @@
 // ListHeader — displays the list title with rename, archive, and delete actions.
 // Styled for dark kanban board; supports inline editing with Enter/Escape/blur.
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import type { List } from '../api';
 import Button from '../../../common/components/Button';
 import type { ListSortBy } from '../types';
@@ -90,6 +90,12 @@ const ListHeader = ({
     setEditing(false);
   };
 
+  const stopMenuEventPropagation = (event: React.SyntheticEvent) => {
+    // [why] Header is a sortable drag handle. Prevent menu interactions from
+    // bubbling into dnd-kit pointer listeners, which can swallow clicks.
+    event.stopPropagation();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // [why] The header is wrapped by dnd-kit keyboard listeners; stop bubbling so
     // typing (especially Space) edits the input instead of triggering drag behavior.
@@ -127,11 +133,14 @@ const ListHeader = ({
         </Button>
       )}
 
-      <div className="relative ml-2">
+      <div className="relative ml-2 z-50" onMouseDown={stopMenuEventPropagation} onPointerDown={stopMenuEventPropagation}>
         <Button
           variant="ghost"
           className={`rounded p-1 ${toneMutedClass} ${toneButtonHoverClass}`}
-          onClick={() => {
+          onMouseDown={stopMenuEventPropagation}
+          onPointerDown={stopMenuEventPropagation}
+          onClick={(event) => {
+            stopMenuEventPropagation(event);
             setMenuOpen((v) => !v);
             setSortMenuOpen(false);
             setMoveListMenuOpen(false);
@@ -144,7 +153,11 @@ const ListHeader = ({
           ···
         </Button>
         {menuOpen && (
-          <div className="absolute right-0 z-10 mt-1 w-52 rounded-md border border-border bg-bg-surface py-1 text-base shadow-xl">
+          <div
+            className="absolute right-0 z-[80] mt-1 w-52 rounded-md border border-border bg-bg-surface py-1 text-base shadow-xl pointer-events-auto"
+            onMouseDown={stopMenuEventPropagation}
+            onPointerDown={stopMenuEventPropagation}
+          >
             <Button
               variant="ghost"
               className="w-full justify-start px-4 py-2 text-sm rounded-none"
@@ -277,7 +290,7 @@ const ListHeader = ({
             </Button>
 
             {sortMenuOpen && (
-              <div className="absolute left-full top-0 ml-1 w-64 rounded-md border border-border bg-bg-surface text-base shadow-2xl">
+              <div className="absolute left-full top-0 ml-1 z-[90] w-64 rounded-md border border-border bg-bg-surface text-base shadow-2xl">
                 <div className="flex items-center justify-between border-b border-border px-3 py-2">
                   <p className="text-sm font-semibold text-base">Sort list</p>
                   <Button
@@ -309,7 +322,7 @@ const ListHeader = ({
             )}
 
             {moveCardsMenuOpen && (
-              <div className="absolute left-full top-0 ml-1 w-64 rounded-md border border-border bg-bg-surface text-base shadow-2xl">
+              <div className="absolute left-full top-0 ml-1 z-[90] w-64 rounded-md border border-border bg-bg-surface text-base shadow-2xl">
                 <div className="flex items-center justify-between border-b border-border px-3 py-2">
                   <p className="text-sm font-semibold text-base">Move cards to list</p>
                   <Button
@@ -345,7 +358,7 @@ const ListHeader = ({
             )}
 
             {moveListMenuOpen && (
-              <div className="absolute left-full top-0 ml-1 w-64 rounded-md border border-border bg-bg-surface text-base shadow-2xl">
+              <div className="absolute left-full top-0 ml-1 z-[90] w-64 rounded-md border border-border bg-bg-surface text-base shadow-2xl">
                 <div className="flex items-center justify-between border-b border-border px-3 py-2">
                   <p className="text-sm font-semibold text-base">Move list to position</p>
                   <Button
@@ -382,4 +395,28 @@ const ListHeader = ({
   );
 };
 
-export default ListHeader;
+function areEqual(prev: Props, next: Props): boolean {
+  if (prev === next) return true;
+
+  return (
+    prev.list.id === next.list.id
+    && prev.list.title === next.list.title
+    && prev.cardCount === next.cardCount
+    && prev.onRename === next.onRename
+    && prev.onAddCard === next.onAddCard
+    && prev.onCopyList === next.onCopyList
+    && prev.onMoveList === next.onMoveList
+    && prev.onMoveAllCards === next.onMoveAllCards
+    && prev.onArchive === next.onArchive
+    && prev.onArchiveAllCards === next.onArchiveAllCards
+    && prev.onDelete === next.onDelete
+    && prev.onSortBy === next.onSortBy
+    && prev.onChangeListColor === next.onChangeListColor
+    && prev.listColor === next.listColor
+    && prev.textTone === next.textTone
+    && prev.availableLists === next.availableLists
+    && prev.hasBackground === next.hasBackground
+  );
+}
+
+export default memo(ListHeader, areEqual);

@@ -104,6 +104,36 @@ const SortableListColumn = ({
     onToggleLabels ?? noopRef.current,
     [onToggleLabels],
   );
+  const handleRename = useCallback((title: string) => {
+    onRename(list.id, title);
+  }, [list.id, onRename]);
+  const handleOpenAddCard = useCallback(() => {
+    setAddingCard(true);
+  }, []);
+  const handleCopyList = useCallback(() => {
+    onCopyList(list.id);
+  }, [list.id, onCopyList]);
+  const handleMoveList = useCallback((targetIndex: number) => {
+    onMoveList(list.id, targetIndex);
+  }, [list.id, onMoveList]);
+  const handleMoveAllCards = useCallback((targetListId: string) => {
+    onMoveAllCards(list.id, targetListId);
+  }, [list.id, onMoveAllCards]);
+  const handleArchive = useCallback(() => {
+    onArchive(list.id);
+  }, [list.id, onArchive]);
+  const handleArchiveAllCards = useCallback(() => {
+    onArchiveAllCards(list.id);
+  }, [list.id, onArchiveAllCards]);
+  const handleDelete = useCallback(() => {
+    onDelete(list.id);
+  }, [list.id, onDelete]);
+  const handleChangeListColor = useCallback((color: string | null) => {
+    onChangeListColor(list.id, color);
+  }, [list.id, onChangeListColor]);
+  const handleSortBy = useCallback((sortBy: ListSortBy) => {
+    onSortBy(list.id, sortBy);
+  }, [list.id, onSortBy]);
 
   // Sortable hook for the list column itself (horizontal reorder)
   const {
@@ -192,22 +222,22 @@ const SortableListColumn = ({
       aria-label={`List: ${list.title}`}
     >
       {/* Drag handle is the list header */}
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+      <div {...attributes} {...listeners} className="relative z-20 cursor-grab active:cursor-grabbing">
         <ListHeader
           list={list}
           listColor={listColor}
           availableLists={availableLists}
           cardCount={cardIds.length}
-          onRename={(title) => { onRename(list.id, title); }}
-          onAddCard={() => { setAddingCard(true); }}
-          onCopyList={() => { onCopyList(list.id); }}
-          onMoveList={(targetIndex: number) => { onMoveList(list.id, targetIndex); }}
-          onMoveAllCards={(targetListId: string) => { onMoveAllCards(list.id, targetListId); }}
-          onArchive={() => { onArchive(list.id); }}
-          onArchiveAllCards={() => { onArchiveAllCards(list.id); }}
-          onDelete={() => { onDelete(list.id); }}
-          onChangeListColor={(color: string | null) => { onChangeListColor(list.id, color); }}
-          onSortBy={(sortBy: ListSortBy) => { onSortBy(list.id, sortBy); }}
+          onRename={handleRename}
+          onAddCard={handleOpenAddCard}
+          onCopyList={handleCopyList}
+          onMoveList={handleMoveList}
+          onMoveAllCards={handleMoveAllCards}
+          onArchive={handleArchive}
+          onArchiveAllCards={handleArchiveAllCards}
+          onDelete={handleDelete}
+          onChangeListColor={handleChangeListColor}
+          onSortBy={handleSortBy}
           textTone={listTextTone}
           hasBackground={hasBackground}
         />
@@ -215,7 +245,8 @@ const SortableListColumn = ({
 
       {/* Cards — draggable tiles with pointer-resolved insertion preview */}
       <div
-        className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]"
+        data-dnd-list-scroll-container="true"
+        className="relative z-0 flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]"
         style={{ contentVisibility: 'auto', contain: 'layout paint style', containIntrinsicSize: '1px 900px' }}
       >
         {listCardObjects.map((card, idx) => (
@@ -255,7 +286,7 @@ const SortableListColumn = ({
           <Button
             variant="ghost"
             className={`w-full justify-start rounded-lg px-2 py-1.5 text-sm ${addCardButtonToneClass}`}
-            onClick={() => { setAddingCard(true); }}
+            onClick={handleOpenAddCard}
             aria-label={`Add a card to ${list.title}`}
           >
             + Add a card

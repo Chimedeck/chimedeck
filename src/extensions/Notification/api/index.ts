@@ -29,6 +29,7 @@ export interface Notification {
   source_type: 'card_description' | 'comment' | 'board_activity';
   source_id: string;
   card_id: string | null;
+  emoji?: string | null;
   card_title: string | null;
   board_id: string | null;
   board_title: string | null;

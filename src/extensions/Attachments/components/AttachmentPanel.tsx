@@ -32,9 +32,11 @@ interface Props {
   onCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
   /** Called whenever the full attachment list changes — useful for features that need to reference attachments by id. */
   onAttachmentsChange?: (attachments: Attachment[]) => void;
+  /** External signal to force a refresh (e.g. uploads initiated outside this panel). */
+  refreshSignal?: number;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange, onAttachmentsChange }: Readonly<Props>): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange, onAttachmentsChange, refreshSignal }: Readonly<Props>): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -88,6 +90,11 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   useEffect(() => {
     void loadAttachments();
   }, [loadAttachments]);
+
+  useEffect(() => {
+    if (refreshSignal === undefined) return;
+    void loadAttachments();
+  }, [refreshSignal, loadAttachments]);
 
   // [why] Propagate the full attachment list to the parent whenever it changes so
   // features like checklist item attachment previews can look up attachments by id.

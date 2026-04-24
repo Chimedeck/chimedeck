@@ -24,6 +24,7 @@
   "activity.action.card_member_assigned": "{actor} assigned {assigneeName} to \"{cardTitle}\"",
   "activity.action.card_member_unassigned": "{actor} removed {assigneeName} from \"{cardTitle}\"",
   "activity.action.attachment_added": "{actor} attached \"{name}\" to \"{cardTitle}\"",
+  "activity.action.card_link_attached": "{actor} attached card link \"{linkTarget}\" to \"{cardTitle}\"",
   "activity.action.attachment_removed": "{actor} removed attachment \"{name}\" from \"{cardTitle}\"",
   "activity.action.label_attached": "{actor} added a label to the card",
   "activity.action.label_detached": "{actor} removed a label from the card",

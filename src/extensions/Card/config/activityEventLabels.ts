@@ -83,6 +83,13 @@ export function getActivityEventMeta(
     const name = typeof payload?.name === 'string' ? payload.name : 'a file';
     return { label: `attached ${name} to this card`, dotColor: 'bg-blue-400' };
   }
+  if (eventType === 'card_link_attached') {
+    const referencedCardTitle = typeof payload?.referencedCardTitle === 'string' ? payload.referencedCardTitle : '';
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    const linkUrl = typeof payload?.linkUrl === 'string' ? payload.linkUrl : '';
+    const linkTarget = referencedCardTitle || name || linkUrl || 'a linked card';
+    return { label: `attached card link ${linkTarget} to this card`, dotColor: 'bg-blue-400' };
+  }
   if (eventType === 'attachment_removed') {
     const name = typeof payload?.name === 'string' ? payload.name : 'a file';
     return { label: `removed attachment ${name}`, dotColor: 'bg-bg-sunken' };

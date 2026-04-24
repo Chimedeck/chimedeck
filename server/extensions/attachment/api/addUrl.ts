@@ -71,7 +71,7 @@ async function resolveTargetCard(cardId: string) {
   return { resolvedCardId, card, board };
 }
 
-async function resolveReferencedCardId(rawUrl: string, workspaceId: string): Promise<string | null> {
+async function resolveReferencedCard(rawUrl: string, workspaceId: string): Promise<{ id: string; title: string | null } | null> {
   const internalCard = parseInternalCardUrl(rawUrl);
   if (!internalCard) return null;
 
@@ -99,7 +99,10 @@ async function resolveReferencedCardId(rawUrl: string, workspaceId: string): Pro
     );
   }
 
-  return referencedCard.id as string;
+  return {
+    id: referencedCard.id as string,
+    title: (referencedCard.title as string | null | undefined) ?? null,
+  };
 }
 
 export async function handleAddUrl(req: Request, cardId: string): Promise<Response> {
@@ -140,9 +143,9 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     );
   }
 
-  let referencedCardId: string | null = null;
+  let referencedCard: { id: string; title: string | null } | null = null;
   try {
-    referencedCardId = await resolveReferencedCardId(body.url, board.workspace_id);
+    referencedCard = await resolveReferencedCard(body.url, board.workspace_id);
   } catch (err) {
     if (err instanceof Response) return err;
     throw err;
@@ -161,12 +164,12 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     type: 'URL',
     url: body.url,
     status: 'READY',
-    referenced_card_id: referencedCardId,
+    referenced_card_id: referencedCard?.id ?? null,
     created_at: new Date().toISOString(),
   });
 
   const attachment = await db('attachments').where({ id: attachmentId }).first();
-  const activityAction = referencedCardId ? 'card_link_attached' : 'attachment_added';
+  const activityAction = referencedCard ? 'card_link_attached' : 'attachment_added';
 
   await dispatchEvent({
     type: 'attachment_added',
@@ -187,7 +190,13 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
       cardId: resolvedCardId,
       name: body.name,
       cardTitle: card.title,
-      ...(referencedCardId ? { referencedCardId } : {}),
+      linkUrl: body.url,
+      ...(referencedCard
+        ? {
+            referencedCardId: referencedCard.id,
+            referencedCardTitle: referencedCard.title,
+          }
+        : {}),
     },
   });
 

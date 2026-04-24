@@ -892,6 +892,11 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const handleAttachmentCountChange = useCallback(
     ({ fileCount, linkedCardCount }: { fileCount: number; linkedCardCount: number }) => {
       if (!card) return;
+      const currentFileCount = card.attachment_count ?? 0;
+      const currentLinkedCount = card.linked_card_count ?? 0;
+      if (currentFileCount === fileCount && currentLinkedCount === linkedCardCount) {
+        return;
+      }
       dispatch(boardSliceActions.updateCard({ card: { ...card, attachment_count: fileCount, linked_card_count: linkedCardCount } }));
     },
     [card, dispatch],
