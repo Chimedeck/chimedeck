@@ -99,6 +99,7 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
 
           const comment = item.data;
           const authorName = comment.author_name ?? comment.author_email ?? 'Unknown';
+          const commentCardTitle = comment.card_title ?? 'Untitled card';
           return (
             <div key={`comment-${comment.id}`} className="flex items-start gap-2 py-1.5 text-sm">
               <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-400" aria-hidden="true" />
@@ -115,12 +116,14 @@ const BoardActivitiesPanel = ({ boardId, onCardClick }: Props) => {
                     <button
                       type="button"
                       className="font-medium underline underline-offset-2 transition-opacity hover:opacity-75"
-                      onClick={() => onCardClick(comment.card_id)}
+                      onClick={() => {
+                        onCardClick(comment.card_id);
+                      }}
                     >
-                      {`"${comment.card_title}"`}
+                      {`"${commentCardTitle}"`}
                     </button>
                   ) : (
-                    <span className="font-medium">{`"${comment.card_title}"`}</span>
+                    <span className="font-medium">{`"${commentCardTitle}"`}</span>
                   )}
                   {!comment.deleted && (
                     <span className="text-muted">: {comment.content}</span>

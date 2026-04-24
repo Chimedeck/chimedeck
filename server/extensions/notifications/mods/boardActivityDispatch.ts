@@ -297,9 +297,11 @@ export async function dispatchDirectCardNotification({
     const cardTitle = payload.cardTitle;
 
     // For direct card events, source_id must always be non-null (notifications schema).
-    // Comment notifications use commentId to deep-link; other card events use cardId.
+    // Use an event-unique source id for non-comment events so board_activity dedupe
+    // does not collapse repeated actions on the same card over time.
+    // Comment notifications keep commentId for deep-linking.
     let emailTemplateData: Record<string, string> | null = null;
-    let sourceId = cardId;
+    let sourceId = `${cardId}:${now}`;
 
     if (payload.type === 'card_commented') {
       sourceId = payload.commentId;
