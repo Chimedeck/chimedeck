@@ -98,6 +98,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
       actorId,
       sourceType: 'comment',
       sourceId: id,
+      sourceText: content,
       cardId,
       boardId: board.id,
       cardTitle: card?.title,

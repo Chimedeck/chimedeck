@@ -1,5 +1,5 @@
 // NotificationPanel — slide-in panel listing recent notifications.
-import type { FC } from 'react';
+import { useMemo, type FC } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import {
@@ -20,22 +20,59 @@ interface Props {
   onNavigate: (notification: Notification) => void;
 }
 
+function isStackableDiscussionNotification(notification: Notification): boolean {
+  if (!notification.card_id) return false;
+  return notification.type === 'card_commented' || notification.type === 'mention';
+}
+
+function groupContinuousCardDiscussionNotifications(notifications: Notification[]): Notification[][] {
+  const groups: Notification[][] = [];
+
+  for (const notification of notifications) {
+    const lastGroup = groups.at(-1);
+    if (lastGroup && lastGroup.length > 0) {
+      const lastGroupFirst = lastGroup.at(0);
+      if (!lastGroupFirst) {
+        groups.push([notification]);
+        continue;
+      }
+
+      const canJoinLastGroup = isStackableDiscussionNotification(notification)
+        && isStackableDiscussionNotification(lastGroupFirst)
+        && notification.card_id === lastGroupFirst.card_id;
+
+      if (canJoinLastGroup) {
+        lastGroup.push(notification);
+        continue;
+      }
+    }
+
+    groups.push([notification]);
+  }
+
+  return groups;
+}
+
 const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
   const dispatch = useAppDispatch();
   const notifications = useAppSelector(selectNotifications);
   const hasMore = useAppSelector(selectNotificationHasMore);
   const status = useAppSelector(selectNotificationStatus);
+  const groupedNotifications = useMemo(
+    () => groupContinuousCardDiscussionNotifications(notifications),
+    [notifications],
+  );
 
   const handleMarkAllRead = () => {
-    dispatch(markAllReadThunk());
+    void dispatch(markAllReadThunk());
   };
 
   const handleClearAll = () => {
-    dispatch(clearAllNotificationsThunk());
+    void dispatch(clearAllNotificationsThunk());
   };
 
   const handleLoadMore = () => {
-    dispatch(fetchMoreNotificationsThunk());
+    void dispatch(fetchMoreNotificationsThunk());
   };
 
   const handleNavigate = (notification: Notification) => {
@@ -69,10 +106,20 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
         </p>
       ) : (
         <>
-          <div className="divide-y divide-border">
-            {notifications.map((n) => (
-              <NotificationItem key={n.id} notification={n} onNavigate={handleNavigate} />
-            ))}
+          <div className="py-1">
+            {groupedNotifications.map((group) => {
+              const firstNotification = group[0];
+              if (!firstNotification) return null;
+
+              return (
+                <NotificationItem
+                  key={firstNotification.id}
+                  notification={firstNotification}
+                  {...(group.length > 1 ? { stackedNotifications: group } : {})}
+                  onNavigate={handleNavigate}
+                />
+              );
+            })}
           </div>
 
           {hasMore && (

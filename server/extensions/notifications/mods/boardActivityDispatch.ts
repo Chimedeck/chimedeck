@@ -243,11 +243,15 @@ export async function dispatchDirectCardNotification({
   boardId,
   cardId,
   actorId,
+  excludedUserIds = [],
 }: {
   payload: DirectCardNotificationPayload;
   boardId: string;
   cardId: string;
   actorId: string;
+  // [why] Allows callers to suppress board-activity fanout for recipients who
+  // already got a more specific notification (e.g. @mention on comment create).
+  excludedUserIds?: string[];
 }): Promise<void> {
   try {
     const [members, guests] = await Promise.all([
@@ -261,12 +265,16 @@ export async function dispatchDirectCardNotification({
         .select('user_id'),
     ]);
 
+    const excludedRecipientIds = new Set(
+      excludedUserIds.filter((id) => id !== actorId),
+    );
+
     const recipients = Array.from(
       new Set([
         ...members.map((m: { user_id: string }) => m.user_id),
         ...guests.map((g: { user_id: string }) => g.user_id),
       ]),
-    );
+    ).filter((recipientId) => !excludedRecipientIds.has(recipientId));
 
     if (recipients.length === 0) return;
 
@@ -288,9 +296,10 @@ export async function dispatchDirectCardNotification({
     const now = new Date().toISOString();
     const cardTitle = payload.cardTitle;
 
-    // For card_commented: resolve email template data and store commentId in source_id
+    // For direct card events, source_id must always be non-null (notifications schema).
+    // Comment notifications use commentId to deep-link; other card events use cardId.
     let emailTemplateData: Record<string, string> | null = null;
-    let sourceId: string | null = null;
+    let sourceId = cardId;
 
     if (payload.type === 'card_commented') {
       sourceId = payload.commentId;

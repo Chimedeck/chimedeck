@@ -51,6 +51,7 @@ interface CreateNotificationsParams {
   actorId: string;
   sourceType: 'card_description' | 'comment';
   sourceId: string;
+  sourceText?: string | undefined;
   cardId: string | null;
   boardId: string;
   // Optional context for mention email dispatch
@@ -65,6 +66,7 @@ async function notifyMentionedUser({
   boardId,
   sourceType,
   sourceId,
+  sourceText,
   cardId,
   actorId,
   actorPayload,
@@ -77,6 +79,7 @@ async function notifyMentionedUser({
   boardId: string;
   sourceType: 'card_description' | 'comment';
   sourceId: string;
+  sourceText?: string | undefined;
   cardId: string | null;
   actorId: string;
   actorPayload: Record<string, unknown>;
@@ -128,6 +131,7 @@ async function notifyMentionedUser({
         card_title: cardTitle,
         board_title: boardName,
         list_title: null,
+        comment_content: sourceText ?? null,
         actor: actorPayload,
       },
     },
@@ -154,6 +158,7 @@ export async function createNotificationsForMentions({
   actorId,
   sourceType,
   sourceId,
+  sourceText,
   cardId,
   boardId,
   cardTitle,
@@ -187,6 +192,7 @@ export async function createNotificationsForMentions({
       boardId,
       sourceType,
       sourceId,
+      sourceText,
       cardId,
       actorId,
       actorPayload: actorPayload as Record<string, unknown>,

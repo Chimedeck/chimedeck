@@ -142,10 +142,10 @@ function buildCopy({
       return `${actorName} was removed from ${card}`;
 
     case 'checklist_item_assigned':
-      return `${actorName} assigned a checklist item in ${card}`;
+      return `${actorName} was assigned to a checklist item in ${card}`;
 
     case 'checklist_item_unassigned':
-      return `${actorName} unassigned a checklist item in ${card}`;
+      return `${actorName} was unassigned from a checklist item in ${card}`;
 
     case 'checklist_item_due_date_updated':
       return `${actorName} updated a checklist due date in ${card}`;

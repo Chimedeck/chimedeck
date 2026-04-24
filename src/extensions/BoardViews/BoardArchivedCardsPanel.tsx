@@ -14,6 +14,12 @@ interface Props {
   onCardUnarchived?: () => void;
 }
 
+function formatArchivedAt(timestamp: string): string {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString();
+}
+
 const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
   const [cards, setCards] = useState<ArchivedCard[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,46 +83,54 @@ const BoardArchivedCardsPanel = ({ boardId, onCardUnarchived }: Props) => {
         <p className="text-sm italic text-subtle">{translations['BoardViews.noArchivedCards']}</p>
       )}
 
-      {cards.map((card) => (
-        <div
-          key={card.id}
-          className="flex items-center justify-between rounded border border-border bg-bg-surface px-3 py-2 text-sm"
-        >
-          <div>
-              {Array.isArray(card.labels) && card.labels.length > 0 && (
-              <div className="mb-1.5 flex flex-wrap gap-1">
-                {card.labels.map((label) => (
-                  <span
-                    key={label.id}
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
-                    style={{ backgroundColor: label.color, color: contrastText(label.color) }}
-                    title={label.name}
-                  >
-                    {label.name}
-                  </span>
-                ))}
-              </div>
-            )}
-            <button
-              type="button"
-              className="font-medium text-link hover:underline underline-offset-2 text-left"
-              onClick={() => handleOpenCard(card.id)}
-            >
-              {card.title}
-            </button>
-            <p className="text-xs text-subtle">{translations['BoardViews.inList']} {card.list_title}</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={restoringId === card.id}
-            onClick={() => handleRestore(card.id)}
-            className="ml-4"
+      {cards.map((card) => {
+        const archivedAt = formatArchivedAt(card.updated_at);
+        return (
+          <div
+            key={card.id}
+            className="flex items-center justify-between rounded border border-border bg-bg-surface px-3 py-2 text-sm"
           >
-            {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
-          </Button>
-        </div>
-      ))}
+            <div>
+              {Array.isArray(card.labels) && card.labels.length > 0 && (
+                <div className="mb-1.5 flex flex-wrap gap-1">
+                  {card.labels.map((label) => (
+                    <span
+                      key={label.id}
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                      style={{ backgroundColor: label.color, color: contrastText(label.color) }}
+                      title={label.name}
+                    >
+                      {label.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                className="font-medium text-link hover:underline underline-offset-2 text-left"
+                onClick={() => handleOpenCard(card.id)}
+              >
+                {card.title}
+              </button>
+              <p className="text-xs text-subtle">{translations['BoardViews.inList']} {card.list_title}</p>
+              {!!archivedAt && (
+                <p className="text-xs text-subtle">
+                  {translations['BoardViews.archivedAt']} {archivedAt}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={restoringId === card.id}
+              onClick={() => handleRestore(card.id)}
+              className="ml-4"
+            >
+              {restoringId === card.id ? translations['BoardViews.restoringButton'] : translations['BoardViews.restoreButton']}
+            </Button>
+          </div>
+        );
+      })}
     </div>
   );
 };

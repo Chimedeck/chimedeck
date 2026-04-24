@@ -117,6 +117,7 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
         actorId,
         sourceType: 'card_description',
         sourceId: cardId,
+        sourceText: sanitizedDescription ?? '',
         cardId,
         boardId: board.id,
         cardTitle: rows[0].title,

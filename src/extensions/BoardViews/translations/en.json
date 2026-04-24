@@ -17,5 +17,6 @@
   "BoardViews.restoreButton": "Restore",
   "BoardViews.restoringButton": "Restoring…",
   "BoardViews.errorRestoreCard": "Failed to restore card.",
-  "BoardViews.inList": "in"
+  "BoardViews.inList": "in",
+  "BoardViews.archivedAt": "Archived"
 }

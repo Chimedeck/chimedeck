@@ -142,6 +142,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       actorId,
       sourceType: 'comment',
       sourceId: commentId,
+      sourceText: trimmedContent,
       cardId: comment.card_id,
       boardId: board.id,
       cardTitle: card?.title,

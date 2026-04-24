@@ -4,6 +4,20 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
+interface ReactionRow {
+  comment_id: string;
+  emoji: string;
+  user_id: string;
+  reactor_name: string | null;
+}
+
+interface NotificationReactionSummary {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+  reactors: Array<{ userId: string; name: string | null }>;
+}
+
 export async function handleListNotifications(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -38,6 +52,7 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     .leftJoin('users as actor', 'notifications.actor_id', 'actor.id')
     .leftJoin('cards', 'notifications.card_id', 'cards.id')
     .leftJoin('boards', 'notifications.board_id', 'boards.id')
+    .leftJoin('comments as source_comment', 'notifications.source_id', 'source_comment.id')
     // Join to get the destination list name for card_moved notifications
     .leftJoin('lists', 'cards.list_id', 'lists.id')
     .select(
@@ -48,9 +63,11 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'notifications.card_id',
       'notifications.emoji',
       'cards.title as card_title',
+      'cards.description as card_description_content',
       'notifications.board_id',
       'boards.title as board_title',
       'lists.title as list_title',
+      'source_comment.content as comment_content',
       'notifications.read',
       'notifications.created_at',
       db.raw("actor.id as actor_id"),
@@ -75,9 +92,79 @@ export async function handleListNotifications(req: Request): Promise<Response> {
 
   const rows = await query;
   const hasMore = rows.length > limit;
+  const visibleRows = rows.slice(0, limit);
+
+  // Aggregate reactions once for all visible comment-backed notifications.
+  const sourceIds = Array.from(
+    new Set(
+      visibleRows
+        .filter((row) => row.source_type === 'comment')
+        .map((row) => row.source_id)
+        .filter((sourceId): sourceId is string => typeof sourceId === 'string' && sourceId.length > 0),
+    ),
+  );
+
+  const reactionRows = sourceIds.length
+    ? await db('comment_reactions')
+        .leftJoin('users as reactor', 'comment_reactions.user_id', 'reactor.id')
+        .whereIn('comment_reactions.comment_id', sourceIds)
+        .select(
+          'comment_reactions.comment_id',
+          'comment_reactions.emoji',
+          'comment_reactions.user_id',
+          db.raw('COALESCE(reactor.name, reactor.email) as reactor_name'),
+        )
+    : [];
+
+  const reactionByComment = new Map<string, Map<string, {
+    count: number;
+    meReacted: boolean;
+    reactors: Array<{ userId: string; name: string | null }>;
+  }>>();
+
+  for (const row of reactionRows as ReactionRow[]) {
+    if (!reactionByComment.has(row.comment_id)) {
+      reactionByComment.set(row.comment_id, new Map());
+    }
+
+    const emojiMap = reactionByComment.get(row.comment_id);
+    if (!emojiMap) continue;
+    const existing = emojiMap.get(row.emoji) ?? { count: 0, meReacted: false, reactors: [] };
+    existing.count += 1;
+    existing.reactors.push({ userId: row.user_id, name: row.reactor_name ?? null });
+    if (row.user_id === userId) {
+      existing.meReacted = true;
+    }
+    emojiMap.set(row.emoji, existing);
+  }
+
+  const commentReactionMap = new Map<string, NotificationReactionSummary[]>();
+  for (const [commentId, emojiMap] of reactionByComment.entries()) {
+    commentReactionMap.set(
+      commentId,
+      Array.from(emojiMap.entries())
+        .map(([emoji, value]) => ({
+          emoji,
+          count: value.count,
+          reactedByMe: value.meReacted,
+          reactors: value.reactors,
+        }))
+        .sort((a, b) => b.count - a.count),
+    );
+  }
+
   const data = await Promise.all(
-    rows.slice(0, limit).map(async (row) => {
+    visibleRows.map(async (row) => {
       const actorAvatarUrl = row.actor_avatar_url ?? null;
+      const commentContentFromCommentSource =
+        row.source_type === 'comment' && typeof row.comment_content === 'string'
+          ? row.comment_content
+          : null;
+      const commentContentFromDescriptionMention =
+        row.type === 'mention' && row.source_type === 'card_description' && typeof row.card_description_content === 'string'
+          ? row.card_description_content
+          : null;
+      const commentContent = commentContentFromCommentSource ?? commentContentFromDescriptionMention;
 
       return {
         id: row.id,
@@ -90,6 +177,10 @@ export async function handleListNotifications(req: Request): Promise<Response> {
         board_id: row.board_id,
         board_title: row.board_title ?? null,
         list_title: row.list_title ?? null,
+        comment_content: commentContent,
+        comment_reactions: row.source_type === 'comment'
+          ? (commentReactionMap.get(row.source_id) ?? [])
+          : [],
         actor: {
           id: row.actor_id,
           nickname: row.actor_nickname ?? null,
