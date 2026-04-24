@@ -3,6 +3,7 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
+import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 import {
   requireWorkspaceMembership,
@@ -52,18 +53,29 @@ export async function handleArchiveCard(req: Request, cardId: string): Promise<R
     .where({ id: cardId })
     .update({ archived: newArchived, updated_at: new Date().toISOString() }, ['*']);
 
-  // Client expects { cardId, listId } to remove card from board state
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
-  await dispatchEvent({ type: 'card.archived', boardId: board.id, entityId: cardId, actorId, payload: { cardId, listId: card.list_id } });
 
-  // Write to activity feed so archive/unarchive appears in card history
-  writeActivity({
+  // Persist archive/unarchive activity for card feed + board activity timeline.
+  const activity = await writeActivity({
     entityType: 'card',
     entityId: cardId,
     boardId: board.id,
     action: newArchived ? 'card_archived' : 'card_unarchived',
     actorId,
-    payload: { title: card.title },
+    payload: { cardId, title: card.title, cardTitle: card.title, archived: newArchived },
+  });
+
+  // Realtime activity event keeps open card/board feeds in sync without reload.
+  publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
+
+  // Client expects { cardId, listId } to remove card from board state.
+  // Dispatch failures must not block archive persistence.
+  dispatchEvent({
+    type: 'card.archived',
+    boardId: board.id,
+    entityId: cardId,
+    actorId,
+    payload: { cardId, listId: card.list_id, archived: newArchived },
   }).catch(() => {});
 
   // Fire-and-forget card_archived notification with the new archived state

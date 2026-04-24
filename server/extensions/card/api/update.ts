@@ -230,6 +230,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         actorId,
         sourceType: 'card_description',
         sourceId: cardId,
+        sourceText: rows[0].description ?? '',
         cardId,
         boardId: board.id,
         cardTitle: rows[0]?.title,

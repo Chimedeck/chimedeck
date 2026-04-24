@@ -1,12 +1,13 @@
 // BoardNotificationToggle — per-board notification opt-out toggle for the current user.
 // Uses optimistic UI: flips state immediately, rolls back on API failure.
 import { useState, useEffect } from 'react';
-import { BellIcon, BellSlashIcon } from '@heroicons/react/24/outline';
+import { BellIcon, BellSlashIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
 import translations from '../../translations/en.json';
 
 interface Props {
   boardId: string;
+  onMasterEnabledChange?: (enabled: boolean) => void;
 }
 
 // Pill-shaped accessible toggle switch (inline — keeps this file self-contained).
@@ -33,7 +34,10 @@ const ToggleSwitch = ({
       aria-checked={enabled}
       aria-label={ariaLabel}
       disabled={disabled}
-      onClick={() => !disabled && onChange(!enabled)}
+      onClick={() => {
+        if (disabled) return;
+        onChange(!enabled);
+      }}
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base ${track}`}
     >
       <span
@@ -43,9 +47,10 @@ const ToggleSwitch = ({
   );
 };
 
-const BoardNotificationToggle = ({ boardId }: Props) => {
+const BoardNotificationToggle = ({ boardId, onMasterEnabledChange }: Props) => {
   // Opt-out model: default to enabled until the API responds.
   const [enabled, setEnabled] = useState(true);
+  const [onlyRelatedToMe, setOnlyRelatedToMe] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,32 +59,63 @@ const BoardNotificationToggle = ({ boardId }: Props) => {
     setLoading(true);
     setError(null);
     (apiClient as { get: <T>(url: string) => Promise<T> })
-      .get<{ data: { notifications_enabled: boolean } }>(
+      .get<{ data: { notifications_enabled: boolean; only_related_to_me: boolean } }>(
         `/boards/${boardId}/notification-preference`,
       )
       .then((res) => {
         setEnabled(res.data.notifications_enabled);
+        setOnlyRelatedToMe(res.data.only_related_to_me);
+        onMasterEnabledChange?.(res.data.notifications_enabled);
       })
       .catch(() => {
         // [why] Fallback to enabled on error — safer than silently disabling.
         setEnabled(true);
+        setOnlyRelatedToMe(false);
+        onMasterEnabledChange?.(true);
         setError(translations['BoardSettings.notificationsLoadError']);
       })
-      .finally(() => setLoading(false));
-  }, [boardId]);
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [boardId, onMasterEnabledChange]);
 
-  const handleToggle = async (next: boolean) => {
-    const prev = enabled;
-    setEnabled(next); // optimistic update
+  const patchPreference = async (
+    body: { notifications_enabled?: boolean; only_related_to_me?: boolean },
+    rollback: () => void,
+  ) => {
     setError(null);
     try {
       await (apiClient as { patch: <T>(url: string, data: unknown) => Promise<T> }).patch<{
-        data: { notifications_enabled: boolean };
-      }>(`/boards/${boardId}/notification-preference`, { notifications_enabled: next });
+        data: { notifications_enabled: boolean; only_related_to_me: boolean };
+      }>(`/boards/${boardId}/notification-preference`, body);
     } catch {
-      setEnabled(prev); // rollback
+      rollback();
       setError(translations['BoardSettings.notificationsUpdateError']);
     }
+  };
+
+  const handleToggleNotifications = (next: boolean) => {
+    const prev = enabled;
+    setEnabled(next); // optimistic update
+    onMasterEnabledChange?.(next);
+    void patchPreference(
+      { notifications_enabled: next },
+      () => {
+        setEnabled(prev);
+        onMasterEnabledChange?.(prev);
+      },
+    );
+  };
+
+  const handleToggleOnlyRelatedToMe = (next: boolean) => {
+    const prev = onlyRelatedToMe;
+    setOnlyRelatedToMe(next); // optimistic update
+    void patchPreference(
+      { only_related_to_me: next },
+      () => {
+        setOnlyRelatedToMe(prev);
+      },
+    );
   };
 
   return (
@@ -95,11 +131,25 @@ const BoardNotificationToggle = ({ boardId }: Props) => {
         </div>
         <ToggleSwitch
           enabled={enabled}
-          onChange={handleToggle}
+          onChange={handleToggleNotifications}
           disabled={loading}
           ariaLabel={translations['BoardSettings.notificationsAriaLabel']}
         />
       </div>
+
+      <div className={`flex items-center justify-between ${enabled ? '' : 'opacity-50'}`}>
+        <div className="flex items-center gap-2 text-sm text-subtle">
+          <UserCircleIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+          <span>{translations['BoardSettings.onlyRelatedToMeLabel']}</span>
+        </div>
+        <ToggleSwitch
+          enabled={onlyRelatedToMe}
+          onChange={handleToggleOnlyRelatedToMe}
+          disabled={loading || !enabled}
+          ariaLabel={translations['BoardSettings.onlyRelatedToMeAriaLabel']}
+        />
+      </div>
+
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );

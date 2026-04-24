@@ -83,6 +83,13 @@ export function getActivityEventMeta(
     const name = typeof payload?.name === 'string' ? payload.name : 'a file';
     return { label: `attached ${name} to this card`, dotColor: 'bg-blue-400' };
   }
+  if (eventType === 'card_link_attached') {
+    const referencedCardTitle = typeof payload?.referencedCardTitle === 'string' ? payload.referencedCardTitle : '';
+    const name = typeof payload?.name === 'string' ? payload.name : '';
+    const linkUrl = typeof payload?.linkUrl === 'string' ? payload.linkUrl : '';
+    const linkTarget = referencedCardTitle || name || linkUrl || 'a linked card';
+    return { label: `attached card link ${linkTarget} to this card`, dotColor: 'bg-blue-400' };
+  }
   if (eventType === 'attachment_removed') {
     const name = typeof payload?.name === 'string' ? payload.name : 'a file';
     return { label: `removed attachment ${name}`, dotColor: 'bg-bg-sunken' };
@@ -121,6 +128,28 @@ export function getActivityEventMeta(
     const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
     const cl = typeof payload?.checklistTitle === 'string' && payload.checklistTitle ? ` in "${payload.checklistTitle}"` : '';
     return { label: `unchecked "${item}"${cl}`, dotColor: 'bg-bg-sunken' };
+  }
+
+  if (eventType === 'checklist_item_assigned') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const assigneeName = typeof payload?.assigneeName === 'string' && payload.assigneeName
+      ? payload.assigneeName
+      : 'a member';
+    return { label: `assigned ${assigneeName} to "${item}"`, dotColor: 'bg-blue-400' };
+  }
+
+  if (eventType === 'checklist_item_unassigned') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    return { label: `unassigned item "${item}"`, dotColor: 'bg-bg-sunken' };
+  }
+
+  if (eventType === 'checklist_item_due_date_updated') {
+    const item = typeof payload?.itemTitle === 'string' ? payload.itemTitle : 'an item';
+    const dueDate = typeof payload?.dueDate === 'string' ? payload.dueDate : null;
+    if (!dueDate) {
+      return { label: `cleared due date for "${item}"`, dotColor: 'bg-bg-sunken' };
+    }
+    return { label: `updated due date for "${item}"`, dotColor: 'bg-yellow-500' };
   }
 
   return EVENT_LABELS[eventType] ?? FALLBACK;

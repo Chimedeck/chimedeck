@@ -51,6 +51,9 @@ function describeAction(
   const name = textValue(payload.name);
   const assigneeName = textValue(payload.assigneeName);
   const emoji = textValue(payload.emoji);
+  const referencedCardTitle = textValue(payload.referencedCardTitle);
+  const linkUrl = textValue(payload.linkUrl);
+  const linkTarget = referencedCardTitle || name || linkUrl || 'a link';
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
@@ -66,6 +69,9 @@ function describeAction(
     itemTitle,
     commentPreview,
     name,
+    referencedCardTitle,
+    linkUrl,
+    linkTarget,
     assigneeName,
     emoji,
   });

@@ -21,6 +21,107 @@ import CommandMenu from './CommandMenu';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 
+type OverflowCommand = {
+  id: string;
+  label: string;
+  keywords: string[];
+  icon: React.ReactNode;
+  execute: (editor: Editor) => void;
+};
+
+function buildHiddenResponsiveCommands({
+  visibleResponsiveButtonCount,
+  onAttach,
+  linkPopoverOpen,
+  onToggleLinkPopover,
+  setEmojiPickerOpen,
+  setHelpOpen,
+}: {
+  visibleResponsiveButtonCount: number;
+  onAttach?: () => void;
+  linkPopoverOpen: boolean;
+  onToggleLinkPopover?: () => void;
+  setEmojiPickerOpen: (open: boolean) => void;
+  setHelpOpen: (open: boolean) => void;
+}): OverflowCommand[] {
+  const hiddenResponsiveCommands: OverflowCommand[] = [];
+
+  if (visibleResponsiveButtonCount <= 0) {
+    hiddenResponsiveCommands.push({
+      id: 'bold',
+      label: 'Bold',
+      keywords: ['bold', 'strong', 'b'],
+      icon: <BoldIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: (ed) => { ed.chain().focus().toggleBold().run(); },
+    });
+  }
+  if (visibleResponsiveButtonCount <= 1) {
+    hiddenResponsiveCommands.push({
+      id: 'italic',
+      label: 'Italic',
+      keywords: ['italic', 'emphasis', 'i'],
+      icon: <ItalicIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: (ed) => { ed.chain().focus().toggleItalic().run(); },
+    });
+  }
+  if (visibleResponsiveButtonCount <= 2) {
+    hiddenResponsiveCommands.push({
+      id: 'strikethrough',
+      label: 'Strikethrough',
+      keywords: ['strike', 'strikethrough', 'delete'],
+      icon: <StrikethroughIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: (ed) => { ed.chain().focus().toggleStrike().run(); },
+    });
+  }
+  if (visibleResponsiveButtonCount <= 3) {
+    hiddenResponsiveCommands.push({
+      id: 'list',
+      label: 'Toggle bullet list',
+      keywords: ['list', 'bullet', 'ul'],
+      icon: <ListBulletIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: (ed) => { ed.chain().focus().toggleBulletList().run(); },
+    });
+  }
+  if (visibleResponsiveButtonCount <= 4) {
+    hiddenResponsiveCommands.push({
+      id: 'link',
+      label: 'Insert link',
+      keywords: ['link', 'url', 'href'],
+      icon: <LinkIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: () => {
+        if (!linkPopoverOpen) {
+          setEmojiPickerOpen(false);
+          setHelpOpen(false);
+        }
+        onToggleLinkPopover?.();
+      },
+    });
+  }
+
+  if (onAttach && visibleResponsiveButtonCount <= 5) {
+    hiddenResponsiveCommands.push({
+      id: 'attach-file',
+      label: 'Attach file',
+      keywords: ['attach', 'file', 'upload'],
+      icon: <PaperClipIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: () => { onAttach(); },
+    });
+  }
+
+  const helpVisibleThreshold = onAttach ? 6 : 5;
+  if (visibleResponsiveButtonCount <= helpVisibleThreshold) {
+    hiddenResponsiveCommands.push({
+      id: 'editor-help',
+      label: 'Editor help',
+      keywords: ['help', 'shortcut', 'editor'],
+      icon: <QuestionMarkCircleIcon className="h-3.5 w-3.5 shrink-0" />,
+      execute: () => { setHelpOpen(true); },
+    });
+  }
+
+  return hiddenResponsiveCommands;
+}
+
 // ---------------------------------------------------------------------------
 // HeadingDropdown — "Tt" text-styles menu matching the mockup design
 // ---------------------------------------------------------------------------
@@ -313,10 +414,16 @@ interface Props {
 }
 
 const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, linkPopoverOpen = false, onToggleLinkPopover }: Props) => {
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const fixedStartRef = useRef<HTMLDivElement>(null);
+  const plusButtonRef = useRef<HTMLButtonElement>(null);
+  const responsiveButtonRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const responsiveButtonWidthCacheRef = useRef<number[]>([]);
   const overflowRef = useRef<HTMLDivElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [visibleResponsiveButtonCount, setVisibleResponsiveButtonCount] = useState(7 + (onAttach ? 1 : 0));
 
   // Open help modal with ⌘+/ keyboard shortcut
   useEffect(() => {
@@ -384,107 +491,190 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
     'p-1.5 text-xs rounded border border-border text-base hover:bg-bg-overlay transition-colors';
   const btnActive = 'bg-primary/10 text-primary';
 
+  const responsiveButtonTotal = 7 + (onAttach ? 1 : 0);
+  const helpButtonIndex = onAttach ? 6 : 5;
+
+  useEffect(() => {
+    const toolbar = toolbarRef.current;
+    if (!toolbar) return;
+
+    const recalculateVisibleButtons = () => {
+      const fixedStartWidth = fixedStartRef.current?.offsetWidth ?? 0;
+      const plusButtonWidth = plusButtonRef.current?.offsetWidth ?? 0;
+      const availableForResponsiveButtons = Math.max(
+        0,
+        toolbar.clientWidth - fixedStartWidth - plusButtonWidth - 20,
+      );
+
+      let used = 0;
+      let nextVisibleCount = 0;
+
+      for (let i = 0; i < responsiveButtonTotal; i += 1) {
+        const measuredWidth = responsiveButtonRefs.current[i]?.offsetWidth ?? 0;
+        if (measuredWidth > 0) {
+          responsiveButtonWidthCacheRef.current[i] = measuredWidth;
+        }
+        const width = responsiveButtonWidthCacheRef.current[i] ?? measuredWidth;
+        if (width <= 0) continue;
+        if (used + width > availableForResponsiveButtons) break;
+        used += width;
+        nextVisibleCount += 1;
+      }
+
+      setVisibleResponsiveButtonCount(Math.max(0, Math.min(nextVisibleCount, responsiveButtonTotal)));
+    };
+
+    const raf = requestAnimationFrame(recalculateVisibleButtons);
+    const observer = new ResizeObserver(recalculateVisibleButtons);
+    observer.observe(toolbar);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [responsiveButtonTotal]);
+
+  useEffect(() => {
+    setVisibleResponsiveButtonCount(responsiveButtonTotal);
+    responsiveButtonWidthCacheRef.current = [];
+  }, [onAttach, responsiveButtonTotal]);
+
+  const hiddenResponsiveCommands = buildHiddenResponsiveCommands({
+    visibleResponsiveButtonCount,
+    onAttach,
+    linkPopoverOpen,
+    onToggleLinkPopover,
+    setEmojiPickerOpen,
+    setHelpOpen,
+  });
+
   return (
     <>
     <div
+      ref={toolbarRef}
       role="toolbar"
       aria-label="Text formatting"
       className="z-20 flex w-full min-w-0 items-center gap-1 overflow-visible border-b border-border bg-bg-surface p-2 shadow-md"
     >
-      {/* Text styles (heading) dropdown — always first */}
-      <HeadingDropdown editor={editor} />
+      <div ref={fixedStartRef} className="flex shrink-0 items-center gap-1">
+        {/* Text styles (heading) dropdown — always first */}
+        <HeadingDropdown editor={editor} />
 
-      {/* Divider */}
-      <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />
+        {/* Divider */}
+        <span className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />
+      </div>
 
       {/* Primary controls — always visible */}
-      <button
-        type="button"
-        aria-label="Bold"
-        title="Bold"
-        className={`${btn} ${editor?.isActive('bold') ? btnActive : ''}`}
-        onMouseDown={runCmd(() => editor?.chain().focus().toggleBold().run() ?? false)}
-      >
-        <BoldIcon className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        aria-label="Italic"
-        title="Italic"
-        className={`${btn} ${editor?.isActive('italic') ? btnActive : ''}`}
-        onMouseDown={runCmd(() => editor?.chain().focus().toggleItalic().run() ?? false)}
-      >
-        <ItalicIcon className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        aria-label="Strikethrough"
-        title="Strikethrough"
-        className={`${btn} ${editor?.isActive('strike') ? btnActive : ''}`}
-        onMouseDown={runCmd(() => editor?.chain().focus().toggleStrike().run() ?? false)}
-      >
-        <StrikethroughIcon className="h-3.5 w-3.5" />
-      </button>
+      <div className="flex min-w-0 items-center gap-1 overflow-hidden">
+        <div ref={(el) => { responsiveButtonRefs.current[0] = el; }} className={visibleResponsiveButtonCount > 0 ? 'shrink-0' : 'hidden'}>
+          <button
+            type="button"
+            aria-label="Bold"
+            title="Bold"
+            className={`${btn} ${editor?.isActive('bold') ? btnActive : ''}`}
+            onMouseDown={runCmd(() => editor?.chain().focus().toggleBold().run() ?? false)}
+          >
+            <BoldIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
-      {/* List dropdown — bullet + numbered */}
-      <ListDropdown editor={editor} />
+        <div ref={(el) => { responsiveButtonRefs.current[1] = el; }} className={visibleResponsiveButtonCount > 1 ? 'shrink-0' : 'hidden'}>
+          <button
+            type="button"
+            aria-label="Italic"
+            title="Italic"
+            className={`${btn} ${editor?.isActive('italic') ? btnActive : ''}`}
+            onMouseDown={runCmd(() => editor?.chain().focus().toggleItalic().run() ?? false)}
+          >
+            <ItalicIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
-      {/* Hyperlink button */}
-      <button
-        type="button"
-        aria-label="Insert link"
-        title="Insert link"
-        className={`${btn} ${linkPopoverOpen || editor?.isActive('link') ? btnActive : ''}`}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!linkPopoverOpen) {
-            // Close internal panels before parent opens the link popover
-            if (overflowOpen) onToggleOverflow();
-            setEmojiPickerOpen(false);
-            setHelpOpen(false);
-          }
-          onToggleLinkPopover?.();
-        }}
-      >
-        <LinkIcon className="h-3.5 w-3.5" />
-      </button>
+        <div ref={(el) => { responsiveButtonRefs.current[2] = el; }} className={visibleResponsiveButtonCount > 2 ? 'shrink-0' : 'hidden'}>
+          <button
+            type="button"
+            aria-label="Strikethrough"
+            title="Strikethrough"
+            className={`${btn} ${editor?.isActive('strike') ? btnActive : ''}`}
+            onMouseDown={runCmd(() => editor?.chain().focus().toggleStrike().run() ?? false)}
+          >
+            <StrikethroughIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
 
-      {/* Attach file button — shown when caller provides onAttach handler */}
-      {onAttach && (
-        <button
-          type="button"
-          aria-label="Attach file"
-          title="Attach file"
-          className={btn}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onAttach();
+        <div ref={(el) => { responsiveButtonRefs.current[3] = el; }} className={visibleResponsiveButtonCount > 3 ? 'shrink-0' : 'hidden'}>
+          {/* List dropdown — bullet + numbered */}
+          <ListDropdown editor={editor} />
+        </div>
+
+        <div ref={(el) => { responsiveButtonRefs.current[4] = el; }} className={visibleResponsiveButtonCount > 4 ? 'shrink-0' : 'hidden'}>
+          {/* Hyperlink button */}
+          <button
+            type="button"
+            aria-label="Insert link"
+            title="Insert link"
+            className={`${btn} ${linkPopoverOpen || editor?.isActive('link') ? btnActive : ''}`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!linkPopoverOpen) {
+                // Close internal panels before parent opens the link popover
+                if (overflowOpen) onToggleOverflow();
+                setEmojiPickerOpen(false);
+                setHelpOpen(false);
+              }
+              onToggleLinkPopover?.();
+            }}
+          >
+            <LinkIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Attach file button — shown when caller provides onAttach handler */}
+        {onAttach && (
+          <div ref={(el) => { responsiveButtonRefs.current[5] = el; }} className={visibleResponsiveButtonCount > 5 ? 'shrink-0' : 'hidden'}>
+            <button
+              type="button"
+              aria-label="Attach file"
+              title="Attach file"
+              className={btn}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAttach();
+              }}
+            >
+              <PaperClipIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div
+          ref={(el) => {
+            responsiveButtonRefs.current[helpButtonIndex] = el;
           }}
+          className={visibleResponsiveButtonCount > helpButtonIndex ? 'shrink-0' : 'hidden'}
         >
-          <PaperClipIcon className="h-3.5 w-3.5" />
-        </button>
-      )}
-
-      {/* Help button */}
-      <button
-        type="button"
-        aria-label="Editor help"
-        title="Editor help (⌘+/)"
-        className={btn}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setHelpOpen(true);
-        }}
-      >
-        <QuestionMarkCircleIcon className="h-3.5 w-3.5" />
-      </button>
+          {/* Help button */}
+          <button
+            type="button"
+            aria-label="Editor help"
+            title="Editor help (⌘+/)"
+            className={btn}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setHelpOpen(true);
+            }}
+          >
+            <QuestionMarkCircleIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
 
       {/* Overflow + button — secondary controls */}
       <div ref={overflowRef} className="relative ml-auto">
         <button
+          ref={plusButtonRef}
           type="button"
           aria-label="More formatting options"
           title="More formatting options"
@@ -505,6 +695,7 @@ const OneLineToolbar = ({ editor, overflowOpen, onToggleOverflow, onAttach, link
               editor={editor}
               onClose={onToggleOverflow}
               onOpenEmojiPicker={() => setEmojiPickerOpen(true)}
+              extraCommands={hiddenResponsiveCommands}
             />
           )}
 

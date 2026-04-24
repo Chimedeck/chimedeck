@@ -32,9 +32,11 @@ interface Props {
   onCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
   /** Called whenever the full attachment list changes — useful for features that need to reference attachments by id. */
   onAttachmentsChange?: (attachments: Attachment[]) => void;
+  /** External signal to force a refresh (e.g. uploads initiated outside this panel). */
+  refreshSignal?: number;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange, onAttachmentsChange }: Readonly<Props>): React.ReactElement {
+export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange, onAttachmentsChange, refreshSignal }: Readonly<Props>): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -88,6 +90,11 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   useEffect(() => {
     void loadAttachments();
   }, [loadAttachments]);
+
+  useEffect(() => {
+    if (refreshSignal === undefined) return;
+    void loadAttachments();
+  }, [refreshSignal, loadAttachments]);
 
   // [why] Propagate the full attachment list to the parent whenever it changes so
   // features like checklist item attachment previews can look up attachments by id.
@@ -193,18 +200,36 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
     ev.target.value = '';
   };
 
-  // Parse an internal card URL — same logic as the server-side parseInternalCardUrl.
+  // Parse an internal card URL — same logic as server-side parseInternalCardUrl.
   // Returns { cardId } only when the URL is on the same origin as the current page.
+  // Supported forms:
+  // - /c/:cardId[/slug]
+  // - /boards/:boardId/cards/:cardId[/slug]
+  // - /b/:boardId[/slug]?card=:cardId
+  // - /boards/:boardId?card=:cardId
   const parseInternalCardUrl = (url: string): { cardId: string } | null => {
     try {
       const parsed = new URL(url);
       // [why] Only URLs on this origin are internal — guard against cross-site links.
       if (parsed.origin !== globalThis.location.origin) return null;
-      const match = /^\/boards\/([^/]+)$/.exec(parsed.pathname);
-      if (!match) return null;
-      const cardId = parsed.searchParams.get('card');
-      if (!cardId) return null;
-      return { cardId };
+
+      const pathname = parsed.pathname.replace(/\/+$/, '');
+
+      const shortCardMatch = /^\/c\/([^/]+)(?:\/[^/]+)?$/.exec(pathname);
+      if (shortCardMatch) {
+        return { cardId: shortCardMatch[1] as string };
+      }
+
+      const legacyCardMatch = /^\/boards\/[^/]+\/cards\/([^/]+)(?:\/[^/]+)?$/.exec(pathname);
+      if (legacyCardMatch) {
+        return { cardId: legacyCardMatch[1] as string };
+      }
+
+      const queryCardId = parsed.searchParams.get('card');
+      if (!queryCardId) return null;
+
+      const isBoardRoute = /^\/(?:b|boards)\/[^/]+(?:\/[^/]+)?$/.test(pathname);
+      return isBoardRoute ? { cardId: queryCardId } : null;
     } catch {
       return null;
     }

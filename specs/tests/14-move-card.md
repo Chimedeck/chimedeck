@@ -16,19 +16,33 @@
 2. Drag `Test Card 1` from the `To Do` column and drop it into the `In Progress` column.
    - **Expected:** `Test Card 1` appears in `In Progress`. `To Do` now contains only `Test Card 2`.
 
+### Drag-and-Drop (Long Distance with Horizontal Scroll)
+
+1. Ensure the board has at least 6 columns (create temporary lists if needed).
+   - **Expected:** A far-right target list exists outside the initial viewport.
+
+2. Drag `Test Card 1` from `In Progress` toward the far-right list while horizontally scrolling the board during drag.
+   - **Expected:** The insertion indicator stays visible and the currently selected destination column shows a highlighted border.
+
+3. Drop `Test Card 1` into that far-right list.
+   - **Expected:** The card is moved to the far-right list.
+
+4. Drag `Test Card 1` back to `In Progress`.
+   - **Expected:** The card returns to `In Progress` and the destination column border highlight tracks the active target.
+
 ### Move via Card Menu
 
-3. Open `Test Card 1` by clicking it.
+1. Open `Test Card 1` by clicking it.
    - **Expected:** Card detail modal opens; breadcrumb shows `In Progress`.
 
-4. Close the modal.
+2. Close the modal.
 
-5. Right-click (or click the card's **⋮** menu) on `Test Card 1` to open the card action menu.
+3. Right-click (or click the card's **⋮** menu) on `Test Card 1` to open the card action menu.
 
-6. Select **Move** → choose list `Done` → confirm.
+4. Select **Move** → choose list `Done` → confirm.
    - **Expected:** `Test Card 1` moves to `Done`.
 
-7. Repeat step 5–6 to move the card back to `In Progress`.
+5. Repeat step 3-4 to move the card back to `In Progress`.
    - **Expected:** `Test Card 1` is back in `In Progress`.
 
 ---

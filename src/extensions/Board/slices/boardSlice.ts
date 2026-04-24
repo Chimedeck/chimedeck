@@ -266,10 +266,11 @@ const boardSlice = createSlice({
       const fromCards = state.cardsByList[fromListId] ?? [];
       state.cardsByList[fromListId] = fromCards.filter((id) => id !== card.id);
 
-      // Update the card record first so position comparisons below are current
-      if (state.cards[card.id]) {
-        state.cards[card.id] = { ...state.cards[card.id], ...card } as Card;
-      }
+      // [why] Cross-board moves can introduce a card not currently present in this board state's
+      // cards map. Upsert so the target board can render the incoming card immediately.
+      state.cards[card.id] = state.cards[card.id]
+        ? ({ ...state.cards[card.id], ...card } as Card)
+        : (card as Card);
 
       // Insert into target list at the correct sorted position (bytewise, matching DB COLLATE "C")
       const existing = (state.cardsByList[card.list_id] ?? []).filter((id) => id !== card.id);

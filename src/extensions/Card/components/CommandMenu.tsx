@@ -23,6 +23,7 @@ interface Props {
   editor: Editor | null;
   onClose: () => void;
   onOpenEmojiPicker?: () => void;
+  extraCommands?: CommandDef[];
 }
 
 // Static command definitions — icons are pre-rendered so JSX can live here.
@@ -73,13 +74,14 @@ const matchesQuery = (cmd: CommandDef, query: string): boolean => {
   return cmd.label.toLowerCase().includes(q) || cmd.keywords.some((k) => k.toLowerCase().includes(q));
 };
 
-const CommandMenu = ({ editor, onClose, onOpenEmojiPicker }: Props) => {
+const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }: Props) => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const filtered = COMMANDS.filter((cmd) => matchesQuery(cmd, query));
+  const mergedCommands = [...extraCommands, ...COMMANDS];
+  const filtered = mergedCommands.filter((cmd) => matchesQuery(cmd, query));
 
   // Focus the search input immediately when the menu mounts.
   useEffect(() => {

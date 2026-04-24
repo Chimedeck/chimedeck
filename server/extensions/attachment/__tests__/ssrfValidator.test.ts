@@ -1,6 +1,6 @@
 // Unit tests for the SSRF URL validator (isForbiddenUrl).
 import { describe, expect, test } from 'bun:test';
-import { isForbiddenUrl } from '../api/addUrl';
+import { isForbiddenUrl, parseInternalCardUrl } from '../api/addUrl';
 
 describe('isForbiddenUrl', () => {
   test('allows a normal public URL', () => {
@@ -53,5 +53,28 @@ describe('isForbiddenUrl', () => {
 
   test('rejects empty string', () => {
     expect(isForbiddenUrl('')).toBe(true);
+  });
+});
+
+describe('parseInternalCardUrl', () => {
+  test('parses short card route /c/:cardId', () => {
+    expect(parseInternalCardUrl('https://app.example.com/c/Ab12Cd34')).toEqual({ cardId: 'Ab12Cd34' });
+  });
+
+  test('parses short card route with slug', () => {
+    expect(parseInternalCardUrl('https://app.example.com/c/Ab12Cd34/some-card-title')).toEqual({ cardId: 'Ab12Cd34' });
+  });
+
+  test('parses legacy /boards/:boardId/cards/:cardId route', () => {
+    expect(parseInternalCardUrl('https://app.example.com/boards/board-1/cards/card-22')).toEqual({ cardId: 'card-22' });
+  });
+
+  test('parses board route with ?card= query', () => {
+    expect(parseInternalCardUrl('https://app.example.com/b/board-1?card=card-99')).toEqual({ cardId: 'card-99' });
+  });
+
+  test('returns null for non-card URLs', () => {
+    expect(parseInternalCardUrl('https://app.example.com/b/board-1')).toBeNull();
+    expect(parseInternalCardUrl('https://app.example.com/somewhere-else')).toBeNull();
   });
 });

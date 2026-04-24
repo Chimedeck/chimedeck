@@ -2,7 +2,6 @@ import { describe, expect, test, mock, beforeEach } from 'bun:test';
 
 // ---------------------------------------------------------------------------
 // All mocks must be set up before the module-under-test is imported.
-// Paths are relative to THIS test file (server/extensions/notifications/mods/__tests__/).
 // ---------------------------------------------------------------------------
 
 const dispatchEmailMock = mock(() => Promise.resolve());
@@ -13,8 +12,6 @@ const boardPreferenceGuardMock = mock(async () => true);
 mock.module('../boardPreferenceGuard', () => ({
   boardPreferenceGuard: boardPreferenceGuardMock,
   resolveNotificationChannels: resolveChannelsMock,
-  // selectChannels is a pure helper; export a real implementation so boardPreferenceGuard.test.ts
-  // can import it without getting undefined when this mock takes effect.
   selectChannels: (boardRow: any, userRow: any) => {
     if (boardRow) return { inApp: boardRow.in_app_enabled, email: boardRow.email_enabled };
     if (userRow) return { inApp: userRow.in_app_enabled, email: userRow.email_enabled };
@@ -39,17 +36,14 @@ mock.module('../../../../../common/avatar/resolveAvatarUrl', () => ({
   resolveAvatarUrl: mock(async () => 'https://example.com/avatar.png'),
 }));
 
+const firstResult = (value: unknown) => ({ first: async () => value });
+const whereSelectFirst = (value: unknown) => ({ where: () => ({ select: () => firstResult(value) }) });
+
 // Build a db mock that handles each table accessed by boardActivityDispatch.
-function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }] } = {}) {
-  return mock((table: string) => {
+function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests = [] as any[] } = {}) {
+  const db: any = (table: string) => {
     if (table === 'boards') {
-      return {
-        where: () => ({
-          select: () => ({
-            first: async () => ({ id: 'board-1', title: 'Test Board', workspace_id: 'ws-1' }),
-          }),
-        }),
-      };
+      return whereSelectFirst({ id: 'board-1', title: 'Test Board', workspace_id: 'ws-1' });
     }
     if (table === 'board_members') {
       return {
@@ -60,23 +54,20 @@ function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }] } = {}) {
         }),
       };
     }
-    if (table === 'lists') {
+    if (table === 'board_guest_access') {
       return {
         where: () => ({
-          select: () => ({
-            first: async () => ({ name: 'To Do' }),
+          whereNot: () => ({
+            select: async () => boardGuests,
           }),
         }),
       };
     }
+    if (table === 'lists') {
+      return whereSelectFirst({ name: 'To Do' });
+    }
     if (table === 'users') {
-      return {
-        where: () => ({
-          select: () => ({
-            first: async () => ({ id: 'actor-1', nickname: 'alice', name: 'Alice', avatar_url: null }),
-          }),
-        }),
-      };
+      return whereSelectFirst({ id: 'actor-1', nickname: 'alice', name: 'Alice', avatar_url: null });
     }
     if (table === 'notifications') {
       return {
@@ -86,15 +77,19 @@ function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }] } = {}) {
         }),
       };
     }
-    return { where: () => ({ select: () => ({ first: async () => null }) }) };
-  });
+    return whereSelectFirst(null);
+  };
+
+  db.raw = () => 'COALESCE(name, email) as name';
+  return db;
 }
 
-const dbMock = buildDbMock();
-const dbMockRaw = mock(() => 'COALESCE(name, email) as name');
-dbMock.raw = dbMockRaw;
-
-mock.module('../../../../common/db', () => ({ db: dbMock }));
+let currentDbMock = buildDbMock();
+mock.module('../../../../common/db', () => ({
+  get db() {
+    return currentDbMock;
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // Import the module-under-test AFTER all mocks are registered.
@@ -124,6 +119,8 @@ beforeEach(() => {
 
   boardPreferenceGuardMock.mockReset();
   boardPreferenceGuardMock.mockImplementation(async () => true);
+
+  currentDbMock = buildDbMock();
 });
 
 // ---------------------------------------------------------------------------
@@ -144,8 +141,27 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
     });
   });
 
+  test('Recipient deduplication: only one notification is dispatched if user is both member and guest', async () => {
+    // Both tables return the same user ID
+    currentDbMock = buildDbMock({
+      boardMembers: [{ user_id: 'recipient-1' }],
+      boardGuests: [{ user_id: 'recipient-1' }],
+    });
+
+    // We only care about how many times email dispatch is called.
+    // resolveChannelsMock is also a good proxy.
+    await handleBoardActivityNotification({
+      event: makeEvent('card.created') as any,
+      boardId: 'board-1',
+      actorId: 'actor-1',
+    });
+
+    // If deduplication works, it should only be called ONCE.
+    expect(resolveChannelsMock).toHaveBeenCalledTimes(1);
+    expect(dispatchEmailMock).toHaveBeenCalledTimes(1);
+  });
+
   test('T1: email=false from resolved channels is forwarded to dispatchNotificationEmail', async () => {
-    // inApp=false skips the db notification insert path, keeping the test focused on email dispatch.
     resolveChannelsMock.mockImplementation(async () => ({ inApp: false, email: false }));
 
     await handleBoardActivityNotification({
@@ -160,7 +176,6 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
   });
 
   test('T1: inApp=true and email=true both forwarded when both enabled', async () => {
-    // inApp=false skips the db notification insert path; we only care about the email arg here.
     resolveChannelsMock.mockImplementation(async () => ({ inApp: false, email: true }));
 
     await handleBoardActivityNotification({

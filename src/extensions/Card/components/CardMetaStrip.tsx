@@ -70,6 +70,17 @@ function formatDate(iso: string) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function formatDueDateTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 // ------------------------------------------------------------------
 // Pill button used for the "Add…" actions
 // ------------------------------------------------------------------
@@ -547,8 +558,8 @@ const DatesButton = ({
   const checkboxClass = getDueCheckboxClass(status);
 
   const pillLabel = (() => {
-    if (dueDate && startDate) return `${formatDate(startDate)} → ${formatDate(dueDate)}`;
-    if (dueDate) return formatDate(dueDate);
+    if (dueDate && startDate) return `${formatDate(startDate)} → ${formatDueDateTime(dueDate)}`;
+    if (dueDate) return formatDueDateTime(dueDate);
     if (startDate) return `${formatDate(startDate)} →`;
     return '+ Dates';
   })();

@@ -29,12 +29,13 @@ export async function handleGetBoardNotificationPreference(
 
   const row = await db('board_notification_preferences')
     .where({ user_id: userId, board_id: resolvedBoardId })
-    .select('notifications_enabled', 'updated_at')
+    .select('notifications_enabled', 'only_related_to_me', 'updated_at')
     .first();
 
   return Response.json({
     data: {
       notifications_enabled: row ? row.notifications_enabled : !!boardMember || !!boardGuest,
+      only_related_to_me: row ? row.only_related_to_me : false,
       updated_at: row ? row.updated_at : null,
     },
   });

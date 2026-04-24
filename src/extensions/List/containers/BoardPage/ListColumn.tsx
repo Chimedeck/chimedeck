@@ -1,6 +1,6 @@
 // BoardPage/ListColumn — sortable list column using @dnd-kit/sortable.
-// Provides drag handle for list reorder and a SortableContext for card items.
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+// Provides drag handle for list reorder and renders draggable card tiles.
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Fragment, memo, useCallback, useMemo, useRef, useState } from 'react';
 import type { List } from '../../api';
@@ -11,6 +11,7 @@ import type { CustomFieldValue } from '../../../CustomFields/types';
 import AddCardForm from '../../../Card/components/AddCardForm';
 import Button from '../../../../common/components/Button';
 import type { ListSortBy } from '../../types';
+import { useAppSelector } from '~/hooks/useAppSelector';
 
 type ListTextTone = 'light' | 'dark';
 
@@ -31,6 +32,7 @@ interface Props {
   cards: Record<string, Card>;
   boardId?: string;
   boardTitle?: string;
+  currentUserId?: string;
   onRename: (listId: string, title: string) => void;
   onCopyList: (listId: string) => void;
   onMoveList: (listId: string, targetIndex: number) => void;
@@ -70,6 +72,7 @@ const SortableListColumn = ({
   cards,
   boardId,
   boardTitle,
+  currentUserId = '',
   onRename,
   onCopyList,
   onMoveList,
@@ -92,6 +95,8 @@ const SortableListColumn = ({
   hydration,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
+  const storeHydration = useAppSelector((state) => state.board.listHydration[list.id]);
+  const effectiveHydration = hydration ?? storeHydration;
   // WHY: stable noop so CardItem (memo'd) doesn't re-render when onToggleLabels
   // is not provided. An inline `() => {}` creates a new reference every render.
   const noopRef = useRef(() => {});
@@ -99,6 +104,36 @@ const SortableListColumn = ({
     onToggleLabels ?? noopRef.current,
     [onToggleLabels],
   );
+  const handleRename = useCallback((title: string) => {
+    onRename(list.id, title);
+  }, [list.id, onRename]);
+  const handleOpenAddCard = useCallback(() => {
+    setAddingCard(true);
+  }, []);
+  const handleCopyList = useCallback(() => {
+    onCopyList(list.id);
+  }, [list.id, onCopyList]);
+  const handleMoveList = useCallback((targetIndex: number) => {
+    onMoveList(list.id, targetIndex);
+  }, [list.id, onMoveList]);
+  const handleMoveAllCards = useCallback((targetListId: string) => {
+    onMoveAllCards(list.id, targetListId);
+  }, [list.id, onMoveAllCards]);
+  const handleArchive = useCallback(() => {
+    onArchive(list.id);
+  }, [list.id, onArchive]);
+  const handleArchiveAllCards = useCallback(() => {
+    onArchiveAllCards(list.id);
+  }, [list.id, onArchiveAllCards]);
+  const handleDelete = useCallback(() => {
+    onDelete(list.id);
+  }, [list.id, onDelete]);
+  const handleChangeListColor = useCallback((color: string | null) => {
+    onChangeListColor(list.id, color);
+  }, [list.id, onChangeListColor]);
+  const handleSortBy = useCallback((sortBy: ListSortBy) => {
+    onSortBy(list.id, sortBy);
+  }, [list.id, onSortBy]);
 
   // Sortable hook for the list column itself (horizontal reorder)
   const {
@@ -124,7 +159,6 @@ const SortableListColumn = ({
     }),
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, listColor, listTextColor],
   );
-  const columnBorderClass = listColor ? 'border-transparent' : 'border-border';
   const columnSurfaceClass = (() => {
     if (listColor) return '';
     if (hasBackground) return 'bg-bg-surface';
@@ -146,6 +180,10 @@ const SortableListColumn = ({
   // In placeholder mode we remove it to avoid rendering a double gap.
   const usePlaceholderMode =
     typeof dragPlaceholderIndex === 'number' && Number.isFinite(dragPlaceholderIndex);
+  const columnBorderClass = (() => {
+    if (usePlaceholderMode) return 'border-primary';
+    return listColor ? 'border-transparent' : 'border-border';
+  })();
   const visibleCardIds = useMemo(() => {
     if (!usePlaceholderMode || !activeDragCardId) return cardIds;
     const filtered = cardIds.filter((id) => id !== activeDragCardId);
@@ -184,55 +222,55 @@ const SortableListColumn = ({
       aria-label={`List: ${list.title}`}
     >
       {/* Drag handle is the list header */}
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+      <div {...attributes} {...listeners} className="relative z-20 shrink-0 cursor-grab active:cursor-grabbing">
         <ListHeader
           list={list}
           listColor={listColor}
           availableLists={availableLists}
           cardCount={cardIds.length}
-          onRename={(title) => { onRename(list.id, title); }}
-          onAddCard={() => { setAddingCard(true); }}
-          onCopyList={() => { onCopyList(list.id); }}
-          onMoveList={(targetIndex: number) => { onMoveList(list.id, targetIndex); }}
-          onMoveAllCards={(targetListId: string) => { onMoveAllCards(list.id, targetListId); }}
-          onArchive={() => { onArchive(list.id); }}
-          onArchiveAllCards={() => { onArchiveAllCards(list.id); }}
-          onDelete={() => { onDelete(list.id); }}
-          onChangeListColor={(color: string | null) => { onChangeListColor(list.id, color); }}
-          onSortBy={(sortBy: ListSortBy) => { onSortBy(list.id, sortBy); }}
+          onRename={handleRename}
+          onAddCard={handleOpenAddCard}
+          onCopyList={handleCopyList}
+          onMoveList={handleMoveList}
+          onMoveAllCards={handleMoveAllCards}
+          onArchive={handleArchive}
+          onArchiveAllCards={handleArchiveAllCards}
+          onDelete={handleDelete}
+          onChangeListColor={handleChangeListColor}
+          onSortBy={handleSortBy}
           textTone={listTextTone}
           hasBackground={hasBackground}
         />
       </div>
 
-      {/* Cards — vertically sortable */}
+      {/* Cards — draggable tiles with pointer-resolved insertion preview */}
       <div
-        className="flex flex-1 flex-col gap-2 overflow-y-auto px-2 py-2 min-h-[2rem]"
+        data-dnd-list-scroll-container="true"
+        className="scrollbar-contrast relative z-0 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 py-2"
         style={{ contentVisibility: 'auto', contain: 'layout paint style', containIntrinsicSize: '1px 900px' }}
       >
-        <SortableContext items={visibleCardIds} strategy={verticalListSortingStrategy}>
-          {listCardObjects.map((card, idx) => (
-            <Fragment key={card.id}>
-              {normalizedPlaceholderIndex === idx && placeholderNode}
-              <CardItem
-                card={card}
-                listTitle={list.title}
-                {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
-                {...(boardId ? { boardId } : {})}
-                labelsExpanded={labelsExpanded ?? false}
-                onToggleLabels={stableToggleLabels}
-                {...(onCardClick ? { onClick: onCardClick } : {})}
-                {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
-              />
-            </Fragment>
-          ))}
-          {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
-        </SortableContext>
+        {listCardObjects.map((card, idx) => (
+          <Fragment key={card.id}>
+            {normalizedPlaceholderIndex === idx && placeholderNode}
+            <CardItem
+              card={card}
+              listTitle={list.title}
+              {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+              {...(boardId ? { boardId } : {})}
+              currentUserId={currentUserId}
+              labelsExpanded={labelsExpanded ?? false}
+              onToggleLabels={stableToggleLabels}
+              {...(onCardClick ? { onClick: onCardClick } : {})}
+              {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
+            />
+          </Fragment>
+        ))}
+        {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
       </div>
 
       {/* Add card footer — hidden for VIEWER guests */}
-      <div className="px-1 pb-2">
-        {hydration?.loading && (
+      <div className="shrink-0 px-1 pb-2">
+        {effectiveHydration?.loading && (
           <p className={`mb-2 px-2 text-xs ${loadingTextClass}`}>Loading more cards...</p>
         )}
         {!isViewerGuest && (addingCard ? (
@@ -248,7 +286,7 @@ const SortableListColumn = ({
           <Button
             variant="ghost"
             className={`w-full justify-start rounded-lg px-2 py-1.5 text-sm ${addCardButtonToneClass}`}
-            onClick={() => { setAddingCard(true); }}
+            onClick={handleOpenAddCard}
             aria-label={`Add a card to ${list.title}`}
           >
             + Add a card
@@ -263,14 +301,22 @@ function areEqual(prev: Props, next: Props): boolean {
   if (prev === next) return true;
 
   if (prev.list !== next.list) return false;
+
+  const prevUsesPlaceholderMode =
+    typeof prev.dragPlaceholderIndex === 'number' && Number.isFinite(prev.dragPlaceholderIndex);
+  const nextUsesPlaceholderMode =
+    typeof next.dragPlaceholderIndex === 'number' && Number.isFinite(next.dragPlaceholderIndex);
+  const shouldCompareActiveDragCardId = prevUsesPlaceholderMode || nextUsesPlaceholderMode;
+
   const hasSameNonCardProps =
     prev.dragPlaceholderIndex === next.dragPlaceholderIndex
     && prev.dragPlaceholderHeight === next.dragPlaceholderHeight
-    && prev.activeDragCardId === next.activeDragCardId
+    && (!shouldCompareActiveDragCardId || prev.activeDragCardId === next.activeDragCardId)
     && prev.hydration?.loading === next.hydration?.loading
     && prev.hydration?.error === next.hydration?.error
     && prev.boardId === next.boardId
     && prev.boardTitle === next.boardTitle
+    && prev.currentUserId === next.currentUserId
     && prev.onRename === next.onRename
     && prev.onCopyList === next.onCopyList
     && prev.onMoveList === next.onMoveList

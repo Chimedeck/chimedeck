@@ -14,9 +14,12 @@ export async function subscribeToBoard({
   boardId: string;
 }): Promise<void> {
   if (!rooms.has(boardId)) {
-    rooms.set(boardId, new Set());
+    // [why] Only create the room registry after the pubsub subscription succeeds.
+    // This avoids a half-initialized room if subscribeBoard throws.
     await subscriber.subscribeBoard(boardId);
+    rooms.set(boardId, new Set());
   }
+
   rooms.get(boardId)!.add(ws);
   ws.data.subscribedBoards.add(boardId);
 

@@ -1,7 +1,7 @@
 // CardModal — full detail Radix Dialog modal for viewing and editing a card.
 // URL-driven: ?card=:id opens the modal; closing clears the query param.
 // Two-column layout: left = content, right = ActivityFeed (ResizablePanels).
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Card, Label, CardMember, Checklist } from '../api';
@@ -181,6 +181,20 @@ const CardModal = ({
   // [why] cardAttachments is populated by AttachmentPanel via onAttachmentsChange and
   // forwarded to CardChecklist so checklist item titles can preview attachment references.
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
+  const [attachmentRefreshSignal, setAttachmentRefreshSignal] = useState(0);
+
+  const syncCardAttachmentState = useCallback((attachments: Attachment[]) => {
+    setCardAttachments(attachments);
+    const fileCount = attachments.filter((entry) => entry.referenced_card_id == null).length;
+    const linkedCardCount = attachments.filter((entry) => entry.referenced_card_id != null).length;
+    onAttachmentCountChange?.({ fileCount, linkedCardCount });
+  }, [onAttachmentCountChange]);
+
+  const handleEditorAttachmentsChange = useCallback((attachments: Attachment[]) => {
+    syncCardAttachmentState(attachments);
+    // [why] editor paste/file uploads happen outside AttachmentPanel; trigger a panel refresh.
+    setAttachmentRefreshSignal((value) => value + 1);
+  }, [syncCardAttachmentState]);
   const { uploads: coverUploads, upload: uploadCover } = useAttachmentUpload({
     cardId: card.id,
     onSuccess: (attachment) => {
@@ -496,7 +510,14 @@ const CardModal = ({
                       boardId={boardId}
                     />
 
-                    <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} onAttachmentsChange={setCardAttachments} />
+                    <AttachmentPanel
+                      cardId={card.id}
+                      canWrite={!isViewerGuest}
+                      insertMarkdownRef={insertMarkdownRef}
+                      onCountChange={onAttachmentCountChange}
+                      onAttachmentsChange={syncCardAttachmentState}
+                      refreshSignal={attachmentRefreshSignal}
+                    />
 
                     {/* Plugin detail badges */}
                     <div className="flex flex-wrap gap-3">
@@ -529,6 +550,7 @@ const CardModal = ({
                       {...(onEditReply ? { onEditReply } : {})}
                       {...(onDeleteReply ? { onDeleteReply } : {})}
                       canAddComment={!isViewerGuest}
+                      onAttachmentsChange={handleEditorAttachmentsChange}
                       insertMarkdownRef={insertMarkdownRef}
                     />
                   </div>
@@ -576,7 +598,14 @@ const CardModal = ({
                     boardId={boardId}
                   />
 
-                  <AttachmentPanel cardId={card.id} canWrite={!isViewerGuest} insertMarkdownRef={insertMarkdownRef} onCountChange={onAttachmentCountChange} onAttachmentsChange={setCardAttachments} />
+                  <AttachmentPanel
+                    cardId={card.id}
+                    canWrite={!isViewerGuest}
+                    insertMarkdownRef={insertMarkdownRef}
+                    onCountChange={onAttachmentCountChange}
+                    onAttachmentsChange={syncCardAttachmentState}
+                    refreshSignal={attachmentRefreshSignal}
+                  />
 
                   {/* Plugin detail badges */}
                   <div className="flex flex-wrap gap-3">

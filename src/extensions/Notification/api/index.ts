@@ -8,6 +8,13 @@ export interface NotificationActor {
   avatar_url: string | null;
 }
 
+export interface NotificationCommentReaction {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+  reactors: Array<{ userId: string; name: string | null }>;
+}
+
 export type NotificationType =
   | 'mention'
   | 'card_created'
@@ -16,21 +23,32 @@ export type NotificationType =
   | 'comment_reaction'
   | 'card_member_assigned'
   | 'card_member_unassigned'
+  | 'checklist_item_assigned'
+  | 'checklist_item_unassigned'
+  | 'checklist_item_due_date_updated'
   | 'card_updated'
   | 'card_deleted'
   | 'card_archived';
 
 export interface Notification {
   id: string;
-  type: NotificationType | string;
+  type: NotificationType | (string & {});
   source_type: 'card_description' | 'comment' | 'board_activity';
   source_id: string;
   card_id: string | null;
+  emoji?: string | null;
   card_title: string | null;
   board_id: string | null;
   board_title: string | null;
   /** Destination list name — populated for card_moved notifications */
   list_title: string | null;
+  /** Assignment/unassignment target from board activity payload, when available. */
+  target_user_id?: string | null;
+  target_user_name?: string | null;
+  /** Raw comment markdown content when source_id references a comment. */
+  comment_content?: string | null;
+  /** Aggregated comment reactions for comment-backed notifications. */
+  comment_reactions?: NotificationCommentReaction[];
   actor: NotificationActor;
   read: boolean;
   created_at: string;
@@ -64,5 +82,13 @@ export const notificationApi = {
 
   deleteAll(): Promise<void> {
     return apiClient.delete('/notifications');
+  },
+
+  addCommentReaction({ commentId, emoji }: { commentId: string; emoji: string }): Promise<void> {
+    return apiClient.post(`/comments/${commentId}/reactions`, { emoji });
+  },
+
+  removeCommentReaction({ commentId, emoji }: { commentId: string; emoji: string }): Promise<void> {
+    return apiClient.delete(`/comments/${commentId}/reactions/${encodeURIComponent(emoji)}`);
   },
 };

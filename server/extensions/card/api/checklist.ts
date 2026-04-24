@@ -15,6 +15,7 @@ import { generateUniqueShortId } from '../../../common/ids/shortId';
 import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { writeActivity } from '../../activity/mods/write';
 import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
+import { mapActivityToNotification } from '../../activity/mods/mapActivityToNotification';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
 interface CardContext { boardId: string; workspaceId: string; }
@@ -101,7 +102,6 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
     id,
     card_id: cardId,
     title: body.title.trim(),
-    checked: false,
     position,
   });
 
@@ -196,9 +196,13 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
       const boardMember = await db('board_members')
         .where({ board_id: updateContext.boardId, user_id: body.assigned_member_id })
         .first();
-      if (!boardMember) {
+      const boardGuest = await db('board_guest_access')
+        .where({ board_id: updateContext.boardId, user_id: body.assigned_member_id })
+        .first();
+
+      if (!boardMember && !boardGuest) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'assigned_member_id must be a member of this board' } },
+          { error: { code: 'bad-request', message: 'assigned_member_id must be a member or guest of this board' } },
           { status: 400 },
         );
       }
@@ -234,27 +238,121 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
 
   const updated = await db('checklist_items').where({ id: itemId }).first();
 
-  // Fire activity when an item is checked or unchecked
-  if (updates.checked !== undefined && updateCardId && updateContext) {
+  const checkedChanged = updates.checked !== undefined && item.checked !== updated?.checked;
+  const assigneeChanged =
+    updates.assigned_member_id !== undefined
+    && (item.assigned_member_id ?? null) !== (updated?.assigned_member_id ?? null);
+  const dueDateChanged =
+    updates.due_date !== undefined
+    && (item.due_date ?? null) !== (updated?.due_date ?? null);
+
+  if ((checkedChanged || assigneeChanged || dueDateChanged) && updateCardId && updateContext) {
     const actorId = (req as AuthenticatedRequest).currentUser!.id;
-    const card = await db('cards').where({ id: updateCardId }).select('title').first();
-    const checklist = updated?.checklist_id
-      ? await db('checklists').where({ id: updated.checklist_id }).select('title').first()
-      : null;
-    writeActivity({
-      entityType: 'card',
-      entityId: updateCardId,
+    const [card, checklist] = await Promise.all([
+      db('cards').where({ id: updateCardId }).select('title').first(),
+      updated?.checklist_id
+        ? db('checklists').where({ id: updated.checklist_id }).select('title').first()
+        : Promise.resolve(null),
+    ]);
+
+    const basePayload = {
+      itemTitle: updated?.title ?? item.title,
+      checklistTitle: checklist?.title ?? '',
+      cardTitle: card?.title ?? '',
+      cardId: updateCardId,
       boardId: updateContext.boardId,
-      action: updates.checked ? 'checklist_item_checked' : 'checklist_item_unchecked',
-      actorId,
-      payload: {
-        itemTitle: updated?.title ?? item.title,
-        checklistTitle: checklist?.title ?? '',
-        cardTitle: card?.title ?? '',
-      },
-    }).then((activity) => {
+    };
+
+    const emitActivity = async (action: string, payload: Record<string, unknown>) => {
+      const activity = await writeActivity({
+        entityType: 'card',
+        entityId: updateCardId,
+        boardId: updateContext.boardId,
+        action,
+        actorId,
+        payload,
+      });
       publishCardActivityEvent({ activity, boardId: updateContext.boardId }).catch(() => {});
-    }).catch(() => {});
+      mapActivityToNotification({ activity, boardId: updateContext.boardId }).catch(() => {});
+    };
+
+    if (checkedChanged) {
+      await emitActivity(
+        updated?.checked ? 'checklist_item_checked' : 'checklist_item_unchecked',
+        basePayload,
+      );
+    }
+
+    if (assigneeChanged) {
+      const previousAssigneeId = item.assigned_member_id ?? null;
+      const nextAssigneeId = updated?.assigned_member_id ?? null;
+      let assigneeName = '';
+      if (nextAssigneeId) {
+        const assignee = await db('users')
+          .where({ id: nextAssigneeId })
+          .select('name', 'email')
+          .first();
+        assigneeName = assignee?.name ?? assignee?.email ?? nextAssigneeId;
+      }
+
+      const assignmentEventType = nextAssigneeId
+        ? 'checklist_item_assigned'
+        : 'checklist_item_unassigned';
+
+      await dispatchEvent({
+        type: assignmentEventType,
+        boardId: updateContext.boardId,
+        entityId: updateCardId,
+        actorId,
+        payload: {
+          ...basePayload,
+          checklistItemId: itemId,
+          previousUserId: previousAssigneeId,
+          userId: nextAssigneeId,
+          assigneeName,
+        },
+      });
+
+      await emitActivity(
+        assignmentEventType,
+        {
+          ...basePayload,
+          checklistItemId: itemId,
+          previousUserId: previousAssigneeId,
+          userId: nextAssigneeId,
+          assigneeName,
+        },
+      );
+    }
+
+    if (dueDateChanged) {
+      const dueDateAssigneeId = updated?.assigned_member_id ?? item.assigned_member_id ?? null;
+      const dueDateEventType = updated?.due_date
+        ? 'checklist_item_due_date_set'
+        : 'checklist_item_due_date_removed';
+
+      await dispatchEvent({
+        type: dueDateEventType,
+        boardId: updateContext.boardId,
+        entityId: updateCardId,
+        actorId,
+        payload: {
+          ...basePayload,
+          checklistItemId: itemId,
+          userId: dueDateAssigneeId,
+          dueDate: updated?.due_date ?? null,
+          previousDueDate: item.due_date ?? null,
+        },
+      });
+
+      await emitActivity('checklist_item_due_date_updated', {
+        ...basePayload,
+        checklistItemId: itemId,
+        userId: dueDateAssigneeId,
+        dueDate: updated?.due_date ?? null,
+        previousDueDate: item.due_date ?? null,
+      });
+    }
   }
 
   return Response.json({ data: updated });

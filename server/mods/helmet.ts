@@ -1,7 +1,8 @@
 export interface SecurityHeaderOptions {
   /**
    * Origins to add to the frame-src directive (e.g. plugin connector_url origins).
-   * Defaults to an empty list — when empty the directive is set to 'none'.
+    * Always includes 'self' and blob: so in-app blob-backed previews (e.g. PDFs)
+    * can render safely in iframes.
    */
   extraFrameSrc?: string[];
   /**
@@ -23,9 +24,7 @@ export interface SecurityHeaderOptions {
 export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptions = {}): void {
   const { extraFrameSrc = [], extraConnectSrc = [], extraImgSrc = [] } = opts;
 
-  const frameSrc = extraFrameSrc.length > 0
-    ? `'self' ${extraFrameSrc.join(' ')}`
-    : "'none'";
+  const frameSrc = ['\'self\'', 'blob:', ...extraFrameSrc].join(' ');
 
   const connectSrc = ['\'self\'', 'wss:', ...extraConnectSrc].join(' ');
 

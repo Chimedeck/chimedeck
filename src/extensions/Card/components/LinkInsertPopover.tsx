@@ -97,6 +97,20 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     onClose();
   }, [editor, url, displayText, onClose]);
 
+  const handleRemoveLink = useCallback(() => {
+    if (!editor) return;
+
+    if (editor.isActive('link')) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      editor.chain().focus().unsetLink().run();
+    }
+
+    onClose();
+  }, [editor, onClose]);
+
+  const canRemoveLink = Boolean(editor?.isActive('link'));
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -150,24 +164,36 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
         <p className="mt-1 text-[11px] text-muted">Give this link a title or description</p>
       </div>
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="mt-4 flex items-center justify-between gap-2">
         <Button
           type="button"
           variant="ghost"
-          onMouseDown={(e) => { e.preventDefault(); onClose(); }}
+          onMouseDown={(e) => { e.preventDefault(); handleRemoveLink(); }}
+          disabled={!canRemoveLink}
           className="px-3 py-1.5 text-sm text-muted hover:text-subtle"
         >
-          Cancel
+          Remove
         </Button>
-        <Button
-          type="button"
-          variant="primary"
-          onMouseDown={(e) => { e.preventDefault(); handleInsert(); }}
-          disabled={!url.trim()}
-          className="px-3 py-1.5 text-sm"
-        >
-          Insert
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onMouseDown={(e) => { e.preventDefault(); onClose(); }}
+            className="px-3 py-1.5 text-sm text-muted hover:text-subtle"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onMouseDown={(e) => { e.preventDefault(); handleInsert(); }}
+            disabled={!url.trim()}
+            className="px-3 py-1.5 text-sm"
+          >
+            Insert
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -70,8 +70,9 @@ export async function emitCardCreated({
   });
   // [why] Fire-and-forget so a WS delivery failure never blocks the API response.
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
-  // [why] Fan-out notifications after the activity write; failures are swallowed.
-  mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
+  // [why] card.create notifications are emitted by dispatchEvent ->
+  // handleBoardActivityNotification in the card create API path. Emitting here
+  // as well causes duplicate notifications in production.
   return activity;
 }
 
@@ -110,7 +111,9 @@ export async function emitCardMoved({
     userAgent: userAgent ?? null,
   });
   publishCardActivityEvent({ activity, boardId: payload.boardId }).catch(() => {});
-  mapActivityToNotification({ activity, boardId: payload.boardId }).catch(() => {});
+  // [why] card.move notifications are emitted by dispatchEvent ->
+  // handleBoardActivityNotification in the card move API path. Emitting here
+  // as well causes duplicate notifications in production.
   return activity;
 }
 

@@ -53,7 +53,7 @@ const ListColumn = ({
       </div>
 
       {/* Card slot — cards will be rendered here from sprint 07 */}
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-2 min-h-[2rem]">
+      <div className="scrollbar-contrast flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-2 min-h-[2rem]">
         {children}
       </div>
     </div>

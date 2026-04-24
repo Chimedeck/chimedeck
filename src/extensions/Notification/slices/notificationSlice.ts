@@ -2,7 +2,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '~/store';
 import { createAppAsyncThunk } from '~/utils/redux';
-import { notificationApi, type Notification } from '../api';
+import { notificationApi, type Notification, type NotificationCommentReaction } from '../api';
 
 // ---------- State ----------
 
@@ -38,7 +38,7 @@ export const fetchNotificationsThunk = createAppAsyncThunk(
 export const fetchMoreNotificationsThunk = createAppAsyncThunk(
   'notifications/fetchMore',
   async (_, { getState, rejectWithValue }) => {
-    const cursor = (getState() as RootState).notifications.cursor;
+    const cursor = getState().notifications.cursor;
     try {
       return await notificationApi.list({ limit: 20, cursor });
     } catch {
@@ -108,6 +108,16 @@ const notificationSlice = createSlice({
           state.unreadCount += 1;
         }
       }
+    },
+
+    // Keeps comment reactions in Redux so close/reopen preserves optimistic updates.
+    setNotificationCommentReactions(
+      state,
+      action: PayloadAction<{ id: string; reactions: NotificationCommentReaction[] }>,
+    ) {
+      const notification = state.notifications.find((item) => item.id === action.payload.id);
+      if (!notification) return;
+      notification.comment_reactions = action.payload.reactions;
     },
   },
   extraReducers: (builder) => {

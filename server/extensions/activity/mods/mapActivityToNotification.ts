@@ -9,12 +9,13 @@
 //   card_member_unassigned → card_member_unassigned (unassigned user, excl. actor)
 import { db } from '../../../common/db';
 import { preferenceGuard } from '../../notifications/mods/preferenceGuard';
-import { boardPreferenceGuard } from '../../notifications/mods/boardPreferenceGuard';
+import { resolveBoardNotificationPreference } from '../../notifications/mods/boardPreferenceGuard';
 import { globalPreferenceGuard } from '../../notifications/mods/globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { dispatchNotificationEmail } from '../../notifications/mods/emailDispatch';
 import { env } from '../../../config/env';
+import { getCardRelatedUserIds, isRecipientRelatedCardNotification } from '../../notifications/mods/relatedCardRecipients';
 import type { WrittenActivity } from './write';
 import type { NotificationType } from '../../notifications/mods/preferenceGuard';
 
@@ -22,14 +23,26 @@ type ActivityAction =
   | 'card_created'
   | 'card_moved'
   | 'card_member_assigned'
-  | 'card_member_unassigned';
+  | 'card_member_unassigned'
+  | 'checklist_item_assigned'
+  | 'checklist_item_unassigned'
+  | 'checklist_item_due_date_updated';
 
 const ACTIVITY_TO_NOTIFICATION: Record<ActivityAction, NotificationType> = {
   card_created: 'card_created',
   card_moved: 'card_moved',
   card_member_assigned: 'card_member_assigned',
   card_member_unassigned: 'card_member_unassigned',
+  checklist_item_assigned: 'checklist_item_assigned',
+  checklist_item_unassigned: 'checklist_item_unassigned',
+  checklist_item_due_date_updated: 'checklist_item_due_date_updated',
 };
+
+const CHECKLIST_NOTIFICATION_TYPES = new Set<NotificationType>([
+  'checklist_item_assigned',
+  'checklist_item_unassigned',
+  'checklist_item_due_date_updated',
+]);
 
 const SUPPORTED_ACTIONS = new Set<string>(Object.keys(ACTIVITY_TO_NOTIFICATION));
 
@@ -46,7 +59,7 @@ export async function mapActivityToNotification({
 
   try {
     const notificationType = ACTIVITY_TO_NOTIFICATION[activity.action as ActivityAction];
-    const payload = activity.payload as Record<string, unknown>;
+    const payload = normalisePayload(activity.payload);
 
     const board = await db('boards')
       .where({ id: boardId })
@@ -70,7 +83,37 @@ export async function mapActivityToNotification({
       if (row.user_id !== activity.actor_id) recipientSet.add(row.user_id);
     }
 
-    const recipientIds = Array.from(recipientSet);
+    // [why] Card member assignment/unassignment must always notify the target user,
+    // even when they are not currently a board participant row.
+    const currentUserId = typeof payload.userId === 'string' ? payload.userId : null;
+    const previousUserId = typeof payload.previousUserId === 'string' ? payload.previousUserId : null;
+    if (notificationType === 'card_member_assigned' && currentUserId && currentUserId !== activity.actor_id) {
+      recipientSet.add(currentUserId);
+    }
+    if (notificationType === 'card_member_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
+      recipientSet.add(previousUserId);
+    }
+    const recipientIds = CHECKLIST_NOTIFICATION_TYPES.has(notificationType)
+      ? (() => {
+        const checklistRecipients = new Set<string>();
+
+        if (notificationType === 'checklist_item_assigned' && currentUserId && currentUserId !== activity.actor_id) {
+          checklistRecipients.add(currentUserId);
+        }
+
+        if (notificationType === 'checklist_item_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
+          checklistRecipients.add(previousUserId);
+        }
+
+        if (notificationType === 'checklist_item_due_date_updated') {
+          if (currentUserId && currentUserId !== activity.actor_id) {
+            checklistRecipients.add(currentUserId);
+          }
+        }
+
+        return Array.from(checklistRecipients);
+      })()
+      : Array.from(recipientSet);
 
     if (recipientIds.length === 0) return;
 
@@ -92,6 +135,13 @@ export async function mapActivityToNotification({
     const now = new Date().toISOString();
     const cardId = (payload.cardId as string | undefined) ?? null;
     const cardTitle = (payload.cardTitle as string | undefined) ?? null;
+    const targetUserId = (
+      (payload.userId as string | undefined)
+      ?? (payload.previousUserId as string | undefined)
+      ?? null
+    );
+    const targetUserName = (payload.assigneeName as string | undefined) ?? null;
+    const relatedUserIds = await getCardRelatedUserIds({ cardId });
 
     // Derive extra context fields for the WS payload depending on event type.
     const listTitle =
@@ -109,11 +159,23 @@ export async function mapActivityToNotification({
     for (const recipientId of recipientIds) {
       // Board-scoped and global opt-out guards — mirrors boardActivityDispatch.
       try {
-        const [globalEnabled, boardEnabled] = await Promise.all([
+        const [globalEnabled, boardPreference] = await Promise.all([
           globalPreferenceGuard({ userId: recipientId }),
-          boardPreferenceGuard({ userId: recipientId, boardId }),
+          resolveBoardNotificationPreference({ userId: recipientId, boardId }),
         ]);
-        if (!globalEnabled || !boardEnabled) continue;
+        if (!globalEnabled || !boardPreference.notificationsEnabled) continue;
+
+        if (
+          boardPreference.onlyRelatedToMe
+          && !isRecipientRelatedCardNotification({
+            type: notificationType,
+            recipientId,
+            relatedUserIds,
+            targetUserId,
+          })
+        ) {
+          continue;
+        }
       } catch {
         // Fail open: if guard lookup fails, proceed with notification
       }
@@ -155,6 +217,8 @@ export async function mapActivityToNotification({
                     card_title: cardTitle,
                     board_title: board.title,
                     list_title: listTitle,
+                    target_user_id: targetUserId,
+                    target_user_name: targetUserName,
                     actor: actorPayload,
                   },
                 },
@@ -175,6 +239,24 @@ export async function mapActivityToNotification({
   } catch (err) {
     console.warn('[mapActivityToNotification] Failed to dispatch notifications:', err);
   }
+}
+
+function normalisePayload(raw: unknown): Record<string, unknown> {
+  if (!raw) return {};
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
 }
 
 function buildEmailTemplateData({
@@ -226,6 +308,11 @@ function buildEmailTemplateData({
         boardName,
         cardUrl,
       };
+
+    case 'checklist_item_assigned':
+    case 'checklist_item_unassigned':
+    case 'checklist_item_due_date_updated':
+      return null;
 
     default:
       return null;

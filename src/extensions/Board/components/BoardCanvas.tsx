@@ -32,6 +32,10 @@ import { useCardLabelExpanded } from '../../Card/hooks/useCardLabelExpanded';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { fetchListCardsBatchThunk } from '../slices/boardSlice';
+import {
+  getAdjustedPointerY,
+  shouldRecomputeFromPointerDestination,
+} from './dragPlacementUtils';
 
 interface DragPlaceholder {
   listId: string;
@@ -48,6 +52,13 @@ interface BoardListRect {
   centerX: number;
 }
 
+interface PointerListResolutionCache {
+  x: number | null;
+  y: number | null;
+  horizontalScrollDelta: number;
+  listId: string | null;
+}
+
 function isSamePlaceholder(a: DragPlaceholder | null | undefined, b: DragPlaceholder): boolean {
   return a?.listId === b.listId
     && a.index === b.index
@@ -57,6 +68,7 @@ function isSamePlaceholder(a: DragPlaceholder | null | undefined, b: DragPlaceho
 interface Props {
   boardId: string;
   boardTitle?: string;
+  currentUserId?: string;
   listOrder: string[];
   lists: Record<string, List>;
   cardsByList: Record<string, string[]>;
@@ -163,6 +175,16 @@ function getCachedCardViewportMidYWithElements(
   return measured;
 }
 
+function getLiveCardViewportMidYWithElements(
+  cardId: string,
+  cardElementsById?: Record<string, HTMLElement>,
+): number | null {
+  const element = cardElementsById?.[cardId];
+  if (!element?.isConnected) return getOverCardViewportMidY(cardId);
+  const r = element.getBoundingClientRect();
+  return (r.top + r.bottom) / 2;
+}
+
 function getInsertIndexFromPointerY(
   cardIds: string[],
   pointerY: number | null,
@@ -178,7 +200,7 @@ function getInsertIndexFromPointerY(
       if (midsCache) {
         mid = getCachedCardViewportMidYWithElements(cardId, midsCache, cardElementsById);
       } else {
-        mid = getOverCardViewportMidY(cardId);
+        mid = getLiveCardViewportMidYWithElements(cardId, cardElementsById);
       }
     }
     if (mid == null) continue;
@@ -236,6 +258,28 @@ function buildCardElementMap(): Record<string, HTMLElement> {
   return out;
 }
 
+function getCardsWithoutActive(
+  cardsByList: Record<string, string[]>,
+  listId: string,
+  activeId: string,
+): string[] {
+  const cards = cardsByList[listId] ?? [];
+  if (cards.length === 0) return [];
+  const out: string[] = [];
+  for (const cardId of cards) {
+    if (cardId !== activeId) out.push(cardId);
+  }
+  return out;
+}
+
+function getListScrollContainer(listId: string): HTMLElement | null {
+  const listEl = document.getElementById(`board-list-${listId}`);
+  if (!listEl) return null;
+  const marked = listEl.querySelector<HTMLElement>('[data-dnd-list-scroll-container="true"]');
+  if (marked) return marked;
+  return listEl.querySelector<HTMLElement>('[class*="overflow-y-auto"]');
+}
+
 function normalizePlaceholderHeight(value: number | null | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 24) {
     return 72;
@@ -247,6 +291,8 @@ function normalizePlaceholderHeight(value: number | null | undefined): number {
 // A tiny tolerance makes midpoint crossing deterministic when the pointer is
 // visually at the middle but differs by a fraction in floating-point math.
 const DRAG_MIDPOINT_TOLERANCE_PX = 1;
+const LIST_EDGE_AUTOSCROLL_TRIGGER_PX = 56;
+const LIST_EDGE_AUTOSCROLL_MAX_STEP_PX = 22;
 
 const DND_MEASURING = {
   droppable: {
@@ -270,71 +316,158 @@ function getBoardListIdFromElement(element: Element | null): string | null {
   return listEl.id.slice('board-list-'.length);
 }
 
-function getBoardListIdFromPointer(
-  clientX: number | null,
-  clientY: number | null,
-  cachedListRects?: BoardListRect[],
+function getBoardListIdFromPointerHitTest(clientX: number, clientY: number): string | null {
+  const hitOffsets: Array<[number, number]> = [
+    [0, 0],
+    [-6, 0],
+    [6, 0],
+    [0, -6],
+    [0, 6],
+  ];
+
+  for (const [offsetX, offsetY] of hitOffsets) {
+    const hitElement = document.elementFromPoint(clientX + offsetX, clientY + offsetY);
+    const hitListId = getBoardListIdFromElement(hitElement);
+    if (hitListId) return hitListId;
+  }
+
+  return null;
+}
+
+function getContainingBoardListIdFromRects(
+  clientX: number,
+  clientY: number,
+  rects: BoardListRect[],
+  horizontalScrollDelta: number = 0,
 ): string | null {
-  if (clientX == null || clientY == null) return null;
-
-  const hitElement = document.elementFromPoint(clientX, clientY);
-  const hitListId = getBoardListIdFromElement(hitElement);
-  if (hitListId) return hitListId;
-
-  // WHY: on empty columns or near edges, elementFromPoint can briefly resolve
-  // to non-list layers. Fall back to list rectangles to keep cross-column drag
-  // targeting stable.
-  if (cachedListRects && cachedListRects.length > 0) {
-    const containingRect = cachedListRects.find((r) => (
-      clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom
-    ));
-    if (containingRect) {
-      return containingRect.listId;
-    }
-
-    let nearestListId: string | null = null;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    cachedListRects.forEach((r) => {
-      const distance = Math.abs(clientX - r.centerX);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestListId = r.listId;
-      }
-    });
-    return nearestListId;
-  }
-
-  const listElements = Array.from(document.querySelectorAll<HTMLElement>('[id^="board-list-"]'));
-  const containingRect = listElements.find((el) => {
-    const r = el.getBoundingClientRect();
-    return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+  const containingRect = rects.find((r) => {
+    const adjustedLeft = r.left - horizontalScrollDelta;
+    const adjustedRight = r.right - horizontalScrollDelta;
+    return clientX >= adjustedLeft && clientX <= adjustedRight && clientY >= r.top && clientY <= r.bottom;
   });
-  if (containingRect) {
-    return containingRect.id.slice('board-list-'.length);
-  }
+  return containingRect?.listId ?? null;
+}
 
-  // WHY: if Y exits the list rect while dragging fast, keep destination by
-  // selecting the nearest list horizontally.
+function getNearestBoardListIdFromRects(
+  clientX: number,
+  clientY: number,
+  rects: BoardListRect[],
+  horizontalScrollDelta: number = 0,
+): string | null {
+  if (rects.length === 0) return null;
+
+  const verticalTolerance = 40;
+  const verticallyNearbyRects = rects.filter((r) => (
+    clientY >= r.top - verticalTolerance && clientY <= r.bottom + verticalTolerance
+  ));
+  const nearestCandidates = verticallyNearbyRects.length > 0
+    ? verticallyNearbyRects
+    : rects;
+
   let nearestListId: string | null = null;
   let nearestDistance = Number.POSITIVE_INFINITY;
-  listElements.forEach((el) => {
-    const r = el.getBoundingClientRect();
-    const centerX = (r.left + r.right) / 2;
-    const distance = Math.abs(clientX - centerX);
+  nearestCandidates.forEach((r) => {
+    const adjustedCenterX = r.centerX - horizontalScrollDelta;
+    const distance = Math.abs(clientX - adjustedCenterX);
     if (distance < nearestDistance) {
       nearestDistance = distance;
-      nearestListId = el.id.slice('board-list-'.length);
+      nearestListId = r.listId;
     }
   });
   return nearestListId;
 }
 
+function getBoardListIdFromRects(
+  clientX: number,
+  clientY: number,
+  rects: BoardListRect[],
+  horizontalScrollDelta: number = 0,
+): string | null {
+  const containing = getContainingBoardListIdFromRects(
+    clientX,
+    clientY,
+    rects,
+    horizontalScrollDelta,
+  );
+  if (containing) return containing;
+  return getNearestBoardListIdFromRects(
+    clientX,
+    clientY,
+    rects,
+    horizontalScrollDelta,
+  );
+}
+
+function buildLiveBoardListRects(): BoardListRect[] {
+  const listElements = Array.from(document.querySelectorAll<HTMLElement>('[id^="board-list-"]'));
+  return listElements.map((el) => {
+    const r = el.getBoundingClientRect();
+    return {
+      listId: el.id.slice('board-list-'.length),
+      left: r.left,
+      right: r.right,
+      top: r.top,
+      bottom: r.bottom,
+      centerX: (r.left + r.right) / 2,
+    };
+  });
+}
+
+function getBoardListIdFromPointer(
+  clientX: number | null,
+  clientY: number | null,
+  cachedListRects?: BoardListRect[],
+  horizontalScrollDelta: number = 0,
+): string | null {
+  if (clientX == null || clientY == null) return null;
+
+  // WHY: during active drag we pass a snapshot of list rectangles.
+  // Try adjusted cached rect containment first to avoid expensive DOM hit-testing.
+  if (cachedListRects && cachedListRects.length > 0) {
+    const cachedContaining = getContainingBoardListIdFromRects(
+      clientX,
+      clientY,
+      cachedListRects,
+      horizontalScrollDelta,
+    );
+    if (cachedContaining) return cachedContaining;
+
+    const hitListId = getBoardListIdFromPointerHitTest(clientX, clientY);
+    if (hitListId) return hitListId;
+
+    // WHY: when the board scrolls during drag, cached rects can become stale.
+    // We only pay the DOM-query cost when cached rects miss, keeping smoothness.
+    const liveRects = buildLiveBoardListRects();
+    const liveResolved = getBoardListIdFromRects(clientX, clientY, liveRects);
+    if (liveResolved) return liveResolved;
+
+    return getNearestBoardListIdFromRects(
+      clientX,
+      clientY,
+      cachedListRects,
+      horizontalScrollDelta,
+    );
+  }
+
+  const hitListId = getBoardListIdFromPointerHitTest(clientX, clientY);
+  if (hitListId) return hitListId;
+
+  return getBoardListIdFromRects(clientX, clientY, buildLiveBoardListRects());
+}
+
 // WHY: Decoupled from BoardCanvas so that listHydration selector updates
 // (batch fetches completing during a drag) don't trigger a BoardCanvas rerender.
-const ProgressiveHydrationDispatcher = ({ listOrder }: { listOrder: string[] }) => {
+const ProgressiveHydrationDispatcher = ({
+  listOrder,
+  isDragActive,
+}: {
+  listOrder: string[];
+  isDragActive: boolean;
+}) => {
   const dispatch = useAppDispatch();
   const listHydration = useAppSelector((state) => state.board.listHydration);
   useEffect(() => {
+    if (isDragActive) return;
     const pending = listOrder.filter((listId) => {
       const hydration = listHydration[listId];
       return Boolean(
@@ -360,13 +493,14 @@ const ProgressiveHydrationDispatcher = ({ listOrder }: { listOrder: string[] }) 
       if (!hydration || typeof hydration.nextOffset !== 'number') return;
       void dispatch(fetchListCardsBatchThunk({ listId, offset: hydration.nextOffset, limit: 50 }));
     });
-  }, [dispatch, listHydration, listOrder]);
+  }, [dispatch, isDragActive, listHydration, listOrder]);
   return null;
 };
 
 const BoardCanvas = ({
   boardId,
   boardTitle,
+  currentUserId = '',
   listOrder,
   lists,
   cardsByList,
@@ -396,8 +530,6 @@ const BoardCanvas = ({
   collapseEmptyLists = false,
   customFieldValuesMap,
 }: Props) => {
-  const listHydration = useAppSelector((state) => state.board.listHydration);
-
   // WHY: use one consistent drag-preview model across all boards so users
   // always see the same card-sized drop placeholder regardless of board size.
   const disableLiveDragPreview = true;
@@ -420,6 +552,7 @@ const BoardCanvas = ({
   // differ from viewport coordinates (e.g. due to DnD Kit scroll adjustments).
   const livePointerYRef = useRef<number | null>(null);
   const livePointerXRef = useRef<number | null>(null);
+  const livePointerListIdRef = useRef<string | null>(null);
   const pointerRafRef = useRef<number | null>(null);
   const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
   // WHY: snapshot each card's viewport midpoint at drag-start (before DnD Kit
@@ -430,9 +563,19 @@ const BoardCanvas = ({
   const dragStartListRectsRef = useRef<BoardListRect[]>([]);
   const dragCardElementsByIdRef = useRef<Record<string, HTMLElement>>({});
   const dragDroppableListByIdRef = useRef<Record<string, string>>({});
+  const dragSourceListScrollElRef = useRef<HTMLElement | null>(null);
+  const dragStartSourceListScrollTopRef = useRef<number | null>(null);
   // WHY: track which card is being dragged so the pointermove handler can skip
   // same-list placeholder updates when no drag is in progress.
   const dragActiveIdRef = useRef<string | null>(null);
+  const boardScrollerRef = useRef<HTMLDivElement | null>(null);
+  const dragStartScrollLeftRef = useRef<number | null>(null);
+  const pointerListResolutionCacheRef = useRef<PointerListResolutionCache>({
+    x: null,
+    y: null,
+    horizontalScrollDelta: 0,
+    listId: null,
+  });
   // WHY: keep a ref copy of cardsByList so the pointermove handler (no deps) can
   // read the latest list composition without a stale closure.
   const cardsByListRef = useRef(cardsByList);
@@ -445,6 +588,91 @@ const BoardCanvas = ({
   // (empty deps array) does not close over a stale value.
   const disableLiveDragPreviewRef = useRef(disableLiveDragPreview);
   useEffect(() => { disableLiveDragPreviewRef.current = disableLiveDragPreview; }, [disableLiveDragPreview]);
+
+  const getDragScrollDelta = useCallback((): number => {
+    const scroller = boardScrollerRef.current;
+    const start = dragStartScrollLeftRef.current;
+    if (!scroller || start == null) return 0;
+    return scroller.scrollLeft - start;
+  }, []);
+
+  const getDragSourceVerticalScrollDelta = useCallback((): number => {
+    const sourceScroller = dragSourceListScrollElRef.current;
+    const startScrollTop = dragStartSourceListScrollTopRef.current;
+    if (!sourceScroller || startScrollTop == null) return 0;
+    return sourceScroller.scrollTop - startScrollTop;
+  }, []);
+
+  const resetPointerListResolutionCache = useCallback(() => {
+    pointerListResolutionCacheRef.current = {
+      x: null,
+      y: null,
+      horizontalScrollDelta: 0,
+      listId: null,
+    };
+  }, []);
+
+  const applyVerticalEdgeAutoScroll = useCallback((listId: string | null, pointerY: number | null): void => {
+    if (!listId || pointerY == null) return;
+
+    const scroller = getListScrollContainer(listId);
+    if (!scroller) return;
+
+    const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    if (maxScrollTop === 0) return;
+
+    const rect = scroller.getBoundingClientRect();
+    const topEdge = rect.top + LIST_EDGE_AUTOSCROLL_TRIGGER_PX;
+    const bottomEdge = rect.bottom - LIST_EDGE_AUTOSCROLL_TRIGGER_PX;
+    let delta = 0;
+
+    if (pointerY < topEdge && scroller.scrollTop > 0) {
+      const intensity = Math.min(1, (topEdge - pointerY) / LIST_EDGE_AUTOSCROLL_TRIGGER_PX);
+      delta = -Math.ceil(Math.max(1, intensity * LIST_EDGE_AUTOSCROLL_MAX_STEP_PX));
+    } else if (pointerY > bottomEdge && scroller.scrollTop < maxScrollTop) {
+      const intensity = Math.min(1, (pointerY - bottomEdge) / LIST_EDGE_AUTOSCROLL_TRIGGER_PX);
+      delta = Math.ceil(Math.max(1, intensity * LIST_EDGE_AUTOSCROLL_MAX_STEP_PX));
+    }
+
+    if (delta === 0) return;
+
+    const nextScrollTop = Math.max(0, Math.min(maxScrollTop, scroller.scrollTop + delta));
+    if (nextScrollTop !== scroller.scrollTop) {
+      scroller.scrollTop = nextScrollTop;
+    }
+  }, []);
+
+  const resolvePointerListId = useCallback(
+    (clientX: number | null, clientY: number | null): string | null => {
+      if (clientX == null || clientY == null) return null;
+
+      const horizontalScrollDelta = getDragScrollDelta();
+      const cached = pointerListResolutionCacheRef.current;
+      if (
+        cached.x === clientX
+        && cached.y === clientY
+        && cached.horizontalScrollDelta === horizontalScrollDelta
+      ) {
+        return cached.listId;
+      }
+
+      const listId = getBoardListIdFromPointer(
+        clientX,
+        clientY,
+        dragStartListRectsRef.current,
+        horizontalScrollDelta,
+      );
+
+      pointerListResolutionCacheRef.current = {
+        x: clientX,
+        y: clientY,
+        horizontalScrollDelta,
+        listId,
+      };
+      return listId;
+    },
+    [getDragScrollDelta],
+  );
 
   const commitDragPlaceholder = useCallback((next: DragPlaceholder) => {
     if (isSamePlaceholder(dragPlaceholderRef.current, next)) return;
@@ -475,6 +703,20 @@ const BoardCanvas = ({
     }
   }, []);
 
+  const flushQueuedDragPlaceholder = useCallback((): DragPlaceholder | null => {
+    const pending = pendingDragPlaceholderRef.current;
+    if (!pending) return dragPlaceholderRef.current;
+
+    pendingDragPlaceholderRef.current = null;
+    if (dragPlaceholderRafRef.current != null) {
+      globalThis.cancelAnimationFrame(dragPlaceholderRafRef.current);
+      dragPlaceholderRafRef.current = null;
+    }
+
+    dragPlaceholderRef.current = pending;
+    return pending;
+  }, []);
+
   useEffect(() => {
     const handler = (e: PointerEvent) => {
       livePointerXRef.current = e.clientX;
@@ -491,18 +733,36 @@ const BoardCanvas = ({
         // to one calculation per animation frame to keep dragging smooth.
         const activeId = dragActiveIdRef.current;
         const fromListId = fromListIdRef.current;
-        if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) return;
+        if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) {
+          livePointerListIdRef.current = null;
+          resetPointerListResolutionCache();
+          return;
+        }
 
-        // WHY: when the pointer is over another list, cross-list placeholder is
-        // resolved by handleDragOver. Skipping same-list midpoint logic here
-        // prevents it from immediately overriding that destination placeholder.
-        const pointerListId = getBoardListIdFromPointer(
-          point.x,
-          point.y,
-          dragStartListRectsRef.current,
-        );
+        // WHY: resolve destination list from live pointer coordinates and compute
+        // cross-list insertion here each frame. Relying on onDragOver alone can
+        // lag because destination columns expose one droppable container, so
+        // over-events do not continuously fire while moving within the column.
+        const pointerListId = resolvePointerListId(point.x, point.y);
+        livePointerListIdRef.current = pointerListId;
+        applyVerticalEdgeAutoScroll(pointerListId ?? fromListId, point.y);
         const placeholderListId = dragPlaceholderRef.current?.listId ?? null;
-        if (pointerListId && pointerListId !== fromListId) return;
+        if (pointerListId && pointerListId !== fromListId) {
+          if (!listsRef.current[pointerListId]) return;
+          const targetCards = getCardsWithoutActive(cardsByListRef.current, pointerListId, activeId);
+          const insertIndex = getInsertIndexFromPointerY(
+            targetCards,
+            point.y,
+            undefined,
+            dragCardElementsByIdRef.current,
+          );
+          const prevPlaceholder = dragPlaceholderRef.current;
+          const height = prevPlaceholder?.height ?? 72;
+          if (prevPlaceholder?.listId !== pointerListId || prevPlaceholder.index !== insertIndex) {
+            queueDragPlaceholder({ listId: pointerListId, index: insertIndex, height });
+          }
+          return;
+        }
         // WHY: when moving across columns, elementFromPoint can briefly return
         // null (gaps/edges/overlay transitions). If we immediately fall back to
         // same-list midpoint logic, the indicator snaps back to the source list
@@ -510,21 +770,28 @@ const BoardCanvas = ({
         // cross-list placeholder until the pointer is positively in source again.
         if (!pointerListId && placeholderListId && placeholderListId !== fromListId) return;
 
-        const targetCards = (cardsByListRef.current[fromListId] ?? []).filter(
-          (id) => id !== activeId,
-        );
+        const sourceCards = cardsByListRef.current[fromListId] ?? [];
+        const targetCardsLength = Math.max(0, sourceCards.length - 1);
+        // WHY: same-list midpoint caches are captured at drag-start viewport positions.
+        // When the source column scrolls during drag, offset pointerY by scroll delta
+        // so index resolution still aligns with the now-shifted card rows.
+        const adjustedPointerY = getAdjustedPointerY({
+          pointerY: point.y,
+          verticalScrollDelta: getDragSourceVerticalScrollDelta(),
+        });
+        if (adjustedPointerY == null) return;
 
         let insertIndex = 0;
         const sortedMids = dragStartCardMidsSortedRef.current;
         if (sortedMids.length > 0) {
-          insertIndex = Math.max(0, Math.min(getInsertIndexFromSortedMids(sortedMids, point.y), targetCards.length));
+          insertIndex = Math.max(0, Math.min(getInsertIndexFromSortedMids(sortedMids, adjustedPointerY), targetCardsLength));
         } else {
           const mids = dragStartCardMidsRef.current;
-          for (let i = 0; i < targetCards.length; i++) {
-            const cardId = targetCards[i];
-            const mid = cardId == null ? undefined : mids[cardId];
-            if (mid != null && point.y >= mid - DRAG_MIDPOINT_TOLERANCE_PX) {
-              insertIndex = i + 1;
+          for (const cardId of sourceCards) {
+            if (cardId === activeId) continue;
+            const mid = mids[cardId];
+            if (mid != null && adjustedPointerY >= mid - DRAG_MIDPOINT_TOLERANCE_PX) {
+              insertIndex += 1;
             } else {
               break;
             }
@@ -551,9 +818,20 @@ const BoardCanvas = ({
         pointerRafRef.current = null;
       }
       pendingPointerRef.current = null;
+      livePointerListIdRef.current = null;
+      resetPointerListResolutionCache();
       resetQueuedDragPlaceholder();
+      dragSourceListScrollElRef.current = null;
+      dragStartSourceListScrollTopRef.current = null;
     };
-  }, [queueDragPlaceholder, resetQueuedDragPlaceholder]);
+  }, [
+    applyVerticalEdgeAutoScroll,
+    getDragSourceVerticalScrollDelta,
+    queueDragPlaceholder,
+    resetPointerListResolutionCache,
+    resetQueuedDragPlaceholder,
+    resolvePointerListId,
+  ]);
 
   // WHY: track card ordering locally during drag instead of dispatching to Redux
   // on every onDragOver. Dispatching applyOptimisticCardMove each frame causes
@@ -583,11 +861,12 @@ const BoardCanvas = ({
       }
 
       let collisionArgs = args;
-      const pointerListId = getBoardListIdFromPointer(
-        livePointerXRef.current,
-        livePointerYRef.current,
-        dragStartListRectsRef.current,
-      );
+      const pointerListId =
+        livePointerListIdRef.current
+        ?? resolvePointerListId(
+          livePointerXRef.current,
+          livePointerYRef.current,
+        );
       const sourceListId = fromListIdRef.current;
       if (pointerListId || sourceListId) {
         const candidateLists = new Set<string>();
@@ -613,7 +892,7 @@ const BoardCanvas = ({
       }
       return rectIntersection(collisionArgs);
     },
-    [],
+    [resolvePointerListId],
   );
 
   const handleDragStart = useCallback(
@@ -621,9 +900,15 @@ const BoardCanvas = ({
       const id = String(event.active.id);
       const currentCards = cardsRef.current;
       const currentCardsByList = cardsByListRef.current;
+      livePointerListIdRef.current = null;
+      resetPointerListResolutionCache();
+      dragStartScrollLeftRef.current = null;
+      dragSourceListScrollElRef.current = null;
+      dragStartSourceListScrollTopRef.current = null;
       // Only set active card if the dragged item is a card (not a list)
       if (currentCards[id]) {
         setActiveCardId(id);
+        dragStartScrollLeftRef.current = boardScrollerRef.current?.scrollLeft ?? 0;
         const cardToList = buildCardToListMap(currentCardsByList);
         dragCardToListRef.current = cardToList;
         dragDroppableListByIdRef.current = { ...cardToList };
@@ -633,6 +918,9 @@ const BoardCanvas = ({
         fromListIdRef.current = findListForCard(id, currentCardsByList);
         const startListId = findListForCard(id, currentCardsByList);
         if (disableLiveDragPreview && startListId) {
+          const sourceListScroller = getListScrollContainer(startListId);
+          dragSourceListScrollElRef.current = sourceListScroller;
+          dragStartSourceListScrollTopRef.current = sourceListScroller?.scrollTop ?? 0;
           const startIndex = Math.max(0, (currentCardsByList[startListId] ?? []).indexOf(id));
           const startHeight = normalizePlaceholderHeight(event.active.rect.current.initial?.height);
           const startPlaceholder = { listId: startListId, index: startIndex, height: startHeight };
@@ -687,7 +975,7 @@ const BoardCanvas = ({
         }
       }
     },
-    [disableLiveDragPreview, listOrder],
+    [disableLiveDragPreview, listOrder, resetPointerListResolutionCache],
   );
 
   const handleDragOver = useCallback(
@@ -714,19 +1002,20 @@ const BoardCanvas = ({
         const sourceListId = fromListIdRef.current ?? cardToList[activeId] ?? findListForCard(activeId, currentCardsByList);
         if (!sourceListId) return;
 
-        const pointerListId = getBoardListIdFromPointer(
-          pointerX,
-          pointerY,
-          dragStartListRectsRef.current,
-        );
+        const pointerListId =
+          livePointerListIdRef.current
+          ?? resolvePointerListId(
+            pointerX,
+            pointerY,
+          );
 
         if (!over) {
           if (!pointerListId || !currentLists[pointerListId] || pointerListId === sourceListId) return;
-          const targetCards = (currentCardsByList[pointerListId] ?? []).filter((id) => id !== activeId);
+          const targetCards = getCardsWithoutActive(currentCardsByList, pointerListId, activeId);
           const insertIndex = getInsertIndexFromPointerY(
             targetCards,
             pointerY,
-            dragStartCardMidsRef.current,
+            undefined,
             dragCardElementsByIdRef.current,
           );
           const placeholderHeight = normalizePlaceholderHeight(
@@ -755,11 +1044,11 @@ const BoardCanvas = ({
         // most reliable signal and the target list has no DnD Kit transforms.
         if (toListId === sourceListId) return;
 
-        const targetCards = (currentCardsByList[toListId] ?? []).filter((id) => id !== activeId);
-        let insertIndex = getInsertIndexFromPointerY(
+        const targetCards = getCardsWithoutActive(currentCardsByList, toListId, activeId);
+        const insertIndex = getInsertIndexFromPointerY(
           targetCards,
           pointerY,
-          dragStartCardMidsRef.current,
+          undefined,
           dragCardElementsByIdRef.current,
         );
         const placeholderHeight = normalizePlaceholderHeight(
@@ -767,25 +1056,6 @@ const BoardCanvas = ({
           ?? active.rect.current.translated?.height
           ?? 72,
         );
-
-        if (currentCards[overId]) {
-          const overIndex = targetCards.indexOf(overId);
-          if (overIndex >= 0) {
-            // WHY: for cross-list moves, the target list's cards have no DnD Kit
-            // sorting transforms, so getOverCardViewportMidY returns accurate
-            // viewport positions.
-            const overViewportMid = getCachedCardViewportMidYWithElements(
-              overId,
-              dragStartCardMidsRef.current,
-              dragCardElementsByIdRef.current,
-            );
-            const isBelowOverCard =
-              pointerY != null && overViewportMid != null
-                ? pointerY >= overViewportMid - DRAG_MIDPOINT_TOLERANCE_PX
-                : false;
-            insertIndex = overIndex + (isBelowOverCard ? 1 : 0);
-          }
-        }
 
         queueDragPlaceholder({ listId: toListId, index: insertIndex, height: placeholderHeight });
         return;
@@ -851,7 +1121,7 @@ const BoardCanvas = ({
           dragCardsByListRef.current = next;
           return next;
         }
-        const newFrom = (prev[fromListId] ?? []).filter((id) => id !== activeId);
+        const newFrom = getCardsWithoutActive(prev, fromListId, activeId);
         const newTo = [...(prev[toListId] ?? [])];
         newTo.splice(insertIndex, 0, activeId);
         const next = { ...prev, [fromListId]: newFrom, [toListId]: newTo };
@@ -862,7 +1132,7 @@ const BoardCanvas = ({
         return next;
       });
     },
-    [disableLiveDragPreview, queueDragPlaceholder],
+    [disableLiveDragPreview, queueDragPlaceholder, resolvePointerListId],
   );
 
   const handleDragEnd = useCallback(
@@ -870,6 +1140,9 @@ const BoardCanvas = ({
       const currentCards = cardsRef.current;
       const currentCardsByList = cardsByListRef.current;
       const currentLists = listsRef.current;
+      const lastPointerListId = livePointerListIdRef.current;
+      livePointerListIdRef.current = null;
+      resetPointerListResolutionCache();
       const { active, over } = event;
       setActiveCardId(null);
       // WHY: clear dragActiveIdRef so the pointermove handler stops updating
@@ -888,6 +1161,8 @@ const BoardCanvas = ({
         fromListIdRef.current = null;
         dragCardToListRef.current = null;
         dragDroppableListByIdRef.current = {};
+        dragSourceListScrollElRef.current = null;
+        dragStartSourceListScrollTopRef.current = null;
         onDragRollback();
         return;
       }
@@ -902,6 +1177,8 @@ const BoardCanvas = ({
         setDragPlaceholder(null);
         dragCardToListRef.current = null;
         dragDroppableListByIdRef.current = {};
+        dragSourceListScrollElRef.current = null;
+        dragStartSourceListScrollTopRef.current = null;
         const oldIndex = listOrder.indexOf(activeId);
         const newIndex = listOrder.indexOf(overId);
         if (oldIndex !== newIndex && newIndex >= 0) {
@@ -923,20 +1200,23 @@ const BoardCanvas = ({
 
       // Card move commit
       if (currentCards[activeId]) {
-        // Read final placeholder from ref (not state) to avoid stale closure.
-        const latestPlaceholder = dragPlaceholderRef.current;
+        // WHY: pointer-up can happen before the queued rAF placeholder commit runs.
+        // Flush pending placeholder first so commit logic uses the latest drag target.
+        const latestPlaceholder = flushQueuedDragPlaceholder();
         resetQueuedDragPlaceholder();
         dragPlaceholderRef.current = null;
         setDragPlaceholder(null);
         // Read final position from local drag state before clearing it
         const finalCardsByList = dragCardsByListRef.current ?? currentCardsByList;
         const dragCardToList = dragCardToListRef.current ?? buildCardToListMap(finalCardsByList);
-        const toListId = dragCardToList?.[activeId] ?? findListForCard(activeId, finalCardsByList);
+        const toListId = dragCardToList[activeId] ?? findListForCard(activeId, finalCardsByList);
         const fromListId = fromListIdRef.current ?? toListId;
         fromListIdRef.current = null;
         dragCardsByListRef.current = null;
         dragCardToListRef.current = null;
         dragDroppableListByIdRef.current = {};
+        dragSourceListScrollElRef.current = null;
+        dragStartSourceListScrollTopRef.current = null;
         setDragCardsByList(null);
         if (!toListId || !fromListId) {
           onDragRollback();
@@ -946,15 +1226,17 @@ const BoardCanvas = ({
         let resolvedToListId = toListId;
         let resolvedNewIndex = (finalCardsByList[toListId] ?? []).indexOf(activeId);
         const overContainerId = getSortableContainerId(over);
+        let resolvedFromPlaceholder = false;
         if (resolvedNewIndex < 0) {
           resolvedNewIndex = (finalCardsByList[toListId] ?? []).length;
         }
 
         if (disableLiveDragPreview && latestPlaceholder) {
           const placeholderListId = latestPlaceholder.listId;
-          const targetWithoutActive = (finalCardsByList[placeholderListId] ?? []).filter((id) => id !== activeId);
+          const targetWithoutActive = getCardsWithoutActive(finalCardsByList, placeholderListId, activeId);
           resolvedToListId = placeholderListId;
           resolvedNewIndex = Math.max(0, Math.min(latestPlaceholder.index, targetWithoutActive.length));
+          resolvedFromPlaceholder = true;
         }
 
         // WHY: on large boards DnD Kit can miss a final cross-list `over` update
@@ -963,14 +1245,27 @@ const BoardCanvas = ({
         // truth for destination-list and insertion index.
         const pointerX = livePointerXRef.current;
         const pointerY = livePointerYRef.current;
-        const pointerListId = getBoardListIdFromPointer(pointerX, pointerY, dragStartListRectsRef.current);
-        if (disableLiveDragPreview && pointerListId && currentLists[pointerListId] && pointerListId !== fromListId) {
-          const targetWithoutActive = (finalCardsByList[pointerListId] ?? []).filter((id) => id !== activeId);
+        const pointerListId = lastPointerListId
+          ?? resolvePointerListId(
+            pointerX,
+            pointerY,
+          );
+        const pointerListExists = pointerListId != null && currentLists[pointerListId] !== undefined;
+        const shouldRecomputeFromPointer = shouldRecomputeFromPointerDestination({
+          disableLiveDragPreview,
+          pointerListId,
+          pointerListExists,
+          fromListId,
+          resolvedToListId,
+          resolvedFromPlaceholder,
+        });
+        if (shouldRecomputeFromPointer && pointerListId) {
+          const targetWithoutActive = getCardsWithoutActive(finalCardsByList, pointerListId, activeId);
           resolvedToListId = pointerListId;
           resolvedNewIndex = getInsertIndexFromPointerY(
             targetWithoutActive,
             pointerY,
-            dragStartCardMidsRef.current,
+            undefined,
             dragCardElementsByIdRef.current,
           );
         }
@@ -982,20 +1277,19 @@ const BoardCanvas = ({
         // so re-entering here would double-count the move and produce the wrong index
         // (e.g. same-list drag from 0→1 would set resolvedNewIndex back to 0).
         if (disableLiveDragPreview && !latestPlaceholder && currentCards[overId]) {
-          const hoverListId = dragCardToList?.[overId] ?? findListForCard(overId, finalCardsByList) ?? resolvedToListId;
+          const hoverListId = dragCardToList[overId] ?? findListForCard(overId, finalCardsByList) ?? resolvedToListId;
           const sourceCardsInHoverList = finalCardsByList[hoverListId] ?? [];
           const fromIdxInHover = sourceCardsInHoverList.indexOf(activeId);
           const overIdxInHover = sourceCardsInHoverList.indexOf(overId);
-          const targetCards = [...(finalCardsByList[hoverListId] ?? [])].filter((id) => id !== activeId);
+          const targetCards = getCardsWithoutActive(finalCardsByList, hoverListId, activeId);
           const hoverIndex = targetCards.indexOf(overId);
           if (hoverIndex >= 0) {
             resolvedToListId = hoverListId;
             if (fromListId === hoverListId && fromIdxInHover !== -1 && overIdxInHover !== -1) {
               resolvedNewIndex = hoverIndex + (fromIdxInHover < overIdxInHover ? 1 : 0);
             } else {
-              const overViewportMid = getCachedCardViewportMidYWithElements(
+              const overViewportMid = getLiveCardViewportMidYWithElements(
                 overId,
-                dragStartCardMidsRef.current,
                 dragCardElementsByIdRef.current,
               );
               const isBelowHoverCard =
@@ -1013,7 +1307,7 @@ const BoardCanvas = ({
           resolvedNewIndex = (finalCardsByList[overContainerId] ?? []).length;
         }
 
-        const targetPreview = [...(finalCardsByList[resolvedToListId] ?? [])].filter((id) => id !== activeId);
+        const targetPreview = getCardsWithoutActive(finalCardsByList, resolvedToListId, activeId);
         targetPreview.splice(resolvedNewIndex, 0, activeId);
         const afterCardId = resolvedNewIndex > 0 ? (targetPreview[resolvedNewIndex - 1] ?? null) : null;
 
@@ -1039,7 +1333,7 @@ const BoardCanvas = ({
         }
       }
     },
-    [disableLiveDragPreview, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder, onDragStart, resetQueuedDragPlaceholder],
+    [disableLiveDragPreview, flushQueuedDragPlaceholder, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder, onDragStart, resetPointerListResolutionCache, resetQueuedDragPlaceholder, resolvePointerListId],
   );
 
   const activeCard = activeCardId ? cards[activeCardId] : null;
@@ -1063,9 +1357,13 @@ const BoardCanvas = ({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <ProgressiveHydrationDispatcher listOrder={listOrder} />
+      <ProgressiveHydrationDispatcher
+        listOrder={listOrder}
+        isDragActive={activeCardId !== null}
+      />
       <SortableContext items={listOrder} strategy={horizontalListSortingStrategy}>
         <div
+          ref={boardScrollerRef}
           className="flex gap-3 p-4 overflow-x-auto overflow-y-hidden flex-1"
           role="list"
           aria-label="Board lists"
@@ -1083,9 +1381,9 @@ const BoardCanvas = ({
                 availableLists={listSummaries}
                 cardIds={effectiveCardsByList[listId] ?? []}
                 cards={cards}
-                {...(listHydration?.[list.id] ? { hydration: listHydration[list.id] } : {})}
                 boardId={boardId}
                 {...(boardTitle ? { boardTitle } : {})}
+                currentUserId={currentUserId}
                 onRename={onRenameList}
                 onCopyList={onCopyList}
                 onMoveList={onMoveList}
@@ -1102,7 +1400,9 @@ const BoardCanvas = ({
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
                 isViewerGuest={isViewerGuest}
                 hasBackground={hasBackground}
-                activeDragCardId={activeCardId}
+                // WHY: only the placeholder list needs active drag card id.
+                // Keeping other columns at null avoids global rerenders on drag start/end.
+                activeDragCardId={dragPlaceholder?.listId === listId ? activeCardId : null}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderIndex: dragPlaceholder.index } : {})}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderHeight: dragPlaceholder.height } : {})}
               />
@@ -1118,6 +1418,7 @@ const BoardCanvas = ({
             card={activeCard}
             isOverlay
             {...overlayProps}
+            currentUserId={currentUserId}
             labelsExpanded={labelsExpanded}
             onToggleLabels={onToggleLabels}
           />

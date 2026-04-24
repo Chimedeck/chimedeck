@@ -1,13 +1,11 @@
-// CardItem — draggable card chip using @dnd-kit/sortable useSortable.
+// CardItem — draggable card chip using @dnd-kit/core useDraggable.
 // Styled per sprint-18 spec §4.
 import { memo, useCallback, useMemo } from 'react';
 import { CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
-import { useSortable } from '@dnd-kit/sortable';
+import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { useSelector } from 'react-redux';
 import type { Card } from '../api';
 import { removeMember } from '../api';
-import { selectCurrentUser } from '~/slices/authSlice';
 import apiClient from '~/common/api/client';
 import CardLabelChips from './CardLabelChips';
 import { CardMemberAvatars } from './CardMemberAvatars';
@@ -34,6 +32,8 @@ export interface CardItemProps {
   listTitle?: string;
   boardTitle?: string;
   boardId?: string;
+  /** Current user id is threaded from BoardPage to avoid per-card store subscriptions. */
+  currentUserId?: string;
   /** Pre-fetched custom field values for this card from a board-level batch request. */
   customFieldValues?: CustomFieldValue[];
 }
@@ -100,7 +100,7 @@ const CardItemContent = memo(({
   const members = Array.isArray(card.members) ? card.members : [];
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
   const selectedCoverSize = card.cover_size ?? 'SMALL';
-  const useBackgroundImageMode = Boolean(card.cover_image_url) && selectedCoverSize === 'SMALL';
+  const useBackgroundImageMode = hasCover && selectedCoverSize === 'SMALL';
   // WHY: image covers should render at full card width and keep their original ratio.
   // Color-only covers keep the fixed strip height from cover_size.
   let coverClass = 'h-20';
@@ -249,15 +249,25 @@ const CardItemContent = memo(({
         </div>
       )}
 
-      {useBackgroundImageMode && card.cover_image_url ? (
+      {useBackgroundImageMode ? (
         <div className="relative">
-          <img
-            src={card.cover_image_url}
-            alt="Card cover"
-            className="block w-full h-auto"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+          {card.cover_image_url ? (
+            <>
+              <img
+                src={card.cover_image_url}
+                alt="Card cover"
+                className="block w-full h-auto"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+            </>
+          ) : (
+            <div
+              className="w-full min-h-[112px]"
+              style={{ backgroundColor: card.cover_color ?? '#334155' }}
+              aria-hidden="true"
+            />
+          )}
           <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
             <div className="w-full">
               {contentBlock}
@@ -315,16 +325,19 @@ const CardItem = ({
   listTitle,
   boardTitle,
   boardId,
+  currentUserId = '',
   customFieldValues,
 }: CardItemProps) => {
   const selectedCoverSize = card.cover_size ?? 'SMALL';
   const hasImageCover = Boolean(card.cover_image_url);
   const useBackgroundImageMode = Boolean(card.cover_image_url) && selectedCoverSize === 'SMALL';
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: card.id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: card.id,
+      disabled: isOverlay,
+    });
 
-  const currentUser = useSelector(selectCurrentUser);
   const api = apiClient;
 
   const handleRemoveMember = useCallback(
@@ -340,13 +353,12 @@ const CardItem = ({
   // re-renders, which re-measures — infinite loop during rapid drags.
   const style = useMemo<React.CSSProperties>(
     () => ({
-      transform: CSS.Transform.toString(transform),
-      transition,
+      transform: CSS.Translate.toString(transform),
       opacity: isDragging && !isOverlay ? 0 : 1,
       boxShadow: isOverlay ? undefined : CARD_ITEM_SHADOW,
       willChange: transform ? 'transform' : undefined,
     }),
-    [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, isOverlay],
+    [transform?.x, transform?.y, isDragging, isOverlay],
   );
 
   let surfaceClass = 'bg-bg-surface hover:bg-bg-overlay border-border';
@@ -381,7 +393,7 @@ const CardItem = ({
         {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
         {...(typeof boardId === 'string' ? { boardId } : {})}
         {...(customFieldValues ? { customFieldValues } : {})}
-        currentUserId={currentUser?.id ?? ''}
+        currentUserId={currentUserId}
         onRemoveMember={handleRemoveMember}
       />
     </div>
@@ -397,6 +409,7 @@ function areCardItemPropsEqual(prev: CardItemProps, next: CardItemProps): boolea
   if (prev.listTitle !== next.listTitle) return false;
   if (prev.boardTitle !== next.boardTitle) return false;
   if (prev.boardId !== next.boardId) return false;
+  if (prev.currentUserId !== next.currentUserId) return false;
   if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
 
   const prevCard = prev.card;

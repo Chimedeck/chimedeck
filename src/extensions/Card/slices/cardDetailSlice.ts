@@ -462,6 +462,13 @@ const cardDetailSlice = createSlice({
         state.card = action.payload.card;
       }
     },
+
+    remoteSyncMembers(state, action: PayloadAction<{ cardId: string; members: CardMember[] }>) {
+      const { cardId, members } = action.payload;
+      if (state.card?.id !== cardId) return;
+      state.members = members;
+      state.card = { ...state.card, members };
+    },
   },
 
   extraReducers(builder) {

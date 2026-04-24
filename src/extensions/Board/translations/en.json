@@ -19,6 +19,8 @@
   },
   "BoardSettings.notificationsLabel": "Notifications for this board",
   "BoardSettings.notificationsAriaLabel": "Toggle notifications for this board",
+  "BoardSettings.onlyRelatedToMeLabel": "Only notify events related to me",
+  "BoardSettings.onlyRelatedToMeAriaLabel": "Toggle only notifications related to me",
   "BoardSettings.notificationsLoadError": "Failed to load notification preference.",
   "BoardSettings.notificationsUpdateError": "Failed to update notification preference.",
   "BoardSettings.notificationTypePreferences": "Board notification preferences",

@@ -24,7 +24,7 @@ interface Props {
   isBoardParticipant?: boolean;
 }
 
-const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoardParticipant = true }: Props) => {
+const BoardSettings = ({ onClose, isGuest = false, isViewerGuest: _isViewerGuest = false, isBoardParticipant = true }: Props) => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);
@@ -34,6 +34,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
     (board as { visibility?: BoardVisibility } | null)?.visibility ?? 'PRIVATE',
   );
   const [saving, setSaving] = useState(false);
+  const [boardNotificationsEnabled, setBoardNotificationsEnabled] = useState(true);
 
   // Sync local state when the board is loaded (e.g. after initial fetch).
   useEffect(() => {
@@ -72,7 +73,9 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
       {/* Panel — stop click propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
         role="dialog"
         aria-label="Board Settings"
       >
@@ -94,7 +97,9 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
           {!isGuest && (
             <VisibilitySelector
               value={visibility}
-              onChange={handleVisibilityChange}
+              onChange={(next) => {
+                void handleVisibilityChange(next);
+              }}
               disabled={saving}
             />
           )}
@@ -137,9 +142,15 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
             </div>
             {boardId && (
               <>
-                <BoardNotificationToggle boardId={boardId} />
+                <BoardNotificationToggle
+                  boardId={boardId}
+                  onMasterEnabledChange={setBoardNotificationsEnabled}
+                />
                 <div className="mt-4">
-                  <BoardNotificationTypePreferences boardId={boardId} />
+                  <BoardNotificationTypePreferences
+                    boardId={boardId}
+                    disabledByBoardNotifications={!boardNotificationsEnabled}
+                  />
                 </div>
               </>
             )}

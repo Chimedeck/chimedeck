@@ -39,6 +39,7 @@ import {
   updateBoardLabel,
   getBoardLabels,
   getBoardMembers,
+  getBoardGuests,
   getCardComments,
   postCardComment,
   patchComment,
@@ -88,6 +89,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   // cannot see comment/attachment/edit controls inside the card modal.
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
   const [allLabels, setAllLabels] = useState<Label[]>([]);
+  const [boardMembers, setBoardMembers] = useState<CardMember[]>([]);
   const allLabelsRef = useRef<Label[]>([]);
   const boardMembersRef = useRef<CardMember[]>([]);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
@@ -109,14 +111,24 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       .catch(() => {});
   }, [cardId, dispatch, api]);
 
-  // Load board labels and members when boardId is known
+  // Load board labels and participants (members + guests) when boardId is known
   useEffect(() => {
     if (!boardId) return;
     getBoardLabels({ api, boardId })
       .then((labels) => { allLabelsRef.current = labels; setAllLabels(labels); })
       .catch(() => {});
-    getBoardMembers({ api, boardId })
-      .then((members) => { boardMembersRef.current = members; })
+    Promise.allSettled([
+      getBoardMembers({ api, boardId }),
+      getBoardGuests({ api, boardId }),
+    ])
+      .then(([membersResult, guestsResult]) => {
+        const members = membersResult.status === 'fulfilled' ? membersResult.value : [];
+        const guests = guestsResult.status === 'fulfilled' ? guestsResult.value : [];
+        const merged = [...members, ...guests];
+        const uniqueParticipants = Array.from(new Map(merged.map((participant) => [participant.id, participant])).values());
+        boardMembersRef.current = uniqueParticipants;
+        setBoardMembers(uniqueParticipants);
+      })
       .catch(() => {});
   }, [boardId, api]);
 
@@ -684,6 +696,18 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const boardMember = boardMembersRef.current.find((m) => m.id === userId);
       if (!boardMember) return;
       const mutationId = nextMutationId();
+      const previousMembers = members;
+      const nextMembers = previousMembers.some((member) => member.id === boardMember.id)
+        ? previousMembers
+        : [...previousMembers, boardMember];
+
+      const currentBoardCard = boardCards[card.id];
+      if (currentBoardCard) {
+        const nextBoardCard = { ...currentBoardCard, members: nextMembers };
+        dispatch(boardSliceActions.updateCard({ card: nextBoardCard }));
+        dispatch(cardSliceActions.remoteUpdate({ card: nextBoardCard }));
+      }
+
       dispatch(
         cardDetailSliceActions.applyOptimisticMemberAssign({
           mutationId,
@@ -695,24 +719,46 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackMember({ mutationId }));
+
+        if (currentBoardCard) {
+          const rollbackBoardCard = { ...currentBoardCard, members: previousMembers };
+          dispatch(boardSliceActions.updateCard({ card: rollbackBoardCard }));
+          dispatch(cardSliceActions.remoteUpdate({ card: rollbackBoardCard }));
+        }
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, members, boardCards],
   );
 
   const handleMemberRemove = useCallback(
     async (userId: string) => {
       if (!card) return;
       const mutationId = nextMutationId();
+      const previousMembers = members;
+      const nextMembers = previousMembers.filter((member) => member.id !== userId);
+
+      const currentBoardCard = boardCards[card.id];
+      if (currentBoardCard) {
+        const nextBoardCard = { ...currentBoardCard, members: nextMembers };
+        dispatch(boardSliceActions.updateCard({ card: nextBoardCard }));
+        dispatch(cardSliceActions.remoteUpdate({ card: nextBoardCard }));
+      }
+
       dispatch(cardDetailSliceActions.applyOptimisticMemberRemove({ mutationId, memberId: userId }));
       try {
         await deleteMemberAssign({ api, cardId: card.id, userId });
         dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackMember({ mutationId }));
+
+        if (currentBoardCard) {
+          const rollbackBoardCard = { ...currentBoardCard, members: previousMembers };
+          dispatch(boardSliceActions.updateCard({ card: rollbackBoardCard }));
+          dispatch(cardSliceActions.remoteUpdate({ card: rollbackBoardCard }));
+        }
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, members, boardCards],
   );
 
   const handleMoneySave = useCallback(
@@ -880,6 +926,11 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const handleAttachmentCountChange = useCallback(
     ({ fileCount, linkedCardCount }: { fileCount: number; linkedCardCount: number }) => {
       if (!card) return;
+      const currentFileCount = card.attachment_count ?? 0;
+      const currentLinkedCount = card.linked_card_count ?? 0;
+      if (currentFileCount === fileCount && currentLinkedCount === linkedCardCount) {
+        return;
+      }
       dispatch(boardSliceActions.updateCard({ card: { ...card, attachment_count: fileCount, linked_card_count: linkedCardCount } }));
     },
     [card, dispatch],
@@ -922,7 +973,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       labels={labels}
       allLabels={allLabels}
       members={members}
-      boardMembers={boardMembersRef.current}
+      boardMembers={boardMembers}
       checklists={checklists}
       comments={comments}
       activities={activities}

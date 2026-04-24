@@ -44,14 +44,31 @@ export function isForbiddenUrl(rawUrl: string): boolean {
   return FORBIDDEN_RANGES.some((re) => re.test(parsed.hostname));
 }
 
-// Detects internal card URLs of the form /c/:cardId[/slug].
+// Detects internal card URLs in supported app shapes:
+// - /c/:cardId[/slug]
+// - /boards/:boardId/cards/:cardId[/slug]
+// - /b/:boardId[/slug]?card=:cardId
+// - /boards/:boardId?card=:cardId
 export function parseInternalCardUrl(rawUrl: string): { cardId: string } | null {
   try {
     const parsed = new URL(rawUrl);
-    const re = /^\/c\/([A-Za-z0-9]+)(?:\/[^/]+)?$/;
-    const match = re.exec(parsed.pathname);
-    if (!match) return null;
-    return { cardId: match[1] as string };
+    const pathname = parsed.pathname.replace(/\/+$/, '');
+
+    const shortCardMatch = /^\/c\/([^/]+)(?:\/[^/]+)?$/.exec(pathname);
+    if (shortCardMatch) {
+      return { cardId: shortCardMatch[1] as string };
+    }
+
+    const legacyCardMatch = /^\/boards\/[^/]+\/cards\/([^/]+)(?:\/[^/]+)?$/.exec(pathname);
+    if (legacyCardMatch) {
+      return { cardId: legacyCardMatch[1] as string };
+    }
+
+    const queryCardId = parsed.searchParams.get('card');
+    if (!queryCardId) return null;
+
+    const isBoardRoute = /^\/(?:b|boards)\/[^/]+(?:\/[^/]+)?$/.test(pathname);
+    return isBoardRoute ? { cardId: queryCardId } : null;
   } catch {
     return null;
   }
@@ -71,7 +88,7 @@ async function resolveTargetCard(cardId: string) {
   return { resolvedCardId, card, board };
 }
 
-async function resolveReferencedCardId(rawUrl: string, workspaceId: string): Promise<string | null> {
+async function resolveReferencedCard(rawUrl: string, workspaceId: string): Promise<{ id: string; title: string | null } | null> {
   const internalCard = parseInternalCardUrl(rawUrl);
   if (!internalCard) return null;
 
@@ -99,7 +116,10 @@ async function resolveReferencedCardId(rawUrl: string, workspaceId: string): Pro
     );
   }
 
-  return referencedCard.id as string;
+  return {
+    id: referencedCard.id as string,
+    title: (referencedCard.title as string | null | undefined) ?? null,
+  };
 }
 
 export async function handleAddUrl(req: Request, cardId: string): Promise<Response> {
@@ -140,9 +160,9 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     );
   }
 
-  let referencedCardId: string | null = null;
+  let referencedCard: { id: string; title: string | null } | null = null;
   try {
-    referencedCardId = await resolveReferencedCardId(body.url, board.workspace_id);
+    referencedCard = await resolveReferencedCard(body.url, board.workspace_id);
   } catch (err) {
     if (err instanceof Response) return err;
     throw err;
@@ -161,12 +181,12 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     type: 'URL',
     url: body.url,
     status: 'READY',
-    referenced_card_id: referencedCardId,
+    referenced_card_id: referencedCard?.id ?? null,
     created_at: new Date().toISOString(),
   });
 
   const attachment = await db('attachments').where({ id: attachmentId }).first();
-  const activityAction = referencedCardId ? 'card_link_attached' : 'attachment_added';
+  const activityAction = referencedCard ? 'card_link_attached' : 'attachment_added';
 
   await dispatchEvent({
     type: 'attachment_added',
@@ -187,7 +207,13 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
       cardId: resolvedCardId,
       name: body.name,
       cardTitle: card.title,
-      ...(referencedCardId ? { referencedCardId } : {}),
+      linkUrl: body.url,
+      ...(referencedCard
+        ? {
+            referencedCardId: referencedCard.id,
+            referencedCardTitle: referencedCard.title,
+          }
+        : {}),
     },
   });
 

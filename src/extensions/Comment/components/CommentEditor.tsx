@@ -44,6 +44,8 @@ interface Props {
   boardId?: string;
   cardId?: string;
   availableAttachments?: Attachment[];
+  /** Notifies parent when editor-visible attachment list changes (e.g. paste upload success). */
+  onAttachmentsChange?: (attachments: Attachment[]) => void;
   initialValue?: string;
   placeholder?: string;
   onSubmit: (content: string) => Promise<void>;
@@ -209,6 +211,7 @@ const CommentEditor = ({
   boardId,
   cardId,
   availableAttachments = EMPTY_ATTACHMENTS,
+  onAttachmentsChange,
   initialValue = '',
   placeholder = translations['comment.editor.placeholder'],
   onSubmit,
@@ -259,6 +262,10 @@ const CommentEditor = ({
   useEffect(() => {
     replaceCardAttachments(availableAttachments);
   }, [availableAttachments, replaceCardAttachments]);
+
+  useEffect(() => {
+    onAttachmentsChange?.(cardAttachments);
+  }, [cardAttachments, onAttachmentsChange]);
 
   // Attachment upload — only active when a cardId is provided.
   // [why] deferred=true keeps uploads queueable, while explicit flushes let us

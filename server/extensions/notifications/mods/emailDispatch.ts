@@ -108,6 +108,21 @@ function renderTemplate(type: NotificationType, data: Record<string, string>) {
         boardName: data.boardName ?? '',
         cardUrl: data.cardUrl ?? '',
       });
+    case 'checklist_item_assigned':
+    case 'checklist_item_unassigned':
+    case 'checklist_item_due_date_updated': {
+      let changedFields: string[] = [];
+      if (type === 'checklist_item_assigned') changedFields = ['checklist assignee'];
+      if (type === 'checklist_item_unassigned') changedFields = ['checklist assignee'];
+      if (type === 'checklist_item_due_date_updated') changedFields = ['checklist due date'];
+      return renderCardUpdatedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
+        changedFields,
+        cardUrl: data.cardUrl ?? '',
+      });
+    }
     case 'card_updated': {
       // changedFields is serialised as a JSON array string by the dispatch layer
       let changedFields: string[] = [];
@@ -134,6 +149,14 @@ function renderTemplate(type: NotificationType, data: Record<string, string>) {
         boardName: data.boardName ?? '',
         // archived is serialised as the string 'true' or 'false'
         archived: data.archived !== 'false',
+        cardUrl: data.cardUrl ?? '',
+      });
+    default:
+      return renderCardUpdatedEmail({
+        actorName: data.actorName ?? '',
+        cardTitle: data.cardTitle ?? '',
+        boardName: data.boardName ?? '',
+        changedFields: [],
         cardUrl: data.cardUrl ?? '',
       });
   }

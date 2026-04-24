@@ -85,6 +85,7 @@ export async function createReactionNotification({
         source_id: commentId,
         card_id: cardId,
         board_id: boardId,
+        emoji,
         actor_id: actorId,
         read: false,
         created_at: now,

@@ -35,6 +35,8 @@ interface Props {
   onDeleteReply?: (commentId: string) => Promise<void>;
   /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
   canAddComment?: boolean;
+  /** Notifies parent when editor-visible attachments change (e.g. pasted image upload). */
+  onAttachmentsChange?: (attachments: Attachment[]) => void;
   /**
    * When provided, ActivityFeed registers an `insertMarkdown(md)` function on this ref
    * once the CommentEditor mounts. External callers (e.g. AttachmentPanel Comment action)
@@ -63,6 +65,83 @@ function getInitials(name: string | null | undefined, email: string): string {
 
 function buildBoardProps(boardId?: string): { boardId: string } | Record<string, never> {
   return boardId ? { boardId } : {};
+}
+
+function renderSystemEventRow({
+  activity,
+  memberMap,
+  currentUserId,
+  attachmentMap,
+}: {
+  activity: ActivityData;
+  memberMap: Map<string, BoardMember>;
+  currentUserId: string;
+  attachmentMap: Map<string, { thumbnail_url?: string | null; view_url?: string | null; content_type?: string | null }>;
+}): JSX.Element {
+  const member = memberMap.get(activity.actor_id);
+  const displayName =
+    activity.actor_name ||
+    activity.actor_email ||
+    member?.name ||
+    member?.email ||
+    'Unknown';
+  const initials = getInitials(
+    activity.actor_name ?? member?.name,
+    activity.actor_email ?? member?.email ?? activity.actor_id,
+  );
+  const color = avatarColor(activity.actor_id);
+
+  const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
+  const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
+  const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
+  const actorAvatarUrl = activity.actor_avatar_url ?? null;
+
+  const eventContext: ActivityEventContext = {
+    resolveName: (uid) => {
+      const m = memberMap.get(uid);
+      return m?.name ?? m?.email ?? undefined;
+    },
+    currentUserId,
+  };
+  const meta = getActivityEventMeta(activity.action, activity.payload, eventContext);
+
+  return (
+    <div key={`event-${activity.id}`} className="flex items-start gap-3">
+      {/* Avatar */}
+      <div
+        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on dynamically-colored avatar background
+        title={displayName}
+      >
+        {actorAvatarUrl
+          ? <img src={actorAvatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
+          : initials
+        }
+      </div>
+      {/* Body */}
+      <div className="flex-1 min-w-0">
+        <p className="min-w-0 break-words text-sm text-subtle leading-5">
+          {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
+          <span className="font-semibold text-base">{displayName}</span>
+          {' '}
+          <span>{meta.label}</span>
+        </p>
+        <p className="mt-0.5 text-xs text-muted">{relativeTime(activity.created_at)}</p>
+        {showThumbnail && (
+          <a
+            href={(attachmentInfo!.view_url ?? attachmentInfo!.thumbnail_url)!}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.view_url)!}
+              alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
+              className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
+            />
+          </a>
+        )}
+      </div>
+    </div>
+  );
 }
 
 type FeedItem =
@@ -95,6 +174,7 @@ const ActivityFeed = ({
   onEditReply,
   onDeleteReply,
   canAddComment = true,
+  onAttachmentsChange,
   insertMarkdownRef,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -171,6 +251,7 @@ const ActivityFeed = ({
           {...buildBoardProps(boardId)}
           cardId={cardId}
           availableAttachments={attachments}
+          {...(onAttachmentsChange ? { onAttachmentsChange } : {})}
           placeholder="Add a comment…"
           onSubmit={handleAddComment}
           submitLabel="Comment"
@@ -204,73 +285,12 @@ const ActivityFeed = ({
             );
           }
 
-          // System event row: avatar + actor name + label + timestamp
-          const { activity } = item;
-          const member = memberMap.get(activity.actor_id);
-          const displayName =
-            activity.actor_name ||
-            activity.actor_email ||
-            member?.name ||
-            member?.email ||
-            'Unknown';
-          const initials = getInitials(
-            activity.actor_name ?? member?.name,
-            activity.actor_email ?? member?.email ?? activity.actor_id,
-          );
-          const color = avatarColor(activity.actor_id);
-
-          // For attachment events, look up thumbnail from the attachment map
-          const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
-          const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
-          const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
-          const actorAvatarUrl = activity.actor_avatar_url ?? null;
-
-          // [why] Pass context so label builder can resolve member names and detect self-assignment.
-          const eventContext: ActivityEventContext = {
-            resolveName: (uid) => {
-              const m = memberMap.get(uid);
-              return m?.name ?? m?.email ?? undefined;
-            },
+          return renderSystemEventRow({
+            activity: item.activity,
+            memberMap,
             currentUserId,
-          };
-          const meta = getActivityEventMeta(activity.action, activity.payload, eventContext);
-
-          return (
-            <div key={`event-${activity.id}`} className="flex gap-3">
-              {/* Avatar */}
-              <div
-                className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on dynamically-colored avatar background
-                title={displayName}
-              >
-                {actorAvatarUrl
-                  ? <img src={actorAvatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
-                  : initials
-                }
-              </div>
-              {/* Body */}
-              <div className="flex-1 min-w-0">
-                <div className="flex min-w-0 items-baseline gap-2">
-                  {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
-                  <span className="text-sm font-semibold text-base flex-shrink-0">{displayName}</span>
-                  <span className="min-w-0 break-all text-xs text-subtle">{meta.label}</span>
-                  <span className="text-xs text-muted flex-shrink-0">{relativeTime(activity.created_at)}</span>
-                </div>
-                {showThumbnail && (
-                  <a
-                    href={(attachmentInfo!.view_url ?? attachmentInfo!.thumbnail_url)!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.view_url)!}
-                      alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
-                      className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
-                    />
-                  </a>
-                )}
-              </div>
-            </div>
-          );
+            attachmentMap,
+          });
         })}
       </div>
     </div>
