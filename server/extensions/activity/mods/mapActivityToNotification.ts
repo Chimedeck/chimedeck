@@ -83,12 +83,20 @@ export async function mapActivityToNotification({
       if (row.user_id !== activity.actor_id) recipientSet.add(row.user_id);
     }
 
+    // [why] Card member assignment/unassignment must always notify the target user,
+    // even when they are not currently a board participant row.
+    const currentUserId = typeof payload.userId === 'string' ? payload.userId : null;
+    const previousUserId = typeof payload.previousUserId === 'string' ? payload.previousUserId : null;
+    if (notificationType === 'card_member_assigned' && currentUserId && currentUserId !== activity.actor_id) {
+      recipientSet.add(currentUserId);
+    }
+    if (notificationType === 'card_member_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
+      recipientSet.add(previousUserId);
+    }
     let recipientIds = Array.from(recipientSet);
 
     if (CHECKLIST_NOTIFICATION_TYPES.has(notificationType)) {
       const checklistRecipients = new Set<string>();
-      const currentUserId = typeof payload.userId === 'string' ? payload.userId : null;
-      const previousUserId = typeof payload.previousUserId === 'string' ? payload.previousUserId : null;
 
       if (notificationType === 'checklist_item_assigned' && currentUserId && currentUserId !== activity.actor_id) {
         checklistRecipients.add(currentUserId);
@@ -127,6 +135,12 @@ export async function mapActivityToNotification({
     const now = new Date().toISOString();
     const cardId = (payload.cardId as string | undefined) ?? null;
     const cardTitle = (payload.cardTitle as string | undefined) ?? null;
+    const targetUserId = (
+      (payload.userId as string | undefined)
+      ?? (payload.previousUserId as string | undefined)
+      ?? null
+    );
+    const targetUserName = (payload.assigneeName as string | undefined) ?? null;
     const relatedUserIds = await getCardRelatedUserIds({ cardId });
 
     // Derive extra context fields for the WS payload depending on event type.
@@ -157,6 +171,7 @@ export async function mapActivityToNotification({
             type: notificationType,
             recipientId,
             relatedUserIds,
+            targetUserId,
           })
         ) {
           continue;
@@ -202,6 +217,8 @@ export async function mapActivityToNotification({
                     card_title: cardTitle,
                     board_title: board.title,
                     list_title: listTitle,
+                    target_user_id: targetUserId,
+                    target_user_name: targetUserName,
                     actor: actorPayload,
                   },
                 },

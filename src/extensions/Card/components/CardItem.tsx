@@ -100,7 +100,7 @@ const CardItemContent = memo(({
   const members = Array.isArray(card.members) ? card.members : [];
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
   const selectedCoverSize = card.cover_size ?? 'SMALL';
-  const useBackgroundImageMode = Boolean(card.cover_image_url) && selectedCoverSize === 'SMALL';
+  const useBackgroundImageMode = hasCover && selectedCoverSize === 'SMALL';
   // WHY: image covers should render at full card width and keep their original ratio.
   // Color-only covers keep the fixed strip height from cover_size.
   let coverClass = 'h-20';
@@ -249,15 +249,25 @@ const CardItemContent = memo(({
         </div>
       )}
 
-      {useBackgroundImageMode && card.cover_image_url ? (
+      {useBackgroundImageMode ? (
         <div className="relative">
-          <img
-            src={card.cover_image_url}
-            alt="Card cover"
-            className="block w-full h-auto"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+          {card.cover_image_url ? (
+            <>
+              <img
+                src={card.cover_image_url}
+                alt="Card cover"
+                className="block w-full h-auto"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+            </>
+          ) : (
+            <div
+              className="w-full min-h-[112px]"
+              style={{ backgroundColor: card.cover_color ?? '#334155' }}
+              aria-hidden="true"
+            />
+          )}
           <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
             <div className="w-full">
               {contentBlock}

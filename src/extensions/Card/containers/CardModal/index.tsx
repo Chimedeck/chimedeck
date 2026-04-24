@@ -696,6 +696,18 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const boardMember = boardMembersRef.current.find((m) => m.id === userId);
       if (!boardMember) return;
       const mutationId = nextMutationId();
+      const previousMembers = members;
+      const nextMembers = previousMembers.some((member) => member.id === boardMember.id)
+        ? previousMembers
+        : [...previousMembers, boardMember];
+
+      const currentBoardCard = boardCards[card.id];
+      if (currentBoardCard) {
+        const nextBoardCard = { ...currentBoardCard, members: nextMembers };
+        dispatch(boardSliceActions.updateCard({ card: nextBoardCard }));
+        dispatch(cardSliceActions.remoteUpdate({ card: nextBoardCard }));
+      }
+
       dispatch(
         cardDetailSliceActions.applyOptimisticMemberAssign({
           mutationId,
@@ -707,24 +719,46 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackMember({ mutationId }));
+
+        if (currentBoardCard) {
+          const rollbackBoardCard = { ...currentBoardCard, members: previousMembers };
+          dispatch(boardSliceActions.updateCard({ card: rollbackBoardCard }));
+          dispatch(cardSliceActions.remoteUpdate({ card: rollbackBoardCard }));
+        }
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, members, boardCards],
   );
 
   const handleMemberRemove = useCallback(
     async (userId: string) => {
       if (!card) return;
       const mutationId = nextMutationId();
+      const previousMembers = members;
+      const nextMembers = previousMembers.filter((member) => member.id !== userId);
+
+      const currentBoardCard = boardCards[card.id];
+      if (currentBoardCard) {
+        const nextBoardCard = { ...currentBoardCard, members: nextMembers };
+        dispatch(boardSliceActions.updateCard({ card: nextBoardCard }));
+        dispatch(cardSliceActions.remoteUpdate({ card: nextBoardCard }));
+      }
+
       dispatch(cardDetailSliceActions.applyOptimisticMemberRemove({ mutationId, memberId: userId }));
       try {
         await deleteMemberAssign({ api, cardId: card.id, userId });
         dispatch(cardDetailSliceActions.confirmMember({ mutationId }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackMember({ mutationId }));
+
+        if (currentBoardCard) {
+          const rollbackBoardCard = { ...currentBoardCard, members: previousMembers };
+          dispatch(boardSliceActions.updateCard({ card: rollbackBoardCard }));
+          dispatch(cardSliceActions.remoteUpdate({ card: rollbackBoardCard }));
+        }
       }
     },
-    [api, card, dispatch],
+    [api, card, dispatch, members, boardCards],
   );
 
   const handleMoneySave = useCallback(

@@ -16,8 +16,28 @@ interface Props {
   onNavigate: (notification: Notification) => void;
 }
 
-function buildActionCopy(notification: Notification): string {
+function resolveTargetUserCopy({
+  notification,
+  currentUserId,
+}: {
+  notification: Notification;
+  currentUserId: string | null;
+}): { isCurrentUser: boolean; targetName: string } {
+  const targetUserId = notification.target_user_id ?? null;
+  const hasCurrentUser = currentUserId != null && currentUserId !== '';
+  const isCurrentUser = hasCurrentUser
+    ? targetUserId != null && targetUserId === currentUserId
+    : true;
+
+  return {
+    isCurrentUser,
+    targetName: notification.target_user_name ?? 'a member',
+  };
+}
+
+function buildActionCopy(notification: Notification, currentUserId: string | null): string {
   const card = notification.card_title ?? 'this card';
+  const { isCurrentUser, targetName } = resolveTargetUserCopy({ notification, currentUserId });
 
   switch (notification.type) {
     case 'card_created':
@@ -33,13 +53,17 @@ function buildActionCopy(notification: Notification): string {
       return `reacted ${emoji} to your comment`;
     }
     case 'card_member_assigned':
-      return `was assigned to ${card}`;
+      return isCurrentUser ? `assigned you to ${card}` : `assigned ${targetName} to ${card}`;
     case 'card_member_unassigned':
-      return `was removed from ${card}`;
+      return isCurrentUser ? `removed you from ${card}` : `removed ${targetName} from ${card}`;
     case 'checklist_item_assigned':
-      return `was assigned in a checklist item in ${card}`;
+      return isCurrentUser
+        ? `assigned you to a checklist item in ${card}`
+        : `assigned ${targetName} to a checklist item in ${card}`;
     case 'checklist_item_unassigned':
-      return `was unassigned from a checklist item in ${card}`;
+      return isCurrentUser
+        ? `removed you from a checklist item in ${card}`
+        : `removed ${targetName} from a checklist item in ${card}`;
     case 'checklist_item_due_date_updated':
       return `updated a checklist due date in ${card}`;
     case 'card_updated':
@@ -281,7 +305,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
 
           <div className="space-y-1.5">
             {notificationsInStack.map((entry) => {
-              const activityCopy = buildActionCopy(entry);
+              const activityCopy = buildActionCopy(entry, currentUser?.id ?? null);
               const createdTime = formatNotificationTime(entry);
               const actorName = actorDisplayName(entry);
               const commentPreview = extractCommentPreview(entry.comment_content);

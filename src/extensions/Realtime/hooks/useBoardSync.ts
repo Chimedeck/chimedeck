@@ -12,10 +12,11 @@ import { cardSliceActions } from '../../Card/cardSlice';
 import { boardSliceActions, selectCards } from '../../Board/slices/boardSlice';
 import { cardDetailSliceActions } from '../../Card/slices/cardDetailSlice';
 import type { List } from '../../List/api';
-import type { Card } from '../../Card/api';
+import { getCard, type Card } from '../../Card/api';
 import type { CommentData } from '../../Card/api/cardDetail';
 import { selectCurrentUser } from '~/slices/authSlice';
 import type { ActivityData } from '../../Card/slices/cardDetailSlice';
+import { apiClient } from '~/common/api/client';
 
 export interface UseBoardSyncOptions {
   boardId: string;
@@ -80,6 +81,31 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           );
         }
       }
+    },
+    [dispatch],
+  );
+
+  const syncCardMembersFromServer = useCallback(
+    (cardId: string) => {
+      const existingCard = cardsRef.current[cardId];
+      if (!existingCard) return;
+
+      void getCard({ api: apiClient, cardId })
+        .then((response) => {
+          const nextMembers = response.includes.members;
+
+          const mergedCard: Card = {
+            ...existingCard,
+            ...response.data,
+            members: nextMembers,
+            labels: response.includes.labels,
+          };
+
+          dispatch(cardSliceActions.remoteUpdate({ card: mergedCard }));
+          dispatch(boardSliceActions.updateCard({ card: mergedCard }));
+          dispatch(cardDetailSliceActions.remoteSyncMembers({ cardId, members: nextMembers }));
+        })
+        .catch(() => {});
     },
     [dispatch],
   );
@@ -207,7 +233,8 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           const { parent_comment_id, reply } = payload as { parent_comment_id: string; reply: CommentData };
           // [why] The author path already updates reply_count after POST success.
           // Ignore our own WS echo to avoid counting the same reply twice.
-          if (reply?.user_id && reply.user_id === currentUserIdRef.current) break;
+          if (!reply) break;
+          if (reply.user_id === currentUserIdRef.current) break;
           dispatch(cardDetailSliceActions.addReply({ parentId: parent_comment_id, reply }));
           break;
         }
@@ -216,7 +243,16 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         case 'card_activity_created': {
           // [why] Reducer filters by openCardId so cross-card events are silently ignored.
           const { activity } = payload as { activity: ActivityData };
+          if (!activity) break;
           dispatch(cardDetailSliceActions.addActivity(activity));
+
+          if (
+            (activity.action === 'card_member_assigned' || activity.action === 'card_member_unassigned')
+            && typeof activity.entity_id === 'string'
+            && activity.entity_id.length > 0
+          ) {
+            syncCardMembersFromServer(activity.entity_id);
+          }
           break;
         }
 
@@ -244,7 +280,7 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
         dispatch({ type: 'realtime/wsConfirmed', payload: { type, sequence, boardId } });
       }
     },
-    [applyRemoteCommentAdded, dispatch, boardId],
+    [applyRemoteCommentAdded, dispatch, boardId, syncCardMembersFromServer],
   );
 
   return { handleEvent, lastSequence: lastSeqRef.current };

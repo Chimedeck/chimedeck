@@ -49,15 +49,25 @@ export function isRecipientRelatedCardNotification({
   recipientId,
   relatedUserIds,
   replyToUserId,
+  targetUserId,
 }: {
   type: NotificationType;
   recipientId: string;
   relatedUserIds: ReadonlySet<string>;
   replyToUserId?: string | null;
+  targetUserId?: string | null;
 }): boolean {
   if (type === 'card_created') return false;
 
   if (type === 'card_commented' && replyToUserId && recipientId === replyToUserId) {
+    return true;
+  }
+
+  if (
+    (type === 'card_member_assigned' || type === 'card_member_unassigned')
+    && targetUserId
+    && recipientId === targetUserId
+  ) {
     return true;
   }
 

@@ -54,7 +54,10 @@ const ToggleSwitch = ({
         aria-checked={enabled}
         aria-label={ariaLabel}
         disabled={disabled}
-        onClick={() => !disabled && onChange(!enabled)}
+        onClick={() => {
+          if (disabled) return;
+          onChange(!enabled);
+        }}
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base ${track} ${ring}`}
       >
         <span
@@ -125,7 +128,9 @@ const BoardNotificationTypePreferences = ({
           {translations['BoardSettings.notificationTypePreferences']}
         </span>
         <button
-          onClick={handleReset}
+          onClick={() => {
+            void handleReset();
+          }}
           disabled={isResetting || disabledByBoardNotifications}
           className="text-xs text-muted hover:text-subtle transition-colors disabled:opacity-50"
         >
@@ -160,7 +165,9 @@ const BoardNotificationTypePreferences = ({
                 <td className="py-2 text-center">
                   <ToggleSwitch
                     enabled={inAppChecked}
-                    onChange={(next) => handleToggle(type, 'in_app_enabled', next)}
+                    onChange={(next) => {
+                      void handleToggle(type, 'in_app_enabled', next);
+                    }}
                     ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — In-App`}
                     isBoardOverride={isBoardOverride}
                     disabled={disabledByBoardNotifications}
@@ -170,7 +177,9 @@ const BoardNotificationTypePreferences = ({
                   <td className="py-2 text-center">
                     <ToggleSwitch
                       enabled={emailChecked}
-                      onChange={(next) => handleToggle(type, 'email_enabled', next)}
+                      onChange={(next) => {
+                        void handleToggle(type, 'email_enabled', next);
+                      }}
                       ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — Email`}
                       isBoardOverride={isBoardOverride}
                       disabled={disabledByBoardNotifications}

@@ -161,7 +161,13 @@ class RealtimeSocket {
     this.ws.addEventListener('message', (ev: MessageEvent<string>) => {
       try {
         const event = JSON.parse(ev.data) as RealtimeEvent;
-        this.handlers.forEach((h) => h(event));
+        this.handlers.forEach((h) => {
+          try {
+            h(event);
+          } catch {
+            // Isolate subscriber failures so one handler cannot break realtime fanout.
+          }
+        });
       } catch {
         // Ignore malformed frames
       }

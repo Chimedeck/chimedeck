@@ -74,7 +74,9 @@ const BoardNotificationToggle = ({ boardId, onMasterEnabledChange }: Props) => {
         onMasterEnabledChange?.(true);
         setError(translations['BoardSettings.notificationsLoadError']);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
   }, [boardId, onMasterEnabledChange]);
 
   const patchPreference = async (
@@ -108,7 +110,12 @@ const BoardNotificationToggle = ({ boardId, onMasterEnabledChange }: Props) => {
   const handleToggleOnlyRelatedToMe = (next: boolean) => {
     const prev = onlyRelatedToMe;
     setOnlyRelatedToMe(next); // optimistic update
-    void patchPreference({ only_related_to_me: next }, () => setOnlyRelatedToMe(prev));
+    void patchPreference(
+      { only_related_to_me: next },
+      () => {
+        setOnlyRelatedToMe(prev);
+      },
+    );
   };
 
   return (

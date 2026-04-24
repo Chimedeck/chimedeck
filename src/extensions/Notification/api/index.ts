@@ -42,6 +42,9 @@ export interface Notification {
   board_title: string | null;
   /** Destination list name — populated for card_moved notifications */
   list_title: string | null;
+  /** Assignment/unassignment target from board activity payload, when available. */
+  target_user_id?: string | null;
+  target_user_name?: string | null;
   /** Raw comment markdown content when source_id references a comment. */
   comment_content?: string | null;
   /** Aggregated comment reactions for comment-backed notifications. */

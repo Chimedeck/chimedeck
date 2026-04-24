@@ -18,6 +18,28 @@ interface NotificationReactionSummary {
   reactors: Array<{ userId: string; name: string | null }>;
 }
 
+interface ActivityPayload {
+  userId?: string | null;
+  previousUserId?: string | null;
+  assigneeName?: string | null;
+}
+
+function normaliseActivityPayload(raw: unknown): ActivityPayload {
+  if (!raw) return {};
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw as ActivityPayload;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as ActivityPayload;
+      }
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export async function handleListNotifications(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -53,6 +75,10 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     .leftJoin('cards', 'notifications.card_id', 'cards.id')
     .leftJoin('boards', 'notifications.board_id', 'boards.id')
     .leftJoin('comments as source_comment', 'notifications.source_id', 'source_comment.id')
+    .leftJoin('activities as source_activity', function () {
+      this.on('notifications.source_id', '=', 'source_activity.id')
+        .andOn('notifications.source_type', '=', db.raw('?', ['board_activity']));
+    })
     // Join to get the destination list name for card_moved notifications
     .leftJoin('lists', 'cards.list_id', 'lists.id')
     .select(
@@ -64,6 +90,7 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'notifications.emoji',
       'cards.title as card_title',
       'cards.description as card_description_content',
+      'source_activity.payload as source_activity_payload',
       'notifications.board_id',
       'boards.title as board_title',
       'lists.title as list_title',
@@ -165,6 +192,9 @@ export async function handleListNotifications(req: Request): Promise<Response> {
           ? row.card_description_content
           : null;
       const commentContent = commentContentFromCommentSource ?? commentContentFromDescriptionMention;
+      const activityPayload = normaliseActivityPayload(row.source_activity_payload);
+      const targetUserId = activityPayload.userId ?? activityPayload.previousUserId ?? null;
+      const targetUserName = activityPayload.assigneeName ?? null;
 
       return {
         id: row.id,
@@ -177,6 +207,8 @@ export async function handleListNotifications(req: Request): Promise<Response> {
         board_id: row.board_id,
         board_title: row.board_title ?? null,
         list_title: row.list_title ?? null,
+        target_user_id: targetUserId,
+        target_user_name: targetUserName,
         comment_content: commentContent,
         comment_reactions: row.source_type === 'comment'
           ? (commentReactionMap.get(row.source_id) ?? [])
