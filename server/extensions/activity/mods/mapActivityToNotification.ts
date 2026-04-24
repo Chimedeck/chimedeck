@@ -93,27 +93,27 @@ export async function mapActivityToNotification({
     if (notificationType === 'card_member_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
       recipientSet.add(previousUserId);
     }
-    let recipientIds = Array.from(recipientSet);
+    const recipientIds = CHECKLIST_NOTIFICATION_TYPES.has(notificationType)
+      ? (() => {
+        const checklistRecipients = new Set<string>();
 
-    if (CHECKLIST_NOTIFICATION_TYPES.has(notificationType)) {
-      const checklistRecipients = new Set<string>();
-
-      if (notificationType === 'checklist_item_assigned' && currentUserId && currentUserId !== activity.actor_id) {
-        checklistRecipients.add(currentUserId);
-      }
-
-      if (notificationType === 'checklist_item_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
-        checklistRecipients.add(previousUserId);
-      }
-
-      if (notificationType === 'checklist_item_due_date_updated') {
-        if (currentUserId && currentUserId !== activity.actor_id) {
+        if (notificationType === 'checklist_item_assigned' && currentUserId && currentUserId !== activity.actor_id) {
           checklistRecipients.add(currentUserId);
         }
-      }
 
-      recipientIds = Array.from(checklistRecipients);
-    }
+        if (notificationType === 'checklist_item_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
+          checklistRecipients.add(previousUserId);
+        }
+
+        if (notificationType === 'checklist_item_due_date_updated') {
+          if (currentUserId && currentUserId !== activity.actor_id) {
+            checklistRecipients.add(currentUserId);
+          }
+        }
+
+        return Array.from(checklistRecipients);
+      })()
+      : Array.from(recipientSet);
 
     if (recipientIds.length === 0) return;
 
