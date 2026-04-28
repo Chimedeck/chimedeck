@@ -16,6 +16,7 @@ import { cardChecklistCompletedTrigger } from './card/checklistCompleted';
 import { cardAllChecklistsCompletedTrigger } from './card/allChecklistsCompleted';
 import { cardArchivedTrigger } from './card/archived';
 import { cardCommentAddedTrigger } from './card/commentAdded';
+import { cardCustomFieldValueUpdatedTrigger } from './card/customFieldValueUpdated';
 import { boardMemberAddedTrigger } from './board/memberAdded';
 import { listCardAddedTrigger } from './list/cardAdded';
 
@@ -33,6 +34,7 @@ registerTrigger(cardChecklistCompletedTrigger);
 registerTrigger(cardAllChecklistsCompletedTrigger);
 registerTrigger(cardArchivedTrigger);
 registerTrigger(cardCommentAddedTrigger);
+registerTrigger(cardCustomFieldValueUpdatedTrigger);
 
 // Register board and list triggers.
 registerTrigger(boardMemberAddedTrigger);

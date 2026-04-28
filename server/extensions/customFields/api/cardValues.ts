@@ -16,8 +16,48 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { sanitizeText } from '../../../common/sanitize';
+import { dispatchEvent } from '../../../mods/events/dispatch';
 
 export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'CHECKBOX' | 'DROPDOWN';
+
+interface CardCustomFieldValueRow {
+  id: string;
+  card_id: string;
+  custom_field_id: string;
+  value_text: string | null;
+  value_number: string | number | null;
+  value_date: string | Date | null;
+  value_checkbox: boolean | null;
+  value_option_id: string | null;
+}
+
+function toComparableFieldValue(
+  fieldType: FieldType,
+  row: CardCustomFieldValueRow | null | undefined,
+): string | number | boolean | null {
+  if (!row) return null;
+
+  switch (fieldType) {
+    case 'TEXT':
+      return row.value_text ?? null;
+    case 'NUMBER': {
+      if (row.value_number === null || row.value_number === undefined) return null;
+      const num = Number(row.value_number);
+      return Number.isNaN(num) ? null : num;
+    }
+    case 'DATE': {
+      if (!row.value_date) return null;
+      const d = new Date(row.value_date);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    }
+    case 'CHECKBOX':
+      return row.value_checkbox;
+    case 'DROPDOWN':
+      return row.value_option_id ?? null;
+    default:
+      return null;
+  }
+}
 
 async function resolveCardContext(
   cardId: string,
@@ -171,7 +211,7 @@ export async function handleUpsertCardFieldValue(
 
   const existing = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first();
+    .first<CardCustomFieldValueRow>();
 
   if (existing) {
     await db('card_custom_field_values')
@@ -188,7 +228,27 @@ export async function handleUpsertCardFieldValue(
 
   const saved = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first();
+    .first<CardCustomFieldValueRow>();
+
+  const previousValue = toComparableFieldValue(fieldType, existing);
+  const newValue = toComparableFieldValue(fieldType, saved);
+
+  // [why] This trigger should only fire for actual value transitions, not no-op saves.
+  if (previousValue !== newValue && saved) {
+    const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+    await dispatchEvent({
+      type: 'card.custom_field_value_updated',
+      boardId: (ctx.board as Record<string, unknown>).id as string,
+      entityId: cardId,
+      actorId,
+      payload: {
+        fieldId,
+        fieldType,
+        previousValue,
+        newValue,
+      },
+    });
+  }
 
   return Response.json({ data: saved }, { status: existing ? 200 : 201 });
 }

@@ -23,6 +23,7 @@ import { cardAddCommentAction } from './card/addComment';
 import { cardArchiveAction } from './card/archive';
 import { cardAddChecklistAction } from './card/addChecklist';
 import { cardMentionMembersAction } from './card/mentionMembers';
+import { cardUpdateCustomFieldValueAction } from './card/updateCustomFieldValue';
 
 // Register all list actions.
 registerAction(listSortByDueDateAction);
@@ -46,6 +47,7 @@ registerAction(cardArchiveAction);
 registerAction(cardAddChecklistAction);
 registerAction(cardMentionMembersAction);
 registerAction(cardCopyToBoardAction);
+registerAction(cardUpdateCustomFieldValueAction);
 
 // Re-export individual handlers for direct use and testing.
 export {
