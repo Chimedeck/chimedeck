@@ -37,6 +37,27 @@ function buildAttachmentNameMap(attachments: Attachment[]): Map<string, Attachme
   return attachmentMap;
 }
 
+const ATTACHMENT_PLACEHOLDER_RE = /attachment:[^\s"'<>]*/g;
+
+// [why] Some editor paths can persist HTML with src="attachment:..." rather than
+// markdown image/link syntax. This pass resolves raw placeholder URLs anywhere in
+// content so previews do not render broken image placeholders.
+export function hydrateAttachmentPlaceholderUrls(content: string, attachments: Attachment[]): string {
+  if (!content || attachments.length === 0 || !hasAttachmentPlaceholder(content)) {
+    return content;
+  }
+
+  const attachmentMap = buildAttachmentNameMap(attachments);
+
+  return content.replaceAll(ATTACHMENT_PLACEHOLDER_RE, (href) => {
+    const name = readAttachmentPlaceholderName(href);
+    if (!name) return href;
+    const attachment = attachmentMap.get(name);
+    if (!attachment) return href;
+    return resolveAttachmentMarkdownUrl(attachment, false) ?? href;
+  });
+}
+
 function buildAttachmentUrlMap(attachments: Attachment[]): Map<string, string> {
   const attachmentMap = new Map<string, string>();
 
@@ -105,13 +126,15 @@ export function hydrateCommentAttachmentMarkdown(markdown: string, attachments: 
 
   const attachmentMap = buildAttachmentNameMap(attachments);
 
-  return replaceMarkdownTargets(markdown, ({ bang, href }) => {
+  const replacedMarkdownTargets = replaceMarkdownTargets(markdown, ({ bang, href }) => {
     const name = readAttachmentPlaceholderName(href);
     if (!name) return null;
     const attachment = attachmentMap.get(name);
     if (!attachment) return null;
     return resolveAttachmentMarkdownUrl(attachment, bang === '!');
   });
+
+  return hydrateAttachmentPlaceholderUrls(replacedMarkdownTargets, attachments);
 }
 
 export function dehydrateCommentAttachmentMarkdown(markdown: string, attachments: Attachment[]): string {

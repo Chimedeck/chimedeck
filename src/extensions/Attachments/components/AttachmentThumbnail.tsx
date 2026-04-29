@@ -128,15 +128,14 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
           />
         </button>
         {fullSrc && (
-          <a
-            href={fullSrc}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 block truncate text-[10px] text-link hover:underline"
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            className="mt-1 block w-full truncate text-left text-[10px] text-link hover:underline"
             title={displayName}
           >
             {displayName}
-          </a>
+          </button>
         )}
       </div>
       {lightboxOpen && fullSrc && (

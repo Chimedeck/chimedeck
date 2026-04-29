@@ -13,6 +13,7 @@ import { dispatchEvent } from '../../../mods/events/dispatch';
 import { writeActivity } from '../../activity/mods/write';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { env } from '../../../config/env';
 
 // Private/internal IP ranges that must not be targeted (SSRF prevention).
 const FORBIDDEN_RANGES = [
@@ -44,14 +45,58 @@ export function isForbiddenUrl(rawUrl: string): boolean {
   return FORBIDDEN_RANGES.some((re) => re.test(parsed.hostname));
 }
 
+function parseOrigin(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isLocalHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
+function isTrustedInternalOrigin(targetOrigin: string, requestUrl?: string): boolean {
+  const trustedOrigins = new Set<string>();
+
+  const appOrigin = parseOrigin(env.APP_BASE_URL);
+  if (appOrigin) trustedOrigins.add(appOrigin);
+
+  const requestOrigin = parseOrigin(requestUrl);
+  if (requestOrigin) trustedOrigins.add(requestOrigin);
+
+  const extraOrigins = env.CSRF_ALLOWED_ORIGINS
+    .split(',')
+    .map((item) => parseOrigin(item.trim()))
+    .filter((origin): origin is string => Boolean(origin));
+  for (const origin of extraOrigins) trustedOrigins.add(origin);
+
+  if (trustedOrigins.has(targetOrigin)) return true;
+
+  // Allow localhost/127.0.0.1 cross-port matching in local development.
+  const target = new URL(targetOrigin);
+  if (!isLocalHost(target.hostname)) return false;
+
+  for (const origin of trustedOrigins) {
+    const trusted = new URL(origin);
+    if (isLocalHost(trusted.hostname)) return true;
+  }
+
+  return false;
+}
+
 // Detects internal card URLs in supported app shapes:
 // - /c/:cardId[/slug]
 // - /boards/:boardId/cards/:cardId[/slug]
 // - /b/:boardId[/slug]?card=:cardId
 // - /boards/:boardId?card=:cardId
-export function parseInternalCardUrl(rawUrl: string): { cardId: string } | null {
+export function parseInternalCardUrl(rawUrl: string, requestUrl?: string): { cardId: string } | null {
   try {
     const parsed = new URL(rawUrl);
+    if (!isTrustedInternalOrigin(parsed.origin, requestUrl)) return null;
+
     const pathname = parsed.pathname.replace(/\/+$/, '');
 
     const shortCardMatch = /^\/c\/([^/]+)(?:\/[^/]+)?$/.exec(pathname);
@@ -88,8 +133,12 @@ async function resolveTargetCard(cardId: string) {
   return { resolvedCardId, card, board };
 }
 
-async function resolveReferencedCard(rawUrl: string, workspaceId: string): Promise<{ id: string; title: string | null } | null> {
-  const internalCard = parseInternalCardUrl(rawUrl);
+async function resolveReferencedCard(
+  rawUrl: string,
+  workspaceId: string,
+  requestUrl?: string,
+): Promise<{ id: string; title: string | null } | null> {
+  const internalCard = parseInternalCardUrl(rawUrl, requestUrl);
   if (!internalCard) return null;
 
   const resolvedReferencedCardId = await resolveCardId(internalCard.cardId);
@@ -153,7 +202,7 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     );
   }
 
-  if (!parseInternalCardUrl(body.url) && isForbiddenUrl(body.url)) {
+  if (!parseInternalCardUrl(body.url, req.url) && isForbiddenUrl(body.url)) {
     return Response.json(
       { error: { code: 'url-target-forbidden', message: 'URL resolves to a forbidden internal address' } },
       { status: 400 },
@@ -162,7 +211,7 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
 
   let referencedCard: { id: string; title: string | null } | null = null;
   try {
-    referencedCard = await resolveReferencedCard(body.url, board.workspace_id);
+    referencedCard = await resolveReferencedCard(body.url, board.workspace_id, req.url);
   } catch (err) {
     if (err instanceof Response) return err;
     throw err;

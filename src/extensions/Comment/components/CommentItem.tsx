@@ -1,10 +1,12 @@
 // Single comment with inline edit/delete controls
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import emojiData from '@emoji-mart/data';
 import type { Attachment } from '~/extensions/Attachments/types';
 import {
   hydrateCommentAttachmentMarkdown,
+  readAttachmentPlaceholderName,
+  resolveAttachmentMarkdownUrl,
   stripCommentAttachmentPlaceholders,
 } from '~/extensions/Comment/utils/attachmentMarkdown';
 import Button from '~/common/components/Button';
@@ -12,7 +14,9 @@ import CommentEditor from './CommentEditor';
 import CommentDeletedItem from './CommentDeletedItem';
 import CommentReactions from './CommentReactions';
 import CommentReplyThread from './CommentReplyThread';
+import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
 import translations from '../translations/en.json';
+import apiClient from '~/common/api/client';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -160,6 +164,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const [deleting, setDeleting] = useState(false);
   const [replyExpanded, setReplyExpanded] = useState(false);
   const [showReplyEditor, setShowReplyEditor] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
+  const commentMarkdownRef = useRef<HTMLDivElement>(null);
   // [why] Keep first locally-created reply thread mounted before parent `reply_count` refreshes.
   const [hasLocalReplies, setHasLocalReplies] = useState((comment.reply_count ?? 0) > 0);
 
@@ -175,6 +181,61 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     setHasLocalReplies(true);
     setReplyExpanded(true);
   }, [onAddReply]);
+
+  useEffect(() => {
+    if (editing) return;
+    const root = commentMarkdownRef.current;
+    if (!root) return;
+
+    let cancelled = false;
+    const objectUrls: string[] = [];
+
+    const hydrateImage = async (img: HTMLImageElement): Promise<void> => {
+      const rawSrc = img.getAttribute('src');
+      if (!rawSrc) return;
+
+      const placeholderName = readAttachmentPlaceholderName(rawSrc);
+      const mappedAttachment = placeholderName
+        ? attachments.find((attachment) => attachment.name === placeholderName)
+        : null;
+      const mappedSrc = mappedAttachment
+        ? resolveAttachmentMarkdownUrl(mappedAttachment, false)
+        : null;
+      const effectiveSrc = mappedSrc ?? rawSrc;
+      if (effectiveSrc !== rawSrc) {
+        img.src = effectiveSrc;
+      }
+
+      let url: URL;
+      try {
+        url = new URL(effectiveSrc, globalThis.location.origin);
+      } catch {
+        return;
+      }
+
+      if (!/^\/api\/v1\/attachments\/[^/]+\/(?:view|thumbnail)$/.test(url.pathname)) return;
+
+      try {
+        const blob = await apiClient.get<Blob>(`${url.pathname}${url.search}`, { responseType: 'blob' });
+        if (cancelled) return;
+        const objectUrl = URL.createObjectURL(blob);
+        objectUrls.push(objectUrl);
+        img.src = objectUrl;
+      } catch {
+        // Keep original src so browser fallback/error UI remains visible.
+      }
+    };
+
+    const images = Array.from(root.querySelectorAll('img'));
+    images.forEach((img) => {
+      void hydrateImage(img);
+    });
+
+    return () => {
+      cancelled = true;
+      objectUrls.forEach((value) => URL.revokeObjectURL(value));
+    };
+  }, [comment.content, attachments, editing]);
 
   if (comment.deleted) {
     return <CommentDeletedItem commentId={comment.id} createdAt={comment.created_at} />;
@@ -242,8 +303,30 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         ) : (
           <div className="border border-border rounded-md px-3 py-2 bg-surface">
             <div
+              ref={commentMarkdownRef}
               className="comment-markdown prose prose-sm dark:prose-invert max-w-none text-base break-words
                 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              onClick={(event) => {
+                const target = event.target as HTMLElement;
+                const image = target.closest('img');
+                if (!image) return;
+                const src = image.getAttribute('src');
+                if (!src) return;
+                event.preventDefault();
+                event.stopPropagation();
+                setPreviewImage({ src, alt: image.getAttribute('alt') ?? 'Comment image' });
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                const target = event.target as HTMLElement;
+                const image = target.querySelector('img');
+                if (!image) return;
+                const src = image.getAttribute('src');
+                if (!src) return;
+                event.preventDefault();
+                event.stopPropagation();
+                setPreviewImage({ src, alt: image.getAttribute('alt') ?? 'Comment image' });
+              }}
               // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
               // Input is from authenticated users only (internal tool), so XSS risk is accepted.
               dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
@@ -321,6 +404,13 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
           />
         )}
       </div>
+      {previewImage && (
+        <ImageLightbox
+          src={previewImage.src}
+          name={previewImage.alt}
+          onClose={() => setPreviewImage(null)}
+        />
+      )}
     </div>
   );
 };

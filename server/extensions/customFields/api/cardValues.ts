@@ -211,7 +211,7 @@ export async function handleUpsertCardFieldValue(
 
   const existing = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first<CardCustomFieldValueRow>();
+    .first();
 
   if (existing) {
     await db('card_custom_field_values')
@@ -286,7 +286,7 @@ export async function handleDeleteCardFieldValue(
 
   const existing = await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first();
+    .first<CardCustomFieldValueRow>();
 
   if (!existing) {
     return Response.json(
@@ -295,9 +295,32 @@ export async function handleDeleteCardFieldValue(
     );
   }
 
+  const field = await db('custom_fields').where({ id: fieldId }).first();
+  const fieldType = (field?.field_type as FieldType | undefined) ?? null;
+  const previousValue = fieldType
+    ? toComparableFieldValue(fieldType, existing as CardCustomFieldValueRow)
+    : null;
+
   await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
     .delete();
+
+  // [why] Keep board realtime clients in sync when values are cleared via DELETE.
+  if (previousValue !== null) {
+    const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+    await dispatchEvent({
+      type: 'card.custom_field_value_updated',
+      boardId: (ctx.board as Record<string, unknown>).id as string,
+      entityId: cardId,
+      actorId,
+      payload: {
+        fieldId,
+        fieldType,
+        previousValue,
+        newValue: null,
+      },
+    });
+  }
 
   return new Response(null, { status: 204 });
 }

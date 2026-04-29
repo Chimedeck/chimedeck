@@ -13,6 +13,7 @@ import Button from '../../../common/components/Button';
 import type { Attachment } from '~/extensions/Attachments/types';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
+import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
 import { CardAssetPicker } from '~/extensions/Comment/components/CardAssetPicker';
 import { listAttachments } from '~/extensions/Attachments/api';
 import InlineImage from '~/extensions/Comment/extensions/InlineImage';
@@ -23,6 +24,7 @@ import {
   dehydrateCommentAttachmentMarkdown,
   hasAttachmentPlaceholder,
   hydrateCommentAttachmentMarkdown,
+  readAttachmentPlaceholderName,
   resolveAttachmentMarkdownUrl,
   stripCommentAttachmentPlaceholders,
 } from '~/common/utils/attachmentMarkdown';
@@ -234,6 +236,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
 
   // Auth + workspace context needed by the offline draft hook
   const currentUser = useSelector(selectCurrentUser);
@@ -242,6 +245,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
 
   // File picker input ref for attachment uploads
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewContainerRef = useRef<HTMLButtonElement>(null);
   const insertPosMap = useRef<Map<string, number>>(new Map());
   const editorRef = useRef<Editor | null>(null);
   const uploadFilesRef = useRef<((files: File[]) => string[]) | null>(null);
@@ -565,6 +569,69 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const previewHtml = addLinkTargetBlank(marked.parse(hydratedPreviewMarkdown) as string);
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
+  useEffect(() => {
+    if (editing || isEmpty) return;
+    const root = previewContainerRef.current;
+    if (!root) return;
+
+    let cancelled = false;
+    const objectUrls: string[] = [];
+
+    const hydrateImage = async (img: HTMLImageElement): Promise<void> => {
+      const rawSrc = img.getAttribute('src');
+      if (!rawSrc) return;
+
+      const placeholderName = readAttachmentPlaceholderName(rawSrc);
+      const mappedAttachment = placeholderName
+        ? cardAttachmentsRef.current.find((attachment) => attachment.name === placeholderName)
+        : null;
+      const mappedSrc = mappedAttachment
+        ? resolveAttachmentMarkdownUrl(mappedAttachment, false)
+        : null;
+      const effectiveSrc = mappedSrc ?? rawSrc;
+      if (effectiveSrc !== rawSrc) {
+        img.src = effectiveSrc;
+      }
+
+      let url: URL;
+      try {
+        url = new URL(effectiveSrc, globalThis.location.origin);
+      } catch {
+        return;
+      }
+
+      if (!/^\/api\/v1\/attachments\/[^/]+\/(?:view|thumbnail)$/.test(url.pathname)) return;
+
+      try {
+        const requestInit: RequestInit = { credentials: 'include' };
+        if (token) {
+          requestInit.headers = { Authorization: `Bearer ${token}` };
+        }
+        const response = await fetch(`${url.pathname}${url.search}`, requestInit);
+        if (!response.ok) return;
+        const blob = await response.blob();
+        if (cancelled) return;
+        const objectUrl = URL.createObjectURL(blob);
+        objectUrls.push(objectUrl);
+        img.src = objectUrl;
+      } catch {
+        // Keep original src so browser fallback/error UI remains visible.
+      }
+    };
+
+    const images = Array.from(root.querySelectorAll('img'));
+    images.forEach((img) => {
+      void hydrateImage(img);
+    });
+
+    return () => {
+      cancelled = true;
+      objectUrls.forEach((value) => {
+        URL.revokeObjectURL(value);
+      });
+    };
+  }, [editing, isEmpty, previewHtml, token]);
+
   return (
     <section aria-label="Description">
       <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
@@ -755,12 +822,25 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             </div>
           )}
           <button
+            ref={previewContainerRef}
             type="button"
             aria-label={isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'}
             onClick={disabled ? undefined : (e) => {
+              const target = e.target as HTMLElement;
+              const image = target.closest('img');
+              if (image) {
+                const src = image.getAttribute('src');
+                if (src) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setPreviewImage({ src, alt: image.getAttribute('alt') ?? 'Description image' });
+                }
+                return;
+              }
+
               // [why] Intercept link clicks so they open in a new tab and don't
               // trigger edit mode — same pattern as CardDescription.tsx.
-              const link = (e.target as HTMLElement).closest('a');
+              const link = target.closest('a');
               if (link) {
                 const href = link.getAttribute('href');
                 if (href && href !== '#') {
@@ -797,6 +877,13 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             </button>
           )}
         </div>
+      )}
+      {previewImage && (
+        <ImageLightbox
+          src={previewImage.src}
+          name={previewImage.alt}
+          onClose={() => { setPreviewImage(null); }}
+        />
       )}
     </section>
   );

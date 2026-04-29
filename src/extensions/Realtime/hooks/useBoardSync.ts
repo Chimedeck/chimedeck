@@ -17,6 +17,7 @@ import type { CommentData } from '../../Card/api/cardDetail';
 import { selectCurrentUser } from '~/slices/authSlice';
 import type { ActivityData } from '../../Card/slices/cardDetailSlice';
 import { apiClient } from '~/common/api/client';
+import { invalidateBoardCardFieldValuesCache } from '../../CustomFields/api';
 
 export interface UseBoardSyncOptions {
   boardId: string;
@@ -187,6 +188,12 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
           const { cardId, listId } = payload as { cardId: string; listId: string };
           dispatch(cardSliceActions.remoteArchive({ cardId }));
           dispatch(boardSliceActions.removeCard({ cardId, listId }));
+          break;
+        }
+        case 'card.custom_field_value_updated': {
+          // [why] Board cards render custom field badges from a board-level cached map.
+          // Invalidate and refetch so all connected clients see value changes live.
+          invalidateBoardCardFieldValuesCache(boardId);
           break;
         }
 

@@ -8,7 +8,7 @@ import type { Attachment } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
 import { formatBytes } from '../utils/formatBytes';
 import { UploadProgressBar } from './UploadProgressBar';
-import { VideoLightbox, PdfLightbox } from './AttachmentThumbnail';
+import { ImageLightbox, VideoLightbox, PdfLightbox } from './AttachmentThumbnail';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -40,8 +40,44 @@ const STATUS_LABELS: Record<Attachment['status'], string> = {
   REJECTED: translations['attachments.item.status.rejected'],
 };
 
+function openAttachmentTarget({
+  isVideo,
+  isImage,
+  isPdf,
+  attachment,
+  setVideoOpen,
+  setImageOpen,
+  setPdfOpen,
+}: {
+  isVideo: boolean;
+  isImage: boolean;
+  isPdf: boolean;
+  attachment: Attachment;
+  setVideoOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setImageOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setPdfOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}): void {
+  if (isVideo) {
+    setVideoOpen(true);
+    return;
+  }
+  if (isImage) {
+    setImageOpen(true);
+    return;
+  }
+  if (isPdf) {
+    setPdfOpen(true);
+    return;
+  }
+
+  // Use proxy view_url for file attachments; external_url for URL-type.
+  const href = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
+  if (href) window.open(href, '_blank', 'noopener,noreferrer');
+}
+
 export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename, onInsertComment }: Readonly<Props>): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
 
@@ -58,23 +94,21 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
   const isUploading = attachment.status === 'PENDING' && uploadProgress != null;
   const isVideo = attachment.type !== 'URL' && attachment.content_type?.startsWith('video/');
   const isPdf = attachment.type !== 'URL' && attachment.content_type === 'application/pdf';
-  const openHref = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
-  const canOpenWithLink = attachment.status === 'READY' && !isVideo && !isPdf && Boolean(openHref);
   const isImage = attachment.type !== 'URL' && Boolean(attachment.content_type?.startsWith('image/'));
+  const openHref = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
+  const canOpenWithLink = attachment.status === 'READY' && !isImage && !isVideo && !isPdf && Boolean(openHref);
   const imagePreviewSrc = attachment.thumbnail_url ?? attachment.view_url;
 
   const handleOpen = (): void => {
-    if (isVideo) {
-      setVideoOpen(true);
-      return;
-    }
-    if (isPdf) {
-      setPdfOpen(true);
-      return;
-    }
-    // Use proxy view_url for file attachments; external_url for URL-type
-    const href = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
-    if (href) window.open(href, '_blank', 'noopener,noreferrer');
+    openAttachmentTarget({
+      isVideo,
+      isImage,
+      isPdf,
+      attachment,
+      setVideoOpen,
+      setImageOpen,
+      setPdfOpen,
+    });
   };
 
   const handleDeleteClick = (): void => setConfirming(true);
@@ -177,10 +211,15 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
     );
   } else {
     attachmentIdentity = (
-      <div className="flex min-w-0 flex-1 items-center gap-2" title={displayName}>
+      <button
+        type="button"
+        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        title={displayName}
+        onClick={attachment.status === 'READY' ? handleOpen : undefined}
+      >
         {leadingVisual}
         <span className="min-w-0 truncate text-sm text-base">{displayName}</span>
-      </div>
+      </button>
     );
   }
 
@@ -357,6 +396,11 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
       {/* PDF preview overlay — use proxy view_url */}
       {pdfOpen && isPdf && attachment.view_url && (
         <PdfLightbox src={attachment.view_url} name={attachment.name} onClose={() => setPdfOpen(false)} />
+      )}
+
+      {/* Image preview overlay — use thumbnail/view proxy url */}
+      {imageOpen && isImage && imagePreviewSrc && (
+        <ImageLightbox src={imagePreviewSrc} name={attachment.name} onClose={() => setImageOpen(false)} />
       )}
     </div>
   );
