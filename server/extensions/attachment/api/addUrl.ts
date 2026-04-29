@@ -59,32 +59,24 @@ function isLocalHost(hostname: string): boolean {
 }
 
 function isTrustedInternalOrigin(targetOrigin: string, requestUrl?: string): boolean {
-  const trustedOrigins = new Set<string>();
+  const target = new URL(targetOrigin);
 
-  const appOrigin = parseOrigin(env.APP_BASE_URL);
-  if (appOrigin) trustedOrigins.add(appOrigin);
+  const matchesTrustedOrigin = (trustedOrigin: string): boolean => {
+    if (targetOrigin === trustedOrigin) return true;
+
+    // Allow localhost/127.0.0.1 cross-port matching in local development.
+    const trusted = new URL(trustedOrigin);
+    return isLocalHost(target.hostname) && isLocalHost(trusted.hostname);
+  };
+
+  // [why] Internal card detection must primarily trust the configured app domain
+  // (VITE_APP_URL / env.APP_URL). Links from other domains (e.g. trello.com)
+  // should always be treated as external links.
+  const appOrigin = parseOrigin(env.APP_URL);
+  if (appOrigin) return matchesTrustedOrigin(appOrigin);
 
   const requestOrigin = parseOrigin(requestUrl);
-  if (requestOrigin) trustedOrigins.add(requestOrigin);
-
-  const extraOrigins = env.CSRF_ALLOWED_ORIGINS
-    .split(',')
-    .map((item) => parseOrigin(item.trim()))
-    .filter((origin): origin is string => Boolean(origin));
-  for (const origin of extraOrigins) trustedOrigins.add(origin);
-
-  if (trustedOrigins.has(targetOrigin)) return true;
-
-  // Allow localhost/127.0.0.1 cross-port matching in local development.
-  const target = new URL(targetOrigin);
-  if (!isLocalHost(target.hostname)) return false;
-
-  for (const origin of trustedOrigins) {
-    const trusted = new URL(origin);
-    if (isLocalHost(trusted.hostname)) return true;
-  }
-
-  return false;
+  return requestOrigin ? matchesTrustedOrigin(requestOrigin) : false;
 }
 
 // Detects internal card URLs in supported app shapes:

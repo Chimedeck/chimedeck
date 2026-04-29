@@ -127,9 +127,26 @@ function _notifyBoardCardFieldValuesInvalidated(boardId: string): void {
 }
 
 export function invalidateBoardCardFieldValuesCache(boardId: string): void {
-  _batchCfCache.delete(boardId);
-  _batchCfInflight.delete(boardId);
-  _notifyBoardCardFieldValuesInvalidated(boardId);
+  const hasExactKey =
+    _batchCfCache.has(boardId)
+    || _batchCfInflight.has(boardId)
+    || _batchCfInvalidationListeners.has(boardId);
+
+  if (hasExactKey) {
+    _batchCfCache.delete(boardId);
+    _batchCfInflight.delete(boardId);
+    _notifyBoardCardFieldValuesInvalidated(boardId);
+    return;
+  }
+
+  // [why] Card modal metadata can carry canonical board IDs while the board page
+  // route/cache key may use short IDs. If exact-key invalidation misses, fan out to
+  // all active board listeners so custom-field badges still refresh live.
+  _batchCfCache.clear();
+  _batchCfInflight.clear();
+  for (const key of _batchCfInvalidationListeners.keys()) {
+    _notifyBoardCardFieldValuesInvalidated(key);
+  }
 }
 
 function _fetchBoardCardFieldValues(

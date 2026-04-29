@@ -130,12 +130,14 @@ function buildBoardProps(boardId?: string): { boardId: string } | Record<string,
 
 /** Render a relative time string. */
 function relativeTime(iso: string): string {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  const date = new Date(iso);
+  const diff = (Date.now() - date.getTime()) / 1000;
+  const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return translations['comment.relativeTime.justNow'];
-  if (diff < 3600) return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']}`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']}`;
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (diff < 3600) return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']} · ${time}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
+  const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${day}, ${time}`;
 }
 
 /** Parse markdown and highlight @mention chips inside comment text. Returns safe HTML string. */
