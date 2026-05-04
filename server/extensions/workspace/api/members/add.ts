@@ -1,5 +1,6 @@
 // POST /api/v1/workspaces/:id/members — directly add an existing user by email; min role: MEMBER.
 // Members may only assign roles equal to or less privileged than their own.
+import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import {
@@ -68,6 +69,68 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
     .first();
 
   if (existing) {
+    if (existing.role === 'GUEST') {
+      const boardRole = role === 'OWNER' || role === 'ADMIN' ? 'ADMIN' : 'MEMBER';
+      const now = new Date().toISOString();
+
+      await db.transaction(async (trx) => {
+        await trx('memberships')
+          .where({ workspace_id: workspaceId, user_id: user.id })
+          .update({ role });
+
+        const boards = await trx('boards')
+          .where({ workspace_id: workspaceId })
+          .select('id');
+
+        if (boards.length > 0) {
+          await trx('board_members')
+            .insert(
+              boards.map((board) => ({
+                id: randomUUID(),
+                board_id: board.id,
+                user_id: user.id,
+                role: boardRole,
+                created_at: now,
+                updated_at: now,
+              })),
+            )
+            .onConflict(['board_id', 'user_id'])
+            .merge({ role: boardRole, updated_at: now });
+        }
+
+        await trx('board_guest_access')
+          .where({ user_id: user.id })
+          .whereIn(
+            'board_id',
+            trx('boards').where({ workspace_id: workspaceId }).select('id'),
+          )
+          .delete();
+      });
+
+      const member = {
+        userId: user.id,
+        email: user.email,
+        name: user.name ?? user.email,
+        role,
+      };
+
+      writeEvent({
+        type: 'member_joined',
+        boardId: null,
+        entityId: workspaceId,
+        actorId: (req as AuthenticatedRequest).currentUser!.id,
+        payload: {
+          scope: 'workspace',
+          userId: user.id,
+          displayName: (user.name as string | undefined) ?? user.email,
+          role,
+          joinedAt: new Date().toISOString(),
+        },
+      }).catch(() => {});
+
+      return Response.json({ data: member });
+    }
+
     return Response.json(
       { error: { code: 'already-a-member', message: `${email} is already a member of this workspace.` } },
       { status: 409 },
