@@ -8,6 +8,8 @@ import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { selectAuthUser } from '~/extensions/Auth/duck/authDuck';
 import {
   membersSelector,
+  membersWorkspaceIdSelector,
+  fetchMembersInProgressSelector,
   fetchWorkspaceMembersThunk,
 } from '~/extensions/Workspace/containers/WorkspacePage/WorkspacePage.duck';
 import { selectCurrentUserWorkspaceRole } from '~/extensions/Workspace/slices/workspaceSlice';
@@ -38,16 +40,34 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   const currentUser = useAppSelector(selectAuthUser);
   const board = useAppSelector(selectBoard);
   const workspaceMembers = useAppSelector(membersSelector);
+  const membersWorkspaceId = useAppSelector(membersWorkspaceIdSelector);
+  const isMembersLoading = useAppSelector(fetchMembersInProgressSelector);
   const workspaceRole = useAppSelector(selectCurrentUserWorkspaceRole);
+  const boardWorkspaceId =
+    board?.workspaceId ?? (board as { workspace_id?: string } | null)?.workspace_id;
   const [activeTab, setActiveTab] = useState<Tab>('members');
 
-  // [why] If the user navigates directly to a board URL (bypassing the workspace page),
-  // the workspace members slice is empty. Fetch members lazily so the add-member search works.
+  // [why] Always refresh member candidates when this panel opens to avoid stale or
+  // intermittently missing cache state after hard refresh / route bootstrap races.
   useEffect(() => {
-    if (board?.workspaceId && workspaceMembers.length === 0) {
-      dispatch(fetchWorkspaceMembersThunk({ workspaceId: board.workspaceId }));
+    if (
+      boardWorkspaceId
+      && !isMembersLoading
+      && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
+    ) {
+      dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
-  }, [dispatch, board?.workspaceId, workspaceMembers.length]);
+  }, [dispatch, boardWorkspaceId, isMembersLoading, workspaceMembers.length, membersWorkspaceId]);
+
+  const handleAddMemberInputFocus = () => {
+    if (
+      boardWorkspaceId
+      && !isMembersLoading
+      && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
+    ) {
+      dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
+    }
+  };
 
   const { data: boardMembers = [], isLoading } = useGetBoardMembersQuery(boardId ?? '', {
     skip: !boardId,
@@ -195,7 +215,11 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
                     Add member
                   </p>
-                  <AddMemberInput candidates={candidates} onAdd={handleAdd} />
+                  <AddMemberInput
+                    candidates={candidates}
+                    onAdd={handleAdd}
+                    onFocusInput={handleAddMemberInputFocus}
+                  />
                 </div>
               )}
 

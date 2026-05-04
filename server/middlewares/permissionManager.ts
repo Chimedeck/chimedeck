@@ -19,6 +19,23 @@ export function roleRank(role: Role): number {
   return ROLE_RANK[role];
 }
 
+// Resolve the most privileged role from a list of raw membership role values.
+// This defends against legacy duplicate membership rows (e.g. GUEST + ADMIN).
+export function resolveHighestRole(roles: readonly string[]): Role | null {
+  let highest: Role | null = null;
+
+  for (const rawRole of roles) {
+    if (!(rawRole in ROLE_RANK)) continue;
+    const role = rawRole as Role;
+
+    if (!highest || roleRank(role) > roleRank(highest)) {
+      highest = role;
+    }
+  }
+
+  return highest;
+}
+
 // Returns true when the caller's role satisfies the minimum required role.
 export function hasRole(callerRole: Role, minRole: Role): boolean {
   return roleRank(callerRole) >= roleRank(minRole);
@@ -42,11 +59,15 @@ export async function requireWorkspaceMembership(
     );
   }
 
-  const membership = await db('memberships')
+  const memberships = await db('memberships')
     .where({ user_id: req.currentUser.id, workspace_id: workspaceId })
-    .first();
+    .select('role');
 
-  if (!membership) {
+  const resolvedRole = resolveHighestRole(
+    memberships.map((m: { role: string }) => m.role),
+  );
+
+  if (!resolvedRole) {
     return Response.json(
       { error: { code: 'insufficient-role', message: 'You are not a member of this workspace' } },
       { status: 403 },
@@ -54,7 +75,7 @@ export async function requireWorkspaceMembership(
   }
 
   req.workspaceId = workspaceId;
-  req.callerRole = membership.role as Role;
+  req.callerRole = resolvedRole;
   return null;
 }
 
