@@ -40,6 +40,108 @@ function normaliseActivityPayload(raw: unknown): ActivityPayload {
   return {};
 }
 
+function hasCommentSource(row: Record<string, unknown>): boolean {
+  return row.source_type === 'comment' || row.type === 'card_commented';
+}
+
+function resolveCommentContent(row: Record<string, unknown>): string | null {
+  const commentContentFromCommentSource = hasCommentSource(row) && typeof row.comment_content === 'string'
+    ? row.comment_content
+    : null;
+  const commentContentFromDescriptionMention =
+    row.type === 'mention'
+    && row.source_type === 'card_description'
+    && typeof row.card_description_content === 'string'
+      ? row.card_description_content
+      : null;
+
+  return commentContentFromCommentSource ?? commentContentFromDescriptionMention;
+}
+
+function buildNotificationItem({
+  row,
+  commentReactionMap,
+}: {
+  row: Record<string, unknown>;
+  commentReactionMap: Map<string, NotificationReactionSummary[]>;
+}) {
+  const actorAvatarUrl = row.actor_avatar_url ?? null;
+  const actorId = typeof row.actor_id === 'string' ? row.actor_id : null;
+  const commentContent = resolveCommentContent(row);
+  const activityPayload = normaliseActivityPayload(row.source_activity_payload);
+  const targetUserId = activityPayload.userId ?? activityPayload.previousUserId ?? null;
+  const targetUserName = activityPayload.assigneeName ?? null;
+
+  return {
+    id: row.id,
+    type: row.type,
+    source_type: row.source_type,
+    source_id: row.source_id,
+    card_id: row.card_id,
+    emoji: row.emoji ?? null,
+    card_title: row.card_title ?? null,
+    board_id: row.board_id,
+    board_title: row.board_title ?? null,
+    list_title: row.list_title ?? null,
+    target_user_id: targetUserId,
+    target_user_name: targetUserName,
+    comment_content: commentContent,
+    source_parent_id: typeof row.source_comment_parent_id === 'string' ? row.source_comment_parent_id : null,
+    comment_reactions: hasCommentSource(row)
+      ? (commentReactionMap.get(String(row.source_id)) ?? [])
+      : [],
+    actor: {
+      id: row.actor_id,
+      nickname: row.actor_nickname ?? null,
+      name: row.actor_name ?? null,
+      avatar_url: actorId
+        ? buildAvatarProxyUrl({ userId: actorId, avatarUrl: actorAvatarUrl as string | null })
+        : null,
+    },
+    read: row.read,
+    created_at: row.created_at,
+  };
+}
+
+function applyNotificationListFilters({
+  query,
+  unreadOnly,
+  typeFilter,
+  cursor,
+}: {
+  query: ReturnType<typeof db>;
+  unreadOnly: boolean;
+  typeFilter: string | null;
+  cursor: string | null;
+}) {
+  let nextQuery = query;
+
+  if (unreadOnly) {
+    nextQuery = nextQuery.where('notifications.read', false);
+  }
+
+  if (typeFilter) {
+    nextQuery = nextQuery.where('notifications.type', typeFilter);
+  }
+
+  if (cursor) {
+    nextQuery = nextQuery.where('notifications.created_at', '<', cursor);
+  }
+
+  return nextQuery;
+}
+
+function collectCommentSourceIds(rows: Array<Record<string, unknown>>): string[] {
+  return Array.from(
+    new Set(
+      rows
+        .filter((row) => row.source_type === 'comment')
+        .map((row) => row.source_id)
+        .filter((sourceId): sourceId is string => typeof sourceId === 'string' && sourceId.length > 0),
+    ),
+  );
+}
+
 export async function handleListNotifications(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -95,6 +197,7 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'boards.title as board_title',
       'lists.title as list_title',
       'source_comment.content as comment_content',
+      'source_comment.parent_id as source_comment_parent_id',
       'notifications.read',
       'notifications.created_at',
       db.raw("actor.id as actor_id"),
@@ -105,31 +208,14 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     .orderBy('notifications.created_at', 'desc')
     .limit(limit + 1);
 
-  if (unreadOnly) {
-    query = query.where('notifications.read', false);
-  }
-
-  if (typeFilter) {
-    query = query.where('notifications.type', typeFilter);
-  }
-
-  if (cursor) {
-    query = query.where('notifications.created_at', '<', cursor);
-  }
+  query = applyNotificationListFilters({ query, unreadOnly, typeFilter, cursor });
 
   const rows = await query;
   const hasMore = rows.length > limit;
   const visibleRows = rows.slice(0, limit);
 
   // Aggregate reactions once for all visible comment-backed notifications.
-  const sourceIds = Array.from(
-    new Set(
-      visibleRows
-        .filter((row) => row.source_type === 'comment')
-        .map((row) => row.source_id)
-        .filter((sourceId): sourceId is string => typeof sourceId === 'string' && sourceId.length > 0),
-    ),
-  );
+  const sourceIds = collectCommentSourceIds(visibleRows);
 
   const reactionRows = sourceIds.length
     ? await db('comment_reactions')
@@ -180,52 +266,10 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     );
   }
 
-  const data = await Promise.all(
-    visibleRows.map(async (row) => {
-      const actorAvatarUrl = row.actor_avatar_url ?? null;
-      const commentContentFromCommentSource =
-        row.source_type === 'comment' && typeof row.comment_content === 'string'
-          ? row.comment_content
-          : null;
-      const commentContentFromDescriptionMention =
-        row.type === 'mention' && row.source_type === 'card_description' && typeof row.card_description_content === 'string'
-          ? row.card_description_content
-          : null;
-      const commentContent = commentContentFromCommentSource ?? commentContentFromDescriptionMention;
-      const activityPayload = normaliseActivityPayload(row.source_activity_payload);
-      const targetUserId = activityPayload.userId ?? activityPayload.previousUserId ?? null;
-      const targetUserName = activityPayload.assigneeName ?? null;
-
-      return {
-        id: row.id,
-        type: row.type,
-        source_type: row.source_type,
-        source_id: row.source_id,
-        card_id: row.card_id,
-        emoji: row.emoji ?? null,
-        card_title: row.card_title ?? null,
-        board_id: row.board_id,
-        board_title: row.board_title ?? null,
-        list_title: row.list_title ?? null,
-        target_user_id: targetUserId,
-        target_user_name: targetUserName,
-        comment_content: commentContent,
-        comment_reactions: row.source_type === 'comment'
-          ? (commentReactionMap.get(row.source_id) ?? [])
-          : [],
-        actor: {
-          id: row.actor_id,
-          nickname: row.actor_nickname ?? null,
-          name: row.actor_name ?? null,
-          avatar_url: row.actor_id
-            ? buildAvatarProxyUrl({ userId: row.actor_id, avatarUrl: actorAvatarUrl })
-            : null,
-        },
-        read: row.read,
-        created_at: row.created_at,
-      };
-    }),
-  );
+  const data = visibleRows.map((row) => buildNotificationItem({
+    row,
+    commentReactionMap,
+  }));
 
   const lastItem = data.at(-1);
   const nextCursor = hasMore && lastItem ? lastItem.created_at : null;

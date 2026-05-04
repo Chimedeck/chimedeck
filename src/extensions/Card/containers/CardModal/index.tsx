@@ -69,6 +69,8 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const cardId = forcedCardId ?? searchParams.get('card');
+  const focusedCommentId = searchParams.get('comment');
+  const focusedReplyId = searchParams.get('reply');
 
   const card = useAppSelector(selectCardDetail);
   const labels = useAppSelector(selectCardDetailLabels);
@@ -1016,6 +1018,8 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       onAddReply={handleAddReply}
       onEditReply={handleEditComment}
       onDeleteReply={handleDeleteComment}
+      focusedCommentId={focusedCommentId}
+      focusedReplyId={focusedReplyId}
       onMoneySave={handleMoneySave}
       onCoverColorChange={handleCoverColorChange}
       onCoverSizeChange={handleCoverSizeChange}

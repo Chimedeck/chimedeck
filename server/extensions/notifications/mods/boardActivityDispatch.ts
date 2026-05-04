@@ -316,6 +316,7 @@ export async function dispatchDirectCardNotification({
     const cardTitle = payload.cardTitle;
     const relatedUserIds = await getCardRelatedUserIds({ cardId });
     const replyToUserId = payload.type === 'card_commented' ? (payload.replyToUserId ?? null) : null;
+    let sourceParentId: string | null = null;
 
     // For direct card events, source_id must always be non-null (notifications schema).
     // Use an event-unique source id for non-comment events so board_activity dedupe
@@ -326,6 +327,11 @@ export async function dispatchDirectCardNotification({
 
     if (payload.type === 'card_commented') {
       sourceId = payload.commentId;
+      const sourceComment = await db('comments')
+        .where({ id: payload.commentId })
+        .select('parent_id')
+        .first();
+      sourceParentId = (sourceComment?.parent_id as string | undefined) ?? null;
       const board = await db('boards').where({ id: boardId }).select('title').first();
       emailTemplateData = {
         actorName: actor?.name ?? 'Someone',
@@ -426,6 +432,8 @@ export async function dispatchDirectCardNotification({
                     card_title: cardTitle,
                     board_title: emailTemplateData?.boardName ?? null,
                     list_title: null,
+                    comment_content: payload.type === 'card_commented' ? payload.commentPreview : null,
+                    source_parent_id: payload.type === 'card_commented' ? sourceParentId : null,
                     actor: actorPayloadData,
                   },
                 },

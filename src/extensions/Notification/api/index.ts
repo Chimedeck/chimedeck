@@ -47,6 +47,8 @@ export interface Notification {
   target_user_name?: string | null;
   /** Raw comment markdown content when source_id references a comment. */
   comment_content?: string | null;
+  /** Parent comment id when source_id points to a reply comment. */
+  source_parent_id?: string | null;
   /** Aggregated comment reactions for comment-backed notifications. */
   comment_reactions?: NotificationCommentReaction[];
   actor: NotificationActor;

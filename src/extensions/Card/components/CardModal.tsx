@@ -81,6 +81,10 @@ interface Props {
   onAddReply?: (parentId: string, content: string) => Promise<void>;
   onEditReply?: (commentId: string, content: string) => Promise<void>;
   onDeleteReply?: (commentId: string) => Promise<void>;
+  /** Parent/top-level comment to reveal when opening from a notification. */
+  focusedCommentId?: string | null;
+  /** Reply comment id that triggered navigation; used to auto-expand reply thread. */
+  focusedReplyId?: string | null;
   onMoneySave: (amount: string | null, currency: string) => Promise<void>;
   onCoverColorChange: (color: string | null) => void;
   onCoverSizeChange: (size: 'SMALL' | 'FULL') => void;
@@ -158,6 +162,8 @@ const CardModal = ({
   onAddReply,
   onEditReply,
   onDeleteReply,
+  focusedCommentId = null,
+  focusedReplyId = null,
   onMoneySave,
   onCoverColorChange,
   onCoverSizeChange,
@@ -549,6 +555,8 @@ const CardModal = ({
                       {...(onAddReply ? { onAddReply } : {})}
                       {...(onEditReply ? { onEditReply } : {})}
                       {...(onDeleteReply ? { onDeleteReply } : {})}
+                      focusedCommentId={focusedCommentId}
+                      focusedReplyId={focusedReplyId}
                       canAddComment={!isViewerGuest}
                       onAttachmentsChange={handleEditorAttachmentsChange}
                       insertMarkdownRef={insertMarkdownRef}

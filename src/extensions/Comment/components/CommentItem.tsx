@@ -54,7 +54,7 @@ const SHORTCODE_TO_NATIVE = (() => {
 })();
 
 function replaceEmojiShortcodes(text: string): string {
-  return text.replace(/:([a-z0-9_+-]+):/gi, (full, shortcode: string) => {
+  return text.replaceAll(/:([a-z0-9_+-]+):/gi, (full, shortcode: string) => {
     return SHORTCODE_TO_NATIVE.get(shortcode.toLowerCase()) ?? full;
   });
 }
@@ -91,6 +91,10 @@ interface Props {
   attachments?: Attachment[];
   currentUserId: string;
   isAdmin?: boolean;
+  /** True when this comment is the deep-link target from notification navigation. */
+  isNotificationTarget?: boolean;
+  /** Auto-expand replies when a reply notification points at this parent comment. */
+  autoExpandReplies?: boolean;
   onEdit: (commentId: string, content: string) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
   onAddReaction?: (commentId: string, emoji: string) => Promise<void>;
@@ -161,12 +165,13 @@ function renderContent(text: string, attachments: Attachment[]): string {
   return addLinkTargetBlank(withMentions);
 }
 
-const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
+const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [replyExpanded, setReplyExpanded] = useState(false);
+  const [replyExpanded, setReplyExpanded] = useState(autoExpandReplies);
   const [showReplyEditor, setShowReplyEditor] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const commentMarkdownRef = useRef<HTMLDivElement>(null);
   // [why] Keep first locally-created reply thread mounted before parent `reply_count` refreshes.
   const [hasLocalReplies, setHasLocalReplies] = useState((comment.reply_count ?? 0) > 0);
@@ -176,6 +181,14 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
       setHasLocalReplies(true);
     }
   }, [comment.reply_count]);
+
+  useEffect(() => {
+    if (!isNotificationTarget) return;
+    if (autoExpandReplies) {
+      setReplyExpanded(true);
+    }
+    rootRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [isNotificationTarget, autoExpandReplies]);
 
   const handleAddReply = useCallback(async (parentId: string, content: string) => {
     if (!onAddReply) return;
@@ -268,7 +281,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   };
 
   return (
-    <div className="flex gap-3">
+    <div ref={rootRef} className="flex gap-3">
       {/* Avatar */}
       <div
         className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on colored avatar
