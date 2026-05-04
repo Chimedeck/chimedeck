@@ -17,10 +17,25 @@ const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
 export async function handleAddBoardMember(req: Request, boardId: string): Promise<Response> {
   const scopedReq = req as BoardVisibilityScopedRequest;
   const board = scopedReq.board!;
+  const currentUserId = (req as AuthenticatedRequest).currentUser?.id;
 
-  // Only ADMIN+ workspace role can manage board membership.
-  const roleError = requireRole(scopedReq as WorkspaceScopedRequest, 'ADMIN');
-  if (roleError) return roleError;
+  if (!currentUserId) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Authentication required' } },
+      { status: 401 },
+    );
+  }
+
+  // Board membership can be managed by workspace ADMIN+ or explicit board ADMIN/OWNER.
+  const workspaceRoleError = requireRole(scopedReq as WorkspaceScopedRequest, 'ADMIN');
+  if (workspaceRoleError) {
+    const actingBoardMember = await db('board_members')
+      .where({ board_id: boardId, user_id: currentUserId })
+      .first();
+    const actingBoardRole = actingBoardMember?.role as string | undefined;
+    const isBoardAdmin = actingBoardRole === 'ADMIN' || actingBoardRole === 'OWNER';
+    if (!isBoardAdmin) return workspaceRoleError;
+  }
 
   let body: { userId?: string; role?: string };
   try {
@@ -89,7 +104,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     type: 'board_member_added',
     boardId,
     entityId: boardId,
-    actorId: (req as AuthenticatedRequest).currentUser!.id,
+    actorId: currentUserId,
     payload: { userId, role },
   }).catch(() => {});
 
