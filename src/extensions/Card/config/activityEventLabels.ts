@@ -17,13 +17,24 @@ export interface ActivityEventContext {
 const EVENT_LABELS: Record<string, ActivityEventMeta> = {
   'card.member.added': { label: 'added a member', dotColor: 'bg-blue-500' },
   'card.member.removed': { label: 'removed a member', dotColor: 'bg-bg-sunken' },
-  'card.due_date.set': { label: 'set the due date', dotColor: 'bg-yellow-500' },
+  'card.due_date.set': { label: 'set this card to be due', dotColor: 'bg-yellow-500' },
+  'card.due_date.changed': { label: 'changed the due date of this card', dotColor: 'bg-yellow-500' },
   'card.due_date.cleared': { label: 'cleared the due date', dotColor: 'bg-bg-sunken' },
   'card.description.updated': { label: 'updated the description', dotColor: 'bg-blue-500' },
   'card.money.updated': { label: 'updated the value', dotColor: 'bg-green-500' },
 };
 
 const FALLBACK: ActivityEventMeta = { label: 'Activity', dotColor: 'bg-bg-sunken' };
+
+function formatDueDateLabel(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const datePart = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const timePart = parsed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${datePart} at ${timePart}`;
+}
 
 export function getActivityEventMeta(
   eventType: string,
@@ -75,6 +86,22 @@ export function getActivityEventMeta(
     const name = userId ? (context?.resolveName?.(userId) ?? null) : null;
     const who = name ?? 'a member';
     return { label: `removed ${who} from this card`, dotColor: 'bg-bg-sunken' };
+  }
+
+  if (eventType === 'card.due_date.set') {
+    const dueDate = formatDueDateLabel(payload?.dueDate);
+    return {
+      label: dueDate ? `set this card to be due ${dueDate}` : 'set this card to be due',
+      dotColor: 'bg-yellow-500',
+    };
+  }
+
+  if (eventType === 'card.due_date.changed') {
+    const dueDate = formatDueDateLabel(payload?.dueDate);
+    return {
+      label: dueDate ? `changed the due date of this card to ${dueDate}` : 'changed the due date of this card',
+      dotColor: 'bg-yellow-500',
+    };
   }
 
   // --- Attachment events ---

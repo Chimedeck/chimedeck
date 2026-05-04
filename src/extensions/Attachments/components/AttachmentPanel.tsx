@@ -181,6 +181,22 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
     [loadAttachments],
   );
 
+  // Edit external-link URL — optimistic URL update, then refresh to sync referenced-card metadata.
+  const handleUpdateUrl = useCallback(
+    async (id: string, url: string) => {
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, view_url: url, external_url: url } : a)),
+      );
+      try {
+        await patchAttachment({ attachmentId: id, url });
+        void loadAttachments();
+      } catch {
+        void loadAttachments();
+      }
+    },
+    [loadAttachments],
+  );
+
   // Insert markdown link into the active comment editor — no network call
   const handleInsertComment = useCallback(
     (markdown: string) => {
@@ -472,6 +488,8 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
                 attachment={attachment}
                 canWrite={canWrite}
                 onDelete={handleDelete}
+                onRename={(id: string, alias: string) => { void handleRename(id, alias); }}
+                onUpdateUrl={(id: string, url: string) => { void handleUpdateUrl(id, url); }}
               />
             ))}
           </div>

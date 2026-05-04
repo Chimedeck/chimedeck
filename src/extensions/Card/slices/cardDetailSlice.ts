@@ -210,8 +210,12 @@ const cardDetailSlice = createSlice({
 
     // ── Realtime activity events ─────────────────────────────────────────────
     addActivity(state, action: PayloadAction<ActivityData>) {
-      // Only append if this activity belongs to the currently open card.
-      if (state.openCardId !== action.payload.entity_id) return;
+      // [why] URL query may use short_id while realtime payload uses canonical id.
+      // Accept match via openCardId, loaded card id, or loaded card short_id.
+      const eventCardId = action.payload.entity_id;
+      const matchesOpenCard = state.openCardId === eventCardId;
+      const matchesLoadedCard = state.card?.id === eventCardId || state.card?.short_id === eventCardId;
+      if (!matchesOpenCard && !matchesLoadedCard) return;
       // Deduplicate: skip if already present (initial fetch + realtime can both deliver the same row).
       if (state.activities.some((a) => a.id === action.payload.id)) return;
       state.activities.push(action.payload);

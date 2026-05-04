@@ -130,7 +130,8 @@ export async function deleteAttachment({
 
 export async function patchAttachment({
   attachmentId,
+  url,
   alias,
 }: { attachmentId: string } & PatchAttachmentRequest): Promise<{ data: Attachment }> {
-  return apiClient.patch(`/attachments/${attachmentId}`, { alias });
+  return apiClient.patch(`/attachments/${attachmentId}`, { alias, url });
 }

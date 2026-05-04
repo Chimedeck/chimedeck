@@ -111,10 +111,11 @@ export interface UrlAttachmentRequest {
   name: string;
 }
 
-// ---------- Patch (alias update) ----------
+// ---------- Patch (alias and/or URL update) ----------
 
 export interface PatchAttachmentRequest {
-  alias: string;
+  alias?: string;
+  url?: string;
 }
 
 // ---------- In-flight upload state (client-only) ----------
