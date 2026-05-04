@@ -168,10 +168,12 @@ export const ChecklistSection = ({
   );
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [addingItem, setAddingItem] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(checklist.title);
   const [collapsed, setCollapsed] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const addingItemRef = useRef(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -193,10 +195,18 @@ export const ChecklistSection = ({
 
   const handleItemAdd = async () => {
     const trimmed = newTitle.trim();
-    if (!trimmed) return;
-    await onItemAdd(trimmed);
-    setNewTitle('');
-    setAdding(false);
+    if (!trimmed || addingItemRef.current) return;
+
+    addingItemRef.current = true;
+    setAddingItem(true);
+    try {
+      await onItemAdd(trimmed);
+      setNewTitle('');
+      setAdding(false);
+    } finally {
+      addingItemRef.current = false;
+      setAddingItem(false);
+    }
   };
 
   const checked = sortedItems.filter((i: ChecklistItemType) => i.checked).length;
@@ -331,6 +341,7 @@ export const ChecklistSection = ({
                   if (e.key === 'Enter') void handleItemAdd();
                   if (e.key === 'Escape') setAdding(false);
                 }}
+                disabled={addingItem}
                 autoFocus
               />
               <Button
@@ -338,7 +349,7 @@ export const ChecklistSection = ({
                 variant="primary"
                 className="px-3 py-1 text-sm"
                 onClick={() => { void handleItemAdd(); }}
-                disabled={!newTitle.trim()}
+                disabled={!newTitle.trim() || addingItem}
               >
                 Add
               </Button>
