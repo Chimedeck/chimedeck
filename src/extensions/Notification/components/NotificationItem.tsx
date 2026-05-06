@@ -355,7 +355,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                       <p className="mt-0.5 text-sm text-subtle">{activityCopy}</p>
 
                       {commentPreview && (
-                        <p className="mt-1.5 rounded-md border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle leading-relaxed">
+                        <p className="mt-1.5 rounded-md border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle leading-relaxed break-words">
                           {commentPreview}
                         </p>
                       )}

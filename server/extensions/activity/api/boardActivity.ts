@@ -101,6 +101,8 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
     if (membershipError) return membershipError;
   }
 
+  const resolvedBoardId = board.id;
+
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;
   const limitParam = parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10);
@@ -112,7 +114,7 @@ export async function handleBoardActivity(req: Request, boardId: string): Promis
   let query = db('activities')
     .leftJoin('users', 'activities.actor_id', 'users.id')
     .select('activities.*', 'users.name as actor_name')
-    .where({ board_id: boardId })
+    .where({ board_id: resolvedBoardId })
     .whereIn('action', VISIBLE_EVENT_TYPES)
     .orderBy('activities.created_at', 'desc')
     .orderBy('activities.id', 'desc')

@@ -88,6 +88,8 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
     if (membershipError) return membershipError;
   }
 
+  const resolvedBoardId = board.id;
+
   const url = new URL(req.url);
   const cursorParam = url.searchParams.get('cursor') ?? null;
   const limitParam = Number.parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10);
@@ -103,7 +105,7 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
   //       than a raw UNION with cross-type casts.
   let activityQuery = db('activities as a')
     .leftJoin('users as u', 'a.actor_id', 'u.id')
-    .where('a.board_id', boardId)
+    .where('a.board_id', resolvedBoardId)
     .whereIn('a.action', NON_COMMENT_EVENT_TYPES)
     .orderBy('a.created_at', 'desc')
     .orderBy('a.id', 'desc')
@@ -124,7 +126,7 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
     .join('cards', 'c.card_id', 'cards.id')
     .join('lists', 'cards.list_id', 'lists.id')
     .leftJoin('users as u', 'c.user_id', 'u.id')
-    .where('lists.board_id', boardId)
+    .where('lists.board_id', resolvedBoardId)
     .orderBy('c.created_at', 'desc')
     .orderBy('c.id', 'desc')
     .limit(limit)

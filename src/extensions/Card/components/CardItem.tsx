@@ -57,6 +57,19 @@ function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): str
   return 'text-muted';
 }
 
+function formatCardFrontDueDate(iso: string): string {
+  const value = new Date(iso);
+  if (Number.isNaN(value.getTime())) return 'Invalid date';
+
+  return value.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 function hasSameCustomFieldValues(
   prevValues: CustomFieldValue[] | undefined,
   nextValues: CustomFieldValue[] | undefined,
@@ -85,6 +98,24 @@ function hasSameCustomFieldValues(
   return true;
 }
 
+function isLightCoverColor(value: string | null | undefined): boolean {
+  if (!value) return false;
+
+  const hex = value.trim().replace('#', '');
+  const normalized = hex.length === 3
+    ? hex.split('').map((part) => `${part}${part}`).join('')
+    : hex;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return false;
+
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+  return brightness >= 170;
+}
+
 const CardItemContent = memo(({
   card,
   labelsExpanded,
@@ -99,22 +130,45 @@ const CardItemContent = memo(({
   const labels = Array.isArray(card.labels) ? card.labels : [];
   const members = Array.isArray(card.members) ? card.members : [];
   const hasCover = Boolean(card.cover_image_url || card.cover_color);
+  const hasImageCover = Boolean(card.cover_image_url);
+  const hasColorCover = Boolean(card.cover_color);
   const selectedCoverSize = card.cover_size ?? 'SMALL';
-  const useBackgroundImageMode = hasCover && selectedCoverSize === 'SMALL';
+  const useBackgroundImageMode = hasImageCover && selectedCoverSize === 'SMALL';
+  const useBackgroundColorMode = !hasImageCover && hasColorCover && selectedCoverSize === 'SMALL';
+  const showTopCoverStrip = hasCover && !useBackgroundImageMode && !useBackgroundColorMode;
+  const colorModeUsesDarkText = useBackgroundColorMode && isLightCoverColor(card.cover_color);
+  const colorModePrimaryTextClass = colorModeUsesDarkText ? 'text-slate-900' : 'text-white';
+  const colorModeSecondaryTextClass = colorModeUsesDarkText ? 'text-slate-800/90' : 'text-white/90';
+  const colorModeDuePillClass = colorModeUsesDarkText ? 'text-slate-900 bg-white/60' : 'text-white bg-black/35';
   // WHY: image covers should render at full card width and keep their original ratio.
-  // Color-only covers keep the fixed strip height from cover_size.
+  // Color-only FULL mode keeps a compact top strip to avoid oversized cards.
   let coverClass = 'h-20';
   if (!card.cover_image_url && card.cover_size === 'FULL') {
-    coverClass = 'h-28';
+    coverClass = 'h-14';
   }
 
   const hasChecklist = (card.checklist_total ?? 0) > 0;
   const checklistDone = card.checklist_done ?? 0;
   const checklistTotal = card.checklist_total ?? 0;
   const checklistComplete = checklistDone === checklistTotal;
+  let titleTextClass = 'text-base';
+  if (useBackgroundImageMode) {
+    titleTextClass = 'text-white';
+  } else if (useBackgroundColorMode) {
+    titleTextClass = colorModePrimaryTextClass;
+  }
+
+  let secondaryMetaTextClass = 'text-muted';
+  if (useBackgroundImageMode) {
+    secondaryMetaTextClass = 'text-white/90';
+  } else if (useBackgroundColorMode) {
+    secondaryMetaTextClass = colorModeSecondaryTextClass;
+  }
   let checklistTextClass = 'text-muted';
   if (useBackgroundImageMode) {
     checklistTextClass = 'text-white';
+  } else if (useBackgroundColorMode) {
+    checklistTextClass = colorModeSecondaryTextClass;
   } else if (checklistComplete) {
     checklistTextClass = 'text-emerald-800 dark:text-emerald-400';
   }
@@ -139,7 +193,7 @@ const CardItemContent = memo(({
           onToggle={onToggleLabels ?? (() => {})}
         />
       )}
-      <p className={`text-sm leading-snug break-words ${useBackgroundImageMode ? 'text-white' : 'text-base'}`}>{card.title}</p>
+      <p className={`text-sm leading-snug break-words ${titleTextClass}`}>{card.title}</p>
       {card.amount && (
         <div className="mt-1">
           <CardMoneyBadge amount={card.amount} currency={card.currency} />
@@ -156,11 +210,13 @@ const CardItemContent = memo(({
             let dueClass = getDuePillClass(done, overdue, dueSoon);
             if (useBackgroundImageMode) {
               dueClass = 'text-white bg-black/45';
+            } else if (useBackgroundColorMode) {
+              dueClass = colorModeDuePillClass;
             }
             return (
               <span className={`inline-flex items-center gap-0.5 rounded px-1 text-xs ${dueClass}`}>
                 <CalendarIcon className="h-3 w-3 shrink-0" />
-                {new Date(card.due_date).toLocaleDateString()}
+                {formatCardFrontDueDate(card.due_date)}
               </span>
             );
           })()}
@@ -177,7 +233,7 @@ const CardItemContent = memo(({
 
           {attachmentCount > 0 && (
             <span
-              className={`inline-flex items-center gap-0.5 text-xs ${useBackgroundImageMode ? 'text-white/90' : 'text-muted'}`}
+              className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
               title={`${String(attachmentCount)} attachment${attachmentCount > 1 ? 's' : ''}`}
             >
               <PaperClipIcon className="h-3 w-3 shrink-0" />
@@ -187,7 +243,7 @@ const CardItemContent = memo(({
 
           {linkedCardCount > 0 && (
             <span
-              className={`inline-flex items-center gap-0.5 text-xs ${useBackgroundImageMode ? 'text-white/90' : 'text-muted'}`}
+              className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
               title={`${String(linkedCardCount)} linked card${linkedCardCount > 1 ? 's' : ''}`}
             >
               <RectangleStackIcon className="h-3 w-3 shrink-0" />
@@ -197,7 +253,7 @@ const CardItemContent = memo(({
 
           {commentCount > 0 && (
             <span
-              className={`inline-flex items-center gap-0.5 text-xs ${useBackgroundImageMode ? 'text-white/90' : 'text-muted'}`}
+              className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
               title={`${String(commentCount)} comment${commentCount > 1 ? 's' : ''}`}
             >
               <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />
@@ -229,9 +285,51 @@ const CardItemContent = memo(({
     </>
   );
 
+  let contentContainer: React.ReactNode;
+  if (useBackgroundImageMode) {
+    contentContainer = (
+      <div className="relative">
+        {card.cover_image_url ? (
+          <>
+            <img
+              src={card.cover_image_url}
+              alt="Card cover"
+              className="block w-full h-auto"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+          </>
+        ) : (
+          <div
+            className="w-full min-h-[112px]"
+            style={{ backgroundColor: card.cover_color ?? '#334155' }}
+            aria-hidden="true"
+          />
+        )}
+        <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
+          <div className="w-full">
+            {contentBlock}
+          </div>
+        </div>
+      </div>
+    );
+  } else if (useBackgroundColorMode) {
+    contentContainer = (
+      <div className="p-2.5" style={{ backgroundColor: card.cover_color ?? '#334155' }}>
+        {contentBlock}
+      </div>
+    );
+  } else {
+    contentContainer = (
+      <div className="p-2.5">
+        {contentBlock}
+      </div>
+    );
+  }
+
   return (
     <>
-      {hasCover && !useBackgroundImageMode && (
+      {showTopCoverStrip && (
         <div
           className={`w-full overflow-hidden ${card.cover_image_url ? '' : coverClass}`}
           style={card.cover_image_url
@@ -248,37 +346,7 @@ const CardItemContent = memo(({
           )}
         </div>
       )}
-
-      {useBackgroundImageMode ? (
-        <div className="relative">
-          {card.cover_image_url ? (
-            <>
-              <img
-                src={card.cover_image_url}
-                alt="Card cover"
-                className="block w-full h-auto"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
-            </>
-          ) : (
-            <div
-              className="w-full min-h-[112px]"
-              style={{ backgroundColor: card.cover_color ?? '#334155' }}
-              aria-hidden="true"
-            />
-          )}
-          <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
-            <div className="w-full">
-              {contentBlock}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-2.5">
-          {contentBlock}
-        </div>
-      )}
+      {contentContainer}
     </>
   );
 }, (prev, next) => {
