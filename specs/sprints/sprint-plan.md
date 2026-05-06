@@ -326,6 +326,23 @@ Sprint 123 ─────────── Sentry end-to-end monitoring: React
 
 ---
 
+## Security Audit Program (No-Code Documentation Only)
+
+These security sprints are documentation-only and must not include implementation changes.
+
+- NO CODE should be created.
+- ONLY CREATE AUDIT DOCUMENT.
+- Every loophole found must be documented as a separate file under `security/audits/`.
+
+| Sprint | Focus | Deliverables | Status |
+|--------|-------|-------------|--------|
+| [138](./sprint-138.md) | Multi-Tenancy Boundary Mapping | 3 loophole audit files in `security/audits/` | ⬜ Planned |
+| [139](./sprint-139.md) | API Authorization and Privilege Controls | 3 loophole audit files in `security/audits/` | ⬜ Planned |
+| [140](./sprint-140.md) | Realtime and Data Isolation Paths | 3 loophole audit files in `security/audits/` | ⬜ Planned |
+| [141](./sprint-141.md) | Verification, Severity Triage, Final Reporting | Audit summary + severity matrix + validation notes | ⬜ Planned |
+
+---
+
 ## Total Acceptance (Definition of Done for the System)
 
 Taken directly from [requirements §14](../architecture/requirements.md):
