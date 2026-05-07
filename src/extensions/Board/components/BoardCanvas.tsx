@@ -642,6 +642,22 @@ const BoardCanvas = ({
     }
   }, []);
 
+  const scrollListByWheelDelta = useCallback((listId: string | null, deltaY: number): boolean => {
+    if (!listId || !Number.isFinite(deltaY) || Math.abs(deltaY) < 0.01) return false;
+
+    const scroller = getListScrollContainer(listId);
+    if (!scroller) return false;
+
+    const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    if (maxScrollTop === 0) return false;
+
+    const nextScrollTop = Math.max(0, Math.min(maxScrollTop, scroller.scrollTop + deltaY));
+    if (nextScrollTop === scroller.scrollTop) return false;
+
+    scroller.scrollTop = nextScrollTop;
+    return true;
+  }, []);
+
   const resolvePointerListId = useCallback(
     (clientX: number | null, clientY: number | null): string | null => {
       if (clientX == null || clientY == null) return null;
@@ -831,6 +847,93 @@ const BoardCanvas = ({
     resetPointerListResolutionCache,
     resetQueuedDragPlaceholder,
     resolvePointerListId,
+  ]);
+
+  useEffect(() => {
+    const handler = (e: WheelEvent) => {
+      const activeId = dragActiveIdRef.current;
+      const fromListId = fromListIdRef.current;
+      if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) return;
+
+      const pointerX = livePointerXRef.current;
+      const pointerY = livePointerYRef.current;
+      const pointerListId =
+        livePointerListIdRef.current
+        ?? resolvePointerListId(
+          pointerX,
+          pointerY,
+        );
+      const targetListId = pointerListId ?? fromListId;
+      const scrolled = scrollListByWheelDelta(targetListId, e.deltaY);
+      if (!scrolled) return;
+
+      // WHY: keep drag smooth while wheel-scrolling a column; avoid page-level
+      // scroll taking over and immediately re-evaluate placeholder from pointer.
+      e.preventDefault();
+
+      const resolvedPointerListId = resolvePointerListId(pointerX, pointerY);
+      livePointerListIdRef.current = resolvedPointerListId;
+      const placeholderListId = dragPlaceholderRef.current?.listId ?? null;
+
+      if (resolvedPointerListId && resolvedPointerListId !== fromListId) {
+        const targetCards = getCardsWithoutActive(cardsByListRef.current, resolvedPointerListId, activeId);
+        const insertIndex = getInsertIndexFromPointerY(
+          targetCards,
+          pointerY,
+          undefined,
+          dragCardElementsByIdRef.current,
+        );
+        const prevPlaceholder = dragPlaceholderRef.current;
+        const height = prevPlaceholder?.height ?? 72;
+        if (prevPlaceholder?.listId !== resolvedPointerListId || prevPlaceholder.index !== insertIndex) {
+          queueDragPlaceholder({ listId: resolvedPointerListId, index: insertIndex, height });
+        }
+        return;
+      }
+
+      if (!resolvedPointerListId && placeholderListId && placeholderListId !== fromListId) return;
+
+      const sourceCards = cardsByListRef.current[fromListId] ?? [];
+      const targetCardsLength = Math.max(0, sourceCards.length - 1);
+      const adjustedPointerY = getAdjustedPointerY({
+        pointerY,
+        verticalScrollDelta: getDragSourceVerticalScrollDelta(),
+      });
+      if (adjustedPointerY == null) return;
+
+      let insertIndex = 0;
+      const sortedMids = dragStartCardMidsSortedRef.current;
+      if (sortedMids.length > 0) {
+        insertIndex = Math.max(0, Math.min(getInsertIndexFromSortedMids(sortedMids, adjustedPointerY), targetCardsLength));
+      } else {
+        const mids = dragStartCardMidsRef.current;
+        for (const cardId of sourceCards) {
+          if (cardId === activeId) continue;
+          const mid = mids[cardId];
+          if (mid != null && adjustedPointerY >= mid - DRAG_MIDPOINT_TOLERANCE_PX) {
+            insertIndex += 1;
+          } else {
+            break;
+          }
+        }
+      }
+
+      const prevPlaceholder = dragPlaceholderRef.current;
+      if (prevPlaceholder?.listId !== fromListId || prevPlaceholder.index !== insertIndex) {
+        const height = prevPlaceholder?.height ?? 72;
+        queueDragPlaceholder({ listId: fromListId, index: insertIndex, height });
+      }
+    };
+
+    globalThis.addEventListener('wheel', handler, { passive: false });
+    return () => {
+      globalThis.removeEventListener('wheel', handler);
+    };
+  }, [
+    getDragSourceVerticalScrollDelta,
+    queueDragPlaceholder,
+    resolvePointerListId,
+    scrollListByWheelDelta,
   ]);
 
   // WHY: track card ordering locally during drag instead of dispatching to Redux
