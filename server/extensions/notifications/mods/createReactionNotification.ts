@@ -77,21 +77,51 @@ export async function createReactionNotification({
       .first() as { title: string } | undefined;
     const now = new Date().toISOString();
 
-    const [inserted] = await db('notifications').insert(
-      {
-        user_id: recipientId,
-        type: 'comment_reaction',
-        source_type: 'comment',
-        source_id: commentId,
-        card_id: cardId,
-        board_id: boardId,
-        emoji,
-        actor_id: actorId,
-        read: false,
-        created_at: now,
-      },
-      ['*'],
-    ) as [Record<string, unknown>];
+    const nextNotificationRow = {
+      user_id: recipientId,
+      type: 'comment_reaction',
+      source_type: 'comment',
+      source_id: commentId,
+      card_id: cardId,
+      board_id: boardId,
+      emoji,
+      actor_id: actorId,
+      read: false,
+      created_at: now,
+    };
+
+    let inserted: Record<string, unknown> | undefined;
+    try {
+      [inserted] = await db('notifications').insert(nextNotificationRow, ['*']) as [Record<string, unknown>];
+    } catch (error) {
+      const dbError = error as { code?: string };
+      if (dbError.code !== '23505') {
+        throw error;
+      }
+
+      // [why] Some environments dedupe by (user_id, source_type, source_id, type).
+      // Refresh the existing row so the notification surfaces again as unread.
+      [inserted] = await db('notifications')
+        .where({
+          user_id: recipientId,
+          source_type: 'comment',
+          source_id: commentId,
+          type: 'comment_reaction',
+        })
+        .update(
+          {
+            card_id: cardId,
+            board_id: boardId,
+            emoji,
+            actor_id: actorId,
+            read: false,
+            created_at: now,
+          },
+          ['*'],
+        ) as [Record<string, unknown>];
+    }
+
+    if (!inserted) return;
 
     await publishToUser(recipientId, {
       type: 'notification_created',

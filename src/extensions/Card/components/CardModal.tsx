@@ -66,7 +66,7 @@ interface Props {
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
   onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
-  onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
+  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;

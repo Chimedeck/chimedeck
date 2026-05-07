@@ -1,8 +1,8 @@
 // ChecklistSection — a single named checklist group: editable title, progress, items, add form, delete.
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TrashIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import type { Checklist, ChecklistItem as ChecklistItemType } from '../api';
@@ -71,6 +71,7 @@ const compareChecklistItemPosition = (left: string, right: string): number => {
 };
 
 interface SortableChecklistItemRowProps {
+  checklistId: string;
   item: ChecklistItemType;
   boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
   onItemToggle: (itemId: string, checked: boolean) => Promise<void>;
@@ -84,6 +85,7 @@ interface SortableChecklistItemRowProps {
 }
 
 const SortableChecklistItemRow = ({
+  checklistId,
   item,
   boardMembers,
   onItemToggle,
@@ -97,6 +99,11 @@ const SortableChecklistItemRow = ({
 }: SortableChecklistItemRowProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
+    data: {
+      type: 'checklist-item',
+      checklistId,
+      itemId: item.id,
+    },
     ...(disabled === undefined ? {} : { disabled }),
   });
 
@@ -107,7 +114,7 @@ const SortableChecklistItemRow = ({
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={isDragging ? 'opacity-70' : undefined}
+      className={isDragging ? 'relative z-20 opacity-95' : undefined}
       {...attributes}
       {...listeners}
     >
@@ -140,7 +147,6 @@ interface Props {
   onItemAssign: (itemId: string, memberId: string | null) => Promise<void>;
   onItemDueDateChange: (itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (itemId: string) => Promise<void>;
-  onItemReorder: (itemId: string, position: string) => Promise<void>;
   disabled?: boolean;
   /** Forwarded to each ChecklistItem to enable attachment-reference previews in titles. */
   attachments?: Attachment[];
@@ -158,7 +164,6 @@ export const ChecklistSection = ({
   onItemAssign,
   onItemDueDateChange,
   onItemConvertToCard,
-  onItemReorder,
   disabled,
   attachments,
 }: Props) => {
@@ -174,10 +179,13 @@ export const ChecklistSection = ({
   const [collapsed, setCollapsed] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const addingItemRef = useRef(false);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const { setNodeRef: setDropzoneRef, isOver } = useDroppable({
+    id: `checklist-dropzone:${checklist.id}`,
+    data: {
+      type: 'checklist-dropzone',
+      checklistId: checklist.id,
+    },
+  });
 
   // Keep titleDraft in sync when the prop changes (e.g. after server confirmation)
   useEffect(() => { setTitleDraft(checklist.title); }, [checklist.title]);
@@ -210,27 +218,6 @@ export const ChecklistSection = ({
   };
 
   const checked = sortedItems.filter((i: ChecklistItemType) => i.checked).length;
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = sortedItems.findIndex((item) => item.id === active.id);
-    const newIndex = sortedItems.findIndex((item) => item.id === over.id);
-    if (oldIndex < 0 || newIndex < 0) return;
-
-    const reordered = arrayMove(sortedItems, oldIndex, newIndex);
-    const movedItem = reordered[newIndex];
-    if (!movedItem) return;
-
-    const leftPosition = newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
-    const rightPosition = newIndex < reordered.length - 1
-      ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
-      : HIGH_SENTINEL;
-    const position = betweenPositions(leftPosition, rightPosition);
-
-    void onItemReorder(movedItem.id, position);
-  };
 
   return (
     <section aria-label={`Checklist: ${checklist.title}`} className="space-y-1">
@@ -300,33 +287,31 @@ export const ChecklistSection = ({
 
       {!collapsed && (
         <>
-          <div className="mt-1 space-y-0.5">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+          <div
+            ref={setDropzoneRef}
+            className={`mt-1 space-y-0.5 rounded-md transition-colors ${isOver ? 'bg-blue-50/70 dark:bg-blue-900/20' : ''}`}
+          >
+            <SortableContext
+              items={sortedItems.map((item) => item.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={sortedItems.map((item) => item.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {sortedItems.map((item: ChecklistItemType) => (
-                  <SortableChecklistItemRow
-                    key={item.id}
-                    item={item}
-                    onItemToggle={onItemToggle}
-                    onItemRename={onItemRename}
-                    onItemDelete={onItemDelete}
-                    onItemAssign={onItemAssign}
-                    onItemDueDateChange={onItemDueDateChange}
-                    onItemConvertToCard={onItemConvertToCard}
-                    boardMembers={boardMembers}
-                    {...(disabled === undefined ? {} : { disabled })}
-                    {...(attachments === undefined ? {} : { attachments })}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+              {sortedItems.map((item: ChecklistItemType) => (
+                <SortableChecklistItemRow
+                  key={item.id}
+                  checklistId={checklist.id}
+                  item={item}
+                  onItemToggle={onItemToggle}
+                  onItemRename={onItemRename}
+                  onItemDelete={onItemDelete}
+                  onItemAssign={onItemAssign}
+                  onItemDueDateChange={onItemDueDateChange}
+                  onItemConvertToCard={onItemConvertToCard}
+                  boardMembers={boardMembers}
+                  {...(disabled === undefined ? {} : { disabled })}
+                  {...(attachments === undefined ? {} : { attachments })}
+                />
+              ))}
+            </SortableContext>
           </div>
 
           {adding && (

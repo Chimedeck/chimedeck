@@ -341,14 +341,16 @@ export async function updateChecklistItem({
   title,
   checked,
   position,
+  checklist_id,
 }: {
   api: { patch: <T>(url: string, data: unknown) => Promise<T> };
   itemId: string;
   title?: string;
   checked?: boolean;
   position?: string;
+  checklist_id?: string | null;
 }): Promise<{ data: ChecklistItem }> {
-  return api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, { title, checked, position });
+  return api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, { title, checked, position, checklist_id });
 }
 
 export async function deleteChecklistItem({

@@ -4,6 +4,7 @@
 // Cancel / Insert buttons.
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
+import { getMarkRange } from '@tiptap/core';
 import Button from '../../../common/components/Button';
 
 interface Props {
@@ -13,8 +14,13 @@ interface Props {
 
 function getSelectionText(editor: Editor): string {
   const { from, to } = editor.state.selection;
-  if (from === to) return '';
-  return editor.state.doc.textBetween(from, to, ' ');
+  if (from !== to) return editor.state.doc.textBetween(from, to, ' ');
+
+  if (!editor.isActive('link')) return '';
+  const linkType = editor.state.schema.marks.link;
+  const range = getMarkRange(editor.state.selection.$from, linkType);
+  if (!range) return '';
+  return editor.state.doc.textBetween(range.from, range.to, ' ');
 }
 
 function getActiveLinkHref(editor: Editor): string {
@@ -57,6 +63,39 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
     const isInsideLink = editor.isActive('link');
+    const nextDisplayText = displayText.trim();
+
+    // [why] Editing a link via toolbar should be able to update both href and
+    // displayed label. For cursor-inside-link edits, replace the full link text.
+    if (nextDisplayText && (hasSelection || isInsideLink)) {
+      let replaceFrom = from;
+      let replaceTo = to;
+
+      if (!hasSelection && isInsideLink) {
+        const linkType = editor.state.schema.marks.link;
+        const range = getMarkRange(editor.state.selection.$from, linkType);
+        if (range) {
+          replaceFrom = range.from;
+          replaceTo = range.to;
+        }
+      }
+
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(
+          { from: replaceFrom, to: replaceTo },
+          {
+            type: 'text',
+            text: nextDisplayText,
+            marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+          },
+        )
+        .run();
+
+      onClose();
+      return;
+    }
 
     if (hasSelection) {
       // Apply link mark to existing selection
@@ -64,7 +103,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     } else if (isInsideLink) {
       // Update the active link mark when cursor is inside an existing link.
       editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank' }).run();
-    } else if (displayText.trim()) {
+    } else if (nextDisplayText) {
       // Insert new text node with link mark
       editor
         .chain()
@@ -72,7 +111,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
         .insertContent([
           {
             type: 'text',
-            text: displayText.trim(),
+            text: nextDisplayText,
             marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
           },
           { type: 'text', text: ' ' },

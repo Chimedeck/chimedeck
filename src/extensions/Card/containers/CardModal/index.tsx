@@ -558,17 +558,42 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   );
 
   const handleItemReorder = useCallback(
-    async (checklistId: string, itemId: string, position: string) => {
+    async (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => {
       const mutationId = nextMutationId();
-      dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
-        mutationId,
-        checklistId,
-        itemId,
-        fields: { position },
-      }));
+      const destinationChecklistId = targetChecklistId ?? sourceChecklistId;
+
+      if (destinationChecklistId === sourceChecklistId) {
+        dispatch(cardDetailSliceActions.applyOptimisticChecklistItemPatch({
+          mutationId,
+          checklistId: sourceChecklistId,
+          itemId,
+          fields: { position },
+        }));
+      } else {
+        dispatch(cardDetailSliceActions.applyOptimisticChecklistItemMove({
+          mutationId,
+          sourceChecklistId,
+          targetChecklistId: destinationChecklistId,
+          itemId,
+          position,
+        }));
+      }
+
       try {
-        const item = await patchChecklistItem({ api, itemId, fields: { position } });
-        dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
+        const movingAcrossChecklists = destinationChecklistId !== sourceChecklistId;
+        const item = await patchChecklistItem({
+          api,
+          itemId,
+          fields: {
+            position,
+            ...(movingAcrossChecklists ? { checklist_id: destinationChecklistId } : {}),
+          },
+        });
+        dispatch(cardDetailSliceActions.confirmChecklistItem({
+          mutationId,
+          checklistId: item.checklist_id ?? destinationChecklistId,
+          item,
+        }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
       }

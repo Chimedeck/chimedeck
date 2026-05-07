@@ -391,6 +391,41 @@ const cardDetailSlice = createSlice({
       if (item) Object.assign(item, fields);
     },
 
+    applyOptimisticChecklistItemMove(
+      state,
+      action: PayloadAction<{
+        mutationId: string;
+        sourceChecklistId: string;
+        targetChecklistId: string;
+        itemId: string;
+        position: string;
+      }>,
+    ) {
+      const { mutationId, sourceChecklistId, targetChecklistId, itemId, position } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+
+      if (sourceChecklistId === targetChecklistId) {
+        const checklist = state.checklists.find((value) => value.id === sourceChecklistId);
+        const item = checklist?.items.find((value) => value.id === itemId);
+        if (item) item.position = position;
+        return;
+      }
+
+      const sourceChecklist = state.checklists.find((value) => value.id === sourceChecklistId);
+      const targetChecklist = state.checklists.find((value) => value.id === targetChecklistId);
+      if (!sourceChecklist || !targetChecklist) return;
+
+      const sourceIndex = sourceChecklist.items.findIndex((value) => value.id === itemId);
+      if (sourceIndex < 0) return;
+
+      const [movedItem] = sourceChecklist.items.splice(sourceIndex, 1);
+      if (!movedItem) return;
+
+      movedItem.checklist_id = targetChecklistId;
+      movedItem.position = position;
+      targetChecklist.items.push(movedItem);
+    },
+
     // ── Optimistic label assign/unassign ────────────────────────────────────
     applyOptimisticLabelAssign(
       state,

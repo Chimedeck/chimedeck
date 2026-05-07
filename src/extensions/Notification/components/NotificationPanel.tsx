@@ -22,7 +22,9 @@ interface Props {
 
 function isStackableDiscussionNotification(notification: Notification): boolean {
   if (!notification.card_id) return false;
-  return notification.type === 'card_commented' || notification.type === 'mention';
+  return notification.type === 'card_commented'
+    || notification.type === 'comment_reaction'
+    || notification.type === 'mention';
 }
 
 function groupContinuousCardDiscussionNotifications(notifications: Notification[]): Notification[][] {
