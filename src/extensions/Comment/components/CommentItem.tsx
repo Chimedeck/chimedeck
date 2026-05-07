@@ -1,6 +1,6 @@
 // Single comment with inline edit/delete controls
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { marked } from 'marked';
+import { Marked } from 'marked';
 import emojiData from '@emoji-mart/data';
 import type { Attachment } from '~/extensions/Attachments/types';
 import {
@@ -29,8 +29,9 @@ function addLinkTargetBlank(html: string): string {
   );
 }
 
-// Configure marked: soft line breaks become <br>, no mangling
-marked.setOptions({ breaks: true, gfm: true });
+// Use a local parser instance so global marked extensions configured elsewhere
+// cannot break comment rendering in this component.
+const commentMarked = new Marked({ breaks: true, gfm: true });
 
 // Build once so shortcode replacement is O(1) per token during render.
 const SHORTCODE_TO_NATIVE = (() => {
@@ -57,6 +58,15 @@ function replaceEmojiShortcodes(text: string): string {
   return text.replaceAll(/:([a-z0-9_+-]+):/gi, (full, shortcode: string) => {
     return SHORTCODE_TO_NATIVE.get(shortcode.toLowerCase()) ?? full;
   });
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 export interface ReactionSummary {
@@ -153,8 +163,14 @@ function renderContent(text: string, attachments: Attachment[]): string {
   // [why] Legacy/server-sanitized comments may store blockquote markers as
   // "&gt;". Convert marker positions back to markdown so rendering matches editor.
   const normalized = withNativeEmoji.replaceAll(/^(\s*)&gt;(?=\s|$)/gm, '$1>');
-  // Convert markdown → HTML
-  const html = marked.parse(normalized) as string;
+  let html: string;
+  try {
+    // Convert markdown -> HTML.
+    html = commentMarked.parse(normalized) as string;
+  } catch {
+    // [why] Prevent intermittent parser extension mismatches from crashing card load.
+    html = escapeHtml(normalized).replaceAll('\n', '<br>');
+  }
   // Wrap @mentions in a styled chip
   const withMentions = html.replaceAll(
     /(@\w[\w.+-]*)/g,
