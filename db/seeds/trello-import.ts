@@ -74,6 +74,8 @@ const s3 = new S3Client({
 });
 
 const BATCH_SIZE = 500; // rows per INSERT batch
+// 2026-04-21 08:00 GMT+7 (last migration run) converted to UTC.
+const LAST_MIGRATION_CUTOFF = new Date('2026-04-21T01:00:00.000Z');
 
 // ---------------------------------------------------------------------------
 // Member ID → email mapper (from trello-import-member-ids-mapper.json)
@@ -712,9 +714,59 @@ async function main() {
 
   // -------------------------------------------------------------------------
   // 8. Cards + card_labels + card_members (batched)
+  //
+  // Safety gate:
+  // - Insert new cards.
+  // - Update only cards whose DB updated_at is <= LAST_MIGRATION_CUTOFF.
+  // - Never touch cards updated after cutoff.
   // -------------------------------------------------------------------------
 
-  console.log(`🃏  Inserting/updating ${cards.length.toLocaleString()} cards…`);
+  const candidateCardIdSet = new Set<string>();
+  for (const card of cards) {
+    if (!listSet.has(card.idList)) continue;
+    candidateCardIdSet.add(card.id);
+  }
+  const candidateCardIds = [...candidateCardIdSet];
+
+  const existingCardUpdatedAt = new Map<string, Date | null>();
+  for (let i = 0; i < candidateCardIds.length; i += BATCH_SIZE) {
+    const chunk = candidateCardIds.slice(i, i + BATCH_SIZE);
+    const rows = await db('cards').select('id', 'updated_at').whereIn('id', chunk);
+    for (const row of rows as Array<{ id: string; updated_at: Date | string | null }>) {
+      existingCardUpdatedAt.set(
+        row.id,
+        row.updated_at ? new Date(row.updated_at) : null,
+      );
+    }
+  }
+
+  const writableCardIdSet = new Set<string>();
+  let newCardCount = 0;
+  let preCutoffUpdatableCount = 0;
+  let protectedCardCount = 0;
+
+  for (const cardId of candidateCardIds) {
+    if (!existingCardUpdatedAt.has(cardId)) {
+      writableCardIdSet.add(cardId);
+      newCardCount += 1;
+      continue;
+    }
+
+    const dbUpdatedAt = existingCardUpdatedAt.get(cardId);
+    if (!dbUpdatedAt || dbUpdatedAt <= LAST_MIGRATION_CUTOFF) {
+      writableCardIdSet.add(cardId);
+      preCutoffUpdatableCount += 1;
+    } else {
+      protectedCardCount += 1;
+    }
+  }
+
+  console.log(`🛡️   Card safety cutoff: ${LAST_MIGRATION_CUTOFF.toISOString()}`);
+  console.log(`    Candidate cards      : ${candidateCardIds.length.toLocaleString()}`);
+  console.log(`    New cards            : ${newCardCount.toLocaleString()}`);
+  console.log(`    Pre-cutoff updates   : ${preCutoffUpdatableCount.toLocaleString()}`);
+  console.log(`    Protected cards      : ${protectedCardCount.toLocaleString()}`);
+  console.log(`🃏  Inserting/updating ${writableCardIdSet.size.toLocaleString()} safe cards…`);
 
   const cardRows: object[] = [];
   // Junction rows are ID pairs only — small footprint, collected in full so we
@@ -722,7 +774,7 @@ async function main() {
   const allCardLabelRows: object[] = [];
   const allCardMemberRows: object[] = [];
   const allCardCustomFieldValueRows: object[] = [];
-  // All Trello card IDs that appear in this JSON (used to scope the junction sync)
+  // Safe card IDs only (used to scope junction sync writes)
   const trelloCardIds: string[] = [];
   // Track uniqueness for junction tables within this run
   const cardLabelSeen = new Set<string>();
@@ -732,6 +784,8 @@ async function main() {
   for (const card of cards) {
     // Skip cards whose list was not collected (list property missing)
     if (!listSet.has(card.idList)) continue;
+    // Skip cards changed by the team after the last migration cutoff.
+    if (!writableCardIdSet.has(card.id)) continue;
 
     trelloCardIds.push(card.id);
 
@@ -841,9 +895,8 @@ async function main() {
     'due_date', 'short_link', 'short_url', 'amount', 'currency', 'updated_at',
   ]);
 
-  // Sync junction tables: delete existing rows only for Trello-sourced cards,
-  // then re-insert from the latest JSON. Natively-created cards (whose IDs are
-  // not in trelloCardIds) are never touched.
+  // Sync junction tables: delete existing rows only for writable Trello cards,
+  // then re-insert from the latest JSON. Protected cards are never touched.
   console.log('🔄  Syncing card labels…');
   for (let i = 0; i < trelloCardIds.length; i += BATCH_SIZE) {
     await db('card_labels').whereIn('card_id', trelloCardIds.slice(i, i + BATCH_SIZE)).delete();
@@ -884,6 +937,8 @@ async function main() {
   for (const card of cards) {
     // Skip cards whose list was not collected
     if (!listSet.has(card.idList)) continue;
+    // Skip cards changed by the team after the last migration cutoff.
+    if (!writableCardIdSet.has(card.id)) continue;
 
     for (const action of card.actions ?? []) {
       if (commentSeen.has(action.id)) continue;
@@ -932,6 +987,8 @@ async function main() {
 
   for (const card of cards) {
     if (!listSet.has(card.idList)) continue;
+    // Skip cards changed by the team after the last migration cutoff.
+    if (!writableCardIdSet.has(card.id)) continue;
     if (!card.checklists?.length) continue;
 
     allChecklistCardIds.push(card.id);
