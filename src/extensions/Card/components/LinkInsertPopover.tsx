@@ -6,6 +6,8 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
 import { getMarkRange } from '@tiptap/core';
 import Button from '../../../common/components/Button';
+import { fetchLinkPreview } from '~/extensions/Attachments/api';
+import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 
 interface Props {
   editor: Editor | null;
@@ -26,6 +28,17 @@ function getSelectionText(editor: Editor): string {
 function getActiveLinkHref(editor: Editor): string {
   if (!editor.isActive('link')) return '';
   return (editor.getAttributes('link')['href'] as string | undefined) ?? '';
+}
+
+async function resolveInlineLabel(href: string): Promise<string> {
+  const fallback = getInlineTitleFromUrl(href);
+  try {
+    const preview = await fetchLinkPreview({ url: href });
+    const title = preview.data.title.trim();
+    return title || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 const LinkInsertPopover = ({ editor, onClose }: Props) => {
@@ -56,10 +69,10 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     };
   }, [onClose]);
 
-  const handleInsert = useCallback(() => {
+  const handleInsert = useCallback(async () => {
     if (!editor || !url.trim()) return;
 
-    const href = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+    const href = normalizeHttpUrlInput(url) ?? url.trim();
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
     const isInsideLink = editor.isActive('link');
@@ -118,14 +131,16 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
         ])
         .run();
     } else {
-      // Insert bare URL as linked text
+      // [why] Prefer server-side page metadata title (same source as browser tab title)
+      // and fall back to URL-derived label when metadata isn't available.
+      const inlineTitle = await resolveInlineLabel(href);
       editor
         .chain()
         .focus()
         .insertContent([
           {
             type: 'text',
-            text: href,
+            text: inlineTitle,
             marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
           },
           { type: 'text', text: ' ' },
@@ -153,7 +168,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleInsert();
+      void handleInsert();
     }
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -226,7 +241,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           <Button
             type="button"
             variant="primary"
-            onMouseDown={(e) => { e.preventDefault(); handleInsert(); }}
+            onMouseDown={(e) => { e.preventDefault(); void handleInsert(); }}
             disabled={!url.trim()}
             className="px-3 py-1.5 text-sm"
           >

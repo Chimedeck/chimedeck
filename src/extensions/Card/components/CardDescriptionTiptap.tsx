@@ -15,7 +15,7 @@ import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmen
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
 import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
 import { CardAssetPicker } from '~/extensions/Comment/components/CardAssetPicker';
-import { listAttachments } from '~/extensions/Attachments/api';
+import { fetchLinkPreview, listAttachments } from '~/extensions/Attachments/api';
 import InlineImage from '~/extensions/Comment/extensions/InlineImage';
 import { buildMentionExtension } from '~/extensions/Mention/TiptapMentionExtension';
 import CardReference from '../extensions/CardReferenceExtension';
@@ -35,6 +35,8 @@ import {
 } from '~/extensions/OfflineDrafts/hooks/useOfflineDescriptionDraft';
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { enrichExternalLinkChips } from '~/extensions/Attachments/utils/enrichExternalLinkChips';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -384,14 +386,51 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       // position so paste behavior matches drag/drop and file picker insertion.
       handlePaste(view, event) {
         const files = Array.from(event.clipboardData?.files ?? []);
-        if (files.length === 0) return false;
+        if (files.length > 0) {
+          event.preventDefault();
+          const pos = view.state.selection.from;
+          const ids = uploadFilesRef.current?.(files) ?? [];
+          ids.forEach((id) => insertPosMap.current.set(id, pos));
+          void flushUploads()
+            .then(() => loadCardAttachments())
+            .catch(() => {});
+          return true;
+        }
+
+        const clipboardData = event.clipboardData;
+        if (!clipboardData) return false;
+        const clipboardText = clipboardData.getData('text/plain').trim();
+        const href = normalizeHttpUrlInput(clipboardText);
+        if (!href) return false;
+
         event.preventDefault();
         const pos = view.state.selection.from;
-        const ids = uploadFilesRef.current?.(files) ?? [];
-        ids.forEach((id) => insertPosMap.current.set(id, pos));
-        void flushUploads()
-          .then(() => loadCardAttachments())
-          .catch(() => {});
+
+        void (async () => {
+          let inlineTitle = getInlineTitleFromUrl(href);
+          try {
+            const preview = await fetchLinkPreview({ url: href });
+            if (preview.data.title.trim()) {
+              inlineTitle = preview.data.title.trim();
+            }
+          } catch {
+            // Keep inlineTitle fallback.
+          }
+
+          editorRef.current
+            ?.chain()
+            .focus()
+            .insertContentAt(pos, [
+              {
+                type: 'text',
+                text: inlineTitle,
+                marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+              },
+              { type: 'text', text: ' ' },
+            ])
+            .setTextSelection(pos + inlineTitle.length + 1)
+            .run();
+        })();
         return true;
       },
     },
@@ -623,6 +662,8 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     images.forEach((img) => {
       void hydrateImage(img);
     });
+
+    void enrichExternalLinkChips(root);
 
     return () => {
       cancelled = true;

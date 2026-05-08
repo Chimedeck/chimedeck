@@ -15,6 +15,7 @@ import CommentDeletedItem from './CommentDeletedItem';
 import CommentReactions from './CommentReactions';
 import CommentReplyThread from './CommentReplyThread';
 import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
+import { enrichExternalLinkChips } from '~/extensions/Attachments/utils/enrichExternalLinkChips';
 import translations from '../translations/en.json';
 import apiClient from '~/common/api/client';
 
@@ -261,6 +262,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     images.forEach((img) => {
       void hydrateImage(img);
     });
+
+    void enrichExternalLinkChips(root);
 
     return () => {
       cancelled = true;

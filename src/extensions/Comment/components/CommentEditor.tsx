@@ -29,7 +29,7 @@ import { useSelector } from 'react-redux';
 import OneLineToolbar from '~/extensions/Card/components/OneLineToolbar';
 import LinkInsertPopover from '~/extensions/Card/components/LinkInsertPopover';
 import { useAttachmentUpload } from '~/extensions/Attachments/hooks/useAttachmentUpload';
-import { listAttachments } from '~/extensions/Attachments/api';
+import { fetchLinkPreview, listAttachments } from '~/extensions/Attachments/api';
 import { InlineUploadPreview } from '~/extensions/Attachments/components/InlineUploadPreview';
 import {
   useOfflineCommentDraft,
@@ -38,6 +38,7 @@ import {
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import Button from '~/common/components/Button';
+import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 import translations from '../translations/en.json';
 
 interface Props {
@@ -379,16 +380,51 @@ const CommentEditor = ({
       // as dropped files, so pasted screenshots are embedded in the comment.
       handlePaste(view, event) {
         const files = Array.from(event.clipboardData?.files ?? []);
-        if (files.length === 0) return false;
+        if (files.length > 0) {
+          event.preventDefault();
+          const pos = view.state.selection.from;
+          const ids = uploadFilesRef.current?.(files) ?? [];
+          ids.forEach((id) => insertPosMap.current.set(id, pos));
+          void flushUploads()
+            .then(() => loadCardAttachments())
+            .catch(() => {
+              setError(translations['comment.editor.error.uploadFailed']);
+            });
+          return true;
+        }
+
+        const clipboardText = event.clipboardData?.getData('text/plain')?.trim() ?? '';
+        const href = normalizeHttpUrlInput(clipboardText);
+        if (!href) return false;
+
         event.preventDefault();
         const pos = view.state.selection.from;
-        const ids = uploadFilesRef.current?.(files) ?? [];
-        ids.forEach((id) => insertPosMap.current.set(id, pos));
-        void flushUploads()
-          .then(() => loadCardAttachments())
-          .catch(() => {
-            setError(translations['comment.editor.error.uploadFailed']);
-          });
+
+        void (async () => {
+          let inlineTitle = getInlineTitleFromUrl(href);
+          try {
+            const preview = await fetchLinkPreview({ url: href });
+            if (preview.data.title.trim()) {
+              inlineTitle = preview.data.title.trim();
+            }
+          } catch {
+            // Keep inlineTitle fallback.
+          }
+
+          editorRef.current
+            ?.chain()
+            .focus()
+            .insertContentAt(pos, [
+              {
+                type: 'text',
+                text: inlineTitle,
+                marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+              },
+              { type: 'text', text: ' ' },
+            ])
+            .setTextSelection(pos + inlineTitle.length + 1)
+            .run();
+        })();
         return true;
       },
       // [why] In editable mode, clicking links should select them for editing,
