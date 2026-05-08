@@ -44,6 +44,7 @@ export function hasRole(callerRole: Role, minRole: Role): boolean {
 export interface WorkspaceScopedRequest extends AuthenticatedRequest {
   workspaceId?: string;
   callerRole?: Role;
+  guestType?: string;
 }
 
 // Resolves workspaceId from URL params or body, then loads the caller's membership.
@@ -111,12 +112,15 @@ export async function requireMemberOrBoardGuestMember(
   // Workspace MEMBER / ADMIN / OWNER pass through as before.
   if (hasRole(req.callerRole, 'MEMBER')) return null;
 
-  // GUESTs: allow only those with a MEMBER sub-type on this specific board.
-  if (req.callerRole === 'GUEST' && req.currentUser) {
+  // Board-level guest MEMBER sub-type grants write access on this board.
+  // Prefer request context when available, then verify against DB for robustness.
+  if ((req.guestType ?? '').toUpperCase() === 'MEMBER') return null;
+
+  if (req.currentUser) {
     const guestAccess = await db('board_guest_access')
       .where({ user_id: req.currentUser.id, board_id: boardId })
       .first();
-    if (guestAccess?.guest_type === 'MEMBER') return null;
+    if ((guestAccess?.guest_type as string | undefined)?.toUpperCase() === 'MEMBER') return null;
   }
 
   return Response.json(

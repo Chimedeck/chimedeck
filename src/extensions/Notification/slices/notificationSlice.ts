@@ -119,6 +119,21 @@ const notificationSlice = createSlice({
       if (!notification) return;
       notification.comment_reactions = action.payload.reactions;
     },
+
+    setNotificationReadState(
+      state,
+      action: PayloadAction<{ id: string; read: boolean }>,
+    ) {
+      const notification = state.notifications.find((item) => item.id === action.payload.id);
+      if (!notification || notification.read === action.payload.read) return;
+
+      notification.read = action.payload.read;
+      if (action.payload.read) {
+        state.unreadCount = Math.max(0, state.unreadCount - 1);
+      } else {
+        state.unreadCount += 1;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder

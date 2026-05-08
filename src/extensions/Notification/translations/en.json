@@ -12,5 +12,9 @@
   "Notifications.loading": "Loading…",
   "Notifications.today": "Today",
   "Notifications.earlier": "Earlier",
-  "Notifications.deleteAriaLabel": "Dismiss notification"
+  "Notifications.deleteAriaLabel": "Dismiss notification",
+  "Notifications.markGroupRead": "Mark read",
+  "Notifications.markGroupUnread": "Mark unread",
+  "Notifications.markGroupReadAriaLabel": "Mark this notification group as read",
+  "Notifications.markGroupUnreadAriaLabel": "Mark this notification group as unread"
 }

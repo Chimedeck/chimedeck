@@ -20,27 +20,13 @@ interface Props {
   onNavigate: (notification: Notification) => void;
 }
 
-function isStackableDiscussionNotification(notification: Notification): boolean {
-  if (!notification.card_id) return false;
-  return notification.type === 'card_commented'
-    || notification.type === 'comment_reaction'
-    || notification.type === 'mention';
-}
-
-function isStackableBoardUpdateNotification(notification: Notification): boolean {
-  return notification.type === 'card_updated' && Boolean(notification.board_id);
+function resolveBoardCardTagKey(notification: Notification): string | null {
+  if (!notification.board_id || !notification.card_id) return null;
+  return `board-card:${notification.board_id}:${notification.card_id}`;
 }
 
 function resolveContinuousStackKey(notification: Notification): string | null {
-  if (isStackableDiscussionNotification(notification) && notification.card_id) {
-    return `discussion:${notification.card_id}`;
-  }
-
-  if (isStackableBoardUpdateNotification(notification) && notification.board_id) {
-    return `board-update:${notification.board_id}`;
-  }
-
-  return null;
+  return resolveBoardCardTagKey(notification);
 }
 
 function groupContinuousCardDiscussionNotifications(notifications: Notification[]): Notification[][] {

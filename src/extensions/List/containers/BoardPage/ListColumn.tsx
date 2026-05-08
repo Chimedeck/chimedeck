@@ -49,6 +49,8 @@ interface Props {
   /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
    *  null = batch not yet loaded — tiles render no badges rather than firing per-card requests. */
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
+  /** Unread notification counts keyed by card id for card-front bell badges. */
+  unreadNotificationCountByCardId?: Record<string, number>;
   /** True when the current user is a VIEWER guest — hides the Add card button. */
   isViewerGuest?: boolean;
   /** When true the column sits over a board background image — apply solid (opaque) column body. */
@@ -87,6 +89,7 @@ const SortableListColumn = ({
   labelsExpanded,
   onToggleLabels,
   customFieldValuesMap,
+  unreadNotificationCountByCardId,
   isViewerGuest = false,
   hasBackground = false,
   dragPlaceholderIndex,
@@ -261,6 +264,7 @@ const SortableListColumn = ({
               labelsExpanded={labelsExpanded ?? false}
               onToggleLabels={stableToggleLabels}
               {...(onCardClick ? { onClick: onCardClick } : {})}
+              unreadNotificationCount={unreadNotificationCountByCardId?.[card.id] ?? 0}
               {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
             />
           </Fragment>
@@ -331,6 +335,7 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.labelsExpanded === next.labelsExpanded
     && prev.onToggleLabels === next.onToggleLabels
     && prev.customFieldValuesMap === next.customFieldValuesMap
+    && prev.unreadNotificationCountByCardId === next.unreadNotificationCountByCardId
     && prev.listColor === next.listColor
     && prev.availableLists === next.availableLists
     && prev.isViewerGuest === next.isViewerGuest

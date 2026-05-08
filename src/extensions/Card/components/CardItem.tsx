@@ -1,7 +1,7 @@
 // CardItem — draggable card chip using @dnd-kit/core useDraggable.
 // Styled per sprint-18 spec §4.
 import { memo, useCallback, useMemo } from 'react';
-import { CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
+import { BellAlertIcon, CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Card } from '../api';
@@ -36,6 +36,8 @@ export interface CardItemProps {
   currentUserId?: string;
   /** Pre-fetched custom field values for this card from a board-level batch request. */
   customFieldValues?: CustomFieldValue[];
+  /** Count of unread notifications linked to this card. */
+  unreadNotificationCount?: number;
 }
 
 interface CardItemContentProps {
@@ -46,6 +48,7 @@ interface CardItemContentProps {
   boardTitle?: string;
   boardId?: string;
   customFieldValues?: CustomFieldValue[];
+  unreadNotificationCount: number;
   currentUserId: string;
   onRemoveMember: (cardId: string, memberId: string) => Promise<void>;
 }
@@ -124,6 +127,7 @@ const CardItemContent = memo(({
   boardTitle,
   boardId,
   customFieldValues,
+  unreadNotificationCount,
   currentUserId,
   onRemoveMember,
 }: CardItemContentProps) => {
@@ -179,6 +183,7 @@ const CardItemContent = memo(({
   const hasBadges =
     card.description ||
     card.due_date ||
+    unreadNotificationCount > 0 ||
     commentCount > 0 ||
     attachmentCount > 0 ||
     linkedCardCount > 0 ||
@@ -220,6 +225,16 @@ const CardItemContent = memo(({
               </span>
             );
           })()}
+
+          {unreadNotificationCount > 0 && (
+            <span
+              className="inline-flex items-center gap-0.5 rounded-md bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white"
+              title={`${String(unreadNotificationCount)} unread notification${unreadNotificationCount > 1 ? 's' : ''}`}
+            >
+              <BellAlertIcon className="h-3 w-3 shrink-0" />
+              {unreadNotificationCount}
+            </span>
+          )}
 
           {hasChecklist && (
             <span
@@ -357,6 +372,7 @@ const CardItemContent = memo(({
   if (prev.boardTitle !== next.boardTitle) return false;
   if (prev.boardId !== next.boardId) return false;
   if (prev.currentUserId !== next.currentUserId) return false;
+  if (prev.unreadNotificationCount !== next.unreadNotificationCount) return false;
   if (prev.onRemoveMember !== next.onRemoveMember) return false;
   if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
 
@@ -395,6 +411,7 @@ const CardItem = ({
   boardId,
   currentUserId = '',
   customFieldValues,
+  unreadNotificationCount = 0,
 }: CardItemProps) => {
   const selectedCoverSize = card.cover_size ?? 'SMALL';
   const hasImageCover = Boolean(card.cover_image_url);
@@ -461,6 +478,7 @@ const CardItem = ({
         {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
         {...(typeof boardId === 'string' ? { boardId } : {})}
         {...(customFieldValues ? { customFieldValues } : {})}
+        unreadNotificationCount={unreadNotificationCount}
         currentUserId={currentUserId}
         onRemoveMember={handleRemoveMember}
       />
@@ -478,6 +496,7 @@ function areCardItemPropsEqual(prev: CardItemProps, next: CardItemProps): boolea
   if (prev.boardTitle !== next.boardTitle) return false;
   if (prev.boardId !== next.boardId) return false;
   if (prev.currentUserId !== next.currentUserId) return false;
+  if (prev.unreadNotificationCount !== next.unreadNotificationCount) return false;
   if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
 
   const prevCard = prev.card;

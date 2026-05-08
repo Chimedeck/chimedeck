@@ -21,6 +21,7 @@ import {
   selectCards,
   selectBoardStatus,
 } from '../../slices/boardSlice';
+import { markReadThunk, selectNotifications } from '../../../Notification/slices/notificationSlice';
 import BoardHeader from '../../components/BoardHeader';
 import BoardCanvas from '../../components/BoardCanvas';
 import { useBoardCardFieldValues } from '../../../CustomFields/api';
@@ -83,6 +84,7 @@ const BoardPage = () => {
   const lists = useAppSelector(selectLists);
   const cardsByList = useAppSelector(selectCardsByList);
   const cards = useAppSelector(selectCards);
+  const notifications = useAppSelector(selectNotifications);
   const status = useAppSelector(selectBoardStatus);
   const accessToken = useAppSelector(selectAuthToken);
   const currentUser = useAppSelector(selectAuthUser);
@@ -223,6 +225,23 @@ const BoardPage = () => {
     return 50;
   }, []);
 
+  const unreadNotificationIdsByCardId = useMemo(() => {
+    const grouped: Record<string, string[]> = {};
+    for (const notification of notifications) {
+      if (notification.read || !notification.card_id) continue;
+      grouped[notification.card_id] ??= [];
+      grouped[notification.card_id]?.push(notification.id);
+    }
+    return grouped;
+  }, [notifications]);
+
+  const unreadNotificationCountByCardId = useMemo(
+    () => Object.fromEntries(
+      Object.entries(unreadNotificationIdsByCardId).map(([cardId, ids]) => [cardId, ids.length]),
+    ) as Record<string, number>,
+    [unreadNotificationIdsByCardId],
+  );
+
   // ── Automation panel (Sprint 65) ─────────────────────────────────────────
   const automationPanel = useAutomationPanel();
 
@@ -278,6 +297,11 @@ const BoardPage = () => {
   // Open card modal via URL param
   const handleCardClick = useCallback(
     (cardId: string) => {
+      const unreadNotificationIds = unreadNotificationIdsByCardId[cardId] ?? [];
+      unreadNotificationIds.forEach((notificationId) => {
+        void dispatch(markReadThunk({ id: notificationId }));
+      });
+
       const targetCard = cards[cardId] as { short_id?: string | null; title?: string | null } | undefined;
       const routeCardId = targetCard?.short_id ?? cardId;
       const boardRouteTarget = (board?.short_id as string | undefined) ?? resolvedBoardRouteId ?? boardId;
@@ -298,7 +322,7 @@ const BoardPage = () => {
         ...(targetCard?.title ? { title: targetCard.title } : {}),
       }));
     },
-    [board, resolvedBoardRouteId, boardId, cards, navigate],
+    [board, resolvedBoardRouteId, boardId, cards, navigate, unreadNotificationIdsByCardId, dispatch],
   );
 
   const handleRouteCardClose = useCallback(() => {
@@ -709,6 +733,7 @@ const BoardPage = () => {
                 isReadOnly={board.state === 'ARCHIVED'}
                 isViewerGuest={isViewerGuest}
                 customFieldValuesMap={customFieldValuesMap}
+                unreadNotificationCountByCardId={unreadNotificationCountByCardId}
                 hasBackground={!!board.background}
                 collapseEmptyLists={filters.collapseLists && isFiltering}
               />

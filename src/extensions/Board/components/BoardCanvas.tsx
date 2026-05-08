@@ -110,6 +110,8 @@ interface Props {
   /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
    *  null = batch not yet loaded (don't pass per-card values to tiles). */
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
+  /** Unread notification counts keyed by card id for card-front bell badges. */
+  unreadNotificationCountByCardId?: Record<string, number>;
   /** True when the board has a background image — columns render solid, headers get frosted-glass. */
   hasBackground?: boolean;
   /** When true, lists whose filtered card count is 0 are hidden from the board. */
@@ -529,6 +531,7 @@ const BoardCanvas = ({
   isViewerGuest = false,
   collapseEmptyLists = false,
   customFieldValuesMap,
+  unreadNotificationCountByCardId,
 }: Props) => {
   // WHY: use one consistent drag-preview model across all boards so users
   // always see the same card-sized drop placeholder regardless of board size.
@@ -1501,6 +1504,7 @@ const BoardCanvas = ({
                 onToggleLabels={onToggleLabels}
                 {...(onCardClick ? { onCardClick } : {})}
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
+                {...(unreadNotificationCountByCardId ? { unreadNotificationCountByCardId } : {})}
                 isViewerGuest={isViewerGuest}
                 hasBackground={hasBackground}
                 // WHY: only the placeholder list needs active drag card id.
@@ -1524,6 +1528,7 @@ const BoardCanvas = ({
             currentUserId={currentUserId}
             labelsExpanded={labelsExpanded}
             onToggleLabels={onToggleLabels}
+            unreadNotificationCount={unreadNotificationCountByCardId?.[activeCard.id] ?? 0}
           />
         )}
       </DragOverlay>

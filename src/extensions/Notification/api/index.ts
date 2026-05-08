@@ -74,6 +74,10 @@ export const notificationApi = {
     return apiClient.patch(`/notifications/${id}/read`);
   },
 
+  markUnread({ id }: { id: string }): Promise<{ data: { id: string; read: boolean } }> {
+    return apiClient.patch(`/notifications/${id}/unread`);
+  },
+
   markAllRead(): Promise<{ data: { updated: number } }> {
     return apiClient.patch('/notifications/read-all');
   },
