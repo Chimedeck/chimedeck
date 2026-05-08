@@ -204,6 +204,8 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
   const currentUser = useAppSelector(selectCurrentUser);
   const notificationsInStack = stackedNotifications ?? [notification];
   const primaryNotification = notificationsInStack[0] ?? notification;
+  const isBoardUpdateStack = notificationsInStack.length > 1
+    && notificationsInStack.every((entry) => entry.type === 'card_updated');
 
   const handleClick = (entry: Notification) => {
     if (!entry.read) {
@@ -275,9 +277,14 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
   };
 
   const cardTitle = primaryNotification.card_title ?? 'Untitled card';
-  const locationLabel = [primaryNotification.board_title, primaryNotification.list_title]
-    .filter((value): value is string => Boolean(value))
-    .join(': ');
+  const headlineLabel = isBoardUpdateStack
+    ? primaryNotification.board_title ?? 'Board activity'
+    : cardTitle;
+  const locationLabel = isBoardUpdateStack
+    ? `${String(notificationsInStack.length)} card updates`
+    : [primaryNotification.board_title, primaryNotification.list_title]
+      .filter((value): value is string => Boolean(value))
+      .join(': ');
 
   return (
     <div
@@ -293,9 +300,9 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                 onClick={() => {
                   handleClick(primaryNotification);
                 }}
-                aria-label={`Open card ${cardTitle}`}
+                aria-label={isBoardUpdateStack ? `Open board ${headlineLabel}` : `Open card ${cardTitle}`}
               >
-                <p className="truncate text-sm font-semibold text-base">{cardTitle}</p>
+                <p className="truncate text-sm font-semibold text-base">{headlineLabel}</p>
               </button>
               {locationLabel && (
                 <p className="mt-1 text-xs text-muted">{locationLabel}</p>
@@ -370,10 +377,10 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                           <CommentReactions
                             reactions={commentReactions}
                             onAdd={(emoji) => {
-                              void handleAddReaction(entry, emoji);
+                              return handleAddReaction(entry, emoji);
                             }}
                             onRemove={(emoji) => {
-                              void handleRemoveReaction(entry, emoji);
+                              return handleRemoveReaction(entry, emoji);
                             }}
                           />
                         </div>

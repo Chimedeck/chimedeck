@@ -27,6 +27,22 @@ function isStackableDiscussionNotification(notification: Notification): boolean 
     || notification.type === 'mention';
 }
 
+function isStackableBoardUpdateNotification(notification: Notification): boolean {
+  return notification.type === 'card_updated' && Boolean(notification.board_id);
+}
+
+function resolveContinuousStackKey(notification: Notification): string | null {
+  if (isStackableDiscussionNotification(notification) && notification.card_id) {
+    return `discussion:${notification.card_id}`;
+  }
+
+  if (isStackableBoardUpdateNotification(notification) && notification.board_id) {
+    return `board-update:${notification.board_id}`;
+  }
+
+  return null;
+}
+
 function groupContinuousCardDiscussionNotifications(notifications: Notification[]): Notification[][] {
   const groups: Notification[][] = [];
 
@@ -39,9 +55,11 @@ function groupContinuousCardDiscussionNotifications(notifications: Notification[
         continue;
       }
 
-      const canJoinLastGroup = isStackableDiscussionNotification(notification)
-        && isStackableDiscussionNotification(lastGroupFirst)
-        && notification.card_id === lastGroupFirst.card_id;
+      const notificationKey = resolveContinuousStackKey(notification);
+      const lastGroupKey = resolveContinuousStackKey(lastGroupFirst);
+      const canJoinLastGroup = notificationKey != null
+        && lastGroupKey != null
+        && notificationKey === lastGroupKey;
 
       if (canJoinLastGroup) {
         lastGroup.push(notification);
