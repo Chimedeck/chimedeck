@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { marked } from 'marked';
 import MentionInput from '~/common/components/MentionInput/MentionInput';
 import Button from '../../../common/components/Button';
+import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -16,6 +17,44 @@ function addLinkTargetBlank(html: string): string {
     /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
     '<a target="_blank" rel="noopener noreferrer"',
   );
+}
+
+function normalizePreviewLinkHref(rawHref: string): string {
+  const trimmed = rawHref.trim();
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return trimmed;
+    }
+  })();
+
+  const markdownHrefMatch = /^\[[^\]]+\]\((.+)\)$/.exec(decoded);
+  const hrefCandidate = (markdownHrefMatch?.[1] ?? decoded).trim();
+  const unwrapped = hrefCandidate.replace(/^<([^>]+)>$/, '$1').trim();
+
+  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map((match) => match[0]);
+  const bestEmbeddedUrl = (() => {
+    if (embeddedUrls.length === 0) return null;
+
+    const currentHost = globalThis.location.hostname.toLowerCase();
+    const pick = [...embeddedUrls].reverse().find((value) => {
+      try {
+        const parsed = new URL(value);
+        const host = parsed.hostname.toLowerCase();
+        if (host === currentHost) return false;
+        if (host === 'localhost' || host === '127.0.0.1') return false;
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
+    return pick ?? embeddedUrls.at(-1) ?? null;
+  })();
+
+  const normalized = normalizeHttpUrlInput(bestEmbeddedUrl ?? unwrapped);
+  return normalized ?? unwrapped;
 }
 
 interface Props {
@@ -75,7 +114,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
         const href = link.getAttribute('href');
         if (href && href !== '#') {
           e.preventDefault();
-          window.open(href, '_blank', 'noopener,noreferrer');
+          window.open(normalizePreviewLinkHref(href), '_blank', 'noopener,noreferrer');
         }
         return;
       }

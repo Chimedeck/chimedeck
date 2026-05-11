@@ -51,6 +51,46 @@ function addLinkTargetBlank(html: string): string {
   );
 }
 
+function normalizePreviewLinkHref(rawHref: string): string {
+  const trimmed = rawHref.trim();
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return trimmed;
+    }
+  })();
+
+  // [why] Some markdown round-trips can leave a markdown token in href (e.g.
+  // [label](url)) and occasionally this arrives percent-encoded.
+  const markdownHrefMatch = /^\[[^\]]+\]\((.+)\)$/.exec(decoded);
+  const hrefCandidate = (markdownHrefMatch?.[1] ?? decoded).trim();
+  const unwrapped = hrefCandidate.replace(/^<([^>]+)>$/, '$1').trim();
+
+  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map((match) => match[0]);
+  const bestEmbeddedUrl = (() => {
+    if (embeddedUrls.length === 0) return null;
+
+    const currentHost = globalThis.location.hostname.toLowerCase();
+    const pick = [...embeddedUrls].reverse().find((value) => {
+      try {
+        const parsed = new URL(value);
+        const host = parsed.hostname.toLowerCase();
+        if (host === currentHost) return false;
+        if (host === 'localhost' || host === '127.0.0.1') return false;
+        return true;
+      } catch {
+        return false;
+      }
+    });
+
+    return pick ?? embeddedUrls.at(-1) ?? null;
+  })();
+
+  const normalized = normalizeHttpUrlInput(bestEmbeddedUrl ?? unwrapped);
+  return normalized ?? unwrapped;
+}
+
 interface Props {
   boardId: string;
   cardId?: string;
@@ -81,6 +121,18 @@ function normalizeEscapedBlockquoteMarkers(markdown: string): string {
     .replaceAll(/^(\s*)&amp;gt;(?=\s|$)/gm, '$1>');
 }
 
+function normalizeMarkdownLinkUrls(markdown: string): string {
+  return markdown.replaceAll(
+    /\]\((<[^>]+>|[^)\s]+)(\s+["'][^"']*["'])?\)/g,
+    (fullMatch, rawDestination: string, rawTitle: string | undefined) => {
+      const destination = rawDestination.replace(/^<([^>]+)>$/, '$1').trim();
+      const normalized = normalizeHttpUrlInput(destination);
+      if (!normalized) return fullMatch;
+      return `](${normalized}${rawTitle ?? ''})`;
+    },
+  );
+}
+
 function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): string {
   let markdown = normalizeEscapedBlockquoteMarkers(editor.getMarkdown() || '');
   const imageSnippets: string[] = [];
@@ -101,6 +153,8 @@ function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): st
       ? `${markdown.trim()}\n\n${snippet}`
       : snippet;
   });
+
+  markdown = normalizeMarkdownLinkUrls(markdown);
 
   return dehydrateCommentAttachmentMarkdown(markdown, attachments);
 }
@@ -216,11 +270,11 @@ function buildDescriptionSaveMarkdown(
     return buildDescriptionMarkdown(editor, attachments);
   }
 
-  return dehydrateCommentAttachmentMarkdown(draft, attachments);
+  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(draft), attachments);
 }
 
 function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): string {
-  const normalized = normalizeEscapedBlockquoteMarkers(markdown);
+  const normalized = normalizeMarkdownLinkUrls(normalizeEscapedBlockquoteMarkers(markdown));
   if (attachments.length > 0) {
     const hydrated = hydrateCommentAttachmentMarkdown(normalized, attachments);
     return rewriteS3UrlsToProxy(hydrated, attachments);
@@ -886,7 +940,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 const href = link.getAttribute('href');
                 if (href && href !== '#') {
                   e.preventDefault();
-                  window.open(href, '_blank', 'noopener,noreferrer');
+                  window.open(normalizePreviewLinkHref(href), '_blank', 'noopener,noreferrer');
                 }
                 return;
               }
