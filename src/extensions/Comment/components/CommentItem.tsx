@@ -22,8 +22,30 @@ import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 const LINK_CLASS_BUTTON = 'cd-link-button';
 const LINK_CLASS_CARD = 'cd-link-card';
 const LINK_CLASS_URL = 'cd-link-url';
+const LINK_MODE_TITLE_PREFIX = 'cd-mode:';
+const LINK_MODE_META_URL = 'cd-link-mode-url';
+const LINK_MODE_META_BUTTON = 'cd-link-mode-button';
+const LINK_MODE_META_CARD = 'cd-link-mode-card';
 
 type LinkDisplayMode = 'url' | 'button' | 'card';
+
+function getModeFromClassName(className: string | null | undefined): LinkDisplayMode | null {
+  if (!className) return null;
+  const tokens = new Set(className.split(/\s+/).filter(Boolean));
+  if (tokens.has(LINK_MODE_META_URL)) return 'url';
+  if (tokens.has(LINK_MODE_META_CARD)) return 'card';
+  if (tokens.has(LINK_MODE_META_BUTTON)) return 'button';
+  return null;
+}
+
+function getModeFromTitle(value: string | null | undefined): LinkDisplayMode | null {
+  if (!value) return null;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}url`) return 'url';
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}button`) return 'button';
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}card`) return 'card';
+  return null;
+}
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -86,6 +108,12 @@ function normalizeComparableUrl(value: string): string {
 }
 
 function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
+  const modeFromClass = getModeFromClassName(anchor.getAttribute('class'));
+  if (modeFromClass) return modeFromClass;
+
+  const modeFromTitle = getModeFromTitle(anchor.getAttribute('title'));
+  if (modeFromTitle) return modeFromTitle;
+
   if (anchor.querySelector('br')) return 'card';
 
   const href = anchor.getAttribute('href')?.trim() ?? '';
@@ -164,6 +192,15 @@ function normalizeRenderedLinkHtml(html: string): string {
   if (!html || !/<a\b/i.test(html)) return html;
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
+  const anchors = Array.from(doc.body.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  anchors.forEach((anchor) => {
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+    const normalizedHref = normalizePreviewLinkHref(href);
+    if (normalizedHref && normalizedHref !== href) {
+      anchor.setAttribute('href', normalizedHref);
+    }
+  });
   mergeConsecutiveDuplicateHrefLinks(doc.body);
   return doc.body.innerHTML;
 }

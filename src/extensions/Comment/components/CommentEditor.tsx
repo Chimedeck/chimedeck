@@ -55,6 +55,7 @@ const LINK_CLASS_BUTTON = 'cd-link-button';
 const LINK_CLASS_CARD = 'cd-link-card';
 const LINK_CLASS_URL = 'cd-link-url';
 const LINK_CLASS_LOADING = 'cd-link-loading';
+const LINK_MODE_TITLE_PREFIX = 'cd-mode:';
 const LINK_MODE_META_URL = 'cd-link-mode-url';
 const LINK_MODE_META_BUTTON = 'cd-link-mode-button';
 const LINK_MODE_META_CARD = 'cd-link-mode-card';
@@ -78,6 +79,19 @@ function buildLinkClassName(mode: LinkDisplayMode, extraTokens: string[] = []): 
     .map((token) => token.trim())
     .filter((token) => token.length > 0);
   return Array.from(new Set(tokens)).join(' ');
+}
+
+function buildLinkModeTitle(mode: LinkDisplayMode): string {
+  return `${LINK_MODE_TITLE_PREFIX}${mode}`;
+}
+
+function getModeFromTitle(value: unknown): LinkDisplayMode | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}url`) return 'url';
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}button`) return 'button';
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}card`) return 'card';
+  return null;
 }
 
 function getModeFromClassName(className: string | null | undefined): LinkDisplayMode | null {
@@ -114,10 +128,14 @@ function detectLinkDisplayMode(
   className: string | null | undefined,
   text: string,
   href: string,
+  title?: string | null,
   hasVisualLineBreak = false,
 ): LinkDisplayMode {
   const modeFromMetadata = getModeFromClassName(className);
   if (modeFromMetadata) return modeFromMetadata;
+
+  const modeFromTitle = getModeFromTitle(title);
+  if (modeFromTitle) return modeFromTitle;
 
   if (className?.includes(LINK_CLASS_URL)) return 'url';
   if (className?.includes(LINK_CLASS_CARD) || hasVisualLineBreak || text.includes('\n')) return 'card';
@@ -249,7 +267,8 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
       return undefined;
     });
 
-    const inferredMode = detectLinkDisplayMode(currentClass, text, href, hasHardBreak || text.includes('\n'));
+    const title = typeof linkAttrs?.title === 'string' ? linkAttrs.title : null;
+    const inferredMode = detectLinkDisplayMode(currentClass, text, href, title, hasHardBreak || text.includes('\n'));
     const nextClass = buildLinkClassName(inferredMode);
 
     if (currentClass === nextClass) return;
@@ -258,6 +277,7 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
     tr.addMark(range.from, range.to, linkType.create({
       ...linkAttrs,
       class: nextClass,
+      title: buildLinkModeTitle(inferredMode),
       target: '_blank',
       rel: 'noopener noreferrer',
     }));
@@ -291,7 +311,13 @@ function findActiveLinkFromAnchor(editor: Editor, anchorEl: HTMLAnchorElement): 
   if (!range) return null;
 
   const text = editor.state.doc.textBetween(range.from, range.to, '\n');
-  const mode = detectLinkDisplayMode(anchorEl.getAttribute('class'), text, href, Boolean(anchorEl.querySelector('br')));
+  const mode = detectLinkDisplayMode(
+    anchorEl.getAttribute('class'),
+    text,
+    href,
+    anchorEl.getAttribute('title'),
+    Boolean(anchorEl.querySelector('br')),
+  );
 
   return {
     anchorEl,
@@ -318,6 +344,7 @@ function findActiveLinkFromSelection(editor: Editor): ActiveEditorLink | null {
   if (!href) return null;
 
   const className = typeof attrs.class === 'string' ? attrs.class : null;
+  const title = typeof attrs.title === 'string' ? attrs.title : null;
   const text = editor.state.doc.textBetween(range.from, range.to, '\n');
 
   const fromCoords = editor.view.coordsAtPos(range.from);
@@ -337,7 +364,7 @@ function findActiveLinkFromSelection(editor: Editor): ActiveEditorLink | null {
     anchorEl = null;
   }
 
-  const mode = detectLinkDisplayMode(className, text, href, Boolean(anchorEl?.querySelector('br')));
+  const mode = detectLinkDisplayMode(className, text, href, title, Boolean(anchorEl?.querySelector('br')));
 
   return {
     anchorEl,
@@ -406,7 +433,30 @@ function buildCommentMarkdown(editor: Editor, attachments: Attachment[]): string
       : snippet;
   });
 
-  return dehydrateCommentAttachmentMarkdown(markdown, attachments);
+  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(markdown), attachments);
+}
+
+function normalizeMarkdownLinkUrls(markdown: string): string {
+  return markdown.replaceAll(
+    /\]\((<[^>]+>|[^)\s]+)(\s+["'][^"']*["'])?\)/g,
+    (fullMatch, rawDestination: string, rawTitle: string | undefined) => {
+      const destination = rawDestination.replace(/^<([^>]+)>$/, '$1').trim();
+      const decodedDestination = (() => {
+        try {
+          return decodeURIComponent(destination);
+        } catch {
+          return destination;
+        }
+      })();
+
+      const markdownWrapped = /^\[[^\]]+\]\((.+)\)$/.exec(decodedDestination)?.[1]?.trim();
+      const destinationCandidate = markdownWrapped ?? decodedDestination;
+
+      const normalized = normalizeHttpUrlInput(destinationCandidate);
+      if (!normalized) return fullMatch;
+      return `](${normalized}${rawTitle ?? ''})`;
+    },
+  );
 }
 
 function escapeMdLabel(value: string): string {
@@ -502,7 +552,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
       {
         type: 'text',
         text: displayName,
-        marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noopener noreferrer', class: buildLinkClassName('button') } }],
+        marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noopener noreferrer', class: buildLinkClassName('button'), title: buildLinkModeTitle('button') } }],
       },
       { type: 'text', text: ' ' },
     ])
@@ -730,7 +780,7 @@ const CommentEditor = ({
             {
               type: 'text',
               text: href,
-              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: loadingClass } }],
+              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: loadingClass, title: buildLinkModeTitle('url') } }],
             },
             { type: 'text', text: ' ' },
           ])
@@ -801,7 +851,7 @@ const CommentEditor = ({
             {
               type: 'text',
               text,
-              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: buildLinkClassName('button') } }],
+              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: buildLinkClassName('button'), title: buildLinkModeTitle('button') } }],
             },
             { type: 'text', text: ' ' },
           ])
@@ -1011,6 +1061,7 @@ const CommentEditor = ({
       target: '_blank',
       rel: 'noopener noreferrer',
       class: linkClass,
+      title: buildLinkModeTitle(payload.displayMode),
     };
 
     editor

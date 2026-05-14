@@ -301,6 +301,15 @@ function normalizeRenderedLinkHtml(html: string): string {
   if (!html || !/<a\b/i.test(html)) return html;
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
+  const anchors = Array.from(doc.body.querySelectorAll('a[href]'));
+  anchors.forEach((anchor) => {
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+    const normalizedHref = normalizePreviewLinkHref(href);
+    if (normalizedHref && normalizedHref !== href) {
+      anchor.setAttribute('href', normalizedHref);
+    }
+  });
   mergeConsecutiveDuplicateHrefLinks(doc.body);
   return doc.body.innerHTML;
 }
@@ -428,7 +437,21 @@ function normalizeMarkdownLinkUrls(markdown: string): string {
     /\]\((<[^>]+>|[^)\s]+)(\s+["'][^"']*["'])?\)/g,
     (fullMatch, rawDestination: string, rawTitle: string | undefined) => {
       const destination = rawDestination.replace(/^<([^>]+)>$/, '$1').trim();
-      const normalized = normalizeHttpUrlInput(destination);
+      const decodedDestination = (() => {
+        try {
+          return decodeURIComponent(destination);
+        } catch {
+          return destination;
+        }
+      })();
+
+      // [why] Some drafts can accidentally store markdown tokens in the
+      // destination position, e.g. ]([Label](https://...)). Unwrap so the
+      // anchor href is a plain URL (important for native browser open-in-new-tab).
+      const markdownWrapped = /^\[[^\]]+\]\((.+)\)$/.exec(decodedDestination)?.[1]?.trim();
+      const destinationCandidate = markdownWrapped ?? decodedDestination;
+
+      const normalized = normalizeHttpUrlInput(destinationCandidate);
       if (!normalized) return fullMatch;
       return `](${normalized}${rawTitle ?? ''})`;
     },
