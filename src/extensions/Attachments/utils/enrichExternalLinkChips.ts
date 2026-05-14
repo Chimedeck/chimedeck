@@ -55,6 +55,10 @@ export async function enrichExternalLinkChips(root: HTMLElement): Promise<void> 
   await Promise.all(anchors.map(async (anchor) => {
     if (anchor.dataset.metaChipReady === '1') return;
     if (anchor.querySelector('img')) return;
+    // [why] Card-mode links are represented as multi-line anchors (hard break
+    // between title and host). Keep their card presentation intact in view mode
+    // instead of collapsing them into compact metadata chips.
+    if (anchor.querySelector('br')) return;
 
     const rawHref = anchor.getAttribute('href')?.trim() ?? '';
     const absolute = toAbsoluteHttpUrl(rawHref);

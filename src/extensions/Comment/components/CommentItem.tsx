@@ -15,10 +15,15 @@ import CommentDeletedItem from './CommentDeletedItem';
 import CommentReactions from './CommentReactions';
 import CommentReplyThread from './CommentReplyThread';
 import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
-import { enrichExternalLinkChips } from '~/extensions/Attachments/utils/enrichExternalLinkChips';
 import translations from '../translations/en.json';
 import apiClient from '~/common/api/client';
 import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+
+const LINK_CLASS_BUTTON = 'cd-link-button';
+const LINK_CLASS_CARD = 'cd-link-card';
+const LINK_CLASS_URL = 'cd-link-url';
+
+type LinkDisplayMode = 'url' | 'button' | 'card';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -67,6 +72,100 @@ function normalizePreviewLinkHref(rawHref: string): string {
 
   const normalized = normalizeHttpUrlInput(bestEmbeddedUrl ?? unwrapped);
   return normalized ?? unwrapped;
+}
+
+function normalizeComparableUrl(value: string): string {
+  const normalized = normalizeHttpUrlInput(value) ?? value.trim();
+  try {
+    const parsed = new URL(normalized);
+    parsed.hash = '';
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return normalized.replace(/\/$/, '');
+  }
+}
+
+function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
+  if (anchor.querySelector('br')) return 'card';
+
+  const href = anchor.getAttribute('href')?.trim() ?? '';
+  const text = (anchor.textContent ?? '').replaceAll('\u00a0', ' ').trim();
+  if (!href || !text) return 'button';
+
+  const normalizedHref = normalizeComparableUrl(href);
+  const normalizedText = normalizeComparableUrl(text);
+  if (normalizedHref.length > 0 && normalizedHref === normalizedText) return 'url';
+
+  return 'button';
+}
+
+function hydratePreviewLinkModes(root: HTMLElement): void {
+  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  anchors.forEach((anchor) => {
+    anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON, LINK_CLASS_CARD);
+
+    const mode = classifyPreviewLinkMode(anchor);
+    if (mode === 'card') {
+      anchor.classList.add(LINK_CLASS_CARD);
+      return;
+    }
+    if (mode === 'url') {
+      anchor.classList.add(LINK_CLASS_URL);
+      return;
+    }
+    anchor.classList.add(LINK_CLASS_BUTTON);
+  });
+}
+
+function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
+  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  anchors.forEach((anchor) => {
+    if (!anchor.isConnected) return;
+
+    let separator: Node | null = anchor.nextSibling;
+    while (separator?.nodeType === Node.TEXT_NODE && !separator.textContent?.trim()) {
+      separator = separator.nextSibling;
+    }
+
+    const hadBrSeparator = separator instanceof HTMLBRElement;
+    let nextNode: Node | null = separator;
+    if (hadBrSeparator) {
+      nextNode = separator?.nextSibling ?? null;
+      while (nextNode?.nodeType === Node.TEXT_NODE && !nextNode.textContent?.trim()) {
+        nextNode = nextNode.nextSibling;
+      }
+    }
+
+    if (!(nextNode instanceof HTMLAnchorElement)) return;
+
+    const leftHref = normalizeComparableUrl(anchor.getAttribute('href') ?? '');
+    const rightHref = normalizeComparableUrl(nextNode.getAttribute('href') ?? '');
+    if (!leftHref || leftHref !== rightHref) return;
+
+    const firstText = (anchor.textContent ?? '').replaceAll('\u00a0', ' ').trim();
+    const secondText = (nextNode.textContent ?? '').replaceAll('\u00a0', ' ').trim();
+    if (!firstText || !secondText) return;
+
+    anchor.textContent = '';
+    anchor.append(document.createTextNode(firstText));
+    anchor.append(document.createElement('br'));
+    anchor.append(document.createTextNode(secondText));
+    anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON);
+    anchor.classList.add(LINK_CLASS_CARD);
+
+    if (hadBrSeparator && separator instanceof HTMLBRElement) {
+      separator.remove();
+    }
+    nextNode.remove();
+  });
+}
+
+function normalizeRenderedLinkHtml(html: string): string {
+  if (!html || !/<a\b/i.test(html)) return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  mergeConsecutiveDuplicateHrefLinks(doc.body);
+  return doc.body.innerHTML;
 }
 
 // Use a local parser instance so global marked extensions configured elsewhere
@@ -218,7 +317,7 @@ function renderContent(text: string, attachments: Attachment[]): string {
   );
   // [why] Ensure all links open in a new tab so the user is never navigated away
   // from the board view.
-  return addLinkTargetBlank(withMentions);
+  return addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions));
 }
 
 const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
@@ -302,7 +401,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
       void hydrateImage(img);
     });
 
-    void enrichExternalLinkChips(root);
+    hydratePreviewLinkModes(root);
 
     return () => {
       cancelled = true;

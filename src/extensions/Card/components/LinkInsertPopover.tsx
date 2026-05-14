@@ -9,6 +9,8 @@ import Button from '../../../common/components/Button';
 import { fetchLinkPreview } from '~/extensions/Attachments/api';
 import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 
+const LINK_CLASS_BUTTON = 'cd-link-button';
+
 interface Props {
   editor: Editor | null;
   onClose: () => void;
@@ -101,7 +103,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           {
             type: 'text',
             text: nextDisplayText,
-            marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+            marks: [{ type: 'link', attrs: { href, target: '_blank', class: LINK_CLASS_BUTTON } }],
           },
         )
         .run();
@@ -112,10 +114,10 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
 
     if (hasSelection) {
       // Apply link mark to existing selection
-      editor.chain().focus().setLink({ href, target: '_blank' }).run();
+      editor.chain().focus().setLink({ href, target: '_blank', class: LINK_CLASS_BUTTON }).run();
     } else if (isInsideLink) {
       // Update the active link mark when cursor is inside an existing link.
-      editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank' }).run();
+      editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank', class: LINK_CLASS_BUTTON }).run();
     } else if (nextDisplayText) {
       // Insert new text node with link mark
       editor
@@ -125,7 +127,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           {
             type: 'text',
             text: nextDisplayText,
-            marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+            marks: [{ type: 'link', attrs: { href, target: '_blank', class: LINK_CLASS_BUTTON } }],
           },
           { type: 'text', text: ' ' },
         ])
@@ -141,7 +143,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           {
             type: 'text',
             text: inlineTitle,
-            marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+            marks: [{ type: 'link', attrs: { href, target: '_blank', class: LINK_CLASS_BUTTON } }],
           },
           { type: 'text', text: ' ' },
         ])

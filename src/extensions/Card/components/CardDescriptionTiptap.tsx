@@ -5,8 +5,18 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import { Markdown } from '@tiptap/markdown';
 import type { Editor } from '@tiptap/react';
+import { getMarkRange } from '@tiptap/core';
 import { marked } from 'marked';
 import { useSelector } from 'react-redux';
+import {
+  AdjustmentsHorizontalIcon,
+  ArrowTopRightOnSquareIcon,
+  ClipboardDocumentIcon,
+  LinkIcon,
+  MinusIcon,
+  RectangleStackIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import OneLineToolbar from './OneLineToolbar';
 import LinkInsertPopover from './LinkInsertPopover';
 import Button from '../../../common/components/Button';
@@ -36,7 +46,6 @@ import {
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
-import { enrichExternalLinkChips } from '~/extensions/Attachments/utils/enrichExternalLinkChips';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -89,6 +98,227 @@ function normalizePreviewLinkHref(rawHref: string): string {
 
   const normalized = normalizeHttpUrlInput(bestEmbeddedUrl ?? unwrapped);
   return normalized ?? unwrapped;
+}
+
+const LINK_CLASS_BUTTON = 'cd-link-button';
+const LINK_CLASS_CARD = 'cd-link-card';
+const LINK_CLASS_URL = 'cd-link-url';
+const LINK_CLASS_LOADING = 'cd-link-loading';
+
+type LinkDisplayMode = 'url' | 'button' | 'card';
+
+interface ActiveEditorLink {
+  anchorEl: HTMLAnchorElement | null;
+  from: number;
+  to: number;
+  href: string;
+  text: string;
+  mode: LinkDisplayMode;
+  rect: DOMRect;
+}
+
+function detectLinkDisplayMode(
+  className: string | null | undefined,
+  text: string,
+  hasVisualLineBreak = false,
+): LinkDisplayMode {
+  if (className?.includes(LINK_CLASS_URL)) return 'url';
+  if (className?.includes(LINK_CLASS_CARD) || hasVisualLineBreak || text.includes('\n')) return 'card';
+  // [why] Default link presentation in edit mode should be the compact button
+  // style, not raw URL text mode.
+  if (className?.includes(LINK_CLASS_BUTTON)) return 'button';
+  return 'button';
+}
+
+function getLinkLabelText(text: string): string {
+  const firstLine = text.split('\n')[0]?.trim() ?? '';
+  return firstLine || text.trim();
+}
+
+function buildCardLinkText(label: string, href: string): string {
+  const normalized = normalizeHttpUrlInput(href) ?? href;
+  try {
+    const host = new URL(normalized).hostname.replace(/^www\./i, '');
+    return `${label}\n${host}`;
+  } catch {
+    return label;
+  }
+}
+
+function normalizeComparableUrl(value: string): string {
+  const normalized = normalizeHttpUrlInput(value) ?? value.trim();
+  try {
+    const parsed = new URL(normalized);
+    parsed.hash = '';
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    return normalized.replace(/\/$/, '');
+  }
+}
+
+function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
+  if (anchor.querySelector('br')) return 'card';
+
+  const href = anchor.getAttribute('href')?.trim() ?? '';
+  const text = anchor.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
+  if (!href || !text) return 'button';
+
+  const normalizedHref = normalizeComparableUrl(href);
+  const normalizedText = normalizeComparableUrl(text);
+  if (normalizedHref.length > 0 && normalizedHref === normalizedText) return 'url';
+
+  return 'button';
+}
+
+function hydratePreviewLinkModes(root: HTMLElement): void {
+  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  anchors.forEach((anchor) => {
+    anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON, LINK_CLASS_CARD);
+
+    const mode = classifyPreviewLinkMode(anchor);
+    if (mode === 'card') {
+      anchor.classList.add(LINK_CLASS_CARD);
+      return;
+    }
+    if (mode === 'url') {
+      anchor.classList.add(LINK_CLASS_URL);
+      return;
+    }
+    anchor.classList.add(LINK_CLASS_BUTTON);
+  });
+}
+
+function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
+  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  anchors.forEach((anchor) => {
+    if (!anchor.isConnected) return;
+
+    let separator: Node | null = anchor.nextSibling;
+    while (separator && separator.nodeType === Node.TEXT_NODE && !(separator.textContent ?? '').trim()) {
+      separator = separator.nextSibling;
+    }
+
+    const hadBrSeparator = separator instanceof HTMLBRElement;
+    let nextNode: Node | null = separator;
+    if (hadBrSeparator) {
+      nextNode = separator.nextSibling;
+      while (nextNode && nextNode.nodeType === Node.TEXT_NODE && !(nextNode.textContent ?? '').trim()) {
+        nextNode = nextNode.nextSibling;
+      }
+    }
+
+    if (!(nextNode instanceof HTMLAnchorElement)) return;
+
+    const leftHref = normalizeComparableUrl(anchor.getAttribute('href') ?? '');
+    const rightHref = normalizeComparableUrl(nextNode.getAttribute('href') ?? '');
+    if (!leftHref || leftHref !== rightHref) return;
+
+    const firstText = anchor.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
+    const secondText = nextNode.textContent?.replace(/\u00a0/g, ' ').trim() ?? '';
+    if (!firstText || !secondText) return;
+
+    anchor.textContent = '';
+    anchor.append(document.createTextNode(firstText));
+    anchor.append(document.createElement('br'));
+    anchor.append(document.createTextNode(secondText));
+    anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON);
+    anchor.classList.add(LINK_CLASS_CARD);
+
+    if (hadBrSeparator && separator instanceof HTMLBRElement) {
+      separator.remove();
+    }
+    nextNode.remove();
+  });
+}
+
+function normalizeRenderedLinkHtml(html: string): string {
+  if (!html || !/<a\b/i.test(html)) return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  mergeConsecutiveDuplicateHrefLinks(doc.body);
+  return doc.body.innerHTML;
+}
+
+function findActiveLinkFromAnchor(editor: Editor, anchorEl: HTMLAnchorElement): ActiveEditorLink | null {
+  const href = anchorEl.getAttribute('href')?.trim() ?? '';
+  if (!href) return null;
+
+  const linkType = editor.state.schema.marks.link;
+  if (!linkType) return null;
+
+  let range = null;
+  const candidateOffsets = [0, 1, -1];
+  for (const offset of candidateOffsets) {
+    try {
+      const basePos = editor.view.posAtDOM(anchorEl, 0);
+      const safePos = Math.max(1, Math.min(basePos + offset, editor.state.doc.content.size));
+      range = getMarkRange(editor.state.doc.resolve(safePos), linkType);
+      if (range) break;
+    } catch {
+      // Try next candidate offset.
+    }
+  }
+
+  if (!range) return null;
+
+  const text = editor.state.doc.textBetween(range.from, range.to, '\n');
+  const mode = detectLinkDisplayMode(anchorEl.getAttribute('class'), text, Boolean(anchorEl.querySelector('br')));
+
+  return {
+    anchorEl,
+    from: range.from,
+    to: range.to,
+    href,
+    text,
+    mode,
+    rect: anchorEl.getBoundingClientRect(),
+  };
+}
+
+function findActiveLinkFromSelection(editor: Editor): ActiveEditorLink | null {
+  if (!editor.isActive('link')) return null;
+
+  const linkType = editor.state.schema.marks.link;
+  if (!linkType) return null;
+
+  const range = getMarkRange(editor.state.selection.$from, linkType);
+  if (!range) return null;
+
+  const attrs = editor.getAttributes('link') as Record<string, unknown>;
+  const href = typeof attrs.href === 'string' ? attrs.href.trim() : '';
+  if (!href) return null;
+
+  const className = typeof attrs.class === 'string' ? attrs.class : null;
+  const text = editor.state.doc.textBetween(range.from, range.to, '\n');
+
+  const fromCoords = editor.view.coordsAtPos(range.from);
+  const toCoords = editor.view.coordsAtPos(Math.max(range.from + 1, range.to));
+  const left = Math.min(fromCoords.left, toCoords.left);
+  const top = Math.min(fromCoords.top, toCoords.top);
+  const right = Math.max(fromCoords.right, toCoords.right);
+  const bottom = Math.max(fromCoords.bottom, toCoords.bottom);
+  const rect = new DOMRect(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
+
+  let anchorEl: HTMLAnchorElement | null = null;
+  try {
+    const domAt = editor.view.domAtPos(range.from);
+    const node = domAt.node instanceof Element ? domAt.node : domAt.node.parentElement;
+    anchorEl = node?.closest('a') as HTMLAnchorElement | null;
+  } catch {
+    anchorEl = null;
+  }
+
+  const mode = detectLinkDisplayMode(className, text, Boolean(anchorEl?.querySelector('br')));
+
+  return {
+    anchorEl,
+    from: range.from,
+    to: range.to,
+    href,
+    text,
+    mode,
+    rect,
+  };
 }
 
 interface Props {
@@ -206,8 +436,8 @@ function looksLikeHtmlContent(value: string): boolean {
 function buildEditorContentHtml(source: string, attachments: Attachment[]): string {
   const initialContent = getInitialEditorContent(source, attachments);
   if (!initialContent) return '';
-  if (looksLikeHtmlContent(initialContent)) return initialContent;
-  return marked.parse(initialContent) as string;
+  if (looksLikeHtmlContent(initialContent)) return normalizeRenderedLinkHtml(initialContent);
+  return normalizeRenderedLinkHtml(marked.parse(initialContent) as string);
 }
 
 function setEditorContentFromSource(editor: Editor, source: string, attachments: Attachment[]): void {
@@ -217,6 +447,132 @@ function setEditorContentFromSource(editor: Editor, source: string, attachments:
     return;
   }
   editor.commands.setContent(htmlContent);
+  hydrateEditorLinkMarkClasses(editor);
+}
+
+function hydrateEditorLinkMarkClasses(editor: Editor): void {
+  const linkType = editor.state.schema.marks.link;
+  if (!linkType) return;
+
+  const tr = editor.state.tr;
+  const seenRanges = new Set<string>();
+
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText || !node.text || node.text.length === 0) return;
+
+    const hasLinkMark = node.marks.some((mark) => mark.type === linkType);
+    if (!hasLinkMark) return;
+
+    const resolvePos = Math.max(1, Math.min(pos + 1, editor.state.doc.content.size));
+    const range = getMarkRange(editor.state.doc.resolve(resolvePos), linkType);
+    if (!range) return;
+
+    const rangeKey = `${range.from}:${range.to}`;
+    if (seenRanges.has(rangeKey)) return;
+    seenRanges.add(rangeKey);
+
+    const linkAttrs = editor.state.doc
+      .resolve(range.from)
+      .marks()
+      .find((mark) => mark.type === linkType)?.attrs as Record<string, unknown> | undefined;
+
+    const href = typeof linkAttrs?.href === 'string' ? linkAttrs.href.trim() : '';
+    if (!href) return;
+
+    const currentClass = typeof linkAttrs?.class === 'string' ? linkAttrs.class : '';
+    const text = editor.state.doc.textBetween(range.from, range.to, '\n');
+    let hasHardBreak = false;
+    editor.state.doc.nodesBetween(range.from, range.to, (child) => {
+      if (child.type.name === 'hardBreak') {
+        hasHardBreak = true;
+        return false;
+      }
+      return undefined;
+    });
+    const inferredMode = detectLinkDisplayMode(currentClass, text, hasHardBreak || text.includes('\n'));
+    const nextClass = inferredMode === 'url'
+      ? LINK_CLASS_URL
+      : inferredMode === 'card'
+        ? LINK_CLASS_CARD
+        : LINK_CLASS_BUTTON;
+
+    if (currentClass === nextClass) return;
+
+    tr.removeMark(range.from, range.to, linkType);
+    tr.addMark(range.from, range.to, linkType.create({
+      ...linkAttrs,
+      class: nextClass,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    }));
+  });
+
+  if (tr.steps.length > 0) {
+    editor.view.dispatch(tr);
+  }
+}
+
+interface LinkRangeTarget {
+  from: number;
+  to: number;
+  attrs: Record<string, unknown>;
+}
+
+function findLinkRangeByClassToken(editor: Editor, classToken: string): LinkRangeTarget | null {
+  const linkType = editor.state.schema.marks.link;
+  if (!linkType) return null;
+
+  let found: LinkRangeTarget | null = null;
+
+  editor.state.doc.descendants((node, pos) => {
+    if (found) return false;
+    if (!node.isText || !node.text || node.text.length === 0) return;
+
+    const linkMark = node.marks.find((mark) => {
+      if (mark.type !== linkType) return false;
+      const classValue = typeof mark.attrs.class === 'string' ? mark.attrs.class : '';
+      return classValue.split(/\s+/).filter(Boolean).includes(classToken);
+    });
+    if (!linkMark) return;
+
+    const resolvePos = Math.max(1, Math.min(pos + 1, editor.state.doc.content.size));
+    const range = getMarkRange(editor.state.doc.resolve(resolvePos), linkType);
+    if (!range) return;
+
+    found = {
+      from: range.from,
+      to: range.to,
+      attrs: linkMark.attrs as Record<string, unknown>,
+    };
+
+    return false;
+  });
+
+  return found;
+}
+
+function replaceLinkRangeText(
+  editor: Editor,
+  target: LinkRangeTarget,
+  text: string,
+  className: string,
+): void {
+  const linkType = editor.state.schema.marks.link;
+  if (!linkType) return;
+
+  const href = typeof target.attrs.href === 'string' ? target.attrs.href.trim() : '';
+  if (!href) return;
+
+  const mark = linkType.create({
+    ...target.attrs,
+    href,
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    class: className,
+  });
+  const textNode = editor.state.schema.text(text, [mark]);
+  const tr = editor.state.tr.replaceWith(target.from, target.to, textNode);
+  editor.view.dispatch(tr);
 }
 
 function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): boolean {
@@ -293,6 +649,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null);
+  const [hoveredLink, setHoveredLink] = useState<ActiveEditorLink | null>(null);
+  const [activeEditorLink, setActiveEditorLink] = useState<ActiveEditorLink | null>(null);
+  const [linkConfigOpen, setLinkConfigOpen] = useState(false);
+  const [linkEditOpen, setLinkEditOpen] = useState(false);
+  const [linkEditUrl, setLinkEditUrl] = useState('');
+  const [linkEditText, setLinkEditText] = useState('');
 
   // Auth + workspace context needed by the offline draft hook
   const currentUser = useSelector(selectCurrentUser);
@@ -308,6 +670,10 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const cardAttachmentsRef = useRef<Attachment[]>([]);
   const pendingHydratedContentRef = useRef<string | null>(description || null);
   const pendingAttachmentInsertRef = useRef<Map<string, number>>(new Map());
+  const editorScrollRef = useRef<HTMLDivElement>(null);
+  const linkEditUrlInputRef = useRef<HTMLInputElement>(null);
+  const linkConfigRef = useRef<HTMLDivElement>(null);
+  const linkEditRef = useRef<HTMLDivElement>(null);
 
   const replaceCardAttachments = useCallback((attachments: Attachment[]) => {
     cardAttachmentsRef.current = attachments;
@@ -460,6 +826,23 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         event.preventDefault();
         const pos = view.state.selection.from;
 
+        const loadingToken = `link-loading-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const loadingClass = `${LINK_CLASS_URL} ${LINK_CLASS_LOADING} ${loadingToken}`;
+
+        editorRef.current
+          ?.chain()
+          .focus()
+          .insertContentAt(pos, [
+            {
+              type: 'text',
+              text: href,
+              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: loadingClass } }],
+            },
+            { type: 'text', text: ' ' },
+          ])
+          .setTextSelection(pos + href.length + 1)
+          .run();
+
         void (async () => {
           let inlineTitle = getInlineTitleFromUrl(href);
           try {
@@ -471,19 +854,13 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             // Keep inlineTitle fallback.
           }
 
-          editorRef.current
-            ?.chain()
-            .focus()
-            .insertContentAt(pos, [
-              {
-                type: 'text',
-                text: inlineTitle,
-                marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
-              },
-              { type: 'text', text: ' ' },
-            ])
-            .setTextSelection(pos + inlineTitle.length + 1)
-            .run();
+          const ed = editorRef.current;
+          if (!ed || ed.isDestroyed) return;
+
+          const loadingRange = findLinkRangeByClassToken(ed, loadingToken);
+          if (!loadingRange) return;
+
+          replaceLinkRangeText(ed, loadingRange, inlineTitle || href, LINK_CLASS_BUTTON);
         })();
         return true;
       },
@@ -613,6 +990,11 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     if (editor && !editor.isDestroyed) {
       editor.commands.focus();
     }
+    setLinkPopoverOpen(false);
+    setLinkConfigOpen(false);
+    setLinkEditOpen(false);
+    setActiveEditorLink(null);
+    setHoveredLink(null);
     setAssetPickerOpen((prev) => !prev);
   }, [cardId, editor]);
 
@@ -656,10 +1038,231 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
     [handleSave, handleCancel],
   );
 
+  const getEditorLinkFromTarget = useCallback((target: EventTarget | null): ActiveEditorLink | null => {
+    if (!editor) return null;
+    const element = target as HTMLElement | null;
+    if (!element) return null;
+    const anchor = element.closest('a');
+    if (!(anchor instanceof HTMLAnchorElement)) return null;
+    if (!anchor.closest('.ProseMirror')) return null;
+    return findActiveLinkFromAnchor(editor, anchor);
+  }, [editor]);
+
+  const updateStoredLinkRect = useCallback((link: ActiveEditorLink | null): ActiveEditorLink | null => {
+    if (!link) return null;
+    if (link.anchorEl?.isConnected) {
+      return { ...link, rect: link.anchorEl.getBoundingClientRect() };
+    }
+    const fromCoords = editor?.view.coordsAtPos(link.from);
+    const toCoords = editor?.view.coordsAtPos(Math.max(link.from + 1, link.to));
+    if (!fromCoords || !toCoords) return link;
+    const left = Math.min(fromCoords.left, toCoords.left);
+    const top = Math.min(fromCoords.top, toCoords.top);
+    const right = Math.max(fromCoords.right, toCoords.right);
+    const bottom = Math.max(fromCoords.bottom, toCoords.bottom);
+    return {
+      ...link,
+      rect: new DOMRect(left, top, Math.max(1, right - left), Math.max(1, bottom - top)),
+    };
+  }, [editor]);
+
+  const closeLinkConfigUi = useCallback(() => {
+    setLinkConfigOpen(false);
+    setLinkEditOpen(false);
+    setActiveEditorLink(null);
+    setHoveredLink(null);
+  }, []);
+
+  const handleLinkEditInputMouseDown = useCallback((event: React.MouseEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const input = event.currentTarget;
+    globalThis.requestAnimationFrame(() => {
+      input.focus();
+      const end = input.value.length;
+      input.setSelectionRange(end, end);
+    });
+  }, []);
+
+  const applyLinkChange = useCallback((payload: {
+    href: string;
+    displayMode: LinkDisplayMode;
+    baseLabel?: string;
+    openEdit?: boolean;
+  }) => {
+    if (!editor || !activeEditorLink) return;
+
+    const normalizedHref = normalizeHttpUrlInput(payload.href) ?? payload.href.trim();
+    if (!normalizedHref) return;
+
+    let text = payload.baseLabel?.trim() || getLinkLabelText(activeEditorLink.text);
+    if (!text) {
+      text = getInlineTitleFromUrl(normalizedHref);
+    }
+
+    if (payload.displayMode === 'url') {
+      text = normalizedHref;
+    } else if (payload.displayMode === 'card') {
+      text = buildCardLinkText(text, normalizedHref);
+    }
+
+    let linkClass: string | null = null;
+    if (payload.displayMode === 'url') {
+      linkClass = LINK_CLASS_URL;
+    } else if (payload.displayMode === 'button') {
+      linkClass = LINK_CLASS_BUTTON;
+    } else {
+      linkClass = LINK_CLASS_CARD;
+    }
+
+    const attrs = {
+      href: normalizedHref,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      class: linkClass ?? undefined,
+    };
+
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(
+        { from: activeEditorLink.from, to: activeEditorLink.to },
+        {
+          type: 'text',
+          text,
+          marks: [{ type: 'link', attrs }],
+        },
+      )
+      .setTextSelection(activeEditorLink.from + text.length)
+      .run();
+
+    const updatedLink = findActiveLinkFromSelection(editor)
+      ?? (activeEditorLink.anchorEl ? findActiveLinkFromAnchor(editor, activeEditorLink.anchorEl) : null);
+    if (updatedLink) {
+      setActiveEditorLink(updatedLink);
+      setHoveredLink(updatedLink);
+    } else {
+      setActiveEditorLink((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          href: normalizedHref,
+          text,
+          mode: payload.displayMode,
+        };
+      });
+    }
+
+    if (!payload.openEdit) {
+      setLinkEditOpen(false);
+    }
+  }, [editor, activeEditorLink]);
+
+  const linkOverlayTarget = (linkConfigOpen ? activeEditorLink : hoveredLink) ?? null;
+  const linkOverlayPosition = (() => {
+    if (!linkOverlayTarget) return null;
+    const container = editorScrollRef.current;
+    if (!container) return null;
+    const containerRect = container.getBoundingClientRect();
+    // [why] Keep the trigger vertically aligned to the link line center.
+    const left = Math.max(8, Math.min(
+      linkOverlayTarget.rect.right - containerRect.left - 12,
+      containerRect.width - 32,
+    ));
+    const iconSize = 24;
+    const centeredTop = linkOverlayTarget.rect.top - containerRect.top
+      + ((linkOverlayTarget.rect.height - iconSize) / 2);
+    const top = Math.max(6, centeredTop);
+    return { left, top };
+  })();
+
+  const linkConfigPosition = (() => {
+    if (!activeEditorLink) return null;
+    const container = editorScrollRef.current;
+    if (!container) return null;
+    const containerRect = container.getBoundingClientRect();
+    const toolbarHeight = 40;
+    const gap = 10;
+    const left = Math.max(8, Math.min(
+      activeEditorLink.rect.left - containerRect.left,
+      containerRect.width - 296,
+    ));
+
+    const linkTop = activeEditorLink.rect.top - containerRect.top;
+    const linkBottom = activeEditorLink.rect.bottom - containerRect.top;
+    const belowTop = linkBottom + gap;
+    const aboveTop = linkTop - toolbarHeight - gap;
+
+    // [why] Keep toolbar outside the link box so it never obscures the text.
+    const canPlaceBelow = belowTop + toolbarHeight <= container.clientHeight - 8;
+    const canPlaceAbove = aboveTop >= 8;
+
+    let top = belowTop;
+    if (canPlaceAbove && !canPlaceBelow) {
+      top = aboveTop;
+    } else if (canPlaceAbove && canPlaceBelow) {
+      const spaceAbove = linkTop;
+      const spaceBelow = container.clientHeight - linkBottom;
+      top = spaceAbove > spaceBelow ? aboveTop : belowTop;
+    }
+
+    top = Math.max(8, Math.min(top, container.clientHeight - toolbarHeight - 8));
+    return { left, top };
+  })();
+
+  useEffect(() => {
+    if (!editing || editMode !== 'rich' || (!linkConfigOpen && !linkEditOpen)) return;
+    const handler = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+
+      if (linkConfigRef.current?.contains(target) || linkEditRef.current?.contains(target)) {
+        return;
+      }
+
+      closeLinkConfigUi();
+    };
+
+    document.addEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [editing, editMode, linkConfigOpen, linkEditOpen, closeLinkConfigUi]);
+
+  useEffect(() => {
+    if (!editing || editMode !== 'rich') return;
+
+    const refreshRects = () => {
+      setHoveredLink((prev) => updateStoredLinkRect(prev));
+      setActiveEditorLink((prev) => updateStoredLinkRect(prev));
+    };
+
+    window.addEventListener('resize', refreshRects);
+    return () => {
+      window.removeEventListener('resize', refreshRects);
+    };
+  }, [editing, editMode, updateStoredLinkRect]);
+
+  useEffect(() => {
+    if (!editing || editMode !== 'rich') {
+      closeLinkConfigUi();
+    }
+  }, [editing, editMode, closeLinkConfigUi]);
+
+  useEffect(() => {
+    if (!editing || editMode !== 'rich' || !linkConfigOpen || !linkEditOpen) return;
+    const input = linkEditUrlInputRef.current;
+    if (!input) return;
+    globalThis.requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  }, [editing, editMode, linkConfigOpen, linkEditOpen, activeEditorLink?.from, activeEditorLink?.to]);
+
   const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
   const isLong = draft.length > 400;
-  const previewHtml = addLinkTargetBlank(marked.parse(hydratedPreviewMarkdown) as string);
+  const previewHtml = addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string));
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
   useEffect(() => {
@@ -717,7 +1320,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       void hydrateImage(img);
     });
 
-    void enrichExternalLinkChips(root);
+    hydratePreviewLinkModes(root);
 
     return () => {
       cancelled = true;
@@ -774,6 +1377,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   onToggleOverflow={() => setOverflowOpen((o) => !o)}
                   linkPopoverOpen={linkPopoverOpen}
                   onToggleLinkPopover={() => {
+                    closeLinkConfigUi();
                     setAssetPickerOpen(false);
                     setLinkPopoverOpen((v) => !v);
                   }}
@@ -794,13 +1398,268 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   />
                 )}
               </div>
-              <div className="relative min-h-[180px] flex-1 overflow-y-auto rounded-b-lg">
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-white via-white to-transparent" />
+              <div
+                ref={editorScrollRef}
+                className="relative min-h-[180px] flex-1 overflow-y-auto rounded-b-lg"
+                onMouseDownCapture={(event) => {
+                  const next = getEditorLinkFromTarget(event.target);
+                  if (!next) return;
+                  // [why] Prevent browser/link default navigation before click.
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setLinkPopoverOpen(false);
+                  setAssetPickerOpen(false);
+                  setActiveEditorLink(next);
+                  setHoveredLink(next);
+                  setLinkConfigOpen(true);
+                  setLinkEditOpen(false);
+                }}
+                onScroll={() => {
+                  setHoveredLink((prev) => updateStoredLinkRect(prev));
+                  setActiveEditorLink((prev) => updateStoredLinkRect(prev));
+                }}
+                onMouseMove={(event) => {
+                  if (linkConfigOpen) return;
+                  const next = getEditorLinkFromTarget(event.target);
+                  setHoveredLink(next);
+                }}
+                onMouseLeave={() => {
+                  if (!linkConfigOpen) {
+                    setHoveredLink(null);
+                  }
+                }}
+                onClickCapture={(event) => {
+                  const next = getEditorLinkFromTarget(event.target);
+                  if (!next) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setLinkPopoverOpen(false);
+                  setAssetPickerOpen(false);
+                  setActiveEditorLink(next);
+                  setHoveredLink(next);
+                  setLinkConfigOpen(true);
+                  setLinkEditOpen(false);
+                }}
+              >
                 <EditorContent
                   editor={editor}
                   className="relative z-0 px-3 pb-3 pt-4 [&_.ProseMirror]:min-h-[160px] [&_.ProseMirror>*:first-child]:mt-0"
                 />
                 {editor && <CardReferenceBubbleMenu editor={editor} />}
+
+                {linkOverlayPosition && linkOverlayTarget && !linkEditOpen && (
+                  <button
+                    type="button"
+                    aria-label="Configure link"
+                    title="Configure link"
+                    className="absolute z-30 inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-bg-base text-muted shadow-sm hover:text-base"
+                    style={{ left: linkOverlayPosition.left, top: linkOverlayPosition.top }}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setLinkPopoverOpen(false);
+                      setAssetPickerOpen(false);
+                      setActiveEditorLink(linkOverlayTarget);
+                      setHoveredLink(linkOverlayTarget);
+                      setLinkConfigOpen(true);
+                      setLinkEditOpen(false);
+                    }}
+                  >
+                    <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                )}
+
+                {linkConfigOpen && activeEditorLink && linkConfigPosition && (
+                  <div
+                    ref={linkConfigRef}
+                    className="absolute z-40 flex h-10 items-center gap-1 rounded-lg border border-border bg-bg-base px-1.5 shadow-2xl"
+                    style={{ left: linkConfigPosition.left, top: linkConfigPosition.top }}
+                    onMouseDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    <div className="mr-1 inline-flex items-center gap-0.5 rounded-md border border-border bg-bg-overlay p-0.5">
+                      <button
+                        type="button"
+                        title="Display full URL"
+                        aria-label="Display full URL"
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${activeEditorLink.mode === 'url' ? 'bg-indigo-600 text-inverse' : 'text-muted hover:bg-bg-base hover:text-base'}`}
+                        onClick={() => {
+                          applyLinkChange({ href: activeEditorLink.href, displayMode: 'url' });
+                        }}
+                      >
+                        <MinusIcon className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Display as button"
+                        aria-label="Display as button"
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${activeEditorLink.mode === 'button' ? 'bg-indigo-600 text-inverse' : 'text-muted hover:bg-bg-base hover:text-base'}`}
+                        onClick={() => {
+                          applyLinkChange({
+                            href: activeEditorLink.href,
+                            displayMode: 'button',
+                            baseLabel: getLinkLabelText(activeEditorLink.text),
+                          });
+                        }}
+                      >
+                        <LinkIcon className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Display as card"
+                        aria-label="Display as card"
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${activeEditorLink.mode === 'card' ? 'bg-indigo-600 text-inverse' : 'text-muted hover:bg-bg-base hover:text-base'}`}
+                        onClick={() => {
+                          applyLinkChange({
+                            href: activeEditorLink.href,
+                            displayMode: 'card',
+                            baseLabel: getLinkLabelText(activeEditorLink.text) || getInlineTitleFromUrl(activeEditorLink.href),
+                          });
+                        }}
+                      >
+                        <RectangleStackIcon className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      title="Edit link"
+                      aria-label="Edit link"
+                      className="inline-flex h-8 items-center rounded-md px-2 text-sm font-medium text-base hover:bg-bg-overlay"
+                      onClick={() => {
+                        const initialLabel = getLinkLabelText(activeEditorLink.text);
+                        setLinkEditUrl(activeEditorLink.href);
+                        setLinkEditText(activeEditorLink.mode === 'url' ? '' : initialLabel);
+                        setLinkEditOpen(true);
+                        globalThis.requestAnimationFrame(() => {
+                          const input = linkEditUrlInputRef.current;
+                          if (!input) return;
+                          input.focus();
+                          input.select();
+                        });
+                      }}
+                    >
+                      Edit link
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Open Link In New Tab"
+                      aria-label="Open Link In New Tab"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-bg-overlay hover:text-base"
+                      onClick={() => {
+                        window.open(normalizePreviewLinkHref(activeEditorLink.href), '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Copy link"
+                      aria-label="Copy link"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-bg-overlay hover:text-base"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(activeEditorLink.href);
+                      }}
+                    >
+                      <ClipboardDocumentIcon className="h-4 w-4" aria-hidden="true" />
+                    </button>
+
+                    <button
+                      type="button"
+                      title="Delete link"
+                      aria-label="Delete link"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-danger hover:bg-bg-overlay"
+                      onClick={() => {
+                        if (!editor) return;
+                        editor
+                          .chain()
+                          .focus()
+                          .setTextSelection({ from: activeEditorLink.from, to: activeEditorLink.to })
+                          .unsetLink()
+                          .run();
+                        closeLinkConfigUi();
+                      }}
+                    >
+                      <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                    </button>
+
+                    {/* Keep spacing stable while toolbar is compact. */}
+                    <div className="w-0.5" aria-hidden="true" />
+                  </div>
+                )}
+
+                {linkConfigOpen && linkEditOpen && activeEditorLink && linkConfigPosition && (
+                  <div
+                    ref={linkEditRef}
+                    className="absolute z-50 w-80 rounded-xl border border-border bg-bg-base p-3 shadow-2xl"
+                    style={{
+                      left: Math.min(linkConfigPosition.left + 12, Math.max(8, (editorScrollRef.current?.clientWidth ?? 380) - 328)),
+                      top: linkConfigPosition.top + 44,
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <input
+                        ref={linkEditUrlInputRef}
+                        type="url"
+                        autoFocus
+                        value={linkEditUrl}
+                        onMouseDown={handleLinkEditInputMouseDown}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          event.currentTarget.focus();
+                        }}
+                        onChange={(event) => {
+                          setLinkEditUrl(event.target.value);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter') return;
+                          event.preventDefault();
+                          applyLinkChange({
+                            href: linkEditUrl,
+                            displayMode: activeEditorLink.mode,
+                            baseLabel: linkEditText,
+                            openEdit: true,
+                          });
+                          setLinkEditOpen(false);
+                        }}
+                        placeholder="Paste or search for link"
+                        className="w-full rounded-md border border-border bg-bg-overlay px-2.5 py-2 text-sm text-base outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <input
+                        type="text"
+                        value={linkEditText}
+                        onMouseDown={handleLinkEditInputMouseDown}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          event.currentTarget.focus();
+                        }}
+                        onChange={(event) => {
+                          setLinkEditText(event.target.value);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter') return;
+                          event.preventDefault();
+                          applyLinkChange({
+                            href: linkEditUrl,
+                            displayMode: activeEditorLink.mode,
+                            baseLabel: linkEditText,
+                            openEdit: true,
+                          });
+                          setLinkEditOpen(false);
+                        }}
+                        placeholder="Display text (optional)"
+                        className="w-full rounded-md border border-border bg-bg-overlay px-2.5 py-2 text-sm text-base outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Inline upload previews — shown while files are in-flight */}
@@ -954,7 +1813,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 : 'cursor-text hover:bg-bg-overlay',
               isEmpty
                 ? 'text-muted text-sm italic bg-bg-overlay'
-                : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
+                : 'prose dark:prose-invert prose-sm max-w-none text-base',
               isLong && !expanded ? 'overflow-hidden' : '',
             ].join(' ')}
             style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
