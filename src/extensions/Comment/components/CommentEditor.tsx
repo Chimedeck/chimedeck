@@ -55,8 +55,39 @@ const LINK_CLASS_BUTTON = 'cd-link-button';
 const LINK_CLASS_CARD = 'cd-link-card';
 const LINK_CLASS_URL = 'cd-link-url';
 const LINK_CLASS_LOADING = 'cd-link-loading';
+const LINK_MODE_META_URL = 'cd-link-mode-url';
+const LINK_MODE_META_BUTTON = 'cd-link-mode-button';
+const LINK_MODE_META_CARD = 'cd-link-mode-card';
 
 type LinkDisplayMode = 'url' | 'button' | 'card';
+
+function getModeMetaToken(mode: LinkDisplayMode): string {
+  if (mode === 'url') return LINK_MODE_META_URL;
+  if (mode === 'card') return LINK_MODE_META_CARD;
+  return LINK_MODE_META_BUTTON;
+}
+
+function getVisualClassForMode(mode: LinkDisplayMode): string {
+  if (mode === 'url') return LINK_CLASS_URL;
+  if (mode === 'card') return LINK_CLASS_CARD;
+  return LINK_CLASS_BUTTON;
+}
+
+function buildLinkClassName(mode: LinkDisplayMode, extraTokens: string[] = []): string {
+  const tokens = [getVisualClassForMode(mode), getModeMetaToken(mode), ...extraTokens]
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+  return Array.from(new Set(tokens)).join(' ');
+}
+
+function getModeFromClassName(className: string | null | undefined): LinkDisplayMode | null {
+  if (!className) return null;
+  const tokens = new Set(className.split(/\s+/).filter(Boolean));
+  if (tokens.has(LINK_MODE_META_URL)) return 'url';
+  if (tokens.has(LINK_MODE_META_CARD)) return 'card';
+  if (tokens.has(LINK_MODE_META_BUTTON)) return 'button';
+  return null;
+}
 
 interface ActiveEditorLink {
   anchorEl: HTMLAnchorElement | null;
@@ -85,6 +116,9 @@ function detectLinkDisplayMode(
   href: string,
   hasVisualLineBreak = false,
 ): LinkDisplayMode {
+  const modeFromMetadata = getModeFromClassName(className);
+  if (modeFromMetadata) return modeFromMetadata;
+
   if (className?.includes(LINK_CLASS_URL)) return 'url';
   if (className?.includes(LINK_CLASS_CARD) || hasVisualLineBreak || text.includes('\n')) return 'card';
   if (className?.includes(LINK_CLASS_BUTTON)) return 'button';
@@ -216,9 +250,7 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
     });
 
     const inferredMode = detectLinkDisplayMode(currentClass, text, href, hasHardBreak || text.includes('\n'));
-    let nextClass = LINK_CLASS_BUTTON;
-    if (inferredMode === 'url') nextClass = LINK_CLASS_URL;
-    if (inferredMode === 'card') nextClass = LINK_CLASS_CARD;
+    const nextClass = buildLinkClassName(inferredMode);
 
     if (currentClass === nextClass) return;
 
@@ -470,7 +502,7 @@ function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number)
       {
         type: 'text',
         text: displayName,
-        marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noopener noreferrer', class: LINK_CLASS_BUTTON } }],
+        marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noopener noreferrer', class: buildLinkClassName('button') } }],
       },
       { type: 'text', text: ' ' },
     ])
@@ -689,7 +721,7 @@ const CommentEditor = ({
         const pos = view.state.selection.from;
 
         const loadingToken = `link-loading-${String(Date.now())}-${Math.random().toString(36).slice(2, 8)}`;
-        const loadingClass = `${LINK_CLASS_URL} ${LINK_CLASS_LOADING} ${loadingToken}`;
+        const loadingClass = buildLinkClassName('url', [LINK_CLASS_LOADING, loadingToken]);
 
         editorRef.current
           ?.chain()
@@ -722,7 +754,7 @@ const CommentEditor = ({
           const loadingRange = findLinkRangeByClassToken(ed, loadingToken);
           if (!loadingRange) return;
 
-          replaceLinkRangeText(ed, loadingRange, inlineTitle || href, LINK_CLASS_BUTTON);
+          replaceLinkRangeText(ed, loadingRange, inlineTitle || href, buildLinkClassName('button'));
         })();
         return true;
       },
@@ -769,7 +801,7 @@ const CommentEditor = ({
             {
               type: 'text',
               text,
-              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: LINK_CLASS_BUTTON } }],
+              marks: [{ type: 'link', attrs: { href, target: '_blank', rel: 'noopener noreferrer', class: buildLinkClassName('button') } }],
             },
             { type: 'text', text: ' ' },
           ])
@@ -965,26 +997,20 @@ const CommentEditor = ({
       text = getInlineTitleFromUrl(normalizedHref);
     }
 
-    if (payload.displayMode === 'url') {
-      text = normalizedHref;
-    } else if (payload.displayMode === 'card') {
+    if (payload.displayMode === 'card') {
       text = buildCardLinkText(text, normalizedHref);
+    } else if (payload.displayMode === 'url' && !payload.baseLabel?.trim()) {
+      // [why] URL mode should accept custom display text when provided.
+      text = normalizedHref;
     }
 
-    let linkClass: string | null = null;
-    if (payload.displayMode === 'url') {
-      linkClass = LINK_CLASS_URL;
-    } else if (payload.displayMode === 'button') {
-      linkClass = LINK_CLASS_BUTTON;
-    } else {
-      linkClass = LINK_CLASS_CARD;
-    }
+    const linkClass = buildLinkClassName(payload.displayMode);
 
     const attrs = {
       href: normalizedHref,
       target: '_blank',
       rel: 'noopener noreferrer',
-      class: linkClass ?? undefined,
+      class: linkClass,
     };
 
     editor
@@ -1324,7 +1350,7 @@ const CommentEditor = ({
                 onClick={() => {
                   const initialLabel = getLinkLabelText(activeEditorLink.text);
                   setLinkEditUrl(activeEditorLink.href);
-                  setLinkEditText(activeEditorLink.mode === 'url' ? '' : initialLabel);
+                  setLinkEditText(initialLabel);
                   setLinkEditOpen(true);
                 }}
               >

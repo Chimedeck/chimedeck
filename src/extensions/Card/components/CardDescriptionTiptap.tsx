@@ -104,8 +104,53 @@ const LINK_CLASS_BUTTON = 'cd-link-button';
 const LINK_CLASS_CARD = 'cd-link-card';
 const LINK_CLASS_URL = 'cd-link-url';
 const LINK_CLASS_LOADING = 'cd-link-loading';
+const LINK_MODE_TITLE_PREFIX = 'cd-mode:';
+const LINK_MODE_META_URL = 'cd-link-mode-url';
+const LINK_MODE_META_BUTTON = 'cd-link-mode-button';
+const LINK_MODE_META_CARD = 'cd-link-mode-card';
 
 type LinkDisplayMode = 'url' | 'button' | 'card';
+
+function getModeMetaToken(mode: LinkDisplayMode): string {
+  if (mode === 'url') return LINK_MODE_META_URL;
+  if (mode === 'card') return LINK_MODE_META_CARD;
+  return LINK_MODE_META_BUTTON;
+}
+
+function getVisualClassForMode(mode: LinkDisplayMode): string {
+  if (mode === 'url') return LINK_CLASS_URL;
+  if (mode === 'card') return LINK_CLASS_CARD;
+  return LINK_CLASS_BUTTON;
+}
+
+function buildLinkClassName(mode: LinkDisplayMode, extraTokens: string[] = []): string {
+  const tokens = [getVisualClassForMode(mode), getModeMetaToken(mode), ...extraTokens]
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+  return Array.from(new Set(tokens)).join(' ');
+}
+
+function buildLinkModeTitle(mode: LinkDisplayMode): string {
+  return `${LINK_MODE_TITLE_PREFIX}${mode}`;
+}
+
+function getModeFromTitle(value: unknown): LinkDisplayMode | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}url`) return 'url';
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}button`) return 'button';
+  if (trimmed === `${LINK_MODE_TITLE_PREFIX}card`) return 'card';
+  return null;
+}
+
+function getModeFromClassName(className: string | null | undefined): LinkDisplayMode | null {
+  if (!className) return null;
+  const tokens = new Set(className.split(/\s+/).filter(Boolean));
+  if (tokens.has(LINK_MODE_META_URL)) return 'url';
+  if (tokens.has(LINK_MODE_META_CARD)) return 'card';
+  if (tokens.has(LINK_MODE_META_BUTTON)) return 'button';
+  return null;
+}
 
 interface ActiveEditorLink {
   anchorEl: HTMLAnchorElement | null;
@@ -120,8 +165,15 @@ interface ActiveEditorLink {
 function detectLinkDisplayMode(
   className: string | null | undefined,
   text: string,
+  title?: string | null,
   hasVisualLineBreak = false,
 ): LinkDisplayMode {
+  const modeFromMetadata = getModeFromClassName(className);
+  if (modeFromMetadata) return modeFromMetadata;
+
+  const modeFromTitle = getModeFromTitle(title);
+  if (modeFromTitle) return modeFromTitle;
+
   if (className?.includes(LINK_CLASS_URL)) return 'url';
   if (className?.includes(LINK_CLASS_CARD) || hasVisualLineBreak || text.includes('\n')) return 'card';
   // [why] Default link presentation in edit mode should be the compact button
@@ -157,6 +209,12 @@ function normalizeComparableUrl(value: string): string {
 }
 
 function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
+  const metadataMode = getModeFromClassName(anchor.getAttribute('class'));
+  if (metadataMode) return metadataMode;
+
+  const modeFromTitle = getModeFromTitle(anchor.getAttribute('title'));
+  if (modeFromTitle) return modeFromTitle;
+
   if (anchor.querySelector('br')) return 'card';
 
   const href = anchor.getAttribute('href')?.trim() ?? '';
@@ -173,18 +231,19 @@ function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
 function hydratePreviewLinkModes(root: HTMLElement): void {
   const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
   anchors.forEach((anchor) => {
-    anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON, LINK_CLASS_CARD);
+    anchor.classList.remove(
+      'meta-link-chip',
+      LINK_CLASS_URL,
+      LINK_CLASS_BUTTON,
+      LINK_CLASS_CARD,
+      LINK_MODE_META_URL,
+      LINK_MODE_META_BUTTON,
+      LINK_MODE_META_CARD,
+    );
 
     const mode = classifyPreviewLinkMode(anchor);
-    if (mode === 'card') {
-      anchor.classList.add(LINK_CLASS_CARD);
-      return;
-    }
-    if (mode === 'url') {
-      anchor.classList.add(LINK_CLASS_URL);
-      return;
-    }
-    anchor.classList.add(LINK_CLASS_BUTTON);
+    const nextClassTokens = buildLinkClassName(mode).split(/\s+/).filter(Boolean);
+    anchor.classList.add(...nextClassTokens);
   });
 }
 
@@ -221,8 +280,15 @@ function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
     anchor.append(document.createTextNode(firstText));
     anchor.append(document.createElement('br'));
     anchor.append(document.createTextNode(secondText));
-    anchor.classList.remove('meta-link-chip', LINK_CLASS_URL, LINK_CLASS_BUTTON);
-    anchor.classList.add(LINK_CLASS_CARD);
+    anchor.classList.remove(
+      'meta-link-chip',
+      LINK_CLASS_URL,
+      LINK_CLASS_BUTTON,
+      LINK_MODE_META_URL,
+      LINK_MODE_META_BUTTON,
+      LINK_MODE_META_CARD,
+    );
+    anchor.classList.add(LINK_CLASS_CARD, LINK_MODE_META_CARD);
 
     if (hadBrSeparator && separator instanceof HTMLBRElement) {
       separator.remove();
@@ -262,7 +328,12 @@ function findActiveLinkFromAnchor(editor: Editor, anchorEl: HTMLAnchorElement): 
   if (!range) return null;
 
   const text = editor.state.doc.textBetween(range.from, range.to, '\n');
-  const mode = detectLinkDisplayMode(anchorEl.getAttribute('class'), text, Boolean(anchorEl.querySelector('br')));
+  const mode = detectLinkDisplayMode(
+    anchorEl.getAttribute('class'),
+    text,
+    anchorEl.getAttribute('title'),
+    Boolean(anchorEl.querySelector('br')),
+  );
 
   return {
     anchorEl,
@@ -289,6 +360,7 @@ function findActiveLinkFromSelection(editor: Editor): ActiveEditorLink | null {
   if (!href) return null;
 
   const className = typeof attrs.class === 'string' ? attrs.class : null;
+  const title = typeof attrs.title === 'string' ? attrs.title : null;
   const text = editor.state.doc.textBetween(range.from, range.to, '\n');
 
   const fromCoords = editor.view.coordsAtPos(range.from);
@@ -308,7 +380,7 @@ function findActiveLinkFromSelection(editor: Editor): ActiveEditorLink | null {
     anchorEl = null;
   }
 
-  const mode = detectLinkDisplayMode(className, text, Boolean(anchorEl?.querySelector('br')));
+  const mode = detectLinkDisplayMode(className, text, title, Boolean(anchorEl?.querySelector('br')));
 
   return {
     anchorEl,
@@ -489,12 +561,9 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
       }
       return undefined;
     });
-    const inferredMode = detectLinkDisplayMode(currentClass, text, hasHardBreak || text.includes('\n'));
-    const nextClass = inferredMode === 'url'
-      ? LINK_CLASS_URL
-      : inferredMode === 'card'
-        ? LINK_CLASS_CARD
-        : LINK_CLASS_BUTTON;
+    const title = typeof linkAttrs?.title === 'string' ? linkAttrs.title : null;
+    const inferredMode = detectLinkDisplayMode(currentClass, text, title, hasHardBreak || text.includes('\n'));
+    const nextClass = buildLinkClassName(inferredMode);
 
     if (currentClass === nextClass) return;
 
@@ -502,6 +571,7 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
     tr.addMark(range.from, range.to, linkType.create({
       ...linkAttrs,
       class: nextClass,
+      title: buildLinkModeTitle(inferredMode),
       target: '_blank',
       rel: 'noopener noreferrer',
     }));
@@ -827,7 +897,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         const pos = view.state.selection.from;
 
         const loadingToken = `link-loading-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const loadingClass = `${LINK_CLASS_URL} ${LINK_CLASS_LOADING} ${loadingToken}`;
+        const loadingClass = buildLinkClassName('url', [LINK_CLASS_LOADING, loadingToken]);
 
         editorRef.current
           ?.chain()
@@ -860,7 +930,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
           const loadingRange = findLinkRangeByClassToken(ed, loadingToken);
           if (!loadingRange) return;
 
-          replaceLinkRangeText(ed, loadingRange, inlineTitle || href, LINK_CLASS_BUTTON);
+          replaceLinkRangeText(ed, loadingRange, inlineTitle || href, buildLinkClassName('button'));
         })();
         return true;
       },
@@ -1100,26 +1170,22 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
       text = getInlineTitleFromUrl(normalizedHref);
     }
 
-    if (payload.displayMode === 'url') {
-      text = normalizedHref;
-    } else if (payload.displayMode === 'card') {
+    if (payload.displayMode === 'card') {
       text = buildCardLinkText(text, normalizedHref);
+    } else if (payload.displayMode === 'url' && !payload.baseLabel?.trim()) {
+      // [why] URL mode should still allow a custom display label from the edit
+      // popover. Fall back to raw URL only when no label is provided.
+      text = normalizedHref;
     }
 
-    let linkClass: string | null = null;
-    if (payload.displayMode === 'url') {
-      linkClass = LINK_CLASS_URL;
-    } else if (payload.displayMode === 'button') {
-      linkClass = LINK_CLASS_BUTTON;
-    } else {
-      linkClass = LINK_CLASS_CARD;
-    }
+    const linkClass = buildLinkClassName(payload.displayMode);
 
     const attrs = {
       href: normalizedHref,
       target: '_blank',
       rel: 'noopener noreferrer',
-      class: linkClass ?? undefined,
+      class: linkClass,
+      title: buildLinkModeTitle(payload.displayMode),
     };
 
     editor
@@ -1534,7 +1600,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                       onClick={() => {
                         const initialLabel = getLinkLabelText(activeEditorLink.text);
                         setLinkEditUrl(activeEditorLink.href);
-                        setLinkEditText(activeEditorLink.mode === 'url' ? '' : initialLabel);
+                        setLinkEditText(initialLabel);
                         setLinkEditOpen(true);
                         globalThis.requestAnimationFrame(() => {
                           const input = linkEditUrlInputRef.current;
