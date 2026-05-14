@@ -43,6 +43,8 @@ interface Props {
   onChangeListColor: (listId: string, color: string | null) => void;
   onSortBy: (listId: string, sortBy: ListSortBy) => void;
   onAddCard: (listId: string, title: string) => Promise<void>;
+  isCollapsed?: boolean;
+  onToggleCollapsed?: (listId: string) => void;
   onCardClick?: (cardId: string) => void;
   labelsExpanded?: boolean;
   onToggleLabels?: () => void;
@@ -85,6 +87,8 @@ const SortableListColumn = ({
   onChangeListColor,
   onSortBy,
   onAddCard,
+  isCollapsed = false,
+  onToggleCollapsed,
   onCardClick,
   labelsExpanded,
   onToggleLabels,
@@ -137,6 +141,10 @@ const SortableListColumn = ({
   const handleSortBy = useCallback((sortBy: ListSortBy) => {
     onSortBy(list.id, sortBy);
   }, [list.id, onSortBy]);
+  const handleToggleCollapsed = useCallback(() => {
+    if (!onToggleCollapsed) return;
+    onToggleCollapsed(list.id);
+  }, [list.id, onToggleCollapsed]);
 
   // Sortable hook for the list column itself (horizontal reorder)
   const {
@@ -220,7 +228,7 @@ const SortableListColumn = ({
       ref={setNodeRef}
       id={`board-list-${list.id}`}
       style={style}
-      className={`w-72 shrink-0 border rounded-xl flex flex-col h-full ${columnBorderClass} ${columnSurfaceClass}`}
+      className={`${isCollapsed ? 'w-14 self-start' : 'w-72 h-full'} shrink-0 border rounded-xl flex flex-col ${columnBorderClass} ${columnSurfaceClass}`}
       role="listitem"
       aria-label={`List: ${list.title}`}
     >
@@ -241,62 +249,68 @@ const SortableListColumn = ({
           onDelete={handleDelete}
           onChangeListColor={handleChangeListColor}
           onSortBy={handleSortBy}
+          isCollapsed={isCollapsed}
+          onToggleCollapsed={handleToggleCollapsed}
           textTone={listTextTone}
           hasBackground={hasBackground}
         />
       </div>
 
-      {/* Cards — draggable tiles with pointer-resolved insertion preview */}
-      <div
-        data-dnd-list-scroll-container="true"
-        className="scrollbar-contrast relative z-0 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 py-2"
-        style={{ contentVisibility: 'auto', contain: 'layout paint style', containIntrinsicSize: '1px 900px' }}
-      >
-        {listCardObjects.map((card, idx) => (
-          <Fragment key={card.id}>
-            {normalizedPlaceholderIndex === idx && placeholderNode}
-            <CardItem
-              card={card}
-              listTitle={list.title}
-              {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
-              {...(boardId ? { boardId } : {})}
-              currentUserId={currentUserId}
-              labelsExpanded={labelsExpanded ?? false}
-              onToggleLabels={stableToggleLabels}
-              {...(onCardClick ? { onClick: onCardClick } : {})}
-              unreadNotificationCount={unreadNotificationCountByCardId?.[card.id] ?? 0}
-              {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
-            />
-          </Fragment>
-        ))}
-        {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
-      </div>
-
-      {/* Add card footer — hidden for VIEWER guests */}
-      <div className="shrink-0 px-1 pb-2">
-        {effectiveHydration?.loading && (
-          <p className={`mb-2 px-2 text-xs ${loadingTextClass}`}>Loading more cards...</p>
-        )}
-        {!isViewerGuest && (addingCard ? (
-          <AddCardForm
-            listId={list.id}
-            onSubmit={async (listId, title) => {
-              await onAddCard(listId, title);
-              setAddingCard(false);
-            }}
-            onCancel={() => { setAddingCard(false); }}
-          />
-        ) : (
-          <Button
-            variant="ghost"
-            className={`w-full justify-start rounded-lg px-2 py-1.5 text-sm ${addCardButtonToneClass}`}
-            onClick={handleOpenAddCard}
-            aria-label={`Add a card to ${list.title}`}
+      {!isCollapsed && (
+        <>
+          {/* Cards — draggable tiles with pointer-resolved insertion preview */}
+          <div
+            data-dnd-list-scroll-container="true"
+            className="scrollbar-contrast relative z-0 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 py-2"
+            style={{ contentVisibility: 'auto', contain: 'layout paint style', containIntrinsicSize: '1px 900px' }}
           >
-            + Add a card
-          </Button>
-        ))}
-      </div>
+            {listCardObjects.map((card, idx) => (
+              <Fragment key={card.id}>
+                {normalizedPlaceholderIndex === idx && placeholderNode}
+                <CardItem
+                  card={card}
+                  listTitle={list.title}
+                  {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+                  {...(boardId ? { boardId } : {})}
+                  currentUserId={currentUserId}
+                  labelsExpanded={labelsExpanded ?? false}
+                  onToggleLabels={stableToggleLabels}
+                  {...(onCardClick ? { onClick: onCardClick } : {})}
+                  unreadNotificationCount={unreadNotificationCountByCardId?.[card.id] ?? 0}
+                  {...(customFieldValuesMap !== null && customFieldValuesMap !== undefined ? { customFieldValues: customFieldValuesMap[card.id] ?? EMPTY_CUSTOM_FIELD_VALUES } : {})}
+                />
+              </Fragment>
+            ))}
+            {normalizedPlaceholderIndex === listCardObjects.length && placeholderNode}
+          </div>
+
+          {/* Add card footer — hidden for VIEWER guests */}
+          <div className="shrink-0 px-1 pb-2">
+            {effectiveHydration?.loading && (
+              <p className={`mb-2 px-2 text-xs ${loadingTextClass}`}>Loading more cards...</p>
+            )}
+            {!isViewerGuest && (addingCard ? (
+              <AddCardForm
+                listId={list.id}
+                onSubmit={async (listId, title) => {
+                  await onAddCard(listId, title);
+                  setAddingCard(false);
+                }}
+                onCancel={() => { setAddingCard(false); }}
+              />
+            ) : (
+              <Button
+                variant="ghost"
+                className={`w-full justify-start rounded-lg px-2 py-1.5 text-sm ${addCardButtonToneClass}`}
+                onClick={handleOpenAddCard}
+                aria-label={`Add a card to ${list.title}`}
+              >
+                + Add a card
+              </Button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -331,6 +345,8 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.onChangeListColor === next.onChangeListColor
     && prev.onSortBy === next.onSortBy
     && prev.onAddCard === next.onAddCard
+    && prev.isCollapsed === next.isCollapsed
+    && prev.onToggleCollapsed === next.onToggleCollapsed
     && prev.onCardClick === next.onCardClick
     && prev.labelsExpanded === next.labelsExpanded
     && prev.onToggleLabels === next.onToggleLabels

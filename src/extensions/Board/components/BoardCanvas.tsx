@@ -59,6 +59,22 @@ interface PointerListResolutionCache {
   listId: string | null;
 }
 
+function getCollapsedListsStorageKey(boardId: string, userId: string): string {
+  const safeUserId = userId.trim().length > 0 ? userId.trim() : 'anonymous';
+  return `board-collapsed-lists:${boardId}:${safeUserId}`;
+}
+
+function parseCollapsedListIds(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
+
 function isSamePlaceholder(a: DragPlaceholder | null | undefined, b: DragPlaceholder): boolean {
   return a?.listId === b.listId
     && a.index === b.index
@@ -538,6 +554,11 @@ const BoardCanvas = ({
   const disableLiveDragPreview = true;
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const collapsedListsStorageKey = getCollapsedListsStorageKey(boardId, currentUserId);
+  const [collapsedListIds, setCollapsedListIds] = useState<string[]>(() => {
+    if (!globalThis.window) return [];
+    return parseCollapsedListIds(globalThis.window.localStorage.getItem(collapsedListsStorageKey));
+  });
   const [dragPlaceholder, setDragPlaceholder] = useState<DragPlaceholder | null>(null);
   const dragPlaceholderRafRef = useRef<number | null>(null);
   const pendingDragPlaceholderRef = useRef<DragPlaceholder | null>(null);
@@ -591,6 +612,40 @@ const BoardCanvas = ({
   // (empty deps array) does not close over a stale value.
   const disableLiveDragPreviewRef = useRef(disableLiveDragPreview);
   useEffect(() => { disableLiveDragPreviewRef.current = disableLiveDragPreview; }, [disableLiveDragPreview]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    setCollapsedListIds(parseCollapsedListIds(globalThis.window.localStorage.getItem(collapsedListsStorageKey)));
+  }, [collapsedListsStorageKey]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    const next = collapsedListIds.filter((listId) => listOrder.includes(listId));
+    if (next.length === collapsedListIds.length) return;
+    setCollapsedListIds(next);
+  }, [collapsedListIds, listOrder]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    globalThis.window.localStorage.setItem(collapsedListsStorageKey, JSON.stringify(collapsedListIds));
+  }, [collapsedListIds, collapsedListsStorageKey]);
+
+  useEffect(() => {
+    if (!globalThis.window) return undefined;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== collapsedListsStorageKey) return;
+      setCollapsedListIds(parseCollapsedListIds(event.newValue));
+    };
+    globalThis.window.addEventListener('storage', handleStorage);
+    return () => globalThis.window.removeEventListener('storage', handleStorage);
+  }, [collapsedListsStorageKey]);
+
+  const handleToggleListCollapsed = useCallback((listId: string) => {
+    setCollapsedListIds((prev) => {
+      if (prev.includes(listId)) return prev.filter((id) => id !== listId);
+      return [...prev, listId];
+    });
+  }, []);
 
   const getDragScrollDelta = useCallback((): number => {
     const scroller = boardScrollerRef.current;
@@ -1479,6 +1534,7 @@ const BoardCanvas = ({
             if (!list) return null;
             // [why] hide lists with 0 visible cards when the collapse toggle is active
             if (collapseEmptyLists && (effectiveCardsByList[listId]?.length ?? 0) === 0) return null;
+            const isCollapsed = collapsedListIds.includes(listId);
             return (
               <SortableListColumn
                 key={listId}
@@ -1500,6 +1556,8 @@ const BoardCanvas = ({
                 onChangeListColor={onChangeListColor}
                 onSortBy={onSortList}
                 onAddCard={onAddCard}
+                isCollapsed={isCollapsed}
+                onToggleCollapsed={handleToggleListCollapsed}
                 labelsExpanded={labelsExpanded}
                 onToggleLabels={onToggleLabels}
                 {...(onCardClick ? { onCardClick } : {})}

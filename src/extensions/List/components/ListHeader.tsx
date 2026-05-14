@@ -1,6 +1,7 @@
 // ListHeader — displays the list title with rename, archive, and delete actions.
 // Styled for dark kanban board; supports inline editing with Enter/Escape/blur.
 import { memo, useState } from 'react';
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon } from '@heroicons/react/24/outline';
 import type { List } from '../api';
 import Button from '../../../common/components/Button';
 import type { ListSortBy } from '../types';
@@ -24,6 +25,7 @@ interface Props {
   onArchive: () => void;
   onArchiveAllCards: () => void;
   onDelete: () => void;
+  onToggleCollapsed?: () => void;
   onSortBy: (sortBy: ListSortBy) => void;
   onChangeListColor: (color: string | null) => void;
   listColor?: string | null;
@@ -31,9 +33,78 @@ interface Props {
   availableLists?: Array<{ id: string; title: string }>;
   /** When true the column sits over a board background image — apply frosted-glass styling. */
   hasBackground?: boolean;
+  isCollapsed?: boolean;
 }
 
 const LIST_COLORS = ['#0F766E', '#B45309', '#D97706', '#C2410C', '#DC2626', '#7C3AED', '#2563EB', '#0E7490', '#4D7C0F', '#BE185D'];
+
+function renderListTitleNode(args: {
+  editing: boolean;
+  isCollapsed: boolean;
+  title: string;
+  listTitle: string;
+  toneTextClass: string;
+  toneButtonHoverClass: string;
+  inputFocusClass: string;
+  onTitleChange: (next: string) => void;
+  onCommitRename: () => void;
+  onInputKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  onStartEditing: () => void;
+}): React.ReactNode {
+  const {
+    editing,
+    isCollapsed,
+    title,
+    listTitle,
+    toneTextClass,
+    toneButtonHoverClass,
+    inputFocusClass,
+    onTitleChange,
+    onCommitRename,
+    onInputKeyDown,
+    onStartEditing,
+  } = args;
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type="text"
+        value={title}
+        onChange={(e) => {
+          onTitleChange(e.target.value);
+        }}
+        onBlur={onCommitRename}
+        onKeyDown={onInputKeyDown}
+        className={`bg-transparent text-base font-semibold text-sm focus:outline-none rounded px-1 py-0.5 w-full ${toneTextClass} ${inputFocusClass}`}
+        aria-label={`Rename list ${listTitle}`}
+      />
+    );
+  }
+
+  if (isCollapsed) {
+    return (
+      <div
+        className={`overflow-hidden px-1 py-0.5 text-center text-sm font-semibold [writing-mode:vertical-rl] rotate-180 leading-tight ${toneTextClass}`}
+        title={listTitle}
+        aria-label={listTitle}
+      >
+        {listTitle}
+      </div>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      className={`flex-1 min-w-0 h-auto items-start justify-start px-1 py-0.5 text-left text-xs font-semibold leading-tight whitespace-normal break-words ${toneTextClass} ${toneButtonHoverClass}`}
+      onClick={onStartEditing}
+      aria-label={`Rename list ${listTitle}`}
+    >
+      {listTitle}
+    </Button>
+  );
+}
 
 const ListHeader = ({
   list,
@@ -46,12 +117,14 @@ const ListHeader = ({
   onArchive,
   onArchiveAllCards,
   onDelete,
+  onToggleCollapsed,
   onSortBy,
   onChangeListColor,
   listColor = null,
   textTone = 'dark',
   availableLists = [],
   hasBackground,
+  isCollapsed = false,
 }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(list.title);
@@ -104,36 +177,68 @@ const ListHeader = ({
     if (e.key === 'Escape') { setTitle(list.title); setEditing(false); }
   };
 
-  return (
-    <div className={`px-3 pt-3 pb-2 flex items-center justify-between rounded-t-xl${hasBackground && !listColor ? ' backdrop-blur-md bg-bg-surface/75' : ''}`}>
-      {editing ? (
-        <input
-          autoFocus
-          type="text"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-          }}
-          onBlur={commitRename}
-          onKeyDown={handleKeyDown}
-          className={`bg-transparent text-base font-semibold text-sm focus:outline-none rounded px-1 py-0.5 w-full ${toneTextClass} ${inputFocusClass}`}
-          aria-label={`Rename list ${list.title}`}
-        />
-      ) : (
-        <Button
-          variant="ghost"
-          className={`flex-1 justify-start text-sm font-semibold px-1 py-0.5 ${toneTextClass} ${toneButtonHoverClass}`}
-          onClick={() => { setEditing(true); setTitle(list.title); }}
-          aria-label={`Rename list ${list.title}`}
-        >
-          {list.title}
-          {cardCount !== undefined && (
-            <span className={`ml-1.5 text-xs font-normal ${toneMutedClass}`}>({cardCount})</span>
-          )}
-        </Button>
-      )}
+  const titleNode = renderListTitleNode({
+    editing,
+    isCollapsed,
+    title,
+    listTitle: list.title,
+    toneTextClass,
+    toneButtonHoverClass,
+    inputFocusClass,
+    onTitleChange: setTitle,
+    onCommitRename: commitRename,
+    onInputKeyDown: handleKeyDown,
+    onStartEditing: () => {
+      setEditing(true);
+      setTitle(list.title);
+    },
+  });
 
-      <div className="relative ml-2 z-50" onMouseDown={stopMenuEventPropagation} onPointerDown={stopMenuEventPropagation}>
+  const collapseButton = (
+    <Button
+      variant="ghost"
+      className={`rounded p-1 ${toneMutedClass} ${toneButtonHoverClass}`}
+      onMouseDown={stopMenuEventPropagation}
+      onPointerDown={stopMenuEventPropagation}
+      onClick={(event) => {
+        stopMenuEventPropagation(event);
+        setMenuOpen(false);
+        setSortMenuOpen(false);
+        setMoveListMenuOpen(false);
+        setMoveCardsMenuOpen(false);
+        onToggleCollapsed?.();
+      }}
+      aria-label={isCollapsed ? 'Expand list' : 'Collapse list'}
+      title={isCollapsed ? 'Expand list' : 'Collapse list'}
+    >
+      {isCollapsed ? (
+        <ArrowsPointingOutIcon className="h-4 w-4" aria-hidden="true" />
+      ) : (
+        <ArrowsPointingInIcon className="h-4 w-4" aria-hidden="true" />
+      )}
+    </Button>
+  );
+
+  return (
+    <div className={`${isCollapsed ? 'px-1 pt-2 pb-2 flex flex-col items-center gap-2' : 'px-3 pt-2 pb-2'} rounded-t-xl${hasBackground && !listColor ? ' backdrop-blur-md bg-bg-surface/75' : ''}`}>
+      {isCollapsed ? (
+        <>
+          {collapseButton}
+          {titleNode}
+        </>
+      ) : (
+        <div className="flex w-full items-start gap-2">
+          {titleNode}
+
+          <div className="flex shrink-0 items-center gap-1">
+            {cardCount !== undefined && (
+              <span className={`rounded-full bg-bg-overlay px-2 py-0.5 text-[11px] font-semibold ${toneMutedClass}`}>
+                {cardCount}
+              </span>
+            )}
+            {collapseButton}
+
+            <div className="relative z-50" onMouseDown={stopMenuEventPropagation} onPointerDown={stopMenuEventPropagation}>
         <Button
           variant="ghost"
           className={`rounded p-1 ${toneMutedClass} ${toneButtonHoverClass}`}
@@ -390,7 +495,10 @@ const ListHeader = ({
             )}
           </div>
         )}
-      </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -410,12 +518,14 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.onArchive === next.onArchive
     && prev.onArchiveAllCards === next.onArchiveAllCards
     && prev.onDelete === next.onDelete
+    && prev.onToggleCollapsed === next.onToggleCollapsed
     && prev.onSortBy === next.onSortBy
     && prev.onChangeListColor === next.onChangeListColor
     && prev.listColor === next.listColor
     && prev.textTone === next.textTone
     && prev.availableLists === next.availableLists
     && prev.hasBackground === next.hasBackground
+    && prev.isCollapsed === next.isCollapsed
   );
 }
 
