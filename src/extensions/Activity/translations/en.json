@@ -23,6 +23,7 @@
   "activity.action.member_removed": "{actor} removed a member from the card",
   "activity.action.card_member_assigned": "{actor} assigned {assigneeName} to \"{cardTitle}\"",
   "activity.action.card_member_unassigned": "{actor} removed {assigneeName} from \"{cardTitle}\"",
+  "activity.action.card.custom_field.updated": "{actor} updated {fieldName} with {newValueDisplay} on \"{cardTitle}\"",
   "activity.action.card.due_date.set": "{actor} set \"{cardTitle}\" to be due {dueDate} at {dueTime}",
   "activity.action.card.due_date.changed": "{actor} changed \"{cardTitle}\" to be due {dueDate} at {dueTime}",
   "activity.action.card.due_date.cleared": "{actor} cleared due date for \"{cardTitle}\"",

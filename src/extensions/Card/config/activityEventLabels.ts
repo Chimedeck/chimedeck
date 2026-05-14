@@ -88,6 +88,16 @@ export function getActivityEventMeta(
     return { label: `removed ${who} from this card`, dotColor: 'bg-bg-sunken' };
   }
 
+  if (eventType === 'card.custom_field.updated') {
+    const fieldName = typeof payload?.fieldName === 'string' && payload.fieldName.trim().length > 0
+      ? payload.fieldName
+      : 'a field';
+    const newValueDisplay = typeof payload?.newValueDisplay === 'string' && payload.newValueDisplay.trim().length > 0
+      ? payload.newValueDisplay
+      : 'empty';
+    return { label: `updated ${fieldName} with ${newValueDisplay} on this card`, dotColor: 'bg-indigo-500' };
+  }
+
   if (eventType === 'card.due_date.set') {
     const dueDate = formatDueDateLabel(payload?.dueDate);
     return {

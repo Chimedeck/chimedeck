@@ -17,6 +17,8 @@ import {
 } from '../../../middlewares/permissionManager';
 import { sanitizeText } from '../../../common/sanitize';
 import { dispatchEvent } from '../../../mods/events/dispatch';
+import { writeActivity } from '../../activity/mods/write';
+import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 
 export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'CHECKBOX' | 'DROPDOWN';
 
@@ -29,6 +31,59 @@ interface CardCustomFieldValueRow {
   value_date: string | Date | null;
   value_checkbox: boolean | null;
   value_option_id: string | null;
+}
+
+interface DropdownOption {
+  id: string;
+  label: string;
+  color?: string;
+}
+
+function parseDropdownOptions(options: unknown): DropdownOption[] {
+  if (!Array.isArray(options)) return [];
+  return options
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map((entry) => ({
+      id: typeof entry.id === 'string' ? entry.id : '',
+      label: typeof entry.label === 'string' ? entry.label : '',
+      color: typeof entry.color === 'string' ? entry.color : undefined,
+    }))
+    .filter((entry) => entry.id.length > 0);
+}
+
+function formatCustomFieldValueForActivity({
+  fieldType,
+  value,
+  options,
+}: {
+  fieldType: FieldType;
+  value: string | number | boolean | null;
+  options: unknown;
+}): string {
+  if (value === null) return 'empty';
+
+  switch (fieldType) {
+    case 'TEXT':
+      return String(value);
+    case 'NUMBER':
+      return String(value);
+    case 'DATE': {
+      const parsed = new Date(String(value));
+      if (Number.isNaN(parsed.getTime())) return String(value);
+      const datePart = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const timePart = parsed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return `${datePart} ${timePart}`;
+    }
+    case 'CHECKBOX':
+      return value ? 'checked' : 'unchecked';
+    case 'DROPDOWN': {
+      const optionId = String(value);
+      const option = parseDropdownOptions(options).find((entry) => entry.id === optionId);
+      return option?.label?.trim() || optionId;
+    }
+    default:
+      return String(value);
+  }
 }
 
 function toComparableFieldValue(
@@ -232,6 +287,10 @@ export async function handleUpsertCardFieldValue(
 
   const previousValue = toComparableFieldValue(fieldType, existing);
   const newValue = toComparableFieldValue(fieldType, saved);
+  const cardTitle = typeof (ctx.card as Record<string, unknown>).title === 'string'
+    ? (ctx.card as Record<string, unknown>).title as string
+    : '';
+  const fieldName = typeof field.name === 'string' ? field.name : '';
 
   // [why] This trigger should only fire for actual value transitions, not no-op saves.
   if (previousValue !== newValue && saved) {
@@ -248,6 +307,30 @@ export async function handleUpsertCardFieldValue(
         newValue,
       },
     });
+
+    const activity = await writeActivity({
+      entityType: 'card',
+      entityId: cardId,
+      boardId: (ctx.board as Record<string, unknown>).id as string,
+      action: 'card.custom_field.updated',
+      actorId,
+      payload: {
+        cardId,
+        cardTitle,
+        fieldId,
+        fieldName,
+        newValue,
+        newValueDisplay: formatCustomFieldValueForActivity({
+          fieldType,
+          value: newValue,
+          options: field.options,
+        }),
+      },
+    });
+    publishCardActivityEvent({
+      activity,
+      boardId: (ctx.board as Record<string, unknown>).id as string,
+    }).catch(() => {});
   }
 
   return Response.json({ data: saved }, { status: existing ? 200 : 201 });
@@ -297,6 +380,12 @@ export async function handleDeleteCardFieldValue(
 
   const field = await db('custom_fields').where({ id: fieldId }).first();
   const fieldType = (field?.field_type as FieldType | undefined) ?? null;
+  const cardTitle = typeof (ctx.card as Record<string, unknown>).title === 'string'
+    ? (ctx.card as Record<string, unknown>).title as string
+    : '';
+  const fieldName = field && typeof (field as Record<string, unknown>).name === 'string'
+    ? ((field as Record<string, unknown>).name as string)
+    : '';
   const previousValue = fieldType
     ? toComparableFieldValue(fieldType, existing as CardCustomFieldValueRow)
     : null;
@@ -320,6 +409,32 @@ export async function handleDeleteCardFieldValue(
         newValue: null,
       },
     });
+
+    if (fieldType && field) {
+      const activity = await writeActivity({
+        entityType: 'card',
+        entityId: cardId,
+        boardId: (ctx.board as Record<string, unknown>).id as string,
+        action: 'card.custom_field.updated',
+        actorId,
+        payload: {
+          cardId,
+          cardTitle,
+          fieldId,
+          fieldName,
+          newValue: null,
+          newValueDisplay: formatCustomFieldValueForActivity({
+            fieldType,
+            value: null,
+            options: (field as Record<string, unknown>).options,
+          }),
+        },
+      });
+      publishCardActivityEvent({
+        activity,
+        boardId: (ctx.board as Record<string, unknown>).id as string,
+      }).catch(() => {});
+    }
   }
 
   return new Response(null, { status: 204 });

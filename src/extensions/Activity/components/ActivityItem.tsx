@@ -62,6 +62,8 @@ function describeAction(
   const name = textValue(payload.name);
   const assigneeName = textValue(payload.assigneeName);
   const emoji = textValue(payload.emoji);
+  const fieldName = textValue(payload.fieldName);
+  const newValueDisplay = textValue(payload.newValueDisplay);
   const referencedCardTitle = textValue(payload.referencedCardTitle);
   const linkUrl = textValue(payload.linkUrl);
   const linkTarget = referencedCardTitle || name || linkUrl || 'a link';
@@ -84,6 +86,8 @@ function describeAction(
     referencedCardTitle,
     linkUrl,
     linkTarget,
+    fieldName,
+    newValueDisplay,
     assigneeName,
     emoji,
     dueDate,
