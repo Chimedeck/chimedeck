@@ -240,6 +240,8 @@ Bun.serve({
 
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();
+    const path = new URL(req.url).pathname;
+    const isAttachmentViewPath = /^\/api\/v1\/attachments\/[^/]+\/view$/.test(path);
 
     // S3 origin for avatar/attachment images — LocalStack uses S3_ENDPOINT directly,
     // production uses the virtual-hosted bucket URL.
@@ -251,6 +253,7 @@ Bun.serve({
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, 'https://sentry.jhorizon.io', ...pluginOrigins.connectSrc],
       extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
+      frameAncestors: isAttachmentViewPath ? "'self'" : "'none'",
     });
     const response = new Response(res.body, {
       status: res.status,

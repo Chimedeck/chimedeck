@@ -216,6 +216,27 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
     );
   }
 
+  const isSameListMove = card.list_id === body.targetListId;
+  if (isSameListMove) {
+    // [why] Drag/drop can commit even when card stays at the same index.
+    // Treat this as a no-op: skip writes, events, and notifications.
+    const currentListCardIds = await db('cards')
+      .where({ list_id: card.list_id, archived: false })
+      .orderBy('position', 'asc')
+      .select('id');
+    const currentIndex = currentListCardIds.findIndex((entry: { id: string }) => entry.id === cardId);
+    if (currentIndex === insertIndex) {
+      const unchangedCard = await db('cards').where({ id: cardId }).first();
+      if (!unchangedCard) {
+        return Response.json(
+          { error: { code: 'card-not-found', message: 'Card not found after move' } },
+          { status: 404 },
+        );
+      }
+      return Response.json({ data: unchangedCard });
+    }
+  }
+
   const left = insertIndex > 0 ? targetCards[insertIndex - 1]?.position ?? '' : '';
   const right = insertIndex < targetCards.length
     ? targetCards[insertIndex]?.position ?? HIGH_SENTINEL
@@ -254,22 +275,24 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const fromListId = card.list_id;
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 
-  await Promise.all([
-    dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updatedCard, fromListId, toListId: updatedCard.list_id } }),
-    emitCardMoved({
-      actorId,
-      cardId,
-      cardTitle: updatedCard.title,
-      fromListId,
-      fromListName: sourceList!.title ?? null,
-      toListId: updatedCard.list_id,
-      toListName: targetList.title ?? null,
-      boardId: board.id,
-      workspaceId: board.workspace_id,
-      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
-      userAgent: req.headers.get('user-agent') ?? null,
-    }),
-  ]);
+  if (fromListId !== updatedCard.list_id) {
+    await Promise.all([
+      dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updatedCard, fromListId, toListId: updatedCard.list_id } }),
+      emitCardMoved({
+        actorId,
+        cardId,
+        cardTitle: updatedCard.title,
+        fromListId,
+        fromListName: sourceList!.title ?? null,
+        toListId: updatedCard.list_id,
+        toListName: targetList.title ?? null,
+        boardId: board.id,
+        workspaceId: board.workspace_id,
+        ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+        userAgent: req.headers.get('user-agent') ?? null,
+      }),
+    ]);
+  }
 
   // Broadcast to the source board so its kanban view removes/moves the card in real time.
   publisher.publish(

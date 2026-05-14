@@ -15,6 +15,11 @@ export interface SecurityHeaderOptions {
    * Always includes 'self', data:, and blob:.
    */
   extraImgSrc?: string[];
+  /**
+   * Override frame-ancestors directive for endpoints that must be embeddable
+   * by same-origin pages (e.g. attachment inline preview iframe).
+   */
+  frameAncestors?: string;
 }
 
 // Applies security headers to every response.
@@ -22,7 +27,12 @@ export interface SecurityHeaderOptions {
 // dynamically registered plugin iframes and their declared API domains are
 // allowed by the browser's CSP enforcement.
 export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptions = {}): void {
-  const { extraFrameSrc = [], extraConnectSrc = [], extraImgSrc = [] } = opts;
+  const {
+    extraFrameSrc = [],
+    extraConnectSrc = [],
+    extraImgSrc = [],
+    frameAncestors = "'none'",
+  } = opts;
 
   const frameSrc = ['\'self\'', 'blob:', ...extraFrameSrc].join(' ');
 
@@ -30,8 +40,10 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
 
   const imgSrc = ['\'self\'', 'data:', 'blob:', ...extraImgSrc].join(' ');
 
+  const xFrameOptions = frameAncestors === "'self'" ? 'SAMEORIGIN' : 'DENY';
+
   headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-Frame-Options', xFrameOptions);
   headers.set('X-XSS-Protection', '1; mode=block');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set(
@@ -40,7 +52,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   );
   headers.set(
     'Content-Security-Policy',
-    `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors 'none'`
+    `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors ${frameAncestors}`
   );
   headers.set(
     'Permissions-Policy',
