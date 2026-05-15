@@ -10,12 +10,16 @@ import type { RealtimeEvent } from '../client/socket';
 import { listSliceActions } from '../../List/listSlice';
 import { cardSliceActions } from '../../Card/cardSlice';
 import { boardSliceActions, selectCards } from '../../Board/slices/boardSlice';
-import { cardDetailSliceActions } from '../../Card/slices/cardDetailSlice';
+import {
+  cardDetailSliceActions,
+  selectCardDetail,
+  selectOpenCardId,
+  type ActivityData,
+} from '../../Card/slices/cardDetailSlice';
 import type { List } from '../../List/api';
 import { getCard, type Card } from '../../Card/api';
 import type { CommentData } from '../../Card/api/cardDetail';
 import { selectCurrentUser } from '~/slices/authSlice';
-import type { ActivityData } from '../../Card/slices/cardDetailSlice';
 import { apiClient } from '~/common/api/client';
 import { invalidateBoardCardFieldValuesCache } from '../../CustomFields/api';
 
@@ -33,16 +37,28 @@ export interface UseBoardSyncResult {
 export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResult {
   const dispatch = useAppDispatch();
   const cards = useAppSelector(selectCards);
+  const openCardId = useAppSelector(selectOpenCardId);
+  const openCardDetail = useAppSelector(selectCardDetail);
   const currentUser = useAppSelector(selectCurrentUser);
   // Deduplication set: "entityId:sequence" → prevent double-apply
   const seen = useRef<Set<string>>(new Set());
   const lastSeqRef = useRef(0);
   const cardsRef = useRef(cards);
+  const openCardIdRef = useRef<string | null>(openCardId);
+  const openCardDetailRef = useRef<Card | null>(openCardDetail);
   const currentUserIdRef = useRef<string | null>(currentUser?.id ?? null);
 
   useEffect(() => {
     cardsRef.current = cards;
   }, [cards]);
+
+  useEffect(() => {
+    openCardIdRef.current = openCardId;
+  }, [openCardId]);
+
+  useEffect(() => {
+    openCardDetailRef.current = openCardDetail;
+  }, [openCardDetail]);
 
   useEffect(() => {
     currentUserIdRef.current = currentUser?.id ?? null;
@@ -58,12 +74,25 @@ export function useBoardSync({ boardId }: UseBoardSyncOptions): UseBoardSyncResu
       cardId: string | undefined;
       actorId: string | undefined;
     }) => {
-      if (comment) {
+      const targetCardId = comment?.card_id ?? cardId;
+      const activeCardId = openCardIdRef.current;
+      const activeCard = openCardDetailRef.current;
+      const isTargetingOpenCard = Boolean(
+        targetCardId
+        && (
+          targetCardId === activeCardId
+          || targetCardId === activeCard?.id
+          || targetCardId === activeCard?.short_id
+        ),
+      );
+
+      // [why] Board rooms receive comment events for every card in the board.
+      // Only append to modal comments when the event targets the currently viewed card.
+      if (comment && isTargetingOpenCard) {
         dispatch(cardDetailSliceActions.addComment(comment));
       }
 
       // Keep board card badge counts in sync for realtime updates.
-      const targetCardId = comment?.card_id ?? cardId;
       const currentUserId = currentUserIdRef.current;
       const isOwnComment =
         (comment?.user_id != null && comment.user_id === currentUserId) ||
