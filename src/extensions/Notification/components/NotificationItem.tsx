@@ -85,16 +85,30 @@ function buildActionCopy(notification: Notification, currentUserId: string | nul
 function extractCommentPreview(content: string | null | undefined): string | null {
   if (!content) return null;
 
-  const plainText = content
-    .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, ' ') // markdown image syntax
-    .replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1') // markdown links -> link text
-    .replaceAll(/[>#*_`~]/g, ' ')
-    .replaceAll(/\s+/g, ' ')
-    .trim();
+  const lines = content
+    .replaceAll(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => {
+      return line
+        .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, ' ') // markdown image syntax
+        .replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1') // markdown links -> link text
+        .replaceAll(/[>#*_`~]/g, ' ')
+        .replaceAll(/\s+/g, ' ')
+        .trim();
+    })
+    .filter(Boolean);
 
-  if (!plainText) return null;
-  if (plainText.length <= 160) return plainText;
-  return `${plainText.slice(0, 159).trimEnd()}…`;
+  if (lines.length === 0) return null;
+
+  const isTruncated = lines.length > 3;
+  const previewLines = lines.slice(0, 3);
+
+  if (isTruncated) {
+    const lastLine = previewLines[2] ?? '';
+    previewLines[2] = lastLine ? `${lastLine}...` : '...';
+  }
+
+  return previewLines.join('\n');
 }
 
 function actorDisplayName(notification: Notification): string {
@@ -410,7 +424,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                       <p className="mt-0.5 text-sm text-subtle">{activityCopy}</p>
 
                       {commentPreview && (
-                        <p className="mt-1.5 rounded-md border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle leading-relaxed break-words">
+                        <p className="mt-1.5 rounded-md border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle leading-relaxed break-words whitespace-pre-line">
                           {commentPreview}
                         </p>
                       )}

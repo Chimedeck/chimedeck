@@ -26,8 +26,8 @@ export async function createReactionNotification({
     // Load comment author — we notify them about the reaction
     const comment = await db('comments')
       .where({ id: commentId })
-      .select('user_id')
-      .first() as { user_id: string } | undefined;
+      .select('user_id', 'content')
+      .first() as { user_id: string; content: string | null } | undefined;
     if (!comment) return;
 
     const recipientId: string = comment.user_id;
@@ -133,6 +133,7 @@ export async function createReactionNotification({
           card_title: card?.title ?? null,
           board_title: board?.title ?? null,
           list_title: null,
+          comment_content: comment.content ?? null,
           actor: actorPayload,
           // Pass emoji in the notification payload so the copy can say "X reacted 👍"
           emoji,

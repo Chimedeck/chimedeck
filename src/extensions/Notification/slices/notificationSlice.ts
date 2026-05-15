@@ -101,12 +101,33 @@ const notificationSlice = createSlice({
   reducers: {
     // Called by useNotificationSync when a WS notification_created event arrives
     addNotification(state, action: PayloadAction<Notification>) {
-      const exists = state.notifications.some((n) => n.id === action.payload.id);
-      if (!exists) {
+      const existingIndex = state.notifications.findIndex((n) => n.id === action.payload.id);
+      if (existingIndex === -1) {
         state.notifications.unshift(action.payload);
         if (!action.payload.read) {
           state.unreadCount += 1;
         }
+        return;
+      }
+
+      const existing = state.notifications[existingIndex];
+      if (!existing) return;
+
+      const nextNotification: Notification = {
+        ...existing,
+        ...action.payload,
+        // Keep already-hydrated fields when realtime payload omits them.
+        comment_content: action.payload.comment_content ?? existing.comment_content,
+        comment_reactions: action.payload.comment_reactions ?? existing.comment_reactions,
+      };
+
+      state.notifications.splice(existingIndex, 1);
+      state.notifications.unshift(nextNotification);
+
+      if (existing.read && !nextNotification.read) {
+        state.unreadCount += 1;
+      } else if (!existing.read && nextNotification.read) {
+        state.unreadCount = Math.max(0, state.unreadCount - 1);
       }
     },
 
