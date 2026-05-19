@@ -50,6 +50,11 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      // Trello compatibility routes are mounted at /trello/1/* on the Bun server.
+      '/trello': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
   build: {

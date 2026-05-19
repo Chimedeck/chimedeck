@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChimeDeck API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --text: #111827;
+        --muted: #6b7280;
+        --accent: #0f766e;
+        --accent-2: #115e59;
+        --border: #e5e7eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 15% 5%, rgba(15, 118, 110, 0.08) 0, rgba(15, 118, 110, 0) 40%),
+          radial-gradient(circle at 85% 0, rgba(17, 94, 89, 0.08) 0, rgba(17, 94, 89, 0) 35%),
+          var(--bg);
+      }
+
+      .topbar {
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+        padding: 14px 20px;
+      }
+
+      .title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 10px;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+
+      .tab {
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .tab.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
+      .hint {
+        padding: 10px 20px;
+        color: var(--muted);
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <h1 class="title">ChimeDeck API Documentation</h1>
+      <p class="subtitle">Use Authorize to set your token, then run requests directly with Try it out.</p>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" id="tab-native" type="button">Native API</button>
+      <button class="tab" id="tab-trello" type="button">Trello Compatible Adapter API</button>
+    </nav>
+
+    <div class="hint">
+      Native API expects <strong>Bearer &lt;JWT&gt;</strong>. Trello adapter accepts <strong>Bearer hf_...</strong> or <strong>?token=hf_...</strong>.
+    </div>
+
+    <main>
+      <section id="native-section">
+        <div id="swagger-native"></div>
+      </section>
+      <section id="trello-section" class="hidden">
+        <div id="swagger-trello"></div>
+      </section>
+    </main>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      const nativeUi = SwaggerUIBundle({
+        url: "/api-docs/native.yaml",
+        dom_id: "#swagger-native",
+        deepLinking: true,
+        persistAuthorization: true,
+      });
+
+      const trelloUi = SwaggerUIBundle({
+        url: "/api-docs/trello.yaml",
+        dom_id: "#swagger-trello",
+        deepLinking: true,
+        persistAuthorization: true,
+      });
+
+      const tabNative = document.getElementById("tab-native");
+      const tabTrello = document.getElementById("tab-trello");
+      const nativeSection = document.getElementById("native-section");
+      const trelloSection = document.getElementById("trello-section");
+
+      function showNative() {
+        tabNative.classList.add("active");
+        tabTrello.classList.remove("active");
+        nativeSection.classList.remove("hidden");
+        trelloSection.classList.add("hidden");
+      }
+
+      function showTrello() {
+        tabTrello.classList.add("active");
+        tabNative.classList.remove("active");
+        trelloSection.classList.remove("hidden");
+        nativeSection.classList.add("hidden");
+      }
+
+      tabNative.addEventListener("click", showNative);
+      tabTrello.addEventListener("click", showTrello);
+
+      window.__apiDocs = { nativeUi, trelloUi };
+    </script>
+  </body>
+</html>

@@ -13,6 +13,7 @@ import {
   PuzzlePieceIcon,
   UserPlusIcon,
   CommandLineIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -241,6 +242,21 @@ export default function Sidebar() {
                 >
                   <CommandLineIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {commonTranslations['Sidebar.mcpDocsLabel']}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/developer/api-docs"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
+                    }`
+                  }
+                >
+                  <DocumentTextIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  API Docs
                 </NavLink>
               </li>
               {/* Invite External User — visible only to admin-domain users */}

@@ -1,0 +1,696 @@
+openapi: 3.0.3
+info:
+  title: ChimeDeck Native API
+  version: 1.0.0
+  description: |
+    Native ChimeDeck REST API. Use the Authorize button to pass your JWT as Bearer token.
+
+    Typical test flow:
+    1. POST /api/v1/auth/login
+    2. Copy access token
+    3. Authorize with Bearer token
+    4. Call protected endpoints such as /api/v1/users/me, /api/v1/workspaces, /api/v1/boards
+servers:
+  - url: /
+    description: Same-origin API base (works with Vite proxy in dev)
+
+tags:
+  - name: System
+  - name: Auth
+  - name: Users
+  - name: Workspaces
+  - name: Boards
+  - name: Lists
+  - name: Cards
+  - name: Labels
+  - name: Comments
+  - name: Attachments
+  - name: Search
+  - name: Notifications
+  - name: Presence
+  - name: CustomFields
+  - name: API Tokens
+  - name: Webhooks
+  - name: Automation
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            name:
+              type: string
+            data:
+              type: object
+              additionalProperties: true
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: secret123
+    LoginResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            refreshToken:
+              type: string
+              example: rft_abc123
+            user:
+              type: object
+              additionalProperties: true
+    GenericDataResponse:
+      type: object
+      properties:
+        data:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: array
+              items:
+                type: object
+                additionalProperties: true
+    TokenCreateResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            token:
+              type: string
+              example: hf_xxxxxxxxxxxxxxxxxxxx
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/flags:
+    get:
+      tags: [System]
+      summary: Read runtime feature flags
+      responses:
+        '200':
+          description: Current flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and get access/refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /api/v1/users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/workspaces:
+    get:
+      tags: [Workspaces]
+      summary: List workspaces available to current user
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Workspace list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    post:
+      tags: [Workspaces]
+      summary: Create workspace
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Product Team
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/workspaces/{workspaceId}:
+    get:
+      tags: [Workspaces]
+      summary: Get workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    patch:
+      tags: [Workspaces]
+      summary: Update workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/boards:
+    get:
+      tags: [Boards]
+      summary: List boards
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Board list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    post:
+      tags: [Boards]
+      summary: Create board
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                workspaceId: { type: string }
+                title: { type: string, example: Sprint Board }
+      responses:
+        '201':
+          description: Board created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/boards/{boardId}:
+    get:
+      tags: [Boards]
+      summary: Get board
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Board
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    patch:
+      tags: [Boards]
+      summary: Update board
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Board updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    delete:
+      tags: [Boards]
+      summary: Delete/archive board
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/lists:
+    post:
+      tags: [Lists]
+      summary: Create list
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                boardId: { type: string }
+                title: { type: string }
+      responses:
+        '201':
+          description: List created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/lists/{listId}:
+    get:
+      tags: [Lists]
+      summary: Get list
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    patch:
+      tags: [Lists]
+      summary: Update list
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: List updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/cards:
+    post:
+      tags: [Cards]
+      summary: Create card
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                listId: { type: string }
+                title: { type: string }
+                description: { type: string }
+      responses:
+        '201':
+          description: Card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/cards/{cardId}:
+    get:
+      tags: [Cards]
+      summary: Get card
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    patch:
+      tags: [Cards]
+      summary: Update card
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/labels:
+    post:
+      tags: [Labels]
+      summary: Create label
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                boardId: { type: string }
+                name: { type: string }
+                color: { type: string }
+      responses:
+        '201':
+          description: Label created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/comments:
+    post:
+      tags: [Comments]
+      summary: Create comment
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cardId: { type: string }
+                content: { type: string }
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/attachments:
+    post:
+      tags: [Attachments]
+      summary: Upload attachment metadata/presigned flow
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Attachment workflow response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/search:
+    get:
+      tags: [Search]
+      summary: Search boards/cards
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      summary: List current user notifications
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/presence:
+    get:
+      tags: [Presence]
+      summary: Presence heartbeat/state endpoint
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Presence state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/custom-fields:
+    get:
+      tags: [CustomFields]
+      summary: List custom field definitions
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Custom fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/api-tokens:
+    get:
+      tags: [API Tokens]
+      summary: List tokens for current user
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Token list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    post:
+      tags: [API Tokens]
+      summary: Create a new API token
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: local-script }
+      responses:
+        '201':
+          description: Token created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenCreateResponse'
+
+  /api/v1/webhooks:
+    get:
+      tags: [Webhooks]
+      summary: List configured webhooks
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Webhook list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+    post:
+      tags: [Webhooks]
+      summary: Create webhook
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+
+  /api/v1/automation:
+    get:
+      tags: [Automation]
+      summary: List automation rules/triggers
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: Automation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'

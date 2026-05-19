@@ -39,6 +39,7 @@ import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { webhooksRouter } from './extensions/webhooks/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
+import { trelloCompatRouter } from './extensions/trelloCompat';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -73,6 +74,31 @@ async function serveStatic(filePath: string): Promise<Response | null> {
 async function router(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
+
+  if (path === '/api-docs/native-openapi.yaml' && req.method === 'GET') {
+    const file = Bun.file(`${import.meta.dir}/../docs/api/native-openapi.yaml`);
+    if (!(await file.exists())) {
+      return Response.json(
+        { error: { code: 'not-found', message: 'Native OpenAPI spec not found' } },
+        { status: 404 }
+      );
+    }
+    return new Response(file, { headers: { 'Content-Type': 'application/yaml; charset=utf-8' } });
+  }
+
+  if (path === '/api-docs/trello-openapi.yaml' && req.method === 'GET') {
+    const file = Bun.file(`${import.meta.dir}/../docs/api/trello-openapi.yaml`);
+    if (!(await file.exists())) {
+      return Response.json(
+        { error: { code: 'not-found', message: 'Trello OpenAPI spec not found' } },
+        { status: 404 }
+      );
+    }
+    return new Response(file, { headers: { 'Content-Type': 'application/yaml; charset=utf-8' } });
+  }
+
+
+
 
   if (path === '/health' && req.method === 'GET') {
     return Response.json({ status: 'ok' });
@@ -161,6 +187,9 @@ async function router(req: Request): Promise<Response> {
 
   const healthCheckResponse = await healthCheckExtensionRouter(req, path);
   if (healthCheckResponse) return healthCheckResponse;
+
+  const trelloCompatResponse = await trelloCompatRouter(req, path);
+  if (trelloCompatResponse) return trelloCompatResponse;
 
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;

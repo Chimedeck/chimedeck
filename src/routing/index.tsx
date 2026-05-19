@@ -52,6 +52,11 @@ const McpDocsPage = lazy(() =>
     default: m.default,
   }))
 );
+const ApiDocsPage = lazy(() =>
+  import('~/extensions/DeveloperDocs/containers/ApiDocsPage/ApiDocsPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const VerifyEmailPage = lazy(() =>
   import('~/extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage').then((m) => ({
     default: m.default,
@@ -163,6 +168,7 @@ export default function AppRouter() {
               <Route path="/profile/edit" element={<EditProfilePage />} />
               <Route path="/developer/plugins" element={<PluginDocsPage />} />
               <Route path="/developer/mcp" element={<McpDocsPage />} />
+              <Route path="/developer/api-docs" element={<ApiDocsPage />} />
               {/* Design System page — only registered when DESIGN_SYSTEM_ENABLED is true (dev by default). */}
               {config.designSystemEnabled && DesignSystemPage && (
                 <Route path={DESIGN_SYSTEM_PATH} element={<DesignSystemPage />} />

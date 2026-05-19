@@ -14,6 +14,7 @@ import {
   PuzzlePieceIcon,
   UserPlusIcon,
   CommandLineIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -54,10 +55,10 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   collapsed: boolean;
-  end?: boolean;
-  badge?: React.ReactNode;
-  'aria-label'?: string;
-  onNavigate?: () => void;
+  end?: boolean | undefined;
+  badge?: React.ReactNode | undefined;
+  'aria-label'?: string | undefined;
+  onNavigate?: (() => void) | undefined;
 }
 
 function NavItem({ to, icon, label, collapsed, end, badge, 'aria-label': ariaLabel, onNavigate }: NavItemProps) {
@@ -98,9 +99,9 @@ interface NavButtonProps {
   icon: React.ReactNode;
   label: string;
   collapsed: boolean;
-  badge?: React.ReactNode;
-  'aria-label'?: string;
-  onNavigate?: () => void;
+  badge?: React.ReactNode | undefined;
+  'aria-label'?: string | undefined;
+  onNavigate?: (() => void) | undefined;
 }
 
 function NavButton({ onClick, icon, label, collapsed, badge, 'aria-label': ariaLabel, onNavigate }: NavButtonProps) {
@@ -389,6 +390,13 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 to="/developer/mcp"
                 icon={<CommandLineIcon className="h-5 w-5" />}
                 label={layoutTranslations['Sidebar.mcpDocsLabel']}
+                collapsed={collapsed}
+                onNavigate={onClose}
+              />
+              <NavItem
+                to="/developer/api-docs"
+                icon={<DocumentTextIcon className="h-5 w-5" />}
+                label="API Docs"
                 collapsed={collapsed}
                 onNavigate={onClose}
               />

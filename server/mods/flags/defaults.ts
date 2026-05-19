@@ -14,4 +14,5 @@ export const defaults: Record<string, boolean> = {
   SES_ENABLED: false,
   NOTIFICATION_PREFERENCES_ENABLED: true,
   EMAIL_NOTIFICATIONS_ENABLED: false,
+  TRELLO_COMPAT_ENABLED: false,
 };
