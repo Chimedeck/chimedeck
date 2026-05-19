@@ -20,5 +20,6 @@ export function serializeList(list: {
     softLimit: null,
     status: null,
     subscribed: false,
+    limits: {},
   };
 }

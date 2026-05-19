@@ -8,6 +8,7 @@ import { getTrelloAuthUser } from '../../middlewares/trelloAuth';
 import { serializeBoard } from '../../serializers/board';
 import { serializeMember, usernameFromEmail } from '../../serializers/member';
 import { serializeOrganization } from '../../serializers/organization';
+import { serializeSearchMembers, serializeSearchResponse } from '../../serializers/search';
 import type { TrelloSearchResponse } from '../../types/trello';
 import { loadTrelloCardById } from '../cards';
 
@@ -133,17 +134,26 @@ async function listBoardMemberships(boardId: string): Promise<Array<{
   return memberships;
 }
 
-function toModelTypeSet(raw: string | null): Set<'boards' | 'cards' | 'members' | 'organizations'> {
-  if (!raw || raw.trim() === '' || raw.toLowerCase() === 'all') {
+export type SearchModelType = 'boards' | 'cards' | 'members' | 'organizations';
+
+function splitCsvParam(values: string[]): string[] {
+  return values
+    .flatMap((value) => value.split(','))
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length > 0);
+}
+
+export function parseSearchModelTypes(params: URLSearchParams): Set<SearchModelType> {
+  const rawTokens = splitCsvParam([
+    ...params.getAll('modelType'),
+    ...params.getAll('modelTypes'),
+  ]);
+  if (rawTokens.length === 0 || rawTokens.includes('all')) {
     return new Set(['boards', 'cards', 'members', 'organizations']);
   }
 
-  const tokens = raw
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter((entry) => entry.length > 0);
-  const next = new Set<'boards' | 'cards' | 'members' | 'organizations'>();
-  for (const token of tokens) {
+  const next = new Set<SearchModelType>();
+  for (const token of rawTokens) {
     if (token === 'board' || token === 'boards') next.add('boards');
     if (token === 'card' || token === 'cards') next.add('cards');
     if (token === 'member' || token === 'members') next.add('members');
@@ -293,7 +303,7 @@ export async function searchRouter(req: AuthenticatedRequest, path: string): Pro
     const query = normalizeQuery(url.searchParams.get('query'));
     if (!query) return trelloError('invalid value for query', 400);
     const limit = toPositiveInt(url.searchParams.get('limit'), 8);
-    return Response.json(await searchMembers(user.id, query, limit, true));
+    return Response.json(serializeSearchMembers(await searchMembers(user.id, query, limit, true)));
   }
 
   if (pathname !== '/search' || req.method !== 'GET') return null;
@@ -301,18 +311,13 @@ export async function searchRouter(req: AuthenticatedRequest, path: string): Pro
   const query = normalizeQuery(url.searchParams.get('query'));
   if (!query) return trelloError('invalid value for query', 400);
 
-  const modelTypes = toModelTypeSet(url.searchParams.get('modelTypes'));
+  const modelTypes = parseSearchModelTypes(url.searchParams);
   const boardsLimit = toPositiveInt(url.searchParams.get('boards_limit'), 10);
   const cardsLimit = toPositiveInt(url.searchParams.get('cards_limit'), 10);
   const membersLimit = toPositiveInt(url.searchParams.get('members_limit'), 10);
   const organizationsLimit = toPositiveInt(url.searchParams.get('organizations_limit'), 10);
 
-  const response: TrelloSearchResponse = {
-    boards: [],
-    cards: [],
-    members: [],
-    organizations: [],
-  };
+  const response: TrelloSearchResponse = serializeSearchResponse();
 
   if (modelTypes.has('boards')) response.boards = await searchBoards(user.id, query, boardsLimit);
   if (modelTypes.has('cards')) {
@@ -325,5 +330,5 @@ export async function searchRouter(req: AuthenticatedRequest, path: string): Pro
     response.organizations = await searchOrganizations(user.id, query, organizationsLimit);
   }
 
-  return Response.json(response);
+  return Response.json(serializeSearchResponse(response));
 }

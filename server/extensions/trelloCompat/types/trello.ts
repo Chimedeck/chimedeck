@@ -122,6 +122,7 @@ export interface TrelloList {
   softLimit: null;
   status: null;
   subscribed: false;
+  limits: Record<string, never>;
 }
 
 export interface TrelloBoardMembership {
@@ -223,7 +224,7 @@ export interface TrelloOrganization {
   };
   products: never[];
   url: string;
-  website: null;
+  website: string | null;
 }
 
 export interface TrelloAction {
@@ -236,6 +237,21 @@ export interface TrelloAction {
   limits: Record<string, never>;
   memberCreator: TrelloMember;
 }
+
+export interface TrelloReaction {
+  id: string;
+  idMember: string;
+  idModel: string;
+  emoji: string;
+  member?: { id: string };
+}
+
+export type TrelloReactionSummary = Record<string, {
+  emoji: string;
+  idModel: string;
+  count: number;
+  idMembers: string[];
+}>;
 
 export type TrelloActionType =
   | 'commentCard'

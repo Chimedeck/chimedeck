@@ -10,6 +10,7 @@ type CustomFieldOptionRow = {
   id: string;
   value?: string | { text?: string } | null;
   color?: string | null;
+  pos?: number | string | null;
 };
 
 type CustomFieldRow = {
@@ -49,6 +50,22 @@ function toOptionText(value: CustomFieldOptionRow['value']): string {
   return '';
 }
 
+function toIsoOrNull(value: string | Date | null | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function toBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return !!value;
+}
+
 function toOptions(value: CustomFieldRow['options'], idCustomField: string): TrelloCustomFieldOption[] {
   let options: CustomFieldOptionRow[] = [];
   if (Array.isArray(value)) {
@@ -67,7 +84,7 @@ function toOptions(value: CustomFieldRow['options'], idCustomField: string): Tre
     idCustomField,
     value: { text: toOptionText(option.value) },
     color: option.color ?? null,
-    pos: rankToPos(index),
+    pos: Number.isFinite(Number(option.pos)) ? Number(option.pos) : rankToPos(index),
   }));
 }
 
@@ -81,7 +98,7 @@ function toValueForFieldType(
     return { number: row.value_number === null || row.value_number === undefined ? null : String(row.value_number) };
   }
   if (normalizedType === 'DATE') {
-    return { date: row.value_date ? new Date(row.value_date).toISOString() : null };
+    return { date: toIsoOrNull(row.value_date) };
   }
   if (normalizedType === 'CHECKBOX') {
     return { checked: row.value_checkbox === null || row.value_checkbox === undefined ? null : String(row.value_checkbox) };
@@ -89,7 +106,7 @@ function toValueForFieldType(
   if (normalizedType === 'DROPDOWN') return { optionId: row.value_option_id ?? null };
 
   if (row.value_option_id) return { optionId: row.value_option_id };
-  if (row.value_date) return { date: new Date(row.value_date).toISOString() };
+  if (row.value_date) return { date: toIsoOrNull(row.value_date) };
   if (row.value_number !== null && row.value_number !== undefined) return { number: String(row.value_number) };
   if (row.value_checkbox !== null && row.value_checkbox !== undefined) return { checked: String(row.value_checkbox) };
   return { text: row.value_text ?? null };
@@ -106,7 +123,7 @@ export function serializeCustomField(customField: CustomFieldRow): TrelloCustomF
     idModel: customField.board_id,
     modelType: 'board',
     fieldGroup: customField.id,
-    display: { cardFront: !!customField.show_on_card },
+    display: { cardFront: toBoolean(customField.show_on_card) },
     name: customField.name,
     pos,
     type: fieldType,

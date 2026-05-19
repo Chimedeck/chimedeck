@@ -31,6 +31,7 @@ type WorkspaceRow = {
   created_at?: string | Date | null;
   desc?: string | null;
   website?: string | null;
+  visibility?: 'PUBLIC' | 'PRIVATE' | null;
 };
 
 type BoardRow = {
@@ -366,11 +367,15 @@ export async function organizationsRouter(req: AuthenticatedRequest, path: strin
   if (fieldMatch && req.method === 'GET') {
     if (!hasMinRole(callerRole, 'VIEWER')) return TRELLO_PERMISSION_DENIED();
     const field = fieldMatch[1] as string;
-    if (field === 'id') return Response.json(workspace.id);
-    if (field === 'displayName') return Response.json(workspace.name);
-    if (field === 'name') return Response.json(workspace.name.toLowerCase().replace(/\s+/g, ''));
-    if (field === 'desc') return Response.json(workspace.desc ?? '');
-    if (field === 'website') return Response.json(workspace.website ?? null);
+    const memberships = await listOrgMembershipRows(workspace.id);
+    const organization = serializeOrganization({
+      ...workspace,
+      memberships: memberships.filter((membership) => membership.role !== 'GUEST'),
+    });
+
+    if (field in organization) {
+      return Response.json(organization[field as keyof typeof organization]);
+    }
     return TRELLO_NOT_FOUND();
   }
 

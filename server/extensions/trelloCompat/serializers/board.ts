@@ -1,4 +1,5 @@
 import type { TrelloBoard, TrelloBoardMembership } from '../types/trello';
+import { serializeEmbeddedLabel } from './label';
 
 type VisibilityPermLevel = 'private' | 'org' | 'public';
 
@@ -8,8 +9,24 @@ function visibilityToPermLevel(v: string | null | undefined): VisibilityPermLeve
   return 'private';
 }
 
+export function serializeBoardLabels(labels: Array<{
+  id: string;
+  board_id?: string | null;
+  idBoard?: string | null;
+  name?: string | null;
+  color?: string | null;
+}>, boardId: string): Array<{
+  id: string;
+  idBoard: string;
+  name: string;
+  color: string | null;
+}> {
+  return labels.map((label) => serializeEmbeddedLabel(label, boardId));
+}
+
 export function serializeBoard(board: {
   id: string;
+  short_id?: string | null;
   title: string;
   description?: string | null;
   state: 'ACTIVE' | 'ARCHIVED';
@@ -23,7 +40,7 @@ export function serializeBoard(board: {
   const closed = board.state === 'ARCHIVED';
   const permissionLevel = visibilityToPermLevel(board.visibility);
   const background = board.background ?? 'blue';
-  const shortLink = board.id.slice(0, 8);
+  const shortLink = board.short_id ?? board.id.slice(0, 8);
 
   return {
     id: board.id,

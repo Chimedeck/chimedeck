@@ -1,6 +1,6 @@
 import type { TrelloCard, TrelloCustomFieldItem, TrelloLabel } from '../types/trello';
 import { toCardChecklistIds } from './checklist';
-import { toCardLabelIds } from './label';
+import { serializeEmbeddedLabel, toCardLabelIds } from './label';
 import { toCardMemberIds } from './member';
 import { rankToPos } from './position';
 
@@ -11,8 +11,32 @@ function toIso(value: string | Date | null | undefined): string | null {
 }
 
 function normalizeCoverSize(size: string | null | undefined): 'normal' | 'full' {
-  return String(size ?? '').toUpperCase() === 'FULL' ? 'full' : 'normal';
+  return (size ?? '').toUpperCase() === 'FULL' ? 'full' : 'normal';
 }
+
+function normalizeCustomFieldItem(item: TrelloCustomFieldItem): TrelloCustomFieldItem {
+  const value = item.value ?? {};
+  if (Object.hasOwn(value, 'optionId')) {
+    const optionId = value.optionId ?? null;
+    return {
+      ...item,
+      idValue: optionId ?? item.idValue,
+      value: { optionId },
+    };
+  }
+  if (Object.hasOwn(value, 'date')) return { ...item, value: { date: value.date ?? null } };
+  if (Object.hasOwn(value, 'number')) return { ...item, value: { number: value.number ?? null } };
+  if (Object.hasOwn(value, 'checked')) return { ...item, value: { checked: value.checked ?? null } };
+  return { ...item, value: { text: value.text ?? null } };
+}
+
+type CardLabelInput = TrelloLabel | {
+  id: string;
+  board_id?: string | null;
+  idBoard?: string | null;
+  name?: string | null;
+  color?: string | null;
+};
 
 export function serializeCard(card: {
   id: string;
@@ -31,7 +55,7 @@ export function serializeCard(card: {
   cover_attachment_id?: string | null;
   cover_color?: string | null;
   cover_size?: string | null;
-  labels?: TrelloLabel[];
+  labels?: CardLabelInput[];
   members?: Array<{ user_id: string }>;
   checklists?: Array<{ id: string }>;
   attachmentCount?: number;
@@ -43,10 +67,17 @@ export function serializeCard(card: {
   const due = toIso(card.due_date);
   const start = toIso(card.start_date);
   const pos = typeof card._rank === 'number' ? rankToPos(card._rank) : 65535;
-  const shortLink = String(card.short_id ?? card.id.slice(0, 8));
+  const shortLink = typeof card.short_id === 'number'
+    ? card.short_id.toString()
+    : card.short_id ?? card.id.slice(0, 8);
   const idShort = typeof card.short_id === 'number'
     ? card.short_id
-    : Number.parseInt(String(card.short_id ?? ''), 10) || 0;
+    : Number.parseInt(card.short_id ?? '', 10) || 0;
+  const labels = (card.labels ?? []).map((label) => serializeEmbeddedLabel(label, card.board_id ?? ''));
+  const idChecklists = toCardChecklistIds(card.checklists ?? []);
+  const idLabels = toCardLabelIds(labels);
+  const idMembers = toCardMemberIds(card.members ?? []);
+  const attachmentCount = card.attachmentCount ?? 0;
 
   return {
     id: card.id,
@@ -61,7 +92,7 @@ export function serializeCard(card: {
       due,
       start,
       description: !!(card.description && card.description.length > 0),
-      attachments: card.attachmentCount ?? 0,
+      attachments: attachmentCount,
       comments: card.commentCount ?? 0,
       checkItems: card.checkItemCount ?? 0,
       checkItemsChecked: card.checkItemsChecked ?? 0,
@@ -90,13 +121,13 @@ export function serializeCard(card: {
     dueReminder: null,
     idAttachmentCover: card.cover_attachment_id ?? null,
     idBoard: card.board_id ?? '',
-    idChecklists: toCardChecklistIds(card.checklists ?? []),
-    idLabels: toCardLabelIds(card.labels ?? []),
+    idChecklists,
+    idLabels,
     idList: card.list_id,
-    idMembers: toCardMemberIds(card.members ?? []),
+    idMembers,
     idMembersVoted: [],
     idShort,
-    labels: card.labels ?? [],
+    labels,
     limits: {},
     locationName: null,
     manualCoverAttachment: false,
@@ -108,6 +139,6 @@ export function serializeCard(card: {
     start,
     subscribed: false,
     url: `/trello/1/cards/${card.id}`,
-    customFieldItems: card.customFieldItems ?? [],
+    customFieldItems: (card.customFieldItems ?? []).map((item) => normalizeCustomFieldItem(item)),
   };
 }

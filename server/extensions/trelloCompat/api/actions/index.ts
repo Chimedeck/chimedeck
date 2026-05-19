@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import {
@@ -19,6 +18,14 @@ import { serializeList } from '../../serializers/list';
 import { serializeMember } from '../../serializers/member';
 import { getTrelloAuthUser } from '../../middlewares/trelloAuth';
 import { loadTrelloCardById } from '../cards';
+import { getActionOrganizationResponse } from './organization';
+import {
+  createOrGetActionReaction,
+  deleteActionReaction,
+  getActionReaction,
+  listActionReactions,
+} from './reactions';
+import { getActionReactionsSummary } from './reactionsSummary';
 
 type MembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST';
 const ROLE_RANK: Record<MembershipRole, number> = {
@@ -108,6 +115,17 @@ type ActivityActionContext = {
 };
 
 type ActionContext = CommentActionContext | ActivityActionContext;
+const ACTION_RESERVED_SUBPATHS = new Set([
+  'text',
+  'board',
+  'card',
+  'list',
+  'member',
+  'memberCreator',
+  'organization',
+  'reactions',
+  'reactionsSummary',
+]);
 
 function toBasicMember(user: UserRow): { id: string; email: string; name: string; avatar_url?: string | null } {
   return {
@@ -311,6 +329,16 @@ function serializeActionByContext(context: ActionContext) {
   });
 }
 
+export function projectActionField(
+  action: ReturnType<typeof serializeActionByContext>,
+  field: string,
+): { found: true; value: unknown } | { found: false } {
+  if (!Object.prototype.hasOwnProperty.call(action, field)) {
+    return { found: false };
+  }
+  return { found: true, value: (action as Record<string, unknown>)[field] };
+}
+
 async function listBoardMemberships(boardId: string): Promise<Array<{
   id: string;
   idMember: string;
@@ -356,14 +384,6 @@ async function listBoardMemberships(boardId: string): Promise<Array<{
 function canMutateComment(userId: string, context: CommentActionContext, isAdmin: boolean): boolean {
   if (context.comment.user_id === userId) return true;
   return isAdmin;
-}
-
-async function resolveReactionRows(commentId: string): Promise<Array<{ id?: string; emoji: string; user_id: string }>> {
-  return await db('comment_reactions').where({ comment_id: commentId }) as Array<{
-    id?: string;
-    emoji: string;
-    user_id: string;
-  }>;
 }
 
 export async function actionsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
@@ -466,6 +486,25 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
     }));
   }
 
+  if (subPath === 'organization' && req.method === 'GET') {
+    return await getActionOrganizationResponse(context.board);
+  }
+
+  const fieldMatch = subPath.match(/^([a-zA-Z0-9_]+)$/);
+  if (fieldMatch && req.method === 'GET') {
+    const field = fieldMatch[1] as string;
+    if (!ACTION_RESERVED_SUBPATHS.has(field)) {
+      const projection = projectActionField(serializeActionByContext(context), field);
+      if (!projection.found) return trelloError('invalid value for field', 400);
+      return Response.json(projection.value);
+    }
+  }
+
+  if (subPath === 'reactions' && req.method === 'GET') {
+    if (context.kind !== 'comment') return TRELLO_ACTION_TEXT_UNSUPPORTED();
+    return Response.json(await listActionReactions(context.comment.id));
+  }
+
   if (subPath === 'reactions' && req.method === 'POST') {
     if (context.kind !== 'comment') return TRELLO_ACTION_TEXT_UNSUPPORTED();
     const body = await parseBody(req);
@@ -473,74 +512,38 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
     if (typeof shortName !== 'string' || !shortName.trim() || shortName.trim().length > 32) {
       return trelloError('invalid value for shortName', 400);
     }
-    const emoji = shortName.trim();
-
-    const existing = await db('comment_reactions')
-      .where({ comment_id: context.comment.id, user_id: user.id, emoji })
-      .first() as { id?: string } | undefined;
-
-    if (!existing) {
-      await db('comment_reactions').insert({
-        id: randomUUID(),
-        comment_id: context.comment.id,
-        user_id: user.id,
-        emoji,
-        created_at: new Date().toISOString(),
-      });
-    }
-
-    const created = await db('comment_reactions')
-      .where({ comment_id: context.comment.id, user_id: user.id, emoji })
-      .first() as { id?: string } | undefined;
-
-    return Response.json({
-      id: created?.id ?? `${context.comment.id}:${user.id}:${emoji}`,
-      idMember: user.id,
-      idModel: context.comment.id,
-      member: serializeMember({
-        id: user.id,
-        email: user.email,
-        name: user.name ?? user.email,
-        avatar_url: user.avatar_url ?? null,
-      }),
-      emoji,
-      shortName: emoji,
-    });
+    return Response.json(await createOrGetActionReaction({
+      commentId: context.comment.id,
+      emoji: shortName.trim(),
+      user,
+    }));
   }
 
-  const reactionDeleteMatch = subPath.match(/^reactions\/([^/]+)$/);
-  if (reactionDeleteMatch && req.method === 'DELETE') {
+  const reactionMatch = subPath.match(/^reactions\/([^/]+)$/);
+  if (reactionMatch && req.method === 'GET') {
     if (context.kind !== 'comment') return TRELLO_ACTION_TEXT_UNSUPPORTED();
-    const reactionIdentifier = decodeURIComponent(reactionDeleteMatch[1] as string);
+    const reactionIdentifier = decodeURIComponent(reactionMatch[1] as string);
+    const reaction = await getActionReaction(context.comment.id, reactionIdentifier);
+    if (!reaction) return TRELLO_NOT_FOUND();
+    return Response.json(reaction);
+  }
 
-    const byId = await db('comment_reactions')
-      .where({ id: reactionIdentifier, comment_id: context.comment.id })
-      .first() as { id: string; user_id: string; emoji: string } | undefined;
-
-    if (byId) {
-      if (byId.user_id !== user.id && !boardAdmin) return TRELLO_PERMISSION_DENIED();
-      await db('comment_reactions').where({ id: byId.id }).delete();
-      return Response.json({});
-    }
-
-    await db('comment_reactions')
-      .where({ comment_id: context.comment.id, user_id: user.id, emoji: reactionIdentifier })
-      .delete();
+  if (reactionMatch && req.method === 'DELETE') {
+    if (context.kind !== 'comment') return TRELLO_ACTION_TEXT_UNSUPPORTED();
+    const reactionIdentifier = decodeURIComponent(reactionMatch[1] as string);
+    const deletion = await deleteActionReaction({
+      commentId: context.comment.id,
+      reactionIdentifier,
+      callerId: user.id,
+      boardAdmin,
+    });
+    if (!deletion.allowed) return TRELLO_PERMISSION_DENIED();
     return Response.json({});
   }
 
   if (subPath === 'reactionsSummary' && req.method === 'GET') {
     if (context.kind !== 'comment') return TRELLO_ACTION_TEXT_UNSUPPORTED();
-    const rows = await resolveReactionRows(context.comment.id);
-    const summary: Record<string, { count: number; memberIds: string[] }> = {};
-    for (const row of rows) {
-      if (!summary[row.emoji]) summary[row.emoji] = { count: 0, memberIds: [] };
-      const bucket = summary[row.emoji];
-      if (!bucket) continue;
-      bucket.count += 1;
-      bucket.memberIds.push(row.user_id);
-    }
-    return Response.json(summary);
+    return Response.json(await getActionReactionsSummary(context.comment.id));
   }
 
   if (subPath === 'text' && req.method === 'GET') {

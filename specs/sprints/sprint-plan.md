@@ -171,6 +171,10 @@
 | [146](./sprint-146.md) | Trello Compat: Checklists & Labels | Full `/trello/1/checklists/*` and `/trello/1/labels/*` surfaces — checklist/checkItem CRUD with `idChecklistSource` copy; label CRUD; serializers | ⬜ Needs 144 |
 | [147](./sprint-147.md) | Trello Compat: Members & Organizations | Full `/trello/1/members/*` and `/trello/1/organizations/*` surfaces — member profile + boards/cards/orgs; workspace CRUD + invite by email; org serializer | ⬜ Needs 143 |
 | [148](./sprint-148.md) | Trello Compat: Actions, Search & CustomFields | `/trello/1/actions/*` (comments + activity → Trello action types); `/trello/1/search` + `/trello/1/search/members/`; `/trello/1/customFields/*` with card value upsert — completes full compatibility surface | ⬜ Needs 142 |
+| [149](./sprint-149.md) | Trello Compat: Response Normalization Baseline & Contract Matrix | Adapter-only parity matrix for all implemented `/trello/1/*` endpoints (sprints 142–148); canonical serialization rules; contract-test scaffolding; no Native API changes | ⬜ Needs 148 |
+| [150](./sprint-150.md) | Trello Compat: Actions Response Normalization | Trello Actions parity against Atlassian docs: normalize action payloads, field projection, member/memberCreator/display semantics, reactions list/get/create/delete/summary, action organization/field routes | ⬜ Needs 149 |
+| [151](./sprint-151.md) | Trello Compat: Core Entity Response Normalization | Normalize boards/cards/lists/checklists/labels response shapes and cross-endpoint serializer consistency; apply Trello-style field projection where supported | ⬜ Needs 149 |
+| [152](./sprint-152.md) | Trello Compat: Metadata & Search Response Normalization | Normalize members/organizations/search/customFields responses, envelopes, and Trello-style error semantics for adapter-only routes | ⬜ Needs 149 + 150 + 151 |
 
 ---
 

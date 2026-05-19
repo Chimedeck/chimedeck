@@ -5,12 +5,23 @@ function toOrgSlug(value: string): string {
   return value.toLowerCase().replace(/\s+/g, '');
 }
 
+function visibilityToPermissionLevel(visibility: string | null | undefined): 'private' | 'public' {
+  return visibility === 'PUBLIC' ? 'public' : 'private';
+}
+
+function normalizeOptionalWebsite(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const website = value.trim();
+  return website.length > 0 ? website : null;
+}
+
 export function serializeOrganization(workspace: {
   id: string;
   name: string;
   owner_id?: string | null;
   desc?: string | null;
   website?: string | null;
+  visibility?: string | null;
   memberships?: Array<{ user_id: string; role: string }>;
 }): TrelloOrganization {
   const memberships: TrelloOrgMembership[] = (workspace.memberships ?? []).map((membership) => {
@@ -37,7 +48,7 @@ export function serializeOrganization(workspace: {
     nodeId: workspace.id,
     powerUps: [],
     prefs: {
-      permissionLevel: 'private',
+      permissionLevel: visibilityToPermissionLevel(workspace.visibility),
       voting: 'disabled',
       comments: 'members',
       invitations: 'admins',
@@ -49,6 +60,6 @@ export function serializeOrganization(workspace: {
     },
     products: [],
     url: `/trello/1/organizations/${workspace.id}`,
-    website: null,
+    website: normalizeOptionalWebsite(workspace.website),
   };
 }
