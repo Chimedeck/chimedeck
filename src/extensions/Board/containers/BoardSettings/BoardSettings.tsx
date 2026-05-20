@@ -25,10 +25,11 @@ interface Props {
   isBoardParticipant?: boolean;
 }
 
-const BoardSettings = ({ onClose, isGuest = false, isViewerGuest: _isViewerGuest = false, isBoardParticipant = true }: Props) => {
+const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoardParticipant = true }: Props) => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);
+  const canEditGuestWritableSettings = !isViewerGuest;
 
   // Local state mirrors board.visibility; initialised once board is loaded.
   const [visibility, setVisibility] = useState<BoardVisibility>(
@@ -94,7 +95,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest: _isViewerGuest
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {/* Visibility — MEMBER guests and full members only; VIEWER guests cannot change board visibility */}
+          {/* Visibility — full members only. Guests can still manage board-writable settings below based on guest subtype. */}
           {!isGuest && (
             <VisibilitySelector
               value={visibility}
@@ -105,8 +106,8 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest: _isViewerGuest
             />
           )}
 
-          {/* Background, Custom Fields, Plugins — full members only */}
-          {!isGuest && (
+          {/* Background + board schema settings — full members and MEMBER guests. */}
+          {canEditGuestWritableSettings && (
             <>
               <div className="border-t border-border pt-4">
                 <BackgroundPicker boardId={boardId ?? ''} />
@@ -120,25 +121,40 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest: _isViewerGuest
                 {boardId && <BoardLabelsPanel boardId={boardId} />}
               </div>
 
-              <div className="border-t border-border pt-4">
-                <button
-                  onClick={handlePluginsClick}
-                  className="w-full text-left px-3 py-2 rounded text-sm text-subtle hover:bg-bg-surface flex items-center gap-2 transition-colors"
-                >
-                  <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>Plugins</span>
-                </button>
-              </div>
-
               {boardId && board?.title && (
                 <div className="border-t border-border pt-4">
                   <StateTransitionsSettingsEntry
                     boardId={boardId}
                     boardTitle={board.title}
+                    canOpenEditor={!isGuest}
                   />
                 </div>
               )}
+
+              {/* Plugins stay full-member only. */}
+              {!isGuest && (
+                <div className="border-t border-border pt-4">
+                  <button
+                    onClick={handlePluginsClick}
+                    className="w-full text-left px-3 py-2 rounded text-sm text-subtle hover:bg-bg-surface flex items-center gap-2 transition-colors"
+                  >
+                    <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>Plugins</span>
+                  </button>
+                </div>
+              )}
             </>
+          )}
+
+          {/* VIEWER guests can still view transition rules but cannot open the editor. */}
+          {isViewerGuest && boardId && board?.title && (
+            <div className="border-t border-border pt-4">
+              <StateTransitionsSettingsEntry
+                boardId={boardId}
+                boardTitle={board.title}
+                canOpenEditor={false}
+              />
+            </div>
           )}
 
           {/* User settings — per-board notification preferences; only shown for board participants (members/guests). */}

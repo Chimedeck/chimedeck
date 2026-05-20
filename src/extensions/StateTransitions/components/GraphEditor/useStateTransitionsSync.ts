@@ -230,7 +230,10 @@ export const useStateTransitionsSync = ({ boardId, active }: Args) => {
   return {
     isFeatureEnabled,
     transitions: data,
-    isLoading: isFetching || isLoading,
+    // [why] Keep canvas mounted during background revalidation to avoid visual
+    // flicker/bleep after local saves (edge create/update).
+    // Only show blocking loading state for the initial fetch when no data exists yet.
+    isLoading: isLoading || (!data && isFetching),
     isSaving: putStatus.isLoading,
     isError,
     errorMessage: isError ? getErrorMessage(error) : null,

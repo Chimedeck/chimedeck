@@ -27,6 +27,10 @@ export function boardPath(board: HasId): string {
   return slug ? `/b/${getBoardRouteId(board)}/${slug}` : `/b/${getBoardRouteId(board)}`;
 }
 
+export function stateTransitionsEditorPath(board: HasId): string {
+  return `${boardPath(board)}/e/state`;
+}
+
 export function cardPath(card: HasId): string {
   const slug = toSlug(card.title);
   return slug ? `/c/${getCardRouteId(card)}/${slug}` : `/c/${getCardRouteId(card)}`;

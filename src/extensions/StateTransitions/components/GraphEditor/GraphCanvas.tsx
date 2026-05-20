@@ -2,9 +2,12 @@ import { useCallback, useRef, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
+  ConnectionMode,
   Controls,
   type EdgeTypes,
   type OnConnect,
+  type OnConnectEnd,
+  type OnConnectStart,
   type OnEdgesChange,
   type OnNodesChange,
   MiniMap,
@@ -14,7 +17,12 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ACTION_TYPES } from '../../config/actionTypes';
-import type { StateTransitionAction, StateTransitionDirection, StateTransitionStyle } from '../../api';
+import type {
+  StateTransitionAction,
+  StateTransitionDirection,
+  StateTransitionStyle,
+  StateTransitionWaypoint,
+} from '../../api';
 import ColumnNode from './ColumnNode';
 import EdgeInspector from './EdgeInspector';
 import GraphEditorToolbar from './GraphEditorToolbar';
@@ -41,12 +49,18 @@ interface Props {
   onNodesChange: OnNodesChange<GraphEditorNode>;
   onEdgesChange: OnEdgesChange<GraphEditorEdge>;
   onConnect: OnConnect;
+  onConnectStart: OnConnectStart;
+  onConnectEnd: OnConnectEnd;
   onNodeDragStop: (nodeId: string, x: number, y: number) => void;
   onSelectionChange: (selection: { nodes: GraphEditorNode[]; edges: GraphEditorEdge[] }) => void;
   onSelectEdge: (edgeId: string | null) => void;
   onUpdateEdgeAction: (edgeId: string, nextAction: StateTransitionAction) => void;
   onUpdateEdgeDirection: (edgeId: string, nextDirection: StateTransitionDirection) => void;
   onUpdateEdgeStyle: (edgeId: string, nextStyle: StateTransitionStyle) => void;
+  onPreviewEdgeOffset: (edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => void;
+  onCommitEdgeOffset: (edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => void;
+  onPreviewEdgeWaypoints: (edgeId: string, waypoints: StateTransitionWaypoint[]) => void;
+  onCommitEdgeWaypoints: (edgeId: string, waypoints: StateTransitionWaypoint[]) => void;
   onDeleteEdge: (edgeId: string) => void;
   onAddNote: (x: number, y: number) => void;
   onRequestAddColumn: (x: number, y: number) => void;
@@ -66,12 +80,18 @@ const GraphCanvas = ({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onConnectStart,
+  onConnectEnd,
   onNodeDragStop,
   onSelectionChange,
   onSelectEdge,
   onUpdateEdgeAction,
   onUpdateEdgeDirection,
   onUpdateEdgeStyle,
+  onPreviewEdgeOffset,
+  onCommitEdgeOffset,
+  onPreviewEdgeWaypoints,
+  onCommitEdgeWaypoints,
   onDeleteEdge,
   onAddNote,
   onRequestAddColumn,
@@ -120,6 +140,18 @@ const GraphCanvas = ({
               onSelectEdge(edgeId);
             },
             onDelete: onDeleteEdge,
+            onPreviewOffset: (edgeId: string, offsetX: number, offsetY: number) => {
+              onPreviewEdgeOffset(edgeId, offsetX, offsetY);
+            },
+            onCommitOffset: (edgeId: string, offsetX: number, offsetY: number) => {
+              onCommitEdgeOffset(edgeId, offsetX, offsetY);
+            },
+            onPreviewWaypoints: (edgeId: string, waypoints: StateTransitionWaypoint[]) => {
+              onPreviewEdgeWaypoints(edgeId, waypoints);
+            },
+            onCommitWaypoints: (edgeId: string, waypoints: StateTransitionWaypoint[]) => {
+              onCommitEdgeWaypoints(edgeId, waypoints);
+            },
           },
         }))}
         nodeTypes={nodeTypes}
@@ -128,6 +160,8 @@ const GraphCanvas = ({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onSelectionChange={onSelectionChange}
         onNodeDragStop={(_event, node) => {
           onNodeDragStop(node.id, node.position.x, node.position.y);
@@ -135,9 +169,13 @@ const GraphCanvas = ({
         onEdgeClick={(_event, edge) => {
           onSelectEdge(edge.id);
         }}
-        onPaneClick={() => {
+        onPaneClick={(event) => {
+          if ((event.target as HTMLElement | null)?.closest('[data-edge-inspector="true"]')) {
+            return;
+          }
           onSelectEdge(null);
         }}
+        connectionMode={ConnectionMode.Loose}
         fitView
         minZoom={0.2}
         maxZoom={1.5}

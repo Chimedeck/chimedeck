@@ -1,6 +1,7 @@
 // BoardCanvas — DndContext wrapper and horizontally scrollable kanban canvas.
 // Handles card and list drag-and-drop with optimistic updates and rollback on failure.
 import { useState, useCallback, useRef, useEffect, startTransition } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   DragOverlay,
@@ -39,9 +40,9 @@ import {
 import StateTransitionErrorPopup from '~/extensions/StateTransitions/components/StateTransitionErrorPopup';
 import { extractStateTransitionRejectionFromError } from '~/extensions/StateTransitions/components/KanbanCard';
 import { useStateTransitionGuard } from '~/extensions/StateTransitions/hooks/useStateTransitionGuard';
-import GraphEditor from '~/extensions/StateTransitions/components/GraphEditor';
 import TransitionsActiveBanner from '~/extensions/StateTransitions/components/TransitionsActiveBanner';
 import { useTransitionsBanner } from '~/extensions/StateTransitions/hooks/useTransitionsBanner';
+import { stateTransitionsEditorPath } from '~/common/routing/shortUrls';
 
 interface DragPlaceholder {
   listId: string;
@@ -555,6 +556,7 @@ const BoardCanvas = ({
   customFieldValuesMap,
   unreadNotificationCountByCardId,
 }: Props) => {
+  const navigate = useNavigate();
   // WHY: use one consistent drag-preview model across all boards so users
   // always see the same card-sized drop placeholder regardless of board size.
   const disableLiveDragPreview = true;
@@ -569,7 +571,6 @@ const BoardCanvas = ({
     allowedNextStates: Array<{ id: string; name: string }>;
   } | null>(null);
   const stateTransitionGuard = useStateTransitionGuard(boardId);
-  const [graphEditorOpen, setGraphEditorOpen] = useState(false);
   const transitionsBanner = useTransitionsBanner({
     boardId,
     enabled: stateTransitionGuard.isEnforcementActive,
@@ -627,16 +628,9 @@ const BoardCanvas = ({
   const cardsRef = useRef(cards);
   useEffect(() => { cardsRef.current = cards; }, [cards]);
 
-  useEffect(() => {
-    if (!globalThis.window) return;
-    const params = new URLSearchParams(globalThis.window.location.search);
-    if (params.get('openStateTransitionsEditor') !== '1') return;
-    setGraphEditorOpen(true);
-    params.delete('openStateTransitionsEditor');
-    const nextSearch = params.toString();
-    const nextUrl = `${globalThis.window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${globalThis.window.location.hash}`;
-    globalThis.window.history.replaceState(null, '', nextUrl);
-  }, []);
+  const openStateTransitionsEditorRoute = useCallback(() => {
+    navigate(stateTransitionsEditorPath({ id: boardId, title: boardTitle ?? null }));
+  }, [boardId, boardTitle, navigate]);
   const listsRef = useRef(lists);
   useEffect(() => { listsRef.current = lists; }, [lists]);
   // WHY: keep a ref copy of disableLiveDragPreview so the pointermove handler
@@ -1590,7 +1584,7 @@ const BoardCanvas = ({
       {transitionsBanner.isVisible && (
         <TransitionsActiveBanner
           onViewRules={() => {
-            setGraphEditorOpen(true);
+            openStateTransitionsEditorRoute();
           }}
           onDismiss={transitionsBanner.dismiss}
         />
@@ -1672,15 +1666,7 @@ const BoardCanvas = ({
           setStateTransitionRejection(null);
         }}
         onViewRules={() => {
-          setGraphEditorOpen(true);
-        }}
-      />
-      <GraphEditor
-        boardId={boardId}
-        boardTitle={boardTitle ?? ''}
-        open={graphEditorOpen}
-        onClose={() => {
-          setGraphEditorOpen(false);
+          openStateTransitionsEditorRoute();
         }}
       />
     </DndContext>

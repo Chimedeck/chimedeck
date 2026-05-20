@@ -116,3 +116,5 @@ export const selectEmailVerificationEnabled = (state: RootState) =>
   state.featureFlags.emailVerificationEnabled;
 export const selectStateTransitionsEnabled = (state: RootState) =>
   state.featureFlags.stateTransitionsEnabled;
+export const selectFeatureFlagsStatus = (state: RootState) =>
+  state.featureFlags.status;

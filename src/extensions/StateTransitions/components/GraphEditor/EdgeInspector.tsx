@@ -30,7 +30,10 @@ const EdgeInspector = ({
   onDelete,
   onClose,
 }: Props) => (
-  <aside className="pointer-events-auto absolute right-4 top-4 z-20 w-72 rounded-lg border border-border bg-bg-surface p-3 shadow-xl">
+  <aside
+    data-edge-inspector="true"
+    className="nodrag nopan pointer-events-auto absolute right-4 top-4 z-20 w-72 rounded-lg border border-border bg-bg-surface p-3 shadow-xl"
+  >
     <div className="mb-2 flex items-center justify-between">
       <h3 className="text-sm font-semibold text-base">{translations['StateTransitions.edgeInspectorTitle']}</h3>
       <button
@@ -98,12 +101,21 @@ const EdgeInspector = ({
         </button>
         <button
           type="button"
-          className={`${optionBaseClass} ${selectedStyle === 'curved' ? optionActiveClass : optionInactiveClass}`}
+          className={`${optionBaseClass} ${selectedStyle === 'orthogonal' ? optionActiveClass : optionInactiveClass}`}
           onClick={() => {
-            onStyleChange('curved');
+            onStyleChange('orthogonal');
           }}
         >
-          {translations['StateTransitions.edgeStyleCurved']}
+          {translations['StateTransitions.edgeStyleOrthogonal']}
+        </button>
+        <button
+          type="button"
+          className={`${optionBaseClass} ${selectedStyle === 'smooth' || selectedStyle === 'curved' ? optionActiveClass : optionInactiveClass}`}
+          onClick={() => {
+            onStyleChange('smooth');
+          }}
+        >
+          {translations['StateTransitions.edgeStyleSmooth']}
         </button>
       </div>
     </div>

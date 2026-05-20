@@ -1,6 +1,11 @@
 export type StateTransitionAction = 'allowed_move_to';
 export type StateTransitionDirection = 'one_way' | 'two_way';
-export type StateTransitionStyle = 'straight' | 'curved';
+export type StateTransitionStyle = 'straight' | 'orthogonal' | 'smooth' | 'curved';
+
+export interface StateTransitionWaypoint {
+  x: number;
+  y: number;
+}
 
 export interface StateTransitionListLike {
   id: string;
@@ -38,6 +43,11 @@ export interface StateTransitionEdge {
   id: string;
   fromNodeId: string;
   toNodeId: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  connectorOffsetX?: number;
+  connectorOffsetY?: number;
+  waypoints?: StateTransitionWaypoint[];
   action: StateTransitionAction;
   direction: StateTransitionDirection;
   style: StateTransitionStyle;

@@ -10,6 +10,15 @@ const EdgeDeleteButton = ({ onClick }: Props) => (
     type="button"
     className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border bg-bg-surface text-muted hover:bg-bg-overlay hover:text-base"
     aria-label={translations['StateTransitions.edgeDelete']}
+    onMouseDown={(event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    }}
+    onPointerDown={(event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onClick();
+    }}
     onClick={(event) => {
       event.preventDefault();
       event.stopPropagation();

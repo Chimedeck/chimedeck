@@ -60,6 +60,18 @@ export function serializeGraph(graph: StateTransitionGraph): StateTransitionGrap
       id: edge.id,
       fromNodeId: edge.fromNodeId,
       toNodeId: edge.toNodeId,
+      ...(edge.sourceHandle === undefined ? {} : { sourceHandle: edge.sourceHandle }),
+      ...(edge.targetHandle === undefined ? {} : { targetHandle: edge.targetHandle }),
+      ...(edge.connectorOffsetX === undefined ? {} : { connectorOffsetX: edge.connectorOffsetX }),
+      ...(edge.connectorOffsetY === undefined ? {} : { connectorOffsetY: edge.connectorOffsetY }),
+      ...(edge.waypoints === undefined
+        ? {}
+        : {
+            waypoints: edge.waypoints.map((waypoint) => ({
+              x: waypoint.x,
+              y: waypoint.y,
+            })),
+          }),
       action: edge.action,
       direction: edge.direction,
       style: edge.style,

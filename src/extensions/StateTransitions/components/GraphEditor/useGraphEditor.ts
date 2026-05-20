@@ -7,6 +7,8 @@ import {
   type Edge,
   type Node,
   type OnConnect,
+  type OnConnectEnd,
+  type OnConnectStart,
   type OnEdgesChange,
   type OnNodesChange,
 } from '@xyflow/react';
@@ -19,6 +21,7 @@ import {
   type StateTransitionNode,
   type StateTransitionNote,
   type StateTransitionStyle,
+  type StateTransitionWaypoint,
 } from '../../api';
 import { DEFAULT_ACTION_TYPE_ID, getActionTypeConfig } from '../../config/actionTypes';
 import { applyRemoteGraphMerge } from './useStateTransitionsSync';
@@ -50,6 +53,9 @@ export interface GraphEditorEdgeData extends Record<string, unknown> {
   action: StateTransitionAction;
   direction: StateTransitionDirection;
   style: StateTransitionStyle;
+  connectorOffsetX: number;
+  connectorOffsetY: number;
+  waypoints: StateTransitionWaypoint[];
   onInspect?: (edgeId: string) => void;
   onDelete?: (edgeId: string) => void;
 }
@@ -203,14 +209,100 @@ const toGraphNotes = (nodes: GraphEditorNode[]): StateTransitionNote[] =>
       positionY: Math.round(node.position.y),
     }));
 
-const toReactFlowEdges = (graph: StateTransitionGraph | null): GraphEditorEdge[] =>
-  (graph?.edges ?? []).map((edge) => {
+type HandlePair = {
+  sourceHandle: string;
+  targetHandle: string;
+};
+
+const LEGACY_HANDLE_ID_MAP: Record<string, string> = {
+  'top-source': 'top-left-source',
+  'top-target': 'top-right-target',
+  'right-source': 'right-top-source',
+  'right-target': 'right-bottom-target',
+  'bottom-source': 'bottom-left-source',
+  'bottom-target': 'bottom-right-target',
+  'left-source': 'left-top-source',
+  'left-target': 'left-bottom-target',
+  'top-left': 'top-left-source',
+  'top-right': 'top-right-source',
+  'right-top': 'right-top-source',
+  'right-bottom': 'right-bottom-source',
+  'bottom-left': 'bottom-left-source',
+  'bottom-right': 'bottom-right-source',
+  'left-top': 'left-top-source',
+  'left-bottom': 'left-bottom-source',
+};
+
+const normalizeHandleId = (handleId: string | null | undefined): string | undefined => {
+  if (!handleId) return undefined;
+  return LEGACY_HANDLE_ID_MAP[handleId] ?? handleId;
+};
+
+const canonicalizeHandleRole = (
+  handleId: string | undefined,
+  role: 'source' | 'target',
+): string | undefined => {
+  if (!handleId) return undefined;
+  const normalized = normalizeHandleId(handleId);
+  if (!normalized) return undefined;
+  if (!normalized.endsWith('-source') && !normalized.endsWith('-target')) {
+    return normalized;
+  }
+  return normalized.replace(/-(source|target)$/, `-${role}`);
+};
+
+const inferHandlesForEdge = ({
+  sourceNode,
+  targetNode,
+}: {
+  sourceNode?: { positionX: number; positionY: number };
+  targetNode?: { positionX: number; positionY: number };
+}): HandlePair | null => {
+  if (!sourceNode || !targetNode) return null;
+
+  const dx = targetNode.positionX - sourceNode.positionX;
+  const dy = targetNode.positionY - sourceNode.positionY;
+  const horizontal = Math.abs(dx) >= Math.abs(dy);
+
+  if (horizontal) {
+    return dx >= 0
+      ? { sourceHandle: 'right-top-source', targetHandle: 'left-top-target' }
+      : { sourceHandle: 'left-top-source', targetHandle: 'right-top-target' };
+  }
+
+  return dy >= 0
+    ? { sourceHandle: 'bottom-left-source', targetHandle: 'top-left-target' }
+    : { sourceHandle: 'top-left-source', targetHandle: 'bottom-left-target' };
+};
+
+const toReactFlowEdges = (graph: StateTransitionGraph | null): GraphEditorEdge[] => {
+  const nodeById = new Map((graph?.nodes ?? []).map((node) => [node.id, node]));
+
+  return (graph?.edges ?? []).map((edge) => {
     const actionType = getActionTypeConfig(edge.action);
+    const inferredHandles = inferHandlesForEdge({
+      sourceNode: nodeById.get(edge.fromNodeId),
+      targetNode: nodeById.get(edge.toNodeId),
+    });
+    let resolvedHandles: Partial<GraphEditorEdge> = {};
+    if (typeof edge.sourceHandle === 'string' && typeof edge.targetHandle === 'string') {
+      resolvedHandles = {
+        sourceHandle: normalizeHandleId(edge.sourceHandle),
+        targetHandle: normalizeHandleId(edge.targetHandle),
+      };
+    } else if (inferredHandles) {
+      resolvedHandles = {
+        sourceHandle: inferredHandles.sourceHandle,
+        targetHandle: inferredHandles.targetHandle,
+      };
+    }
+
     return {
       id: edge.id,
       type: 'transitionEdge',
       source: edge.fromNodeId,
       target: edge.toNodeId,
+      ...resolvedHandles,
       markerEnd: {
         type: MarkerType.ArrowClosed,
         color: actionType.colour,
@@ -219,6 +311,9 @@ const toReactFlowEdges = (graph: StateTransitionGraph | null): GraphEditorEdge[]
         action: edge.action,
         direction: edge.direction,
         style: edge.style,
+        connectorOffsetX: edge.connectorOffsetX ?? 0,
+        connectorOffsetY: edge.connectorOffsetY ?? 0,
+        waypoints: edge.waypoints ?? [],
       },
       ...(edge.direction === 'two_way'
         ? {
@@ -230,12 +325,29 @@ const toReactFlowEdges = (graph: StateTransitionGraph | null): GraphEditorEdge[]
         : {}),
     };
   });
+};
 
 const toGraphEdges = (edges: GraphEditorEdge[]): StateTransitionEdge[] =>
   edges.map((edge) => ({
     id: edge.id,
     fromNodeId: edge.source,
     toNodeId: edge.target,
+    ...(typeof edge.sourceHandle === 'string' ? { sourceHandle: edge.sourceHandle } : {}),
+    ...(typeof edge.targetHandle === 'string' ? { targetHandle: edge.targetHandle } : {}),
+    ...(typeof edge.data.connectorOffsetX === 'number' && edge.data.connectorOffsetX !== 0
+      ? { connectorOffsetX: edge.data.connectorOffsetX }
+      : {}),
+    ...(typeof edge.data.connectorOffsetY === 'number' && edge.data.connectorOffsetY !== 0
+      ? { connectorOffsetY: edge.data.connectorOffsetY }
+      : {}),
+    ...(edge.data.waypoints.length > 0
+      ? {
+          waypoints: edge.data.waypoints.map((waypoint) => ({
+            x: waypoint.x,
+            y: waypoint.y,
+          })),
+        }
+      : {}),
     action: edge.data.action,
     direction: edge.data.direction,
     style: edge.data.style,
@@ -302,6 +414,7 @@ export const useGraphEditor = ({
   const edgesRef = useRef<GraphEditorEdge[]>(edges);
   const saveTimeoutRef = useRef<number | null>(null);
   const rejectTimeoutRef = useRef<number | null>(null);
+  const connectStartRef = useRef<{ nodeId: string | null; handleId: string | null } | null>(null);
   const isDirtyRef = useRef(false);
   const isApplyingUndoRef = useRef(false);
   const historyRef = useRef<HistorySnapshot[]>([]);
@@ -450,16 +563,46 @@ export const useGraphEditor = ({
   }, []);
 
   const onConnect: OnConnect = useCallback((connection: Connection) => {
-    const source = connection.source;
-    const target = connection.target;
+    const connectStart = connectStartRef.current;
+    connectStartRef.current = null;
+
+    const rawSource = connection.source;
+    const rawTarget = connection.target;
+    const rawSourceHandle = normalizeHandleId(connection.sourceHandle);
+    const rawTargetHandle = normalizeHandleId(connection.targetHandle);
+    const shouldSwapDirection = Boolean(
+      rawSourceHandle?.endsWith('-target') || rawTargetHandle?.endsWith('-source'),
+    );
+
+    const source = shouldSwapDirection ? rawTarget : rawSource;
+    const target = shouldSwapDirection ? rawSource : rawTarget;
+    let sourceHandle = shouldSwapDirection ? rawTargetHandle : rawSourceHandle;
+    let targetHandle = shouldSwapDirection ? rawSourceHandle : rawTargetHandle;
     if (!source || !target) return;
 
-    if (source === target) {
-      triggerRejectedConnectionFeedback(source);
+    let normalizedSource = source;
+    let normalizedTarget = target;
+    if (connectStart?.nodeId && connectStart.nodeId === normalizedTarget && connectStart.nodeId !== normalizedSource) {
+      normalizedSource = target;
+      normalizedTarget = source;
+      const previousSourceHandle = sourceHandle;
+      sourceHandle = targetHandle;
+      targetHandle = previousSourceHandle;
+    }
+
+    if (connectStart?.nodeId && connectStart.handleId && connectStart.nodeId === normalizedSource) {
+      sourceHandle = normalizeHandleId(connectStart.handleId);
+    }
+
+    sourceHandle = canonicalizeHandleRole(sourceHandle, 'source');
+    targetHandle = canonicalizeHandleRole(targetHandle, 'target');
+
+    if (normalizedSource === normalizedTarget) {
+      triggerRejectedConnectionFeedback(normalizedSource);
       return;
     }
 
-    if (connectionAlreadyExists(edgesRef.current, source, target)) {
+    if (connectionAlreadyExists(edgesRef.current, normalizedSource, normalizedTarget)) {
       return;
     }
 
@@ -472,8 +615,10 @@ export const useGraphEditor = ({
     const nextEdge: GraphEditorEdge = {
       id: edgeId,
       type: 'transitionEdge',
-      source,
-      target,
+      source: normalizedSource,
+      target: normalizedTarget,
+      ...(sourceHandle ? { sourceHandle } : {}),
+      ...(targetHandle ? { targetHandle } : {}),
       markerEnd: {
         type: MarkerType.ArrowClosed,
         color: getActionTypeConfig(defaultAction).colour,
@@ -482,6 +627,9 @@ export const useGraphEditor = ({
         action: defaultAction,
         direction: 'one_way',
         style: 'straight',
+        connectorOffsetX: 0,
+        connectorOffsetY: 0,
+        waypoints: [],
       },
     };
 
@@ -492,6 +640,17 @@ export const useGraphEditor = ({
       return next;
     });
   }, [defaultAction, persistDebounced, pushHistory, triggerRejectedConnectionFeedback]);
+
+  const onConnectStart: OnConnectStart = useCallback((_event, params) => {
+    connectStartRef.current = {
+      nodeId: params.nodeId ?? null,
+      handleId: params.handleId ?? null,
+    };
+  }, []);
+
+  const onConnectEnd: OnConnectEnd = useCallback(() => {
+    connectStartRef.current = null;
+  }, []);
 
   const onEdgesChange: OnEdgesChange<GraphEditorEdge> = useCallback((changes) => {
     const hasRemove = changes.some((change) => change.type === 'remove');
@@ -517,6 +676,9 @@ export const useGraphEditor = ({
           action: edge.data.action,
           direction: edge.data.direction,
           style: edge.data.style,
+          connectorOffsetX: edge.data.connectorOffsetX ?? 0,
+          connectorOffsetY: edge.data.connectorOffsetY ?? 0,
+          waypoints: edge.data.waypoints ?? [],
           ...(edge.data.onInspect ? { onInspect: edge.data.onInspect } : {}),
           ...(edge.data.onDelete ? { onDelete: edge.data.onDelete } : {}),
           ...patch,
@@ -539,6 +701,80 @@ export const useGraphEditor = ({
               },
             }
           : baseEdge;
+      });
+      edgesRef.current = next;
+      persistDebounced(nodesRef.current, next);
+      return next;
+    });
+  }, [persistDebounced, pushHistory]);
+
+  const previewEdgeOffset = useCallback((edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => {
+    setEdges((current) => {
+      const next = current.map((edge) => {
+        if (edge.id !== edgeId) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            connectorOffsetX,
+            connectorOffsetY,
+          },
+        };
+      });
+      edgesRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const commitEdgeOffset = useCallback((edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => {
+    pushHistory(nodesRef.current, edgesRef.current);
+    setEdges((current) => {
+      const next = current.map((edge) => {
+        if (edge.id !== edgeId) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            connectorOffsetX,
+            connectorOffsetY,
+          },
+        };
+      });
+      edgesRef.current = next;
+      persistDebounced(nodesRef.current, next);
+      return next;
+    });
+  }, [persistDebounced, pushHistory]);
+
+  const previewEdgeWaypoints = useCallback((edgeId: string, waypoints: StateTransitionWaypoint[]) => {
+    setEdges((current) => {
+      const next = current.map((edge) => {
+        if (edge.id !== edgeId) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            waypoints,
+          },
+        };
+      });
+      edgesRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const commitEdgeWaypoints = useCallback((edgeId: string, waypoints: StateTransitionWaypoint[]) => {
+    pushHistory(nodesRef.current, edgesRef.current);
+    setEdges((current) => {
+      const next = current.map((edge) => {
+        if (edge.id !== edgeId) return edge;
+        return {
+          ...edge,
+          data: {
+            ...edge.data,
+            waypoints,
+          },
+        };
       });
       edgesRef.current = next;
       persistDebounced(nodesRef.current, next);
@@ -727,6 +963,8 @@ export const useGraphEditor = ({
     onNodesChange,
     onNodeDragStop,
     onConnect,
+    onConnectStart,
+    onConnectEnd,
     onEdgesChange,
     onSelectionChange,
     selectedEdge,
@@ -734,6 +972,10 @@ export const useGraphEditor = ({
     selectedEdges,
     selectEdge,
     updateEdge,
+    previewEdgeOffset,
+    commitEdgeOffset,
+    previewEdgeWaypoints,
+    commitEdgeWaypoints,
     deleteElementsByIds,
     deleteSelectedElements,
     clearSelection,

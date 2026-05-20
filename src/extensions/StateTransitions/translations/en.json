@@ -26,6 +26,8 @@
   "StateTransitions.edgeDirectionOneWay": "→ One-way",
   "StateTransitions.edgeDirectionTwoWay": "↔ Two-way",
   "StateTransitions.edgeStyleStraight": "─ Straight",
+  "StateTransitions.edgeStyleOrthogonal": "└ Orthogonal",
+  "StateTransitions.edgeStyleSmooth": "~ Smooth",
   "StateTransitions.edgeStyleCurved": "~ Curved",
   "StateTransitions.toolbarAddColumn": "Add Column",
   "StateTransitions.toolbarArrowType": "Arrow",

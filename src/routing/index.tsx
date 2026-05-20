@@ -92,6 +92,11 @@ const PluginDashboardPage = lazy(() =>
     default: m.default,
   }))
 );
+const StateTransitionsEditorPage = lazy(() =>
+  import('~/extensions/StateTransitions/containers/StateTransitionsEditorPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const PluginRegistryPage = lazy(() =>
   import('~/extensions/Plugins/containers/PluginRegistryPage/PluginRegistryPage').then((m) => ({
     default: m.default,
@@ -159,6 +164,8 @@ export default function AppRouter() {
                 />
               </Route>
               <Route path="/b/:boardId/:slug?" element={<BoardPage />} />
+              <Route path="/b/:boardId/e/state" element={<StateTransitionsEditorPage />} />
+              <Route path="/b/:boardId/:slug/e/state" element={<StateTransitionsEditorPage />} />
               <Route path="/c/:cardId/:slug?" element={<BoardPage />} />
               <Route path="/b/:boardId/settings/plugins" element={<PluginDashboardPage />} />
               <Route path="/plugins" element={<PluginRegistryPage />} />

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
+import { selectFeatureFlagsStatus } from '~/slices/featureFlagsSlice';
 import {
   boardSliceActions,
   selectBoard,
@@ -11,7 +12,6 @@ import {
 import type { List } from '~/extensions/List/api';
 import { deleteList } from '~/extensions/List/api';
 import { apiClient } from '~/common/api/client';
-import { boardPath } from '~/common/routing/shortUrls';
 import {
   useCopyStateTransitionsMutation,
   useCreateBoardListMutation,
@@ -24,6 +24,7 @@ import CopyTransitionsModal from '../CopyTransitionsModal';
 import { useGraphEditor } from './useGraphEditor';
 import { useStateTransitionsSync } from './useStateTransitionsSync';
 import translations from '../../translations/en.json';
+import { stateTransitionsEditorPath } from '~/common/routing/shortUrls';
 
 interface Props {
   boardId: string;
@@ -81,6 +82,7 @@ const GraphEditor = ({
   onClose,
 }: Props) => {
   const dispatch = useAppDispatch();
+  const featureFlagsStatus = useAppSelector(selectFeatureFlagsStatus);
   const board = useAppSelector(selectBoard);
   const listOrder = useAppSelector(selectListOrder);
   const listsById = useAppSelector(selectLists);
@@ -145,6 +147,8 @@ const GraphEditor = ({
     onNodesChange,
     onNodeDragStop,
     onConnect,
+    onConnectStart,
+    onConnectEnd,
     onEdgesChange,
     onSelectionChange,
     selectedEdge,
@@ -152,6 +156,10 @@ const GraphEditor = ({
     selectedEdges,
     selectEdge,
     updateEdge,
+    previewEdgeOffset,
+    commitEdgeOffset,
+    previewEdgeWaypoints,
+    commitEdgeWaypoints,
     deleteElementsByIds,
     deleteSelectedElements,
     clearSelection,
@@ -194,10 +202,10 @@ const GraphEditor = ({
   }, [isDirty, isDragSaving, isMutationSaving, onClose, toggleSaving]);
 
   useEffect(() => {
-    if (open && !isFeatureEnabled) {
+    if (open && featureFlagsStatus === 'ready' && !isFeatureEnabled) {
       onClose();
     }
-  }, [isFeatureEnabled, onClose, open]);
+  }, [featureFlagsStatus, isFeatureEnabled, onClose, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -379,6 +387,8 @@ const GraphEditor = ({
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onConnectStart={onConnectStart}
+                onConnectEnd={onConnectEnd}
                 onSelectionChange={onSelectionChange}
                 onNodeDragStop={onNodeDragStop}
                 onSelectEdge={selectEdge}
@@ -390,6 +400,18 @@ const GraphEditor = ({
                 }}
                 onUpdateEdgeStyle={(edgeId, style) => {
                   updateEdge(edgeId, { style });
+                }}
+                onPreviewEdgeOffset={(edgeId, connectorOffsetX, connectorOffsetY) => {
+                  previewEdgeOffset(edgeId, connectorOffsetX, connectorOffsetY);
+                }}
+                onCommitEdgeOffset={(edgeId, connectorOffsetX, connectorOffsetY) => {
+                  commitEdgeOffset(edgeId, connectorOffsetX, connectorOffsetY);
+                }}
+                onPreviewEdgeWaypoints={(edgeId, waypoints) => {
+                  previewEdgeWaypoints(edgeId, waypoints);
+                }}
+                onCommitEdgeWaypoints={(edgeId, waypoints) => {
+                  commitEdgeWaypoints(edgeId, waypoints);
                 }}
                 onDeleteEdge={(edgeId) => {
                   deleteElementsByIds({ edgeIds: [edgeId] });
@@ -459,11 +481,11 @@ const GraphEditor = ({
               targetBoardId: targetBoard.id,
               copyEnabled,
             }).unwrap();
-            const targetPath = `${boardPath({
+            const targetPath = stateTransitionsEditorPath({
               id: targetBoard.id,
               short_id: targetBoard.short_id ?? null,
               title: targetBoard.title,
-            })}?openStateTransitionsEditor=1`;
+            });
             if (response.metadata.skippedNodes > 0) {
               addToast({
                 variant: 'info',

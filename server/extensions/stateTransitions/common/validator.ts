@@ -2,7 +2,7 @@ import type { StateTransitionAction, StateTransitionDirection, StateTransitionGr
 
 const VALID_ACTIONS: StateTransitionAction[] = ['allowed_move_to'];
 const VALID_DIRECTIONS: StateTransitionDirection[] = ['one_way', 'two_way'];
-const VALID_STYLES: StateTransitionStyle[] = ['straight', 'curved'];
+const VALID_STYLES: StateTransitionStyle[] = ['straight', 'orthogonal', 'smooth', 'curved'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -77,6 +77,31 @@ export function validateGraphShape(
     if (!VALID_STYLES.includes(edge.style as StateTransitionStyle)) {
       return { ok: false, message: 'edge.style is invalid' };
     }
+    if (edge.sourceHandle !== undefined && typeof edge.sourceHandle !== 'string') {
+      return { ok: false, message: 'edge.sourceHandle must be a string when provided' };
+    }
+    if (edge.targetHandle !== undefined && typeof edge.targetHandle !== 'string') {
+      return { ok: false, message: 'edge.targetHandle must be a string when provided' };
+    }
+    if (edge.connectorOffsetX !== undefined && !isFiniteNumber(edge.connectorOffsetX)) {
+      return { ok: false, message: 'edge.connectorOffsetX must be a finite number when provided' };
+    }
+    if (edge.connectorOffsetY !== undefined && !isFiniteNumber(edge.connectorOffsetY)) {
+      return { ok: false, message: 'edge.connectorOffsetY must be a finite number when provided' };
+    }
+    if (edge.waypoints !== undefined) {
+      if (!Array.isArray(edge.waypoints)) {
+        return { ok: false, message: 'edge.waypoints must be an array when provided' };
+      }
+      for (const waypoint of edge.waypoints) {
+        if (!isRecord(waypoint)) {
+          return { ok: false, message: 'edge.waypoint must be an object' };
+        }
+        if (!isFiniteNumber(waypoint.x) || !isFiniteNumber(waypoint.y)) {
+          return { ok: false, message: 'edge.waypoint x and y must be finite numbers' };
+        }
+      }
+    }
     if (edge.label !== undefined && typeof edge.label !== 'string') {
       return { ok: false, message: 'edge.label must be a string when provided' };
     }
@@ -145,6 +170,17 @@ export function coerceLegacyGraphShape(value: unknown): StateTransitionGraph | n
     if (!VALID_ACTIONS.includes(edge.action as StateTransitionAction)) return false;
     if (!VALID_DIRECTIONS.includes(edge.direction as StateTransitionDirection)) return false;
     if (!VALID_STYLES.includes(edge.style as StateTransitionStyle)) return false;
+    if (edge.sourceHandle !== undefined && typeof edge.sourceHandle !== 'string') return false;
+    if (edge.targetHandle !== undefined && typeof edge.targetHandle !== 'string') return false;
+    if (edge.connectorOffsetX !== undefined && !isFiniteNumber(edge.connectorOffsetX)) return false;
+    if (edge.connectorOffsetY !== undefined && !isFiniteNumber(edge.connectorOffsetY)) return false;
+    if (edge.waypoints !== undefined) {
+      if (!Array.isArray(edge.waypoints)) return false;
+      for (const waypoint of edge.waypoints) {
+        if (!isRecord(waypoint)) return false;
+        if (!isFiniteNumber(waypoint.x) || !isFiniteNumber(waypoint.y)) return false;
+      }
+    }
     return edge.label === undefined || typeof edge.label === 'string';
   });
   if (normalizedEdges.length !== edges.length) return null;
