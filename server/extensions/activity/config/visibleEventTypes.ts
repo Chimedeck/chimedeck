@@ -10,6 +10,7 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   // Card lifecycle events (sprint 88+)
   'card_created',
   'card_moved',
+  'card_move_blocked',
   'card_member_assigned',
   'card_member_unassigned',
   // System events (sprint 29+)

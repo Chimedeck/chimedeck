@@ -12,6 +12,7 @@ import AddCardForm from '../../../Card/components/AddCardForm';
 import Button from '../../../../common/components/Button';
 import type { ListSortBy } from '../../types';
 import { useAppSelector } from '~/hooks/useAppSelector';
+import { getKanbanColumnBorderClass } from '~/extensions/StateTransitions/components/KanbanBoard';
 
 type ListTextTone = 'light' | 'dark';
 
@@ -64,6 +65,8 @@ interface Props {
   /** Active dragged card id so we can hide source slot and avoid double gaps. */
   activeDragCardId?: string | null;
   hydration?: { loading: boolean; error: boolean };
+  isForbiddenDropTarget?: boolean;
+  showLockedTransitionIndicator?: boolean;
 }
 
 const EMPTY_CUSTOM_FIELD_VALUES: CustomFieldValue[] = [];
@@ -100,6 +103,8 @@ const SortableListColumn = ({
   dragPlaceholderHeight,
   activeDragCardId = null,
   hydration,
+  isForbiddenDropTarget = false,
+  showLockedTransitionIndicator = false,
 }: Props) => {
   const [addingCard, setAddingCard] = useState(false);
   const storeHydration = useAppSelector((state) => state.board.listHydration[list.id]);
@@ -191,10 +196,11 @@ const SortableListColumn = ({
   // In placeholder mode we remove it to avoid rendering a double gap.
   const usePlaceholderMode =
     typeof dragPlaceholderIndex === 'number' && Number.isFinite(dragPlaceholderIndex);
-  const columnBorderClass = (() => {
-    if (usePlaceholderMode) return 'border-primary';
-    return listColor ? 'border-transparent' : 'border-border';
-  })();
+  const columnBorderClass = getKanbanColumnBorderClass({
+    isForbiddenDropTarget,
+    usesDragPlaceholder: usePlaceholderMode,
+    listHasCustomColor: Boolean(listColor),
+  });
   const visibleCardIds = useMemo(() => {
     if (!usePlaceholderMode || !activeDragCardId) return cardIds;
     const filtered = cardIds.filter((id) => id !== activeDragCardId);
@@ -253,6 +259,7 @@ const SortableListColumn = ({
           onToggleCollapsed={handleToggleCollapsed}
           textTone={listTextTone}
           hasBackground={hasBackground}
+          showLockedIndicator={showLockedTransitionIndicator}
         />
       </div>
 
@@ -355,7 +362,9 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.listColor === next.listColor
     && prev.availableLists === next.availableLists
     && prev.isViewerGuest === next.isViewerGuest
-    && prev.hasBackground === next.hasBackground;
+    && prev.hasBackground === next.hasBackground
+    && prev.isForbiddenDropTarget === next.isForbiddenDropTarget
+    && prev.showLockedTransitionIndicator === next.showLockedTransitionIndicator;
 
   if (!hasSameNonCardProps) return false;
 

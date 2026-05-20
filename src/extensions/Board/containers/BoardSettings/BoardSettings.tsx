@@ -12,6 +12,7 @@ import BackgroundPicker from './BackgroundPicker';
 import BoardLabelsPanel from './BoardLabelsPanel';
 import BoardNotificationToggle from './BoardNotificationToggle';
 import BoardNotificationTypePreferences from './BoardNotificationTypePreferences';
+import StateTransitionsSettingsEntry from '~/extensions/StateTransitions/components/StateTransitionsSettingsEntry';
 import { boardPath } from '~/common/routing/shortUrls';
 
 interface Props {
@@ -128,6 +129,15 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest: _isViewerGuest
                   <span>Plugins</span>
                 </button>
               </div>
+
+              {boardId && board?.title && (
+                <div className="border-t border-border pt-4">
+                  <StateTransitionsSettingsEntry
+                    boardId={boardId}
+                    boardTitle={board.title}
+                  />
+                </div>
+              )}
             </>
           )}
 

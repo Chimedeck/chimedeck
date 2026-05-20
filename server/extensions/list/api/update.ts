@@ -9,6 +9,8 @@ import {
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
 import { sanitizeText } from '../../../common/sanitize';
+import { featureFlags } from '../../../config/featureFlags';
+import { syncStateTransitionsOnListRename } from '../../stateTransitions/hooks/listSync';
 
 export async function handleUpdateList(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -55,6 +57,10 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
   const updated = await db('lists')
     .where({ id: listId })
     .update({ title: sanitizeText(body.title.trim()) }, ['*']);
+
+  if (featureFlags.STATE_TRANSITIONS_ENABLED) {
+    await syncStateTransitionsOnListRename(list.board_id);
+  }
 
   // Use 'list_updated' to match client useBoardSync handler; send the full list object
   await writeEvent({ type: 'list_updated', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list: updated[0] } });

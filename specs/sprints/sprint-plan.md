@@ -175,6 +175,12 @@
 | [150](./sprint-150.md) | Trello Compat: Actions Response Normalization | Trello Actions parity against Atlassian docs: normalize action payloads, field projection, member/memberCreator/display semantics, reactions list/get/create/delete/summary, action organization/field routes | ⬜ Needs 149 |
 | [151](./sprint-151.md) | Trello Compat: Core Entity Response Normalization | Normalize boards/cards/lists/checklists/labels response shapes and cross-endpoint serializer consistency; apply Trello-style field projection where supported | ⬜ Needs 149 |
 | [152](./sprint-152.md) | Trello Compat: Metadata & Search Response Normalization | Normalize members/organizations/search/customFields responses, envelopes, and Trello-style error semantics for adapter-only routes | ⬜ Needs 149 + 150 + 151 |
+| **— Enforceable State Transitions —** | | | |
+| [153](./sprint-153.md) | State Transitions: DB + Core API | `board_state_transitions` table, graph JSONB schema, GET/PUT graph API, `/rules` endpoint for agents/MCP, `POST /copy` to clone to another board, `STATE_TRANSITIONS_ENABLED` flag, WS broadcast on save | ⬜ Needs 05 + 06 + 07 |
+| [154](./sprint-154.md) | State Transitions: Card Move Enforcement | `validateCardMove` guard wired into card move handler, `422 state-transition-forbidden` response with allowed states payload, in-memory rules cache, activity log on blocked move, Trello-compat error mapping | ⬜ Needs 153 |
+| [155](./sprint-155.md) | State Transitions: Graph Editor Foundation | `bun add @xyflow/react`; Board Settings entry (`ArrowsRightLeftIcon`); full-screen overlay graph editor; column nodes with handles; draggable positions persisted; enable/disable toggle saved server-side | ⬜ Needs 153 + 18 + 19 |
+| [156](./sprint-156.md) | State Transitions: Edges, Toolbar & Real-Time Sync | Drag-to-create edges, `TransitionEdge` component (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), `StickyNoteNode`, real-time WS collaborative editing, undo stack, `config/actionTypes.ts` extensibility stub | ⬜ Needs 155 + 09 + 10 |
+| [157](./sprint-157.md) | State Transitions: Kanban Enforcement UI + Copy to Board | `useStateTransitionGuard` DnD pre-check, `StateTransitionErrorPopup`, forbidden-column drag-over highlight, locked-column icon, Copy to Board modal (cross-workspace), "Transitions Active" banner | ⬜ Needs 154 + 156 |
 
 ---
 
@@ -206,6 +212,7 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `SENTRY_SERVER_ENABLED` | Sprint 123 | Skip Bun server Sentry SDK initialisation and server-side capture wrappers |
 | `DESIGN_SYSTEM_ENABLED` | Sprint 134 | Expose `/design-system` route in the client (default: `true` in dev, `false` in production) |
 | `TRELLO_COMPAT_ENABLED` | Sprint 142 | Enable the `/trello/1/*` Trello-compatible API layer backed by ChimeDeck data (default: `false`; no Trello credentials required) |
+| `STATE_TRANSITIONS_ENABLED` | Sprint 153 | Enable board-level enforceable state transitions: DB migration, graph API, enforcement guard, and graph editor UI (default: `false`) |
 
 ---
 
@@ -335,6 +342,12 @@ Sprint 94 ──────────── i18n Phase 5: Mention, Notificati
 Sprint 121 ─────────── Email template centralisation: extract HTML to *.html files, Handlebars {{var}} binding, renderTemplate helper
 ──── Monitoring & Error Tracking ────────────────────────────────────────────────────────────────
 Sprint 123 ─────────── Sentry end-to-end monitoring: React runtime errors + route tracing, Bun API error capture, shared release/environment tags, source map upload for deobfuscated stack traces
+──── Enforceable State Transitions ──────────────────────────────────────────────────────────────
+Sprint 153 ─────────── StateTransitionGraph (board_state_transitions table): nodes = lists, edges = allowed_move_to rules, notes = sticky annotations; GET/PUT graph API, /rules endpoint for agents/MCP/CLI, POST /copy cross-board
+Sprint 154 ─────────── Card move enforcement: validateCardMove guard, 422 state-transition-forbidden with allowed states, in-memory rules cache, blocked-move activity log, Trello-compat error mapping
+Sprint 155 ─────────── Graph editor UI foundation: Board Settings entry (ArrowsRightLeftIcon), full-screen ReactFlow canvas overlay, column nodes with handles, draggable positions persisted, enable/disable toggle
+Sprint 156 ─────────── Graph editor full: drag-to-create edges, TransitionEdge (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), StickyNoteNode, real-time WS collaborative editing, undo stack
+Sprint 157 ─────────── Kanban enforcement UI: DnD pre-move guard, StateTransitionErrorPopup, forbidden-column drag highlight, locked column icon, Copy to Board cross-workspace modal, "Transitions Active" banner
 ```
 
 ---

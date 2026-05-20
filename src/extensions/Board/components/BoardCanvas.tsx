@@ -36,6 +36,12 @@ import {
   getAdjustedPointerY,
   shouldRecomputeFromPointerDestination,
 } from './dragPlacementUtils';
+import StateTransitionErrorPopup from '~/extensions/StateTransitions/components/StateTransitionErrorPopup';
+import { extractStateTransitionRejectionFromError } from '~/extensions/StateTransitions/components/KanbanCard';
+import { useStateTransitionGuard } from '~/extensions/StateTransitions/hooks/useStateTransitionGuard';
+import GraphEditor from '~/extensions/StateTransitions/components/GraphEditor';
+import TransitionsActiveBanner from '~/extensions/StateTransitions/components/TransitionsActiveBanner';
+import { useTransitionsBanner } from '~/extensions/StateTransitions/hooks/useTransitionsBanner';
 
 interface DragPlaceholder {
   listId: string;
@@ -554,6 +560,20 @@ const BoardCanvas = ({
   const disableLiveDragPreview = true;
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [forbiddenDropListId, setForbiddenDropListId] = useState<string | null>(null);
+  const [stateTransitionRejection, setStateTransitionRejection] = useState<{
+    fromListId: string;
+    fromListName: string;
+    toListId: string;
+    toListName: string;
+    allowedNextStates: Array<{ id: string; name: string }>;
+  } | null>(null);
+  const stateTransitionGuard = useStateTransitionGuard(boardId);
+  const [graphEditorOpen, setGraphEditorOpen] = useState(false);
+  const transitionsBanner = useTransitionsBanner({
+    boardId,
+    enabled: stateTransitionGuard.isEnforcementActive,
+  });
   const collapsedListsStorageKey = getCollapsedListsStorageKey(boardId, currentUserId);
   const [collapsedListIds, setCollapsedListIds] = useState<string[]>(() => {
     if (!globalThis.window) return [];
@@ -606,6 +626,17 @@ const BoardCanvas = ({
   useEffect(() => { cardsByListRef.current = cardsByList; }, [cardsByList]);
   const cardsRef = useRef(cards);
   useEffect(() => { cardsRef.current = cards; }, [cards]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    const params = new URLSearchParams(globalThis.window.location.search);
+    if (params.get('openStateTransitionsEditor') !== '1') return;
+    setGraphEditorOpen(true);
+    params.delete('openStateTransitionsEditor');
+    const nextSearch = params.toString();
+    const nextUrl = `${globalThis.window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${globalThis.window.location.hash}`;
+    globalThis.window.history.replaceState(null, '', nextUrl);
+  }, []);
   const listsRef = useRef(lists);
   useEffect(() => { listsRef.current = lists; }, [lists]);
   // WHY: keep a ref copy of disableLiveDragPreview so the pointermove handler
@@ -1058,6 +1089,7 @@ const BoardCanvas = ({
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
+      setForbiddenDropListId(null);
       const id = String(event.active.id);
       const currentCards = cardsRef.current;
       const currentCardsByList = cardsByListRef.current;
@@ -1171,7 +1203,12 @@ const BoardCanvas = ({
           );
 
         if (!over) {
-          if (!pointerListId || !currentLists[pointerListId] || pointerListId === sourceListId) return;
+          if (!pointerListId || !currentLists[pointerListId] || pointerListId === sourceListId) {
+            setForbiddenDropListId(null);
+            return;
+          }
+          const isForbiddenMove = !stateTransitionGuard.canMove(sourceListId, pointerListId);
+          setForbiddenDropListId(isForbiddenMove ? pointerListId : null);
           const targetCards = getCardsWithoutActive(currentCardsByList, pointerListId, activeId);
           const insertIndex = getInsertIndexFromPointerY(
             targetCards,
@@ -1199,6 +1236,9 @@ const BoardCanvas = ({
           toListId = cardToList[overId] ?? findListForCard(overId, currentCardsByList) ?? sourceListId;
         }
 
+        const isForbiddenMove = !stateTransitionGuard.canMove(sourceListId, toListId);
+        setForbiddenDropListId(isForbiddenMove ? toListId : null);
+
         // WHY: same-list position is handled in real-time by the pointermove
         // handler (using pre-drag card midpoint snapshots). Only handle
         // cross-list transitions here, where DnD Kit's over.id change is the
@@ -1222,7 +1262,10 @@ const BoardCanvas = ({
         return;
       }
 
-      if (!over) return;
+      if (!over) {
+        setForbiddenDropListId(null);
+        return;
+      }
 
       const overId = String(over.id);
 
@@ -1241,6 +1284,8 @@ const BoardCanvas = ({
         if (!currentLists[overId]) {
           toListId = cardToList[overId] ?? findListForCard(overId, prev) ?? fromListId;
         }
+        const isForbiddenMove = !stateTransitionGuard.canMove(fromListId, toListId);
+        setForbiddenDropListId(isForbiddenMove ? toListId : null);
         if (fromListId === toListId && activeId === overId) return prev;
 
         const toCards = prev[toListId] ?? [];
@@ -1293,7 +1338,7 @@ const BoardCanvas = ({
         return next;
       });
     },
-    [disableLiveDragPreview, queueDragPlaceholder, resolvePointerListId],
+    [disableLiveDragPreview, queueDragPlaceholder, resolvePointerListId, stateTransitionGuard],
   );
 
   const handleDragEnd = useCallback(
@@ -1306,6 +1351,7 @@ const BoardCanvas = ({
       resetPointerListResolutionCache();
       const { active, over } = event;
       setActiveCardId(null);
+      setForbiddenDropListId(null);
       // WHY: clear dragActiveIdRef so the pointermove handler stops updating
       // the placeholder after the drag is committed.
       dragActiveIdRef.current = null;
@@ -1472,6 +1518,12 @@ const BoardCanvas = ({
         targetPreview.splice(resolvedNewIndex, 0, activeId);
         const afterCardId = resolvedNewIndex > 0 ? (targetPreview[resolvedNewIndex - 1] ?? null) : null;
 
+        if (!stateTransitionGuard.canMove(fromListId, resolvedToListId)) {
+          setStateTransitionRejection(stateTransitionGuard.getRejectionReason(fromListId, resolvedToListId));
+          onDragRollback();
+          return;
+        }
+
         // Apply the final position to Redux in a single dispatch (moved here
         // from onDragOver — see handleDragOver comment for why)
         onDragStart();
@@ -1489,12 +1541,25 @@ const BoardCanvas = ({
             toListId: resolvedToListId,
             afterCardId,
           });
-        } catch {
+        } catch (error) {
+          const fallbackRejection = stateTransitionGuard.getRejectionReason(fromListId, resolvedToListId);
+          const parsedRejection = extractStateTransitionRejectionFromError({
+            error,
+            fallback: {
+              fromListId,
+              fromListName: fallbackRejection.fromListName,
+              toListId: resolvedToListId,
+              toListName: fallbackRejection.toListName,
+            },
+          });
+          if (parsedRejection) {
+            setStateTransitionRejection(parsedRejection);
+          }
           onDragRollback();
         }
       }
     },
-    [disableLiveDragPreview, flushQueuedDragPlaceholder, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder, onDragStart, resetPointerListResolutionCache, resetQueuedDragPlaceholder, resolvePointerListId],
+    [disableLiveDragPreview, flushQueuedDragPlaceholder, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder, onDragStart, resetPointerListResolutionCache, resetQueuedDragPlaceholder, resolvePointerListId, stateTransitionGuard],
   );
 
   const activeCard = activeCardId ? cards[activeCardId] : null;
@@ -1522,6 +1587,14 @@ const BoardCanvas = ({
         listOrder={listOrder}
         isDragActive={activeCardId !== null}
       />
+      {transitionsBanner.isVisible && (
+        <TransitionsActiveBanner
+          onViewRules={() => {
+            setGraphEditorOpen(true);
+          }}
+          onDismiss={transitionsBanner.dismiss}
+        />
+      )}
       <SortableContext items={listOrder} strategy={horizontalListSortingStrategy}>
         <div
           ref={boardScrollerRef}
@@ -1570,6 +1643,8 @@ const BoardCanvas = ({
                 activeDragCardId={dragPlaceholder?.listId === listId ? activeCardId : null}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderIndex: dragPlaceholder.index } : {})}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderHeight: dragPlaceholder.height } : {})}
+                isForbiddenDropTarget={activeCardId !== null && forbiddenDropListId === listId}
+                showLockedTransitionIndicator={stateTransitionGuard.isListLocked(listId)}
               />
             );
           })}
@@ -1590,6 +1665,24 @@ const BoardCanvas = ({
           />
         )}
       </DragOverlay>
+      <StateTransitionErrorPopup
+        open={stateTransitionRejection !== null}
+        rejection={stateTransitionRejection}
+        onClose={() => {
+          setStateTransitionRejection(null);
+        }}
+        onViewRules={() => {
+          setGraphEditorOpen(true);
+        }}
+      />
+      <GraphEditor
+        boardId={boardId}
+        boardTitle={boardTitle ?? ''}
+        open={graphEditorOpen}
+        onClose={() => {
+          setGraphEditorOpen(false);
+        }}
+      />
     </DndContext>
   );
 };

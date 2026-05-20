@@ -12,6 +12,7 @@ export const EVENT_TYPE_MAP: Record<string, TrelloActionType> = {
   card_created: 'createCard',
   card_updated: 'updateCard',
   card_moved: 'updateCard',
+  card_move_blocked: 'updateCard',
   card_member_assigned: 'addMemberToCard',
   card_member_unassigned: 'removeMemberFromCard',
   list_created: 'createList',

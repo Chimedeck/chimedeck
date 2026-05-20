@@ -12,6 +12,8 @@ import { requireCardWritable, type CardScopedRequest } from '../middlewares/requ
 import { between, HIGH_SENTINEL, generatePositions } from '../../list/mods/fractional';
 import { recordConflict } from '../../realtime/mods/conflictHandler';
 import { emitCardMoved } from '../../activity/mods/createActivityEvent';
+import { validateCardMove } from '../../stateTransitions/enforcement';
+import { StateTransitionForbiddenError } from '../../stateTransitions/common/errors';
 
 type MoveBody = { targetListId: string; afterCardId?: string | null };
 
@@ -187,6 +189,36 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const listsOrError = await validateMoveLists({ card, targetListId: body.targetListId });
   if (listsOrError instanceof Response) return listsOrError;
   const { targetList, sourceList } = listsOrError;
+
+  try {
+    await validateCardMove({
+      boardId: board.id,
+      fromListId: card.list_id,
+      toListId: body.targetListId,
+      cardId,
+      actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+    });
+  } catch (error) {
+    if (error instanceof StateTransitionForbiddenError) {
+      return Response.json(
+        {
+          name: 'state-transition-forbidden',
+          data: {
+            boardId: error.boardId,
+            fromListId: error.fromListId,
+            fromListName: sourceList.title ?? error.fromListName,
+            toListId: error.toListId,
+            toListName: targetList.title ?? error.toListName,
+            allowedNextStates: error.allowedNextStates,
+          },
+        },
+        { status: 422 },
+      );
+    }
+    throw error;
+  }
 
   // For cross-board moves, verify the caller has write access on the target board too.
   const isCrossBoard = sourceList.board_id !== targetList.board_id;

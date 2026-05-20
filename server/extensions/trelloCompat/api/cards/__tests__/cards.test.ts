@@ -176,6 +176,7 @@ function createStore(): DataStore {
 
 let dataStore = createStore();
 let shortIdSeq = 0;
+const validateCardMoveMock = mock(async () => undefined);
 
 const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) => {
   const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
@@ -217,12 +218,18 @@ mock.module('../../../../../common/ids/resolveEntityId', () => ({
   },
 }));
 
+mock.module('../../../../stateTransitions/enforcement', () => ({
+  validateCardMove: validateCardMoveMock,
+}));
+
+const { StateTransitionForbiddenError } = await import('../../../../stateTransitions/common/errors');
 const { trelloCompatRouter } = await import('../../index');
 
 beforeEach(() => {
   Bun.env['TRELLO_COMPAT_ENABLED'] = 'true';
   dataStore = createStore();
   shortIdSeq = 0;
+  validateCardMoveMock.mockClear();
   authenticateMock.mockClear();
 });
 
@@ -347,5 +354,40 @@ describe('trelloCompat cards', () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.idCustomField).toBe('cf-text-1');
     expect(items[0]?.value.text).toBe('hello');
+  });
+
+  it('returns Trello-style 422 when state transition enforcement blocks card move', async () => {
+    validateCardMoveMock.mockImplementationOnce(async () => {
+      throw new StateTransitionForbiddenError({
+        boardId: 'board-1',
+        fromListId: 'list-1',
+        fromListName: 'Todo',
+        toListId: 'list-2',
+        toListName: 'Done',
+        allowedNextStates: [],
+      });
+    });
+
+    const putReq = new Request('http://localhost/trello/1/cards/card-1', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer hf_admin_token' },
+      body: JSON.stringify({ idList: 'list-2' }),
+    });
+    const putRes = await trelloCompatRouter(putReq, '/trello/1/cards/card-1');
+    expect(putRes?.status).toBe(422);
+    const body = await putRes!.json() as { message: string; error: string };
+    expect(body).toEqual({
+      message: 'State transition from "Todo" to "Done" is not allowed.',
+      error: 'STATE_TRANSITION_FORBIDDEN',
+    });
+    expect(validateCardMoveMock).toHaveBeenCalledWith({
+      boardId: 'board-1',
+      fromListId: 'list-1',
+      toListId: 'list-2',
+      cardId: 'card-1',
+      actorId: 'user-admin',
+      ipAddress: null,
+      userAgent: null,
+    });
   });
 });

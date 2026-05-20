@@ -31,7 +31,9 @@ import { ensureBucketExists } from './extensions/attachment/common/config/s3';
 import { pluginsRouter } from './extensions/plugins/api/index';
 import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
+import { featureFlags } from './config/featureFlags';
 import { boardViewRouter } from './extensions/boardView/api/index';
+import { stateTransitionsRouter } from './extensions/stateTransitions/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
@@ -117,6 +119,7 @@ async function router(req: Request): Promise<Response> {
         notificationPreferencesEnabled,
         emailNotificationsEnabled,
         emailVerificationEnabled,
+        stateTransitionsEnabled: featureFlags.STATE_TRANSITIONS_ENABLED,
       },
     });
   }
@@ -139,6 +142,9 @@ async function router(req: Request): Promise<Response> {
 
   const boardViewResponse = await boardViewRouter(req, path);
   if (boardViewResponse) return boardViewResponse;
+
+  const stateTransitionsResponse = await stateTransitionsRouter(req, path);
+  if (stateTransitionsResponse) return stateTransitionsResponse;
 
   const customFieldsResponse = await customFieldsRouter(req, path);
   if (customFieldsResponse) return customFieldsResponse;

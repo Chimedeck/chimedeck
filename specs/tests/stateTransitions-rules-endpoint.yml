@@ -1,0 +1,44 @@
+name: state-transitions-rules-endpoint
+description: Verify GET /api/v1/boards/:boardId/state-transitions/rules normalization and error handling.
+endpoint: GET /api/v1/boards/:boardId/state-transitions/rules
+preconditions:
+  - Authenticated board member can access the board.
+  - Feature flag STATE_TRANSITIONS_ENABLED=true unless explicitly disabled by a case.
+cases:
+  - id: rules-empty-graph
+    title: Returns empty rules for graph without outgoing edges
+    setup:
+      - Persist state transition row with nodes only and no edges.
+    expect:
+      status: 200
+      body:
+        data:
+          rules: []
+  - id: rules-derive-complex
+    title: Derives allowed and forbidden states from one-way and two-way edges
+    setup:
+      - Persist graph with at least 4 nodes and mixed one_way/two_way edges.
+    expect:
+      status: 200
+      assertions:
+        - rules include current_state_id for nodes that have at least one derived allowed transition.
+        - allowed_next_state_ids contains only reachable list ids for each rule.
+        - forbidden_next_state_ids contains all other board list ids excluding current and allowed.
+  - id: rules-sync-renamed-and-deleted
+    title: Repairs stale node labels and strips deleted-node references before responding
+    setup:
+      - Persist graph containing a renamed node label and a deleted node id referenced by an edge.
+      - Keep current board lists with renamed title and without deleted list id.
+    expect:
+      status: 200
+      assertions:
+        - response rules use current list titles.
+        - deleted list ids do not appear in allowed_next_state_ids or forbidden_next_state_ids.
+  - id: rules-feature-flag-off
+    title: Returns not implemented when feature is disabled
+    setup:
+      - Set STATE_TRANSITIONS_ENABLED=false.
+    expect:
+      status: 501
+      body:
+        name: not-implemented

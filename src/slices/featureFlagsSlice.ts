@@ -18,6 +18,8 @@ interface FeatureFlagsState {
   emailNotificationsEnabled: boolean;
   // Whether email address verification is required on registration (Sprint 74)
   emailVerificationEnabled: boolean;
+  // Whether enforceable state transitions UI/API are enabled
+  stateTransitionsEnabled: boolean;
   status: 'idle' | 'loading' | 'ready' | 'error';
 }
 
@@ -28,6 +30,7 @@ const initialState: FeatureFlagsState = {
   notificationPreferencesEnabled: false,
   emailNotificationsEnabled: false,
   emailVerificationEnabled: false,
+  stateTransitionsEnabled: false,
   status: 'idle',
 };
 
@@ -35,17 +38,35 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
   'featureFlags/fetch',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get<{
-        data: {
+      const response = await apiClient.get<
+        | {
+          data: {
+            adminEmailDomains?: string;
+            adminInviteEmailEnabled?: boolean;
+            sesEnabled?: boolean;
+            notificationPreferencesEnabled?: boolean;
+            emailNotificationsEnabled?: boolean;
+            emailVerificationEnabled?: boolean;
+            stateTransitionsEnabled?: boolean;
+          };
+        }
+        | {
           adminEmailDomains?: string;
           adminInviteEmailEnabled?: boolean;
           sesEnabled?: boolean;
           notificationPreferencesEnabled?: boolean;
           emailNotificationsEnabled?: boolean;
           emailVerificationEnabled?: boolean;
-        };
-      }>('/flags');
-      return response.data;
+          stateTransitionsEnabled?: boolean;
+        }
+      >('/flags');
+
+      // apiClient auto-unwraps Axios responses, but keep compatibility with wrapped shapes.
+      if (response && typeof response === 'object' && 'data' in response && response.data) {
+        return response.data;
+      }
+
+      return response;
     } catch {
       return rejectWithValue('flags-fetch-failed');
     }
@@ -62,12 +83,14 @@ const featureFlagsSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(fetchFeatureFlagsThunk.fulfilled, (state, action) => {
-        state.adminEmailDomains = action.payload.adminEmailDomains ?? '';
-        state.adminInviteEmailEnabled = action.payload.adminInviteEmailEnabled ?? false;
-        state.sesEnabled = action.payload.sesEnabled ?? false;
-        state.notificationPreferencesEnabled = action.payload.notificationPreferencesEnabled ?? false;
-        state.emailNotificationsEnabled = action.payload.emailNotificationsEnabled ?? false;
-        state.emailVerificationEnabled = action.payload.emailVerificationEnabled ?? false;
+        const payload = action.payload ?? {};
+        state.adminEmailDomains = payload.adminEmailDomains ?? '';
+        state.adminInviteEmailEnabled = payload.adminInviteEmailEnabled ?? false;
+        state.sesEnabled = payload.sesEnabled ?? false;
+        state.notificationPreferencesEnabled = payload.notificationPreferencesEnabled ?? false;
+        state.emailNotificationsEnabled = payload.emailNotificationsEnabled ?? false;
+        state.emailVerificationEnabled = payload.emailVerificationEnabled ?? false;
+        state.stateTransitionsEnabled = payload.stateTransitionsEnabled ?? false;
         state.status = 'ready';
       })
       .addCase(fetchFeatureFlagsThunk.rejected, (state) => {
@@ -91,3 +114,5 @@ export const selectEmailNotificationsEnabled = (state: RootState) =>
   state.featureFlags.emailNotificationsEnabled;
 export const selectEmailVerificationEnabled = (state: RootState) =>
   state.featureFlags.emailVerificationEnabled;
+export const selectStateTransitionsEnabled = (state: RootState) =>
+  state.featureFlags.stateTransitionsEnabled;

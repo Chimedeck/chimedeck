@@ -84,6 +84,7 @@
     "@types/marked": "^6.0.0",
     "@types/sanitize-html": "^2.16.1",
     "@vitejs/plugin-react": "^6.0.1",
+    "@xyflow/react": "^12.10.2",
     "axios": "^1",
     "class-variance-authority": "^0.7",
     "clsx": "^2",

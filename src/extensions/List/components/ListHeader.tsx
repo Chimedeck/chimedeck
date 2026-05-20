@@ -5,6 +5,7 @@ import { ArrowsPointingInIcon, ArrowsPointingOutIcon } from '@heroicons/react/24
 import type { List } from '../api';
 import Button from '../../../common/components/Button';
 import type { ListSortBy } from '../types';
+import KanbanColumnLockIndicator from '~/extensions/StateTransitions/components/KanbanColumnHeader';
 
 const SORT_OPTIONS: Array<{ value: ListSortBy; label: string }> = [
   { value: 'created-desc', label: 'Date created (newest first)' },
@@ -34,6 +35,7 @@ interface Props {
   /** When true the column sits over a board background image — apply frosted-glass styling. */
   hasBackground?: boolean;
   isCollapsed?: boolean;
+  showLockedIndicator?: boolean;
 }
 
 const LIST_COLORS = ['#0F766E', '#B45309', '#D97706', '#C2410C', '#DC2626', '#7C3AED', '#2563EB', '#0E7490', '#4D7C0F', '#BE185D'];
@@ -125,6 +127,7 @@ const ListHeader = ({
   availableLists = [],
   hasBackground,
   isCollapsed = false,
+  showLockedIndicator = false,
 }: Props) => {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(list.title);
@@ -228,7 +231,10 @@ const ListHeader = ({
         </>
       ) : (
         <div className="flex w-full items-start gap-2">
-          {titleNode}
+          <div className="flex min-w-0 flex-1 items-start gap-1">
+            {titleNode}
+            {showLockedIndicator && <KanbanColumnLockIndicator />}
+          </div>
 
           <div className="flex shrink-0 items-center gap-1">
             {cardCount !== undefined && (
@@ -526,6 +532,7 @@ function areEqual(prev: Props, next: Props): boolean {
     && prev.availableLists === next.availableLists
     && prev.hasBackground === next.hasBackground
     && prev.isCollapsed === next.isCollapsed
+    && prev.showLockedIndicator === next.showLockedIndicator
   );
 }
 

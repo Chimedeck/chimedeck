@@ -23,6 +23,9 @@ import { serializeList } from '../../serializers/list';
 import { serializeMember } from '../../serializers/member';
 import { getTrelloAuthUser } from '../../middlewares/trelloAuth';
 import type { TrelloCard } from '../../types/trello';
+import { validateCardMove } from '../../../stateTransitions/enforcement';
+import { StateTransitionForbiddenError } from '../../../stateTransitions/common/errors';
+import { toTrelloStateTransitionForbiddenResponse } from '../../cardMove';
 
 type MembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST';
 const ROLE_RANK: Record<MembershipRole, number> = {
@@ -542,7 +545,7 @@ async function loadUsersByIds(ids: string[]): Promise<Map<string, UserRow>> {
 
 function mapActivityType(action: string): string {
   if (action === 'card_created') return 'createCard';
-  if (action === 'card_updated' || action === 'card_moved') return 'updateCard';
+  if (action === 'card_updated' || action === 'card_moved' || action === 'card_move_blocked') return 'updateCard';
   if (action === 'card_member_assigned') return 'addMemberToCard';
   if (action === 'card_member_unassigned') return 'removeMemberFromCard';
   return action;
@@ -796,6 +799,25 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
       targetListId = list.id;
       targetBoardId = list.board_id;
+    }
+
+    if (targetListId !== context.card.list_id) {
+      try {
+        await validateCardMove({
+          boardId: context.board.id,
+          fromListId: context.card.list_id,
+          toListId: targetListId,
+          cardId: context.card.id,
+          actorId: user.id,
+          ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+          userAgent: req.headers.get('user-agent') ?? null,
+        });
+      } catch (error) {
+        if (error instanceof StateTransitionForbiddenError) {
+          return toTrelloStateTransitionForbiddenResponse(error);
+        }
+        throw error;
+      }
     }
 
     if (targetListId !== context.card.list_id) updates['list_id'] = targetListId;
