@@ -16,6 +16,14 @@ export interface SecurityHeaderOptions {
    */
   extraImgSrc?: string[];
   /**
+   * Origins to add to the style-src directive for pages that load external CSS.
+   */
+  extraStyleSrc?: string[];
+  /**
+   * Origins to add to the script-src directive for pages that load external JS.
+   */
+  extraScriptSrc?: string[];
+  /**
    * Override frame-ancestors directive for endpoints that must be embeddable
    * by same-origin pages (e.g. attachment inline preview iframe).
    */
@@ -31,6 +39,8 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
     extraFrameSrc = [],
     extraConnectSrc = [],
     extraImgSrc = [],
+    extraStyleSrc = [],
+    extraScriptSrc = [],
     frameAncestors = "'none'",
   } = opts;
 
@@ -39,6 +49,8 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   const connectSrc = ['\'self\'', 'wss:', ...extraConnectSrc].join(' ');
 
   const imgSrc = ['\'self\'', 'data:', 'blob:', ...extraImgSrc].join(' ');
+  const styleSrc = ['\'self\'', "'unsafe-inline'", ...extraStyleSrc].join(' ');
+  const scriptSrc = ['\'self\'', 'https://static.cloudflareinsights.com', ...extraScriptSrc].join(' ');
 
   const xFrameOptions = frameAncestors === "'self'" ? 'SAMEORIGIN' : 'DENY';
 
@@ -52,7 +64,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   );
   headers.set(
     'Content-Security-Policy',
-    `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors ${frameAncestors}`
+    `default-src 'self'; script-src ${scriptSrc}; worker-src 'self' blob:; style-src ${styleSrc}; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors ${frameAncestors}`
   );
   headers.set(
     'Permissions-Policy',
