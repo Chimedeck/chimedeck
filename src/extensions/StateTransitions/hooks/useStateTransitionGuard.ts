@@ -28,7 +28,7 @@ export interface StateTransitionGuardSnapshot {
 function getUniqueAllowedStateIds(rule: StateTransitionRule): string[] {
   const seen = new Set<string>();
   const unique: string[] = [];
-  for (const nextId of rule.allowed_next_state_ids) {
+  for (const nextId of rule.allowedNextStateIds) {
     const normalizedId = String(nextId ?? '').trim();
     if (!normalizedId || seen.has(normalizedId)) continue;
     seen.add(normalizedId);
@@ -53,12 +53,12 @@ export function buildStateTransitionGuardSnapshot({
     listNameById.set(list.id, list.title);
   }
   for (const rule of rules ?? []) {
-    if (!listNameById.has(rule.current_state_id)) {
-      listNameById.set(rule.current_state_id, rule.current_state);
+    if (!listNameById.has(rule.currentStateId)) {
+      listNameById.set(rule.currentStateId, rule.currentState);
     }
-    rule.allowed_next_state_ids.forEach((nextId, index) => {
+    rule.allowedNextStateIds.forEach((nextId, index) => {
       if (!listNameById.has(nextId)) {
-        const nextName = rule.allowed_next_states[index] ?? nextId;
+        const nextName = rule.allowedNextStates[index] ?? nextId;
         listNameById.set(nextId, nextName);
       }
     });
@@ -69,7 +69,7 @@ export function buildStateTransitionGuardSnapshot({
     isRulesLoaded: rules !== null,
     listNameById,
     knownListIds: new Set(knownLists.map((list) => list.id)),
-    ruleByCurrentStateId: new Map((rules ?? []).map((rule) => [rule.current_state_id, rule])),
+    ruleByCurrentStateId: new Map((rules ?? []).map((rule) => [rule.currentStateId, rule])),
   };
 }
 

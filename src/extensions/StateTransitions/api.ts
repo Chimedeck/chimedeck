@@ -70,12 +70,12 @@ export interface CopyStateTransitionsResponse {
 }
 
 export interface StateTransitionRule {
-  current_state: string;
-  current_state_id: string;
-  allowed_next_states: string[];
-  allowed_next_state_ids: string[];
-  forbidden_next_states: string[];
-  forbidden_next_state_ids: string[];
+  currentState: string;
+  currentStateId: string;
+  allowedNextStates: string[];
+  allowedNextStateIds: string[];
+  forbiddenNextStates: string[];
+  forbiddenNextStateIds: string[];
 }
 
 export interface StateTransitionRulesResponse {

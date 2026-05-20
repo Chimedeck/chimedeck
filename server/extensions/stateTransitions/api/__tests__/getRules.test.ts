@@ -245,23 +245,23 @@ describe('GET /api/v1/boards/:boardId/state-transitions/rules', () => {
     const body = await res.json() as {
       data: {
         rules: Array<{
-          current_state_id: string;
-          allowed_next_state_ids: string[];
-          forbidden_next_state_ids: string[];
+          currentStateId: string;
+          allowedNextStateIds: string[];
+          forbiddenNextStateIds: string[];
         }>;
       };
     };
 
     expect(body.data.rules).toHaveLength(2);
-    const ruleFromTodo = body.data.rules.find((rule) => rule.current_state_id === 'list-1');
-    const ruleFromDone = body.data.rules.find((rule) => rule.current_state_id === 'list-3');
+    const ruleFromTodo = body.data.rules.find((rule) => rule.currentStateId === 'list-1');
+    const ruleFromDone = body.data.rules.find((rule) => rule.currentStateId === 'list-3');
 
     expect(ruleFromTodo).toBeDefined();
     expect(ruleFromDone).toBeDefined();
-    expect((ruleFromTodo?.allowed_next_state_ids ?? []).sort()).toEqual(['list-2', 'list-3']);
-    expect((ruleFromTodo?.forbidden_next_state_ids ?? []).sort()).toEqual(['list-4']);
-    expect((ruleFromDone?.allowed_next_state_ids ?? []).sort()).toEqual(['list-1']);
-    expect((ruleFromDone?.forbidden_next_state_ids ?? []).sort()).toEqual(['list-2', 'list-4']);
+    expect((ruleFromTodo?.allowedNextStateIds ?? []).sort()).toEqual(['list-2', 'list-3']);
+    expect((ruleFromTodo?.forbiddenNextStateIds ?? []).sort()).toEqual(['list-4']);
+    expect((ruleFromDone?.allowedNextStateIds ?? []).sort()).toEqual(['list-1']);
+    expect((ruleFromDone?.forbiddenNextStateIds ?? []).sort()).toEqual(['list-2', 'list-4']);
   });
 
   it('normalizes rule IDs to listId values even when node IDs differ', async () => {

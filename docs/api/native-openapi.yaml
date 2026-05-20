@@ -370,6 +370,66 @@ paths:
               schema:
                 type: object
 
+  /api/v1/boards/{boardId}/state-transitions:
+    get:
+      tags: [Boards]
+      summary: Get state transition graph for a board
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: State transitions payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+        '404':
+          description: Board not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '501':
+          description: Feature disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/boards/{boardId}/state-transitions/rules:
+    get:
+      tags: [Boards]
+      summary: Get state transition rules for card move validation
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transition rules payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
+        '404':
+          description: Board not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '501':
+          description: Feature disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /api/v1/lists:
     post:
       tags: [Lists]

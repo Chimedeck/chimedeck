@@ -194,17 +194,17 @@ describe('GET state transition rules', () => {
     const body = await res.json() as {
       data: {
         rules: Array<{
-          current_state_id: string;
-          allowed_next_state_ids: string[];
-          forbidden_next_state_ids: string[];
+          currentStateId: string;
+          allowedNextStateIds: string[];
+          forbiddenNextStateIds: string[];
         }>;
       };
     };
     expect(body.data.rules).toHaveLength(1);
     expect(body.data.rules[0]).toMatchObject({
-      current_state_id: 'list-1',
-      allowed_next_state_ids: ['list-2'],
-      forbidden_next_state_ids: ['list-3'],
+      currentStateId: 'list-1',
+      allowedNextStateIds: ['list-2'],
+      forbiddenNextStateIds: ['list-3'],
     });
   });
 });

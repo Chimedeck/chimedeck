@@ -300,20 +300,20 @@ describe('state transitions rules + sync hooks', () => {
     const body = await res.json() as {
       data: {
         rules: Array<{
-          current_state_id: string;
-          allowed_next_state_ids: string[];
-          forbidden_next_state_ids: string[];
+          currentStateId: string;
+          allowedNextStateIds: string[];
+          forbiddenNextStateIds: string[];
         }>;
       };
     };
     expect(body.data.rules).toEqual([
       {
-        current_state: 'Todo',
-        current_state_id: 'list-1',
-        allowed_next_states: ['Doing'],
-        allowed_next_state_ids: ['list-2'],
-        forbidden_next_states: ['Done'],
-        forbidden_next_state_ids: ['list-3'],
+        currentState: 'Todo',
+        currentStateId: 'list-1',
+        allowedNextStates: ['Doing'],
+        allowedNextStateIds: ['list-2'],
+        forbiddenNextStates: ['Done'],
+        forbiddenNextStateIds: ['list-3'],
       },
     ]);
   });

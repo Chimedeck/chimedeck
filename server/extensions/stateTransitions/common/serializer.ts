@@ -23,6 +23,15 @@ type RulesResponseInput = {
   graph: StateTransitionGraph;
 };
 
+type StateTransitionRuleResponse = {
+  currentState: string;
+  currentStateId: string;
+  allowedNextStates: string[];
+  allowedNextStateIds: string[];
+  forbiddenNextStates: string[];
+  forbiddenNextStateIds: string[];
+};
+
 const NODE_START_X = 120;
 const NODE_STEP_X = 240;
 const NODE_Y = 80;
@@ -164,12 +173,21 @@ export function toRulesResponse({
   boardId,
   enabled,
   graph,
-}: RulesResponseInput): { data: { boardId: string; enabled: boolean; rules: StateTransitionRule[] } } {
+}: RulesResponseInput): { data: { boardId: string; enabled: boolean; rules: StateTransitionRuleResponse[] } } {
+  const rules = deriveRulesFromGraph(serializeGraph(graph)).map((rule) => ({
+    currentState: rule.current_state,
+    currentStateId: rule.current_state_id,
+    allowedNextStates: rule.allowed_next_states,
+    allowedNextStateIds: rule.allowed_next_state_ids,
+    forbiddenNextStates: rule.forbidden_next_states,
+    forbiddenNextStateIds: rule.forbidden_next_state_ids,
+  }));
+
   return {
     data: {
       boardId,
       enabled,
-      rules: deriveRulesFromGraph(serializeGraph(graph)),
+      rules,
     },
   };
 }

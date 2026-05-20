@@ -171,9 +171,16 @@ const ApiDocsPage = () => {
   const [navGroups, setNavGroups] = useState<ApiNavGroup[]>([]);
   const [activeNavId, setActiveNavId] = useState<string>('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [specCacheBuster] = useState(() => String(Date.now()));
 
-  const nativeSpecUrl = useMemo(() => '/api-docs/native-openapi.yaml', []);
-  const trelloSpecUrl = useMemo(() => '/api-docs/trello-openapi.yaml', []);
+  const nativeSpecUrl = useMemo(
+    () => `/api-docs/native-openapi.yaml?v=${specCacheBuster}`,
+    [specCacheBuster],
+  );
+  const trelloSpecUrl = useMemo(
+    () => `/api-docs/trello-openapi.yaml?v=${specCacheBuster}`,
+    [specCacheBuster],
+  );
 
   const activeSpecUrl = activeTab === 'native' ? nativeSpecUrl : trelloSpecUrl;
 
