@@ -25,6 +25,8 @@ interface BoardListPageState {
   boards: Board[];
   fetchInProgress: boolean;
   fetchError: SerializedError | null;
+  // Latest fetch request id; used to ignore stale out-of-order responses.
+  activeFetchRequestId: string | null;
   createInProgress: boolean;
   createError: SerializedError | null;
   archiveInProgress: boolean;
@@ -43,6 +45,7 @@ const initialState: BoardListPageState = {
   boards: [],
   fetchInProgress: false,
   fetchError: null,
+  activeFetchRequestId: null,
   createInProgress: false,
   createError: null,
   archiveInProgress: false,
@@ -136,17 +139,24 @@ const boardListPageSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchBoardsThunk.pending, (state) => {
+      .addCase(fetchBoardsThunk.pending, (state, action) => {
         state.fetchInProgress = true;
         state.fetchError = null;
+        state.activeFetchRequestId = action.meta.requestId;
       })
-      .addCase(fetchBoardsThunk.fulfilled, (state, action: PayloadAction<Board[]>) => {
+      .addCase(fetchBoardsThunk.fulfilled, (state, action) => {
+        // Ignore stale results from an older request so a late response does not
+        // wipe out freshly-created boards.
+        if (state.activeFetchRequestId !== action.meta.requestId) return;
         state.fetchInProgress = false;
         state.boards = action.payload;
+        state.activeFetchRequestId = null;
       })
       .addCase(fetchBoardsThunk.rejected, (state, action) => {
+        if (state.activeFetchRequestId !== action.meta.requestId) return;
         state.fetchInProgress = false;
         state.fetchError = action.error;
+        state.activeFetchRequestId = null;
       })
       .addCase(createBoardThunk.pending, (state) => {
         state.createInProgress = true;

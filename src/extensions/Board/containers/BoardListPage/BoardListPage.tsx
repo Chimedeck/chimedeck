@@ -89,7 +89,11 @@ const BoardListPage = () => {
 
   const handleCreate = (title: string) => {
     if (!workspaceId) return;
-    dispatch(createBoardThunk({ workspaceId, title }));
+    void dispatch(createBoardThunk({ workspaceId, title }))
+      .unwrap()
+      // [why] Ensure server-truth list is refreshed after create.
+      .then(() => dispatch(fetchBoardsThunk({ workspaceId })))
+      .catch(() => undefined);
     setShowCreateModal(false);
   };
 
