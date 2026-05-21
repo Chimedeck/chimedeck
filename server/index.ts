@@ -73,30 +73,37 @@ async function serveStatic(filePath: string): Promise<Response | null> {
   return new Response(file);
 }
 
+async function serveOpenApiSpec(specFileName: string, notFoundMessage: string): Promise<Response> {
+  const candidatePaths = [
+    // Runtime in source checkout (local/dev or non-container execution).
+    `${import.meta.dir}/../public/api-docs/${specFileName}`,
+    // Runtime in production image where Vite outputs static assets to dist/.
+    `${import.meta.dir}/../dist/api-docs/${specFileName}`,
+  ];
+
+  for (const filePath of candidatePaths) {
+    const file = Bun.file(filePath);
+    if (await file.exists()) {
+      return new Response(file, { headers: { 'Content-Type': 'application/yaml; charset=utf-8' } });
+    }
+  }
+
+  return Response.json(
+    { error: { code: 'not-found', message: notFoundMessage } },
+    { status: 404 }
+  );
+}
+
 async function router(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
 
   if (path === '/api-docs/native-openapi.yaml' && req.method === 'GET') {
-    const file = Bun.file(`${import.meta.dir}/../docs/api/native-openapi.yaml`);
-    if (!(await file.exists())) {
-      return Response.json(
-        { error: { code: 'not-found', message: 'Native OpenAPI spec not found' } },
-        { status: 404 }
-      );
-    }
-    return new Response(file, { headers: { 'Content-Type': 'application/yaml; charset=utf-8' } });
+    return serveOpenApiSpec('native-openapi.yaml', 'Native OpenAPI spec not found');
   }
 
   if (path === '/api-docs/trello-openapi.yaml' && req.method === 'GET') {
-    const file = Bun.file(`${import.meta.dir}/../docs/api/trello-openapi.yaml`);
-    if (!(await file.exists())) {
-      return Response.json(
-        { error: { code: 'not-found', message: 'Trello OpenAPI spec not found' } },
-        { status: 404 }
-      );
-    }
-    return new Response(file, { headers: { 'Content-Type': 'application/yaml; charset=utf-8' } });
+    return serveOpenApiSpec('trello-openapi.yaml', 'Trello OpenAPI spec not found');
   }
 
 
