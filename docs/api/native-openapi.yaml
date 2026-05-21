@@ -98,6 +98,149 @@ components:
             token:
               type: string
               example: hf_xxxxxxxxxxxxxxxxxxxx
+    StateTransitionWaypoint:
+      type: object
+      required: [x, y]
+      properties:
+        x: { type: number }
+        y: { type: number }
+    StateTransitionNode:
+      type: object
+      required: [id, listId, label, positionX, positionY]
+      properties:
+        id: { type: string }
+        listId: { type: string }
+        label: { type: string }
+        positionX: { type: number }
+        positionY: { type: number }
+    StateTransitionEdge:
+      type: object
+      required: [id, fromNodeId, toNodeId, action, direction, style]
+      properties:
+        id: { type: string }
+        fromNodeId: { type: string }
+        toNodeId: { type: string }
+        sourceHandle: { type: string }
+        targetHandle: { type: string }
+        connectorOffsetX: { type: number }
+        connectorOffsetY: { type: number }
+        waypoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateTransitionWaypoint'
+        action:
+          type: string
+          enum: [allowed_move_to]
+        direction:
+          type: string
+          enum: [one_way, two_way]
+        style:
+          type: string
+          enum: [straight, orthogonal, smooth, curved]
+        label: { type: string }
+    StateTransitionNote:
+      type: object
+      required: [id, content, positionX, positionY]
+      properties:
+        id: { type: string }
+        content: { type: string }
+        positionX: { type: number }
+        positionY: { type: number }
+    StateTransitionGraph:
+      type: object
+      required: [nodes, edges, notes]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateTransitionNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateTransitionEdge'
+        notes:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateTransitionNote'
+    StateTransitionRule:
+      type: object
+      required:
+        - currentState
+        - currentStateId
+        - allowedNextStates
+        - allowedNextStateIds
+        - forbiddenNextStates
+        - forbiddenNextStateIds
+      properties:
+        currentState: { type: string }
+        currentStateId: { type: string }
+        allowedNextStates:
+          type: array
+          items: { type: string }
+        allowedNextStateIds:
+          type: array
+          items: { type: string }
+        forbiddenNextStates:
+          type: array
+          items: { type: string }
+        forbiddenNextStateIds:
+          type: array
+          items: { type: string }
+    StateTransitionsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [boardId, enabled, graph, updatedAt]
+          properties:
+            boardId: { type: string }
+            enabled: { type: boolean }
+            graph:
+              $ref: '#/components/schemas/StateTransitionGraph'
+            updatedAt: { type: string, format: date-time }
+    PutStateTransitionsRequest:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        graph:
+          $ref: '#/components/schemas/StateTransitionGraph'
+    StateTransitionRulesResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [boardId, enabled, rules]
+          properties:
+            boardId: { type: string }
+            enabled: { type: boolean }
+            rules:
+              type: array
+              items:
+                $ref: '#/components/schemas/StateTransitionRule'
+    CopyStateTransitionsRequest:
+      type: object
+      required: [targetBoardId]
+      properties:
+        targetBoardId: { type: string }
+        copyEnabled: { type: boolean }
+    CopyStateTransitionsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [boardId, enabled, graph, updatedAt]
+          properties:
+            boardId: { type: string }
+            enabled: { type: boolean }
+            graph:
+              $ref: '#/components/schemas/StateTransitionGraph'
+            updatedAt: { type: string, format: date-time }
+        metadata:
+          type: object
+          required: [skippedNodes, copyEnabled]
+          properties:
+            skippedNodes: { type: integer }
+            copyEnabled: { type: boolean }
 
 paths:
   /health:
@@ -386,9 +529,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenericDataResponse'
+                $ref: '#/components/schemas/StateTransitionsResponse'
         '404':
           description: Board not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '501':
+          description: Feature disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags: [Boards]
+      summary: Save state transition graph and enabled state
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutStateTransitionsRequest'
+      responses:
+        '200':
+          description: State transitions saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StateTransitionsResponse'
+        '422':
+          description: Invalid graph payload
           content:
             application/json:
               schema:
@@ -416,7 +593,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GenericDataResponse'
+                $ref: '#/components/schemas/StateTransitionRulesResponse'
         '404':
           description: Board not found
           content:
@@ -429,6 +606,73 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+
+  /api/v1/boards/{boardId}/state-transitions/copy:
+    post:
+      tags: [Boards]
+      summary: Copy state transition graph to another board
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopyStateTransitionsRequest'
+      responses:
+        '200':
+          description: Transitions copied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CopyStateTransitionsResponse'
+        '422':
+          description: Validation or permission error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '501':
+          description: Feature disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/v1/boards/{boardId}/lists:
+    post:
+      tags: [Lists]
+      summary: Create list on a specific board
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                afterId:
+                  oneOf:
+                    - type: string
+                    - type: 'null'
+      responses:
+        '201':
+          description: List created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericDataResponse'
 
   /api/v1/lists:
     post:
@@ -492,6 +736,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GenericDataResponse'
+    delete:
+      tags: [Lists]
+      summary: Delete list
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: listId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                confirm: { type: boolean }
+      responses:
+        '204':
+          description: List deleted
+        '409':
+          description: Confirmation required when list has cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /api/v1/cards:
     post:
@@ -653,11 +923,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/GenericDataResponse'
 
-  /api/v1/presence:
+  /api/v1/boards/{boardId}/presence:
     get:
       tags: [Presence]
-      summary: Presence heartbeat/state endpoint
+      summary: Board presence heartbeat/state endpoint
       security: [{ BearerAuth: [] }]
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: string }
       responses:
         '200':
           description: Presence state

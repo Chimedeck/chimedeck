@@ -43,6 +43,10 @@ const McpDocsPage = () => {
             <NavItem href="#tool-search-cards" label="search_cards" />
             <NavItem href="#tool-search-board" label="search_board" />
             <NavItem href="#tool-get-card" label="get_card" />
+            <NavItem href="#tool-get-state-transitions" label="get_state_transitions" />
+            <NavItem href="#tool-set-state-transitions" label="set_state_transitions" />
+            <NavItem href="#tool-get-state-transition-rules" label="get_state_transition_rules" />
+            <NavItem href="#tool-copy-state-transitions" label="copy_state_transitions" />
           </nav>
         </div>
       </aside>
@@ -336,7 +340,7 @@ curl -X POST http://localhost:3000/api/mcp \\
           <Section id="available-tools">
             <H2>Available Tools</H2>
             <P>
-              ChimeDeck exposes 9 MCP tools. Each tool maps to a specific REST API endpoint.
+              ChimeDeck exposes 13 MCP tools. Each tool maps to a specific REST API endpoint.
             </P>
             <Table
               headers={['Tool', 'Description', 'Endpoint']}
@@ -411,6 +415,38 @@ curl -X POST http://localhost:3000/api/mcp \\
                     { key: 'tool', content: <Code>get_card</Code> },
                     { key: 'desc', content: 'Retrieve the full details of a single card by its ID' },
                     { key: 'endpoint', content: <Code>GET /api/v1/cards/:cardId</Code> },
+                  ],
+                },
+                {
+                  rowId: 'tool-get-state-transitions',
+                  cells: [
+                    { key: 'tool', content: <Code>get_state_transitions</Code> },
+                    { key: 'desc', content: 'Retrieve state transition graph and enabled flag for a board' },
+                    { key: 'endpoint', content: <Code>GET /api/v1/boards/:boardId/state-transitions</Code> },
+                  ],
+                },
+                {
+                  rowId: 'tool-set-state-transitions',
+                  cells: [
+                    { key: 'tool', content: <Code>set_state_transitions</Code> },
+                    { key: 'desc', content: 'Update state transition graph and/or enabled flag for a board' },
+                    { key: 'endpoint', content: <Code>PUT /api/v1/boards/:boardId/state-transitions</Code> },
+                  ],
+                },
+                {
+                  rowId: 'tool-get-state-transition-rules',
+                  cells: [
+                    { key: 'tool', content: <Code>get_state_transition_rules</Code> },
+                    { key: 'desc', content: 'Retrieve enforceable state-transition rules for a board' },
+                    { key: 'endpoint', content: <Code>GET /api/v1/boards/:boardId/state-transitions/rules</Code> },
+                  ],
+                },
+                {
+                  rowId: 'tool-copy-state-transitions',
+                  cells: [
+                    { key: 'tool', content: <Code>copy_state_transitions</Code> },
+                    { key: 'desc', content: 'Copy state transition graph from one board to another' },
+                    { key: 'endpoint', content: <Code>POST /api/v1/boards/:boardId/state-transitions/copy</Code> },
                   ],
                 },
               ]}
@@ -741,6 +777,125 @@ curl -X POST http://localhost:3000/api/mcp \\
                     { key: 'type', content: 'string' },
                     { key: 'req', content: '✅' },
                     { key: 'desc', content: 'ID of the card to retrieve' },
+                  ],
+                },
+              ]}
+            />
+          </Section>
+
+          {/* get_state_transitions */}
+          <Section id="tool-get-state-transitions">
+            <H3>get_state_transitions</H3>
+            <P>Retrieve state transition graph and enabled flag for a board.</P>
+            <Table
+              headers={['Parameter', 'Type', 'Required', 'Description']}
+              rows={[
+                {
+                  rowId: 'gst-boardId',
+                  cells: [
+                    { key: 'param', content: <Code>boardId</Code> },
+                    { key: 'type', content: 'string' },
+                    { key: 'req', content: '✅' },
+                    { key: 'desc', content: 'ID of the board' },
+                  ],
+                },
+              ]}
+            />
+          </Section>
+
+          {/* set_state_transitions */}
+          <Section id="tool-set-state-transitions">
+            <H3>set_state_transitions</H3>
+            <P>Update state transition graph and/or enabled flag for a board.</P>
+            <WarnCallout className="mb-3">
+              Provide at least one of <Code>enabled</Code> or <Code>graph</Code>.
+            </WarnCallout>
+            <Table
+              headers={['Parameter', 'Type', 'Required', 'Description']}
+              rows={[
+                {
+                  rowId: 'sst-boardId',
+                  cells: [
+                    { key: 'param', content: <Code>boardId</Code> },
+                    { key: 'type', content: 'string' },
+                    { key: 'req', content: '✅' },
+                    { key: 'desc', content: 'ID of the board' },
+                  ],
+                },
+                {
+                  rowId: 'sst-enabled',
+                  cells: [
+                    { key: 'param', content: <Code>enabled</Code> },
+                    { key: 'type', content: 'boolean' },
+                    { key: 'req', content: 'No' },
+                    { key: 'desc', content: 'Enable or disable state transition enforcement' },
+                  ],
+                },
+                {
+                  rowId: 'sst-graph',
+                  cells: [
+                    { key: 'param', content: <Code>graph</Code> },
+                    { key: 'type', content: 'object' },
+                    { key: 'req', content: 'No' },
+                    { key: 'desc', content: 'State transition graph payload' },
+                  ],
+                },
+              ]}
+            />
+          </Section>
+
+          {/* get_state_transition_rules */}
+          <Section id="tool-get-state-transition-rules">
+            <H3>get_state_transition_rules</H3>
+            <P>Retrieve enforceable state-transition rules for a board.</P>
+            <Table
+              headers={['Parameter', 'Type', 'Required', 'Description']}
+              rows={[
+                {
+                  rowId: 'gstr-boardId',
+                  cells: [
+                    { key: 'param', content: <Code>boardId</Code> },
+                    { key: 'type', content: 'string' },
+                    { key: 'req', content: '✅' },
+                    { key: 'desc', content: 'ID of the board' },
+                  ],
+                },
+              ]}
+            />
+          </Section>
+
+          {/* copy_state_transitions */}
+          <Section id="tool-copy-state-transitions">
+            <H3>copy_state_transitions</H3>
+            <P>Copy state transition graph from one board to another.</P>
+            <Table
+              headers={['Parameter', 'Type', 'Required', 'Description']}
+              rows={[
+                {
+                  rowId: 'cst-boardId',
+                  cells: [
+                    { key: 'param', content: <Code>boardId</Code> },
+                    { key: 'type', content: 'string' },
+                    { key: 'req', content: '✅' },
+                    { key: 'desc', content: 'Source board ID' },
+                  ],
+                },
+                {
+                  rowId: 'cst-targetBoardId',
+                  cells: [
+                    { key: 'param', content: <Code>targetBoardId</Code> },
+                    { key: 'type', content: 'string' },
+                    { key: 'req', content: '✅' },
+                    { key: 'desc', content: 'Target board ID' },
+                  ],
+                },
+                {
+                  rowId: 'cst-copyEnabled',
+                  cells: [
+                    { key: 'param', content: <Code>copyEnabled</Code> },
+                    { key: 'type', content: 'boolean' },
+                    { key: 'req', content: 'No' },
+                    { key: 'desc', content: 'Copy source board enabled flag when true' },
                   ],
                 },
               ]}

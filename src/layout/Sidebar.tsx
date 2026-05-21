@@ -394,6 +394,13 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                 onNavigate={onClose}
               />
               <NavItem
+                to="/developer/cli"
+                icon={<CommandLineIcon className="h-5 w-5" />}
+                label={layoutTranslations['Sidebar.cliDocsLabel']}
+                collapsed={collapsed}
+                onNavigate={onClose}
+              />
+              <NavItem
                 to="/developer/api-docs"
                 icon={<DocumentTextIcon className="h-5 w-5" />}
                 label="API Docs"

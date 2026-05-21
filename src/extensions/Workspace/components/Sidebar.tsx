@@ -246,6 +246,21 @@ export default function Sidebar() {
               </li>
               <li>
                 <NavLink
+                  to="/developer/cli"
+                  className={({ isActive }) =>
+                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-bg-sunken text-base font-medium'
+                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
+                    }`
+                  }
+                >
+                  <CommandLineIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  {commonTranslations['Sidebar.cliDocsLabel']}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
                   to="/developer/api-docs"
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${

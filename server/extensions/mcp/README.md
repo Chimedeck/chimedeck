@@ -229,6 +229,10 @@ Returns `204 No Content` on success.
 | `search_cards` | Full-text search over cards within a workspace | `GET /api/v1/workspaces/:workspaceId/search` |
 | `search_board` | Full-text search over cards and lists scoped to a single board | `GET /api/v1/boards/:boardId/search` |
 | `get_card` | Retrieve the full details of a single card by its ID | `GET /api/v1/cards/:cardId` |
+| `get_state_transitions` | Retrieve state transition graph and enabled flag for a board | `GET /api/v1/boards/:boardId/state-transitions` |
+| `set_state_transitions` | Update state transition graph and/or enabled flag for a board | `PUT /api/v1/boards/:boardId/state-transitions` |
+| `get_state_transition_rules` | Retrieve enforceable state-transition rules for a board | `GET /api/v1/boards/:boardId/state-transitions/rules` |
+| `copy_state_transitions` | Copy state transition graph from one board to another | `POST /api/v1/boards/:boardId/state-transitions/copy` |
 
 ### Tool Parameters
 
@@ -297,3 +301,29 @@ Returns `204 No Content` on success.
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `cardId` | string | ✅ | ID of the card to retrieve |
+
+#### `get_state_transitions`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board |
+
+#### `set_state_transitions`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board |
+| `enabled` | boolean | No | Enable or disable state transition enforcement |
+| `graph` | object | No | State transition graph payload |
+
+At least one of `enabled` or `graph` must be provided.
+
+#### `get_state_transition_rules`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board |
+
+#### `copy_state_transitions`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | Source board ID |
+| `targetBoardId` | string | ✅ | Target board ID |
+| `copyEnabled` | boolean | No | Copy source board's `enabled` flag when `true` |
