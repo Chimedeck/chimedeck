@@ -2,6 +2,7 @@ import type { Attachment } from '~/extensions/Attachments/types';
 
 const ATTACHMENT_URL_PREFIX = 'attachment:';
 const MARKDOWN_TARGET_PATTERN = /(!?)\[([^\]]*)\]\((\S+?)(?:\s+"([^"]*)")?\)/g;
+const ATTACHMENT_PLACEHOLDER_URL_RE = /attachment:[^)\s"'<>]+(?:\)[^)\s"'<>]+)*/g;
 
 interface MarkdownTargetParts {
   bang: string;
@@ -37,7 +38,15 @@ function buildAttachmentNameMap(attachments: Attachment[]): Map<string, Attachme
   return attachmentMap;
 }
 
-const ATTACHMENT_PLACEHOLDER_RE = /attachment:[^\s"'<>]*/g;
+function normalizeAttachmentPlaceholderHrefEncoding(content: string): string {
+  if (!content || !hasAttachmentPlaceholder(content)) return content;
+
+  // [why] Legacy placeholder urls may contain raw parentheses because encodeURIComponent
+  // does not escape them. Markdown parsers can misread these and drop surrounding text.
+  return content.replaceAll(ATTACHMENT_PLACEHOLDER_URL_RE, (href) => (
+    href.replaceAll('(', '%28').replaceAll(')', '%29')
+  ));
+}
 
 // [why] Some editor paths can persist HTML with src="attachment:..." rather than
 // markdown image/link syntax. This pass resolves raw placeholder URLs anywhere in
@@ -47,9 +56,10 @@ export function hydrateAttachmentPlaceholderUrls(content: string, attachments: A
     return content;
   }
 
+  const normalized = normalizeAttachmentPlaceholderHrefEncoding(content);
   const attachmentMap = buildAttachmentNameMap(attachments);
 
-  return content.replaceAll(ATTACHMENT_PLACEHOLDER_RE, (href) => {
+  return normalized.replaceAll(ATTACHMENT_PLACEHOLDER_URL_RE, (href) => {
     const name = readAttachmentPlaceholderName(href);
     if (!name) return href;
     const attachment = attachmentMap.get(name);
@@ -76,7 +86,10 @@ function buildAttachmentUrlMap(attachments: Attachment[]): Map<string, string> {
 }
 
 export function buildAttachmentPlaceholderUrl(name: string): string {
-  return `${ATTACHMENT_URL_PREFIX}${encodeURIComponent(name)}`;
+  const encodedName = encodeURIComponent(name)
+    .replaceAll('(', '%28')
+    .replaceAll(')', '%29');
+  return `${ATTACHMENT_URL_PREFIX}${encodedName}`;
 }
 
 export function readAttachmentPlaceholderName(value: string): string | null {
@@ -97,7 +110,9 @@ export function hasAttachmentPlaceholder(markdown: string): boolean {
 export function stripCommentAttachmentPlaceholders(markdown: string): string {
   if (!markdown || !hasAttachmentPlaceholder(markdown)) return markdown;
 
-  return markdown.replaceAll(MARKDOWN_TARGET_PATTERN, (full, bang, label, href) => {
+  const normalized = normalizeAttachmentPlaceholderHrefEncoding(markdown);
+
+  return normalized.replaceAll(MARKDOWN_TARGET_PATTERN, (full, bang, label, href) => {
     const attachmentName = readAttachmentPlaceholderName(href);
     if (!attachmentName) return full;
     const fallbackLabel = label || attachmentName;
@@ -124,9 +139,10 @@ export function hydrateCommentAttachmentMarkdown(markdown: string, attachments: 
     return markdown;
   }
 
+  const normalized = normalizeAttachmentPlaceholderHrefEncoding(markdown);
   const attachmentMap = buildAttachmentNameMap(attachments);
 
-  const replacedMarkdownTargets = replaceMarkdownTargets(markdown, ({ bang, href }) => {
+  const replacedMarkdownTargets = replaceMarkdownTargets(normalized, ({ bang, href }) => {
     const name = readAttachmentPlaceholderName(href);
     if (!name) return null;
     const attachment = attachmentMap.get(name);

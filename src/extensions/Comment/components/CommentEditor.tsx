@@ -515,6 +515,59 @@ function getInitialEditorContent(initialValue: string, attachments: Attachment[]
   return rewriteS3UrlsToProxy(hydrated, attachments);
 }
 
+function hasRenderableEditorContent(editor: Editor): boolean {
+  if (editor.state.doc.textContent.trim().length > 0) return true;
+  let hasImage = false;
+  editor.state.doc.descendants((node) => {
+    if (node.type.name === 'image') {
+      hasImage = true;
+      return false;
+    }
+    return undefined;
+  });
+  return hasImage;
+}
+
+function buildImageNodeFallbackDoc(markdown: string): Record<string, unknown> | null {
+  if (!markdown.trim()) return null;
+
+  const IMAGE_MARKDOWN_RE = /!\[([^\]]*)\]\((\S+?)(?:\s+"([^"]*)")?\)/g;
+  const paragraphNodes: Array<Record<string, unknown>> = [];
+  let cursor = 0;
+  let match = IMAGE_MARKDOWN_RE.exec(markdown);
+
+  while (match) {
+    const full = match[0] ?? '';
+    const alt = match[1] ?? '';
+    const src = match[2] ?? '';
+    const index = match.index;
+
+    const before = markdown.slice(cursor, index);
+    if (before.length > 0) {
+      paragraphNodes.push({ type: 'text', text: before });
+    }
+
+    if (src.trim().length > 0) {
+      paragraphNodes.push({ type: 'image', attrs: { src: src.trim(), alt: alt || null } });
+    }
+
+    cursor = index + full.length;
+    match = IMAGE_MARKDOWN_RE.exec(markdown);
+  }
+
+  const tail = markdown.slice(cursor);
+  if (tail.length > 0) {
+    paragraphNodes.push({ type: 'text', text: tail });
+  }
+
+  if (!paragraphNodes.some((node) => node.type === 'image')) return null;
+
+  return {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: paragraphNodes }],
+  };
+}
+
 function insertAttachmentAt(editor: Editor, attachment: Attachment, pos: number): boolean {
   const isImage = attachment.content_type?.startsWith('image/') ?? false;
   const url = resolveAttachmentMarkdownUrl(attachment, isImage);
@@ -591,6 +644,7 @@ const CommentEditor = ({
   const [linkEditUrl, setLinkEditUrl] = useState('');
   const [linkEditText, setLinkEditText] = useState('');
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>(availableAttachments);
+  const shouldRestoreDraft = initialValue.trim().length === 0 && !hasAttachmentPlaceholder(initialValue);
 
   // Auth + workspace context needed by the offline draft hook
   const currentUser = useSelector(selectCurrentUser);
@@ -876,12 +930,33 @@ const CommentEditor = ({
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
+    const pendingContent = pendingHydratedContentRef.current;
     const hydratedContent = resolvePendingHydratedContent(
-      pendingHydratedContentRef.current,
+      pendingContent,
       cardAttachmentsRef.current,
     );
     if (!hydratedContent) return;
     editor.commands.setContent(hydratedContent, { contentType: 'markdown' });
+    if (!hasRenderableEditorContent(editor) && pendingContent && pendingContent.trim().length > 0) {
+      const imageFallbackDoc = buildImageNodeFallbackDoc(hydratedContent);
+      if (imageFallbackDoc) {
+        editor.commands.setContent(imageFallbackDoc);
+      }
+    }
+    if (!hasRenderableEditorContent(editor) && pendingContent && pendingContent.trim().length > 0) {
+      const fallbackText = stripCommentAttachmentPlaceholders(
+        normalizeEscapedBlockquoteMarkers(pendingContent),
+      ).trim();
+      if (fallbackText.length > 0) {
+        editor.commands.setContent({
+          type: 'doc',
+          content: [{
+            type: 'paragraph',
+            content: [{ type: 'text', text: fallbackText }],
+          }],
+        });
+      }
+    }
     hydrateEditorLinkMarkClasses(editor);
     pendingHydratedContentRef.current = null;
   }, [editor, cardAttachments, restoredDraft]);
@@ -900,11 +975,11 @@ const CommentEditor = ({
 
   // Restore offline draft into editor once it's loaded (async, after initial render)
   useEffect(() => {
-    if (!restoredDraft) return;
+    if (!shouldRestoreDraft || !restoredDraft) return;
     pendingHydratedContentRef.current = restoredDraft;
   // [why] Only restore when the draft first becomes available — not on every render
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restoredDraft]);
+  }, [restoredDraft, shouldRestoreDraft]);
 
   const handleSubmit = useCallback(async () => {
     if (!editor) return;
@@ -1210,7 +1285,7 @@ const CommentEditor = ({
       />
 
       {/* Draft recovery banner — shown when a draft was restored from local/server storage */}
-      {restoredDraft && draftStatus !== 'idle' && (
+      {shouldRestoreDraft && restoredDraft && draftStatus !== 'idle' && (
         <div
           data-testid="comment-draft-recovery-banner"
           className="flex items-center justify-between rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300"

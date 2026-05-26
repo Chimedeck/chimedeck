@@ -401,6 +401,14 @@ const MemberSection = ({
   const visibleMembers = members.slice(0, MAX_VISIBLE);
   const overflow = members.length - MAX_VISIBLE;
   const [failedAvatarIds, setFailedAvatarIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredMembers = boardMembers.filter((member) => {
+    if (!normalizedSearch) return true;
+    const name = member.name ?? '';
+    return name.toLowerCase().includes(normalizedSearch) || member.email.toLowerCase().includes(normalizedSearch);
+  });
 
   const isAvatarFailed = (memberId: string): boolean => failedAvatarIds.has(memberId);
 
@@ -450,7 +458,13 @@ const MemberSection = ({
       )}
       {!disabled && (
         <PillButton
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => {
+            setOpen((v) => {
+              const nextOpen = !v;
+              if (nextOpen) setSearchQuery('');
+              return nextOpen;
+            });
+          }}
           aria-label="Assign members"
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -464,10 +478,20 @@ const MemberSection = ({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
           <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-2 space-y-1">
+            <input
+              className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Search members..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
             {boardMembers.length === 0 && (
               <p className="text-xs text-subtle px-2 py-1">No board members</p>
             )}
-            {boardMembers.map((member) => {
+            {boardMembers.length > 0 && filteredMembers.length === 0 && (
+              <p className="text-xs text-subtle px-2 py-1">No members found</p>
+            )}
+            {filteredMembers.map((member) => {
               const assigned = assignedIds.has(member.id);
               const name = member.name ?? member.email;
               return (
