@@ -227,6 +227,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
 
   const handleClick = (entry: Notification) => {
     if (!entry.read) {
+      dispatch(notificationSliceActions.setNotificationReadState({ id: entry.id, read: true }));
       void dispatch(markReadThunk({ id: entry.id }));
     }
     onNavigate(entry);

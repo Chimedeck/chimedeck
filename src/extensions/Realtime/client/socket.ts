@@ -161,6 +161,10 @@ class RealtimeSocket {
     this.ws.addEventListener('message', (ev: MessageEvent<string>) => {
       try {
         const event = JSON.parse(ev.data) as RealtimeEvent;
+        if (event.type === 'ping') {
+          this.send({ type: 'ping' });
+          return;
+        }
         this.handlers.forEach((h) => {
           try {
             h(event);
@@ -217,6 +221,26 @@ class RealtimeSocket {
 
   private _wsBase(): string {
     if (typeof window === 'undefined') return 'ws://localhost:3000';
+
+    const env = (import.meta as ImportMeta & {
+      env?: Record<string, string | undefined>;
+    }).env;
+    const configuredWsBase = env?.['VITE_WS_BASE_URL']?.trim();
+    if (configuredWsBase) {
+      return configuredWsBase.replace(/\/$/, '');
+    }
+
+    const configuredApiBase = env?.['VITE_API_BASE_URL']?.trim();
+    if (configuredApiBase) {
+      try {
+        const apiUrl = new URL(configuredApiBase, window.location.origin);
+        const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProtocol}//${apiUrl.host}`;
+      } catch {
+        // Fall through to same-origin fallback when API base is malformed.
+      }
+    }
+
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${proto}//${window.location.host}`;
   }

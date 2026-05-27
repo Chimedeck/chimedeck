@@ -4,6 +4,12 @@ import type { RootState } from '~/store';
 import { createAppAsyncThunk } from '~/utils/redux';
 import { notificationApi, type Notification, type NotificationCommentReaction } from '../api';
 
+function shouldIncludeNotification(notification: Notification): boolean {
+  // [why] "card_updated" entries should stay in board/card activities but
+  // should not appear in the notification list UI.
+  return notification.type !== 'card_updated';
+}
+
 // ---------- State ----------
 
 export interface NotificationState {
@@ -101,6 +107,10 @@ const notificationSlice = createSlice({
   reducers: {
     // Called by useNotificationSync when a WS notification_created event arrives
     addNotification(state, action: PayloadAction<Notification>) {
+      if (!shouldIncludeNotification(action.payload)) {
+        return;
+      }
+
       const existingIndex = state.notifications.findIndex((n) => n.id === action.payload.id);
       if (existingIndex === -1) {
         state.notifications.unshift(action.payload);
@@ -163,8 +173,9 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotificationsThunk.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.notifications = action.payload.data;
-        state.unreadCount = action.payload.data.filter((n) => !n.read).length;
+        const filteredNotifications = action.payload.data.filter(shouldIncludeNotification);
+        state.notifications = filteredNotifications;
+        state.unreadCount = filteredNotifications.filter((n) => !n.read).length;
         state.hasMore = action.payload.metadata.hasMore;
         state.cursor = action.payload.metadata.cursor;
       })
@@ -173,7 +184,9 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchMoreNotificationsThunk.fulfilled, (state, action) => {
         const existingIds = new Set(state.notifications.map((n) => n.id));
-        const newOnes = action.payload.data.filter((n) => !existingIds.has(n.id));
+        const newOnes = action.payload.data
+          .filter(shouldIncludeNotification)
+          .filter((n) => !existingIds.has(n.id));
         state.notifications.push(...newOnes);
         state.unreadCount = state.notifications.filter((n) => !n.read).length;
         state.hasMore = action.payload.metadata.hasMore;

@@ -77,7 +77,17 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
             popup[0]?.hide();
             return true;
           }
-          return renderer.ref?.onKeyDown(props) ?? false;
+
+          const mentionListRef = renderer?.ref;
+          if (!mentionListRef || typeof mentionListRef.onKeyDown !== 'function') {
+            return false;
+          }
+
+          try {
+            return mentionListRef.onKeyDown(props) ?? false;
+          } catch {
+            return false;
+          }
         },
 
         onExit() {

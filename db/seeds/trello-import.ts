@@ -729,20 +729,55 @@ async function main() {
   const candidateCardIds = [...candidateCardIdSet];
 
   const existingCardUpdatedAt = new Map<string, Date | null>();
+  const cardsWithPostCutoffRelatedActivity = new Set<string>();
   for (let i = 0; i < candidateCardIds.length; i += BATCH_SIZE) {
     const chunk = candidateCardIds.slice(i, i + BATCH_SIZE);
-    const rows = await db('cards').select('id', 'updated_at').whereIn('id', chunk);
+    const [
+      cardRows,
+      recentCardActivityRows,
+      recentCommentRows,
+      recentChecklistRows,
+    ] = await Promise.all([
+      db('cards').select('id', 'updated_at').whereIn('id', chunk),
+      db('activities')
+        .distinct('entity_id')
+        .where({ entity_type: 'card' })
+        .whereIn('entity_id', chunk)
+        .andWhere('created_at', '>', LAST_MIGRATION_CUTOFF),
+      db('comments')
+        .distinct('card_id')
+        .whereIn('card_id', chunk)
+        .andWhere('updated_at', '>', LAST_MIGRATION_CUTOFF),
+      db('checklists')
+        .distinct('card_id')
+        .whereIn('card_id', chunk)
+        .andWhere('updated_at', '>', LAST_MIGRATION_CUTOFF),
+    ]);
+
+    const rows = cardRows;
     for (const row of rows as Array<{ id: string; updated_at: Date | string | null }>) {
       existingCardUpdatedAt.set(
         row.id,
         row.updated_at ? new Date(row.updated_at) : null,
       );
     }
+
+    for (const row of recentCardActivityRows as Array<{ entity_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.entity_id);
+    }
+    for (const row of recentCommentRows as Array<{ card_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.card_id);
+    }
+    for (const row of recentChecklistRows as Array<{ card_id: string }>) {
+      cardsWithPostCutoffRelatedActivity.add(row.card_id);
+    }
   }
 
   const writableCardIdSet = new Set<string>();
   let newCardCount = 0;
   let preCutoffUpdatableCount = 0;
+  let protectedByRelatedActivityCount = 0;
+  let protectedByCardUpdatedAtCount = 0;
   let protectedCardCount = 0;
 
   for (const cardId of candidateCardIds) {
@@ -752,11 +787,18 @@ async function main() {
       continue;
     }
 
+    if (cardsWithPostCutoffRelatedActivity.has(cardId)) {
+      protectedByRelatedActivityCount += 1;
+      protectedCardCount += 1;
+      continue;
+    }
+
     const dbUpdatedAt = existingCardUpdatedAt.get(cardId);
     if (!dbUpdatedAt || dbUpdatedAt <= LAST_MIGRATION_CUTOFF) {
       writableCardIdSet.add(cardId);
       preCutoffUpdatableCount += 1;
     } else {
+      protectedByCardUpdatedAtCount += 1;
       protectedCardCount += 1;
     }
   }
@@ -765,6 +807,8 @@ async function main() {
   console.log(`    Candidate cards      : ${candidateCardIds.length.toLocaleString()}`);
   console.log(`    New cards            : ${newCardCount.toLocaleString()}`);
   console.log(`    Pre-cutoff updates   : ${preCutoffUpdatableCount.toLocaleString()}`);
+  console.log(`    Protected by activity: ${protectedByRelatedActivityCount.toLocaleString()}`);
+  console.log(`    Protected by card ts : ${protectedByCardUpdatedAtCount.toLocaleString()}`);
   console.log(`    Protected cards      : ${protectedCardCount.toLocaleString()}`);
   console.log(`🃏  Inserting/updating ${writableCardIdSet.size.toLocaleString()} safe cards…`);
 
