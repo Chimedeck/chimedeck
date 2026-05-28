@@ -18,6 +18,10 @@ import { dispatchDirectCardNotification } from '../../notifications/mods/boardAc
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 
+function hasNonPersistableMediaUrl(content: string): boolean {
+  return /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) || /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content);
+}
+
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -172,6 +176,17 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   const id = randomUUID();
   const shortId = await generateUniqueShortId('comments');
   const trimmedContent = sanitizeRichText(body.content.trim());
+  if (hasNonPersistableMediaUrl(trimmedContent)) {
+    return Response.json(
+      {
+        error: {
+          code: 'bad-request',
+          message: 'Comment contains a temporary local media URL. Please re-upload the image before saving.',
+        },
+      },
+      { status: 400 },
+    );
+  }
   const idempotencyKey = body.idempotency_key?.trim() ?? null;
   let mentionedUserIds: string[] = [];
 

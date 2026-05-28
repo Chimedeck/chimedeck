@@ -418,7 +418,7 @@ function buildCommentMarkdown(editor: Editor, attachments: Attachment[]): string
   editor.state.doc.descendants((node) => {
     if (node.type.name !== 'image') return;
     const src = typeof node.attrs?.src === 'string' ? node.attrs.src : '';
-    if (!src) return;
+    if (!src || isNonPersistableUrl(src)) return;
     const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt : '';
     imageSnippets.push(`![${alt}](${src})`);
   });
@@ -433,7 +433,26 @@ function buildCommentMarkdown(editor: Editor, attachments: Attachment[]): string
       : snippet;
   });
 
-  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(markdown), attachments);
+  const sanitized = stripNonPersistableMarkdownTargets(markdown);
+  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(sanitized), attachments);
+}
+
+function isNonPersistableUrl(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return normalized.startsWith('blob:') || normalized.startsWith('data:') || normalized.startsWith('file:');
+}
+
+function stripNonPersistableMarkdownTargets(markdown: string): string {
+  if (!markdown) return markdown;
+
+  return markdown.replaceAll(
+    /(!?)\[([^\]]*)\]\((<[^>]+>|[^)\s]+)(\s+["'][^"']*["'])?\)/g,
+    (fullMatch, bang: string, label: string, rawDestination: string) => {
+      const destination = rawDestination.replace(/^<([^>]+)>$/, '$1').trim();
+      if (!isNonPersistableUrl(destination)) return fullMatch;
+      return bang === '!' ? label : `[${label || destination}]`;
+    },
+  );
 }
 
 function normalizeMarkdownLinkUrls(markdown: string): string {

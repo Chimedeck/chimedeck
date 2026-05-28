@@ -13,6 +13,10 @@ import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
+function hasNonPersistableMediaUrl(content: string): boolean {
+  return /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) || /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content);
+}
+
 async function loadCommentWithAuthor(commentId: string): Promise<Record<string, unknown> | null> {
   const row = await db('comments')
     .leftJoin('users', 'comments.user_id', 'users.id')
@@ -110,6 +114,17 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   }
 
   const trimmedContent = sanitizeRichText(body.content.trim());
+  if (hasNonPersistableMediaUrl(trimmedContent)) {
+    return Response.json(
+      {
+        error: {
+          code: 'bad-request',
+          message: 'Comment contains a temporary local media URL. Please re-upload the image before saving.',
+        },
+      },
+      { status: 400 },
+    );
+  }
 
   // [why] No-op edits should not bump version or emit edit activity/events.
   // This keeps the (edited) marker only for actual content changes.
