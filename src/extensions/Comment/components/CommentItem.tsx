@@ -27,6 +27,7 @@ const LINK_MODE_TITLE_PREFIX = 'cd-mode:';
 const LINK_MODE_META_URL = 'cd-link-mode-url';
 const LINK_MODE_META_BUTTON = 'cd-link-mode-button';
 const LINK_MODE_META_CARD = 'cd-link-mode-card';
+const COMMENT_ATTACHMENT_SOURCE_ATTR = 'data-comment-attachment-src';
 
 type LinkDisplayMode = 'url' | 'button' | 'card';
 
@@ -106,6 +107,11 @@ function normalizeComparableUrl(value: string): string {
   } catch {
     return normalized.replace(/\/$/, '');
   }
+}
+
+function isNonPersistableUrl(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return normalized.startsWith('blob:') || normalized.startsWith('data:') || normalized.startsWith('file:');
 }
 
 function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
@@ -399,7 +405,11 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     const objectUrls: string[] = [];
 
     const hydrateImage = async (img: HTMLImageElement): Promise<void> => {
-      const rawSrc = img.getAttribute('src');
+      const currentSrc = img.getAttribute('src')?.trim() ?? '';
+      const persistedSrc = img.getAttribute(COMMENT_ATTACHMENT_SOURCE_ATTR)?.trim() ?? '';
+      const rawSrc = currentSrc && isNonPersistableUrl(currentSrc) && persistedSrc
+        ? persistedSrc
+        : currentSrc;
       if (!rawSrc) return;
 
       const placeholderName = readAttachmentPlaceholderName(rawSrc);
@@ -410,7 +420,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         ? resolveAttachmentMarkdownUrl(mappedAttachment, false)
         : null;
       const effectiveSrc = mappedSrc ?? rawSrc;
-      if (effectiveSrc !== rawSrc) {
+      img.setAttribute(COMMENT_ATTACHMENT_SOURCE_ATTR, effectiveSrc);
+      if (effectiveSrc !== currentSrc) {
         img.src = effectiveSrc;
       }
 
@@ -430,7 +441,10 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         objectUrls.push(objectUrl);
         img.src = objectUrl;
       } catch {
-        // Keep original src so browser fallback/error UI remains visible.
+        // Keep stable API src so browser fallback/error UI remains visible.
+        if (img.getAttribute('src') !== effectiveSrc) {
+          img.src = effectiveSrc;
+        }
       }
     };
 
