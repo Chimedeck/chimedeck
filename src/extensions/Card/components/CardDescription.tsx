@@ -2,11 +2,13 @@
 // View mode: renders markdown; click anywhere to enter edit mode.
 // Edit mode: plain textarea (with @mention support). Save with Ctrl/Cmd+Enter or
 // the Save button. Cancel with Escape or the Cancel button.
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import MentionInput from '~/common/components/MentionInput/MentionInput';
 import Button from '../../../common/components/Button';
 import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
+import { escapeScriptTags } from '~/common/utils/escapeScriptTags';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -83,7 +85,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   }, [disabled, description]);
 
   const handleSave = useCallback(() => {
-    onSave(draft);
+    onSave(escapeScriptTags(draft));
     setEditing(false);
   }, [draft, onSave]);
 
@@ -123,7 +125,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
     [handleEnterEdit],
   );
 
-  const previewHtml = addLinkTargetBlank(marked.parse(draft || '') as string);
+  const previewHtml = sanitizeUserGeneratedHtml(addLinkTargetBlank(marked.parse(draft || '') as string));
   const isEmpty = !draft.trim();
   const isLong = draft.length > SHOW_MORE_THRESHOLD;
 
@@ -203,7 +205,9 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             <button
               type="button"
               className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              onClick={() => setExpanded((e) => !e)}
+              onClick={() => {
+                setExpanded((e) => !e);
+              }}
             >
               {expanded ? 'Show less ↑' : 'Show more ↓'}
             </button>

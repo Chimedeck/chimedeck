@@ -18,6 +18,7 @@ import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThu
 import translations from '../translations/en.json';
 import apiClient from '~/common/api/client';
 import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
 
 const LINK_CLASS_BUTTON = 'cd-link-button';
 const LINK_CLASS_CARD = 'cd-link-card';
@@ -354,7 +355,7 @@ function renderContent(text: string, attachments: Attachment[]): string {
   );
   // [why] Ensure all links open in a new tab so the user is never navigated away
   // from the board view.
-  return addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions));
+  return sanitizeUserGeneratedHtml(addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions)));
 }
 
 const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
@@ -546,8 +547,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 event.stopPropagation();
                 setPreviewImage({ src, alt: image.getAttribute('alt') ?? 'Comment image' });
               }}
-              // [why] dangerouslySetInnerHTML — content is user-authored markdown parsed by marked.
-              // Input is from authenticated users only (internal tool), so XSS risk is accepted.
+              // [why] Rendered markdown is sanitized first to strip scripts, event
+              // handlers, and unsafe URLs before injecting into the DOM.
               dangerouslySetInnerHTML={{ __html: renderContent(comment.content, attachments) }}
             />
           </div>

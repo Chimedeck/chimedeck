@@ -49,6 +49,7 @@ import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import Button from '~/common/components/Button';
 import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { escapeScriptTags } from '~/common/utils/escapeScriptTags';
 import translations from '../translations/en.json';
 
 const LINK_CLASS_BUTTON = 'cd-link-button';
@@ -414,6 +415,9 @@ function draftStatusLabel(status: DraftStatus): string | null {
 function buildCommentMarkdown(editor: Editor, attachments: Attachment[]): string {
   let markdown = editor.getMarkdown() || '';
   const imageSnippets: string[] = [];
+  const scriptLiterals = Array.from(
+    new Set((editor.state.doc.textContent.match(/<script\b[\s\S]*?<\/script>/gi) ?? []).map((value) => value.trim())),
+  );
 
   editor.state.doc.descendants((node) => {
     if (node.type.name !== 'image') return;
@@ -433,8 +437,16 @@ function buildCommentMarkdown(editor: Editor, attachments: Attachment[]): string
       : snippet;
   });
 
+  scriptLiterals.forEach((snippet) => {
+    if (!snippet || markdown.includes(snippet)) return;
+    const escapedSnippet = escapeScriptTags(snippet);
+    markdown = markdown.trim().length > 0
+      ? `${markdown.trim()}\n\n${escapedSnippet}`
+      : escapedSnippet;
+  });
+
   const sanitized = stripNonPersistableMarkdownTargets(markdown);
-  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(sanitized), attachments);
+  return dehydrateCommentAttachmentMarkdown(escapeScriptTags(normalizeMarkdownLinkUrls(sanitized)), attachments);
 }
 
 function isNonPersistableUrl(value: string): boolean {
@@ -837,6 +849,20 @@ const CommentEditor = ({
         }
 
         const clipboardText = event.clipboardData?.getData('text/plain')?.trim() ?? '';
+
+        if (/<script\b[^>]*>|<\/script>/i.test(clipboardText)) {
+          event.preventDefault();
+          const pos = view.state.selection.from;
+          const escapedText = escapeScriptTags(clipboardText);
+          editorRef.current
+            ?.chain()
+            .focus()
+            .insertContentAt(pos, [{ type: 'text', text: escapedText }])
+            .setTextSelection(pos + escapedText.length)
+            .run();
+          return true;
+        }
+
         const href = normalizeHttpUrlInput(clipboardText);
         if (!href) return false;
 

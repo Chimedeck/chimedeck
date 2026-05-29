@@ -46,6 +46,8 @@ import {
 import { selectCurrentUser, selectAccessToken } from '~/slices/authSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
+import { escapeScriptTags } from '~/common/utils/escapeScriptTags';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -461,6 +463,9 @@ function normalizeMarkdownLinkUrls(markdown: string): string {
 function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): string {
   let markdown = normalizeEscapedBlockquoteMarkers(editor.getMarkdown() || '');
   const imageSnippets: string[] = [];
+  const scriptLiterals = Array.from(
+    new Set((editor.state.doc.textContent.match(/<script\b[\s\S]*?<\/script>/gi) ?? []).map((value) => value.trim())),
+  );
 
   editor.state.doc.descendants((node) => {
     if (node.type.name !== 'image') return;
@@ -481,7 +486,15 @@ function buildDescriptionMarkdown(editor: Editor, attachments: Attachment[]): st
 
   markdown = normalizeMarkdownLinkUrls(markdown);
 
-  return dehydrateCommentAttachmentMarkdown(markdown, attachments);
+  scriptLiterals.forEach((snippet) => {
+    if (!snippet || markdown.includes(snippet)) return;
+    const escapedSnippet = escapeScriptTags(snippet);
+    markdown = markdown.trim().length > 0
+      ? `${markdown.trim()}\n\n${escapedSnippet}`
+      : escapedSnippet;
+  });
+
+  return dehydrateCommentAttachmentMarkdown(escapeScriptTags(markdown), attachments);
 }
 
 function escapeMdLabel(value: string): string {
@@ -719,7 +732,7 @@ function buildDescriptionSaveMarkdown(
     return buildDescriptionMarkdown(editor, attachments);
   }
 
-  return dehydrateCommentAttachmentMarkdown(normalizeMarkdownLinkUrls(draft), attachments);
+  return dehydrateCommentAttachmentMarkdown(escapeScriptTags(normalizeMarkdownLinkUrls(draft)), attachments);
 }
 
 function buildPreviewMarkdown(markdown: string, attachments: Attachment[]): string {
@@ -913,6 +926,20 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         const clipboardData = event.clipboardData;
         if (!clipboardData) return false;
         const clipboardText = clipboardData.getData('text/plain').trim();
+
+        if (/<script\b[^>]*>|<\/script>/i.test(clipboardText)) {
+          event.preventDefault();
+          const pos = view.state.selection.from;
+          const escapedText = escapeScriptTags(clipboardText);
+          editorRef.current
+            ?.chain()
+            .focus()
+            .insertContentAt(pos, [{ type: 'text', text: escapedText }])
+            .setTextSelection(pos + escapedText.length)
+            .run();
+          return true;
+        }
+
         const href = normalizeHttpUrlInput(clipboardText);
         if (!href) return false;
 
@@ -1351,7 +1378,9 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
   const hydratedPreviewMarkdown = buildPreviewMarkdown(draft || '', cardAttachments);
   const isEmpty = !draft.trim();
   const isLong = draft.length > 400;
-  const previewHtml = addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string));
+  const previewHtml = sanitizeUserGeneratedHtml(
+    addLinkTargetBlank(normalizeRenderedLinkHtml(marked.parse(hydratedPreviewMarkdown) as string)),
+  );
   const attachProps = cardId ? { onAttach: handleAttach } : undefined;
 
   useEffect(() => {

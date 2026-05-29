@@ -42,6 +42,8 @@ export function sanitizeRichText(input: string): string {
       pre: ['class'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
-    disallowedTagsMode: 'discard',
+    // [why] Preserve disallowed tags (e.g. <script>) as visible escaped text
+    // instead of silently dropping them, while still preventing execution.
+    disallowedTagsMode: 'escape',
   });
 }
