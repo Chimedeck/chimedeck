@@ -11,6 +11,8 @@ import { dispatchEvent } from '../../../mods/events/dispatch';
 import type { BoardVisibility } from '../types';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { applyLimitGuard } from '../../../middlewares/limitGuard';
+import { getBoardCountPerWorkspace } from '../../subscription/common/usage';
 
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
@@ -51,6 +53,23 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
 
   const creatorId = (req as AuthenticatedRequest).currentUser!.id;
   const id = randomUUID();
+
+  // Enforce board-per-workspace and total-board caps before persisting.
+  const boardCount = await getBoardCountPerWorkspace(workspaceId);
+  const perWorkspaceLimitError = await applyLimitGuard({
+    workspaceId,
+    limitKey: 'maxBoardsPerWorkspace',
+    currentUsage: boardCount,
+  });
+  if (perWorkspaceLimitError) return perWorkspaceLimitError;
+
+  const totalLimitError = await applyLimitGuard({
+    workspaceId,
+    limitKey: 'maxBoardsTotal',
+    currentUsage: boardCount,
+  });
+  if (totalLimitError) return totalLimitError;
+
   const shortId = await generateUniqueShortId('boards');
 
   // Wrap board creation + initial member insert in a transaction so no partial state is persisted.

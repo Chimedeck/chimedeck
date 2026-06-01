@@ -2,6 +2,8 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import { applyWorkspaceLimitGuard } from '../../../middlewares/limitGuard';
+import { getWorkspaceCountForUser } from '../../subscription/common/usage';
 
 export async function handleCreateWorkspace(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -25,6 +27,11 @@ export async function handleCreateWorkspace(req: Request): Promise<Response> {
       { status: 400 },
     );
   }
+
+  // Enforce workspace creation cap before persisting.
+  const workspaceCount = await getWorkspaceCountForUser(currentUser!.id);
+  const limitError = await applyWorkspaceLimitGuard({ userId: currentUser!.id, currentUsage: workspaceCount });
+  if (limitError) return limitError;
 
   const id = randomUUID();
   const name = body.name.trim();

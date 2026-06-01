@@ -13,6 +13,8 @@ import { requireBoardWritable, type BoardScopedRequest } from '../../board/middl
 import { between, HIGH_SENTINEL } from '../mods/fractional';
 import { sanitizeText } from '../../../common/sanitize';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { applyLimitGuard } from '../../../middlewares/limitGuard';
+import { getColumnCountForBoard } from '../../subscription/common/usage';
 
 export async function handleCreateList(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -48,6 +50,15 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
       { status: 400 },
     );
   }
+
+  // Enforce column-per-board cap before persisting.
+  const columnCount = await getColumnCountForBoard(canonicalBoardId);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxColumnsPerBoard',
+    currentUsage: columnCount,
+  });
+  if (limitError) return limitError;
 
   // Resolve position: insert after the specified list (or at the end)
   const activeLists = await db('lists')
