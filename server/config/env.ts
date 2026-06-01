@@ -68,6 +68,15 @@ export const env = {
   // Rate-limiting — when false, all limits are bypassed
   RATE_LIMIT_ENABLED: Bun.env['RATE_LIMIT_ENABLED'] === 'true',
 
+  // Subscription gates — master kill switch and default tier fallback.
+  SUBSCRIPTIONS_ENABLED: Bun.env['SUBSCRIPTIONS_ENABLED'] === 'true',
+  SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER: Bun.env['SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER'] !== 'false',
+  STRIPE_SECRET_KEY: Bun.env['STRIPE_SECRET_KEY'] ?? '',
+  STRIPE_WEBHOOK_SECRET: Bun.env['STRIPE_WEBHOOK_SECRET'] ?? '',
+  STRIPE_PRICE_TIER_2: Bun.env['STRIPE_PRICE_TIER_2'] ?? '',
+  STRIPE_PRICE_TIER_3: Bun.env['STRIPE_PRICE_TIER_3'] ?? '',
+  STRIPE_PRICE_TIER_4: Bun.env['STRIPE_PRICE_TIER_4'] ?? '',
+
   // Email / SES
   SES_REGION: Bun.env['SES_REGION'] ?? 'us-east-1',
   SES_FROM_ADDRESS: Bun.env['SES_FROM_ADDRESS'] ?? 'noreply@example.com',
@@ -153,7 +162,4 @@ export const env = {
   /** Release identifier sent to Sentry, typically a git SHA or semver tag. */
   SENTRY_RELEASE: Bun.env['SENTRY_RELEASE'] ?? '',
 
-  // Webhooks feature flag — disabled by default in local dev, enabled in staging/prod.
-  // Set WEBHOOKS_ENABLED=true to activate all /api/v1/webhooks routes.
-  WEBHOOKS_ENABLED: Bun.env['WEBHOOKS_ENABLED'] === 'true',
 } as const;

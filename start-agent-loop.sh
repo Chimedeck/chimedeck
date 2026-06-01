@@ -53,11 +53,11 @@ CHANGELOG_DIR="specs/changelog"       # one timestamped .md per iteration
 ARCH_DIR="specs/architecture"          # architecture decision records
 
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
-MODEL_RECAP="gpt-4.1"
-MODEL_PLAN="gpt-4.1"
-MODEL_EXECUTE="gpt-5.3-codex"
-MODEL_TEST_FREE="gpt-4.1"
-MODEL_TEST_EVAL="gpt-4.1"
+MODEL_RECAP="gpt-5.4-mini"
+MODEL_PLAN="gpt-5.4-mini"
+MODEL_EXECUTE="auto"
+MODEL_TEST_FREE="gpt-5.4-mini"
+MODEL_TEST_EVAL="gpt-5.4-mini"
 
 # Temp directory for inter-phase context passing
 TMP_DIR="$(mktemp -d)"

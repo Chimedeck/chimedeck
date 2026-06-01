@@ -42,6 +42,7 @@ import { webhooksRouter } from './extensions/webhooks/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 import { trelloCompatRouter } from './extensions/trelloCompat';
+import { subscriptionRouter } from './extensions/subscription/api';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -197,6 +198,9 @@ async function router(req: Request): Promise<Response> {
 
   const webhooksResponse = await webhooksRouter(req, path);
   if (webhooksResponse) return webhooksResponse;
+
+  const subscriptionResponse = await subscriptionRouter(req, path);
+  if (subscriptionResponse) return subscriptionResponse;
 
   const healthCheckResponse = await healthCheckExtensionRouter(req, path);
   if (healthCheckResponse) return healthCheckResponse;

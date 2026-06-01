@@ -181,7 +181,13 @@
 | [155](./sprint-155.md) | State Transitions: Graph Editor Foundation | `bun add @xyflow/react`; Board Settings entry (`ArrowsRightLeftIcon`); full-screen overlay graph editor; column nodes with handles; draggable positions persisted; enable/disable toggle saved server-side | ⬜ Needs 153 + 18 + 19 |
 | [156](./sprint-156.md) | State Transitions: Edges, Toolbar & Real-Time Sync | Drag-to-create edges, `TransitionEdge` component (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), `StickyNoteNode`, real-time WS collaborative editing, undo stack, `config/actionTypes.ts` extensibility stub | ⬜ Needs 155 + 09 + 10 |
 | [157](./sprint-157.md) | State Transitions: Kanban Enforcement UI + Copy to Board | `useStateTransitionGuard` DnD pre-check, `StateTransitionErrorPopup`, forbidden-column drag-over highlight, locked-column icon, Copy to Board modal (cross-workspace), "Transitions Active" banner | ⬜ Needs 154 + 156 |
-
+| **— Subscriptions & Tier Gating —** | | | |
+| [158](./sprint-158.md) | Subscriptions: Workspace Billing + Stripe Subscriptions | `workspace_subscriptions` + `stripe_webhook_events` tables; Stripe Checkout (subscription mode), Billing Portal, idempotent webhook; `getCurrentTier(workspaceId)` resolver; platform-admin override; `SUBSCRIPTIONS_ENABLED` flag | ⬜ Needs 03 + 04 + 33 |
+| [159](./sprint-159.md) | Subscriptions: Tier Entitlements Config + Resolver | `server/config/subscription-tiers.ts` map (tier→limits + tier→features, `'unlimited'` sentinel); `limits.ts` helpers; `resolveEntitlements(workspaceId)`; workspace-scoped/owner-scoped `usage` counters; `GET /workspaces/:workspaceId/entitlements` | ⬜ Needs 158 |
+| [160](./sprint-160.md) | Subscriptions: Conditional Feature-Gating Middleware | `feature-gates.ts` endpoint→feature map; `featureGate` middleware; `402 feature-not-in-plan`; `resolveWorkspaceContext` + resource-workspace tier resolution; `minimumTierFor` | ⬜ Needs 159 |
+| [161](./sprint-161.md) | Subscriptions: Resource Limit Enforcement | `limitGuard.assertWithinLimit`; pre-create guards for workspace/board (dual cap)/column/member/guest/storage; `402 limit-reached`; read-only-over-limit downgrade behaviour | ⬜ Needs 159 + 04 + 05 + 06 + 12 + 78 + 89 |
+| [162](./sprint-162.md) | Subscriptions: Tier-Aware Workspace-Wide Rate Limiting | Extend `rateLimiter.ts` to workspace-scoped shared READ/WRITE buckets from tier limits; `rl:ws:<id>:<class>` keys; `'unlimited'` bypass; `429` envelope with tier; fallback to Sprint 14 when disabled | ⬜ Needs 14 + 158 + 159 |
+| [163](./sprint-163.md) | Subscriptions: Billing & Plan Management UI | `/workspaces/:workspaceId/settings/billing` page; CurrentPlanCard, UsageMeters, PlanComparisonGrid; Stripe Checkout/Portal redirects; shared `UpgradeModal` + `usePlanGate` 402 interceptor; inline lock/headroom affordances | ⬜ Needs 158 + 159 + 160 + 161 + 17 + 96 |
 ---
 
 ## Feature Flag Coverage
@@ -213,6 +219,7 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `DESIGN_SYSTEM_ENABLED` | Sprint 134 | Expose `/design-system` route in the client (default: `true` in dev, `false` in production) |
 | `TRELLO_COMPAT_ENABLED` | Sprint 142 | Enable the `/trello/1/*` Trello-compatible API layer backed by ChimeDeck data (default: `false`; no Trello credentials required) |
 | `STATE_TRANSITIONS_ENABLED` | Sprint 153 | Enable board-level enforceable state transitions: DB migration, graph API, enforcement guard, and graph editor UI (default: `false`) |
+| `SUBSCRIPTIONS_ENABLED` | Sprint 158 | Master switch for all subscription functionality (Stripe checkout/portal/webhook processing, entitlements, feature gates, resource limits, tier rate limits, and billing UI). When `false`, every workspace resolves to `SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER` (default `tier_4`) and all subscription-specific enforcement/UX is bypassed or hidden (default: `false`) |
 
 ---
 
