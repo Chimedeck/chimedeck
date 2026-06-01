@@ -1,6 +1,7 @@
 import { handleCreateCheckout } from './createCheckout';
 import { handleCreatePortal } from './createPortal';
 import { handleGetWorkspaceSubscription } from './getWorkspaceSubscription';
+import { handleGetEntitlements } from './getEntitlements';
 import { handleStripeWebhook } from './webhook';
 
 export async function subscriptionRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -18,6 +19,10 @@ export async function subscriptionRouter(req: Request, pathname: string): Promis
 
   if (pathname === '/api/subscription/portal' && req.method === 'POST') {
     return handleCreatePortal(req);
+  }
+
+  if (pathname.match(/^\/api\/v1\/workspaces\/[^/]+\/entitlements$/) && req.method === 'GET') {
+    return handleGetEntitlements(req, pathname);
   }
 
   return null;
