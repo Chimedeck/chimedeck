@@ -16,7 +16,6 @@ import CommentReactions from './CommentReactions';
 import CommentReplyThread from './CommentReplyThread';
 import { ImageLightbox } from '~/extensions/Attachments/components/AttachmentThumbnail';
 import translations from '../translations/en.json';
-import apiClient from '~/common/api/client';
 import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
 
@@ -401,10 +400,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     const root = commentMarkdownRef.current;
     if (!root) return;
 
-    let cancelled = false;
-    const objectUrls: string[] = [];
-
-    const hydrateImage = async (img: HTMLImageElement): Promise<void> => {
+    const hydrateImage = (img: HTMLImageElement): void => {
       const currentSrc = img.getAttribute('src')?.trim() ?? '';
       const persistedSrc = img.getAttribute(COMMENT_ATTACHMENT_SOURCE_ATTR)?.trim() ?? '';
       const rawSrc = currentSrc && isNonPersistableUrl(currentSrc) && persistedSrc
@@ -424,41 +420,16 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
       if (effectiveSrc !== currentSrc) {
         img.src = effectiveSrc;
       }
-
-      let url: URL;
-      try {
-        url = new URL(effectiveSrc, globalThis.location.origin);
-      } catch {
-        return;
-      }
-
-      if (!/^\/api\/v1\/attachments\/[^/]+\/(?:view|thumbnail)$/.test(url.pathname)) return;
-
-      try {
-        const blob = await apiClient.get<Blob>(`${url.pathname}${url.search}`, { responseType: 'blob' });
-        if (cancelled) return;
-        const objectUrl = URL.createObjectURL(blob);
-        objectUrls.push(objectUrl);
-        img.src = objectUrl;
-      } catch {
-        // Keep stable API src so browser fallback/error UI remains visible.
-        if (img.getAttribute('src') !== effectiveSrc) {
-          img.src = effectiveSrc;
-        }
-      }
     };
 
     const images = Array.from(root.querySelectorAll('img'));
     images.forEach((img) => {
-      void hydrateImage(img);
+      hydrateImage(img);
     });
 
     hydratePreviewLinkModes(root);
 
-    return () => {
-      cancelled = true;
-      objectUrls.forEach((value) => URL.revokeObjectURL(value));
-    };
+    return undefined;
   }, [comment.content, attachments, editing]);
 
   if (comment.deleted) {
