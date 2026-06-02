@@ -5,6 +5,7 @@ import { resolveEntitlements, type WorkspaceEntitlements } from '../common/entit
 import { getWorkspaceUsage, type WorkspaceUsage } from '../common/usage';
 import { getByWorkspaceId } from '../common/subscriptionRepo';
 import { env } from '../../../config/env';
+import type { SubscriptionTier } from '../common/types';
 
 interface EntitlementsResponse {
   status: number;
@@ -14,7 +15,7 @@ interface EntitlementsResponse {
     usage: WorkspaceUsage;
   };
   name?: string;
-  data?: { message?: string };
+  error?: { message?: string };
 }
 
 /**
@@ -41,7 +42,7 @@ export async function handleGetEntitlements(
     const workspaceId = match[1];
 
     // Get subscription for workspace
-    let tier: any = 'tier_1'; // default free tier
+    let tier: SubscriptionTier = 'tier_1'; // default free tier
 
     if (env.SUBSCRIPTIONS_ENABLED) {
       const subscription = await getByWorkspaceId(workspaceId);

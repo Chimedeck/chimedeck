@@ -41,6 +41,9 @@ import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { webhooksRouter } from './extensions/webhooks/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
+import { applyFeatureGate } from './middlewares/featureGate';
+import { applyRateLimit, rateLimiterClient } from './middlewares/rateLimiter';
+import { resolveRequestWorkspaceContext } from './common/requestContext';
 import { trelloCompatRouter } from './extensions/trelloCompat';
 import { subscriptionRouter } from './extensions/subscription/api';
 // Register all automation trigger handlers at startup.
@@ -135,6 +138,18 @@ async function router(req: Request): Promise<Response> {
   if (path === '/api/v1/metrics/propagation') {
     return handlePropagationPing(req);
   }
+
+  // Resolve the request workspace context once, then reuse it for rate limiting
+  // and feature gating so workspace-scoped requests share the same lookup.
+  const workspaceContext = await resolveRequestWorkspaceContext(path);
+
+  const rateLimitResponse = await applyRateLimit(req, workspaceContext, rateLimiterClient);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // Feature-gate: enforce tier-based feature access after shedding abusive traffic.
+  // Returns 402 if the tier doesn't include the feature.
+  const gateResponse = await applyFeatureGate(req, workspaceContext.workspaceId ?? undefined);
+  if (gateResponse) return gateResponse;
 
   const authResponse = await authRouter(req, path);
   if (authResponse) return authResponse;

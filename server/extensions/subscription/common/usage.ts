@@ -99,6 +99,17 @@ export async function getMaxInvitedMembersPerBoard(workspaceId: string): Promise
 }
 
 /**
+ * Get the count of explicit members on a specific board.
+ */
+export async function getInvitedMemberCountForBoard(boardId: string): Promise<number> {
+  const result = await db('board_members')
+    .where({ board_id: boardId })
+    .count('id as count')
+    .first<{ count: number | string }>();
+  return Number(result?.count || 0);
+}
+
+/**
  * Get maximum guests in any board within workspace.
  */
 export async function getMaxGuestsPerBoard(workspaceId: string): Promise<number> {
@@ -110,6 +121,17 @@ export async function getMaxGuestsPerBoard(workspaceId: string): Promise<number>
     .orderBy(db.raw('guest_count'), 'desc')
     .first<{ guest_count: number | string }>();
   return Number(result?.guest_count || 0);
+}
+
+/**
+ * Get the count of explicit guests on a specific board.
+ */
+export async function getGuestCountForBoard(boardId: string): Promise<number> {
+  const result = await db('board_guest_access')
+    .where({ board_id: boardId })
+    .count('id as count')
+    .first<{ count: number | string }>();
+  return Number(result?.count || 0);
 }
 
 /**

@@ -22,7 +22,13 @@ const TIER_NAME_MAP: Record<SubscriptionTier, string> = {
 // The subset of TierQuotas keys that the limit guard can enforce.
 export type LimitKey = Extract<
   keyof TierQuotas,
-  'maxWorkspaces' | 'maxBoardsPerWorkspace' | 'maxBoardsTotal' | 'maxColumnsPerBoard'
+  | 'maxWorkspaces'
+  | 'maxBoardsPerWorkspace'
+  | 'maxBoardsTotal'
+  | 'maxColumnsPerBoard'
+  | 'maxInvitedMembersPerBoard'
+  | 'maxGuestsPerBoard'
+  | 'maxStorageBytes'
 >;
 
 /**

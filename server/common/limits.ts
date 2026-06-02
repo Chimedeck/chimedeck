@@ -20,7 +20,7 @@ export function isUnlimited(quota: QuotaValue): boolean {
  */
 export function exceeds(usage: number, quota: QuotaValue): boolean {
   if (isUnlimited(quota)) return false;
-  return usage >= quota;
+  return usage >= (quota as number);
 }
 
 /**
@@ -31,7 +31,7 @@ export function exceeds(usage: number, quota: QuotaValue): boolean {
  */
 export function remaining(usage: number, quota: QuotaValue): number {
   if (isUnlimited(quota)) return Number.MAX_SAFE_INTEGER;
-  const diff = quota - usage;
+  const diff = (quota as number) - usage;
   return Math.max(0, diff);
 }
 
@@ -45,7 +45,7 @@ export function validate(usage: number, quota: QuotaValue):
   if (isUnlimited(quota)) {
     return { valid: true };
   }
-  if (usage >= quota) {
+  if (usage >= (quota as number)) {
     return { valid: false, remaining: 0, quota: quota as number };
   }
   return { valid: true };

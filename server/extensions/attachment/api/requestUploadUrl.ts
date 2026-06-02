@@ -14,6 +14,8 @@ import { s3Config } from '../common/config/s3';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../config/allowedTypes';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { applyLimitGuard } from '../../../middlewares/limitGuard';
+import { getStorageBytesUsed } from '../../subscription/common/usage';
 
 export async function handleRequestUploadUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -69,6 +71,14 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
   if (membershipError) return membershipError;
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
+
+  const storageBytes = await getStorageBytesUsed(board.workspace_id);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxStorageBytes',
+    currentUsage: storageBytes + body.sizeBytes,
+  });
+  if (limitError) return limitError;
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
   const attachmentId = randomUUID();

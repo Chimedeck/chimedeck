@@ -1,7 +1,46 @@
-import { describe, expect, test, mock, beforeEach, afterEach } from 'bun:test';
-import { resolveQuota, buildLimitResponse, type LimitKey } from './limitGuard';
-import { SUBSCRIPTION_TIERS } from '../config/subscription-tiers';
+import { beforeEach, afterEach, describe, expect, test, mock } from 'bun:test';
 import type { SubscriptionTier } from '../extensions/subscription/common/types';
+
+let subscriptionsEnabled = true;
+
+const dbMock = mock(() => ({
+  where: () => ({
+    join: () => ({
+      where: () => ({
+        orderByRaw: () => ({
+          first: async () => null,
+        }),
+      }),
+    }),
+  }),
+}));
+
+const getCurrentTierMock = mock(async () => 'tier_1' as SubscriptionTier);
+
+mock.module('../config/env', () => ({
+  env: {
+    get SUBSCRIPTIONS_ENABLED() {
+      return subscriptionsEnabled;
+    },
+  },
+}));
+
+mock.module('../common/db', () => ({
+  db: dbMock,
+}));
+
+mock.module('../extensions/subscription/common/subscriptionRepo', () => ({
+  getCurrentTier: getCurrentTierMock,
+}));
+
+const {
+  resolveQuota,
+  buildLimitResponse,
+  applyWorkspaceLimitGuard,
+  applyLimitGuard,
+} = await import('./limitGuard');
+
+import { SUBSCRIPTION_TIERS } from '../config/subscription-tiers';
 
 // ---------------------------------------------------------------------------
 // resolveQuota — maps tier + limitKey to quota value
@@ -58,7 +97,7 @@ describe('resolveQuota', () => {
 
 describe('buildLimitResponse', () => {
   describe('unlimited quota', () => {
-    const limitKeys: LimitKey[] = ['maxWorkspaces', 'maxBoardsPerWorkspace', 'maxColumnsPerBoard'];
+    const limitKeys = ['maxWorkspaces', 'maxBoardsPerWorkspace', 'maxColumnsPerBoard'] as const;
 
     for (const key of limitKeys) {
       test(`enterprise tier ${key} — never returns 402`, () => {
@@ -97,7 +136,7 @@ describe('buildLimitResponse', () => {
       expect(res).not.toBeNull();
       expect(res!.status).toBe(402);
 
-      const body = await res!.json() as any;
+      const body = (await res!.json()) as any;
       expect(body.error.code).toBe('limit-reached');
       expect(body.error.data.limit).toBe('maxWorkspaces');
       expect(body.error.data.currentUsage).toBe(1);
@@ -110,7 +149,7 @@ describe('buildLimitResponse', () => {
       expect(res).not.toBeNull();
       expect(res!.status).toBe(402);
 
-      const body = await res!.json() as any;
+      const body = (await res!.json()) as any;
       expect(body.error.code).toBe('limit-reached');
       expect(body.error.data.limit).toBe('maxBoardsPerWorkspace');
       expect(body.error.data.currentUsage).toBe(6);
@@ -123,26 +162,47 @@ describe('buildLimitResponse', () => {
 
     test('response body has error.code = limit-reached', async () => {
       const res = buildLimitResponse('tier_1', 'maxWorkspaces', 5);
-      const body = await res!.json() as any;
+      const body = (await res!.json()) as any;
       expect(body.error.code).toBe('limit-reached');
     });
 
-    test('unlimited quota in response body when unlimited', async () => {
-      // Enterprise tier maxColumnsPerBoard is unlimited — we should never reach 402 there,
-      // but test that free quota is reported as number (not sentinel string) correctly.
+    test('free quota is reported as a number', async () => {
       const res = buildLimitResponse('tier_1', 'maxWorkspaces', 2);
-      const body = await res!.json() as any;
+      const body = (await res!.json()) as any;
       expect(typeof body.error.data.quota).toBe('number');
     });
   });
+});
 
-  describe('SUBSCRIPTIONS_ENABLED bypass', () => {
-    // The bypass is tested indirectly via applyLimitGuard / applyWorkspaceLimitGuard
-    // which check env.SUBSCRIPTIONS_ENABLED before calling buildLimitResponse.
-    // Here we verify that buildLimitResponse itself always enforces limits (it has no env dependency).
-    test('buildLimitResponse always enforces limits regardless of env', () => {
-      // Even at quota, buildLimitResponse always returns 402 — env bypass is the caller's responsibility.
-      expect(buildLimitResponse('tier_1', 'maxWorkspaces', 1)).not.toBeNull();
+// ---------------------------------------------------------------------------
+// SUBSCRIPTIONS_ENABLED bypass — guards should no-op before any tier lookup
+// ---------------------------------------------------------------------------
+
+describe('SUBSCRIPTIONS_ENABLED bypass', () => {
+  beforeEach(() => {
+    subscriptionsEnabled = false;
+    dbMock.mockClear();
+    getCurrentTierMock.mockClear();
+  });
+
+  afterEach(() => {
+    subscriptionsEnabled = true;
+  });
+
+  test('applyWorkspaceLimitGuard returns null when subscriptions are disabled', async () => {
+    const res = await applyWorkspaceLimitGuard({ userId: 'user-1', currentUsage: 999 });
+    expect(res).toBeNull();
+    expect(dbMock).not.toHaveBeenCalled();
+  });
+
+  test('applyLimitGuard returns null when subscriptions are disabled', async () => {
+    const res = await applyLimitGuard({
+      workspaceId: 'workspace-1',
+      limitKey: 'maxBoardsPerWorkspace',
+      currentUsage: 999,
     });
+
+    expect(res).toBeNull();
+    expect(getCurrentTierMock).not.toHaveBeenCalled();
   });
 });

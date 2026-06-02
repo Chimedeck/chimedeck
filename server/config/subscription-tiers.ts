@@ -4,6 +4,17 @@
 
 export type QuotaValue = number | 'unlimited';
 
+// Boolean feature keys — gatable premium features accessed via the feature-gate middleware.
+export type BooleanFeatureKey =
+  | 'automations'
+  | 'webhooks'
+  | 'plugins'
+  | 'customFields'
+  | 'apiTokens'
+  | 'stateTransitions';
+
+export type BooleanFeatures = Record<BooleanFeatureKey, boolean>;
+
 export interface TierQuotas {
   // Workspace limits
   maxWorkspaces: QuotaValue;
@@ -25,7 +36,15 @@ export interface TierQuotas {
   // Rate limits (requests per minute)
   readRateLimit: QuotaValue;
   writeRateLimit: QuotaValue;
+
+  // Boolean gatable feature flags
+  features: BooleanFeatures;
 }
+
+// Canonical tier IDs in ascending order (cheapest to most capable).
+// Used by minimumTierFor() to find the lowest tier that unlocks a feature.
+export const TIER_ORDER = ['tier_1', 'tier_2', 'unlimited'] as const;
+export type CanonicalTierId = typeof TIER_ORDER[number];
 
 export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
   free: {
@@ -38,6 +57,14 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
     maxStorageBytes: 100 * 1024 * 1024, // 100 MB
     readRateLimit: 100,
     writeRateLimit: 30,
+    features: {
+      automations: false,
+      webhooks: false,
+      plugins: false,
+      customFields: false,
+      apiTokens: false,
+      stateTransitions: false,
+    },
   },
   pro: {
     maxWorkspaces: 5,
@@ -49,6 +76,14 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
     maxStorageBytes: 10 * 1024 * 1024 * 1024, // 10 GB
     readRateLimit: 500,
     writeRateLimit: 200,
+    features: {
+      automations: true,
+      webhooks: false,
+      plugins: true,
+      customFields: true,
+      apiTokens: true,
+      stateTransitions: true,
+    },
   },
   enterprise: {
     maxWorkspaces: 'unlimited',
@@ -60,6 +95,14 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
     maxStorageBytes: 'unlimited',
     readRateLimit: 'unlimited',
     writeRateLimit: 'unlimited',
+    features: {
+      automations: true,
+      webhooks: true,
+      plugins: true,
+      customFields: true,
+      apiTokens: true,
+      stateTransitions: true,
+    },
   },
 };
 

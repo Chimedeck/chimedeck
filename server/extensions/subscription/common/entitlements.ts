@@ -1,8 +1,9 @@
 // Workspace entitlements resolver.
 // Single source of truth for what a workspace can do based on tier + subscription state.
 
-import { SUBSCRIPTION_TIERS, type TierQuotas } from '../../../config/subscription-tiers';
+import { SUBSCRIPTION_TIERS, type TierQuotas, type BooleanFeatures } from '../../../config/subscription-tiers';
 import { FEATURE_KEYS, type FeatureKey } from './featureKeys';
+import { getCurrentTier } from './subscriptionRepo';
 import type { SubscriptionTier } from './types';
 
 // Map stored tier IDs to canonical tier names
@@ -43,4 +44,23 @@ export function resolveEntitlements(tier: SubscriptionTier): WorkspaceEntitlemen
     [FEATURE_KEYS.rateLimit.readPerMinute]: quotas.readRateLimit,
     [FEATURE_KEYS.rateLimit.writePerMinute]: quotas.writeRateLimit,
   };
+}
+
+export interface WorkspaceFeatureEntitlements {
+  tier: SubscriptionTier;
+  features: BooleanFeatures;
+}
+
+/**
+ * Resolve a workspace's boolean feature entitlements by workspace ID.
+ * Used by the feature-gate middleware to check if a tier has access to a gated feature.
+ * Returns { tier, features } where features is the boolean flag map for that tier.
+ */
+export async function resolveWorkspaceEntitlements(
+  workspaceId: string,
+): Promise<WorkspaceFeatureEntitlements> {
+  const tier = await getCurrentTier(workspaceId);
+  const tierName = TIER_ID_MAP[tier] || 'free';
+  const quotas = SUBSCRIPTION_TIERS[tierName];
+  return { tier, features: quotas.features };
 }

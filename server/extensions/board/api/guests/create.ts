@@ -9,9 +9,11 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
+import { applyLimitGuard } from '../../../../middlewares/limitGuard';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { writeEvent } from '../../../../mods/events/index';
 import type { GuestType } from '../../types';
+import { getGuestCountForBoard } from '../../../subscription/common/usage';
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -59,6 +61,14 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
     );
   }
   const guestType: GuestType = (rawGuestType as GuestType | undefined) ?? 'VIEWER';
+
+  const guestCount = await getGuestCountForBoard(boardId);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxGuestsPerBoard',
+    currentUsage: guestCount,
+  });
+  if (limitError) return limitError;
 
   // Prevent inviting existing workspace members (non-GUEST) as guests.
   const existingMember = await db('memberships')
