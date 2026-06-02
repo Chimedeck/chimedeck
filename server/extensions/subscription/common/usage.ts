@@ -4,36 +4,12 @@
 import { db } from '../../../common/db';
 
 export interface WorkspaceUsage {
-  workspaceCount: number;
   boardsPerWorkspace: number;
   boardsTotal: number;
   columnsPerBoard: number;
   invitedMembersPerBoard: number;
   guestsPerBoard: number;
   storageBytes: number;
-}
-
-/**
- * Get the number of workspaces for a user or current user.
- * For now, counts total active workspaces (can be refined by userId later).
- */
-export async function getWorkspaceCount(): Promise<number> {
-  const result = await db('workspaces')
-    .count('id as count')
-    .first<{ count: number | string }>();
-  return Number(result?.count || 0);
-}
-
-/**
- * Get the number of workspaces owned by a specific user.
- * Used to enforce the per-user maxWorkspaces quota at creation time.
- */
-export async function getWorkspaceCountForUser(userId: string): Promise<number> {
-  const result = await db('workspaces')
-    .where({ owner_id: userId })
-    .count('id as count')
-    .first<{ count: number | string }>();
-  return Number(result?.count || 0);
 }
 
 /**
@@ -51,11 +27,7 @@ export async function getBoardCountPerWorkspace(workspaceId: string): Promise<nu
  * Get total board count (aggregate across workspace).
  */
 export async function getBoardCountTotal(workspaceId: string): Promise<number> {
-  const result = await db('boards')
-    .where({ workspace_id: workspaceId })
-    .count('boards.id as count')
-    .first<{ count: number | string }>();
-  return Number(result?.count || 0);
+  return getBoardCountPerWorkspace(workspaceId);
 }
 
 /**
@@ -169,7 +141,6 @@ export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceU
   ]);
 
   return {
-    workspaceCount: 1,
     boardsPerWorkspace,
     boardsTotal,
     columnsPerBoard,

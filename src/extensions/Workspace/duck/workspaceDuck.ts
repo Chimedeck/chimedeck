@@ -1,6 +1,6 @@
 // Global workspace duck — tracks the list of workspaces and which one is active.
 // Used by the AppShell sidebar across all private pages.
-import { createSelector, createSlice, type PayloadAction, type SerializedError } from '@reduxjs/toolkit';
+import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '~/store';
 import { createAppAsyncThunk } from '~/utils/redux';
 import { listWorkspaces, createWorkspace, type Workspace } from '../api';
@@ -12,7 +12,16 @@ interface WorkspaceShellState {
   activeWorkspaceId: string | null;
   status: 'idle' | 'loading' | 'error';
   createInProgress: boolean;
-  createError: SerializedError | null;
+  createError: CreateWorkspaceError | null;
+}
+
+export interface CreateWorkspaceError {
+  code: string;
+  message: string;
+  data?: {
+    workspaceId?: string;
+    upgradeUrl?: string;
+  };
 }
 
 const initialState: WorkspaceShellState = {
@@ -33,11 +42,37 @@ export const fetchWorkspacesThunk = createAppAsyncThunk(
   }
 );
 
+function isApiError(
+  err: unknown,
+): err is { response: { data: { error?: { code?: string; message?: string; data?: CreateWorkspaceError['data'] } } } } {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'response' in err &&
+    typeof (err as { response?: unknown }).response === 'object'
+  );
+}
+
 export const createWorkspaceThunk = createAppAsyncThunk(
   'workspaceShell/create',
-  async ({ name }: { name: string }, { extra: { api } }) => {
-    const res = await createWorkspace({ api, name });
-    return res.data;
+  async ({ name }: { name: string }, { extra: { api }, rejectWithValue }) => {
+    try {
+      const res = await createWorkspace({ api, name });
+      return res.data;
+    } catch (err) {
+      if (isApiError(err)) {
+        const apiError = err.response.data.error;
+        return rejectWithValue({
+          code: apiError?.code ?? 'workspace-create-failed',
+          message: apiError?.message ?? 'Failed to create workspace. Please try again.',
+          data: apiError?.data,
+        } as CreateWorkspaceError);
+      }
+      return rejectWithValue({
+        code: 'workspace-create-failed',
+        message: 'Failed to create workspace. Please try again.',
+      } as CreateWorkspaceError);
+    }
   }
 );
 
@@ -78,7 +113,11 @@ const workspaceShellSlice = createSlice({
       })
       .addCase(createWorkspaceThunk.rejected, (state, action) => {
         state.createInProgress = false;
-        state.createError = action.error;
+        const payload = action.payload as CreateWorkspaceError | undefined;
+        state.createError = payload ?? {
+          code: 'workspace-create-failed',
+          message: action.error.message ?? 'Failed to create workspace. Please try again.',
+        };
       });
   },
 });

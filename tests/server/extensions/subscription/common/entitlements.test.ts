@@ -6,14 +6,12 @@ import { FEATURE_KEYS } from '../../../../../server/extensions/subscription/comm
 describe('entitlements resolver', () => {
   it('resolves free tier from tier_1', () => {
     const entitlements = resolveEntitlements('tier_1');
-    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(1);
     expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(5);
     expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe(2);
   });
 
   it('resolves pro tier from tier_2', () => {
     const entitlements = resolveEntitlements('tier_2');
-    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(5);
     expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(50);
     expect(entitlements[FEATURE_KEYS.board.maxTotal]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe(20);
@@ -21,7 +19,6 @@ describe('entitlements resolver', () => {
 
   it('resolves enterprise tier from unlimited', () => {
     const entitlements = resolveEntitlements('unlimited');
-    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.guest.maxPerBoard]).toBe('unlimited');
@@ -32,7 +29,6 @@ describe('entitlements resolver', () => {
     const entitlements = resolveEntitlements('tier_1');
     const keys = Object.keys(entitlements);
     
-    expect(keys).toContain(FEATURE_KEYS.workspace.maxWorkspaces);
     expect(keys).toContain(FEATURE_KEYS.board.maxPerWorkspace);
     expect(keys).toContain(FEATURE_KEYS.board.maxTotal);
     expect(keys).toContain(FEATURE_KEYS.list.maxPerBoard);
@@ -45,7 +41,6 @@ describe('entitlements resolver', () => {
 
   it('free tier has numeric quotas for most resources', () => {
     const entitlements = resolveEntitlements('tier_1');
-    expect(typeof entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe('number');
     expect(typeof entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe('number');
     expect(typeof entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe('number');
     expect(typeof entitlements[FEATURE_KEYS.guest.maxPerBoard]).toBe('number');
@@ -53,7 +48,6 @@ describe('entitlements resolver', () => {
 
   it('pro tier has mixed numeric and unlimited quotas', () => {
     const entitlements = resolveEntitlements('tier_2');
-    expect(typeof entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe('number');
     expect(entitlements[FEATURE_KEYS.board.maxTotal]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.list.maxPerBoard]).toBe('unlimited');
   });
@@ -75,7 +69,6 @@ describe('entitlements resolver', () => {
 
   it('defaults unknown tier to free', () => {
     const entitlements = resolveEntitlements('unknown-tier' as any);
-    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(1);
     expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(5);
   });
 });

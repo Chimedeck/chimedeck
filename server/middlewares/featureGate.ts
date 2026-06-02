@@ -143,7 +143,7 @@ export async function applyFeatureGate(
           feature: rule.feature,
           currentTier: tier,
           requiredTier,
-          upgradeUrl: '/settings/billing',
+          upgradeUrl: `/workspace/${workspaceId}/billing`,
         },
       },
     },

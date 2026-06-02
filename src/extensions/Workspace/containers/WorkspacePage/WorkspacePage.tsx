@@ -1,6 +1,6 @@
 // Main workspace management page: shows workspace details, member list, and invite controls.
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
@@ -19,6 +19,7 @@ import Button from '~/common/components/Button';
 
 const WorkspacePage = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { workspaceId } = useParams<{ workspaceId: string }>();
 
   const workspace = useAppSelector(currentWorkspaceSelector);
@@ -105,15 +106,22 @@ const WorkspacePage = () => {
           <h1 className="text-2xl font-bold text-base">{workspace.name}</h1>
           <p className="text-sm text-muted mt-1">Workspace Settings</p>
         </div>
-        {currentMember?.role === 'OWNER' && (
-          <Button
-            variant="link"
-            onClick={handleDeleteWorkspace}
-            className="text-sm text-danger underline-offset-4"
-          >
-            Delete workspace
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {(currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN') && (
+            <Button variant="secondary" onClick={() => navigate(`/workspace/${workspace.id}/billing`)}>
+              Billing
+            </Button>
+          )}
+          {currentMember?.role === 'OWNER' && (
+            <Button
+              variant="link"
+              onClick={handleDeleteWorkspace}
+              className="text-sm text-danger underline-offset-4"
+            >
+              Delete workspace
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Members section */}

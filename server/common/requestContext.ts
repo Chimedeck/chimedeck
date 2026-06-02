@@ -22,11 +22,11 @@ export interface RequestWorkspaceContext {
  */
 export async function resolveRequestWorkspaceId(path: string): Promise<string | null> {
   // Direct workspace path: /api/v1/workspaces/:workspaceId/...
-  const workspaceMatch = path.match(/^\/api\/v1\/workspaces\/([^/]+)/);
+  const workspaceMatch = /^\/api\/v1\/workspaces\/([^/]+)/.exec(path);
   if (workspaceMatch?.[1]) return workspaceMatch[1];
 
   // Board-scoped path: /api/v1/boards/:boardId/...
-  const boardMatch = path.match(/^\/api\/v1\/boards\/([^/]+)/);
+  const boardMatch = /^\/api\/v1\/boards\/([^/]+)/.exec(path);
   if (boardMatch) {
     const board = await db('boards')
       .where({ id: boardMatch[1] })
@@ -36,7 +36,7 @@ export async function resolveRequestWorkspaceId(path: string): Promise<string | 
   }
 
   // Card-scoped path: /api/v1/cards/:cardId/...
-  const cardMatch = path.match(/^\/api\/v1\/cards\/([^/]+)/);
+  const cardMatch = /^\/api\/v1\/cards\/([^/]+)/.exec(path);
   if (cardMatch) {
     const card = await db('cards')
       .where({ id: cardMatch[1] })
@@ -45,6 +45,21 @@ export async function resolveRequestWorkspaceId(path: string): Promise<string | 
     if (!card) return null;
     const list = await db('lists')
       .where({ id: card.list_id })
+      .select('board_id')
+      .first<{ board_id: string }>();
+    if (!list) return null;
+    const board = await db('boards')
+      .where({ id: list.board_id })
+      .select('workspace_id')
+      .first<{ workspace_id: string }>();
+    return board?.workspace_id ?? null;
+  }
+
+  // List-scoped path: /api/v1/lists/:listId/...
+  const listMatch = /^\/api\/v1\/lists\/([^/]+)/.exec(path);
+  if (listMatch) {
+    const list = await db('lists')
+      .where({ id: listMatch[1] })
       .select('board_id')
       .first<{ board_id: string }>();
     if (!list) return null;

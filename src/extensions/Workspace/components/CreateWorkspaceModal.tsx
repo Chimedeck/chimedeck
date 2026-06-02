@@ -25,6 +25,13 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
 
   const [name, setName] = useState('');
 
+  const isBlockedByFreeOwnedWorkspace =
+    error?.code === 'workspace-creation-blocked-by-free-owned-workspace';
+
+  const errorText = isBlockedByFreeOwnedWorkspace
+    ? translations['CreateWorkspaceModal.errorUpgradeAllOwnedWorkspaces']
+    : (error?.message || translations['CreateWorkspaceModal.errorGeneric']);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -74,9 +81,18 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             </div>
 
             {error && (
-              <p className="mb-3 text-sm text-danger">
-                {translations['CreateWorkspaceModal.errorGeneric']}
-              </p>
+              <div className="mb-3 space-y-1">
+                <p className="text-sm text-danger">{errorText}</p>
+                {isBlockedByFreeOwnedWorkspace && error.data?.upgradeUrl && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(error.data!.upgradeUrl!)}
+                    className="text-sm text-primary underline underline-offset-2"
+                  >
+                    {translations['CreateWorkspaceModal.upgradeWorkspaceLink']}
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="flex justify-end gap-2">

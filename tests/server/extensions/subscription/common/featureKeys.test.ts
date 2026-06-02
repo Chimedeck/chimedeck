@@ -8,7 +8,6 @@ import {
 describe('featureKeys', () => {
   describe('FEATURE_KEYS structure', () => {
     it('exports nested feature key groups', () => {
-      expect(FEATURE_KEYS.workspace).toBeDefined();
       expect(FEATURE_KEYS.board).toBeDefined();
       expect(FEATURE_KEYS.list).toBeDefined();
       expect(FEATURE_KEYS.member).toBeDefined();
@@ -18,7 +17,6 @@ describe('featureKeys', () => {
     });
 
     it('each group contains named feature keys', () => {
-      expect(FEATURE_KEYS.workspace.maxWorkspaces).toBeDefined();
       expect(FEATURE_KEYS.board.maxPerWorkspace).toBeDefined();
       expect(FEATURE_KEYS.board.maxTotal).toBeDefined();
       expect(FEATURE_KEYS.list.maxPerBoard).toBeDefined();
@@ -31,10 +29,6 @@ describe('featureKeys', () => {
   });
 
   describe('key naming conventions', () => {
-    it('workspace keys use "workspace:" prefix', () => {
-      expect(FEATURE_KEYS.workspace.maxWorkspaces).toMatch(/^workspace:/);
-    });
-
     it('board keys use "board:" prefix', () => {
       expect(FEATURE_KEYS.board.maxPerWorkspace).toMatch(/^board:/);
       expect(FEATURE_KEYS.board.maxTotal).toMatch(/^board:/);
@@ -72,13 +66,12 @@ describe('featureKeys', () => {
   });
 
   describe('ALL_FEATURE_KEYS array', () => {
-    it('contains exactly 9 keys', () => {
-      expect(ALL_FEATURE_KEYS).toHaveLength(9);
+    it('contains exactly 8 keys', () => {
+      expect(ALL_FEATURE_KEYS).toHaveLength(8);
     });
 
     it('includes all feature keys from FEATURE_KEYS object', () => {
       const expectedKeys = [
-        FEATURE_KEYS.workspace.maxWorkspaces,
         FEATURE_KEYS.board.maxPerWorkspace,
         FEATURE_KEYS.board.maxTotal,
         FEATURE_KEYS.list.maxPerBoard,
@@ -104,8 +97,6 @@ describe('featureKeys', () => {
     });
 
     it('is a readonly array', () => {
-      const isReadonly = Object.isFrozen(ALL_FEATURE_KEYS) ||
-        !Object.getOwnPropertyDescriptor(ALL_FEATURE_KEYS, 'length')?.writable;
       // Check immutability by ensuring const assertion prevents type narrowing tricks
       expect(typeof ALL_FEATURE_KEYS).toBe('object');
     });
@@ -117,7 +108,6 @@ describe('featureKeys', () => {
         expect(ALL_FEATURE_KEYS).toContain(key);
       };
 
-      typeCheck(FEATURE_KEYS.workspace.maxWorkspaces);
       typeCheck(FEATURE_KEYS.board.maxPerWorkspace);
       typeCheck(FEATURE_KEYS.board.maxTotal);
       typeCheck(FEATURE_KEYS.list.maxPerBoard);
@@ -132,7 +122,6 @@ describe('featureKeys', () => {
   describe('integration scenarios', () => {
     it('can be used as entitlement object keys', () => {
       const entitlements: Record<FeatureKey, number | string> = {
-        [FEATURE_KEYS.workspace.maxWorkspaces]: 5,
         [FEATURE_KEYS.board.maxPerWorkspace]: 50,
         [FEATURE_KEYS.board.maxTotal]: 'unlimited',
         [FEATURE_KEYS.list.maxPerBoard]: 'unlimited',
@@ -143,8 +132,8 @@ describe('featureKeys', () => {
         [FEATURE_KEYS.rateLimit.writePerMinute]: 200,
       };
 
-      expect(Object.keys(entitlements)).toHaveLength(9);
-      expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(5);
+      expect(Object.keys(entitlements)).toHaveLength(8);
+      expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(50);
     });
 
     it('all keys can be accessed from ALL_FEATURE_KEYS array', () => {

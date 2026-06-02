@@ -44,6 +44,7 @@ import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 import { applyFeatureGate } from './middlewares/featureGate';
 import { applyRateLimit, rateLimiterClient } from './middlewares/rateLimiter';
 import { resolveRequestWorkspaceContext } from './common/requestContext';
+import { applySubscriptionAccessGuard } from './middlewares/subscriptionAccessGuard';
 import { trelloCompatRouter } from './extensions/trelloCompat';
 import { subscriptionRouter } from './extensions/subscription/api';
 // Register all automation trigger handlers at startup.
@@ -150,6 +151,9 @@ async function router(req: Request): Promise<Response> {
   // Returns 402 if the tier doesn't include the feature.
   const gateResponse = await applyFeatureGate(req, workspaceContext.workspaceId ?? undefined);
   if (gateResponse) return gateResponse;
+
+  const subscriptionAccessResponse = await applySubscriptionAccessGuard(req, workspaceContext);
+  if (subscriptionAccessResponse) return subscriptionAccessResponse;
 
   const authResponse = await authRouter(req, path);
   if (authResponse) return authResponse;

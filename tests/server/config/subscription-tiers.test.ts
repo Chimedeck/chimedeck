@@ -3,13 +3,11 @@ import {
   SUBSCRIPTION_TIERS,
   DEFAULT_UNLIMITED_TIER,
   TierQuotas,
-  QuotaValue,
 } from '../../../server/config/subscription-tiers';
 
 describe('subscription-tiers config', () => {
   const REQUIRED_TIERS = ['free', 'pro', 'enterprise'];
   const REQUIRED_QUOTA_KEYS: (keyof TierQuotas)[] = [
-    'maxWorkspaces',
     'maxBoardsPerWorkspace',
     'maxBoardsTotal',
     'maxColumnsPerBoard',
@@ -19,6 +17,10 @@ describe('subscription-tiers config', () => {
     'readRateLimit',
     'writeRateLimit',
   ];
+
+  function pickQuotaValues(tier: TierQuotas) {
+    return REQUIRED_QUOTA_KEYS.map((key) => [key, tier[key]] as const);
+  }
 
   it('exports all required tier keys', () => {
     for (const tierName of REQUIRED_TIERS) {
@@ -38,7 +40,7 @@ describe('subscription-tiers config', () => {
 
   it('all quota values are either number or "unlimited"', () => {
     for (const [tierName, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
-      for (const [quotaKey, value] of Object.entries(tier)) {
+      for (const [quotaKey, value] of pickQuotaValues(tier)) {
         const valid =
           typeof value === 'number' || value === 'unlimited';
         expect(valid).toBe(
@@ -57,7 +59,7 @@ describe('subscription-tiers config', () => {
 
   it('free tier has all numeric (no unlimited) quotas', () => {
     const freeTier = SUBSCRIPTION_TIERS.free;
-    for (const [key, value] of Object.entries(freeTier)) {
+    for (const [key, value] of pickQuotaValues(freeTier)) {
       expect(typeof value).toBe(
         'number',
         `free tier.${key} should be numeric, got ${value}`
@@ -69,12 +71,12 @@ describe('subscription-tiers config', () => {
     const proTier = SUBSCRIPTION_TIERS.pro;
     expect(proTier.maxBoardsTotal).toBe('unlimited');
     expect(proTier.maxColumnsPerBoard).toBe('unlimited');
-    expect(typeof proTier.maxWorkspaces).toBe('number');
+    expect(typeof proTier.maxBoardsPerWorkspace).toBe('number');
   });
 
   it('enterprise tier has all unlimited quotas', () => {
     const entTier = SUBSCRIPTION_TIERS.enterprise;
-    for (const [key, value] of Object.entries(entTier)) {
+    for (const [key, value] of pickQuotaValues(entTier)) {
       expect(value).toBe(
         'unlimited',
         `enterprise tier.${key} should be unlimited, got ${value}`
@@ -86,9 +88,6 @@ describe('subscription-tiers config', () => {
     const free = SUBSCRIPTION_TIERS.free;
     const pro = SUBSCRIPTION_TIERS.pro;
 
-    expect((pro.maxWorkspaces as number) >= (free.maxWorkspaces as number)).toBe(
-      true
-    );
     expect((pro.maxBoardsPerWorkspace as number) >=
       (free.maxBoardsPerWorkspace as number)).toBe(true);
   });
@@ -98,7 +97,7 @@ describe('subscription-tiers config', () => {
   });
 
   it('DEFAULT_UNLIMITED_TIER has only unlimited values', () => {
-    for (const [key, value] of Object.entries(DEFAULT_UNLIMITED_TIER)) {
+    for (const [key, value] of pickQuotaValues(DEFAULT_UNLIMITED_TIER)) {
       expect(value).toBe('unlimited', `fallback tier.${key} should be unlimited`);
     }
   });

@@ -16,9 +16,6 @@ export type BooleanFeatureKey =
 export type BooleanFeatures = Record<BooleanFeatureKey, boolean>;
 
 export interface TierQuotas {
-  // Workspace limits
-  maxWorkspaces: QuotaValue;
-
   // Board limits per workspace
   maxBoardsPerWorkspace: QuotaValue;
   maxBoardsTotal: QuotaValue;
@@ -48,11 +45,10 @@ export type CanonicalTierId = typeof TIER_ORDER[number];
 
 export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
   free: {
-    maxWorkspaces: 1,
     maxBoardsPerWorkspace: 5,
     maxBoardsTotal: 5,
     maxColumnsPerBoard: 10,
-    maxInvitedMembersPerBoard: 2,
+    maxInvitedMembersPerBoard: 'unlimited',
     maxGuestsPerBoard: 1,
     maxStorageBytes: 100 * 1024 * 1024, // 100 MB
     readRateLimit: 100,
@@ -67,11 +63,10 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
     },
   },
   pro: {
-    maxWorkspaces: 5,
     maxBoardsPerWorkspace: 50,
     maxBoardsTotal: 'unlimited',
     maxColumnsPerBoard: 'unlimited',
-    maxInvitedMembersPerBoard: 20,
+    maxInvitedMembersPerBoard: 'unlimited',
     maxGuestsPerBoard: 10,
     maxStorageBytes: 10 * 1024 * 1024 * 1024, // 10 GB
     readRateLimit: 500,
@@ -86,13 +81,12 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
     },
   },
   enterprise: {
-    maxWorkspaces: 'unlimited',
     maxBoardsPerWorkspace: 'unlimited',
     maxBoardsTotal: 'unlimited',
     maxColumnsPerBoard: 'unlimited',
     maxInvitedMembersPerBoard: 'unlimited',
     maxGuestsPerBoard: 'unlimited',
-    maxStorageBytes: 'unlimited',
+    maxStorageBytes: 100 * 1024 * 1024 * 1024, // 10 GB
     readRateLimit: 'unlimited',
     writeRateLimit: 'unlimited',
     features: {

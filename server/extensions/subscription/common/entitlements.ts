@@ -1,8 +1,8 @@
 // Workspace entitlements resolver.
 // Single source of truth for what a workspace can do based on tier + subscription state.
 
-import { SUBSCRIPTION_TIERS, type TierQuotas, type BooleanFeatures } from '../../../config/subscription-tiers';
-import { FEATURE_KEYS, type FeatureKey } from './featureKeys';
+import { SUBSCRIPTION_TIERS, type BooleanFeatures } from '../../../config/subscription-tiers';
+import { FEATURE_KEYS } from './featureKeys';
 import { getCurrentTier } from './subscriptionRepo';
 import type { SubscriptionTier } from './types';
 
@@ -13,8 +13,9 @@ const TIER_ID_MAP: Record<SubscriptionTier, keyof typeof SUBSCRIPTION_TIERS> = {
   unlimited: 'enterprise',
 };
 
+const FREE_TIER_QUOTAS = SUBSCRIPTION_TIERS.free as NonNullable<(typeof SUBSCRIPTION_TIERS)[string]>;
+
 export interface WorkspaceEntitlements {
-  [FEATURE_KEYS.workspace.maxWorkspaces]: number | 'unlimited';
   [FEATURE_KEYS.board.maxPerWorkspace]: number | 'unlimited';
   [FEATURE_KEYS.board.maxTotal]: number | 'unlimited';
   [FEATURE_KEYS.list.maxPerBoard]: number | 'unlimited';
@@ -30,11 +31,10 @@ export interface WorkspaceEntitlements {
  * Maps stored tier ID to canonical tier quotas.
  */
 export function resolveEntitlements(tier: SubscriptionTier): WorkspaceEntitlements {
-  const tierName = TIER_ID_MAP[tier] || 'free';
-  const quotas = SUBSCRIPTION_TIERS[tierName];
+  const tierName: keyof typeof SUBSCRIPTION_TIERS = TIER_ID_MAP[tier] ?? 'free';
+  const quotas = SUBSCRIPTION_TIERS[tierName] ?? FREE_TIER_QUOTAS;
 
   return {
-    [FEATURE_KEYS.workspace.maxWorkspaces]: quotas.maxWorkspaces,
     [FEATURE_KEYS.board.maxPerWorkspace]: quotas.maxBoardsPerWorkspace,
     [FEATURE_KEYS.board.maxTotal]: quotas.maxBoardsTotal,
     [FEATURE_KEYS.list.maxPerBoard]: quotas.maxColumnsPerBoard,
@@ -60,7 +60,7 @@ export async function resolveWorkspaceEntitlements(
   workspaceId: string,
 ): Promise<WorkspaceFeatureEntitlements> {
   const tier = await getCurrentTier(workspaceId);
-  const tierName = TIER_ID_MAP[tier] || 'free';
-  const quotas = SUBSCRIPTION_TIERS[tierName];
+  const tierName: keyof typeof SUBSCRIPTION_TIERS = TIER_ID_MAP[tier] ?? 'free';
+  const quotas = SUBSCRIPTION_TIERS[tierName] ?? FREE_TIER_QUOTAS;
   return { tier, features: quotas.features };
 }

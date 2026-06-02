@@ -29,7 +29,6 @@ mock.module('../../server/extensions/subscription/common/subscriptionRepo', () =
 
 mock.module('../../server/extensions/subscription/common/entitlements', () => ({
   resolveEntitlements: () => ({
-    [FEATURE_KEYS.workspace.maxWorkspaces]: 1,
     [FEATURE_KEYS.board.maxPerWorkspace]: 5,
     [FEATURE_KEYS.board.maxTotal]: 5,
     [FEATURE_KEYS.list.maxPerBoard]: 10,
@@ -71,14 +70,14 @@ beforeEach(() => {
 
 describe('rate limiter helpers', () => {
   it('builds legacy keys from identifier + class', () => {
-    const key = buildLegacyRateLimiterKey('read', 'user-123', '1.2.3.4');
+    const key = buildLegacyRateLimiterKey('read', 'user-123', 'client-a');
     expect(key).toContain('user-123');
     expect(key).toContain('read');
   });
 
   it('falls back to IP for legacy keys when userId is missing', () => {
-    const key = buildLegacyRateLimiterKey('mutation', undefined, '5.6.7.8');
-    expect(key).toContain('5.6.7.8');
+    const key = buildLegacyRateLimiterKey('mutation', undefined, 'client-b');
+    expect(key).toContain('client-b');
     expect(key).toContain('mutation');
   });
 
@@ -107,7 +106,7 @@ describe('applyRateLimit', () => {
     const first = new Request('http://localhost/api/v1/boards/board-1', { method: 'POST' });
     const second = new Request('http://localhost/api/v1/cards/card-1', {
       method: 'POST',
-      headers: { 'x-forwarded-for': '9.9.9.9' },
+      headers: { 'x-forwarded-for': 'client-c' },
     });
 
     const firstResult = await applyRateLimit(first, { workspaceId: 'ws-1' }, client);

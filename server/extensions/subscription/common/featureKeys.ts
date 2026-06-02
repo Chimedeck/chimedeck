@@ -1,12 +1,7 @@
 // Canonical feature/limit keys for entitlements, gating, and enforcement.
 // Single source of truth for all feature names referenced in tier quotas, gates, and guards.
 
-// Workspace limits
 export const FEATURE_KEYS = {
-  workspace: {
-    maxWorkspaces: 'workspace:max-workspaces',
-  },
-
   // Board limits
   board: {
     maxPerWorkspace: 'board:max-per-workspace',
@@ -42,7 +37,6 @@ export const FEATURE_KEYS = {
 
 // Flat list of all feature keys for validation
 export const ALL_FEATURE_KEYS = [
-  FEATURE_KEYS.workspace.maxWorkspaces,
   FEATURE_KEYS.board.maxPerWorkspace,
   FEATURE_KEYS.board.maxTotal,
   FEATURE_KEYS.list.maxPerBoard,

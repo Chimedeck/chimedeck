@@ -3,18 +3,6 @@ import type { SubscriptionTier } from '../extensions/subscription/common/types';
 
 let subscriptionsEnabled = true;
 
-const dbMock = mock(() => ({
-  where: () => ({
-    join: () => ({
-      where: () => ({
-        orderByRaw: () => ({
-          first: async () => null,
-        }),
-      }),
-    }),
-  }),
-}));
-
 const getCurrentTierMock = mock(async () => 'tier_1' as SubscriptionTier);
 
 mock.module('../config/env', () => ({
@@ -25,10 +13,6 @@ mock.module('../config/env', () => ({
   },
 }));
 
-mock.module('../common/db', () => ({
-  db: dbMock,
-}));
-
 mock.module('../extensions/subscription/common/subscriptionRepo', () => ({
   getCurrentTier: getCurrentTierMock,
 }));
@@ -36,7 +20,6 @@ mock.module('../extensions/subscription/common/subscriptionRepo', () => ({
 const {
   resolveQuota,
   buildLimitResponse,
-  applyWorkspaceLimitGuard,
   applyLimitGuard,
 } = await import('./limitGuard');
 
@@ -47,19 +30,6 @@ import { SUBSCRIPTION_TIERS } from '../config/subscription-tiers';
 // ---------------------------------------------------------------------------
 
 describe('resolveQuota', () => {
-  test('free tier maxWorkspaces is 1', () => {
-    expect(resolveQuota('tier_1', 'maxWorkspaces')).toBe(SUBSCRIPTION_TIERS.free.maxWorkspaces);
-    expect(resolveQuota('tier_1', 'maxWorkspaces')).toBe(1);
-  });
-
-  test('pro tier maxWorkspaces is 5', () => {
-    expect(resolveQuota('tier_2', 'maxWorkspaces')).toBe(5);
-  });
-
-  test('enterprise tier maxWorkspaces is unlimited', () => {
-    expect(resolveQuota('unlimited', 'maxWorkspaces')).toBe('unlimited');
-  });
-
   test('free tier maxBoardsPerWorkspace is 5', () => {
     expect(resolveQuota('tier_1', 'maxBoardsPerWorkspace')).toBe(5);
   });
@@ -86,8 +56,8 @@ describe('resolveQuota', () => {
 
   test('unknown tier falls back to free', () => {
     // Cast to bypass type narrowing — simulates corrupt data from DB.
-    const quota = resolveQuota('bad_tier' as SubscriptionTier, 'maxWorkspaces');
-    expect(quota).toBe(SUBSCRIPTION_TIERS.free.maxWorkspaces);
+    const quota = resolveQuota('bad_tier' as SubscriptionTier, 'maxBoardsPerWorkspace');
+    expect(quota).toBe(SUBSCRIPTION_TIERS.free.maxBoardsPerWorkspace);
   });
 });
 
@@ -97,55 +67,38 @@ describe('resolveQuota', () => {
 
 describe('buildLimitResponse', () => {
   describe('unlimited quota', () => {
-    const limitKeys = ['maxWorkspaces', 'maxBoardsPerWorkspace', 'maxColumnsPerBoard'] as const;
+    const limitKeys = ['maxBoardsPerWorkspace', 'maxColumnsPerBoard'] as const;
 
     for (const key of limitKeys) {
       test(`enterprise tier ${key} — never returns 402`, () => {
-        expect(buildLimitResponse('unlimited', key, 999_999)).toBeNull();
-        expect(buildLimitResponse('unlimited', key, 0)).toBeNull();
-        expect(buildLimitResponse('unlimited', key, Number.MAX_SAFE_INTEGER)).toBeNull();
+        expect(buildLimitResponse('unlimited', key, 999_999, 'workspace-1')).toBeNull();
+        expect(buildLimitResponse('unlimited', key, 0, 'workspace-1')).toBeNull();
+        expect(buildLimitResponse('unlimited', key, Number.MAX_SAFE_INTEGER, 'workspace-1')).toBeNull();
       });
     }
 
     test('pro tier maxBoardsTotal is unlimited — never returns 402', () => {
-      expect(buildLimitResponse('tier_2', 'maxBoardsTotal', 999)).toBeNull();
+      expect(buildLimitResponse('tier_2', 'maxBoardsTotal', 999, 'workspace-1')).toBeNull();
     });
 
     test('pro tier maxColumnsPerBoard is unlimited — never returns 402', () => {
-      expect(buildLimitResponse('tier_2', 'maxColumnsPerBoard', 999)).toBeNull();
+      expect(buildLimitResponse('tier_2', 'maxColumnsPerBoard', 999, 'workspace-1')).toBeNull();
     });
   });
 
   describe('numeric quota — below limit', () => {
-    test('returns null when usage is 0 out of 1 (free maxWorkspaces)', () => {
-      expect(buildLimitResponse('tier_1', 'maxWorkspaces', 0)).toBeNull();
-    });
-
     test('returns null when usage is 4 out of 5 (free maxBoardsPerWorkspace)', () => {
-      expect(buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 4)).toBeNull();
+      expect(buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 4, 'workspace-1')).toBeNull();
     });
 
     test('returns null when usage is 9 out of 10 (free maxColumnsPerBoard)', () => {
-      expect(buildLimitResponse('tier_1', 'maxColumnsPerBoard', 9)).toBeNull();
+      expect(buildLimitResponse('tier_1', 'maxColumnsPerBoard', 9, 'workspace-1')).toBeNull();
     });
   });
 
   describe('numeric quota — at or above limit', () => {
-    test('returns 402 when usage equals quota (free maxWorkspaces = 1)', async () => {
-      const res = buildLimitResponse('tier_1', 'maxWorkspaces', 1);
-      expect(res).not.toBeNull();
-      expect(res!.status).toBe(402);
-
-      const body = (await res!.json()) as any;
-      expect(body.error.code).toBe('limit-reached');
-      expect(body.error.data.limit).toBe('maxWorkspaces');
-      expect(body.error.data.currentUsage).toBe(1);
-      expect(body.error.data.quota).toBe(1);
-      expect(body.error.data.upgradeUrl).toBe('/settings/billing');
-    });
-
     test('returns 402 when usage exceeds quota (free maxBoardsPerWorkspace = 5)', async () => {
-      const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 6);
+      const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 6, 'workspace-1');
       expect(res).not.toBeNull();
       expect(res!.status).toBe(402);
 
@@ -157,17 +110,17 @@ describe('buildLimitResponse', () => {
     });
 
     test('returns 402 when at column cap (free maxColumnsPerBoard = 10)', () => {
-      expect(buildLimitResponse('tier_1', 'maxColumnsPerBoard', 10)).not.toBeNull();
+      expect(buildLimitResponse('tier_1', 'maxColumnsPerBoard', 10, 'workspace-1')).not.toBeNull();
     });
 
     test('response body has error.code = limit-reached', async () => {
-      const res = buildLimitResponse('tier_1', 'maxWorkspaces', 5);
+      const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 5, 'workspace-1');
       const body = (await res!.json()) as any;
       expect(body.error.code).toBe('limit-reached');
     });
 
     test('free quota is reported as a number', async () => {
-      const res = buildLimitResponse('tier_1', 'maxWorkspaces', 2);
+      const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 5, 'workspace-1');
       const body = (await res!.json()) as any;
       expect(typeof body.error.data.quota).toBe('number');
     });
@@ -181,18 +134,11 @@ describe('buildLimitResponse', () => {
 describe('SUBSCRIPTIONS_ENABLED bypass', () => {
   beforeEach(() => {
     subscriptionsEnabled = false;
-    dbMock.mockClear();
     getCurrentTierMock.mockClear();
   });
 
   afterEach(() => {
     subscriptionsEnabled = true;
-  });
-
-  test('applyWorkspaceLimitGuard returns null when subscriptions are disabled', async () => {
-    const res = await applyWorkspaceLimitGuard({ userId: 'user-1', currentUsage: 999 });
-    expect(res).toBeNull();
-    expect(dbMock).not.toHaveBeenCalled();
   });
 
   test('applyLimitGuard returns null when subscriptions are disabled', async () => {

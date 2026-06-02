@@ -14,7 +14,7 @@ function getWorkspaceIdFromRequest(req: Request): string | null {
 export async function handleGetWorkspaceSubscription(req: Request): Promise<Response> {
   const workspaceResolution = await resolveWorkspaceContext(req, {
     workspaceId: getWorkspaceIdFromRequest(req),
-    minRole: 'GUEST',
+    minRole: 'ADMIN',
   });
   if (workspaceResolution.response) return workspaceResolution.response;
   const { context } = workspaceResolution;

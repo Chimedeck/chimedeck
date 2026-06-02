@@ -10,7 +10,12 @@ let resolverResult:
   | { context: WorkspaceContext; response: null }
   | { context: null; response: Response };
 let subscriptionRecord: WorkspaceSubscription | null = null;
-const upsertCalls: Array<Record<string, unknown>> = [];
+
+function requestInfoToUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
 
 mock.module('../../server/config/env', () => ({
   env: {
@@ -49,9 +54,8 @@ mock.module('../../server/extensions/subscription/common/subscriptionRepo', () =
       updatedAt: '2026-06-01T00:00:00.000Z',
     },
   upsertWorkspaceSubscription: async (input: Record<string, unknown>) => {
-    upsertCalls.push(input);
     const next: WorkspaceSubscription = {
-      workspaceId: String(input.workspaceId),
+      workspaceId: typeof input.workspaceId === 'string' ? input.workspaceId : 'ws-1',
       tier: (input.tier as WorkspaceSubscription['tier']) ?? 'tier_1',
       status: (input.status as WorkspaceSubscription['status']) ?? 'active',
       stripeCustomerId: (input.stripeCustomerId as string | null | undefined) ?? null,
@@ -101,7 +105,6 @@ describe('subscription API endpoints', () => {
       },
       response: null,
     };
-    upsertCalls.length = 0;
     globalThis.fetch = mock(async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> =>
       Response.json({ url: 'https://checkout.stripe.test/session_123' })
     ) as typeof fetch;
@@ -118,6 +121,53 @@ describe('subscription API endpoints', () => {
 
     expect(response.status).toBe(200);
     expect(payload.data?.url).toContain('checkout.stripe.test');
+  });
+
+  it('POST /api/subscription/checkout uses request origin for redirect URLs', async () => {
+    let capturedBody = '';
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = requestInfoToUrl(input);
+      if (url.includes('/v1/customers')) {
+        return Response.json({ id: 'cus_123' });
+      }
+      if (url.includes('/v1/checkout/sessions')) {
+        const requestBody = init?.body;
+        if (typeof requestBody === 'string') {
+          capturedBody = requestBody;
+        } else if (requestBody instanceof URLSearchParams) {
+          capturedBody = requestBody.toString();
+        }
+        return Response.json({ url: 'https://checkout.stripe.test/session_123' });
+      }
+      return Response.json({});
+    }) as typeof fetch;
+
+    subscriptionRecord = {
+      workspaceId: 'ws-1',
+      tier: 'tier_1',
+      status: 'active',
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+      stripeCurrentPeriodEnd: null,
+      createdAt: '2026-06-01T00:00:00.000Z',
+      updatedAt: '2026-06-01T00:00:00.000Z',
+    };
+
+    const request = new Request('http://localhost/api/subscription/checkout', {
+      method: 'POST',
+      headers: { origin: 'http://localhost:5173' },
+      body: JSON.stringify({ workspaceId: 'ws-1', tier: 'tier_2' }),
+    });
+
+    const response = await handleCreateCheckout(request);
+    expect(response.status).toBe(200);
+    expect(capturedBody).toContain(
+      'success_url=http%3A%2F%2Flocalhost%3A5173%2Fworkspace%2Fws-1%2Fbilling%3Fcheckout%3Dsuccess',
+    );
+    expect(capturedBody).toContain(
+      'cancel_url=http%3A%2F%2Flocalhost%3A5173%2Fworkspace%2Fws-1%2Fbilling%3Fcheckout%3Dcancel',
+    );
   });
 
   it('POST /api/subscription/checkout allows ADMIN and returns checkout url', async () => {
@@ -166,6 +216,29 @@ describe('subscription API endpoints', () => {
 
     expect(response.status).toBe(200);
     expect(payload.data?.url).toContain('billing.stripe.test');
+  });
+
+  it('POST /api/subscription/portal uses request origin for return URL', async () => {
+    let capturedBody = '';
+    globalThis.fetch = mock(async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const requestBody = init?.body;
+      if (typeof requestBody === 'string') {
+        capturedBody = requestBody;
+      } else if (requestBody instanceof URLSearchParams) {
+        capturedBody = requestBody.toString();
+      }
+      return Response.json({ url: 'https://billing.stripe.test/session_123' });
+    }) as typeof fetch;
+
+    const request = new Request('http://localhost/api/subscription/portal', {
+      method: 'POST',
+      headers: { origin: 'http://localhost:5173' },
+      body: JSON.stringify({ workspaceId: 'ws-1' }),
+    });
+
+    const response = await handleCreatePortal(request);
+    expect(response.status).toBe(200);
+    expect(capturedBody).toContain('return_url=http%3A%2F%2Flocalhost%3A5173%2Fworkspace%2Fws-1%2Fbilling');
   });
 
   it('POST /api/subscription/portal rejects non-admin callers', async () => {

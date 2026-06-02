@@ -5,6 +5,27 @@ import type { SubscriptionTier } from '../common/types';
 
 type CheckoutTier = Extract<SubscriptionTier, 'tier_2' | 'unlimited'>;
 
+function normalizeOrigin(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveClientAppOrigin(req: Request): string {
+  const origin = normalizeOrigin(req.headers.get('origin'));
+  if (origin) return origin;
+
+  const referer = normalizeOrigin(req.headers.get('referer'));
+  if (referer) return referer;
+
+  return env.APP_URL;
+}
+
 function getPriceIdByTier(tier: CheckoutTier): string {
   if (tier === 'tier_2') return env.STRIPE_PRICE_TIER_2;
   return env.STRIPE_PRICE_TIER_4;
@@ -45,16 +66,18 @@ async function createStripeCheckoutSession({
   workspaceId,
   customerId,
   priceId,
+  appOrigin,
 }: {
   workspaceId: string;
   customerId: string;
   priceId: string;
+  appOrigin: string;
 }): Promise<string> {
   const body = new URLSearchParams();
   body.set('mode', 'subscription');
   body.set('customer', customerId);
-  body.set('success_url', `${env.APP_URL}/workspace/${workspaceId}/billing?checkout=success`);
-  body.set('cancel_url', `${env.APP_URL}/workspace/${workspaceId}/billing?checkout=cancel`);
+  body.set('success_url', `${appOrigin}/workspace/${workspaceId}/billing?checkout=success`);
+  body.set('cancel_url', `${appOrigin}/workspace/${workspaceId}/billing?checkout=cancel`);
   body.set('line_items[0][price]', priceId);
   body.set('line_items[0][quantity]', '1');
   body.set('metadata[workspaceId]', workspaceId);
@@ -110,6 +133,7 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
   }
 
   try {
+    const appOrigin = resolveClientAppOrigin(req);
     const subscription = await getOrCreateByWorkspaceId(context.workspaceId);
     const customerId =
       subscription.stripeCustomerId ??
@@ -135,6 +159,7 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
       workspaceId: context.workspaceId,
       customerId,
       priceId,
+      appOrigin,
     });
 
     return Response.json({ data: { url } });

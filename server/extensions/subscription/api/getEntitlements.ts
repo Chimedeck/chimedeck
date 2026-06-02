@@ -3,9 +3,8 @@
 
 import { resolveEntitlements, type WorkspaceEntitlements } from '../common/entitlements';
 import { getWorkspaceUsage, type WorkspaceUsage } from '../common/usage';
-import { getByWorkspaceId } from '../common/subscriptionRepo';
-import { env } from '../../../config/env';
-import type { SubscriptionTier } from '../common/types';
+import { getCurrentTier } from '../common/subscriptionRepo';
+import { resolveWorkspaceContext } from '../common/workspaceResolver';
 
 interface EntitlementsResponse {
   status: number;
@@ -27,8 +26,8 @@ export async function handleGetEntitlements(
 ): Promise<Response> {
   try {
     // Extract workspaceId from pathname: /api/v1/workspaces/:workspaceId/entitlements
-    const match = pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/entitlements$/);
-    if (!match || !match[1]) {
+    const match = /^\/api\/v1\/workspaces\/([^/]+)\/entitlements$/.exec(pathname);
+    if (!match?.[1]) {
       return new Response(
         JSON.stringify({
           status: 400,
@@ -41,26 +40,19 @@ export async function handleGetEntitlements(
 
     const workspaceId = match[1];
 
-    // Get subscription for workspace
-    let tier: SubscriptionTier = 'tier_1'; // default free tier
+    const workspaceResolution = await resolveWorkspaceContext(req, {
+      workspaceId,
+      minRole: 'ADMIN',
+    });
+    if (workspaceResolution.response) return workspaceResolution.response;
 
-    if (env.SUBSCRIPTIONS_ENABLED) {
-      const subscription = await getByWorkspaceId(workspaceId);
-      if (subscription) {
-        tier = subscription.tier;
-      }
-    } else {
-      // Fallback: if subscriptions disabled and default unlimited is enabled, use unlimited tier
-      if (env.SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER) {
-        tier = 'unlimited';
-      }
-    }
+    const tier = await getCurrentTier(workspaceResolution.context.workspaceId);
 
     // Resolve entitlements from tier
     const entitlements = resolveEntitlements(tier);
 
     // Get usage for workspace
-    const usage = await getWorkspaceUsage(workspaceId);
+    const usage = await getWorkspaceUsage(workspaceResolution.context.workspaceId);
 
     return new Response(
       JSON.stringify({

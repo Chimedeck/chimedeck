@@ -2,16 +2,39 @@ import { env } from '../../../config/env';
 import { getByWorkspaceId } from '../common/subscriptionRepo';
 import { resolveWorkspaceContext } from '../common/workspaceResolver';
 
+function normalizeOrigin(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveClientAppOrigin(req: Request): string {
+  const origin = normalizeOrigin(req.headers.get('origin'));
+  if (origin) return origin;
+
+  const referer = normalizeOrigin(req.headers.get('referer'));
+  if (referer) return referer;
+
+  return env.APP_URL;
+}
+
 async function createStripePortalSession({
   customerId,
   workspaceId,
+  appOrigin,
 }: {
   customerId: string;
   workspaceId: string;
+  appOrigin: string;
 }): Promise<string> {
   const body = new URLSearchParams();
   body.set('customer', customerId);
-  body.set('return_url', `${env.APP_URL}/workspace/${workspaceId}/billing`);
+  body.set('return_url', `${appOrigin}/workspace/${workspaceId}/billing`);
 
   const response = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
     method: 'POST',
@@ -62,9 +85,11 @@ export async function handleCreatePortal(req: Request): Promise<Response> {
   }
 
   try {
+    const appOrigin = resolveClientAppOrigin(req);
     const url = await createStripePortalSession({
       customerId: subscription.stripeCustomerId,
       workspaceId: context.workspaceId,
+      appOrigin,
     });
     return Response.json({ data: { url } });
   } catch (error) {
