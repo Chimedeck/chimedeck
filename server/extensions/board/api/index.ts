@@ -26,6 +26,13 @@ import { handleGetWorkspaceBoards } from './workspaceBoards';
 import { handleUploadBackground } from './uploadBackground';
 import { handleDeleteBackground } from './deleteBackground';
 import { handleGetBackground } from './backgroundProxy';
+import { handleGetChatPermissions, handlePatchChatPermissions } from './chatPermissions/index';
+import { handleGetChatMessages } from './chatMessages/index';
+import { handleCreateChatMessage } from './chatMessages/index';
+import { handleCreateChatSearch } from './chatSearch/index';
+import { handleCreateChatAssist } from './chatAssist/index';
+import { handleGetBoardIntegrations, handlePatchBoardIntegrations } from './integrations/index';
+import { handleLoadSpecsManifest, handleReadSpecsFile } from './specs/index';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a board route, otherwise null.
@@ -159,6 +166,36 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // DELETE /api/v1/boards/:id/background — remove the background image (Owner/Admin only)
     if (sub === '/background' && req.method === 'DELETE') return handleDeleteBackground(req, boardId);
+
+    // GET /api/v1/boards/:id/chat-permissions — read board chat permission settings
+    if (sub === '/chat-permissions' && req.method === 'GET') return handleGetChatPermissions(req, boardId);
+
+    // PATCH /api/v1/boards/:id/chat-permissions — update guest chat toggles (ADMIN/OWNER only)
+    if (sub === '/chat-permissions' && req.method === 'PATCH') return handlePatchChatPermissions(req, boardId);
+
+    // GET /api/v1/boards/:id/settings/integrations — read board integration settings
+    if (sub === '/settings/integrations' && req.method === 'GET') return handleGetBoardIntegrations(req, boardId);
+
+    // PATCH /api/v1/boards/:id/settings/integrations — update board integration settings
+    if (sub === '/settings/integrations' && req.method === 'PATCH') return handlePatchBoardIntegrations(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/messages — persist a board chat message
+    if (sub === '/chat/messages' && req.method === 'POST') return handleCreateChatMessage(req, boardId);
+
+    // GET /api/v1/boards/:id/chat/messages — load board chat history
+    if (sub === '/chat/messages' && req.method === 'GET') return handleGetChatMessages(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/search — semantic board-chat retrieval
+    if (sub === '/chat/search' && req.method === 'POST') return handleCreateChatSearch(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/assist — board-chat assist response
+    if (sub === '/chat/assist' && req.method === 'POST') return handleCreateChatAssist(req, boardId);
+
+    // GET /api/v1/boards/:id/specs/manifest — load specs manifest (members only)
+    if (sub === '/specs/manifest' && req.method === 'GET') return handleLoadSpecsManifest(req, boardId);
+
+    // GET /api/v1/boards/:id/specs/files?path=... — read a single specs file (members only)
+    if (sub === '/specs/files' && req.method === 'GET') return handleReadSpecsFile(req, boardId);
   }
 
   return null;
