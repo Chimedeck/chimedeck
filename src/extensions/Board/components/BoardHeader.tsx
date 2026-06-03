@@ -7,6 +7,7 @@ import type { ConnectionState } from '~/common/components/ConnectionBadge';
 import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
 import AutomationHeaderButton from '~/extensions/Automation/components/AutomationHeaderButton';
 import BoardButtonsBar from '~/extensions/Automation/components/BoardButtons/BoardButtonsBar';
+import BoardChatButton from '~/extensions/BoardChat/components/BoardChatButton';
 
 interface Member {
   id: string;
@@ -41,6 +42,8 @@ interface Props {
   onStar?: () => void;
   /** Called when user unstars the board */
   onUnstar?: () => void;
+  /** Called when user opens the board chat drawer */
+  onOpenBoardChat?: () => void;
 }
 
 const BoardHeader = ({
@@ -61,6 +64,7 @@ const BoardHeader = ({
   isGuest = false,
   onStar,
   onUnstar,
+  onOpenBoardChat,
 }: Props) => {
   // Resolve connection state: prefer explicit connectionState, fall back to legacy connected bool
   const resolvedState: ConnectionState =
@@ -216,11 +220,19 @@ const BoardHeader = ({
           {/* Board buttons bar — left of automation header button */}
           {onOpenAutomation && <BoardButtonsBar boardId={board.id} hasBackground={hasBackground} />}
 
-          {/* Automation button — left of the ··· settings menu */}
+          {/* Automation button — left of the board chat button */}
           {onOpenAutomation && (
             <AutomationHeaderButton
               activeCount={activeAutomationCount}
               onClick={onOpenAutomation}
+              hasBackground={hasBackground}
+            />
+          )}
+
+          {/* Board chat button — hidden for guests */}
+          {!isGuest && onOpenBoardChat && (
+            <BoardChatButton
+              onClick={onOpenBoardChat}
               hasBackground={hasBackground}
             />
           )}

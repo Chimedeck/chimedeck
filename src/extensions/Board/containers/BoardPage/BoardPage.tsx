@@ -68,6 +68,7 @@ import { canBoardGuestWrite } from '../../mods/guestPermissions';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
 import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthCheckConfig';
+import { BOARD_CHAT_ENABLED } from '~/extensions/Board/config/boardChatConfig';
 import { boardPath, cardPath } from '~/common/routing/shortUrls';
 
 const BoardPage = () => {
@@ -168,6 +169,9 @@ const BoardPage = () => {
   // [why] Board guests are board-scoped participants and should be able to
   //       configure and receive board notifications like joined members.
   const canManageOwnBoardNotifications = isBoardMember || isGuest;
+
+  // ── Board chat panel ──────────────────────────────────────────────────────
+  const [boardChatOpen, setBoardChatOpen] = useState(false);
 
   // ── Board filters ─────────────────────────────────────────────────────────
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
@@ -827,6 +831,7 @@ const BoardPage = () => {
         isGuest={isGuest}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenMembers={() => setMembersOpen(true)}
+        onOpenBoardChat={BOARD_CHAT_ENABLED ? () => setBoardChatOpen(true) : undefined}
         {...(!isGuest && {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
