@@ -69,6 +69,7 @@ import { FunnelIcon } from '@heroicons/react/24/outline';
 import HealthCheckTab from '~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab';
 import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthCheckConfig';
 import { BOARD_CHAT_ENABLED } from '~/extensions/Board/config/boardChatConfig';
+import { BoardChatDrawer } from '~/extensions/BoardChat';
 import { boardPath, cardPath } from '~/common/routing/shortUrls';
 
 const BoardPage = () => {
@@ -178,8 +179,12 @@ const BoardPage = () => {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const filterContainerRef = useRef<HTMLDivElement>(null);
 
-  // Reset filters when navigating to a different board
-  useEffect(() => { setFilters(DEFAULT_FILTERS); setFilterPanelOpen(false); }, [boardId]);
+  // Reset filters and close panels when navigating to a different board
+  useEffect(() => { 
+    setFilters(DEFAULT_FILTERS); 
+    setFilterPanelOpen(false); 
+    setBoardChatOpen(false);
+  }, [boardId]);
 
   // Derive unique labels from cards for the filter panel label list
   const boardLabels = useMemo(() => {
@@ -831,7 +836,7 @@ const BoardPage = () => {
         isGuest={isGuest}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenMembers={() => setMembersOpen(true)}
-        onOpenBoardChat={BOARD_CHAT_ENABLED ? () => setBoardChatOpen(true) : undefined}
+        {...(BOARD_CHAT_ENABLED && { onOpenBoardChat: () => setBoardChatOpen(true) })}
         {...(!isGuest && {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
@@ -949,6 +954,14 @@ const BoardPage = () => {
       {/* Board members panel (Sprint 79) */}
       {membersOpen && (
         <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
+      )}
+
+      {/* Board chat drawer (Sprint 164) */}
+      {boardChatOpen && (
+        <BoardChatDrawer
+          boardId={boardId ?? ''}
+          onClose={() => setBoardChatOpen(false)}
+        />
       )}
 
       {/* Board delete confirmation dialog — shown when server returns 409 with nested content counts */}
