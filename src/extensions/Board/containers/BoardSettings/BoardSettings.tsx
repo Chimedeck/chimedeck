@@ -12,6 +12,7 @@ import BackgroundPicker from './BackgroundPicker';
 import BoardLabelsPanel from './BoardLabelsPanel';
 import BoardNotificationToggle from './BoardNotificationToggle';
 import BoardNotificationTypePreferences from './BoardNotificationTypePreferences';
+import GithubProjectUrlSetting from './GithubProjectUrlSetting';
 import StateTransitionsSettingsEntry from '~/extensions/StateTransitions/components/StateTransitionsSettingsEntry';
 import { boardPath } from '~/common/routing/shortUrls';
 
@@ -23,9 +24,11 @@ interface Props {
   isViewerGuest?: boolean;
   /** When false, the user can see the board but is not a board participant (member/guest) — notification settings are hidden. */
   isBoardParticipant?: boolean;
+  /** When true, the user can manage board integrations (e.g., OWNER/ADMIN). */
+  canManageIntegrations?: boolean;
 }
 
-const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoardParticipant = true }: Props) => {
+const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoardParticipant = true, canManageIntegrations = false }: Props) => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);
@@ -141,6 +144,18 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
                     <PuzzlePieceIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>Plugins</span>
                   </button>
+                </div>
+              )}
+
+              {/* Integrations — GitHub Project URL (Admin only for write, visible to all members) */}
+              {!isGuest && (
+                <div className="border-t border-border pt-4">
+                  {boardId && (
+                    <GithubProjectUrlSetting
+                      boardId={boardId}
+                      disabled={!canManageIntegrations}
+                    />
+                  )}
                 </div>
               )}
             </>

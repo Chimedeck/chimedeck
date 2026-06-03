@@ -28,5 +28,13 @@
   "BoardSettings.notificationTypePreferencesResetConfirm": "Reset board overrides?",
   "BoardSettings.notificationTypePreferencesSource.board": "Board override",
   "BoardSettings.notificationTypePreferencesSource.user": "From master config",
-  "BoardSettings.notificationTypePreferencesSource.default": "Default (enabled)"
+  "BoardSettings.notificationTypePreferencesSource.default": "Default (enabled)",
+  "BoardSettings.githubProjectUrlLabel": "GitHub Project URL",
+  "BoardSettings.githubProjectUrlPlaceholder": "https://github.com/orgs/example/projects/1",
+  "BoardSettings.githubProjectUrlHelper": "Link this board to a GitHub project for better integration",
+  "BoardSettings.githubProjectUrlUnauthorized": "Only board admins can edit this setting",
+  "BoardSettings.githubProjectUrlInvalid": "Please enter a valid GitHub project URL",
+  "BoardSettings.githubProjectUrlSaveError": "Failed to save GitHub Project URL",
+  "BoardSettings.githubProjectUrlLoadError": "Failed to load GitHub Project URL",
+  "BoardSettings.githubProjectUrlCleared": "GitHub Project URL cleared"
 }

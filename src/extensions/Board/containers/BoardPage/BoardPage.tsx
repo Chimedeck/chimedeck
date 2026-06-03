@@ -59,7 +59,10 @@ import BoardFilterPanel, {
   applyBoardFilter,
 } from '../../components/BoardFilterPanel';
 import { useGetBoardMembersQuery } from '../../slices/boardMembersSlice';
-import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
+import {
+  selectCurrentUserWorkspaceRole,
+  selectIsGuestInActiveWorkspace,
+} from '~/extensions/Workspace/slices/workspaceSlice';
 import {
   selectActiveWorkspaceId,
   setActiveWorkspace,
@@ -98,6 +101,7 @@ const BoardPage = () => {
   const activeView = useAppSelector(selectActiveView);
   // [why] GUEST workspace members can view boards but not manage settings or members.
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
+  const workspaceRole = useAppSelector(selectCurrentUserWorkspaceRole);
   // [why] VIEWER guests have read-only access; MEMBER guests can write.
   // Non-guests always get full write access (canBoardGuestWrite returns true for null).
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
@@ -170,6 +174,10 @@ const BoardPage = () => {
   // [why] Board guests are board-scoped participants and should be able to
   //       configure and receive board notifications like joined members.
   const canManageOwnBoardNotifications = isBoardMember || isGuest;
+  const canManageGuestChatPermissions =
+    workspaceRole === 'OWNER' || workspaceRole === 'ADMIN';
+  const canManageIntegrations =
+    workspaceRole === 'OWNER' || workspaceRole === 'ADMIN';
 
   // ── Board chat panel ──────────────────────────────────────────────────────
   const [boardChatOpen, setBoardChatOpen] = useState(false);
@@ -949,6 +957,7 @@ const BoardPage = () => {
           isGuest={isGuest}
           isViewerGuest={isViewerGuest}
           isBoardParticipant={canManageOwnBoardNotifications}
+          canManageIntegrations={canManageIntegrations}
         />
       )}
       {/* Board members panel (Sprint 79) */}
@@ -960,6 +969,9 @@ const BoardPage = () => {
       {boardChatOpen && (
         <BoardChatDrawer
           boardId={boardId ?? ''}
+          isGuest={isGuest}
+          callerGuestType={board?.callerGuestType ?? null}
+          canManageGuestPermissions={canManageGuestChatPermissions}
           onClose={() => setBoardChatOpen(false)}
         />
       )}

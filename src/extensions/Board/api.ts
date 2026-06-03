@@ -233,3 +233,35 @@ export async function patchBoardVisibility({
 }): Promise<{ data: Board }> {
   return api.patch<{ data: Board }>(`/boards/${boardId}`, { visibility });
 }
+
+// Board integrations settings
+export interface BoardIntegrations {
+  github_project_url?: string | null;
+}
+
+// GET /api/v1/boards/:id/settings/integrations — retrieve board integrations settings.
+export async function getBoardIntegrations({
+  api,
+  boardId,
+}: {
+  api: { get: <T>(url: string) => Promise<T> };
+  boardId: string;
+}): Promise<{ data: BoardIntegrations }> {
+  return api.get<{ data: BoardIntegrations }>(`/boards/${boardId}/settings/integrations`);
+}
+
+// PATCH /api/v1/boards/:id/settings/integrations — update board integrations settings; min role: ADMIN.
+export async function patchBoardIntegrations({
+  api,
+  boardId,
+  settings,
+}: {
+  api: { patch: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  settings: Partial<BoardIntegrations>;
+}): Promise<{ data: BoardIntegrations }> {
+  return api.patch<{ data: BoardIntegrations }>(
+    `/boards/${boardId}/settings/integrations`,
+    settings,
+  );
+}
