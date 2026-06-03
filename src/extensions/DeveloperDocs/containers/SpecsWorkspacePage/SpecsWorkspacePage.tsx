@@ -151,6 +151,7 @@ type WorkspaceAction =
   | { type: 'save/start'; path: string; content: string }
   | { type: 'save/success'; path: string; content: string; etag: string; sha: string; created: boolean }
   | { type: 'save/error'; path: string; content: string; message: string; status: number | null }
+  | { type: 'save/conflict-clear' }
   | { type: 'commit/message'; message: string }
   | { type: 'commit/start' }
   | { type: 'commit/success'; changedFiles: string[] }
@@ -173,7 +174,7 @@ function setPathValue(state: WorkspaceState, path: string, content: string, etag
 function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
     case 'manifest/loading':
-      return { ...state, manifestStatus: 'loading', manifestError: null };
+      return { ...state, manifestStatus: 'loading', manifestError: null, files: state.files ?? [] };
     case 'manifest/loaded':
       return { ...state, manifestStatus: 'loaded', files: action.files };
     case 'manifest/error':
@@ -272,6 +273,14 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         lastSaveAttemptContent: { ...state.lastSaveAttemptContent, [action.path]: action.content },
       };
 
+    case 'save/conflict-clear':
+      return {
+        ...state,
+        saveError: null,
+        saveErrorPath: null,
+        saveErrorStatus: null,
+      };
+
     case 'commit/message':
       return { ...state, commitMessage: action.message, commitStatus: 'idle', commitError: null };
     case 'commit/start':
@@ -350,7 +359,7 @@ const SpecsWorkspacePage = ({
     return () => {
       cancelled = true;
     };
-  }, [api, boardId]);
+  }, [boardId]);
 
   useEffect(() => {
     const { selectedPath } = state;
@@ -382,7 +391,7 @@ const SpecsWorkspacePage = ({
     return () => {
       cancelled = true;
     };
-  }, [api, boardId, canEdit, state.editorContent, state.fileStatus, state.savedContent, state.selectedPath]);
+  }, [boardId, canEdit, state.editorContent, state.fileStatus, state.savedContent, state.selectedPath]);
 
   const handleSelectFile = useCallback((path: string) => {
     dispatch({ type: 'file/select', path });
@@ -418,6 +427,7 @@ const SpecsWorkspacePage = ({
         etag: file.etag,
         forceEditorContent: true,
       });
+      dispatch({ type: 'save/conflict-clear' });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to reload file';
       dispatch({ type: 'file/error', message });
@@ -538,7 +548,7 @@ const SpecsWorkspacePage = ({
     );
   }
 
-  if (state.files.length === 0) {
+  if (!state.files || state.files.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 py-12">
         <p className="text-sm text-muted">No documentation files found in this repository.</p>
@@ -611,6 +621,24 @@ const SpecsWorkspacePage = ({
                 )}
               </div>
             </div>
+
+            {saveConflict && (
+              <div className="shrink-0 border-b border-red-300 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-900/20">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <p className="text-sm font-medium text-red-900 dark:text-red-200">File conflict detected</p>
+                    <p className="text-xs text-red-800 dark:text-red-300">{state.saveError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleReloadSelectedFile}
+                    className="shrink-0 rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-900 hover:bg-red-50 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/50"
+                  >
+                    Reload file
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="flex-1 overflow-hidden">
               <SpecsMarkdownEditor
