@@ -6,11 +6,13 @@ import {
 } from '../../../server/config/subscription-tiers';
 
 describe('subscription-tiers config', () => {
-  const REQUIRED_TIERS = ['free', 'pro', 'enterprise'];
+  const REQUIRED_TIERS = ['personal', 'hobby', 'pro', 'business', 'enterprise'];
   const REQUIRED_QUOTA_KEYS: (keyof TierQuotas)[] = [
+    'maxWorkspaces',
     'maxBoardsPerWorkspace',
     'maxBoardsTotal',
     'maxColumnsPerBoard',
+    'maxCardsPerBoard',
     'maxInvitedMembersPerBoard',
     'maxGuestsPerBoard',
     'maxStorageBytes',
@@ -57,21 +59,48 @@ describe('subscription-tiers config', () => {
     }
   });
 
-  it('free tier has all numeric (no unlimited) quotas', () => {
-    const freeTier = SUBSCRIPTION_TIERS.free;
-    for (const [key, value] of pickQuotaValues(freeTier)) {
-      expect(typeof value).toBe(
+  it('personal tier has numeric quotas for all capacity fields', () => {
+    const personalTier = SUBSCRIPTION_TIERS.personal;
+    // members and guests are unlimited even on personal; capacity fields are numeric
+    const numericFields: (keyof TierQuotas)[] = [
+      'maxWorkspaces', 'maxBoardsPerWorkspace', 'maxBoardsTotal',
+      'maxColumnsPerBoard', 'maxCardsPerBoard', 'maxStorageBytes',
+      'readRateLimit', 'writeRateLimit',
+    ];
+    for (const key of numericFields) {
+      expect(typeof personalTier[key]).toBe(
         'number',
-        `free tier.${key} should be numeric, got ${value}`
+        `personal tier.${key} should be numeric, got ${personalTier[key]}`
+      );
+    }
+  });
+
+  it('hobby tier has numeric quotas for all capacity fields', () => {
+    const hobbyTier = SUBSCRIPTION_TIERS.hobby;
+    const numericFields: (keyof TierQuotas)[] = [
+      'maxWorkspaces', 'maxBoardsPerWorkspace', 'maxBoardsTotal',
+      'maxColumnsPerBoard', 'maxCardsPerBoard', 'maxStorageBytes',
+      'readRateLimit', 'writeRateLimit',
+    ];
+    for (const key of numericFields) {
+      expect(typeof hobbyTier[key]).toBe(
+        'number',
+        `hobby tier.${key} should be numeric, got ${hobbyTier[key]}`
       );
     }
   });
 
   it('pro tier has mostly numeric quotas with some unlimited', () => {
     const proTier = SUBSCRIPTION_TIERS.pro;
-    expect(proTier.maxBoardsTotal).toBe('unlimited');
-    expect(proTier.maxColumnsPerBoard).toBe('unlimited');
+    expect(typeof proTier.maxWorkspaces).toBe('number');
     expect(typeof proTier.maxBoardsPerWorkspace).toBe('number');
+    expect(typeof proTier.maxCardsPerBoard).toBe('number');
+  });
+
+  it('business tier has some unlimited quotas', () => {
+    const businessTier = SUBSCRIPTION_TIERS.business;
+    expect(businessTier.maxBoardsTotal).toBe('unlimited');
+    expect(typeof businessTier.maxWorkspaces).toBe('number');
   });
 
   it('enterprise tier has all unlimited quotas', () => {
@@ -84,12 +113,22 @@ describe('subscription-tiers config', () => {
     }
   });
 
-  it('free tier quotas are strictly ordered (higher for pro, enterprise)', () => {
-    const free = SUBSCRIPTION_TIERS.free;
+  it('tiers are strictly ordered by workspace count (personal <= hobby <= pro <= business)', () => {
+    const personal = SUBSCRIPTION_TIERS.personal;
+    const hobby = SUBSCRIPTION_TIERS.hobby;
     const pro = SUBSCRIPTION_TIERS.pro;
+    const business = SUBSCRIPTION_TIERS.business;
 
-    expect((pro.maxBoardsPerWorkspace as number) >=
-      (free.maxBoardsPerWorkspace as number)).toBe(true);
+    expect((hobby.maxBoardsPerWorkspace as number) >= (personal.maxBoardsPerWorkspace as number)).toBe(true);
+    expect((pro.maxWorkspaces as number) > (hobby.maxWorkspaces as number)).toBe(true);
+    expect((business.maxWorkspaces as number) > (pro.maxWorkspaces as number)).toBe(true);
+  });
+
+  it('stateTransitions is false for personal, true for paid tiers', () => {
+    expect(SUBSCRIPTION_TIERS.personal.features.stateTransitions).toBe(false);
+    expect(SUBSCRIPTION_TIERS.hobby.features.stateTransitions).toBe(true);
+    expect(SUBSCRIPTION_TIERS.pro.features.stateTransitions).toBe(true);
+    expect(SUBSCRIPTION_TIERS.business.features.stateTransitions).toBe(true);
   });
 
   it('DEFAULT_UNLIMITED_TIER is enterprise', () => {

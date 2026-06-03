@@ -8,8 +8,10 @@ import {
 describe('featureKeys', () => {
   describe('FEATURE_KEYS structure', () => {
     it('exports nested feature key groups', () => {
+      expect(FEATURE_KEYS.workspace).toBeDefined();
       expect(FEATURE_KEYS.board).toBeDefined();
       expect(FEATURE_KEYS.list).toBeDefined();
+      expect(FEATURE_KEYS.card).toBeDefined();
       expect(FEATURE_KEYS.member).toBeDefined();
       expect(FEATURE_KEYS.guest).toBeDefined();
       expect(FEATURE_KEYS.storage).toBeDefined();
@@ -17,9 +19,11 @@ describe('featureKeys', () => {
     });
 
     it('each group contains named feature keys', () => {
+      expect(FEATURE_KEYS.workspace.maxWorkspaces).toBeDefined();
       expect(FEATURE_KEYS.board.maxPerWorkspace).toBeDefined();
       expect(FEATURE_KEYS.board.maxTotal).toBeDefined();
       expect(FEATURE_KEYS.list.maxPerBoard).toBeDefined();
+      expect(FEATURE_KEYS.card.maxPerBoard).toBeDefined();
       expect(FEATURE_KEYS.member.maxInvitedPerBoard).toBeDefined();
       expect(FEATURE_KEYS.guest.maxPerBoard).toBeDefined();
       expect(FEATURE_KEYS.storage.maxBytes).toBeDefined();
@@ -29,6 +33,10 @@ describe('featureKeys', () => {
   });
 
   describe('key naming conventions', () => {
+    it('workspace keys use "workspace:" prefix', () => {
+      expect(FEATURE_KEYS.workspace.maxWorkspaces).toMatch(/^workspace:/);
+    });
+
     it('board keys use "board:" prefix', () => {
       expect(FEATURE_KEYS.board.maxPerWorkspace).toMatch(/^board:/);
       expect(FEATURE_KEYS.board.maxTotal).toMatch(/^board:/);
@@ -36,6 +44,10 @@ describe('featureKeys', () => {
 
     it('list keys use "list:" prefix', () => {
       expect(FEATURE_KEYS.list.maxPerBoard).toMatch(/^list:/);
+    });
+
+    it('card keys use "card:" prefix', () => {
+      expect(FEATURE_KEYS.card.maxPerBoard).toMatch(/^card:/);
     });
 
     it('member keys use "member:" prefix', () => {
@@ -66,15 +78,17 @@ describe('featureKeys', () => {
   });
 
   describe('ALL_FEATURE_KEYS array', () => {
-    it('contains exactly 8 keys', () => {
-      expect(ALL_FEATURE_KEYS).toHaveLength(8);
+    it('contains exactly 10 keys', () => {
+      expect(ALL_FEATURE_KEYS).toHaveLength(10);
     });
 
     it('includes all feature keys from FEATURE_KEYS object', () => {
       const expectedKeys = [
+        FEATURE_KEYS.workspace.maxWorkspaces,
         FEATURE_KEYS.board.maxPerWorkspace,
         FEATURE_KEYS.board.maxTotal,
         FEATURE_KEYS.list.maxPerBoard,
+        FEATURE_KEYS.card.maxPerBoard,
         FEATURE_KEYS.member.maxInvitedPerBoard,
         FEATURE_KEYS.guest.maxPerBoard,
         FEATURE_KEYS.storage.maxBytes,

@@ -3,7 +3,7 @@ import { getOrCreateByWorkspaceId, upsertWorkspaceSubscription } from '../common
 import { resolveWorkspaceContext } from '../common/workspaceResolver';
 import type { SubscriptionTier } from '../common/types';
 
-type CheckoutTier = Extract<SubscriptionTier, 'tier_2' | 'unlimited'>;
+type CheckoutTier = Extract<SubscriptionTier, 'tier_2' | 'tier_3' | 'tier_4'>;
 
 function normalizeOrigin(value: string | null): string | null {
   if (!value) return null;
@@ -28,6 +28,7 @@ function resolveClientAppOrigin(req: Request): string {
 
 function getPriceIdByTier(tier: CheckoutTier): string {
   if (tier === 'tier_2') return env.STRIPE_PRICE_TIER_2;
+  if (tier === 'tier_3') return env.STRIPE_PRICE_TIER_3;
   return env.STRIPE_PRICE_TIER_4;
 }
 
@@ -123,7 +124,7 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
   const { context } = workspaceResolution;
 
   const tier = (body.tier ?? 'tier_2') as CheckoutTier;
-  if (!['tier_2', 'unlimited'].includes(tier)) {
+  if (!['tier_2', 'tier_3', 'tier_4'].includes(tier)) {
     return Response.json({ name: 'invalid-tier', data: { tier } }, { status: 400 });
   }
 

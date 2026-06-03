@@ -2,6 +2,11 @@
 // Single source of truth for all feature names referenced in tier quotas, gates, and guards.
 
 export const FEATURE_KEYS = {
+  // Workspace limits (account-level)
+  workspace: {
+    maxWorkspaces: 'workspace:max-workspaces',
+  },
+
   // Board limits
   board: {
     maxPerWorkspace: 'board:max-per-workspace',
@@ -11,6 +16,11 @@ export const FEATURE_KEYS = {
   // List/Column limits
   list: {
     maxPerBoard: 'list:max-per-board',
+  },
+
+  // Card limits
+  card: {
+    maxPerBoard: 'card:max-per-board',
   },
 
   // Member limits
@@ -37,9 +47,11 @@ export const FEATURE_KEYS = {
 
 // Flat list of all feature keys for validation
 export const ALL_FEATURE_KEYS = [
+  FEATURE_KEYS.workspace.maxWorkspaces,
   FEATURE_KEYS.board.maxPerWorkspace,
   FEATURE_KEYS.board.maxTotal,
   FEATURE_KEYS.list.maxPerBoard,
+  FEATURE_KEYS.card.maxPerBoard,
   FEATURE_KEYS.member.maxInvitedPerBoard,
   FEATURE_KEYS.guest.maxPerBoard,
   FEATURE_KEYS.storage.maxBytes,

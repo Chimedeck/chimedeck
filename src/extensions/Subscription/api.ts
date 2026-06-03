@@ -1,6 +1,6 @@
 import { apiClient } from '~/common/api/client';
 
-export type SubscriptionTier = 'tier_1' | 'tier_2' | 'unlimited';
+export type SubscriptionTier = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4' | 'unlimited';
 
 export interface WorkspaceSubscription {
   workspaceId: string;
@@ -15,7 +15,7 @@ export interface WorkspaceSubscription {
 
 export interface CheckoutRequest {
   workspaceId: string;
-  tier: Extract<SubscriptionTier, 'tier_2' | 'unlimited'>;
+  tier: Extract<SubscriptionTier, 'tier_2' | 'tier_3' | 'tier_4'>;
 }
 
 export interface CheckoutResponse {
@@ -29,9 +29,11 @@ export interface PortalResponse {
 export type EntitlementValue = number | 'unlimited';
 
 export interface WorkspaceEntitlements {
+  'workspace:max-workspaces': EntitlementValue;
   'board:max-per-workspace': EntitlementValue;
   'board:max-total': EntitlementValue;
   'list:max-per-board': EntitlementValue;
+  'card:max-per-board': EntitlementValue;
   'member:max-invited-per-board': EntitlementValue;
   'guest:max-per-board': EntitlementValue;
   'storage:max-bytes': EntitlementValue;
@@ -43,6 +45,7 @@ export interface WorkspaceUsage {
   boardsPerWorkspace: number;
   boardsTotal: number;
   columnsPerBoard: number;
+  cardsPerBoard: number;
   invitedMembersPerBoard: number;
   guestsPerBoard: number;
   storageBytes: number;

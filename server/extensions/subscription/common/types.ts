@@ -1,4 +1,4 @@
-export type SubscriptionTier = 'tier_1' | 'tier_2' | 'unlimited';
+export type SubscriptionTier = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4' | 'unlimited';
 
 export type SubscriptionStatus =
   | 'active'

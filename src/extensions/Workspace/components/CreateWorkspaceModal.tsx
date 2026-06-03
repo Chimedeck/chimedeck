@@ -25,10 +25,10 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
 
   const [name, setName] = useState('');
 
-  const isBlockedByFreeOwnedWorkspace =
-    error?.code === 'workspace-creation-blocked-by-free-owned-workspace';
+  const isBlockedByWorkspaceLimit =
+    error?.code === 'workspace-creation-limit-reached';
 
-  const errorText = isBlockedByFreeOwnedWorkspace
+  const errorText = isBlockedByWorkspaceLimit
     ? translations['CreateWorkspaceModal.errorUpgradeAllOwnedWorkspaces']
     : (error?.message || translations['CreateWorkspaceModal.errorGeneric']);
 
@@ -83,7 +83,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             {error && (
               <div className="mb-3 space-y-1">
                 <p className="text-sm text-danger">{errorText}</p>
-                {isBlockedByFreeOwnedWorkspace && error.data?.upgradeUrl && (
+                {isBlockedByWorkspaceLimit && error.data?.upgradeUrl && (
                   <button
                     type="button"
                     onClick={() => navigate(error.data!.upgradeUrl!)}

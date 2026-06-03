@@ -13,17 +13,21 @@ import type { SubscriptionTier } from '../extensions/subscription/common/types';
 
 // Maps stored tier IDs to canonical tier names used by SUBSCRIPTION_TIERS.
 const TIER_NAME_MAP: Record<SubscriptionTier, string> = {
-  tier_1: 'free',
-  tier_2: 'pro',
+  tier_1: 'personal',
+  tier_2: 'hobby',
+  tier_3: 'pro',
+  tier_4: 'business',
   unlimited: 'enterprise',
 };
 
 // The subset of TierQuotas keys that the limit guard can enforce.
 export type LimitKey = Extract<
   keyof TierQuotas,
+  | 'maxWorkspaces'
   | 'maxBoardsPerWorkspace'
   | 'maxBoardsTotal'
   | 'maxColumnsPerBoard'
+  | 'maxCardsPerBoard'
   | 'maxInvitedMembersPerBoard'
   | 'maxGuestsPerBoard'
   | 'maxStorageBytes'
@@ -33,8 +37,8 @@ export type LimitKey = Extract<
  * Resolve quota value for a specific limitKey from a given tier.
  */
 export function resolveQuota(tier: SubscriptionTier, limitKey: LimitKey): QuotaValue {
-  const tierName = TIER_NAME_MAP[tier] ?? 'free';
-  const quotas = SUBSCRIPTION_TIERS[tierName];
+  const tierName = TIER_NAME_MAP[tier] ?? 'personal';
+  const quotas = SUBSCRIPTION_TIERS[tierName] ?? SUBSCRIPTION_TIERS.personal;
   return quotas[limitKey];
 }
 

@@ -53,8 +53,8 @@ describe('POST /api/v1/workspaces subscription policy', () => {
     };
 
     expect(res?.status).toBe(402);
-    expect(body.error?.code).toBe('workspace-creation-blocked-by-free-owned-workspace');
-    expect(body.error?.message).toBe('Upgrade your existing free workspace to create another workspace.');
+    expect(body.error?.code).toBe('workspace-creation-limit-reached');
+    expect(body.error?.message).toBe('You have reached the workspace limit for your current plan.');
     expect(body.error?.data?.workspaceId).toBe('ws-free');
     expect(body.error?.data?.upgradeUrl).toBe('/workspace/ws-free/billing');
     expect(transactionMock).not.toHaveBeenCalled();

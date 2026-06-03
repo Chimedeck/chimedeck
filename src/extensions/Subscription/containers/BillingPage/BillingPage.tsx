@@ -31,6 +31,8 @@ type PlanCard = {
   description: string;
 };
 
+type PaidTier = Extract<WorkspaceSubscription['tier'], 'tier_2' | 'tier_3' | 'tier_4'>;
+
 function normalizeWorkspaceToken(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -61,9 +63,24 @@ function ratioClass(used: number, limit: number): string {
 }
 
 function planLabel(tier: WorkspaceSubscription['tier']): string {
-  if (tier === 'tier_2') return translations['BillingPage.planPro'];
+  if (tier === 'tier_2') return translations['BillingPage.planHobby'];
+  if (tier === 'tier_3') return translations['BillingPage.planPro'];
+  if (tier === 'tier_4') return translations['BillingPage.planBusiness'];
   if (tier === 'unlimited') return translations['BillingPage.planEnterprise'];
-  return translations['BillingPage.planFree'];
+  return translations['BillingPage.planPersonal'];
+}
+
+function nextTierForUpgrade(tier: WorkspaceSubscription['tier']): PaidTier | null {
+  if (tier === 'tier_1') return 'tier_2';
+  if (tier === 'tier_2') return 'tier_3';
+  if (tier === 'tier_3') return 'tier_4';
+  return null;
+}
+
+function upgradeButtonLabel(tier: PaidTier): string {
+  if (tier === 'tier_2') return translations['BillingPage.upgradeToHobby'];
+  if (tier === 'tier_3') return translations['BillingPage.upgradeToPro'];
+  return translations['BillingPage.upgradeToBusiness'];
 }
 
 function canManageBilling(role: Role | undefined): boolean {
@@ -152,6 +169,12 @@ export default function BillingPage() {
         limit: entitlements['list:max-per-board'],
       },
       {
+        id: 'cardsPerBoard',
+        label: translations['BillingPage.metric.cardsPerBoard'],
+        used: usage.cardsPerBoard,
+        limit: entitlements['card:max-per-board'],
+      },
+      {
         id: 'invitedMembersPerBoard',
         label: translations['BillingPage.metric.invitedMembersPerBoard'],
         used: usage.invitedMembersPerBoard,
@@ -175,19 +198,17 @@ export default function BillingPage() {
 
   const isManager = canManageBilling(role);
 
-  const upgradeTarget = useMemo<'tier_2' | 'unlimited' | null>(() => {
-    if (!subscription) return null;
-    if (subscription.tier === 'tier_1') return 'tier_2';
-    if (subscription.tier === 'tier_2') return 'unlimited';
-    return null;
-  }, [subscription]);
+  const upgradeTarget = useMemo<PaidTier | null>(
+    () => (subscription ? nextTierForUpgrade(subscription.tier) : null),
+    [subscription],
+  );
 
   const handleUpgrade = useCallback(() => {
     if (!resolvedWorkspaceId || !upgradeTarget) return;
     navigate(`/workspace/${resolvedWorkspaceId}/checkout?tier=${upgradeTarget}`);
   }, [navigate, upgradeTarget, resolvedWorkspaceId]);
 
-  const handleCheckoutTier = useCallback((tier: 'tier_2' | 'unlimited') => {
+  const handleCheckoutTier = useCallback((tier: PaidTier) => {
     if (!resolvedWorkspaceId) return;
     navigate(`/workspace/${resolvedWorkspaceId}/checkout?tier=${tier}`);
   }, [navigate, resolvedWorkspaceId]);
@@ -209,18 +230,23 @@ export default function BillingPage() {
   const plans = useMemo<PlanCard[]>(() => [
     {
       tier: 'tier_1',
-      name: translations['BillingPage.planFree'],
-      description: translations['BillingPage.planFreeDescription'],
+      name: translations['BillingPage.planPersonal'],
+      description: translations['BillingPage.planPersonalDescription'],
     },
     {
       tier: 'tier_2',
+      name: translations['BillingPage.planHobby'],
+      description: translations['BillingPage.planHobbyDescription'],
+    },
+    {
+      tier: 'tier_3',
       name: translations['BillingPage.planPro'],
       description: translations['BillingPage.planProDescription'],
     },
     {
-      tier: 'unlimited',
-      name: translations['BillingPage.planEnterprise'],
-      description: translations['BillingPage.planEnterpriseDescription'],
+      tier: 'tier_4',
+      name: translations['BillingPage.planBusiness'],
+      description: translations['BillingPage.planBusinessDescription'],
     },
   ], []);
 
@@ -277,9 +303,7 @@ export default function BillingPage() {
               <div className="flex flex-wrap gap-2">
                 {upgradeTarget && (
                   <Button variant="primary" onClick={handleUpgrade}>
-                    {upgradeTarget === 'tier_2'
-                      ? translations['BillingPage.upgradeToTeam']
-                      : translations['BillingPage.upgradeToEnterprise']}
+                    {upgradeButtonLabel(upgradeTarget)}
                   </Button>
                 )}
 
@@ -306,10 +330,13 @@ export default function BillingPage() {
         {subscription && (
           <section className="rounded-xl border border-border bg-bg-surface p-5">
             <h3 className="text-lg font-semibold text-base">{translations['BillingPage.plansTitle']}</h3>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
               {plans.map((plan) => {
                 const isCurrent = subscription.tier === plan.tier;
-                const canCheckout = isManager && (plan.tier === 'tier_2' || plan.tier === 'unlimited') && !isCurrent;
+                const canCheckout =
+                  isManager
+                  && (plan.tier === 'tier_2' || plan.tier === 'tier_3' || plan.tier === 'tier_4')
+                  && !isCurrent;
                 let actionNode: React.ReactNode;
 
                 if (isCurrent) {
@@ -322,7 +349,7 @@ export default function BillingPage() {
                       variant="primary"
                       size="sm"
                       className="mt-4"
-                      onClick={() => handleCheckoutTier(plan.tier as 'tier_2' | 'unlimited')}
+                      onClick={() => handleCheckoutTier(plan.tier as PaidTier)}
                     >
                       {translations['BillingPage.choosePlan']}
                     </Button>

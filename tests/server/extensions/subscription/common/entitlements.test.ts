@@ -4,22 +4,39 @@ import { resolveEntitlements } from '../../../../../server/extensions/subscripti
 import { FEATURE_KEYS } from '../../../../../server/extensions/subscription/common/featureKeys';
 
 describe('entitlements resolver', () => {
-  it('resolves free tier from tier_1', () => {
+  it('resolves personal tier from tier_1', () => {
     const entitlements = resolveEntitlements('tier_1');
-    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(5);
-    expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe(2);
+    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(1);
+    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(1);
+    expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe('unlimited');
+    expect(entitlements[FEATURE_KEYS.guest.maxPerBoard]).toBe('unlimited');
   });
 
-  it('resolves pro tier from tier_2', () => {
+  it('resolves hobby tier from tier_2', () => {
     const entitlements = resolveEntitlements('tier_2');
-    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(50);
-    expect(entitlements[FEATURE_KEYS.board.maxTotal]).toBe('unlimited');
-    expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe(20);
+    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(10);
+    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(1);
+    expect(entitlements[FEATURE_KEYS.card.maxPerBoard]).toBe(500);
+  });
+
+  it('resolves pro tier from tier_3', () => {
+    const entitlements = resolveEntitlements('tier_3');
+    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(30);
+    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(5);
+    expect(entitlements[FEATURE_KEYS.card.maxPerBoard]).toBe(1000);
+  });
+
+  it('resolves business tier from tier_4', () => {
+    const entitlements = resolveEntitlements('tier_4');
+    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(200);
+    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe(50);
+    expect(entitlements[FEATURE_KEYS.card.maxPerBoard]).toBe(5000);
   });
 
   it('resolves enterprise tier from unlimited', () => {
     const entitlements = resolveEntitlements('unlimited');
     expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe('unlimited');
+    expect(entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.guest.maxPerBoard]).toBe('unlimited');
     expect(entitlements[FEATURE_KEYS.storage.maxBytes]).toBe('unlimited');
@@ -28,10 +45,12 @@ describe('entitlements resolver', () => {
   it('includes all feature keys in entitlements', () => {
     const entitlements = resolveEntitlements('tier_1');
     const keys = Object.keys(entitlements);
-    
+
+    expect(keys).toContain(FEATURE_KEYS.workspace.maxWorkspaces);
     expect(keys).toContain(FEATURE_KEYS.board.maxPerWorkspace);
     expect(keys).toContain(FEATURE_KEYS.board.maxTotal);
     expect(keys).toContain(FEATURE_KEYS.list.maxPerBoard);
+    expect(keys).toContain(FEATURE_KEYS.card.maxPerBoard);
     expect(keys).toContain(FEATURE_KEYS.member.maxInvitedPerBoard);
     expect(keys).toContain(FEATURE_KEYS.guest.maxPerBoard);
     expect(keys).toContain(FEATURE_KEYS.storage.maxBytes);
@@ -39,36 +58,34 @@ describe('entitlements resolver', () => {
     expect(keys).toContain(FEATURE_KEYS.rateLimit.writePerMinute);
   });
 
-  it('free tier has numeric quotas for most resources', () => {
+  it('personal tier has numeric quotas for most resources', () => {
     const entitlements = resolveEntitlements('tier_1');
     expect(typeof entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe('number');
-    expect(typeof entitlements[FEATURE_KEYS.member.maxInvitedPerBoard]).toBe('number');
-    expect(typeof entitlements[FEATURE_KEYS.guest.maxPerBoard]).toBe('number');
-  });
-
-  it('pro tier has mixed numeric and unlimited quotas', () => {
-    const entitlements = resolveEntitlements('tier_2');
-    expect(entitlements[FEATURE_KEYS.board.maxTotal]).toBe('unlimited');
-    expect(entitlements[FEATURE_KEYS.list.maxPerBoard]).toBe('unlimited');
+    expect(typeof entitlements[FEATURE_KEYS.workspace.maxWorkspaces]).toBe('number');
+    expect(typeof entitlements[FEATURE_KEYS.card.maxPerBoard]).toBe('number');
   });
 
   it('rate limits are included for all tiers', () => {
-    const free = resolveEntitlements('tier_1');
-    const pro = resolveEntitlements('tier_2');
+    const personal = resolveEntitlements('tier_1');
+    const hobby = resolveEntitlements('tier_2');
+    const business = resolveEntitlements('tier_4');
     const enterprise = resolveEntitlements('unlimited');
 
-    expect(free[FEATURE_KEYS.rateLimit.readPerMinute]).toBe(100);
-    expect(free[FEATURE_KEYS.rateLimit.writePerMinute]).toBe(30);
+    expect(personal[FEATURE_KEYS.rateLimit.readPerMinute]).toBe(500);
+    expect(personal[FEATURE_KEYS.rateLimit.writePerMinute]).toBe(200);
 
-    expect(pro[FEATURE_KEYS.rateLimit.readPerMinute]).toBe(500);
-    expect(pro[FEATURE_KEYS.rateLimit.writePerMinute]).toBe(200);
+    expect(hobby[FEATURE_KEYS.rateLimit.readPerMinute]).toBe(500);
+    expect(hobby[FEATURE_KEYS.rateLimit.writePerMinute]).toBe(200);
+
+    expect(business[FEATURE_KEYS.rateLimit.readPerMinute]).toBe(3000);
+    expect(business[FEATURE_KEYS.rateLimit.writePerMinute]).toBe(1000);
 
     expect(enterprise[FEATURE_KEYS.rateLimit.readPerMinute]).toBe('unlimited');
     expect(enterprise[FEATURE_KEYS.rateLimit.writePerMinute]).toBe('unlimited');
   });
 
-  it('defaults unknown tier to free', () => {
+  it('defaults unknown tier to personal', () => {
     const entitlements = resolveEntitlements('unknown-tier' as any);
-    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(5);
+    expect(entitlements[FEATURE_KEYS.board.maxPerWorkspace]).toBe(1);
   });
 });

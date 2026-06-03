@@ -7,6 +7,7 @@ export interface WorkspaceUsage {
   boardsPerWorkspace: number;
   boardsTotal: number;
   columnsPerBoard: number;
+  cardsPerBoard: number;
   invitedMembersPerBoard: number;
   guestsPerBoard: number;
   storageBytes: number;
@@ -42,6 +43,21 @@ export async function getMaxColumnsPerBoard(workspaceId: string): Promise<number
     .orderBy(db.raw('col_count'), 'desc')
     .first<{ col_count: number | string }>();
   return Number(result?.col_count || 0);
+}
+
+/**
+ * Get maximum card count in any board within workspace.
+ */
+export async function getMaxCardsPerBoard(workspaceId: string): Promise<number> {
+  const result = await db('cards')
+    .select(db.raw('COUNT(cards.id) as card_count'))
+    .join('lists', 'cards.list_id', 'lists.id')
+    .join('boards', 'lists.board_id', 'boards.id')
+    .where({ 'boards.workspace_id': workspaceId })
+    .groupBy('lists.board_id')
+    .orderBy(db.raw('card_count'), 'desc')
+    .first<{ card_count: number | string }>();
+  return Number(result?.card_count || 0);
 }
 
 /**
@@ -128,6 +144,7 @@ export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceU
     boardsPerWorkspace,
     boardsTotal,
     columnsPerBoard,
+    cardsPerBoard,
     invitedMembersPerBoard,
     guestsPerBoard,
     storageBytes,
@@ -135,6 +152,7 @@ export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceU
     getBoardCountPerWorkspace(workspaceId),
     getBoardCountTotal(workspaceId),
     getMaxColumnsPerBoard(workspaceId),
+    getMaxCardsPerBoard(workspaceId),
     getMaxInvitedMembersPerBoard(workspaceId),
     getMaxGuestsPerBoard(workspaceId),
     getStorageBytesUsed(workspaceId),
@@ -144,6 +162,7 @@ export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceU
     boardsPerWorkspace,
     boardsTotal,
     columnsPerBoard,
+    cardsPerBoard,
     invitedMembersPerBoard,
     guestsPerBoard,
     storageBytes,
