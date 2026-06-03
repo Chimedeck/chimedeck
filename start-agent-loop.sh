@@ -51,13 +51,14 @@ WORKFLOW_FILE=".github/copilot-instructions.md"
 SAMPLE_PROJECT_DIR="sample-project"  # read-only reference repo cloned by setup.sh
 CHANGELOG_DIR="specs/changelog"       # one timestamped .md per iteration
 ARCH_DIR="specs/architecture"          # architecture decision records
+TEST_CREDENTIALS_FILE="specs/tests/TEST_CREDENTIALS.md"
 
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
-MODEL_RECAP="gpt-4.1"
-MODEL_PLAN="gpt-4.1"
-MODEL_EXECUTE="gpt-5.3-codex"
-MODEL_TEST_FREE="gpt-4.1"
-MODEL_TEST_EVAL="gpt-4.1"
+MODEL_RECAP="gpt-5.4-mini"
+MODEL_PLAN="gpt-5.4-mini"
+MODEL_EXECUTE="auto"
+MODEL_TEST_FREE="gpt-5.4-mini"
+MODEL_TEST_EVAL="gpt-5.4-mini"
 
 # Temp directory for inter-phase context passing
 TMP_DIR="$(mktemp -d)"
@@ -433,6 +434,14 @@ Then, if PLAYWRIGHT_REQUIRED, list the exact user flows to test (max 5 bullets).
     phase_header "RETEST (Playwright MCP evaluation)" "$MODEL_TEST_EVAL"
 
     SCOUT_SUMMARY="$(cat "$SCOUT_OUT")"
+    if [[ -f "$TEST_CREDENTIALS_FILE" ]]; then
+      TEST_CREDENTIALS_CONTENT="$(cat "$TEST_CREDENTIALS_FILE")"
+      TEST_CREDENTIALS_NOTE="Credentials loaded from ${TEST_CREDENTIALS_FILE}:"
+    else
+      TEST_CREDENTIALS_CONTENT="ERROR: ${TEST_CREDENTIALS_FILE} not found. Stop and report this as a blocker."
+      TEST_CREDENTIALS_NOTE="Credential file status:"
+    fi
+
     EVAL_PROMPT="You are in Phase 4 (Retest – Playwright MCP evaluator) of iteration ${i}.
 Read the workflow instructions in '${WORKFLOW_FILE}' first.
 
@@ -447,8 +456,11 @@ MANDATORY RULES — follow without exception:
   each affected URL. Do NOT reason statically about what the code 'would' do.
 - NEVER respond with 'tests do not exist' or 'implementation required'. The
   scenario IS the test. Execute it live in the browser right now.
-- Read specs/tests/TEST_CREDENTIALS.md for all login credentials.
+- Use the credentials provided below for all login-required flows.
 - 'Tests do not exist' is an invalid response — open the browser and check.
+
+${TEST_CREDENTIALS_NOTE}
+${TEST_CREDENTIALS_CONTENT}
 
 IMPORTANT: Run the dev server in THIS project, not in '${SAMPLE_PROJECT_DIR}/'.
 '${SAMPLE_PROJECT_DIR}/' is a read-only reference and must not be started or modified.

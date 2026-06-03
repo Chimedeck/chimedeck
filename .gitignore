@@ -71,3 +71,5 @@ test-results/
 test-screenshots-tmp/
 playwright-report/
 .playwright-mcp/
+
+/specs/tests/TEST_CREDENTIALS.md
