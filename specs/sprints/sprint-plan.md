@@ -181,6 +181,13 @@
 | [155](./sprint-155.md) | State Transitions: Graph Editor Foundation | `bun add @xyflow/react`; Board Settings entry (`ArrowsRightLeftIcon`); full-screen overlay graph editor; column nodes with handles; draggable positions persisted; enable/disable toggle saved server-side | ⬜ Needs 153 + 18 + 19 |
 | [156](./sprint-156.md) | State Transitions: Edges, Toolbar & Real-Time Sync | Drag-to-create edges, `TransitionEdge` component (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), `StickyNoteNode`, real-time WS collaborative editing, undo stack, `config/actionTypes.ts` extensibility stub | ⬜ Needs 155 + 09 + 10 |
 | [157](./sprint-157.md) | State Transitions: Kanban Enforcement UI + Copy to Board | `useStateTransitionGuard` DnD pre-check, `StateTransitionErrorPopup`, forbidden-column drag-over highlight, locked-column icon, Copy to Board modal (cross-workspace), "Transitions Active" banner | ⬜ Needs 154 + 156 |
+| [164](./sprint-164.md) | Board Chat UI Entry + Sidebar History | Board header chat icon beside plugin/settings; right-side chat drawer with conversation history list; org-member-only visibility baseline | ⬜ Needs 18 + 79 + 80 |
+| [165](./sprint-165.md) | Board Chat Access Control + Guest Overrides | Board chat ACL policy (`org members only` by default), guest visibility/use toggles in chat sidebar, board-level settings + enforcement middleware | ⬜ Needs 164 |
+| [166](./sprint-166.md) | Conversation Storage: Raw + Vector | Persist chat messages as raw text and vector embeddings; board-scoped retrieval/search API; migration and indexing strategy | ⬜ Needs 165 |
+| [167](./sprint-167.md) | OpenAI-Compatible Adapter + Card Function Calling | Provider adapter with configurable API key/base URL/model; function-call orchestration for `create-card-from-chat` from conversation context | ⬜ Needs 166 + 07 |
+| [168](./sprint-168.md) | Board Setting: GitHub Project URL | Board settings field `github_project_url`; only workspace members on board can set/update; audit event + validation | ⬜ Needs 79 + 114 |
+| [169](./sprint-169.md) | Backend Repo Fetch + Specs Markdown Delivery | Backend function accepts GitHub project URL and returns downloaded repo path using GitHub App installation-token fetch; manifest-first + lazy `specs/**/*.md` loading for client view/edit | ⬜ Needs 168 |
+| [170](./sprint-170.md) | Specs Markdown Editor + Commit Sync | Board `Documentation` tab next to `Health Check` opens TipTap markdown-mode editor; delta-save API for edits/new files; backend git service commit-and-push with app bot alias identity | ⬜ Needs 169 |
 
 ---
 
@@ -348,6 +355,14 @@ Sprint 154 ─────────── Card move enforcement: validateCard
 Sprint 155 ─────────── Graph editor UI foundation: Board Settings entry (ArrowsRightLeftIcon), full-screen ReactFlow canvas overlay, column nodes with handles, draggable positions persisted, enable/disable toggle
 Sprint 156 ─────────── Graph editor full: drag-to-create edges, TransitionEdge (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), StickyNoteNode, real-time WS collaborative editing, undo stack
 Sprint 157 ─────────── Kanban enforcement UI: DnD pre-move guard, StateTransitionErrorPopup, forbidden-column drag highlight, locked column icon, Copy to Board cross-workspace modal, "Transitions Active" banner
+──── Board Chat + AI + GitHub Specs Flow ─────────────────────────────────────────
+Sprint 164 ─────────── Board chat entrypoint: header chat icon near plugin/settings; right-side drawer chat UI with history; baseline org-member-only visibility
+Sprint 165 ─────────── Chat access model: org members can use chat by default; guests hidden/blocked unless board toggles allow view/use
+Sprint 166 ─────────── Conversation persistence layer: raw transcript storage + vector embeddings for semantic retrieval
+Sprint 167 ─────────── OpenAI-compatible adapter: configurable API key/base URL/model; function calling for AI-triggered card creation from chat history
+Sprint 168 ─────────── Board settings extension: github_project_url field with org-member-only edit permission
+Sprint 169 ─────────── Repository bridge: resolve project URL -> downloaded repository path with GitHub App installation-token fetch; manifest-first and lazy specs markdown delivery
+Sprint 170 ─────────── Specs authoring workflow: board `Documentation` tab (next to Health Check) opens TipTap markdown-mode editor UI, delta-save endpoint, git-service commit-and-push with app bot alias identity
 ```
 
 ---
