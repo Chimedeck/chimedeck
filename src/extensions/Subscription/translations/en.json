@@ -32,6 +32,8 @@
   "BillingPage.plansTitle": "Plans",
   "BillingPage.currentPlanBadge": "Current plan",
   "BillingPage.choosePlan": "Go to Checkout",
+  "BillingPage.upgrade": "Upgrade",
+  "BillingPage.downgrade": "Downgrade",
   "BillingPage.metric.workspaceCount": "Workspaces",
   "BillingPage.metric.boardsPerWorkspace": "Boards per workspace",
   "BillingPage.metric.boardsTotal": "Total boards",

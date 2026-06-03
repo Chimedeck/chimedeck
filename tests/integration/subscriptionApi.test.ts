@@ -4,6 +4,7 @@ import type { WorkspaceContext, WorkspaceSubscription } from '../../server/exten
 let subscriptionsEnabled = true;
 let stripeSecretKey = 'sk_test_123';
 let stripePriceTier2 = 'price_tier_2';
+let stripePriceTier3 = 'price_tier_3';
 let stripePriceTier4 = 'price_tier_4';
 let currentTier: WorkspaceSubscription['tier'] = 'tier_1';
 let resolverResult:
@@ -27,6 +28,9 @@ mock.module('../../server/config/env', () => ({
     },
     get STRIPE_PRICE_TIER_2() {
       return stripePriceTier2;
+    },
+    get STRIPE_PRICE_TIER_3() {
+      return stripePriceTier3;
     },
     get STRIPE_PRICE_TIER_4() {
       return stripePriceTier4;
@@ -82,6 +86,7 @@ describe('subscription API endpoints', () => {
     subscriptionsEnabled = true;
     stripeSecretKey = 'sk_test_123';
     stripePriceTier2 = 'price_tier_2';
+    stripePriceTier3 = 'price_tier_3';
     stripePriceTier4 = 'price_tier_4';
     currentTier = 'tier_1';
     subscriptionRecord = {
@@ -188,6 +193,61 @@ describe('subscription API endpoints', () => {
 
     const response = await handleCreateCheckout(request);
     expect(response.status).toBe(200);
+  });
+
+  it('POST /api/subscription/checkout updates existing Stripe subscription instead of creating a new one', async () => {
+    let checkoutSessionsCalls = 0;
+    let subscriptionGetCalls = 0;
+    let subscriptionUpdateCalls = 0;
+
+    subscriptionRecord = {
+      workspaceId: 'ws-1',
+      tier: 'tier_2',
+      status: 'active',
+      stripeCustomerId: 'cus_existing',
+      stripeSubscriptionId: 'sub_existing',
+      stripePriceId: 'price_tier_2',
+      stripeCurrentPeriodEnd: null,
+      createdAt: '2026-06-01T00:00:00.000Z',
+      updatedAt: '2026-06-01T00:00:00.000Z',
+    };
+
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = requestInfoToUrl(input);
+      if (url.includes('/v1/checkout/sessions')) {
+        checkoutSessionsCalls += 1;
+        return Response.json({ url: 'https://checkout.stripe.test/session_123' });
+      }
+      if (url.includes('/v1/subscriptions/sub_existing') && (init?.method ?? 'GET') === 'GET') {
+        subscriptionGetCalls += 1;
+        return Response.json({
+          id: 'sub_existing',
+          items: {
+            data: [{ id: 'si_existing' }],
+          },
+        });
+      }
+      if (url.includes('/v1/subscriptions/sub_existing') && init?.method === 'POST') {
+        subscriptionUpdateCalls += 1;
+        return Response.json({ id: 'sub_existing' });
+      }
+      return Response.json({});
+    }) as typeof fetch;
+
+    const request = new Request('http://localhost/api/subscription/checkout', {
+      method: 'POST',
+      headers: { origin: 'http://localhost:5173' },
+      body: JSON.stringify({ workspaceId: 'ws-1', tier: 'tier_4' }),
+    });
+
+    const response = await handleCreateCheckout(request);
+    const payload = (await response.json()) as { data?: { url?: string } };
+
+    expect(response.status).toBe(200);
+    expect(subscriptionGetCalls).toBe(1);
+    expect(subscriptionUpdateCalls).toBe(1);
+    expect(checkoutSessionsCalls).toBe(0);
+    expect(payload.data?.url).toBe('http://localhost:5173/workspace/ws-1/billing?checkout=success');
   });
 
   it('POST /api/subscription/checkout rejects non-admin callers', async () => {

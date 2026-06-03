@@ -33,6 +33,14 @@ type PlanCard = {
 
 type PaidTier = Extract<WorkspaceSubscription['tier'], 'tier_2' | 'tier_3' | 'tier_4'>;
 
+const TIER_RANK: Record<WorkspaceSubscription['tier'], number> = {
+  tier_1: 1,
+  tier_2: 2,
+  tier_3: 3,
+  tier_4: 4,
+  unlimited: 5,
+};
+
 function normalizeWorkspaceToken(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -85,6 +93,19 @@ function upgradeButtonLabel(tier: PaidTier): string {
 
 function canManageBilling(role: Role | undefined): boolean {
   return role === 'OWNER' || role === 'ADMIN';
+}
+
+function planActionLabel({
+  currentTier,
+  targetTier,
+}: {
+  currentTier: WorkspaceSubscription['tier'];
+  targetTier: WorkspaceSubscription['tier'];
+}): string {
+  if (TIER_RANK[targetTier] > TIER_RANK[currentTier]) {
+    return translations['BillingPage.upgrade'];
+  }
+  return translations['BillingPage.downgrade'];
 }
 
 export default function BillingPage() {
@@ -333,25 +354,31 @@ export default function BillingPage() {
             <div className="mt-4 grid gap-3 md:grid-cols-4">
               {plans.map((plan) => {
                 const isCurrent = subscription.tier === plan.tier;
-                const canCheckout =
-                  isManager
-                  && (plan.tier === 'tier_2' || plan.tier === 'tier_3' || plan.tier === 'tier_4')
-                  && !isCurrent;
                 let actionNode: React.ReactNode;
 
                 if (isCurrent) {
                   actionNode = (
                     <p className="mt-4 text-xs font-medium text-primary">{translations['BillingPage.currentPlanBadge']}</p>
                   );
-                } else if (canCheckout) {
+                } else if (isManager) {
+                  const actionLabel = planActionLabel({ currentTier: subscription.tier, targetTier: plan.tier });
+                  const isDowngradeToPersonal = plan.tier === 'tier_1';
+
                   actionNode = (
                     <Button
-                      variant="primary"
+                      variant={actionLabel === translations['BillingPage.downgrade'] ? 'secondary' : 'primary'}
                       size="sm"
                       className="mt-4"
-                      onClick={() => handleCheckoutTier(plan.tier as PaidTier)}
+                      onClick={() => {
+                        if (isDowngradeToPersonal) {
+                          void handleOpenPortal();
+                          return;
+                        }
+                        handleCheckoutTier(plan.tier as PaidTier);
+                      }}
+                      disabled={isDowngradeToPersonal && busyAction === 'portal'}
                     >
-                      {translations['BillingPage.choosePlan']}
+                      {actionLabel}
                     </Button>
                   );
                 } else {

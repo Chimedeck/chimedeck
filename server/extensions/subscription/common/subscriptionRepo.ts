@@ -1,5 +1,6 @@
 import { db } from '../../../common/db';
 import { env } from '../../../config/env';
+import { mapStripePriceIdToTier } from './priceTierMap';
 import { serializeWorkspaceSubscription } from './serializer';
 import type {
   SubscriptionStatus,
@@ -140,7 +141,15 @@ export async function getCurrentTier(workspaceId: string): Promise<SubscriptionT
 
   const row = await db(TABLE_NAME)
     .where({ workspace_id: workspaceId })
-    .first<Pick<WorkspaceSubscriptionRow, 'tier'>>();
+    .first<Pick<WorkspaceSubscriptionRow, 'tier' | 'stripe_price_id'>>();
 
-  return row?.tier ?? defaultTier;
+  if (!row?.tier) return defaultTier;
+
+  // [context] Legacy data may have tier='unlimited' while stripe_price_id maps to a paid tier.
+  if (row.tier === 'unlimited' && row.stripe_price_id) {
+    const mappedTier = mapStripePriceIdToTier(row.stripe_price_id);
+    if (mappedTier !== 'tier_1') return mappedTier;
+  }
+
+  return row.tier;
 }
