@@ -201,7 +201,7 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
   }
 
   return Response.json(
-    { data: { path: filePath, content: fileResult.content } },
+    { data: { path: filePath, content: fileResult.content, etag: fileResult.etag } },
     { headers: { ETag: `"${fileResult.etag}"`, 'Cache-Control': 'private, max-age=300' } },
   );
 }

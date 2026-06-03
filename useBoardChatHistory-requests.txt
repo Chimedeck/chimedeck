@@ -1,0 +1,1 @@
+228. [GET] http://localhost:5173/src/extensions/BoardChat/hooks/useBoardChatHistory.ts => [200] OK

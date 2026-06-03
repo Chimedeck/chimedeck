@@ -59,6 +59,24 @@ export const env = {
   // Search feature gate — when false, GET /search returns 501
   SEARCH_ENABLED: Bun.env['SEARCH_ENABLED'] === 'true',
 
+  // Board chat embeddings — used by Sprint 166 write-path retry handling.
+  CHAT_EMBEDDING_API_URL: Bun.env['CHAT_EMBEDDING_API_URL'] ?? '',
+  CHAT_EMBEDDING_API_KEY: Bun.env['CHAT_EMBEDDING_API_KEY'] ?? '',
+  CHAT_EMBEDDING_MODEL: Bun.env['CHAT_EMBEDDING_MODEL'] ?? 'text-embedding-3-small',
+  CHAT_EMBEDDING_DIMENSIONS: parseInt(Bun.env['CHAT_EMBEDDING_DIMENSIONS'] ?? '1536', 10),
+  // Board chat assist provider — used by Sprint 167 assist endpoint.
+  CHAT_ASSIST_API_KEY: Bun.env['CHAT_ASSIST_API_KEY'] ?? '',
+  CHAT_ASSIST_BASE_URL: Bun.env['CHAT_ASSIST_BASE_URL'] ?? '',
+  CHAT_ASSIST_MODEL: Bun.env['CHAT_ASSIST_MODEL'] ?? '',
+  GITHUB_APP_ID: Bun.env['GITHUB_APP_ID'] ?? '',
+  GITHUB_APP_PRIVATE_KEY: decodeKey(Bun.env['GITHUB_APP_PRIVATE_KEY'] ?? ''),
+  GITHUB_APP_BOT_ALIAS: Bun.env['GITHUB_APP_BOT_ALIAS'] ?? 'github-app[bot]',
+  GITHUB_APP_API_BASE_URL: Bun.env['GITHUB_APP_API_BASE_URL'] ?? 'https://api.github.com',
+  GITHUB_REPOSITORY_CACHE_DIR: Bun.env['GITHUB_REPOSITORY_CACHE_DIR'] ?? '',
+  GITHUB_REPOSITORY_CACHE_TTL_SECONDS: parseInt(Bun.env['GITHUB_REPOSITORY_CACHE_TTL_SECONDS'] ?? '300', 10),
+  GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS:
+    parseInt(Bun.env['GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS'] ?? '60', 10),
+
   // OpenTelemetry — when false, no SDK is initialised and spans are no-ops
   OTEL_ENABLED: Bun.env['OTEL_ENABLED'] === 'true',
   OTEL_EXPORTER_URL: Bun.env['OTEL_EXPORTER_URL'] ?? 'http://localhost:4318/v1/traces',
@@ -155,5 +173,4 @@ export const env = {
 
   // Webhooks feature flag — disabled by default in local dev, enabled in staging/prod.
   // Set WEBHOOKS_ENABLED=true to activate all /api/v1/webhooks routes.
-  WEBHOOKS_ENABLED: Bun.env['WEBHOOKS_ENABLED'] === 'true',
 } as const;

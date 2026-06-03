@@ -46,6 +46,12 @@ export interface CardCreatedPayload {
   listName?: string | null;
   boardId: string;
   workspaceId: string;
+  source?: {
+    type: 'board-chat-assist';
+    tool: 'create_board_card';
+    toolCallId: string;
+    idempotencyKey: string;
+  };
 }
 
 export async function emitCardCreated({

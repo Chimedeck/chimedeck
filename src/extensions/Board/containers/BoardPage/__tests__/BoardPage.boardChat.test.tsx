@@ -4,10 +4,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import BoardPage from '../BoardPage';
-import * as boardChatConfig from '../../config/boardChatConfig';
+import * as boardChatConfig from '../../../config/boardChatConfig';
 
 // Mock the BOARD_CHAT_ENABLED flag
-vi.mock('../../config/boardChatConfig', () => ({
+vi.mock('../../../config/boardChatConfig', () => ({
   BOARD_CHAT_ENABLED: false,
 }));
 
@@ -41,9 +41,12 @@ describe('BoardPage — Board Chat feature gate', () => {
           token: 'token',
           user: { id: 'user-1' },
         }),
-        workspace: () => ({
+        workspaceShell: () => ({
           activeWorkspaceId: 'ws-1',
-          isGuest: false,
+          workspaces: [{ id: 'ws-1', name: 'Workspace', callerRole: 'MEMBER', createdAt: '2026-01-01' }],
+          status: 'idle',
+          createInProgress: false,
+          createError: null,
         }),
         boardMembers: () => ({ data: [] }),
         notifications: () => ({ notifications: [] }),
@@ -100,9 +103,12 @@ describe('BoardPage — Board Chat feature gate', () => {
           token: 'token',
           user: { id: 'user-1' },
         }),
-        workspace: () => ({
+        workspaceShell: () => ({
           activeWorkspaceId: 'ws-1',
-          isGuest: true, // Set as guest
+          workspaces: [{ id: 'ws-1', name: 'Workspace', callerRole: 'GUEST', createdAt: '2026-01-01' }],
+          status: 'idle',
+          createInProgress: false,
+          createError: null,
         }),
         boardMembers: () => ({ data: [] }),
         notifications: () => ({ notifications: [] }),

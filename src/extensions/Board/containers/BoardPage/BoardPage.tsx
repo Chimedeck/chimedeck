@@ -7,6 +7,7 @@
 // Sprint 56: replace browser confirm() with BoardDeleteDialog/ListDeleteDialog for nested content.
 // Sprint 87: redirect to workspace boards page (with success toast via navigate state) when the currently open board is deleted.
 // Sprint 116: Health Check fifth tab (HEALTH_CHECK_ENABLED flag).
+// Sprint 170: Documentation sixth tab — visible only when board has a valid GitHub Project URL.
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -74,6 +75,8 @@ import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthChec
 import { BOARD_CHAT_ENABLED } from '~/extensions/Board/config/boardChatConfig';
 import { BoardChatDrawer } from '~/extensions/BoardChat';
 import { boardPath, cardPath } from '~/common/routing/shortUrls';
+import { getBoardIntegrations } from '../../api';
+import SpecsWorkspacePage from '~/extensions/DeveloperDocs/containers/SpecsWorkspacePage/SpecsWorkspacePage';
 
 const BoardPage = () => {
   const dispatch = useAppDispatch();
@@ -160,8 +163,31 @@ const BoardPage = () => {
   }, []);
 
   // ── Active tab ────────────────────────────────────────────────────────────
-  type BoardTab = 'board' | 'activities' | 'archived-cards' | 'health-check';
+  type BoardTab = 'board' | 'activities' | 'archived-cards' | 'health-check' | 'documentation';
   const [activeTab, setActiveTab] = useState<BoardTab>('board');
+
+  // ── Documentation tab — GitHub Project URL integration gate ───────────────
+  // [why] The Documentation tab is only visible when the board has a configured
+  // GitHub Project URL.  We fetch integrations once when boardId is known and
+  // store the result; null means "not yet loaded or no URL configured".
+  const [githubProjectUrl, setGithubProjectUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!boardId) return;
+    let cancelled = false;
+    getBoardIntegrations({ api, boardId })
+      .then((res) => {
+        if (cancelled) return;
+        setGithubProjectUrl(res.data.github_project_url ?? null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGithubProjectUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, boardId]);
 
   // ── Board settings panel ─────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -178,6 +204,11 @@ const BoardPage = () => {
     workspaceRole === 'OWNER' || workspaceRole === 'ADMIN';
   const canManageIntegrations =
     workspaceRole === 'OWNER' || workspaceRole === 'ADMIN';
+  const canEditDocs =
+    workspaceRole === 'OWNER'
+    || workspaceRole === 'ADMIN'
+    || workspaceRole === 'MEMBER'
+    || (isGuest && canBoardGuestWrite(board?.callerGuestType ?? null));
 
   // ── Board chat panel ──────────────────────────────────────────────────────
   const [boardChatOpen, setBoardChatOpen] = useState(false);
@@ -712,6 +743,8 @@ const BoardPage = () => {
     { id: 'archived-cards' as const, label: 'Archived Cards' },
     // Health Check tab — only visible when feature flag is enabled (Sprint 116)
     ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
+    // Documentation tab — only visible when board has a valid GitHub Project URL (Sprint 170)
+    ...(githubProjectUrl ? [{ id: 'documentation' as const, label: 'Documentation' }] : []),
   ];
 
   const tabContent = (() => {
@@ -800,6 +833,16 @@ const BoardPage = () => {
 
     if (activeTab === 'health-check') {
       return <HealthCheckTab boardId={boardId ?? ''} />;
+    }
+
+    if (activeTab === 'documentation') {
+      return (
+        <SpecsWorkspacePage
+          boardId={boardId ?? ''}
+          accessToken={accessToken ?? null}
+          canEdit={canEditDocs}
+        />
+      );
     }
 
     return (

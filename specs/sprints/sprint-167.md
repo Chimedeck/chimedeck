@@ -74,6 +74,7 @@ Interaction model in chat sidebar:
 - Enforce board permissions before card creation.
 - Add idempotency key on tool execution path.
 - Record activity log entry for AI-created cards.
+- Persist assistant action-card metadata with `suggested` / `confirmed` / `dismissed` states for the chat UI contract.
 
 ---
 
@@ -97,3 +98,4 @@ Interaction model in chat sidebar:
 5. Invalid function payload is rejected with typed `422` error.
 6. AI-created card appears on board and activity log includes creation source.
 7. Chat UI supports explicit user confirmation path via `Create card` action prior to execution when confirmation mode is enabled.
+8. Assist responses expose action-card metadata suitable for the board chat drawer.

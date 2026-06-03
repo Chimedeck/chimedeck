@@ -1,5 +1,3 @@
-// POST /api/v1/lists/:listId/cards — create a new card; min role: MEMBER.
-import { randomUUID } from 'node:crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { dispatchEvent } from '../../../mods/events/dispatch';
@@ -9,11 +7,8 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
-import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
-import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 import { emitCardCreated } from '../../activity/mods/createActivityEvent';
-import { resolveCoverImageUrl } from '../../../common/cards/cover';
-import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { createCard } from '../mods/create';
 
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -74,38 +69,27 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     }
   }
 
-  // Append to end of list
-  const lastCard = await db('cards')
-    .where({ list_id: listId, archived: false })
-    .orderBy('position', 'desc')
-    .first();
-
-  const position = between(lastCard ? lastCard.position : '', HIGH_SENTINEL);
-
-  const id = randomUUID();
-  const shortId = await generateUniqueShortId('cards');
-  await db('cards').insert({
-    id,
-    short_id: shortId,
-    list_id: listId,
-    title: sanitizeText(body.title.trim()),
-    description: body.description ? sanitizeRichText(body.description.trim()) : null,
-    position,
-    archived: false,
-    start_date: body.start_date ?? null,
+  const cardWithCover = await createCard({
+    listId,
+    title: body.title.trim(),
+    description: body.description ? body.description.trim() : null,
+    startDate: body.start_date ?? null,
   });
-
-  const card = await db('cards').where({ id }).first();
-  const cardWithCover = await resolveCoverImageUrl(card as { id: string; cover_attachment_id?: string | null });
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 
   // Broadcast the full card object so clients can update their local state immediately
   await Promise.all([
-    dispatchEvent({ type: 'card.created', boardId: list.board_id, entityId: id, actorId, payload: { card: cardWithCover, listId } }),
+    dispatchEvent({
+      type: 'card.created',
+      boardId: list.board_id,
+      entityId: cardWithCover.id,
+      actorId,
+      payload: { card: cardWithCover, listId },
+    }),
     emitCardCreated({
       actorId,
-      cardId: id,
+      cardId: cardWithCover.id,
       cardTitle: cardWithCover.title,
       listId,
       listName: list.title ?? null,

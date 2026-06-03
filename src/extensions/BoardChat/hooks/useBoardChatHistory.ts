@@ -1,5 +1,6 @@
-// useBoardChatHistory — stub hook to query board chat message history.
-// Sprint 165 will integrate the backend API; for now, this stubs loading/empty/error states.
+import { useEffect, useState } from 'react';
+import { apiClient } from '~/common/api/client';
+import { getBoardChatMessages } from '../api';
 
 export type HistoryState = 'loading' | 'empty' | 'error' | 'loaded';
 
@@ -23,26 +24,62 @@ export interface UseBoardChatHistoryResult {
 export const useBoardChatHistory = ({
   boardId,
   enabled = true,
+  refreshKey = 0,
 }: {
   boardId: string;
   enabled?: boolean;
+  refreshKey?: number;
 }): UseBoardChatHistoryResult => {
-  // [why] Stub implementation: Sprint 165 will wire the actual API endpoint.
-  // For now, return a predictable "loading" state that UI layers can consume.
-  if (!enabled || !boardId) {
-    return {
-      messages: [],
-      state: 'empty',
-      isLoading: false,
-      isEmpty: true,
-    };
-  }
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [state, setState] = useState<HistoryState>(enabled && boardId ? 'loading' : 'empty');
+  const [error, setError] = useState<string | undefined>();
 
-  // [why] Always return loading for now so the drawer UI tests the loading state properly.
+  useEffect(() => {
+    if (!enabled || !boardId) {
+      setMessages([]);
+      setState('empty');
+      setError(undefined);
+      return;
+    }
+
+    let cancelled = false;
+    setState('loading');
+    setError(undefined);
+
+    void getBoardChatMessages({
+      api: apiClient as { get: <T>(url: string) => Promise<T> },
+      boardId,
+    })
+      .then((res) => {
+        if (cancelled) return;
+        const nextMessages = res.data.map((message) => ({
+          id: message.id,
+          userId: message.author_id,
+          userName: message.userName,
+          text: message.content,
+          createdAt: message.created_at,
+          avatar: message.avatar ?? undefined,
+        }));
+        setMessages(nextMessages);
+        setState(nextMessages.length > 0 ? 'loaded' : 'empty');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMessages([]);
+        setState('error');
+        setError('Failed to load history');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, enabled, refreshKey]);
+
   return {
-    messages: [],
-    state: 'loading',
-    isLoading: true,
-    isEmpty: false,
+    messages,
+    state,
+    error,
+    isLoading: state === 'loading',
+    isEmpty: state === 'empty',
   };
 };

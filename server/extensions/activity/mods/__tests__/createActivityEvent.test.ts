@@ -61,11 +61,23 @@ describe('createActivityEvent notification fan-out', () => {
       listName: 'To do',
       boardId: 'board-1',
       workspaceId: 'workspace-1',
+      source: {
+        type: 'board-chat-assist',
+        tool: 'create_board_card',
+        toolCallId: 'tool-call-1',
+        idempotencyKey: 'idem-1',
+      },
     });
 
     expect(writeActivityMock).toHaveBeenCalledTimes(1);
     expect(publishCardActivityEventMock).toHaveBeenCalledTimes(1);
     expect(mapActivityToNotificationMock).not.toHaveBeenCalled();
+    expect(writeActivityMock.mock.calls[0]?.[0].payload.source).toEqual({
+      type: 'board-chat-assist',
+      tool: 'create_board_card',
+      toolCallId: 'tool-call-1',
+      idempotencyKey: 'idem-1',
+    });
   });
 
   test('emitCardMoved does not map activity to notification directly', async () => {

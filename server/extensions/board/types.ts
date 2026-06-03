@@ -245,3 +245,39 @@ export interface SpecsFileResult {
   etag: string;
   sizeBytes: number;
 }
+
+export interface PutSpecsFileBody {
+  path: string;
+  content: string;
+}
+
+export interface PutSpecsFileResult {
+  status: number;
+  data: {
+    path: string;
+    content: string;
+    etag: string;
+    sha: string;
+    created: boolean;
+  };
+}
+
+export interface CommitSpecsBody {
+  message: string;
+  changedFiles: string[];
+}
+
+export interface CommitSpecsResult {
+  status: number;
+  data: {
+    commitHash: string;
+    pushStatus: 'pushed' | 'pending';
+    branch: string;
+    changedFiles: string[];
+    footer: {
+      actorId: string;
+      boardId: string;
+      botAlias: string;
+    };
+  };
+}

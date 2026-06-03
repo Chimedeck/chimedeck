@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 // ── In-memory fixtures ─────────────────────────────────────────────────────────
 
@@ -33,6 +36,8 @@ const FAKE_MANIFEST = {
 
 const { handleLoadSpecsManifest, specsLoadDeps } = await import('../specs/load');
 const { handleReadSpecsFile, specsReadDeps } = await import('../specs/read');
+const { handlePutSpecsFile, specsFileWriteDeps } = await import('../github/specs/file');
+const { handleCommitSpecs, specsCommitDeps } = await import('../github/specs/commit');
 
 // ── Shared dep reset ──────────────────────────────────────────────────────────
 
@@ -88,6 +93,22 @@ function makeReadFileMock(content = '# Hello World', etag = 'fileetag001') {
   return async () => ({ content, etag, sizeBytes: content.length });
 }
 
+async function createTempRepo(initialContent = '# Hello World') {
+  const repoPath = await mkdtemp(join(tmpdir(), 'specs-worktree-'));
+  await mkdir(join(repoPath, 'specs'), { recursive: true });
+  await writeFile(join(repoPath, 'specs', 'guide.md'), initialContent);
+  return repoPath;
+}
+
+const tempRepos: string[] = [];
+
+afterEach(async () => {
+  while (tempRepos.length > 0) {
+    const repoPath = tempRepos.pop() as string;
+    await rm(repoPath, { recursive: true, force: true });
+  }
+});
+
 function makeResolvePathMock(ok = true, absolutePath = `${FAKE_REPO_PATH}/README.md`) {
   return ({ filePath }: { repoPath: string; filePath: string }) => {
     if (!ok || filePath.includes('..') || filePath.startsWith('/')) {
@@ -124,6 +145,35 @@ function resetDeps() {
   specsReadDeps.readSpecsFile = makeReadFileMock();
   specsReadDeps.resolveSpecsFilePath = makeResolvePathMock();
   specsReadDeps.now = () => new Date('2026-06-03T01:00:00.000Z');
+
+  specsFileWriteDeps.authenticate = makeAuthMock();
+  specsFileWriteDeps.requireBoardAccess = makeBoardAccessMock();
+  specsFileWriteDeps.requireWorkspaceMembership = makeMembershipMock();
+  specsFileWriteDeps.requireRole = makeRoleMock();
+  specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock();
+  specsFileWriteDeps.writeSpecsFile = async ({ repoPath, filePath, content, ifMatch }) => {
+    const { writeSpecsFile } = await import('../../mods/specs/write');
+    return writeSpecsFile({ repoPath, filePath, content, ifMatch });
+  };
+  specsFileWriteDeps.invalidateSpecsCachesForBoard = () => {};
+
+  specsCommitDeps.authenticate = makeAuthMock();
+  specsCommitDeps.requireBoardAccess = makeBoardAccessMock();
+  specsCommitDeps.requireWorkspaceMembership = makeMembershipMock();
+  specsCommitDeps.requireRole = makeRoleMock();
+  specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock();
+  specsCommitDeps.getGithubInstallationAccessToken = async () => 'installation-token';
+  specsCommitDeps.normalizeGithubProjectUrl = ({ value }: { value: string }) => ({
+    ok: true as const,
+    value: {
+      normalizedUrl: value,
+      hash: 'hash',
+      reference: { scope: 'repo' as const, owner: 'journeyhorizon', repository: 'agentic-trello-replacement', projectNumber: 12 },
+    },
+  });
+  specsCommitDeps.commitSpecsChanges = async () => {
+    throw new Error('commit-mock-not-configured');
+  };
 }
 
 beforeEach(() => {
@@ -252,9 +302,10 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { path: string; content: string } };
+    const body = await res.json() as { data: { path: string; content: string; etag: string } };
     expect(body.data.path).toBe('README.md');
     expect(body.data.content).toBe('# Hello World');
+    expect(body.data.etag).toBe('fileetag001');
     expect(res.headers.get('etag')).toBe('"fileetag001"');
   });
 
@@ -354,5 +405,211 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
       'board-1',
     );
     expect(res.status).toBe(502);
+  });
+});
+
+// ── PUT /api/v1/boards/:id/github/specs/file ─────────────────────────────────
+
+describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
+  it('saves markdown files with an If-Match guard', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const { readSpecsFile } = await import('../../mods/specs/read');
+    const current = await readSpecsFile({ absolutePath: join(repoPath, 'specs', 'guide.md') });
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'If-Match': `"${current.etag}"`,
+        },
+        body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json() as { data: { path: string; content: string; etag: string; created: boolean } };
+    expect(body.data.path).toBe('specs/guide.md');
+    expect(body.data.content).toBe('# Updated');
+    expect(body.data.created).toBe(false);
+    expect(res.headers.get('etag')).toBe(`"${body.data.etag}"`);
+    expect(await readFile(join(repoPath, 'specs', 'guide.md'), 'utf8')).toBe('# Updated');
+  });
+
+  it('returns 412 when the If-Match precondition is stale', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'If-Match': '"stale-etag"',
+        },
+        body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(412);
+    const body = await res.json() as { name: string };
+    expect(body.name).toBe('stale-specs-file-precondition');
+  });
+
+  it('returns 422 for non-markdown writes', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'specs/guide.txt', content: 'plain text' }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(422);
+    const body = await res.json() as { name: string };
+    expect(body.name).toBe('specs-file-must-be-markdown');
+  });
+});
+
+// ── POST /api/v1/boards/:id/github/specs/commit ───────────────────────────────
+
+describe('POST /api/v1/boards/:boardId/github/specs/commit', () => {
+  it('returns a pending commit response when push credentials are unavailable', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+    specsCommitDeps.getGithubInstallationAccessToken = async () => {
+      throw new Error('github-app-not-configured');
+    };
+
+    let capturedInput: Parameters<typeof specsCommitDeps.commitSpecsChanges>[0] | null = null;
+    specsCommitDeps.commitSpecsChanges = async (input) => {
+      capturedInput = input;
+      return {
+        commitHash: 'commit-sha-1',
+        pushStatus: 'pending',
+        branch: input.branch,
+        changedFiles: input.changedFiles,
+        footer: {
+          actorId: input.actorId,
+          boardId: input.boardId,
+          botAlias: input.botAlias,
+        },
+      };
+    };
+
+    const res = await handleCommitSpecs(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update specs',
+          changedFiles: ['specs/guide.md'],
+        }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(201);
+    const body = await res.json() as {
+      data: {
+        commitHash: string;
+        pushStatus: 'pushed' | 'pending';
+        footer: { actorId: string; boardId: string; botAlias: string };
+      };
+    };
+    expect(body.data.commitHash).toBe('commit-sha-1');
+    expect(body.data.pushStatus).toBe('pending');
+    expect(body.data.footer.actorId).toBe('user-1');
+    expect(body.data.footer.boardId).toBe('board-1');
+    expect(body.data.footer.botAlias).toBe('github-app[bot]');
+    expect(capturedInput?.pushToken).toBeNull();
+  });
+
+  it('returns a pushed commit response when installation token is available', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+    specsCommitDeps.getGithubInstallationAccessToken = async () => 'installation-token';
+
+    let capturedInput: Parameters<typeof specsCommitDeps.commitSpecsChanges>[0] | null = null;
+    specsCommitDeps.commitSpecsChanges = async (input) => {
+      capturedInput = input;
+      return {
+        commitHash: 'commit-sha-2',
+        pushStatus: 'pushed',
+        branch: input.branch,
+        changedFiles: input.changedFiles,
+        footer: {
+          actorId: input.actorId,
+          boardId: input.boardId,
+          botAlias: input.botAlias,
+        },
+      };
+    };
+
+    const res = await handleCommitSpecs(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update specs',
+          changedFiles: ['specs/guide.md'],
+        }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(201);
+    const body = await res.json() as {
+      data: {
+        commitHash: string;
+        pushStatus: 'pushed' | 'pending';
+        footer: { actorId: string; boardId: string; botAlias: string };
+      };
+    };
+    expect(body.data.commitHash).toBe('commit-sha-2');
+    expect(body.data.pushStatus).toBe('pushed');
+    expect(body.data.footer.actorId).toBe('user-1');
+    expect(body.data.footer.boardId).toBe('board-1');
+    expect(body.data.footer.botAlias).toBe('github-app[bot]');
+    expect(capturedInput?.pushToken).toBe('installation-token');
+  });
+
+  it('returns 422 when a non-markdown file is passed to commit', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsCommitDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+    specsCommitDeps.getGithubInstallationAccessToken = async () => 'installation-token';
+    specsCommitDeps.commitSpecsChanges = async () => {
+      throw new Error('specs-file-must-be-markdown');
+    };
+
+    const res = await handleCommitSpecs(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'Update specs',
+          changedFiles: ['specs/guide.txt'],
+        }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(422);
+    const body = await res.json() as { name: string };
+    expect(body.name).toBe('specs-file-must-be-markdown');
   });
 });

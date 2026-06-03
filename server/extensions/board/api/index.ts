@@ -33,6 +33,7 @@ import { handleCreateChatSearch } from './chatSearch/index';
 import { handleCreateChatAssist } from './chatAssist/index';
 import { handleGetBoardIntegrations, handlePatchBoardIntegrations } from './integrations/index';
 import { handleLoadSpecsManifest, handleReadSpecsFile } from './specs/index';
+import { handlePutSpecsFile, handleCommitSpecs } from './github/specs/index';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 // Returns a Response if the path matches a board route, otherwise null.
@@ -196,6 +197,12 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // GET /api/v1/boards/:id/specs/files?path=... — read a single specs file (members only)
     if (sub === '/specs/files' && req.method === 'GET') return handleReadSpecsFile(req, boardId);
+
+    // PUT /api/v1/boards/:id/github/specs/file — delta-save a markdown file
+    if (sub === '/github/specs/file' && req.method === 'PUT') return handlePutSpecsFile(req, boardId);
+
+    // POST /api/v1/boards/:id/github/specs/commit — stage and commit specs changes
+    if (sub === '/github/specs/commit' && req.method === 'POST') return handleCommitSpecs(req, boardId);
   }
 
   return null;
