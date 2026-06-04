@@ -144,6 +144,7 @@ type WorkspaceAction =
   | { type: 'manifest/loaded'; files: SpecsManifestEntry[] }
   | { type: 'manifest/error'; message: string }
   | { type: 'file/select'; path: string }
+  | { type: 'file/ready' }
   | { type: 'file/loading' }
   | { type: 'file/loaded'; path: string; content: string; etag: string; forceEditorContent?: boolean }
   | { type: 'file/error'; message: string }
@@ -182,6 +183,8 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
 
     case 'file/select':
       return { ...state, selectedPath: action.path, fileError: null };
+    case 'file/ready':
+      return { ...state, fileStatus: 'loaded', fileError: null };
     case 'file/loading':
       return { ...state, fileStatus: 'loading', fileError: null };
     case 'file/loaded': {
@@ -217,17 +220,23 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
 
     case 'editor/change': {
       const nextDirty = new Set(state.dirtyPaths);
+      const nextPendingCommitPaths = new Set(state.pendingCommitPaths);
       const saved = state.savedContent[action.path];
       if (saved !== undefined && action.content !== saved) {
         nextDirty.add(action.path);
+        nextPendingCommitPaths.delete(action.path);
       } else if (saved !== undefined) {
         nextDirty.delete(action.path);
+        if (state.lastSaveAttemptContent[action.path] === saved) {
+          nextPendingCommitPaths.add(action.path);
+        }
       }
 
       return {
         ...state,
         editorContent: { ...state.editorContent, [action.path]: action.content },
         dirtyPaths: nextDirty,
+        pendingCommitPaths: nextPendingCommitPaths,
         commitStatus: 'idle',
         saveError: null,
         saveErrorPath: null,
@@ -247,8 +256,11 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'save/success': {
       const nextState = setPathValue(state, action.path, action.content, action.etag);
       const currentContent = nextState.editorContent[action.path];
+      const nextDirtyPaths = new Set(nextState.dirtyPaths);
       const nextPendingCommitPaths = new Set(nextState.pendingCommitPaths);
       if (currentContent === action.content) {
+        // Editor content matches what was just saved — the file is clean and ready to commit.
+        nextDirtyPaths.delete(action.path);
         nextPendingCommitPaths.add(action.path);
       }
 
@@ -259,6 +271,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         saveErrorPath: null,
         saveErrorStatus: null,
         commitStatus: 'idle',
+        dirtyPaths: nextDirtyPaths,
         pendingCommitPaths: nextPendingCommitPaths,
         lastSaveAttemptContent: { ...nextState.lastSaveAttemptContent, [action.path]: action.content },
       };
@@ -286,17 +299,24 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'commit/start':
       return { ...state, commitStatus: 'committing', commitError: null };
     case 'commit/success':
-      return {
-        ...state,
-        commitStatus: 'success',
-        commitError: null,
-        pendingCommitPaths: new Set(),
-        commitMessage: '',
-        lastSaveAttemptContent: action.changedFiles.reduce<Record<string, string>>((acc, path) => {
-          acc[path] = state.savedContent[path] ?? '';
-          return acc;
-        }, { ...state.lastSaveAttemptContent }),
-      };
+      {
+        const nextPendingCommitPaths = new Set(state.pendingCommitPaths);
+        for (const changedFile of action.changedFiles) {
+          nextPendingCommitPaths.delete(changedFile);
+        }
+
+        return {
+          ...state,
+          commitStatus: 'success',
+          commitError: null,
+          pendingCommitPaths: nextPendingCommitPaths,
+          commitMessage: '',
+          lastSaveAttemptContent: action.changedFiles.reduce<Record<string, string>>((acc, path) => {
+            acc[path] = state.savedContent[path] ?? '';
+            return acc;
+          }, { ...state.lastSaveAttemptContent }),
+        };
+      }
     case 'commit/error':
       return { ...state, commitStatus: 'error', commitError: action.message };
 
@@ -364,8 +384,12 @@ const SpecsWorkspacePage = ({
   useEffect(() => {
     const { selectedPath } = state;
     if (!selectedPath) return;
-    if (state.fileStatus === 'loading') return;
-    if (selectedPath in state.savedContent) return;
+    if (selectedPath in state.savedContent) {
+      if (state.fileStatus !== 'loaded' || state.fileError) {
+        dispatch({ type: 'file/ready' });
+      }
+      return;
+    }
     const shouldForceEditorContent = !canEdit || !(selectedPath in state.editorContent);
 
     let cancelled = false;
@@ -391,7 +415,7 @@ const SpecsWorkspacePage = ({
     return () => {
       cancelled = true;
     };
-  }, [boardId, canEdit, state.editorContent, state.fileStatus, state.savedContent, state.selectedPath]);
+  }, [boardId, canEdit, state.editorContent, state.savedContent, state.selectedPath]);
 
   const handleSelectFile = useCallback((path: string) => {
     dispatch({ type: 'file/select', path });
@@ -706,3 +730,4 @@ const SpecsWorkspacePage = ({
 };
 
 export default SpecsWorkspacePage;
+export { workspaceReducer, initialState };

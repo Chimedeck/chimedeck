@@ -69,7 +69,10 @@ export async function writeSpecsFile({
   if (!created) {
     const current = await readSpecsFile({ absolutePath: resolved.absolutePath });
     const matches = parseIfMatchHeader(ifMatch);
-    if (matches && !matches.has('*') && !matches.has(current.etag)) {
+    if (!matches) {
+      throw new Error('missing-specs-file-precondition');
+    }
+    if (!matches.has('*') && !matches.has(current.etag)) {
       throw new Error('stale-specs-file-precondition');
     }
   }

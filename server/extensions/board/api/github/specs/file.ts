@@ -52,6 +52,12 @@ function mapWriteError(err: unknown): Response {
       { status: 412 },
     );
   }
+  if (message === 'missing-specs-file-precondition') {
+    return Response.json(
+      { name: message, data: { message: 'If-Match header is required when updating an existing file.' } },
+      { status: 412 },
+    );
+  }
 
   if (
     message === 'specs-file-must-be-markdown'

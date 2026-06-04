@@ -462,6 +462,25 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
     expect(body.name).toBe('stale-specs-file-precondition');
   });
 
+  it('returns 412 when If-Match is missing for an existing file', async () => {
+    const repoPath = await createTempRepo('# Hello World');
+    tempRepos.push(repoPath);
+    specsFileWriteDeps.downloadRepositoryFromProjectUrl = makeDownloadMock(repoPath);
+
+    const res = await handlePutSpecsFile(
+      new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
+      }),
+      'board-1',
+    );
+
+    expect(res.status).toBe(412);
+    const body = await res.json() as { name: string };
+    expect(body.name).toBe('missing-specs-file-precondition');
+  });
+
   it('returns 422 for non-markdown writes', async () => {
     const repoPath = await createTempRepo('# Hello World');
     tempRepos.push(repoPath);

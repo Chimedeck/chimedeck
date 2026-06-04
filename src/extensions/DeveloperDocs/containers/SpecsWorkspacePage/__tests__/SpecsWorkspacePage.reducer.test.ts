@@ -1,84 +1,28 @@
-// Test for SpecsWorkspacePage reducer logic - validates state transitions for conflict recovery
 import { describe, it, expect } from 'vitest';
+import {
+  workspaceReducer,
+  initialState as baseInitialState,
+} from '../SpecsWorkspacePage';
 
-// Inline reducer from SpecsWorkspacePage for testing
-interface WorkspaceState {
-  manifestStatus: 'idle' | 'loading' | 'loaded' | 'error';
-  manifestError: string | null;
-  files: any[];
-  selectedPath: string | null;
-  fileStatus: 'idle' | 'loading' | 'loaded' | 'error';
-  fileError: string | null;
-  savedContent: Record<string, string>;
-  savedEtags: Record<string, string>;
-  editorContent: Record<string, string>;
-  dirtyPaths: Set<string>;
-  pendingCommitPaths: Set<string>;
-  lastSaveAttemptContent: Record<string, string>;
-  isSaving: boolean;
-  saveError: string | null;
-  saveErrorPath: string | null;
-  saveErrorStatus: number | null;
-  commitStatus: 'idle' | 'committing' | 'success' | 'error';
-  commitError: string | null;
-  commitMessage: string;
-}
+type WorkspaceState = Parameters<typeof workspaceReducer>[0];
+type WorkspaceAction = Parameters<typeof workspaceReducer>[1];
 
-type WorkspaceAction =
-  | { type: 'save/error'; path: string; content: string; message: string; status: number | null }
-  | { type: 'save/conflict-clear' }
-  | { type: 'manifest/loading' };
-
-function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
-  switch (action.type) {
-    case 'manifest/loading':
-      return { ...state, manifestStatus: 'loading', manifestError: null, files: state.files ?? [] };
-    case 'save/error':
-      return {
-        ...state,
-        isSaving: false,
-        saveError: action.message,
-        saveErrorPath: action.path,
-        saveErrorStatus: action.status,
-        lastSaveAttemptContent: { ...state.lastSaveAttemptContent, [action.path]: action.content },
-      };
-    case 'save/conflict-clear':
-      return {
-        ...state,
-        saveError: null,
-        saveErrorPath: null,
-        saveErrorStatus: null,
-      };
-    default:
-      return state;
-  }
-}
-
-describe('SpecsWorkspacePage Reducer - Conflict Recovery', () => {
-  const initialState: WorkspaceState = {
-    manifestStatus: 'idle',
-    manifestError: null,
-    files: [],
-    selectedPath: null,
-    fileStatus: 'idle',
-    fileError: null,
-    savedContent: {},
-    savedEtags: {},
-    editorContent: {},
-    dirtyPaths: new Set(),
-    pendingCommitPaths: new Set(),
-    lastSaveAttemptContent: {},
-    isSaving: false,
-    saveError: null,
-    saveErrorPath: null,
-    saveErrorStatus: null,
-    commitStatus: 'idle',
-    commitError: null,
-    commitMessage: '',
+function cloneInitialState(overrides: Partial<WorkspaceState> = {}): WorkspaceState {
+  return {
+    ...baseInitialState,
+    dirtyPaths: new Set(baseInitialState.dirtyPaths),
+    pendingCommitPaths: new Set(baseInitialState.pendingCommitPaths),
+    ...overrides,
   };
+}
 
+function reduce(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
+  return workspaceReducer(state, action);
+}
+
+describe('SpecsWorkspacePage reducer', () => {
   it('records a stale save conflict (412 status)', () => {
-    const state = workspaceReducer(initialState, {
+    const state = reduce(cloneInitialState(), {
       type: 'save/error',
       path: 'specs/architecture.md',
       content: '# Updated',
@@ -93,49 +37,132 @@ describe('SpecsWorkspacePage Reducer - Conflict Recovery', () => {
   });
 
   it('clears conflict state with save/conflict-clear action', () => {
-    const stateWithConflict: WorkspaceState = {
-      ...initialState,
+    const stateWithConflict = cloneInitialState({
       saveError: 'The file changed on the server. Reload and try again.',
       saveErrorPath: 'specs/architecture.md',
       saveErrorStatus: 412,
-    };
-
-    const state = workspaceReducer(stateWithConflict, {
-      type: 'save/conflict-clear',
     });
+
+    const state = reduce(stateWithConflict, { type: 'save/conflict-clear' });
 
     expect(state.saveError).toBeNull();
     expect(state.saveErrorPath).toBeNull();
     expect(state.saveErrorStatus).toBeNull();
   });
 
-  it('preserves files array during manifest/loading transition', () => {
-    const stateWithFiles: WorkspaceState = {
-      ...initialState,
-      files: [
-        { path: 'specs/architecture.md', sizeBytes: 1024 },
-        { path: 'specs/changelog.md', sizeBytes: 512 },
-      ],
-    };
-
-    const state = workspaceReducer(stateWithFiles, {
-      type: 'manifest/loading',
+  it('removes a file from pending commit while local edits are unsaved', () => {
+    const state = reduce(cloneInitialState({
+      savedContent: { 'specs/architecture.md': '# Saved' },
+      editorContent: { 'specs/architecture.md': '# Saved' },
+      pendingCommitPaths: new Set(['specs/architecture.md']),
+      lastSaveAttemptContent: { 'specs/architecture.md': '# Saved' },
+    }), {
+      type: 'editor/change',
+      path: 'specs/architecture.md',
+      content: '# Unsaved draft',
     });
 
-    expect(state.files).toEqual([
-      { path: 'specs/architecture.md', sizeBytes: 1024 },
-      { path: 'specs/changelog.md', sizeBytes: 512 },
-    ]);
-    expect(state.manifestStatus).toBe('loading');
+    expect(state.dirtyPaths.has('specs/architecture.md')).toBe(true);
+    expect(state.pendingCommitPaths.has('specs/architecture.md')).toBe(false);
   });
 
-  it('handles manifest/loading with undefined files gracefully', () => {
-    const state = workspaceReducer(
-      { ...initialState, files: undefined as any },
-      { type: 'manifest/loading' },
-    );
+  it('restores pending commit state when content returns to the last saved value', () => {
+    const dirtyState = cloneInitialState({
+      savedContent: { 'specs/architecture.md': '# Saved' },
+      editorContent: { 'specs/architecture.md': '# Unsaved draft' },
+      dirtyPaths: new Set(['specs/architecture.md']),
+      pendingCommitPaths: new Set(),
+      lastSaveAttemptContent: { 'specs/architecture.md': '# Saved' },
+    });
 
-    expect(state.files).toEqual([]);
-    expect(state.manifestStatus).toBe('loading');
+    const state = reduce(dirtyState, {
+      type: 'editor/change',
+      path: 'specs/architecture.md',
+      content: '# Saved',
+    });
+
+    expect(state.dirtyPaths.has('specs/architecture.md')).toBe(false);
+    expect(state.pendingCommitPaths.has('specs/architecture.md')).toBe(true);
+  });
+
+  it('clears only committed files from pendingCommitPaths on commit/success', () => {
+    const state = reduce(cloneInitialState({
+      commitStatus: 'committing',
+      commitMessage: 'Update specs',
+      pendingCommitPaths: new Set(['specs/architecture.md', 'specs/changelog.md']),
+      savedContent: {
+        'specs/architecture.md': '# Architecture',
+        'specs/changelog.md': '# Changelog',
+      },
+      lastSaveAttemptContent: {
+        'specs/architecture.md': '# Architecture',
+        'specs/changelog.md': '# Changelog',
+      },
+    }), {
+      type: 'commit/success',
+      changedFiles: ['specs/architecture.md'],
+    });
+
+    expect(state.commitStatus).toBe('success');
+    expect(state.commitMessage).toBe('');
+    expect(state.pendingCommitPaths.has('specs/architecture.md')).toBe(false);
+    expect(state.pendingCommitPaths.has('specs/changelog.md')).toBe(true);
+  });
+
+  it('clears dirtyPaths and adds to pendingCommitPaths on save/success when editor matches saved', () => {
+    const dirtyState = cloneInitialState({
+      selectedPath: 'specs/overview.md',
+      savedContent: { 'specs/overview.md': '# Original' },
+      savedEtags: { 'specs/overview.md': '"etag-v1"' },
+      editorContent: { 'specs/overview.md': '# Edited' },
+      dirtyPaths: new Set(['specs/overview.md']),
+      pendingCommitPaths: new Set(),
+      isSaving: true,
+    });
+
+    const state = reduce(dirtyState, {
+      type: 'save/success',
+      path: 'specs/overview.md',
+      content: '# Edited',
+      etag: '"etag-v2"',
+      sha: 'abc123',
+      created: false,
+    });
+
+    expect(state.isSaving).toBe(false);
+    // dirtyPaths cleared because editor content matches saved content.
+    expect(state.dirtyPaths.has('specs/overview.md')).toBe(false);
+    // Path is now ready to commit.
+    expect(state.pendingCommitPaths.has('specs/overview.md')).toBe(true);
+    expect(state.savedContent['specs/overview.md']).toBe('# Edited');
+    expect(state.savedEtags['specs/overview.md']).toBe('"etag-v2"');
+  });
+
+  it('leaves dirtyPaths intact on save/success when editor has newer edits', () => {
+    const dirtyState = cloneInitialState({
+      selectedPath: 'specs/overview.md',
+      savedContent: { 'specs/overview.md': '# Original' },
+      savedEtags: { 'specs/overview.md': '"etag-v1"' },
+      // User typed more after save was initiated
+      editorContent: { 'specs/overview.md': '# Newer edits' },
+      dirtyPaths: new Set(['specs/overview.md']),
+      pendingCommitPaths: new Set(),
+      isSaving: true,
+    });
+
+    const state = reduce(dirtyState, {
+      type: 'save/success',
+      path: 'specs/overview.md',
+      // save/success carries the content that was saved (an older snapshot)
+      content: '# Edited snapshot',
+      etag: '"etag-v2"',
+      sha: 'abc123',
+      created: false,
+    });
+
+    // dirtyPaths stays because editor still has newer edits
+    expect(state.dirtyPaths.has('specs/overview.md')).toBe(true);
+    // Not ready to commit yet
+    expect(state.pendingCommitPaths.has('specs/overview.md')).toBe(false);
   });
 });

@@ -27,14 +27,14 @@ import { handleUploadBackground } from './uploadBackground';
 import { handleDeleteBackground } from './deleteBackground';
 import { handleGetBackground } from './backgroundProxy';
 import { handleGetChatPermissions, handlePatchChatPermissions } from './chatPermissions/index';
-import { handleGetChatMessages } from './chatMessages/index';
-import { handleCreateChatMessage } from './chatMessages/index';
+import { handleGetChatMessages, handleCreateChatMessage } from './chatMessages/index';
 import { handleCreateChatSearch } from './chatSearch/index';
 import { handleCreateChatAssist } from './chatAssist/index';
 import { handleGetBoardIntegrations, handlePatchBoardIntegrations } from './integrations/index';
 import { handleLoadSpecsManifest, handleReadSpecsFile } from './specs/index';
 import { handlePutSpecsFile, handleCommitSpecs } from './github/specs/index';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
+import { flags } from '../../../mods/flags';
 
 // Returns a Response if the path matches a board route, otherwise null.
 export async function boardRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -64,6 +64,28 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
       );
     }
     const sub = boardMatch[2] ?? '';
+
+    const isBoardChatRoute = sub === '/chat-permissions' || sub.startsWith('/chat/');
+    if (isBoardChatRoute) {
+      const boardChatEnabled = await flags.isEnabled('BOARD_CHAT_ENABLED');
+      if (!boardChatEnabled) {
+        return Response.json(
+          { error: { code: 'board-chat-disabled', message: 'Board chat feature is disabled' } },
+          { status: 404 },
+        );
+      }
+    }
+
+    const isGithubEditingRoute = sub.startsWith('/specs/') || sub.startsWith('/github/specs/');
+    if (isGithubEditingRoute) {
+      const githubEditingEnabled = await flags.isEnabled('GITHUB_EDITING_ENABLED');
+      if (!githubEditingEnabled) {
+        return Response.json(
+          { error: { code: 'github-editing-disabled', message: 'GitHub editing feature is disabled' } },
+          { status: 404 },
+        );
+      }
+    }
 
     // Enforce board visibility before dispatching to any board-scoped handler.
     // Populates req.board (and req.currentUser, req.workspaceId, req.callerRole for non-public boards).

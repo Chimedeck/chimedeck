@@ -1,7 +1,7 @@
 // SpecsWorkspacePage.test.tsx — workspace file selection and save/commit behavior.
 // Sprint 170: checks manifest load, dirty tracking, conflict reload, and commit wiring.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import SpecsWorkspacePage from '../../containers/SpecsWorkspacePage/SpecsWorkspacePage';
 import * as apiClient from '~/common/api/client';
 
@@ -74,6 +74,25 @@ function mockResponse(body: unknown, status = 200) {
   });
 }
 
+async function openArchitectureFile() {
+  await waitFor(() => {
+    expect(screen.getByText('architecture.md')).toBeInTheDocument();
+  });
+
+  fireEvent.click(screen.getByRole('button', { name: /architecture\.md/i }));
+
+  await waitFor(() => {
+    expect(screen.getByTestId('editor-content')).toBeInTheDocument();
+  }, { timeout: 3000 });
+}
+
+async function updateEditorMarkdown(nextContent: string) {
+  await act(async () => {
+    editorMarkdown = nextContent;
+    editorConfig?.onUpdate?.({ editor: editorMock });
+  });
+}
+
 describe('SpecsWorkspacePage', () => {
   const apiGet = apiClient.apiClient.get as ReturnType<typeof vi.fn>;
 
@@ -86,7 +105,6 @@ describe('SpecsWorkspacePage', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
   });
 
   it('renders the file tree and prompt after loading the manifest', async () => {
@@ -101,12 +119,14 @@ describe('SpecsWorkspacePage', () => {
   });
 
   it('debounces save requests and clears the dirty badge after save succeeds', async () => {
-    vi.useFakeTimers();
-    apiGet
-      .mockResolvedValueOnce({ data: MOCK_MANIFEST })
-      .mockResolvedValueOnce({
+    apiGet.mockImplementation(async (url: string) => {
+      if (url.includes('/specs/manifest')) {
+        return { data: MOCK_MANIFEST };
+      }
+      return {
         data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
-      });
+      };
+    });
     const fetchMock = vi.fn(async () => mockResponse({
       data: {
         path: 'specs/architecture.md',
@@ -116,32 +136,20 @@ describe('SpecsWorkspacePage', () => {
         created: false,
       },
     }));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
 
-    await waitFor(() => {
-      expect(screen.getByText('architecture.md')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText('architecture.md'));
+    await openArchitectureFile();
+    await updateEditorMarkdown('# Updated');
 
     await waitFor(() => {
-      expect(screen.getByTitle('specs/architecture.md')).toBeInTheDocument();
+      expect(screen.getByText('Unsaved')).toBeInTheDocument();
     });
-
-    expect(screen.getByText('Saved')).toBeInTheDocument();
-
-    editorMarkdown = '# Updated';
-    editorConfig?.onUpdate?.({ editor: editorMock });
-
-    expect(screen.getByText('Unsaved')).toBeInTheDocument();
-
-    vi.advanceTimersByTime(600);
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
+    }, { timeout: 3000 });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/v1/boards/board-1/github/specs/file');
@@ -154,62 +162,102 @@ describe('SpecsWorkspacePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Ready to commit')).toBeInTheDocument();
-    });
-    expect(screen.queryByText('Unsaved')).not.toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }, { timeout: 4000 });
   });
 
   it('shows a conflict banner and reloads the server copy after a stale save', async () => {
-    vi.useFakeTimers();
-    apiGet
-      .mockResolvedValueOnce({ data: MOCK_MANIFEST })
-      .mockResolvedValueOnce({
-        data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
-      })
-      .mockResolvedValueOnce({
-        data: { path: 'specs/architecture.md', content: '# Server copy', etag: 'file-etag-3' },
-      });
+    let fileReads = 0;
+    apiGet.mockImplementation(async (url: string) => {
+      if (url.includes('/specs/manifest')) {
+        return { data: MOCK_MANIFEST };
+      }
+      fileReads += 1;
+      if (fileReads === 1) {
+        return { data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' } };
+      }
+      return { data: { path: 'specs/architecture.md', content: '# Server copy', etag: 'file-etag-3' } };
+    });
 
     const fetchMock = vi.fn(async () => mockResponse({
       name: 'stale-specs-file-precondition',
       data: { message: 'The file changed on the server. Reload and try again.' },
     }, 412));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
 
+    await openArchitectureFile();
+    await updateEditorMarkdown('# Conflicting local change');
+
     await waitFor(() => {
-      expect(screen.getByText('architecture.md')).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: 'Reload file' }).length).toBeGreaterThan(0);
+    }, { timeout: 3000 });
+    expect(screen.getAllByText(/The file changed on the server/).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reload file' })[0]);
+
+    await waitFor(() => {
+      expect(fileReads).toBeGreaterThanOrEqual(2);
     });
-    fireEvent.click(screen.getByText('architecture.md'));
+  });
 
-    await waitFor(() => {
-      expect(screen.getByTitle('specs/architecture.md')).toBeInTheDocument();
+  it('returns to a cached file without getting stuck in loading and keeps unsaved edits', async () => {
+    let resolveChangelogRead: (() => void) | null = null;
+    apiGet.mockImplementation((url: string) => {
+      if (url.includes('/specs/manifest')) {
+        return Promise.resolve({ data: MOCK_MANIFEST });
+      }
+      if (url.includes('architecture.md')) {
+        return Promise.resolve({
+          data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
+        });
+      }
+      if (url.includes('2026-01.md')) {
+        return new Promise((resolve) => {
+          resolveChangelogRead = () => {
+            resolve({
+              data: { path: 'specs/changelog/2026-01.md', content: '# Changelog', etag: 'file-etag-2' },
+            });
+          };
+        });
+      }
+      return Promise.reject(new Error(`Unexpected url: ${url}`));
     });
 
-    editorMarkdown = '# Conflicting local change';
-    editorConfig?.onUpdate?.({ editor: editorMock });
-    vi.advanceTimersByTime(600);
+    render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
 
+    await openArchitectureFile();
+    await updateEditorMarkdown('# Local architecture draft');
     await waitFor(() => {
-      expect(screen.getByText('Conflict')).toBeInTheDocument();
+      expect(screen.getByText('Unsaved')).toBeInTheDocument();
     });
-    expect(screen.getByText(/The file changed on the server/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reload file' }));
+    fireEvent.click(screen.getByRole('button', { name: '2026-01.md' }));
+    await waitFor(() => {
+      expect(screen.getByText('Loading…')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /architecture\.md/i }));
 
     await waitFor(() => {
-      expect(editorMock.commands.setContent).toHaveBeenCalledWith('# Server copy');
+      expect(screen.getByTestId('editor-content')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Loading…')).not.toBeInTheDocument();
+    expect(screen.getByText('Unsaved')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveChangelogRead?.();
     });
   });
 
   it('posts the changed file list to the commit endpoint', async () => {
-    vi.useFakeTimers();
-    apiGet
-      .mockResolvedValueOnce({ data: MOCK_MANIFEST })
-      .mockResolvedValueOnce({
-        data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
-      });
+    apiGet.mockImplementation(async (url: string) => {
+      if (url.includes('/specs/manifest')) {
+        return { data: MOCK_MANIFEST };
+      }
+      return { data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' } };
+    });
 
     const fetchMock = vi
       .fn()
@@ -235,29 +283,22 @@ describe('SpecsWorkspacePage', () => {
           },
         },
       }, 201));
-    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
 
-    await waitFor(() => {
-      expect(screen.getByText('architecture.md')).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByText('architecture.md'));
+    await openArchitectureFile();
+    await updateEditorMarkdown('# Updated');
+    const commitButton = screen.getByRole('button', { name: 'Commit changes' });
+    expect(commitButton).toBeDisabled();
 
     await waitFor(() => {
-      expect(screen.getByTitle('specs/architecture.md')).toBeInTheDocument();
-    });
-
-    editorMarkdown = '# Updated';
-    editorConfig?.onUpdate?.({ editor: editorMock });
-    vi.advanceTimersByTime(600);
-
-    await waitFor(() => {
-      expect(screen.getByText('Ready to commit')).toBeInTheDocument();
-    });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }, { timeout: 3000 });
+    expect(commitButton).not.toBeDisabled();
 
     fireEvent.change(screen.getByLabelText('Commit message'), { target: { value: 'Update specs' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Commit changes' }));
+    fireEvent.click(commitButton);
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(2);

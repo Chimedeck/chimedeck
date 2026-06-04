@@ -118,6 +118,8 @@ async function router(req: Request): Promise<Response> {
     const notificationPreferencesEnabled = await flags.isEnabled('NOTIFICATION_PREFERENCES_ENABLED');
     const emailNotificationsEnabled = await flags.isEnabled('EMAIL_NOTIFICATIONS_ENABLED');
     const emailVerificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
+    const boardChatEnabled = await flags.isEnabled('BOARD_CHAT_ENABLED');
+    const githubEditingEnabled = await flags.isEnabled('GITHUB_EDITING_ENABLED');
     return Response.json({
       data: {
         sesEnabled,
@@ -127,6 +129,8 @@ async function router(req: Request): Promise<Response> {
         emailNotificationsEnabled,
         emailVerificationEnabled,
         stateTransitionsEnabled: featureFlags.STATE_TRANSITIONS_ENABLED,
+        boardChatEnabled,
+        githubEditingEnabled,
       },
     });
   }

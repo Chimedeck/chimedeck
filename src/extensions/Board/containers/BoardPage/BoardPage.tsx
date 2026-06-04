@@ -30,7 +30,7 @@ import CardModalContainer from '../../../Card/containers/CardModal';
 import BoardSettings from '../BoardSettings/BoardSettings';
 import ToastRegion from '~/common/components/ToastRegion';
 import type { ToastItem } from '~/common/components/ToastRegion';
-import { updateBoard, archiveBoard, deleteBoard, starBoard, unstarBoard } from '../../api';
+import { updateBoard, archiveBoard, deleteBoard, starBoard, unstarBoard, getBoardIntegrations } from '../../api';
 import { createList, updateList, archiveList, deleteList, reorderLists, sortListCards, updateListColor } from '../../../List/api';
 import type { ListSortBy } from '../../../List/types';
 import { createCard, getCard, copyCard } from '../../../Card/api';
@@ -75,8 +75,11 @@ import { HEALTH_CHECK_ENABLED } from '~/extensions/HealthCheck/config/healthChec
 import { BOARD_CHAT_ENABLED } from '~/extensions/Board/config/boardChatConfig';
 import { BoardChatDrawer } from '~/extensions/BoardChat';
 import { boardPath, cardPath } from '~/common/routing/shortUrls';
-import { getBoardIntegrations } from '../../api';
 import SpecsWorkspacePage from '~/extensions/DeveloperDocs/containers/SpecsWorkspacePage/SpecsWorkspacePage';
+import {
+  selectBoardChatEnabled,
+  selectGithubEditingEnabled,
+} from '~/slices/featureFlagsSlice';
 
 const BoardPage = () => {
   const dispatch = useAppDispatch();
@@ -105,6 +108,8 @@ const BoardPage = () => {
   // [why] GUEST workspace members can view boards but not manage settings or members.
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
   const workspaceRole = useAppSelector(selectCurrentUserWorkspaceRole);
+  const boardChatFlagEnabled = useAppSelector(selectBoardChatEnabled);
+  const githubEditingFlagEnabled = useAppSelector(selectGithubEditingEnabled);
   // [why] VIEWER guests have read-only access; MEMBER guests can write.
   // Non-guests always get full write access (canBoardGuestWrite returns true for null).
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
@@ -209,6 +214,8 @@ const BoardPage = () => {
     || workspaceRole === 'ADMIN'
     || workspaceRole === 'MEMBER'
     || (isGuest && canBoardGuestWrite(board?.callerGuestType ?? null));
+  const isBoardChatEnabled = BOARD_CHAT_ENABLED && boardChatFlagEnabled;
+  const isDocumentationEnabled = githubEditingFlagEnabled;
 
   // ── Board chat panel ──────────────────────────────────────────────────────
   const [boardChatOpen, setBoardChatOpen] = useState(false);
@@ -224,6 +231,12 @@ const BoardPage = () => {
     setFilterPanelOpen(false); 
     setBoardChatOpen(false);
   }, [boardId]);
+
+  useEffect(() => {
+    if (activeTab === 'documentation' && !isDocumentationEnabled) {
+      setActiveTab('board');
+    }
+  }, [activeTab, isDocumentationEnabled]);
 
   // Derive unique labels from cards for the filter panel label list
   const boardLabels = useMemo(() => {
@@ -743,8 +756,8 @@ const BoardPage = () => {
     { id: 'archived-cards' as const, label: 'Archived Cards' },
     // Health Check tab — only visible when feature flag is enabled (Sprint 116)
     ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
-    // Documentation tab — only visible when board has a valid GitHub Project URL (Sprint 170)
-    ...(githubProjectUrl ? [{ id: 'documentation' as const, label: 'Documentation' }] : []),
+    // Documentation tab — only visible when GitHub editing is enabled and URL is configured.
+    ...(isDocumentationEnabled && githubProjectUrl ? [{ id: 'documentation' as const, label: 'Documentation' }] : []),
   ];
 
   const tabContent = (() => {
@@ -835,7 +848,7 @@ const BoardPage = () => {
       return <HealthCheckTab boardId={boardId ?? ''} />;
     }
 
-    if (activeTab === 'documentation') {
+    if (activeTab === 'documentation' && isDocumentationEnabled) {
       return (
         <SpecsWorkspacePage
           boardId={boardId ?? ''}
@@ -887,7 +900,7 @@ const BoardPage = () => {
         isGuest={isGuest}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenMembers={() => setMembersOpen(true)}
-        {...(BOARD_CHAT_ENABLED && { onOpenBoardChat: () => setBoardChatOpen(true) })}
+        {...(isBoardChatEnabled && { onOpenBoardChat: () => setBoardChatOpen(true) })}
         {...(!isGuest && {
           onArchive: handleBoardArchive,
           onDelete: handleBoardDelete,
@@ -1009,7 +1022,7 @@ const BoardPage = () => {
       )}
 
       {/* Board chat drawer (Sprint 164) */}
-      {boardChatOpen && (
+      {isBoardChatEnabled && boardChatOpen && (
         <BoardChatDrawer
           boardId={boardId ?? ''}
           isGuest={isGuest}

@@ -15,4 +15,6 @@ export const defaults: Record<string, boolean> = {
   NOTIFICATION_PREFERENCES_ENABLED: true,
   EMAIL_NOTIFICATIONS_ENABLED: false,
   TRELLO_COMPAT_ENABLED: false,
+  BOARD_CHAT_ENABLED: true,
+  GITHUB_EDITING_ENABLED: true,
 };

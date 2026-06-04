@@ -1,7 +1,9 @@
 // BoardPage.boardChat.test.tsx — wiring and BOARD_CHAT_ENABLED gate tests
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import BoardPage from '../BoardPage';
 import * as boardChatConfig from '../../../config/boardChatConfig';
@@ -11,17 +13,78 @@ vi.mock('../../../config/boardChatConfig', () => ({
   BOARD_CHAT_ENABLED: false,
 }));
 
-// Mock dependencies
-vi.mock('react-router-dom', () => ({
-  useParams: vi.fn(() => ({ boardId: 'board-1', cardId: undefined })),
-  useNavigate: vi.fn(),
+// Mock BoardChatDrawer to avoid jsdom scrollIntoView + API call issues while
+// still allowing open/close interaction tests.
+vi.mock('~/extensions/BoardChat', () => ({
+  BoardChatDrawer: ({ onClose }: { onClose: () => void }) => {
+    // Mirror the real drawer's Escape-key behavior so close-on-Escape tests pass.
+    React.useEffect(() => {
+      const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+      document.addEventListener('keydown', handler);
+      return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+    return (
+      <div role="dialog" aria-label="Board Chat drawer">
+        <h2>Board Chat</h2>
+        <button aria-label="Close board chat" onClick={onClose}>Close</button>
+      </div>
+    );
+  },
 }));
 
-vi.mock('../../api');
-vi.mock('../../../Realtime/hooks/useWebSocket');
-vi.mock('../../../Realtime/hooks/useBoardSync');
-vi.mock('../../../Realtime/PollingFallback');
-vi.mock('../../../Notification/slices/notificationSlice');
+// Mock heavy sub-components that require their own Redux state slices
+vi.mock('../../../components/BoardCanvas', () => ({
+  default: () => <div data-testid="board-canvas" />,
+}));
+vi.mock('../../../../Card/containers/CardModal', () => ({
+  default: () => null,
+}));
+vi.mock('~/extensions/Plugins/iframeHost/PluginIframeContainer', () => ({
+  default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+}));
+vi.mock('~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab', () => ({
+  default: () => null,
+}));
+vi.mock('~/extensions/HealthCheck/config/healthCheckConfig', () => ({
+  HEALTH_CHECK_ENABLED: false,
+  HEALTH_CHECK_POLL_INTERVAL_MS: 60_000,
+}));
+
+// Mock dependencies
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useParams: vi.fn(() => ({ boardId: 'board-1', cardId: undefined })),
+    useNavigate: vi.fn(),
+  };
+});
+
+vi.mock('../../../api', () => ({
+  getBoardIntegrations: vi.fn(() => Promise.resolve({ data: { github_project_url: null } })),
+  updateBoard: vi.fn(),
+  archiveBoard: vi.fn(),
+  deleteBoard: vi.fn(),
+  starBoard: vi.fn(),
+  unstarBoard: vi.fn(),
+  updateBoardVisibility: vi.fn(),
+}));
+vi.mock('~/extensions/Realtime/hooks/useWebSocket', () => ({
+  useWebSocket: vi.fn(() => ({ connectionState: 'connected', pollingActive: false })),
+}));
+vi.mock('~/extensions/Realtime/hooks/useBoardSync', () => ({
+  useBoardSync: vi.fn(() => ({ handleEvent: vi.fn(), lastSequence: 0 })),
+}));
+vi.mock('~/extensions/Realtime/PollingFallback', () => ({
+  usePollingFallback: vi.fn(),
+}));
+vi.mock('~/extensions/Notification/slices/notificationSlice', () => ({
+  markReadThunk: vi.fn(() => ({ type: 'notification/markRead' })),
+  selectNotifications: vi.fn(() => []),
+}));
+vi.mock('../../../slices/boardMembersSlice', () => ({
+  useGetBoardMembersQuery: vi.fn(() => ({ data: [] })),
+}));
 
 describe('BoardPage — Board Chat feature gate', () => {
   let mockStore: ReturnType<typeof configureStore>;
@@ -48,9 +111,9 @@ describe('BoardPage — Board Chat feature gate', () => {
           createInProgress: false,
           createError: null,
         }),
-        boardMembers: () => ({ data: [] }),
+        boardMembersApi: () => ({}),
         notifications: () => ({ notifications: [] }),
-        boardViewSwitcher: () => ({ activeView: 'KANBAN' }),
+        viewPreference: () => ({ activeView: 'KANBAN', status: 'idle' }),
       },
     });
   });
@@ -59,9 +122,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = false;
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -74,9 +139,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = true;
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -110,16 +177,18 @@ describe('BoardPage — Board Chat feature gate', () => {
           createInProgress: false,
           createError: null,
         }),
-        boardMembers: () => ({ data: [] }),
+        boardMembersApi: () => ({}),
         notifications: () => ({ notifications: [] }),
-        boardViewSwitcher: () => ({ activeView: 'KANBAN' }),
+        viewPreference: () => ({ activeView: 'KANBAN', status: 'idle' }),
       },
     });
 
     render(
-      <Provider store={guestStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={guestStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -132,9 +201,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = true;
 
     const { getByLabelText, queryByText } = render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -153,9 +224,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = true;
 
     const { getByLabelText, queryByText } = render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     // Open the drawer
@@ -183,9 +256,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = true;
 
     const { getByLabelText, queryByText, container } = render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     // Open the drawer
@@ -215,9 +290,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = true;
 
     const { getByLabelText, queryByText } = render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     // Open the drawer
@@ -244,9 +321,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = true;
 
     const { getByLabelText, queryByText, rerender } = render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     // Open the drawer
@@ -263,9 +342,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     // Simulate navigating to a different board by re-rendering with new props
     // (In a real scenario, this would be via route params change)
     rerender(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     // Drawer should be closed after board change
@@ -276,9 +357,11 @@ describe('BoardPage — Board Chat feature gate', () => {
     (boardChatConfig as any).BOARD_CHAT_ENABLED = false;
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>
     );
 
     // Verify the board header is still rendered

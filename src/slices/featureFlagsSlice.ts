@@ -20,6 +20,10 @@ interface FeatureFlagsState {
   emailVerificationEnabled: boolean;
   // Whether enforceable state transitions UI/API are enabled
   stateTransitionsEnabled: boolean;
+  // Whether board chat UI/API should be enabled
+  boardChatEnabled: boolean;
+  // Whether GitHub-backed documentation editing should be enabled
+  githubEditingEnabled: boolean;
   status: 'idle' | 'loading' | 'ready' | 'error';
 }
 
@@ -31,6 +35,8 @@ const initialState: FeatureFlagsState = {
   emailNotificationsEnabled: false,
   emailVerificationEnabled: false,
   stateTransitionsEnabled: false,
+  boardChatEnabled: false,
+  githubEditingEnabled: false,
   status: 'idle',
 };
 
@@ -48,6 +54,8 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
             emailNotificationsEnabled?: boolean;
             emailVerificationEnabled?: boolean;
             stateTransitionsEnabled?: boolean;
+            boardChatEnabled?: boolean;
+            githubEditingEnabled?: boolean;
           };
         }
         | {
@@ -58,6 +66,8 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
           emailNotificationsEnabled?: boolean;
           emailVerificationEnabled?: boolean;
           stateTransitionsEnabled?: boolean;
+          boardChatEnabled?: boolean;
+          githubEditingEnabled?: boolean;
         }
       >('/flags');
 
@@ -91,6 +101,8 @@ const featureFlagsSlice = createSlice({
         state.emailNotificationsEnabled = payload.emailNotificationsEnabled ?? false;
         state.emailVerificationEnabled = payload.emailVerificationEnabled ?? false;
         state.stateTransitionsEnabled = payload.stateTransitionsEnabled ?? false;
+        state.boardChatEnabled = payload.boardChatEnabled ?? false;
+        state.githubEditingEnabled = payload.githubEditingEnabled ?? false;
         state.status = 'ready';
       })
       .addCase(fetchFeatureFlagsThunk.rejected, (state) => {
@@ -116,5 +128,9 @@ export const selectEmailVerificationEnabled = (state: RootState) =>
   state.featureFlags.emailVerificationEnabled;
 export const selectStateTransitionsEnabled = (state: RootState) =>
   state.featureFlags.stateTransitionsEnabled;
+export const selectBoardChatEnabled = (state: RootState) =>
+  state.featureFlags.boardChatEnabled;
+export const selectGithubEditingEnabled = (state: RootState) =>
+  state.featureFlags.githubEditingEnabled;
 export const selectFeatureFlagsStatus = (state: RootState) =>
   state.featureFlags.status;

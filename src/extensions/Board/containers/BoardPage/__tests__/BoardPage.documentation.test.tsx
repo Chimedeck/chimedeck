@@ -1,8 +1,10 @@
 // BoardPage.documentation.test.tsx — Documentation tab visibility and behavior.
 // Sprint 170: tab appears when board has a valid GitHub Project URL, hidden otherwise.
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import BoardPage from '../BoardPage';
 import * as BoardAPI from '../../../api';
@@ -25,32 +27,58 @@ vi.mock('~/extensions/DeveloperDocs/containers/SpecsWorkspacePage/SpecsWorkspace
   ),
 }));
 
-vi.mock('react-router-dom', () => ({
-  useParams: vi.fn(() => ({ boardId: 'board-1', cardId: undefined })),
-  useNavigate: vi.fn(() => vi.fn()),
+// Mock heavy sub-components that require their own Redux state slices
+vi.mock('../../../components/BoardCanvas', () => ({
+  default: () => <div data-testid="board-canvas" />,
+}));
+vi.mock('../../../../Card/containers/CardModal', () => ({
+  default: () => null,
+}));
+vi.mock('~/extensions/Plugins/iframeHost/PluginIframeContainer', () => ({
+  default: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+}));
+vi.mock('~/extensions/HealthCheck/containers/HealthCheckTab/HealthCheckTab', () => ({
+  default: () => <div data-testid="health-check-tab" />,
+}));
+vi.mock('~/extensions/BoardChat', () => ({
+  BoardChatDrawer: () => null,
+}));
+
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useParams: vi.fn(() => ({ boardId: 'board-1', cardId: undefined })),
+    useNavigate: vi.fn(() => vi.fn()),
+  };
+});
+
+vi.mock('~/extensions/HealthCheck/config/healthCheckConfig', () => ({
+  HEALTH_CHECK_ENABLED: true,
+  HEALTH_CHECK_POLL_INTERVAL_MS: 60_000,
 }));
 
 vi.mock('../../../config/boardChatConfig', () => ({
   BOARD_CHAT_ENABLED: false,
 }));
 
-vi.mock('~/extensions/HealthCheck/config/healthCheckConfig', () => ({
-  HEALTH_CHECK_ENABLED: true,
-}));
-
 vi.mock('../../../realtime.ts', () => ({}));
-vi.mock('../../../Realtime/hooks/useWebSocket', () => ({
+vi.mock('~/extensions/Realtime/hooks/useWebSocket', () => ({
   useWebSocket: vi.fn(() => ({ connectionState: 'connected', pollingActive: false })),
 }));
-vi.mock('../../../Realtime/hooks/useBoardSync', () => ({
+vi.mock('~/extensions/Realtime/hooks/useBoardSync', () => ({
   useBoardSync: vi.fn(() => ({ handleEvent: vi.fn(), lastSequence: 0 })),
 }));
-vi.mock('../../../Realtime/PollingFallback', () => ({
+vi.mock('~/extensions/Realtime/PollingFallback', () => ({
   usePollingFallback: vi.fn(),
 }));
-vi.mock('../../../Notification/slices/notificationSlice', () => ({
+vi.mock('~/extensions/Notification/slices/notificationSlice', () => ({
   markReadThunk: vi.fn(() => ({ type: 'notification/markRead' })),
   selectNotifications: vi.fn(() => []),
+}));
+
+vi.mock('../../../slices/boardMembersSlice', () => ({
+  useGetBoardMembersQuery: vi.fn(() => ({ data: [] })),
 }));
 
 function makeMockStore() {
@@ -75,9 +103,9 @@ function makeMockStore() {
         createInProgress: false,
         createError: null,
       }),
-      boardMembers: () => ({ data: [] }),
+      boardMembersApi: () => ({}),
       notifications: () => ({ notifications: [] }),
-      boardViewSwitcher: () => ({ activeView: 'KANBAN' }),
+      viewPreference: () => ({ activeView: 'KANBAN', status: 'idle' }),
     },
   });
 }
@@ -96,9 +124,11 @@ describe('BoardPage — Documentation tab', () => {
     });
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>,
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -112,9 +142,11 @@ describe('BoardPage — Documentation tab', () => {
     });
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>,
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -128,9 +160,11 @@ describe('BoardPage — Documentation tab', () => {
     });
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>,
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -151,9 +185,11 @@ describe('BoardPage — Documentation tab', () => {
     });
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>,
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
@@ -171,9 +207,11 @@ describe('BoardPage — Documentation tab', () => {
     (BoardAPI.getBoardIntegrations as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>,
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>,
     );
 
     // Wait for any async effects to settle
@@ -188,9 +226,11 @@ describe('BoardPage — Documentation tab', () => {
     });
 
     render(
-      <Provider store={mockStore}>
-        <BoardPage />
-      </Provider>,
+      <MemoryRouter>
+        <Provider store={mockStore}>
+          <BoardPage />
+        </Provider>
+      </MemoryRouter>,
     );
 
     await waitFor(() => {
