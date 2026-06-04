@@ -168,9 +168,8 @@ const SortableListColumn = ({
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0.5 : 1,
-      contentVisibility: 'auto',
-      contain: 'layout paint style',
-      containIntrinsicSize: '1px 640px',
+      // Keep style containment only so header flyout menus can stack above sibling columns.
+      contain: 'style',
       ...(listColor ? { backgroundColor: listColor, color: listTextColor } : {}),
     }),
     [transform?.x, transform?.y, transform?.scaleX, transform?.scaleY, transition, isDragging, listColor, listTextColor],
@@ -234,7 +233,7 @@ const SortableListColumn = ({
       ref={setNodeRef}
       id={`board-list-${list.id}`}
       style={style}
-      className={`${isCollapsed ? 'w-14 self-start' : 'w-72 h-full'} shrink-0 border rounded-xl flex flex-col ${columnBorderClass} ${columnSurfaceClass}`}
+      className={`${isCollapsed ? 'w-14 self-start' : 'w-72 h-full'} relative z-0 shrink-0 border rounded-xl flex flex-col hover:z-40 focus-within:z-40 ${columnBorderClass} ${columnSurfaceClass}`}
       role="listitem"
       aria-label={`List: ${list.title}`}
     >
