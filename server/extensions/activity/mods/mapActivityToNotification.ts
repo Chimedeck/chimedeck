@@ -202,6 +202,10 @@ export async function mapActivityToNotification({
               card_id: cardId,
               board_id: boardId,
               actor_id: activity.actor_id,
+              // [why] Persist at insert time so the list name is frozen to the destination
+              // at the moment of the move. Resolving via cards.list_id at query time would
+              // show the card's current list for all historical card_moved notifications.
+              list_title: listTitle,
               read: false,
               created_at: now,
             },

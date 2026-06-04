@@ -173,6 +173,10 @@ export default function NotificationContainer() {
       known.add(notification.id);
     });
 
+    // [why] When the panel is open, the user can already see the incoming notifications
+    // (e.g. via "Load more"). Showing toasts on top would be redundant and jarring.
+    if (panelOpen) return;
+
     const newUnreadNotifications = unseenNotifications.filter((notification) => !notification.read);
     if (newUnreadNotifications.length === 0) return;
 
@@ -188,7 +192,7 @@ export default function NotificationContainer() {
 
       return next.slice(-5);
     });
-  }, [notifications, notificationStatus, buildNotificationToast]);
+  }, [notifications, notificationStatus, buildNotificationToast, panelOpen]);
 
   // Close panel on outside click
   useEffect(() => {

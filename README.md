@@ -61,7 +61,7 @@ bun install
 cp .env.example .env
 
 # 3. Build + start Postgres (pg_cron image built on first run, ~20 s) + LocalStack S3
-docker compose up -d postgres localstack
+docker compose up -d postgres localstack redis
 
 # 4. Run database migrations
 bun run db:migrate

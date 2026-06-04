@@ -181,8 +181,6 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       this.on('notifications.source_id', '=', 'source_activity.id')
         .andOn('notifications.source_type', '=', db.raw('?', ['board_activity']));
     })
-    // Join to get the destination list name for card_moved notifications
-    .leftJoin('lists', 'cards.list_id', 'lists.id')
     .select(
       'notifications.id',
       'notifications.type',
@@ -195,7 +193,9 @@ export async function handleListNotifications(req: Request): Promise<Response> {
       'source_activity.payload as source_activity_payload',
       'notifications.board_id',
       'boards.title as board_title',
-      'lists.title as list_title',
+      // [why] list_title is persisted at insert time (not resolved from cards.list_id)
+      // so historical card_moved notifications show the correct destination list.
+      'notifications.list_title',
       'source_comment.content as comment_content',
       'source_comment.parent_id as source_comment_parent_id',
       'notifications.read',
