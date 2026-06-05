@@ -1,7 +1,7 @@
 // Sprint 166 — embedding adapter and vector persistence helpers for board chat.
 import { randomUUID } from 'crypto';
 import { db } from '../../../../../common/db';
-import { env } from '../../../../../config/env';
+import { getEmbeddingProviderConfig } from '../providerConfig';
 import type {
   BoardChatEmbedding,
   BoardChatMessageVector,
@@ -12,16 +12,9 @@ interface EmbeddingApiResponse {
 }
 
 function getEmbeddingConfig() {
-  if (!env.CHAT_EMBEDDING_API_URL) {
-    throw new Error('chat-embedding-provider-not-configured');
-  }
-
-  return {
-    apiUrl: env.CHAT_EMBEDDING_API_URL,
-    apiKey: env.CHAT_EMBEDDING_API_KEY,
-    model: env.CHAT_EMBEDDING_MODEL,
-    dimensions: env.CHAT_EMBEDDING_DIMENSIONS,
-  };
+  // [why] Provider resolution (OpenAI vs Ollama) is centralised in providerConfig
+  // so the embedding call site stays provider-agnostic.
+  return getEmbeddingProviderConfig();
 }
 
 export async function generateBoardChatEmbedding({
@@ -53,9 +46,9 @@ export async function generateBoardChatEmbedding({
   }
 
   return {
-    provider: 'http',
+    provider: config.provider,
     model: config.model,
-    dimensions: embedding.length || config.dimensions,
+    dimensions: embedding.length || config.defaultDimensions,
     values: embedding,
   };
 }

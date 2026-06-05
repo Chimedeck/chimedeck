@@ -90,7 +90,8 @@ describe('downloadRepositoryFromProjectUrl', () => {
 
   it('rejects invalid URLs before any network/git work', async () => {
     await expect(downloadRepositoryFromProjectUrl({
-      projectUrl: 'https://github.com/octo-org/not-a-project',
+      // Three-segment path is ambiguous — neither a project nor a bare repo.
+      projectUrl: 'https://github.com/octo-org/not-a-project/extra',
       boardId: 'board-invalid',
     })).rejects.toThrow('invalid-github-project-url');
 
@@ -108,6 +109,28 @@ describe('downloadRepositoryFromProjectUrl', () => {
     expect(tokenCalls).toBe(0);
     expect(branchCalls).toBe(0);
     expect(checkoutCalls).toHaveLength(0);
+  });
+
+  it('accepts a plain HTTPS repository URL and downloads it', async () => {
+    const result = await downloadRepositoryFromProjectUrl({
+      projectUrl: 'https://github.com/octo-org/octo-repo.git',
+      boardId: 'board-https-repo',
+    });
+
+    expect(result.ref).toBe('main');
+    expect(checkoutCalls[0]?.remoteUrl).toBe('https://github.com/octo-org/octo-repo.git');
+    expect(tokenCalls).toBe(1);
+  });
+
+  it('accepts an SSH clone URL and downloads it', async () => {
+    const result = await downloadRepositoryFromProjectUrl({
+      projectUrl: 'git@github.com:octo-org/octo-repo.git',
+      boardId: 'board-ssh-repo',
+    });
+
+    expect(result.ref).toBe('main');
+    expect(checkoutCalls[0]?.remoteUrl).toBe('https://github.com/octo-org/octo-repo.git');
+    expect(tokenCalls).toBe(1);
   });
 
   it('does not expose installation tokens in thrown errors', async () => {

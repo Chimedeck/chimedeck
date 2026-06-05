@@ -1,19 +1,13 @@
 // Single source of truth for all environment variable access.
-// Never use Bun.env or process.env directly outside this module.
-
-// JWT keys are stored as base64 in .env to avoid multiline quoting issues.
-// If the value looks like raw PEM already (starts with -----), use it as-is.
-function decodeKey(raw: string): string {
-  if (!raw) return '';
-  if (raw.startsWith('-----')) return raw;
-  // base64-encoded PEM
-  return Buffer.from(raw, 'base64').toString('utf-8');
-}
+// Never use Bun.env or process.env outside this module.
+import { decodeKey } from './decodeKey';
+// Re-export so test files can exercise the decoder without instantiating `env`.
+export { decodeKey };
 
 export const env = {
   DATABASE_URL: Bun.env['DATABASE_URL'] ?? '',
-  JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? ''),
-  JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? ''),
+  JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? '', 'JWT_PRIVATE_KEY'),
+  JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? '', 'JWT_PUBLIC_KEY'),
 
   // S3 / file storage
   // When FLAG_USE_LOCAL_STORAGE=true, the storage module overrides endpoint/credentials with LocalStack defaults.
@@ -60,16 +54,36 @@ export const env = {
   SEARCH_ENABLED: Bun.env['SEARCH_ENABLED'] === 'true',
 
   // Board chat embeddings — used by Sprint 166 write-path retry handling.
+  // OpenAI-compatible by default. Set CHAT_PROVIDER=ollama to route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars (see getChatProviderConfig).
+  // CHAT_EMBEDDING_ENABLED is an independent kill-switch for the embedding path —
+  // set it to false when the provider (e.g. Ollama Cloud) does not expose an
+  // embedding model, or to disable semantic retrieval without disabling chat.
+  CHAT_EMBEDDING_ENABLED: Bun.env['CHAT_EMBEDDING_ENABLED'] !== 'false',
   CHAT_EMBEDDING_API_URL: Bun.env['CHAT_EMBEDDING_API_URL'] ?? '',
   CHAT_EMBEDDING_API_KEY: Bun.env['CHAT_EMBEDDING_API_KEY'] ?? '',
   CHAT_EMBEDDING_MODEL: Bun.env['CHAT_EMBEDDING_MODEL'] ?? 'text-embedding-3-small',
   CHAT_EMBEDDING_DIMENSIONS: parseInt(Bun.env['CHAT_EMBEDDING_DIMENSIONS'] ?? '1536', 10),
   // Board chat assist provider — used by Sprint 167 assist endpoint.
+  // OpenAI-compatible by default. Set CHAT_PROVIDER=ollama to route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars (see getChatProviderConfig).
   CHAT_ASSIST_API_KEY: Bun.env['CHAT_ASSIST_API_KEY'] ?? '',
   CHAT_ASSIST_BASE_URL: Bun.env['CHAT_ASSIST_BASE_URL'] ?? '',
   CHAT_ASSIST_MODEL: Bun.env['CHAT_ASSIST_MODEL'] ?? '',
+  // Chat provider selector — when 'ollama' the embedding + assist providers route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars. When 'openai' (or unset) the
+  // CHAT_EMBEDDING_* / CHAT_ASSIST_* vars are used as-is. Unknown values fall back to 'openai'.
+  CHAT_PROVIDER: (Bun.env['CHAT_PROVIDER'] ?? 'openai').toLowerCase() === 'ollama' ? 'ollama' : 'openai',
+  // Ollama (https://ollama.com/v1) — OpenAI-compatible hosted inference.
+  // Used for both embedding and assist when CHAT_PROVIDER=ollama.
+  OLLAMA_API_KEY: Bun.env['OLLAMA_API_KEY'] ?? '',
+  OLLAMA_BASE_URL: Bun.env['OLLAMA_BASE_URL'] ?? 'https://ollama.com/v1',
+  OLLAMA_EMBEDDING_MODEL: Bun.env['OLLAMA_EMBEDDING_MODEL'] ?? '',
+  OLLAMA_EMBEDDING_DIMENSIONS: parseInt(Bun.env['OLLAMA_EMBEDDING_DIMENSIONS'] ?? '1024', 10),
+  OLLAMA_ASSIST_MODEL: Bun.env['OLLAMA_ASSIST_MODEL'] ?? '',
+
   GITHUB_APP_ID: Bun.env['GITHUB_APP_ID'] ?? '',
-  GITHUB_APP_PRIVATE_KEY: decodeKey(Bun.env['GITHUB_APP_PRIVATE_KEY'] ?? ''),
+  GITHUB_APP_PRIVATE_KEY: decodeKey(Bun.env['GITHUB_APP_PRIVATE_KEY'] ?? '', 'GITHUB_APP_PRIVATE_KEY'),
   GITHUB_APP_BOT_ALIAS: Bun.env['GITHUB_APP_BOT_ALIAS'] ?? 'github-app[bot]',
   GITHUB_APP_API_BASE_URL: Bun.env['GITHUB_APP_API_BASE_URL'] ?? 'https://api.github.com',
   GITHUB_REPOSITORY_CACHE_DIR: Bun.env['GITHUB_REPOSITORY_CACHE_DIR'] ?? '',
@@ -81,6 +95,13 @@ export const env = {
     Bun.env['GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS'] ?? '60',
     10
   ),
+  // GitHub App webhook receiver — when true, POST /api/v1/github/webhook is mounted.
+  // Off by default in local dev so the server doesn't have to be reachable from the internet.
+  GITHUB_WEBHOOKS_ENABLED: Bun.env['GITHUB_WEBHOOKS_ENABLED'] === 'true',
+  // Fallback webhook signing secret used when a per-installation secret has not been
+  // registered (e.g. during the very first `installation.created` event, before our
+  // own handler has stored one). Generate with: openssl rand -hex 32
+  GITHUB_APP_WEBHOOK_SECRET: Bun.env['GITHUB_APP_WEBHOOK_SECRET'] ?? '',
 
   // OpenTelemetry — when false, no SDK is initialised and spans are no-ops
   OTEL_ENABLED: Bun.env['OTEL_ENABLED'] === 'true',

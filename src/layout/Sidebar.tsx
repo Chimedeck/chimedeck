@@ -28,7 +28,7 @@ import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/wo
 import { selectAuthUser, logoutThunk } from '~/extensions/Auth/duck/authDuck';
 import { isPlatformAdmin } from '~/extensions/Auth/utils/isPlatformAdmin';
 import { selectProfile } from '~/extensions/User/containers/ProfilePage/ProfilePage.duck';
-import { selectAdminEmailDomains } from '~/slices/featureFlagsSlice';
+import { selectAdminEmailDomains, selectSubscriptionsEnabled } from '~/slices/featureFlagsSlice';
 import { openInviteModal } from '~/extensions/AdminInvite/adminInvite.slice';
 import CreateWorkspaceModal from '~/extensions/Workspace/components/CreateWorkspaceModal';
 import Button from '~/common/components/Button';
@@ -152,6 +152,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
   const user = useAppSelector(selectAuthUser);
   const profile = useAppSelector(selectProfile);
   const adminEmailDomains = useAppSelector(selectAdminEmailDomains);
+  const subscriptionsEnabled = useAppSelector(selectSubscriptionsEnabled);
   const isGuest = useAppSelector(selectIsGuestInActiveWorkspace);
 
   const userEmail = user?.email ?? '';
@@ -372,7 +373,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   onNavigate={onClose}
                 />
               )}
-              {(activeWorkspace.callerRole === 'OWNER' || activeWorkspace.callerRole === 'ADMIN') && (
+              {(activeWorkspace.callerRole === 'OWNER' || activeWorkspace.callerRole === 'ADMIN') && subscriptionsEnabled && (
                 <NavItem
                   to={`/workspace/${activeWorkspace.id}/billing`}
                   icon={<DocumentTextIcon className="h-5 w-5" />}

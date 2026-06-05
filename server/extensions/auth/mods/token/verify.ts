@@ -11,8 +11,17 @@ export interface DecodedToken {
 
 // Returns decoded payload or null if the token is invalid/expired.
 export async function verifyAccessToken({ token }: { token: string }): Promise<DecodedToken | null> {
+  // [why] See issue.ts — the PEM could be malformed in the same way at boot,
+  // and importSPKI is a no-op for verification of expired tokens, so we still
+  // need a graceful fallback here.
+  let publicKey: CryptoKey;
   try {
-    const publicKey = await importSPKI(jwtConfig.publicKey, 'RS256');
+    publicKey = await importSPKI(jwtConfig.publicKey, 'RS256');
+  } catch {
+    return null;
+  }
+
+  try {
     const { payload } = await jwtVerify(token, publicKey, { algorithms: ['RS256'] });
 
     return {

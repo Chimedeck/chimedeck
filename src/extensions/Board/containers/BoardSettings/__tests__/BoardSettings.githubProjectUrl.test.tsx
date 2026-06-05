@@ -68,7 +68,7 @@ describe('GithubProjectUrlSetting', () => {
       render(<GithubProjectUrlSetting boardId={boardId} />);
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to load GitHub Project URL')).toBeInTheDocument();
+        expect(screen.getByText('Failed to load GitHub URL')).toBeInTheDocument();
       });
     });
   });
@@ -124,7 +124,7 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project URL')).not.toBeInTheDocument();
+        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
       });
     });
 
@@ -137,7 +137,7 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.getByText('Please enter a valid GitHub project URL')).toBeInTheDocument();
+        expect(screen.getByText('Please enter a valid GitHub project or repository URL')).toBeInTheDocument();
       });
     });
 
@@ -150,7 +150,7 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project URL')).not.toBeInTheDocument();
+        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
       });
     });
 
@@ -163,7 +163,46 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project URL')).not.toBeInTheDocument();
+        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should accept an HTTPS repository URL', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+
+      const input = screen.getByRole('textbox');
+      await userEvent.clear(input);
+      await userEvent.type(input, 'https://github.com/journeyhorizon/sample-agentic-project.git');
+      fireEvent.blur(input);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should accept an SSH clone URL', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+
+      const input = screen.getByRole('textbox');
+      await userEvent.clear(input);
+      await userEvent.type(input, 'git@github.com:journeyhorizon/sample-agentic-project.git');
+      fireEvent.blur(input);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should still reject completely unrelated URLs', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+
+      const input = screen.getByRole('textbox');
+      await userEvent.clear(input);
+      await userEvent.type(input, 'https://example.com/owner/repo.git');
+      fireEvent.blur(input);
+
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a valid GitHub project or repository URL')).toBeInTheDocument();
       });
     });
   });
@@ -234,8 +273,10 @@ describe('GithubProjectUrlSetting', () => {
       await userEvent.click(saveButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to save GitHub Project URL')).toBeInTheDocument();
-        expect(input).toHaveValue(''); // Rolled back to empty
+        expect(screen.getByText('Failed to save GitHub URL')).toBeInTheDocument();
+        // The input should be rolled back to the value the user typed before
+        // the failed save (not the empty initial value).
+        expect(input).toHaveValue('https://github.com/orgs/example/projects/1');
       });
     });
 
@@ -345,7 +386,7 @@ describe('GithubProjectUrlSetting', () => {
     it('should have proper ARIA labels', async () => {
       render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
 
-      const input = await screen.findByLabelText('GitHub Project URL');
+      const input = await screen.findByLabelText('GitHub URL');
       expect(input).toBeInTheDocument();
     });
 
@@ -353,7 +394,159 @@ describe('GithubProjectUrlSetting', () => {
       render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
 
       await waitFor(() => {
-        expect(screen.getByText('Link this board to a GitHub project for better integration')).toBeInTheDocument();
+        // [why] The helper is split into a sentence + a monospace examples
+        // block + a follow-up hint.  We assert on the stable sentence so the
+        // test is robust to copy tweaks in the example / hint rows.
+        expect(
+          screen.getByText('Link this board to a GitHub project or repository for better integration.'),
+        ).toBeInTheDocument();
+        // Examples should be rendered in a monospace block.
+        expect(
+          screen.getByText(/https:\/\/github\.com\/orgs\/<owner>\/projects\/<n>/),
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Save button enablement after blur (regression: #save-disabled-after-blur)', () => {
+    beforeEach(() => {
+      vi.mocked(BoardAPI.getBoardIntegrations).mockResolvedValue({
+        data: { github_project_url: null },
+      });
+    });
+
+    // [why] The previous implementation computed `disabled` from a combination
+    // of `isFocused` and `isValidationError`, which meant that as soon as the
+    // user blurred a valid URL, the Save button would re-disable.  These
+    // tests pin down the corrected behaviour across the three supported URL
+    // shapes.
+
+    const sampleUrls: ReadonlyArray<{ label: string; value: string }> = [
+      { label: 'project URL', value: 'https://github.com/orgs/example/projects/1' },
+      { label: 'HTTPS repo URL', value: 'https://github.com/journeyhorizon/sample-agentic-project.git' },
+      { label: 'SSH clone URL', value: 'git@github.com:journeyhorizon/sample-agentic-project.git' },
+    ];
+
+    for (const { label, value } of sampleUrls) {
+      it(`keeps Save enabled after blur for a valid ${label}`, async () => {
+        render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+
+        const input = await screen.findByRole('textbox');
+        await userEvent.click(input);
+        await userEvent.clear(input);
+        await userEvent.type(input, value);
+        // Explicit blur to leave the input — reproduces the bug from the
+        // previous implementation, where blur forced `isFocused` to false.
+        fireEvent.blur(input);
+
+        const saveButton = screen.getByTestId('github-project-url-save');
+        expect(saveButton).not.toBeDisabled();
+      });
+    }
+  });
+
+  describe('Parsed owner/repository display', () => {
+    beforeEach(() => {
+      vi.mocked(BoardAPI.getBoardIntegrations).mockResolvedValue({
+        data: { github_project_url: null },
+      });
+    });
+
+    it('shows the parsed owner/repo for an org project URL', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+      const input = await screen.findByRole('textbox');
+      await userEvent.type(input, 'https://github.com/orgs/example/projects/7');
+
+      await waitFor(() => {
+        expect(screen.getByTestId('github-project-url-parsed-value')).toHaveTextContent(
+          'example · project #7',
+        );
+      });
+    });
+
+    it('shows the parsed owner/repo for an HTTPS repo URL', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+      const input = await screen.findByRole('textbox');
+      await userEvent.type(input, 'https://github.com/journeyhorizon/sample-agentic-project.git');
+
+      await waitFor(() => {
+        expect(screen.getByTestId('github-project-url-parsed-value')).toHaveTextContent(
+          'journeyhorizon/sample-agentic-project',
+        );
+      });
+    });
+
+    it('shows the parsed owner/repo for an SSH clone URL', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+      const input = await screen.findByRole('textbox');
+      await userEvent.type(input, 'git@github.com:journeyhorizon/sample-agentic-project.git');
+
+      await waitFor(() => {
+        expect(screen.getByTestId('github-project-url-parsed-value')).toHaveTextContent(
+          'journeyhorizon/sample-agentic-project',
+        );
+      });
+    });
+
+    it('does not show the parsed chip while the URL is invalid', async () => {
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+      const input = await screen.findByRole('textbox');
+      await userEvent.type(input, 'not a real url');
+
+      expect(screen.queryByTestId('github-project-url-parsed-value')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Save payload normalisation', () => {
+    beforeEach(() => {
+      vi.mocked(BoardAPI.getBoardIntegrations).mockResolvedValue({
+        data: { github_project_url: null },
+      });
+    });
+
+    it('strips the .git suffix from an HTTPS repo URL when saving', async () => {
+      vi.mocked(BoardAPI.patchBoardIntegrations).mockResolvedValue({
+        data: { github_project_url: 'https://github.com/journeyhorizon/sample-agentic-project' },
+      });
+
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+      const input = await screen.findByRole('textbox');
+      await userEvent.type(input, 'https://github.com/journeyhorizon/sample-agentic-project.git');
+
+      const saveButton = screen.getByTestId('github-project-url-save');
+      await userEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(vi.mocked(BoardAPI.patchBoardIntegrations)).toHaveBeenCalledWith(
+          expect.objectContaining({
+            settings: {
+              github_project_url: 'https://github.com/journeyhorizon/sample-agentic-project',
+            },
+          }),
+        );
+      });
+    });
+
+    it('rewrites an SSH clone URL to canonical HTTPS when saving', async () => {
+      vi.mocked(BoardAPI.patchBoardIntegrations).mockResolvedValue({
+        data: { github_project_url: 'https://github.com/journeyhorizon/sample-agentic-project' },
+      });
+
+      render(<GithubProjectUrlSetting boardId={boardId} disabled={false} />);
+      const input = await screen.findByRole('textbox');
+      await userEvent.type(input, 'git@github.com:journeyhorizon/sample-agentic-project.git');
+
+      const saveButton = screen.getByTestId('github-project-url-save');
+      await userEvent.click(saveButton);
+
+      await waitFor(() => {
+        expect(vi.mocked(BoardAPI.patchBoardIntegrations)).toHaveBeenCalledWith(
+          expect.objectContaining({
+            settings: {
+              github_project_url: 'https://github.com/journeyhorizon/sample-agentic-project',
+            },
+          }),
+        );
       });
     });
   });

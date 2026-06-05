@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { generateId } from '../../../common/uuid';
 import { db } from '../../../common/db';
 import { verifyPassword } from '../mods/password/verify';
-import { issueAccessToken } from '../mods/token/issue';
+import { issueAccessToken, AccessTokenKeyError } from '../mods/token/issue';
 import { jwtConfig } from '../common/config/jwt';
 import { memCache } from '../../../mods/cache';
 import { flags } from '../../../mods/flags';
@@ -111,7 +111,22 @@ export async function handleLogin(req: Request): Promise<Response> {
     );
   }
 
-  const accessToken = await issueAccessToken({ sub: user.id, email: user.email });
+  let accessToken: string;
+  try {
+    accessToken = await issueAccessToken({ sub: user.id, email: user.email });
+  } catch (error) {
+    // [why] When the JWT signing key is misconfigured the deep jose/Bun
+    // base64 decoder throws an opaque error. Surface a structured 500 that
+    // names the env var so the operator can fix it from the server logs.
+    if (error instanceof AccessTokenKeyError) {
+      console.error('[auth/token] JWT key error:', error.message);
+      return Response.json(
+        { error: { code: 'auth-server-misconfigured', message: 'Authentication server is misconfigured — see server logs.' } },
+        { status: 500 },
+      );
+    }
+    throw error;
+  }
 
   // Issue opaque refresh token (32 random bytes).
   const refreshToken = randomBytes(32).toString('hex');

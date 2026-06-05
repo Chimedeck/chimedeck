@@ -202,7 +202,8 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
       new Request('http://localhost/api/v1/boards/board-1/settings/integrations', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ github_project_url: 'https://github.com/journeyh/not-a-project' }),
+        // Three-segment path is ambiguous — neither project nor bare repo.
+        body: JSON.stringify({ github_project_url: 'https://github.com/journeyh/not-a-project/extra' }),
       }),
       'board-1',
     );

@@ -24,7 +24,10 @@ const installationIdCache = new Map<string, number>();
 const installationTokenCache = new Map<number, InstallationTokenCacheEntry>();
 
 function toInstallationKey(reference: GithubProjectReference): string {
-  if (reference.scope === 'repo') {
+  // [why] For all repo-shaped references the App installation is the one for
+  // that specific repository. org/user-scoped project URLs still resolve to
+  // an org or user installation.
+  if (reference.scope === 'repo' || reference.scope === 'repo-https' || reference.scope === 'repo-ssh') {
     return `repo:${reference.owner}/${reference.repository ?? ''}`;
   }
   return `${reference.scope}:${reference.owner}`;
@@ -32,7 +35,7 @@ function toInstallationKey(reference: GithubProjectReference): string {
 
 function toInstallationPath(reference: GithubProjectReference): string {
   const owner = encodeURIComponent(reference.owner);
-  if (reference.scope === 'repo') {
+  if (reference.scope === 'repo' || reference.scope === 'repo-https' || reference.scope === 'repo-ssh') {
     const repository = encodeURIComponent(reference.repository ?? '');
     return `/repos/${owner}/${repository}/installation`;
   }

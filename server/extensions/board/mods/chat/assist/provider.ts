@@ -1,4 +1,4 @@
-import { env } from '../../../../../config/env';
+import { getAssistProviderConfig } from '../providerConfig';
 import type {
   BoardChatAssistOutput,
   BoardChatAssistProviderConfig,
@@ -23,16 +23,10 @@ interface ChatCompletionResponse {
   };
 }
 
-function getRequiredAssistConfig(): BoardChatAssistProviderConfig {
-  if (!env.CHAT_ASSIST_API_KEY || !env.CHAT_ASSIST_BASE_URL || !env.CHAT_ASSIST_MODEL) {
-    throw new Error('assist-provider-not-configured');
-  }
-
-  return {
-    apiKey: env.CHAT_ASSIST_API_KEY,
-    baseUrl: env.CHAT_ASSIST_BASE_URL,
-    model: env.CHAT_ASSIST_MODEL,
-  };
+function getRequiredAssistConfig() {
+  // [why] Provider resolution (OpenAI vs Ollama) is centralised in providerConfig
+  // so the assist call site stays provider-agnostic.
+  return getAssistProviderConfig();
 }
 
 function buildCompletionsUrl(baseUrl: string): string {

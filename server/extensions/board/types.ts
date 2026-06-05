@@ -219,6 +219,9 @@ export interface BoardChatAssistProviderConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  // [why] Optional so older call sites (and existing tests) that don't know about
+  // provider selection can still construct a valid config object.
+  provider?: 'openai' | 'ollama';
 }
 
 // Specs manifest types — Sprint 169

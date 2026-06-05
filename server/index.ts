@@ -39,6 +39,7 @@ import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
 import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { webhooksRouter } from './extensions/webhooks/api/index';
+import { githubAppRouter } from './extensions/githubApp/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
 import { applyFeatureGate } from './middlewares/featureGate';
@@ -134,6 +135,10 @@ async function router(req: Request): Promise<Response> {
         emailNotificationsEnabled,
         emailVerificationEnabled,
         stateTransitionsEnabled: featureFlags.STATE_TRANSITIONS_ENABLED,
+        subscriptionsEnabled: featureFlags.SUBSCRIPTIONS_ENABLED,
+        // [why] Distinct from boardChatEnabled: chat can be on while embeddings
+        // are off (e.g. Ollama Cloud has chat models but no /v1/embeddings).
+        chatEmbeddingEnabled: env.CHAT_EMBEDDING_ENABLED,
         boardChatEnabled,
         githubEditingEnabled,
       },
@@ -221,6 +226,9 @@ async function router(req: Request): Promise<Response> {
 
   const webhooksResponse = await webhooksRouter(req, path);
   if (webhooksResponse) return webhooksResponse;
+
+  const githubAppResponse = await githubAppRouter(req, path);
+  if (githubAppResponse) return githubAppResponse;
 
   const subscriptionResponse = await subscriptionRouter(req, path);
   if (subscriptionResponse) return subscriptionResponse;

@@ -104,9 +104,16 @@ async function downloadRepositoryForKey({
   if (!normalized.ok) {
     throw new Error('invalid-github-project-url');
   }
-
   const { reference } = normalized.value;
-  if (reference.scope !== 'repo' || !reference.repository) {
+  // [why] Repo download requires a concrete owner/repo pair. Accept the three
+  // shapes that produce one: project linked to a repo, plain HTTPS repo URL,
+  // and SSH clone URL.
+  const isRepoShape =
+    (reference.scope === 'repo' ||
+      reference.scope === 'repo-https' ||
+      reference.scope === 'repo-ssh') &&
+    Boolean(reference.repository);
+  if (!isRepoShape) {
     throw new Error('github-project-url-repository-scope-required');
   }
 
