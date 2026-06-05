@@ -54,11 +54,11 @@ ARCH_DIR="specs/architecture"          # architecture decision records
 TEST_CREDENTIALS_FILE="specs/tests/TEST_CREDENTIALS.md"
 
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
-MODEL_RECAP="gpt-5.4-mini"
-MODEL_PLAN="gpt-5.4-mini"
-MODEL_EXECUTE="auto"
-MODEL_TEST_FREE="gpt-5.4-mini"
-MODEL_TEST_EVAL="gpt-5.4-mini"
+MODEL_RECAP="minimax-m3"
+MODEL_PLAN="minimax-m3"
+MODEL_EXECUTE="minimax-m3"
+MODEL_TEST_FREE="minimax-m3"
+MODEL_TEST_EVAL="minimax-m3"
 
 # Temp directory for inter-phase context passing
 TMP_DIR="$(mktemp -d)"
