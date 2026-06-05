@@ -117,6 +117,16 @@ const WebhooksRegisterPage = lazy(() =>
     (m) => ({ default: m.default }),
   )
 );
+const BillingPage = lazy(() =>
+  import('~/extensions/Subscription/containers/BillingPage/BillingPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const SubscriptionCheckoutPage = lazy(() =>
+  import('~/extensions/Subscription/containers/SubscriptionCheckoutPage/SubscriptionCheckoutPage').then(
+    (m) => ({ default: m.default }),
+  )
+);
 // Lazy-loaded only when the flag is enabled — avoids bundling in production builds.
 const DesignSystemPage = config.designSystemEnabled
   ? lazy(() =>
@@ -177,6 +187,13 @@ export default function AppRouter() {
               <Route path="/settings/profile" element={<ProfilePage />} />
               <Route path="/settings/api-tokens" element={<ApiTokenPage />} />
               <Route path="/settings/webhooks" element={<WebhooksRegisterPage />} />
+              <Route path="/workspace/:workspaceId/billing" element={<BillingPage />} />
+              <Route path="/workspace/:workspaceId/checkout" element={<SubscriptionCheckoutPage />} />
+              <Route path="/workspaces/:workspaceId/settings/billing" element={<BillingPage />} />
+              <Route
+                path="/workspaces/:workspaceId/settings/billing/checkout"
+                element={<SubscriptionCheckoutPage />}
+              />
               <Route path="/profile/edit" element={<EditProfilePage />} />
               <Route path="/developer/plugins" element={<PluginDocsPage />} />
               <Route path="/developer/mcp" element={<McpDocsPage />} />

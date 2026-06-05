@@ -368,6 +368,16 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   icon={<UsersIcon className="h-5 w-5" />}
                   label={translations['Sidebar.members']}
                   collapsed={collapsed}
+                  end
+                  onNavigate={onClose}
+                />
+              )}
+              {(activeWorkspace.callerRole === 'OWNER' || activeWorkspace.callerRole === 'ADMIN') && (
+                <NavItem
+                  to={`/workspace/${activeWorkspace.id}/billing`}
+                  icon={<DocumentTextIcon className="h-5 w-5" />}
+                  label={translations['Sidebar.billing']}
+                  collapsed={collapsed}
                   onNavigate={onClose}
                 />
               )}

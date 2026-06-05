@@ -7,6 +7,7 @@ let tokenGetter: (() => string | null) | null = null;
 let clearAuthCallback: (() => void) | null = null;
 let refreshRequestPromise: Promise<unknown> | null = null;
 let didHandleSessionExpiry = false;
+let lastSubscriptionRedirectAt = 0;
 
 export const setTokenGetter = (fn: () => string | null) => {
   tokenGetter = fn;
@@ -46,6 +47,25 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
     if (!isAxiosErrorLike(error)) {
+      throw toError(error);
+    }
+
+    const subscriptionError = extractSubscriptionError(error.response?.data);
+    if (subscriptionError) {
+      const now = Date.now();
+      if (now - lastSubscriptionRedirectAt < 2000) {
+        throw toError(error);
+      }
+
+      const currentPath = globalThis.location.pathname;
+      const billingTarget = subscriptionError.upgradeUrl;
+      const alreadyOnBilling = billingTarget ? currentPath.startsWith(billingTarget) : false;
+
+      if (!alreadyOnBilling) {
+        lastSubscriptionRedirectAt = now;
+        globalThis.alert(subscriptionError.message);
+        globalThis.location.assign(subscriptionError.upgradeUrl);
+      }
       throw toError(error);
     }
 
@@ -109,6 +129,27 @@ function getApiErrorMessage(data: unknown): string | null {
   if (!maybeError || typeof maybeError !== 'object') return null;
   const message = (maybeError as { message?: unknown }).message;
   return typeof message === 'string' ? message : null;
+}
+
+function extractSubscriptionError(data: unknown): { message: string; upgradeUrl: string } | null {
+  if (!data || typeof data !== 'object') return null;
+  const maybeError = (data as { error?: unknown }).error;
+  if (!maybeError || typeof maybeError !== 'object') return null;
+
+  const code = (maybeError as { code?: unknown }).code;
+  if (code !== 'subscription-payment-required' && code !== 'subscription-readonly') return null;
+
+  const message = (maybeError as { message?: unknown }).message;
+  const maybeData = (maybeError as { data?: unknown }).data;
+  const upgradeUrl = typeof maybeData === 'object' && maybeData !== null
+    ? (maybeData as { upgradeUrl?: unknown }).upgradeUrl
+    : null;
+
+  if (typeof message !== 'string' || typeof upgradeUrl !== 'string' || upgradeUrl.length === 0) {
+    return null;
+  }
+
+  return { message, upgradeUrl };
 }
 
 export default apiClient;

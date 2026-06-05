@@ -73,9 +73,14 @@ export const env = {
   GITHUB_APP_BOT_ALIAS: Bun.env['GITHUB_APP_BOT_ALIAS'] ?? 'github-app[bot]',
   GITHUB_APP_API_BASE_URL: Bun.env['GITHUB_APP_API_BASE_URL'] ?? 'https://api.github.com',
   GITHUB_REPOSITORY_CACHE_DIR: Bun.env['GITHUB_REPOSITORY_CACHE_DIR'] ?? '',
-  GITHUB_REPOSITORY_CACHE_TTL_SECONDS: parseInt(Bun.env['GITHUB_REPOSITORY_CACHE_TTL_SECONDS'] ?? '300', 10),
-  GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS:
-    parseInt(Bun.env['GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS'] ?? '60', 10),
+  GITHUB_REPOSITORY_CACHE_TTL_SECONDS: parseInt(
+    Bun.env['GITHUB_REPOSITORY_CACHE_TTL_SECONDS'] ?? '300',
+    10
+  ),
+  GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS: parseInt(
+    Bun.env['GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS'] ?? '60',
+    10
+  ),
 
   // OpenTelemetry — when false, no SDK is initialised and spans are no-ops
   OTEL_ENABLED: Bun.env['OTEL_ENABLED'] === 'true',
@@ -85,6 +90,15 @@ export const env = {
 
   // Rate-limiting — when false, all limits are bypassed
   RATE_LIMIT_ENABLED: Bun.env['RATE_LIMIT_ENABLED'] === 'true',
+
+  // Subscription gates — master kill switch and default tier fallback.
+  SUBSCRIPTIONS_ENABLED: Bun.env['SUBSCRIPTIONS_ENABLED'] === 'true',
+  SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER: Bun.env['SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER'] !== 'false',
+  STRIPE_SECRET_KEY: Bun.env['STRIPE_SECRET_KEY'] ?? '',
+  STRIPE_WEBHOOK_SECRET: Bun.env['STRIPE_WEBHOOK_SECRET'] ?? '',
+  STRIPE_PRICE_TIER_2: Bun.env['STRIPE_PRICE_TIER_2'] ?? '',
+  STRIPE_PRICE_TIER_3: Bun.env['STRIPE_PRICE_TIER_3'] ?? '',
+  STRIPE_PRICE_TIER_4: Bun.env['STRIPE_PRICE_TIER_4'] ?? '',
 
   // Email / SES
   SES_REGION: Bun.env['SES_REGION'] ?? 'us-east-1',
@@ -103,7 +117,10 @@ export const env = {
 
   // Access token TTL in seconds. Defaults to 24 hours (production-safe).
   // Override with ACCESS_TOKEN_TTL_SECONDS env var (e.g. set to 900 for tighter session windows).
-  ACCESS_TOKEN_TTL_SECONDS: parseInt(Bun.env['ACCESS_TOKEN_TTL_SECONDS'] ?? String(24 * 60 * 60), 10),
+  ACCESS_TOKEN_TTL_SECONDS: parseInt(
+    Bun.env['ACCESS_TOKEN_TTL_SECONDS'] ?? String(24 * 60 * 60),
+    10
+  ),
 
   // Refresh token TTL in days. Defaults to 30 days (1 month).
   // Override with REFRESH_TOKEN_TTL_DAYS env var for custom persistence windows.
@@ -152,7 +169,10 @@ export const env = {
   /** HTTP probe timeout in milliseconds. Default: 10 000 ms. */
   HEALTH_CHECK_TIMEOUT_MS: parseInt(Bun.env['HEALTH_CHECK_TIMEOUT_MS'] ?? '10000', 10),
   /** Response time threshold (ms) above which a 2xx response is classified amber. Default: 1 000 ms. */
-  HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000', 10),
+  HEALTH_CHECK_AMBER_THRESHOLD_MS: parseInt(
+    Bun.env['HEALTH_CHECK_AMBER_THRESHOLD_MS'] ?? '1000',
+    10
+  ),
 
   // Design System dev page — enabled by default in development, disabled in production.
   // Set DESIGN_SYSTEM_ENABLED=true to force-enable in production (not recommended).

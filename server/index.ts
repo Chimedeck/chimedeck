@@ -41,7 +41,12 @@ import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { webhooksRouter } from './extensions/webhooks/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
+import { applyFeatureGate } from './middlewares/featureGate';
+import { applyRateLimit, rateLimiterClient } from './middlewares/rateLimiter';
+import { resolveRequestWorkspaceContext } from './common/requestContext';
+import { applySubscriptionAccessGuard } from './middlewares/subscriptionAccessGuard';
 import { trelloCompatRouter } from './extensions/trelloCompat';
+import { subscriptionRouter } from './extensions/subscription/api';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -139,6 +144,21 @@ async function router(req: Request): Promise<Response> {
     return handlePropagationPing(req);
   }
 
+  // Resolve the request workspace context once, then reuse it for rate limiting
+  // and feature gating so workspace-scoped requests share the same lookup.
+  const workspaceContext = await resolveRequestWorkspaceContext(path);
+
+  const rateLimitResponse = await applyRateLimit(req, workspaceContext, rateLimiterClient);
+  if (rateLimitResponse) return rateLimitResponse;
+
+  // Feature-gate: enforce tier-based feature access after shedding abusive traffic.
+  // Returns 402 if the tier doesn't include the feature.
+  const gateResponse = await applyFeatureGate(req, workspaceContext.workspaceId ?? undefined);
+  if (gateResponse) return gateResponse;
+
+  const subscriptionAccessResponse = await applySubscriptionAccessGuard(req, workspaceContext);
+  if (subscriptionAccessResponse) return subscriptionAccessResponse;
+
   const authResponse = await authRouter(req, path);
   if (authResponse) return authResponse;
 
@@ -201,6 +221,9 @@ async function router(req: Request): Promise<Response> {
 
   const webhooksResponse = await webhooksRouter(req, path);
   if (webhooksResponse) return webhooksResponse;
+
+  const subscriptionResponse = await subscriptionRouter(req, path);
+  if (subscriptionResponse) return subscriptionResponse;
 
   const healthCheckResponse = await healthCheckExtensionRouter(req, path);
   if (healthCheckResponse) return healthCheckResponse;

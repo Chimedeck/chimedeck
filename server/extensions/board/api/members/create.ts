@@ -10,6 +10,8 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { dispatchEvent } from '../../../../mods/events/dispatch';
+import { applyLimitGuard } from '../../../../middlewares/limitGuard';
+import { getInvitedMemberCountForBoard } from '../../../subscription/common/usage';
 
 type BoardMemberRole = 'ADMIN' | 'MEMBER';
 const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
@@ -58,6 +60,14 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   const role: BoardMemberRole = VALID_ROLES.has(body.role as BoardMemberRole)
     ? (body.role as BoardMemberRole)
     : 'MEMBER';
+
+  const memberCount = await getInvitedMemberCountForBoard(boardId);
+  const limitError = await applyLimitGuard({
+    workspaceId: board.workspace_id,
+    limitKey: 'maxInvitedMembersPerBoard',
+    currentUsage: memberCount,
+  });
+  if (limitError) return limitError;
 
   // Target user must be a workspace member (not a guest) to be added to a board.
   const workspaceMembership = await db('memberships')

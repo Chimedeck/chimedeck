@@ -14,17 +14,23 @@ export const s3Config = {
 const s3AccessKeyId = env.S3_AWS_ACCESS_KEY_ID || env.AWS_ACCESS_KEY_ID;
 const s3SecretAccessKey = env.S3_AWS_SECRET_ACCESS_KEY || env.AWS_SECRET_ACCESS_KEY;
 
+if (!s3AccessKeyId || !s3SecretAccessKey) {
+  throw new Error('S3 credentials are required');
+}
+
 // Singleton S3 client — re-used across all S3 operations.
-export const s3Client = new S3Client({
+const s3ClientConfig = {
   region: s3Config.region,
-  endpoint: s3Config.endpoint,
   credentials: {
     accessKeyId: s3AccessKeyId,
     secretAccessKey: s3SecretAccessKey,
   },
   // Required when using path-style URLs with LocalStack or custom S3 endpoints
   forcePathStyle: !!s3Config.endpoint,
-});
+  ...(s3Config.endpoint ? { endpoint: s3Config.endpoint } : {}),
+};
+
+export const s3Client = new S3Client(s3ClientConfig);
 
 /**
  * Ensure the configured S3 bucket exists. When S3_ENDPOINT is set (LocalStack /
