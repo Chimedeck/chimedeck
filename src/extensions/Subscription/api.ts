@@ -42,6 +42,7 @@ export interface WorkspaceEntitlements {
 }
 
 export interface WorkspaceUsage {
+  workspaceCount: number;
   boardsPerWorkspace: number;
   boardsTotal: number;
   columnsPerBoard: number;

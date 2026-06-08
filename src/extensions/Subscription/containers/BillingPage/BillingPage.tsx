@@ -28,6 +28,9 @@ type PlanCard = {
   tier: WorkspaceSubscription['tier'];
   name: string;
   description: string;
+  workspaces: EntitlementValue;
+  boardsPerWorkspace: EntitlementValue;
+  boardsTotal: EntitlementValue;
 };
 
 type PaidTier = Extract<WorkspaceSubscription['tier'], 'tier_2' | 'tier_3' | 'tier_4'>;
@@ -67,6 +70,11 @@ function ratioClass(used: number, limit: number): string {
   if (ratio >= 1) return 'bg-danger';
   if (ratio >= 0.8) return 'bg-amber-500';
   return 'bg-primary';
+}
+
+function formatEntitlementValue(value: EntitlementValue): string {
+  if (value === 'unlimited') return translations['BillingPage.unlimited'];
+  return String(value);
 }
 
 function planLabel(tier: WorkspaceSubscription['tier']): string {
@@ -170,6 +178,12 @@ export default function BillingPage() {
 
     return [
       {
+        id: 'workspaceCount',
+        label: translations['BillingPage.metric.workspaceCount'],
+        used: Number(usage.workspaceCount),
+        limit: entitlements['workspace:max-workspaces'],
+      },
+      {
         id: 'boardsPerWorkspace',
         label: translations['BillingPage.metric.boardsPerWorkspace'],
         used: usage.boardsPerWorkspace,
@@ -251,21 +265,33 @@ export default function BillingPage() {
       tier: 'tier_1',
       name: translations['BillingPage.planPersonal'],
       description: translations['BillingPage.planPersonalDescription'],
+      workspaces: 1,
+      boardsPerWorkspace: 1,
+      boardsTotal: 1,
     },
     {
       tier: 'tier_2',
       name: translations['BillingPage.planHobby'],
       description: translations['BillingPage.planHobbyDescription'],
+      workspaces: 1,
+      boardsPerWorkspace: 10,
+      boardsTotal: 10,
     },
     {
       tier: 'tier_3',
       name: translations['BillingPage.planPro'],
       description: translations['BillingPage.planProDescription'],
+      workspaces: 5,
+      boardsPerWorkspace: 30,
+      boardsTotal: 150,
     },
     {
       tier: 'tier_4',
       name: translations['BillingPage.planBusiness'],
       description: translations['BillingPage.planBusinessDescription'],
+      workspaces: 50,
+      boardsPerWorkspace: 200,
+      boardsTotal: 'unlimited',
     },
   ], []);
 
@@ -405,13 +431,14 @@ export default function BillingPage() {
             {metrics.map((metric) => {
               const displayUsed = metric.formatter ? metric.formatter(metric.used) : String(metric.used);
               const isUnlimited = metric.limit === 'unlimited';
+              const numericLimit = typeof metric.limit === 'number' ? metric.limit : 0;
               let displayLimit = String(metric.limit);
               if (isUnlimited) {
                 displayLimit = translations['BillingPage.unlimited'];
               } else if (metric.formatter) {
-                displayLimit = metric.formatter(metric.limit);
+                displayLimit = metric.formatter(numericLimit);
               }
-              const percentage = isUnlimited ? 0 : Math.min((metric.used / Math.max(metric.limit, 1)) * 100, 100);
+              const percentage = isUnlimited ? 0 : Math.min((metric.used / Math.max(numericLimit, 1)) * 100, 100);
 
               return (
                 <div key={metric.id} className="space-y-1">
@@ -423,8 +450,8 @@ export default function BillingPage() {
                   {!isUnlimited && (
                     <div className="h-2 rounded-full bg-bg-sunken overflow-hidden">
                       <div
-                        className={`h-full ${ratioClass(metric.used, metric.limit)}`}
-                        style={{ width: `${percentage}%` }}
+                        className={`h-full ${ratioClass(metric.used, numericLimit)}`}
+                        style={{ width: `${String(percentage)}%` }}
                       />
                     </div>
                   )}

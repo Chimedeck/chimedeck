@@ -4,6 +4,7 @@
 import { db } from '../../../common/db';
 
 export interface WorkspaceUsage {
+  workspaceCount: number;
   boardsPerWorkspace: number;
   boardsTotal: number;
   columnsPerBoard: number;
@@ -11,6 +12,25 @@ export interface WorkspaceUsage {
   invitedMembersPerBoard: number;
   guestsPerBoard: number;
   storageBytes: number;
+}
+
+/**
+ * Get workspace count for the workspace owner.
+ */
+export async function getWorkspaceCount(workspaceId: string): Promise<number> {
+  const workspace = await db('workspaces')
+    .where({ id: workspaceId })
+    .select('owner_id')
+    .first<{ owner_id: string }>();
+
+  if (!workspace?.owner_id) return 0;
+
+  const result = await db('workspaces')
+    .where({ owner_id: workspace.owner_id })
+    .count('id as count')
+    .first<{ count: number | string }>();
+
+  return Number(result?.count || 0);
 }
 
 /**
@@ -162,6 +182,7 @@ export async function getStorageBytesUsed(workspaceId: string): Promise<number> 
  */
 export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceUsage> {
   const [
+    workspaceCount,
     boardsPerWorkspace,
     boardsTotal,
     columnsPerBoard,
@@ -170,6 +191,7 @@ export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceU
     guestsPerBoard,
     storageBytes,
   ] = await Promise.all([
+    getWorkspaceCount(workspaceId),
     getBoardCountPerWorkspace(workspaceId),
     getBoardCountTotal(workspaceId),
     getMaxColumnsPerBoard(workspaceId),
@@ -180,6 +202,7 @@ export async function getWorkspaceUsage(workspaceId: string): Promise<WorkspaceU
   ]);
 
   return {
+    workspaceCount,
     boardsPerWorkspace,
     boardsTotal,
     columnsPerBoard,
