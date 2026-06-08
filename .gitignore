@@ -19,6 +19,7 @@ out/
 # Environment variables
 .env
 .env.local
+.env.commercial
 .env.*.local
 .env.development
 .env.test
