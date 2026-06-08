@@ -27,7 +27,7 @@ env:
   # SSM deployment targets — format: "<instance-id>:<region>", comma-separated for multiple
   # e.g. "i-0abc1234567890def:us-east-1" or "i-0abc1234567890def:us-east-1,i-0fed9876543210abc:eu-west-1"
   AWS_INSTANCE_IDS: ${{ secrets.COMMERCIAL_AWS_INSTANCE_IDS }}
-  AWS_INSTANCE_DEPLOY_SCRIPT: ${{ secrets.PRODUCTION_AWS_INSTANCE_DEPLOY_SCRIPT }}
+  AWS_INSTANCE_DEPLOY_SCRIPT: ${{ secrets.STABLE_AWS_INSTANCE_DEPLOY_SCRIPT }}
 
 jobs:
   deploy:
