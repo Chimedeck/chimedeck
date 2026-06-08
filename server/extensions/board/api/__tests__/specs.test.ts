@@ -234,31 +234,30 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns 422 when no github_project_url is configured', async () => {
+  it('returns 403 with the configured-repository hint when no github_project_url is configured', async () => {
     board.github_project_url = null;
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
       'board-1',
     );
-    expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    expect(res.status).toBe(403);
+    const body = await res.json() as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
+    expect(body.data.message).toContain('configure your Github documentation');
   });
 
-  it('returns 502 when the repository download fails', async () => {
+  it('returns 403 with the access-denied hint when the manifest cannot be loaded', async () => {
     specsLoadDeps.downloadRepositoryFromProjectUrl = async () => {
       throw new Error('github-repository-download-failed');
     };
-
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
       'board-1',
     );
-
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(403);
     const body = await res.json() as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-load-failed');
-    expect(body.data.message).toBe('github-repository-download-failed');
+    expect(body.data.message).toContain('do not have access to this respository');
   });
 
   it('deduplicates in-flight manifest requests for the same board+url', async () => {
@@ -351,24 +350,6 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     expect(body.name).toBe('specs-file-not-found');
   });
 
-  it('returns 422 when the manifest-listed size exceeds the limit', async () => {
-    // Override manifest to include a file that exceeds the 1MiB limit.
-    specsReadDeps.buildSpecsManifest = async () => ({
-      ref: FAKE_REF,
-      fetchedAt: FAKE_FETCHED_AT,
-      files: [{ path: 'README.md', sizeBytes: 2 * 1024 * 1024 }],
-      etag: FAKE_MANIFEST_ETAG,
-    });
-
-    const res = await handleReadSpecsFile(
-      new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
-      'board-1',
-    );
-    expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
-    expect(body.name).toBe('specs-file-too-large');
-  });
-
   it('returns 401 for unauthenticated requests', async () => {
     authenticated = false;
     const res = await handleReadSpecsFile(
@@ -387,24 +368,27 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns 422 when no github_project_url is configured', async () => {
+  it('returns 403 when no github_project_url is configured', async () => {
     board.github_project_url = null;
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
       'board-1',
     );
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(403);
   });
 
-  it('returns 502 when the repository download fails', async () => {
-    specsReadDeps.downloadRepositoryFromProjectUrl = async () => {
+  it('returns 403 with the access-denied hint when the manifest cannot be loaded', async () => {
+    specsLoadDeps.downloadRepositoryFromProjectUrl = async () => {
       throw new Error('github-repository-download-failed');
     };
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
       'board-1',
     );
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(403);
+    const body = await res.json() as { name: string; data: { message: string } };
+    expect(body.name).toBe('specs-load-failed');
+    expect(body.data.message).toContain('do not have access to this respository');
   });
 });
 

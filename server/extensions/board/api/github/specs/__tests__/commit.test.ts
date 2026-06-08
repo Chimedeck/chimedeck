@@ -132,12 +132,13 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit — authorization', (
     expect(body.name).toContain('guest');
   });
 
-  it('returns 422 when no github_project_url is configured', async () => {
+  it('returns 403 with the configured-repository hint when no github_project_url is configured', async () => {
     board.github_project_url = null;
     const res = await handleCommitSpecs(makeCommitRequest(), 'board-1');
-    expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    expect(res.status).toBe(403);
+    const body = await res.json() as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
+    expect(body.data.message).toContain('configure your Github documentation');
   });
 });
 

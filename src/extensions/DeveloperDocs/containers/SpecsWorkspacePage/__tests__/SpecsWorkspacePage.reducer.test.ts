@@ -166,3 +166,35 @@ describe('SpecsWorkspacePage reducer', () => {
     expect(state.pendingCommitPaths.has('specs/overview.md')).toBe(false);
   });
 });
+
+describe('SpecsWorkspacePage reducer — manifest error metadata', () => {
+  it('records name + status alongside the error message on manifest/error', () => {
+    const state = reduce(cloneInitialState(), {
+      type: 'manifest/error',
+      message: 'You must configure your Github documentation respository first',
+      name: 'specs-not-configured',
+      status: 403,
+    });
+
+    expect(state.manifestError).toContain('configure your Github documentation');
+    expect(state.manifestErrorName).toBe('specs-not-configured');
+    expect(state.manifestErrorStatus).toBe(403);
+    expect(state.manifestStatus).toBe('error');
+  });
+
+  it('clears the manifest error fields on manifest/loading', () => {
+    const stateWithError = cloneInitialState({
+      manifestStatus: 'error',
+      manifestError: 'You must configure your Github documentation respository first',
+      manifestErrorName: 'specs-not-configured',
+      manifestErrorStatus: 403,
+    });
+
+    const state = reduce(stateWithError, { type: 'manifest/loading' });
+
+    expect(state.manifestError).toBeNull();
+    expect(state.manifestErrorName).toBeNull();
+    expect(state.manifestErrorStatus).toBeNull();
+    expect(state.manifestStatus).toBe('loading');
+  });
+});

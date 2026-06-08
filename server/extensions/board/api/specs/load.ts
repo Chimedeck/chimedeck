@@ -84,10 +84,23 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
   const accessError = await specsLoadDeps.requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
+  const board = boardReq.board as
+    | ({ workspace_id: string } & { github_project_url?: string | null })
+    | undefined;
+  if (!board) {
+    return Response.json(
+      {
+        name: 'specs-load-failed',
+        data: { message: 'Board not found' },
+      },
+      { status: 500 },
+    );
+  }
+
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await specsLoadDeps.requireWorkspaceMembership(
     workspaceReq,
-    boardReq.board!.workspace_id,
+    board.workspace_id,
   );
   if (membershipError) return membershipError;
 
@@ -95,11 +108,14 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
   const roleError = specsLoadDeps.requireRole(workspaceReq, 'MEMBER');
   if (roleError) return roleError;
 
-  const board = boardReq.board as { github_project_url?: string | null };
-  if (!board.github_project_url) {
+  const githubProjectUrl = board.github_project_url;
+  if (!githubProjectUrl) {
     return Response.json(
-      { name: 'specs-not-configured', data: { message: 'No GitHub project URL is configured for this board' } },
-      { status: 422 },
+      {
+        name: 'specs-not-configured',
+        data: { message: 'You must configure your Github documentation respository first' },
+      },
+      { status: 403 },
     );
   }
 
@@ -110,14 +126,19 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
   try {
     result = await getOrBuildManifest({
       boardId,
-      projectUrl: board.github_project_url,
+      projectUrl: githubProjectUrl,
       refresh,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'unknown-error';
+  } catch (error) {
+    if (error instanceof Error && error.message) {
+      // Keep the public response generic while still handling the failure path.
+    }
     return Response.json(
-      { name: 'specs-load-failed', data: { message } },
-      { status: 502 },
+      {
+        name: 'specs-load-failed',
+        data: { message: 'Our app do not have access to this respository' },
+      },
+      { status: 403 },
     );
   }
 

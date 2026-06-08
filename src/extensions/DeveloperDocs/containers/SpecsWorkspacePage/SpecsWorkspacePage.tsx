@@ -44,7 +44,31 @@ interface SpecsCommitResponse {
 
 type ApiHandle = { get: <T>(url: string) => Promise<T> };
 
-type RequestError = Error & { status?: number };
+type RequestError = Error & { status?: number; name?: string };
+
+function extractManifestErrorMessage(err: unknown, fallback: string): {
+  message: string;
+  name: string | null;
+  status: number | null;
+} {
+  const candidate = err as {
+    response?: { status?: number; data?: { name?: unknown; data?: { message?: unknown }; error?: { message?: unknown }; message?: unknown } };
+    message?: unknown;
+  };
+  const status = typeof candidate?.response?.status === 'number' ? candidate.response.status : null;
+  const payload = candidate?.response?.data;
+  const serverName = typeof payload?.name === 'string' ? payload.name : null;
+  const dataMessage = payload?.data?.message;
+  const errorMessage = payload?.error?.message;
+  const topMessage = payload?.message;
+  const message =
+    (typeof dataMessage === 'string' && dataMessage)
+    || (typeof errorMessage === 'string' && errorMessage)
+    || (typeof topMessage === 'string' && topMessage)
+    || (typeof candidate?.message === 'string' && candidate.message)
+    || fallback;
+  return { message, name: serverName, status };
+}
 
 async function fetchSpecsManifest({ api, boardId }: { api: ApiHandle; boardId: string }): Promise<SpecsManifest> {
   const res = await api.get<{ data: SpecsManifest }>(`/boards/${boardId}/specs/manifest`);
@@ -120,6 +144,8 @@ async function requestSpecsJson<T>({
 interface WorkspaceState {
   manifestStatus: 'idle' | 'loading' | 'loaded' | 'error';
   manifestError: string | null;
+  manifestErrorName: string | null;
+  manifestErrorStatus: number | null;
   files: SpecsManifestEntry[];
   selectedPath: string | null;
   fileStatus: 'idle' | 'loading' | 'loaded' | 'error';
@@ -142,7 +168,7 @@ interface WorkspaceState {
 type WorkspaceAction =
   | { type: 'manifest/loading' }
   | { type: 'manifest/loaded'; files: SpecsManifestEntry[] }
-  | { type: 'manifest/error'; message: string }
+  | { type: 'manifest/error'; message: string; name: string | null; status: number | null }
   | { type: 'file/select'; path: string }
   | { type: 'file/ready' }
   | { type: 'file/loading' }
@@ -175,11 +201,34 @@ function setPathValue(state: WorkspaceState, path: string, content: string, etag
 function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState {
   switch (action.type) {
     case 'manifest/loading':
-      return { ...state, manifestStatus: 'loading', manifestError: null, files: state.files ?? [] };
+      return {
+        ...state,
+        manifestStatus: 'loading',
+        manifestError: null,
+        manifestErrorName: null,
+        manifestErrorStatus: null,
+        files: state.files ?? [],
+      };
     case 'manifest/loaded':
-      return { ...state, manifestStatus: 'loaded', files: action.files };
+      return {
+        ...state,
+        manifestStatus: 'loaded',
+        files: action.files,
+        selectedPath:
+          state.selectedPath && action.files.some((file) => file.path === state.selectedPath)
+            ? state.selectedPath
+            : (action.files[0]?.path ?? null),
+        fileStatus: 'idle',
+        fileError: null,
+      };
     case 'manifest/error':
-      return { ...state, manifestStatus: 'error', manifestError: action.message };
+      return {
+        ...state,
+        manifestStatus: 'error',
+        manifestError: action.message,
+        manifestErrorName: action.name,
+        manifestErrorStatus: action.status,
+      };
 
     case 'file/select':
       return { ...state, selectedPath: action.path, fileError: null };
@@ -328,6 +377,8 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
 const initialState: WorkspaceState = {
   manifestStatus: 'idle',
   manifestError: null,
+  manifestErrorName: null,
+  manifestErrorStatus: null,
   files: [],
   selectedPath: null,
   fileStatus: 'idle',
@@ -372,8 +423,13 @@ const SpecsWorkspacePage = ({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : 'Failed to load specs manifest';
-        dispatch({ type: 'manifest/error', message });
+        const extracted = extractManifestErrorMessage(err, 'Failed to load specs manifest');
+        dispatch({
+          type: 'manifest/error',
+          message: extracted.message,
+          name: extracted.name,
+          status: extracted.status,
+        });
       });
 
     return () => {
@@ -434,8 +490,13 @@ const SpecsWorkspacePage = ({
     fetchSpecsManifest({ api, boardId })
       .then((manifest) => dispatch({ type: 'manifest/loaded', files: manifest.files }))
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Failed to load specs manifest';
-        dispatch({ type: 'manifest/error', message });
+        const extracted = extractManifestErrorMessage(err, 'Failed to load specs manifest');
+        dispatch({
+          type: 'manifest/error',
+          message: extracted.message,
+          name: extracted.name,
+          status: extracted.status,
+        });
       });
   }, [api, boardId]);
 
@@ -558,16 +619,26 @@ const SpecsWorkspacePage = ({
   }
 
   if (state.manifestStatus === 'error') {
+    const isNotConfigured = state.manifestErrorName === 'specs-not-configured';
+    const isAccessDenied = state.manifestErrorName === 'specs-load-failed';
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 py-12">
-        <p className="text-sm text-danger">{state.manifestError ?? 'Failed to load documentation.'}</p>
-        <button
-          type="button"
-          onClick={handleRetry}
-          className="rounded-md bg-bg-overlay px-3 py-1.5 text-sm text-subtle hover:bg-bg-sunken"
-        >
-          Retry
-        </button>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+        <p className="text-sm text-danger">
+          {isNotConfigured
+            ? 'You must configure your Github documentation respository first'
+            : isAccessDenied
+              ? 'Our app do not have access to this respository'
+              : (state.manifestError ?? 'Failed to load documentation.')}
+        </p>
+        {!isNotConfigured && (
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="rounded-md bg-bg-overlay px-3 py-1.5 text-sm text-subtle hover:bg-bg-sunken"
+          >
+            Retry
+          </button>
+        )}
       </div>
     );
   }

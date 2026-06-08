@@ -1,7 +1,7 @@
 // SpecsMarkdownEditor — TipTap-based markdown editor for specs files.
 // Markdown-first: content is serialized/deserialized as plain markdown text.
 // Toolbar is tuned for specs authoring (headings, bold/italic, lists, code, links, blockquote, hr).
-import { useCallback, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from '@tiptap/markdown';
@@ -20,10 +20,10 @@ function ToolbarButton({
   title,
   children,
 }: {
-  onClick: () => void;
-  isActive?: boolean;
-  title: string;
-  children: React.ReactNode;
+  readonly onClick: () => void;
+  readonly isActive?: boolean;
+  readonly title: string;
+  readonly children: React.ReactNode;
 }) {
   return (
     <button
@@ -47,15 +47,21 @@ function ToolbarButton({
 }
 
 const SpecsMarkdownEditor = ({ content, onChange, readOnly = false }: SpecsMarkdownEditorProps) => {
+  const isHydratedRef = useRef(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Markdown,
       Link.configure({ openOnClick: false }),
     ],
-    content,
+    content: '',
     editable: !readOnly,
     onUpdate: ({ editor: ed }) => {
+      if (!isHydratedRef.current) {
+        return;
+      }
+
       // [why] Use the Markdown extension's storage to get the canonical markdown string
       const md = (ed.storage as { markdown?: { getMarkdown?: () => string } }).markdown?.getMarkdown?.() ?? ed.getHTML();
       onChange(md);
@@ -69,9 +75,24 @@ const SpecsMarkdownEditor = ({ content, onChange, readOnly = false }: SpecsMarkd
       (editor.storage as { markdown?: { getMarkdown?: () => string } }).markdown?.getMarkdown?.() ?? '';
     // Only reset if content genuinely changed to avoid clobbering cursor position
     if (currentMd !== content) {
-      editor.commands.setContent(content);
+      isHydratedRef.current = false;
+      editor.commands.setContent(content, { contentType: 'markdown' });
+      queueMicrotask(() => {
+        isHydratedRef.current = true;
+      });
     }
   }, [editor, content]);
+
+  // Allow user edits after the initial editor mount has settled.
+  useEffect(() => {
+    if (!editor) return;
+    const timer = globalThis.setTimeout(() => {
+      isHydratedRef.current = true;
+    }, 0);
+    return () => {
+      globalThis.clearTimeout(timer);
+    };
+  }, [editor]);
 
   // Sync readOnly prop changes
   useEffect(() => {

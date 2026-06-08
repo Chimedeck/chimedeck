@@ -96,6 +96,54 @@ async function renderAndOpenFile(canEdit = true) {
   await waitFor(() => screen.getByTestId('markdown-editor'));
 }
 
+describe('SpecsWorkspacePage — manifest error UX (403 not-configured / load-failed)', () => {
+  function makeAxiosError(status: number, payload: { name: string; data: { message: string } }) {
+    const err = new Error(`Request failed with status code ${status}`) as Error & {
+      response: { status: number; data: typeof payload };
+    };
+    err.response = { status, data: payload };
+    return err;
+  }
+
+  it('shows the "configure your Github documentation" hint when the board has no URL configured (403)', async () => {
+    mockGet.mockRejectedValueOnce(
+      makeAxiosError(403, {
+        name: 'specs-not-configured',
+        data: { message: 'You must configure your Github documentation respository first' },
+      }),
+    );
+
+    render(<SpecsWorkspacePage boardId="board-1" accessToken="token-abc" canEdit />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('You must configure your Github documentation respository first'),
+      ).toBeInTheDocument(),
+    );
+
+    // No "Retry" button is offered for the not-configured case.
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
+  it('shows the "do not have access" hint when the repo cannot be cloned (403)', async () => {
+    mockGet.mockRejectedValueOnce(
+      makeAxiosError(403, {
+        name: 'specs-load-failed',
+        data: { message: 'Our app do not have access to this respository' },
+      }),
+    );
+
+    render(<SpecsWorkspacePage boardId="board-1" accessToken="token-abc" canEdit />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Our app do not have access to this respository')).toBeInTheDocument(),
+    );
+
+    // Retry button is still available — the failure may be transient.
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+});
+
 describe('SpecsWorkspacePage — save/commit UI', () => {
   it('shows "Saved" badge after file loads with no edits', async () => {
     await renderAndOpenFile();

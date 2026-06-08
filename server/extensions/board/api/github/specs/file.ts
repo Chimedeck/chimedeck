@@ -98,8 +98,11 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
   const board = boardReq.board as { github_project_url?: string | null };
   if (!board.github_project_url) {
     return Response.json(
-      { name: 'specs-not-configured', data: { message: 'No GitHub project URL is configured for this board' } },
-      { status: 422 },
+      {
+        name: 'specs-not-configured',
+        data: { message: 'You must configure your Github documentation respository first' },
+      },
+      { status: 403 },
     );
   }
 
@@ -128,10 +131,12 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
     });
     repoPath = result.repoPath;
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'unknown-error';
     return Response.json(
-      { name: 'specs-load-failed', data: { message } },
-      { status: 502 },
+      {
+        name: 'specs-load-failed',
+        data: { message: 'Our app do not have access to this respository' },
+      },
+      { status: 403 },
     );
   }
 

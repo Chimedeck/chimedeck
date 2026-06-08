@@ -756,8 +756,13 @@ const BoardPage = () => {
     { id: 'archived-cards' as const, label: 'Archived Cards' },
     // Health Check tab — only visible when feature flag is enabled (Sprint 116)
     ...(HEALTH_CHECK_ENABLED ? [{ id: 'health-check' as const, label: 'Health Check' }] : []),
-    // Documentation tab — only visible when GitHub editing is enabled and URL is configured.
-    ...(isDocumentationEnabled && githubProjectUrl ? [{ id: 'documentation' as const, label: 'Documentation' }] : []),
+    // Documentation tab — visible whenever the GitHub editing flag is enabled.
+    // [why] The tab is the entry-point for both the editor (when a repo URL is configured)
+    // and the empty-state guidance when it is not. Hiding the tab when no URL is set
+    // would prevent users from discovering how to configure it.
+    ...(isDocumentationEnabled
+      ? [{ id: 'documentation' as const, label: 'Documentation' }]
+      : []),
   ];
 
   const tabContent = (() => {

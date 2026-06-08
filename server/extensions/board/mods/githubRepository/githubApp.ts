@@ -164,17 +164,17 @@ export async function getGithubInstallationAccessToken({
     bearerToken: appJwt,
   });
   if (!response.ok) {
-    throw new Error('github-installation-token-create-failed');
+    throw new TypeError('github-installation-token-create-failed');
   }
 
   const payload = (await readJson(response)) as GithubInstallationTokenResponse | null;
   if (typeof payload?.token !== 'string' || typeof payload.expires_at !== 'string') {
-    throw new Error('github-installation-token-create-failed');
+    throw new TypeError('github-installation-token-create-failed');
   }
 
   const expiresAtMs = toEpochMs(payload.expires_at);
   if (expiresAtMs === null) {
-    throw new Error('github-installation-token-create-failed');
+    throw new TypeError('github-installation-token-create-failed');
   }
 
   installationTokenCache.set(installationId, {
