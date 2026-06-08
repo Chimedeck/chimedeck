@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
 type SubscriptionRow = {
-  workspace_id: string;
-  tier: 'tier_1' | 'tier_2' | 'unlimited';
+  user_id: string;
+  tier: 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4' | 'unlimited';
   status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'unpaid';
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -19,8 +19,8 @@ let defaultUnlimitedTier = true;
 class SubscriptionQueryBuilder {
   private workspaceId: string | null = null;
 
-  where(criteria: { workspace_id: string }): SubscriptionQueryBuilder {
-    this.workspaceId = criteria.workspace_id;
+  where(criteria: { workspace_id?: string; user_id?: string }): SubscriptionQueryBuilder {
+    this.workspaceId = criteria.user_id ?? criteria.workspace_id ?? null;
     return this;
   }
 
@@ -45,7 +45,7 @@ class SubscriptionQueryBuilder {
     returning: (_columns: '*') => Promise<SubscriptionRow[]>;
   } {
     const inserted = { ...payload };
-    rows.set(inserted.workspace_id, inserted);
+    rows.set(inserted.user_id, inserted);
     return {
       returning: async () => [inserted],
     };
@@ -85,8 +85,8 @@ describe('subscriptionRepo', () => {
   });
 
   it('returns workspace tier when subscriptions are enabled', async () => {
-    rows.set('ws-paid', {
-      workspace_id: 'ws-paid',
+    rows.set('user-paid', {
+      user_id: 'user-paid',
       tier: 'tier_2',
       status: 'active',
       stripe_customer_id: 'cus_123',
@@ -97,7 +97,7 @@ describe('subscriptionRepo', () => {
       updated_at: '2026-06-01T00:00:00.000Z',
     });
 
-    const tier = await getCurrentTier('ws-paid');
+    const tier = await getCurrentTier('user-paid');
     expect(tier).toBe('tier_2');
   });
 
@@ -114,7 +114,7 @@ describe('subscriptionRepo', () => {
       status: 'active',
       stripeCustomerId: 'cus_abc',
     });
-    expect(created.workspaceId).toBe('ws-1');
+    expect(created.userId).toBe('ws-1');
     expect(created.tier).toBe('tier_1');
     expect(created.stripeCustomerId).toBe('cus_abc');
 
@@ -131,7 +131,7 @@ describe('subscriptionRepo', () => {
     expect(updated.stripeSubscriptionId).toBe('sub_abc');
 
     const loaded = await getByWorkspaceId('ws-1');
-    expect(loaded?.workspaceId).toBe('ws-1');
+    expect(loaded?.userId).toBe('ws-1');
     expect(loaded?.tier).toBe('unlimited');
   });
 });

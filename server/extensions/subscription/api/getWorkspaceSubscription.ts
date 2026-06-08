@@ -13,7 +13,13 @@ function getWorkspaceIdFromRequest(req: Request): string | null {
   return url.searchParams.get('workspaceId');
 }
 
-async function trySyncWorkspaceSubscriptionFromStripe(subscription: Awaited<ReturnType<typeof getOrCreateByWorkspaceId>>) {
+async function trySyncWorkspaceSubscriptionFromStripe({
+  workspaceId,
+  subscription,
+}: {
+  workspaceId: string;
+  subscription: Awaited<ReturnType<typeof getOrCreateByWorkspaceId>>;
+}) {
   if (!env.SUBSCRIPTIONS_ENABLED || !env.STRIPE_SECRET_KEY) return;
   if (!subscription.stripeCustomerId) return;
 
@@ -64,7 +70,7 @@ async function trySyncWorkspaceSubscriptionFromStripe(subscription: Awaited<Retu
   }
 
   await upsertWorkspaceSubscription({
-    workspaceId: subscription.workspaceId,
+    workspaceId,
     tier: nextTier,
     status: nextStatus,
     stripeCustomerId: subscription.stripeCustomerId,
@@ -80,13 +86,12 @@ async function trySyncWorkspaceSubscriptionFromStripe(subscription: Awaited<Retu
 export async function handleGetWorkspaceSubscription(req: Request): Promise<Response> {
   const workspaceResolution = await resolveWorkspaceContext(req, {
     workspaceId: getWorkspaceIdFromRequest(req),
-    minRole: 'ADMIN',
   });
   if (workspaceResolution.response) return workspaceResolution.response;
   const { context } = workspaceResolution;
 
   const subscription = await getOrCreateByWorkspaceId(context.workspaceId);
-  await trySyncWorkspaceSubscriptionFromStripe(subscription);
+  await trySyncWorkspaceSubscriptionFromStripe({ workspaceId: context.workspaceId, subscription });
   const refreshedSubscription = await getOrCreateByWorkspaceId(context.workspaceId);
   const tier = await getCurrentTier(context.workspaceId);
 

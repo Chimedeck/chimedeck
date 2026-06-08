@@ -373,7 +373,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   onNavigate={onClose}
                 />
               )}
-              {(activeWorkspace.callerRole === 'OWNER' || activeWorkspace.callerRole === 'ADMIN') && subscriptionsEnabled && (
+              {subscriptionsEnabled && (
                 <NavItem
                   to={`/workspace/${activeWorkspace.id}/billing`}
                   icon={<DocumentTextIcon className="h-5 w-5" />}

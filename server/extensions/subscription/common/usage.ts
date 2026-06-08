@@ -28,7 +28,20 @@ export async function getBoardCountPerWorkspace(workspaceId: string): Promise<nu
  * Get total board count (aggregate across workspace).
  */
 export async function getBoardCountTotal(workspaceId: string): Promise<number> {
-  return getBoardCountPerWorkspace(workspaceId);
+  const workspace = await db('workspaces')
+    .where({ id: workspaceId })
+    .select('owner_id')
+    .first<{ owner_id: string }>();
+
+  if (!workspace?.owner_id) return getBoardCountPerWorkspace(workspaceId);
+
+  const result = await db('boards as b')
+    .join('workspaces as w', 'b.workspace_id', 'w.id')
+    .where({ 'w.owner_id': workspace.owner_id })
+    .count('b.id as count')
+    .first<{ count: number | string }>();
+
+  return Number(result?.count || 0);
 }
 
 /**
@@ -126,12 +139,20 @@ export async function getGuestCountForBoard(boardId: string): Promise<number> {
  * Get total storage used by attachments in workspace.
  */
 export async function getStorageBytesUsed(workspaceId: string): Promise<number> {
+  const workspace = await db('workspaces')
+    .where({ id: workspaceId })
+    .select('owner_id')
+    .first<{ owner_id: string }>();
+
+  if (!workspace?.owner_id) return 0;
+
   const result = await db('attachments')
     .select(db.raw('COALESCE(SUM(size_bytes), 0) as total_bytes'))
     .join('cards', 'attachments.card_id', 'cards.id')
     .join('lists', 'cards.list_id', 'lists.id')
     .join('boards', 'lists.board_id', 'boards.id')
-    .where({ 'boards.workspace_id': workspaceId })
+    .join('workspaces', 'boards.workspace_id', 'workspaces.id')
+    .where({ 'workspaces.owner_id': workspace.owner_id })
     .first<{ total_bytes: number }>();
   return Number(result?.total_bytes || 0);
 }

@@ -9,8 +9,8 @@ export type SubscriptionStatus =
   | 'incomplete_expired'
   | 'unpaid';
 
-export interface WorkspaceSubscriptionRow {
-  workspace_id: string;
+export interface UserSubscriptionRow {
+  user_id: string;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   stripe_customer_id: string | null;
@@ -21,8 +21,8 @@ export interface WorkspaceSubscriptionRow {
   updated_at: string | Date;
 }
 
-export interface WorkspaceSubscription {
-  workspaceId: string;
+export interface UserSubscription {
+  userId: string;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   stripeCustomerId: string | null;
@@ -33,8 +33,8 @@ export interface WorkspaceSubscription {
   updatedAt: string;
 }
 
-export interface UpsertWorkspaceSubscriptionInput {
-  workspaceId: string;
+export interface UpsertUserSubscriptionInput {
+  userId: string;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   stripeCustomerId?: string | null;
@@ -43,6 +43,11 @@ export interface UpsertWorkspaceSubscriptionInput {
   stripeCurrentPeriodEnd?: string | Date | null;
 }
 
+// Backward-compat aliases while call sites migrate to user-centric naming.
+export type WorkspaceSubscriptionRow = UserSubscriptionRow;
+export type WorkspaceSubscription = UserSubscription;
+export type UpsertWorkspaceSubscriptionInput = UpsertUserSubscriptionInput;
+
 export type WorkspaceMembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST';
 
 export interface WorkspaceContext {
@@ -50,11 +55,13 @@ export interface WorkspaceContext {
   workspaceName: string;
   currentUserId: string;
   currentUserEmail: string;
+  ownerUserId: string;
+  ownerUserEmail: string | null;
   role: WorkspaceMembershipRole;
 }
 
 export interface WorkspaceSubscriptionApiResponse {
-  workspaceId: string;
+  userId: string;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
   stripeCustomerId: string | null;

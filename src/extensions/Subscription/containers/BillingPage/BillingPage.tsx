@@ -5,7 +5,6 @@ import Spinner from '~/common/components/Spinner';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectWorkspaces, setActiveWorkspace } from '~/extensions/Workspace/duck/workspaceDuck';
-import type { Role } from '~/extensions/Workspace/api';
 import {
   createSubscriptionPortal,
   getWorkspaceEntitlements,
@@ -91,8 +90,8 @@ function upgradeButtonLabel(tier: PaidTier): string {
   return translations['BillingPage.upgradeToBusiness'];
 }
 
-function canManageBilling(role: Role | undefined): boolean {
-  return role === 'OWNER' || role === 'ADMIN';
+function canManageBilling(): boolean {
+  return true;
 }
 
 function planActionLabel({
@@ -121,7 +120,6 @@ export default function BillingPage() {
     return normalizeWorkspaceToken(item.name) === token || normalizeWorkspaceToken(item.id) === token;
   });
   const resolvedWorkspaceId = workspace?.id ?? workspaceId;
-  const role = workspace?.callerRole;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -217,7 +215,7 @@ export default function BillingPage() {
     ];
   }, [entitlements, usage]);
 
-  const isManager = canManageBilling(role);
+  const isManager = canManageBilling();
 
   const upgradeTarget = useMemo<PaidTier | null>(
     () => (subscription ? nextTierForUpgrade(subscription.tier) : null),

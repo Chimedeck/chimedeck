@@ -4,21 +4,7 @@ import { db } from '../../../common/db';
 import { env } from '../../../config/env';
 import { SUBSCRIPTION_TIERS } from '../../../config/subscription-tiers';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
-import type { SubscriptionTier } from '../../subscription/common/types';
-
-type OwnedWorkspaceTierRow = {
-  workspaceId: string;
-  tier: SubscriptionTier | null;
-};
-
-// Numeric rank for comparing tier capability (higher = more permissive)
-const TIER_RANK: Record<string, number> = {
-  tier_1: 0,
-  tier_2: 1,
-  tier_3: 2,
-  tier_4: 3,
-  unlimited: 4,
-};
+import { getCurrentTierForUser } from '../../subscription/common/subscriptionRepo';
 
 const TIER_NAME_MAP: Record<string, keyof typeof SUBSCRIPTION_TIERS> = {
   tier_1: 'personal',
@@ -32,46 +18,40 @@ const TIER_NAME_MAP: Record<string, keyof typeof SUBSCRIPTION_TIERS> = {
  * Returns the workspace ID to surface in the upgrade CTA when workspace creation is blocked,
  * or null if creation is allowed.
  *
- * Logic: find the user's best (highest) tier across all owned workspaces; if the owned
- * workspace count is already at or above that tier's maxWorkspaces limit, block and return
- * the lowest-tier workspace as the upgrade target.
+ * Logic: resolve the caller's billing tier, then compare owned workspace count to that
+ * tier's maxWorkspaces quota. Returns the oldest owned workspace as the upgrade target.
  */
-export function findBlockingWorkspaceForCreate(rows: OwnedWorkspaceTierRow[]): string | null {
-  const count = rows.length;
+export function findBlockingWorkspaceForCreate(args: {
+  workspaceIds: string[];
+  tier: string;
+}): string | null {
+  const count = args.workspaceIds.length;
   if (count === 0) return null;
 
-  // Find the workspace with the highest tier (best entitlements)
-  const bestRow = rows.reduce((best, row) => {
-    const rank = TIER_RANK[row.tier ?? 'tier_1'] ?? 0;
-    const bestRank = TIER_RANK[best.tier ?? 'tier_1'] ?? 0;
-    return rank > bestRank ? row : best;
-  });
-
-  const bestTier = bestRow.tier ?? 'tier_1';
-  const tierName = TIER_NAME_MAP[bestTier] ?? 'personal';
+  const tierName = TIER_NAME_MAP[args.tier] ?? 'personal';
   const maxWorkspaces = SUBSCRIPTION_TIERS[tierName].maxWorkspaces;
 
   if (maxWorkspaces === 'unlimited') return null;
   if (count < (maxWorkspaces as number)) return null;
 
-  // Return the lowest-tier workspace as the upgrade target
-  const lowestRank = Math.min(...rows.map((r) => TIER_RANK[r.tier ?? 'tier_1'] ?? 0));
-  const lowestRow = rows.find((r) => (TIER_RANK[r.tier ?? 'tier_1'] ?? 0) === lowestRank) ?? rows[0];
-  return lowestRow.workspaceId;
+  return args.workspaceIds[0] ?? null;
 }
 
 async function resolveBlockingWorkspaceForCreate(userId: string): Promise<string | null> {
   if (!env.SUBSCRIPTIONS_ENABLED) return null;
 
   const rows = await db('workspaces as w')
-    .leftJoin('workspace_subscriptions as ws', 'w.id', 'ws.workspace_id')
     .where('w.owner_id', userId)
-    .select<{ workspaceId: string; tier: SubscriptionTier | null }[]>(
+    .orderBy('w.created_at', 'asc')
+    .select<{ workspaceId: string }[]>(
       'w.id as workspaceId',
-      'ws.tier as tier',
     );
 
-  return findBlockingWorkspaceForCreate(rows);
+  const tier = await getCurrentTierForUser(userId);
+  return findBlockingWorkspaceForCreate({
+    workspaceIds: rows.map((row) => row.workspaceId),
+    tier,
+  });
 }
 
 export async function handleCreateWorkspace(req: Request): Promise<Response> {

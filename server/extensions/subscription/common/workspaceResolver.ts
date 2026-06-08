@@ -32,12 +32,30 @@ export async function resolveWorkspaceContext(
 
   const workspace = await db('workspaces')
     .where({ id: options.workspaceId })
-    .select('id', 'name')
-    .first<{ id: string; name: string }>();
+    .select('id', 'name', 'owner_id')
+    .first<{ id: string; name: string; owner_id: string | null }>();
   if (!workspace) {
     return {
       context: null,
       response: Response.json({ name: 'workspace-not-found' }, { status: 404 }),
+    };
+  }
+
+  if (!workspace.owner_id) {
+    return {
+      context: null,
+      response: Response.json({ name: 'workspace-owner-not-found' }, { status: 409 }),
+    };
+  }
+
+  const workspaceOwner = await db('users')
+    .where({ id: workspace.owner_id })
+    .select('id', 'email')
+    .first<{ id: string; email: string | null }>();
+  if (!workspaceOwner?.id) {
+    return {
+      context: null,
+      response: Response.json({ name: 'workspace-owner-not-found' }, { status: 409 }),
     };
   }
 
@@ -68,6 +86,8 @@ export async function resolveWorkspaceContext(
       workspaceName: workspace.name,
       currentUserId: currentUser.id,
       currentUserEmail: currentUser.email,
+      ownerUserId: workspaceOwner.id,
+      ownerUserEmail: workspaceOwner.email,
       role,
     },
     response: null,

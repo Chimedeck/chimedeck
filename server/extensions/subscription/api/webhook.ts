@@ -88,11 +88,18 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
         processed: result.processed,
         idempotent: result.idempotent,
         ignored: result.ignored,
-        workspaceId: result.workspaceId ?? null,
+        userId: result.userId ?? null,
         tier: result.tier ?? null,
       },
     });
   } catch (error) {
+    const stripeEvent = event as { id?: string; type?: string } | null;
+    console.error('[subscription/webhook] processing failed', {
+      eventId: stripeEvent?.id ?? null,
+      eventType: stripeEvent?.type ?? null,
+      error: error instanceof Error ? error.message : 'Stripe webhook processing failed',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return Response.json(
       {
         name: 'stripe-webhook-processing-failed',

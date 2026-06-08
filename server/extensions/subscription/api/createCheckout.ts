@@ -47,18 +47,15 @@ function getBillingReturnUrl(appOrigin: string, workspaceId: string): string {
 }
 
 async function createStripeCustomer({
-  workspaceId,
-  workspaceName,
-  currentUserEmail,
+  userId,
+  userEmail,
 }: {
-  workspaceId: string;
-  workspaceName: string;
-  currentUserEmail: string;
+  userId: string;
+  userEmail: string;
 }): Promise<string> {
   const body = new URLSearchParams();
-  body.set('email', currentUserEmail);
-  body.set('name', workspaceName);
-  body.set('metadata[workspaceId]', workspaceId);
+  body.set('email', userEmail);
+  body.set('metadata[userId]', userId);
 
   const response = await fetch('https://api.stripe.com/v1/customers', {
     method: 'POST',
@@ -78,11 +75,13 @@ async function createStripeCustomer({
 }
 
 async function createStripeCheckoutSession({
+  userId,
   workspaceId,
   customerId,
   priceId,
   appOrigin,
 }: {
+  userId: string;
   workspaceId: string;
   customerId: string;
   priceId: string;
@@ -95,6 +94,9 @@ async function createStripeCheckoutSession({
   body.set('cancel_url', `${appOrigin}/workspace/${workspaceId}/billing?checkout=cancel`);
   body.set('line_items[0][price]', priceId);
   body.set('line_items[0][quantity]', '1');
+  body.set('subscription_data[metadata][userId]', userId);
+  body.set('subscription_data[metadata][workspaceId]', workspaceId);
+  body.set('metadata[userId]', userId);
   body.set('metadata[workspaceId]', workspaceId);
 
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -227,26 +229,26 @@ async function getLatestStripeSubscriptionByCustomer(customerId: string): Promis
 
 async function handleExistingWorkspaceSubscriptionChange({
   workspaceId,
-  subscription,
+  billingSubscription,
   targetTier,
   targetPriceId,
   billingReturnUrl,
 }: {
   workspaceId: string;
-  subscription: Awaited<ReturnType<typeof getOrCreateByWorkspaceId>>;
+  billingSubscription: Awaited<ReturnType<typeof getOrCreateByWorkspaceId>>;
   targetTier: CheckoutTier;
   targetPriceId: string;
   billingReturnUrl: string;
 }): Promise<Response | null> {
-  if (subscription.stripeCustomerId && !subscription.stripeSubscriptionId) {
-    const latest = await getLatestStripeSubscriptionByCustomer(subscription.stripeCustomerId);
+  if (billingSubscription.stripeCustomerId && !billingSubscription.stripeSubscriptionId) {
+    const latest = await getLatestStripeSubscriptionByCustomer(billingSubscription.stripeCustomerId);
     if (latest) {
       const latestTier = mapStripePriceIdToTier(latest.priceId);
       await upsertWorkspaceSubscription({
         workspaceId,
         tier: latestTier,
         status: latest.status,
-        stripeCustomerId: subscription.stripeCustomerId,
+        stripeCustomerId: billingSubscription.stripeCustomerId,
         stripeSubscriptionId: latest.id,
         stripePriceId: latest.priceId,
         stripeCurrentPeriodEnd: latest.currentPeriodEnd,
@@ -263,7 +265,7 @@ async function handleExistingWorkspaceSubscriptionChange({
           workspaceId,
           tier: targetTier,
           status: latest.status,
-          stripeCustomerId: subscription.stripeCustomerId,
+          stripeCustomerId: billingSubscription.stripeCustomerId,
           stripeSubscriptionId: latest.id,
           stripePriceId: targetPriceId,
           stripeCurrentPeriodEnd: latest.currentPeriodEnd,
@@ -274,11 +276,11 @@ async function handleExistingWorkspaceSubscriptionChange({
     }
   }
 
-  if (subscription.stripeSubscriptionId && subscription.stripeCustomerId) {
-    if (subscription.stripePriceId !== targetPriceId) {
-      const itemId = await getStripeSubscriptionItemId(subscription.stripeSubscriptionId);
+  if (billingSubscription.stripeSubscriptionId && billingSubscription.stripeCustomerId) {
+    if (billingSubscription.stripePriceId !== targetPriceId) {
+      const itemId = await getStripeSubscriptionItemId(billingSubscription.stripeSubscriptionId);
       await updateStripeSubscriptionPrice({
-        subscriptionId: subscription.stripeSubscriptionId,
+        subscriptionId: billingSubscription.stripeSubscriptionId,
         itemId,
         priceId: targetPriceId,
       });
@@ -286,11 +288,11 @@ async function handleExistingWorkspaceSubscriptionChange({
       await upsertWorkspaceSubscription({
         workspaceId,
         tier: targetTier,
-        status: subscription.status,
-        stripeCustomerId: subscription.stripeCustomerId,
-        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        status: billingSubscription.status,
+        stripeCustomerId: billingSubscription.stripeCustomerId,
+        stripeSubscriptionId: billingSubscription.stripeSubscriptionId,
         stripePriceId: targetPriceId,
-        stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
+        stripeCurrentPeriodEnd: billingSubscription.stripeCurrentPeriodEnd,
       });
     }
 
@@ -318,7 +320,6 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
 
   const workspaceResolution = await resolveWorkspaceContext(req, {
     workspaceId: body.workspaceId,
-    minRole: 'ADMIN',
   });
   if (workspaceResolution.response) return workspaceResolution.response;
   const { context } = workspaceResolution;
@@ -338,7 +339,7 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
     const subscription = await getOrCreateByWorkspaceId(context.workspaceId);
     const existingChangeResponse = await handleExistingWorkspaceSubscriptionChange({
       workspaceId: context.workspaceId,
-      subscription,
+      billingSubscription: subscription,
       targetTier: tier,
       targetPriceId: priceId,
       billingReturnUrl: getBillingReturnUrl(appOrigin, context.workspaceId),
@@ -348,9 +349,8 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
     const customerId =
       subscription.stripeCustomerId ??
       (await createStripeCustomer({
-        workspaceId: context.workspaceId,
-        workspaceName: context.workspaceName,
-        currentUserEmail: context.currentUserEmail,
+        userId: context.ownerUserId,
+        userEmail: context.ownerUserEmail ?? context.currentUserEmail,
       }));
 
     if (!subscription.stripeCustomerId) {
@@ -366,6 +366,7 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
     }
 
     const url = await createStripeCheckoutSession({
+      userId: context.ownerUserId,
       workspaceId: context.workspaceId,
       customerId,
       priceId,

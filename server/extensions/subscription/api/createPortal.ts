@@ -71,7 +71,6 @@ export async function handleCreatePortal(req: Request): Promise<Response> {
 
   const workspaceResolution = await resolveWorkspaceContext(req, {
     workspaceId: body.workspaceId,
-    minRole: 'ADMIN',
   });
   if (workspaceResolution.response) return workspaceResolution.response;
   const { context } = workspaceResolution;
@@ -79,7 +78,7 @@ export async function handleCreatePortal(req: Request): Promise<Response> {
   const subscription = await getByWorkspaceId(context.workspaceId);
   if (!subscription?.stripeCustomerId) {
     return Response.json(
-      { name: 'stripe-customer-not-found', data: { workspaceId: context.workspaceId } },
+      { name: 'stripe-customer-not-found', data: { userId: context.ownerUserId } },
       { status: 409 },
     );
   }

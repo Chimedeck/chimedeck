@@ -13,7 +13,7 @@ mock.module('../../../../../server/config/env', () => ({
 }));
 
 mock.module('../../../../../server/extensions/subscription/common/subscriptionRepo', () => ({
-  getByWorkspaceId: async (workspaceId: string) => subscriptions.get(workspaceId) ?? null,
+  getByUserId: async (userId: string) => subscriptions.get(userId) ?? null,
   getByStripeCustomerId: async (stripeCustomerId: string) => {
     for (const subscription of subscriptions.values()) {
       if (subscription.stripeCustomerId === stripeCustomerId) return subscription;
@@ -27,7 +27,7 @@ mock.module('../../../../../server/extensions/subscription/common/subscriptionRe
     return null;
   },
   upsertStripeSubscriptionState: async (input: {
-    workspaceId: string;
+    userId: string;
     tier: WorkspaceSubscription['tier'];
     status: WorkspaceSubscription['status'];
     stripeCustomerId: string;
@@ -35,9 +35,9 @@ mock.module('../../../../../server/extensions/subscription/common/subscriptionRe
     stripePriceId: string | null;
     stripeCurrentPeriodEnd: string | null;
   }) => {
-    const existing = subscriptions.get(input.workspaceId);
+    const existing = subscriptions.get(input.userId);
     const next: WorkspaceSubscription = {
-      workspaceId: input.workspaceId,
+      userId: input.userId,
       tier: input.tier,
       status: input.status,
       stripeCustomerId: input.stripeCustomerId,
@@ -47,7 +47,7 @@ mock.module('../../../../../server/extensions/subscription/common/subscriptionRe
       createdAt: existing?.createdAt ?? '2026-06-01T00:00:00.000Z',
       updatedAt: '2026-06-01T00:00:00.000Z',
     };
-    subscriptions.set(input.workspaceId, next);
+    subscriptions.set(input.userId, next);
     return next;
   },
   isStripeEventProcessed: (eventId: string) => processedEventIds.has(eventId),
@@ -64,9 +64,9 @@ describe('syncSubscriptionFromStripeEvent', () => {
   beforeEach(() => {
     subscriptions = new Map<string, WorkspaceSubscription>([
       [
-        'ws-1',
+        'user-1',
         {
-          workspaceId: 'ws-1',
+          userId: 'user-1',
           tier: 'tier_1',
           status: 'active',
           stripeCustomerId: 'cus_123',
@@ -92,7 +92,7 @@ describe('syncSubscriptionFromStripeEvent', () => {
             customer: 'cus_123',
             status: 'trialing',
             current_period_end: 1_800_000_000,
-            metadata: { workspaceId: 'ws-1' },
+            metadata: { userId: 'user-1' },
             items: { data: [{ price: { id: 'price_tier_2' } }] },
           },
         },
@@ -103,7 +103,7 @@ describe('syncSubscriptionFromStripeEvent', () => {
     expect(result.idempotent).toBe(false);
     expect(result.tier).toBe('tier_2');
 
-    const updated = subscriptions.get('ws-1');
+    const updated = subscriptions.get('user-1');
     expect(updated?.tier).toBe('tier_2');
     expect(updated?.status).toBe('trialing');
     expect(updated?.stripePriceId).toBe('price_tier_2');
@@ -119,7 +119,7 @@ describe('syncSubscriptionFromStripeEvent', () => {
             id: 'sub_existing',
             customer: 'cus_123',
             status: 'active',
-            metadata: { workspaceId: 'ws-1' },
+            metadata: { userId: 'user-1' },
             items: { data: [{ price: { id: 'price_unknown' } }] },
           },
         },
@@ -127,7 +127,7 @@ describe('syncSubscriptionFromStripeEvent', () => {
     });
 
     expect(result.tier).toBe('tier_1');
-    expect(subscriptions.get('ws-1')?.tier).toBe('tier_1');
+    expect(subscriptions.get('user-1')?.tier).toBe('tier_1');
   });
 
   it('handles deletion events by downgrading to tier_1', async () => {
@@ -139,15 +139,15 @@ describe('syncSubscriptionFromStripeEvent', () => {
           object: {
             id: 'sub_existing',
             customer: 'cus_123',
-            metadata: { workspaceId: 'ws-1' },
+            metadata: { userId: 'user-1' },
           },
         },
       },
     });
 
     expect(result.processed).toBe(true);
-    expect(subscriptions.get('ws-1')?.tier).toBe('tier_1');
-    expect(subscriptions.get('ws-1')?.status).toBe('canceled');
+    expect(subscriptions.get('user-1')?.tier).toBe('tier_1');
+    expect(subscriptions.get('user-1')?.status).toBe('canceled');
   });
 
   it('is idempotent when the same event is replayed', async () => {
@@ -160,7 +160,7 @@ describe('syncSubscriptionFromStripeEvent', () => {
             id: 'sub_existing',
             customer: 'cus_123',
             status: 'active',
-            metadata: { workspaceId: 'ws-1' },
+            metadata: { userId: 'user-1' },
             items: { data: [{ price: { id: 'price_tier_2' } }] },
           },
         },
@@ -176,7 +176,7 @@ describe('syncSubscriptionFromStripeEvent', () => {
             id: 'sub_existing',
             customer: 'cus_123',
             status: 'active',
-            metadata: { workspaceId: 'ws-1' },
+            metadata: { userId: 'user-1' },
             items: { data: [{ price: { id: 'price_tier_2' } }] },
           },
         },

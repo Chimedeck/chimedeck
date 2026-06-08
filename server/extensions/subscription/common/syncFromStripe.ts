@@ -1,11 +1,12 @@
 import {
+  getByUserId,
   getByStripeCustomerId,
   getByStripeSubscriptionId,
-  getByWorkspaceId,
   isStripeEventProcessed,
   recordStripeEventProcessed,
   upsertStripeSubscriptionState,
 } from './subscriptionRepo';
+import { db } from '../../../common/db';
 import { mapStripePriceIdToTier } from './priceTierMap';
 import type {
   SubscriptionStatus,
@@ -39,7 +40,7 @@ export interface SyncFromStripeResult {
   processed: boolean;
   idempotent: boolean;
   ignored: boolean;
-  workspaceId?: string;
+  userId?: string;
   tier?: SubscriptionTier;
 }
 
@@ -79,24 +80,38 @@ function toPeriodEndIsoString(periodEndUnixSeconds: number | undefined, eventTyp
   return new Date(periodEndUnixSeconds * 1000).toISOString();
 }
 
-function getWorkspaceIdFromMetadata(metadata: Record<string, unknown> | undefined): string | null {
+function getUserIdFromMetadata(metadata: Record<string, unknown> | undefined): string | null {
+  const userId = metadata?.userId ?? metadata?.user_id;
+  return typeof userId === 'string' && userId.trim() ? userId : null;
+}
+
+async function getUserIdFromWorkspaceMetadata(metadata: Record<string, unknown> | undefined): Promise<string | null> {
   const workspaceId = metadata?.workspaceId ?? metadata?.workspace_id;
-  return typeof workspaceId === 'string' && workspaceId.trim() ? workspaceId : null;
+  if (typeof workspaceId !== 'string' || !workspaceId.trim()) return null;
+
+  const workspace = await db('workspaces')
+    .where({ id: workspaceId })
+    .select('owner_id')
+    .first<{ owner_id: string }>();
+  return workspace?.owner_id ?? null;
 }
 
 function getPriceId(subscription: StripeSubscriptionObject): string | null {
   return subscription.items?.data?.[0]?.price?.id ?? null;
 }
 
-async function resolveWorkspaceId(subscription: StripeSubscriptionObject): Promise<string | null> {
-  const metadataWorkspaceId = getWorkspaceIdFromMetadata(subscription.metadata);
-  if (metadataWorkspaceId) return metadataWorkspaceId;
+async function resolveUserId(subscription: StripeSubscriptionObject): Promise<string | null> {
+  const metadataUserId = getUserIdFromMetadata(subscription.metadata);
+  if (metadataUserId) return metadataUserId;
+
+  const metadataWorkspaceOwner = await getUserIdFromWorkspaceMetadata(subscription.metadata);
+  if (metadataWorkspaceOwner) return metadataWorkspaceOwner;
 
   const bySubscription = await getByStripeSubscriptionId(subscription.id);
-  if (bySubscription) return bySubscription.workspaceId;
+  if (bySubscription) return bySubscription.userId;
 
   const byCustomer = await getByStripeCustomerId(subscription.customer);
-  if (byCustomer) return byCustomer.workspaceId;
+  if (byCustomer) return byCustomer.userId;
 
   return null;
 }
@@ -157,9 +172,9 @@ export async function syncSubscriptionFromStripeEvent({
   }
 
   const subscription = event.data.object;
-  const workspaceId = await resolveWorkspaceId(subscription);
-  if (!workspaceId) {
-    throw new Error('workspace-id-not-found-for-stripe-subscription');
+  const userId = await resolveUserId(subscription);
+  if (!userId) {
+    throw new Error('user-id-not-found-for-stripe-subscription');
   }
 
   const stripePriceId = getPriceId(subscription);
@@ -167,7 +182,7 @@ export async function syncSubscriptionFromStripeEvent({
   const status = mapStripeStatusToInternal(subscription.status, event.type);
   const stripeCurrentPeriodEnd = toPeriodEndIsoString(subscription.current_period_end, event.type);
 
-  const current = await getByWorkspaceId(workspaceId);
+  const current = await getByUserId(userId);
   if (
     current &&
     hasSameProjection({
@@ -186,11 +201,11 @@ export async function syncSubscriptionFromStripeEvent({
     })
   ) {
     recordStripeEventProcessed(event.id);
-    return { processed: false, idempotent: true, ignored: false, workspaceId, tier };
+    return { processed: false, idempotent: true, ignored: false, userId, tier };
   }
 
   await upsertStripeSubscriptionState({
-    workspaceId,
+    userId,
     tier,
     status,
     stripeCustomerId: subscription.customer,
@@ -205,7 +220,7 @@ export async function syncSubscriptionFromStripeEvent({
     processed: true,
     idempotent: false,
     ignored: false,
-    workspaceId,
+    userId,
     tier,
   };
 }

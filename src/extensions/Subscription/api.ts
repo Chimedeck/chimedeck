@@ -3,7 +3,7 @@ import { apiClient } from '~/common/api/client';
 export type SubscriptionTier = 'tier_1' | 'tier_2' | 'tier_3' | 'tier_4' | 'unlimited';
 
 export interface WorkspaceSubscription {
-  workspaceId: string;
+  userId: string;
   tier: SubscriptionTier;
   status: string;
   stripeCustomerId: string | null;

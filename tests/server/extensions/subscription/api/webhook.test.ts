@@ -22,12 +22,15 @@ mock.module('../../../../../server/extensions/subscription/common/syncFromStripe
   }: {
     event: { id: string };
   }) => {
+    if (event.id === 'evt_failed_processing') {
+      throw new Error('user-id-not-found-for-stripe-subscription');
+    }
     if (seenEventIds.has(event.id)) {
       return {
         processed: false,
         idempotent: true,
         ignored: false,
-        workspaceId: 'ws-1',
+        userId: 'owner-1',
         tier: 'tier_2',
       };
     }
@@ -36,7 +39,7 @@ mock.module('../../../../../server/extensions/subscription/common/syncFromStripe
       processed: true,
       idempotent: false,
       ignored: false,
-      workspaceId: 'ws-1',
+      userId: 'owner-1',
       tier: 'tier_2',
     };
   },
@@ -92,10 +95,10 @@ describe('handleStripeWebhook', () => {
     });
 
     const res = await handleStripeWebhook(req);
-    const body = (await res.json()) as { data?: { tier?: string; workspaceId?: string; idempotent?: boolean } };
+    const body = (await res.json()) as { data?: { tier?: string; userId?: string; idempotent?: boolean } };
 
     expect(res.status).toBe(200);
-    expect(body.data?.workspaceId).toBe('ws-1');
+    expect(body.data?.userId).toBe('owner-1');
     expect(body.data?.tier).toBe('tier_2');
     expect(body.data?.idempotent).toBe(false);
   });
@@ -126,4 +129,50 @@ describe('handleStripeWebhook', () => {
     expect(replayPayload.data?.idempotent).toBe(true);
     expect(replayPayload.data?.processed).toBe(false);
   });
+
+    it('logs event context when webhook processing fails', async () => {
+      const consoleError = mock(() => {});
+      const originalConsoleError = console.error;
+      console.error = consoleError;
+
+      try {
+        const rawBody = JSON.stringify({
+          id: 'evt_failed_processing',
+          type: 'customer.subscription.updated',
+          data: {
+            object: {
+              id: 'sub_missing_identity',
+              customer: 'cus_missing_identity',
+              status: 'active',
+              items: { data: [{ price: { id: 'price_tier_2' } }] },
+            },
+          },
+        });
+
+        const req = new Request('http://localhost/api/subscription/webhook', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'stripe-signature': createStripeSignature(rawBody, webhookSecret),
+          },
+          body: rawBody,
+        });
+
+        const res = await handleStripeWebhook(req);
+        const payload = await res.json() as { name?: string; data?: { message?: string } };
+
+        expect(res.status).toBe(500);
+        expect(payload.name).toBe('stripe-webhook-processing-failed');
+        expect(payload.data?.message).toBe('user-id-not-found-for-stripe-subscription');
+        expect(consoleError).toHaveBeenCalledTimes(1);
+        expect(consoleError.mock.calls[0]?.[0]).toBe('[subscription/webhook] processing failed');
+        expect(consoleError.mock.calls[0]?.[1]).toMatchObject({
+          eventId: 'evt_failed_processing',
+          eventType: 'customer.subscription.updated',
+          error: 'user-id-not-found-for-stripe-subscription',
+        });
+      } finally {
+        console.error = originalConsoleError;
+      }
+    });
 });

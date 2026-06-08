@@ -47,7 +47,7 @@ mock.module('../../server/extensions/subscription/common/subscriptionRepo', () =
   getByWorkspaceId: async () => subscriptionRecord,
   getOrCreateByWorkspaceId: async () =>
     subscriptionRecord ?? {
-      workspaceId: 'ws-1',
+      userId: 'owner-1',
       tier: 'tier_1',
       status: 'active',
       stripeCustomerId: null,
@@ -59,7 +59,7 @@ mock.module('../../server/extensions/subscription/common/subscriptionRepo', () =
     },
   upsertWorkspaceSubscription: async (input: Record<string, unknown>) => {
     const next: WorkspaceSubscription = {
-      workspaceId: typeof input.workspaceId === 'string' ? input.workspaceId : 'ws-1',
+      userId: 'owner-1',
       tier: (input.tier as WorkspaceSubscription['tier']) ?? 'tier_1',
       status: (input.status as WorkspaceSubscription['status']) ?? 'active',
       stripeCustomerId: (input.stripeCustomerId as string | null | undefined) ?? null,
@@ -90,7 +90,7 @@ describe('subscription API endpoints', () => {
     stripePriceTier4 = 'price_tier_4';
     currentTier = 'tier_1';
     subscriptionRecord = {
-      workspaceId: 'ws-1',
+      userId: 'owner-1',
       tier: 'tier_1',
       status: 'active',
       stripeCustomerId: 'cus_existing',
@@ -106,6 +106,8 @@ describe('subscription API endpoints', () => {
         workspaceName: 'Workspace One',
         currentUserId: 'user-1',
         currentUserEmail: 'owner@example.com',
+        ownerUserId: 'owner-1',
+        ownerUserEmail: 'owner@example.com',
         role: 'OWNER',
       },
       response: null,
@@ -148,7 +150,7 @@ describe('subscription API endpoints', () => {
     }) as typeof fetch;
 
     subscriptionRecord = {
-      workspaceId: 'ws-1',
+      userId: 'owner-1',
       tier: 'tier_1',
       status: 'active',
       stripeCustomerId: null,
@@ -173,6 +175,8 @@ describe('subscription API endpoints', () => {
     expect(capturedBody).toContain(
       'cancel_url=http%3A%2F%2Flocalhost%3A5173%2Fworkspace%2Fws-1%2Fbilling%3Fcheckout%3Dcancel',
     );
+        expect(capturedBody).toContain('subscription_data%5Bmetadata%5D%5BuserId%5D=owner-1');
+        expect(capturedBody).toContain('subscription_data%5Bmetadata%5D%5BworkspaceId%5D=ws-1');
   });
 
   it('POST /api/subscription/checkout allows ADMIN and returns checkout url', async () => {
@@ -182,6 +186,8 @@ describe('subscription API endpoints', () => {
         workspaceName: 'Workspace One',
         currentUserId: 'user-2',
         currentUserEmail: 'admin@example.com',
+        ownerUserId: 'owner-1',
+        ownerUserEmail: 'owner@example.com',
         role: 'ADMIN',
       },
       response: null,
@@ -201,7 +207,7 @@ describe('subscription API endpoints', () => {
     let subscriptionUpdateCalls = 0;
 
     subscriptionRecord = {
-      workspaceId: 'ws-1',
+      userId: 'owner-1',
       tier: 'tier_2',
       status: 'active',
       stripeCustomerId: 'cus_existing',
@@ -264,6 +270,63 @@ describe('subscription API endpoints', () => {
     expect(response.status).toBe(403);
   });
 
+  it('POST /api/subscription/checkout sends workspace owner metadata to Stripe for admin-initiated upgrades', async () => {
+    let capturedBody = '';
+    resolverResult = {
+      context: {
+        workspaceId: 'ws-1',
+        workspaceName: 'Workspace One',
+        currentUserId: 'user-2',
+        currentUserEmail: 'admin@example.com',
+        ownerUserId: 'owner-1',
+        ownerUserEmail: 'owner@example.com',
+        role: 'ADMIN',
+      },
+      response: null,
+    };
+    subscriptionRecord = {
+      userId: 'owner-1',
+      tier: 'tier_1',
+      status: 'active',
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      stripePriceId: null,
+      stripeCurrentPeriodEnd: null,
+      createdAt: '2026-06-01T00:00:00.000Z',
+      updatedAt: '2026-06-01T00:00:00.000Z',
+    };
+    globalThis.fetch = mock(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = requestInfoToUrl(input);
+      const requestBody = init?.body;
+      if (url.includes('/v1/customers')) {
+        if (typeof requestBody === 'string') {
+          capturedBody = requestBody;
+        } else if (requestBody instanceof URLSearchParams) {
+          capturedBody = requestBody.toString();
+        }
+        return Response.json({ id: 'cus_123' });
+      }
+      if (url.includes('/v1/checkout/sessions')) {
+        if (typeof requestBody === 'string') {
+          capturedBody = `${capturedBody}&${requestBody}`;
+        } else if (requestBody instanceof URLSearchParams) {
+          capturedBody = `${capturedBody}&${requestBody.toString()}`;
+        }
+        return Response.json({ url: 'https://checkout.stripe.test/session_123' });
+      }
+      return Response.json({});
+    }) as typeof fetch;
+
+    const response = await handleCreateCheckout(new Request('http://localhost/api/subscription/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ workspaceId: 'ws-1', tier: 'tier_4' }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(capturedBody).toContain('email=owner%40example.com');
+    expect(capturedBody).toContain('metadata%5BuserId%5D=owner-1');
+  });
+
   it('POST /api/subscription/portal allows OWNER and returns portal url', async () => {
     globalThis.fetch = mock(async () => Response.json({ url: 'https://billing.stripe.test/session_123' })) as typeof fetch;
     const request = new Request('http://localhost/api/subscription/portal', {
@@ -322,6 +385,8 @@ describe('subscription API endpoints', () => {
         workspaceName: 'Workspace One',
         currentUserId: 'user-3',
         currentUserEmail: 'member@example.com',
+        ownerUserId: 'owner-1',
+        ownerUserEmail: 'owner@example.com',
         role: 'MEMBER',
       },
       response: null,
@@ -330,10 +395,10 @@ describe('subscription API endpoints', () => {
     const request = new Request('http://localhost/api/subscription?workspaceId=ws-1');
 
     const response = await handleGetWorkspaceSubscription(request);
-    const payload = (await response.json()) as { data?: { tier?: string; workspaceId?: string } };
+    const payload = (await response.json()) as { data?: { tier?: string; userId?: string } };
 
     expect(response.status).toBe(200);
-    expect(payload.data?.workspaceId).toBe('ws-1');
+    expect(payload.data?.userId).toBe('owner-1');
     expect(payload.data?.tier).toBe('tier_2');
   });
 

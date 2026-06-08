@@ -11,7 +11,7 @@ function toIsoString(value: string | Date): string {
 
 export function serializeWorkspaceSubscription(row: WorkspaceSubscriptionRow): WorkspaceSubscription {
   return {
-    workspaceId: row.workspace_id,
+    userId: row.user_id,
     tier: row.tier,
     status: row.status,
     stripeCustomerId: row.stripe_customer_id,
@@ -33,7 +33,7 @@ export function serializeWorkspaceSubscriptionResponse({
   subscriptionsEnabled: boolean;
 }): WorkspaceSubscriptionApiResponse {
   return {
-    workspaceId: subscription.workspaceId,
+    userId: subscription.userId,
     tier,
     status: subscription.status,
     stripeCustomerId: subscription.stripeCustomerId,

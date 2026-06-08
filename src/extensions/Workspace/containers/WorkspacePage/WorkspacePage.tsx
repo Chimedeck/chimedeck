@@ -36,7 +36,7 @@ const WorkspacePage = () => {
   // Load workspace + members whenever the workspaceId param changes
   useEffect(() => {
     if (workspaceId) {
-      dispatch(fetchWorkspace({ workspaceId }));
+      void dispatch(fetchWorkspace({ workspaceId }));
     }
   }, [workspaceId, dispatch]);
 
@@ -68,7 +68,7 @@ const WorkspacePage = () => {
 
   const handleDeleteWorkspace = () => {
     if (workspace && window.confirm(`Delete workspace "${workspace.name}"?`)) {
-      dispatch(deleteWorkspaceThunk({ workspaceId: workspace.id }));
+      void dispatch(deleteWorkspaceThunk({ workspaceId: workspace.id }));
     }
   };
 
@@ -107,8 +107,8 @@ const WorkspacePage = () => {
           <p className="text-sm text-muted mt-1">Workspace Settings</p>
         </div>
         <div className="flex items-center gap-3">
-          {(currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN') && (
-            <Button variant="secondary" onClick={() => navigate(`/workspace/${workspace.id}/billing`)}>
+          {currentMember && (
+            <Button variant="secondary" onClick={() => { navigate(`/workspace/${workspace.id}/billing`); }}>
               Billing
             </Button>
           )}
@@ -131,7 +131,7 @@ const WorkspacePage = () => {
           {canInvite && (
             <Button
               variant="primary"
-              onClick={() => setShowInviteModal(true)}
+              onClick={() => { setShowInviteModal(true); }}
               className="px-4 py-2 text-sm" // [theme-exception] text-white on primary button
             >
               + Invite Member
@@ -150,7 +150,7 @@ const WorkspacePage = () => {
         <InviteMemberModal
           workspaceId={workspace.id}
           callerRole={currentMember?.role ?? 'MEMBER'}
-          onClose={() => setShowInviteModal(false)}
+          onClose={() => { setShowInviteModal(false); }}
         />
       )}
     </div>
