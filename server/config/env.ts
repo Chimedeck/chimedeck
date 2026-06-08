@@ -158,6 +158,10 @@ export const env = {
   // When true, registration and email-change are restricted to ALLOWED_EMAIL_DOMAINS.
   // Set to "false" to disable the restriction entirely.
   EMAIL_DOMAIN_RESTRICTION_ENABLED: Bun.env['EMAIL_DOMAIN_RESTRICTION_ENABLED'] !== 'false',
+  // When true, signup is open to all email domains (public registration).
+  // Overrides EMAIL_DOMAIN_RESTRICTION_ENABLED and ALLOWED_EMAIL_DOMAINS.
+  // Defaults to false — only ALLOWED_EMAIL_DOMAINS may register.
+  EMAIL_DOMAIN_PUBLIC_ENABLED: Bun.env['EMAIL_DOMAIN_PUBLIC_ENABLED'] === 'true',
 
   // Webhooks — AES-256-GCM key used to encrypt signing secrets at rest.
   // Generate with: openssl rand -hex 32
