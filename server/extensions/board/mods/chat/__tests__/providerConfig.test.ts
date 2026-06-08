@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, mock } from 'bun:test';
 // Mutable per-test env state. The mock module below exposes this through
 // getters so the resolver under test reads the latest values on every call.
 const envState: Record<string, string> = {
-  CHAT_PROVIDER: 'openai',
+  CHAT_PROVIDER: 'ollama',
   CHAT_EMBEDDING_API_URL: '',
   CHAT_EMBEDDING_API_KEY: '',
   CHAT_EMBEDDING_MODEL: 'text-embedding-3-small',
@@ -15,7 +15,7 @@ const envState: Record<string, string> = {
   OLLAMA_BASE_URL: 'https://ollama.com/v1',
   OLLAMA_EMBEDDING_MODEL: '',
   OLLAMA_EMBEDDING_DIMENSIONS: '1024',
-  OLLAMA_ASSIST_MODEL: '',
+  OLLAMA_ASSIST_MODEL: 'deepseek-r1',
   // [why] Default to 'true' in the mock so existing tests keep working —
   // production behaviour matches (CHAT_EMBEDDING_ENABLED defaults to true in
   // server/config/env.ts). Tests that exercise the disabled path set it to
@@ -35,7 +35,10 @@ function setEnv(updates: Record<string, string | undefined>): void {
 
 mock.module('../../../../../config/env', () => ({
   env: {
-    get CHAT_PROVIDER() { return envState.CHAT_PROVIDER ?? 'openai'; },
+    get CHAT_PROVIDER() {
+      const raw = envState.CHAT_PROVIDER ?? 'ollama';
+      return raw.toLowerCase() === 'openai' ? 'openai' : 'ollama';
+    },
     get CHAT_EMBEDDING_ENABLED() {
       // Production default is true; only 'false' (exact) flips it off.
       return (envState.CHAT_EMBEDDING_ENABLED ?? 'true') !== 'false';
@@ -72,7 +75,7 @@ beforeEach(() => {
     OLLAMA_BASE_URL: 'https://ollama.com/v1',
     OLLAMA_EMBEDDING_MODEL: '',
     OLLAMA_EMBEDDING_DIMENSIONS: '1024',
-    OLLAMA_ASSIST_MODEL: '',
+    OLLAMA_ASSIST_MODEL: 'deepseek-r1',
   });
 });
 
@@ -94,16 +97,17 @@ describe('getEmbeddingProviderConfig', () => {
     expect(config.defaultDimensions).toBe(3072);
   });
 
-  it('treats unknown CHAT_PROVIDER values as openai', () => {
+  it('treats unknown CHAT_PROVIDER values as ollama (the default)', () => {
     setEnv({
       CHAT_PROVIDER: 'banana',
-      CHAT_EMBEDDING_API_URL: 'https://example.com/embed',
-      CHAT_EMBEDDING_MODEL: 'm',
+      OLLAMA_BASE_URL: 'https://ollama.com/v1',
+      OLLAMA_EMBEDDING_MODEL: 'mxbai-embed-large',
+      OLLAMA_EMBEDDING_DIMENSIONS: '1024',
     });
 
     const config = getEmbeddingProviderConfig();
-    expect(config.provider).toBe('openai');
-    expect(config.apiUrl).toBe('https://example.com/embed');
+    expect(config.provider).toBe('ollama');
+    expect(config.apiUrl).toMatch(/\/embeddings$/);
   });
 
   it('throws when the openai embedding URL is missing', () => {

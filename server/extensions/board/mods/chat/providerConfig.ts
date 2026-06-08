@@ -3,11 +3,11 @@
 // should hit based on the CHAT_PROVIDER env var.
 //
 // Supported providers:
-//   - "openai"  (default) → uses CHAT_EMBEDDING_* and CHAT_ASSIST_* env vars
-//     to point at any OpenAI-compatible endpoint (api.openai.com by default).
-//   - "ollama"            → routes through https://ollama.com/v1 using the
+//   - "ollama"  (default) → routes through https://ollama.com/v1 using the
 //     OLLAMA_* env vars (api key, base url, embedding model + dimensions,
-//     assist model). All four values are required to enable the assist flow.
+//     assist model). Embedding model is required.
+//   - "openai"             → uses CHAT_EMBEDDING_* and CHAT_ASSIST_* env vars
+//     to point at any OpenAI-compatible endpoint (api.openai.com by default).
 //
 // Both providers speak the OpenAI HTTP schema, so the call sites in
 // `assist/provider.ts` and `messages/embedding.ts` are provider-agnostic.

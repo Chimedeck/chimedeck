@@ -214,6 +214,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     // POST /api/v1/boards/:id/chat/assist — board-chat assist response
     if (sub === '/chat/assist' && req.method === 'POST') return handleCreateChatAssist(req, boardId);
 
+    // POST /api/v1/boards/:id/chat/assist/commit — commit confirmed document proposals to GitHub
+    if (sub === '/chat/assist/commit' && req.method === 'POST') return handleCommitDocumentProposals(req, boardId);
+
     // GET /api/v1/boards/:id/specs/manifest — load specs manifest (members only)
     if (sub === '/specs/manifest' && req.method === 'GET') return handleLoadSpecsManifest(req, boardId);
 
@@ -225,6 +228,9 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
 
     // POST /api/v1/boards/:id/github/specs/commit — stage and commit specs changes
     if (sub === '/github/specs/commit' && req.method === 'POST') return handleCommitSpecs(req, boardId);
+
+    // POST /api/v1/boards/:id/github/specs/commit — stage and commit specs changes
+    if (sub === '/github/specs/commit' && req.method === 'POST') return handleCommitDocumentProposals(req, boardId);
   }
 
   return null;

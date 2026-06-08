@@ -70,17 +70,17 @@ export const env = {
   CHAT_ASSIST_API_KEY: Bun.env['CHAT_ASSIST_API_KEY'] ?? '',
   CHAT_ASSIST_BASE_URL: Bun.env['CHAT_ASSIST_BASE_URL'] ?? '',
   CHAT_ASSIST_MODEL: Bun.env['CHAT_ASSIST_MODEL'] ?? '',
-  // Chat provider selector — when 'ollama' the embedding + assist providers route through
-  // https://ollama.com/v1 using the OLLAMA_* env vars. When 'openai' (or unset) the
-  // CHAT_EMBEDDING_* / CHAT_ASSIST_* vars are used as-is. Unknown values fall back to 'openai'.
-  CHAT_PROVIDER: (Bun.env['CHAT_PROVIDER'] ?? 'openai').toLowerCase() === 'ollama' ? 'ollama' : 'openai',
+  // Chat provider selector — when 'ollama' (default) the embedding + assist providers route through
+  // https://ollama.com/v1 using the OLLAMA_* env vars. When 'openai' the
+  // CHAT_EMBEDDING_* / CHAT_ASSIST_* vars are used as-is.
+  CHAT_PROVIDER: (Bun.env['CHAT_PROVIDER'] ?? 'ollama').toLowerCase() === 'openai' ? 'openai' : 'ollama',
   // Ollama (https://ollama.com/v1) — OpenAI-compatible hosted inference.
-  // Used for both embedding and assist when CHAT_PROVIDER=ollama.
+  // Used for both embedding and assist when CHAT_PROVIDER=ollama (the default).
   OLLAMA_API_KEY: Bun.env['OLLAMA_API_KEY'] ?? '',
   OLLAMA_BASE_URL: Bun.env['OLLAMA_BASE_URL'] ?? 'https://ollama.com/v1',
   OLLAMA_EMBEDDING_MODEL: Bun.env['OLLAMA_EMBEDDING_MODEL'] ?? '',
   OLLAMA_EMBEDDING_DIMENSIONS: parseInt(Bun.env['OLLAMA_EMBEDDING_DIMENSIONS'] ?? '1024', 10),
-  OLLAMA_ASSIST_MODEL: Bun.env['OLLAMA_ASSIST_MODEL'] ?? '',
+  OLLAMA_ASSIST_MODEL: Bun.env['OLLAMA_ASSIST_MODEL'] ?? 'deepseek-r1',
 
   GITHUB_APP_ID: Bun.env['GITHUB_APP_ID'] ?? '',
   GITHUB_APP_PRIVATE_KEY: decodeKey(Bun.env['GITHUB_APP_PRIVATE_KEY'] ?? '', 'GITHUB_APP_PRIVATE_KEY'),

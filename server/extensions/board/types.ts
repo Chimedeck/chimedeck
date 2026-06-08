@@ -178,13 +178,24 @@ export interface BoardChatAssistActionCard {
   cardTitle?: string;
   listId?: string;
   listName?: string | null;
+  // [why] Document proposal fields — populated when the AI proposes GitHub documents.
+  // content is only present for suggested proposals; once committed it is dropped
+  // from the payload to keep websocket messages small.
+  documentPath?: string;
+  documentContent?: string;
+  commitMessage?: string;
 }
 
 export interface BoardChatAssistMessage {
   role: BoardChatAssistRole;
-  content: string;
+  // [why] Nullable because assistant messages that contain only tool calls
+  // may have null content from some providers (OpenAI, Ollama).
+  content: string | null;
   toolCallId?: string;
   name?: string;
+  // [why] Carried on assistant messages so the loop can feed tool calls
+  // back as tool-result messages on the next turn.
+  toolCalls?: BoardChatAssistToolCall[];
 }
 
 export interface BoardChatAssistInput {
@@ -205,82 +216,45 @@ export interface BoardChatAssistOutput {
     };
     toolCalls?: BoardChatAssistToolCall[];
     actionCard?: BoardChatAssistActionCard;
+    // [why] Multi-proposal support: when the AI proposes several documents
+    // in one turn, each gets its own action card returned here.
+    actionCards?: BoardChatAssistActionCard[];
   };
   name?: string;
   message?: string;
 }
 
-export interface BoardChatAssistProviderInput {
-  messages: BoardChatAssistMessage[];
-  tools?: BoardChatAssistToolDefinition[];
-}
-
-export interface BoardChatAssistProviderConfig {
-  apiKey: string;
-  baseUrl: string;
-  model: string;
-  // [why] Optional so older call sites (and existing tests) that don't know about
-  // provider selection can still construct a valid config object.
-  provider?: 'openai' | 'ollama';
-}
-
-// Specs manifest types — Sprint 169
-export interface SpecsManifestEntry {
-  path: string;
-  sizeBytes: number;
-}
-
-export interface SpecsManifest {
-  ref: string;
-  fetchedAt: string;
-  files: SpecsManifestEntry[];
-  etag: string;
-}
-
-export interface SpecsManifestCacheEntry {
-  manifest: SpecsManifest;
-  repoPath: string;
-  cachedAtMs: number;
-}
-
-export interface SpecsFileResult {
-  content: string;
-  etag: string;
-  sizeBytes: number;
-}
-
-export interface PutSpecsFileBody {
+// [why] Document commit request — client sends back confirmed proposals
+// to persist to GitHub. Each proposal carries the same idempotency key
+// that the server originally generated so duplicate commits are safe.
+export interface BoardChatAssistCommitProposal {
+  toolCallId: string;
+  idempotencyKey: string;
   path: string;
   content: string;
+  commitMessage: string;
 }
 
-export interface PutSpecsFileResult {
+export interface BoardChatAssistCommitInput {
+  boardId: string;
+  actorId: string;
+  proposals: BoardChatAssistCommitProposal[];
+}
+
+export interface BoardChatAssistCommitOutput {
   status: number;
-  data: {
-    path: string;
-    content: string;
-    etag: string;
-    sha: string;
-    created: boolean;
+  data?: {
+    committed: Array<{
+      path: string;
+      commitHash: string;
+      actionCard: BoardChatAssistActionCard;
+    }>;
+    errors: Array<{
+      path: string;
+      name: string;
+      message: string;
+    }>;
   };
-}
-
-export interface CommitSpecsBody {
-  message: string;
-  changedFiles: string[];
-}
-
-export interface CommitSpecsResult {
-  status: number;
-  data: {
-    commitHash: string;
-    pushStatus: 'pushed' | 'pending';
-    branch: string;
-    changedFiles: string[];
-    footer: {
-      actorId: string;
-      boardId: string;
-      botAlias: string;
-    };
-  };
+  name?: string;
+  message?: string;
 }

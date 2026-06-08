@@ -3,11 +3,12 @@
 
 /**
  * Feature flag — whether Board Chat is enabled and should be shown in the header.
- * Mirrors the BOARD_CHAT_ENABLED server env var exposed via /api/v1/config
- * or an injected window variable.
+ * Runtime truth comes from the server via /api/v1/flags (FLAG_BOARD_CHAT_ENABLED).
+ * Build-time fallback uses import.meta.env.FLAG_BOARD_CHAT_ENABLED or the
+ * window.__BOARD_CHAT_ENABLED__ injection.
  * Set to false by default; the app should override this from the server config.
  */
 export const BOARD_CHAT_ENABLED =
   (typeof window !== 'undefined' &&
     (window as unknown as Record<string, unknown>).__BOARD_CHAT_ENABLED__ === true) ||
-  import.meta.env.VITE_BOARD_CHAT_ENABLED === 'true';
+  import.meta.env.FLAG_BOARD_CHAT_ENABLED === 'true';
