@@ -137,7 +137,7 @@ function extractSubscriptionError(data: unknown): { message: string; upgradeUrl:
   if (!maybeError || typeof maybeError !== 'object') return null;
 
   const code = (maybeError as { code?: unknown }).code;
-  if (code !== 'subscription-payment-required' && code !== 'subscription-readonly') return null;
+  if (code !== 'subscription-payment-required') return null;
 
   const message = (maybeError as { message?: unknown }).message;
   const maybeData = (maybeError as { data?: unknown }).data;

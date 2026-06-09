@@ -72,11 +72,6 @@ function ratioClass(used: number, limit: number): string {
   return 'bg-primary';
 }
 
-function formatEntitlementValue(value: EntitlementValue): string {
-  if (value === 'unlimited') return translations['BillingPage.unlimited'];
-  return String(value);
-}
-
 function planLabel(tier: WorkspaceSubscription['tier']): string {
   if (tier === 'tier_2') return translations['BillingPage.planHobby'];
   if (tier === 'tier_3') return translations['BillingPage.planPro'];

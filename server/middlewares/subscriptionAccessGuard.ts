@@ -2,8 +2,6 @@ import { env } from '../config/env';
 import type { RequestWorkspaceContext } from '../common/requestContext';
 import { getWorkspaceBillingEnforcement } from '../extensions/subscription/common/enforcement';
 
-const READ_ONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-
 function isSubscriptionRoute(pathname: string): boolean {
   return pathname.startsWith('/api/subscription') || /\/api\/v1\/workspaces\/[^/]+\/entitlements$/.test(pathname);
 }
@@ -32,24 +30,11 @@ export async function applySubscriptionAccessGuard(
 
   const enforcement = await getWorkspaceBillingEnforcement(workspaceId);
 
+  // [why] Only block hard-lock statuses (canceled, unpaid, etc.).
+  // Individual resource limits (boards, lists, members, storage) are enforced
+  // per-endpoint by applyLimitGuard — we must not lump them together here.
+  // A workspace that hit its board limit should still be able to create lists.
   if (enforcement.mode === 'blocked') {
-    return Response.json(
-      {
-        error: {
-          code: enforcement.code,
-          message: enforcement.message,
-          data: {
-            workspaceId,
-            mode: enforcement.mode,
-            upgradeUrl: enforcement.upgradeUrl,
-          },
-        },
-      },
-      { status: 402 },
-    );
-  }
-
-  if (enforcement.mode === 'readonly' && !READ_ONLY_METHODS.has(req.method.toUpperCase())) {
     return Response.json(
       {
         error: {

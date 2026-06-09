@@ -1,17 +1,14 @@
-import { exceeds } from '../../../common/limits';
-import { resolveEntitlements } from './entitlements';
 import { getByWorkspaceId, getOrCreateByWorkspaceId, upsertWorkspaceSubscription } from './subscriptionRepo';
-import { getWorkspaceUsage } from './usage';
 import type { WorkspaceSubscription } from './types';
 
 const PAST_DUE_GRACE_MS = 10 * 24 * 60 * 60 * 1000;
 
-export type WorkspaceEnforcementMode = 'normal' | 'readonly' | 'blocked';
+export type WorkspaceEnforcementMode = 'normal' | 'blocked';
 
 export interface WorkspaceBillingEnforcement {
   workspaceId: string;
   mode: WorkspaceEnforcementMode;
-  code: 'subscription-ok' | 'subscription-readonly' | 'subscription-payment-required';
+  code: 'subscription-ok' | 'subscription-payment-required';
   message: string;
   upgradeUrl: string;
 }
@@ -28,18 +25,6 @@ function isPastDueBeyondGrace(subscription: WorkspaceSubscription): boolean {
   if (Number.isNaN(periodEnd.valueOf())) return false;
 
   return Date.now() - periodEnd.valueOf() > PAST_DUE_GRACE_MS;
-}
-
-function isReadonlyOverage(usage: Awaited<ReturnType<typeof getWorkspaceUsage>>, tier: WorkspaceSubscription['tier']): boolean {
-  const entitlements = resolveEntitlements(tier);
-  return (
-    exceeds(usage.boardsPerWorkspace, entitlements['board:max-per-workspace'])
-    || exceeds(usage.boardsTotal, entitlements['board:max-total'])
-    || exceeds(usage.columnsPerBoard, entitlements['list:max-per-board'])
-    || exceeds(usage.invitedMembersPerBoard, entitlements['member:max-invited-per-board'])
-    || exceeds(usage.guestsPerBoard, entitlements['guest:max-per-board'])
-    || exceeds(usage.storageBytes, entitlements['storage:max-bytes'])
-  );
 }
 
 async function downgradePastDueWorkspaceIfNeeded(workspaceId: string): Promise<WorkspaceSubscription> {
@@ -86,19 +71,6 @@ export async function getWorkspaceBillingEnforcement(
       message: 'This workspace subscription is past due. Please complete payment first.',
       upgradeUrl,
     };
-  }
-
-  if (effectiveSubscription.tier === 'tier_1') {
-    const usage = await getWorkspaceUsage(workspaceId);
-    if (isReadonlyOverage(usage, effectiveSubscription.tier)) {
-      return {
-        workspaceId,
-        mode: 'readonly',
-        code: 'subscription-readonly',
-        message: 'This workspace exceeds free plan limits and is now view-only until usage is reduced or plan is upgraded.',
-        upgradeUrl,
-      };
-    }
   }
 
   return {

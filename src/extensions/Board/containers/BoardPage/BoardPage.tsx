@@ -520,10 +520,17 @@ const BoardPage = () => {
   const handleAddList = useCallback(
     async (title: string) => {
       if (!boardId) return;
-      const result = await createList({ api, boardId, title });
-      dispatch(boardSliceActions.addList({ list: result.data }));
+      try {
+        const result = await createList({ api, boardId, title });
+        dispatch(boardSliceActions.addList({ list: result.data }));
+      } catch (err: unknown) {
+        const msg =
+          (err as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error
+            ?.message ?? 'Failed to create list.';
+        addToast(msg, 'error');
+      }
     },
-    [api, boardId, dispatch]
+    [api, boardId, dispatch, addToast]
   );
 
   // ── List rename ──────────────────────────────────────────────────────────

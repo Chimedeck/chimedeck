@@ -29,8 +29,9 @@ const AddListForm = ({ onSubmit }: Props) => {
     try {
       await onSubmit(trimmed);
       setTitle('');
-      inputRef.current?.focus();
-    } finally {
+      setOpen(false);
+    } catch {
+      // [why] Parent handles the toast; we just reset form state.
       setSubmitting(false);
     }
   };
