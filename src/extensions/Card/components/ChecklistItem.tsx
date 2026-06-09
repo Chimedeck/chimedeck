@@ -19,6 +19,7 @@ import {
   VideoLightbox,
   PdfLightbox,
 } from '../../Attachments/components/AttachmentThumbnail';
+import { escapeScriptTags } from '~/common/utils/escapeScriptTags';
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -53,7 +54,10 @@ function replaceEmojiShortcodes(text: string): string {
 }
 
 function renderChecklistTitle(text: string, attachments: Attachment[] = []): string {
-  const raw = marked.parseInline(replaceEmojiShortcodes(text)) as string;
+  // [why] Escape <script> tags so they render as visible text instead of
+  // becoming invisible DOM nodes when injected via dangerouslySetInnerHTML.
+  const escaped = escapeScriptTags(text);
+  const raw = marked.parseInline(replaceEmojiShortcodes(escaped)) as string;
   // Replace attachment: placeholder links with data-attachment-id anchors for click-to-preview
   const withAttachments = processAttachmentLinks(raw, attachments);
   // Add target="_blank" to all remaining external links
