@@ -273,7 +273,7 @@ async function router(req: Request): Promise<Response> {
 // frame-src / connect-src directives so the browser permits loading plugin
 // iframes and their outbound API calls. We cache for 60 s to avoid a DB hit
 // on every request while still reflecting new plugin registrations promptly.
-let _pluginOriginCache: PluginCspOrigins = { frameSrc: [], connectSrc: [] };
+let _pluginOriginCache: PluginCspOrigins = { frameSrc: [], connectSrc: [], frameAncestors: [] };
 let _pluginOriginCacheExpiry = 0;
 const PLUGIN_ORIGIN_TTL_MS = 60_000;
 
@@ -334,6 +334,10 @@ Bun.serve({
       extraStyleSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       extraScriptSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       frameAncestors: isAttachmentViewPath ? "'self'" : "'none'",
+      // [why] Plugin connector_url origins must appear in frame-ancestors so
+      // the plugin iframe can embed our board pages without the browser blocking
+      // it with "Unsafe attempt to load URL from frame with URL chrome-error://..."
+      extraFrameAncestors: pluginOrigins.frameAncestors,
     });
     const response = new Response(res.body, {
       status: res.status,
