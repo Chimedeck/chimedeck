@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
@@ -30,7 +29,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-bg-surface border border-border rounded-2xl shadow-2xl p-8">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
-          <Squares2X2Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
+          <img
+            src="/apple-touch-icon.png"
+            alt={translations.appName}
+            className="h-7 w-7 rounded-sm object-contain"
+          />
           <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
