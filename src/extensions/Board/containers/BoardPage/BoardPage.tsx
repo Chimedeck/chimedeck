@@ -9,7 +9,7 @@
 // Sprint 116: Health Check fifth tab (HEALTH_CHECK_ENABLED flag).
 // Sprint 170: Documentation sixth tab — visible only when board has a valid GitHub Project URL.
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
@@ -92,6 +92,7 @@ import { BoardChatDrawer } from '~/extensions/BoardChat';
 import { boardPath, cardPath } from '~/common/routing/shortUrls';
 import SpecsWorkspacePage from '~/extensions/DeveloperDocs/containers/SpecsWorkspacePage/SpecsWorkspacePage';
 import { selectBoardChatEnabled, selectGithubEditingEnabled } from '~/slices/featureFlagsSlice';
+import { selectCardDetail } from '../../../Card/slices/cardDetailSlice';
 
 const BoardPage = () => {
   const dispatch = useAppDispatch();
@@ -100,6 +101,8 @@ const BoardPage = () => {
     cardId?: string;
   }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryCardId = searchParams.get('card');
   const [resolvedBoardId, setResolvedBoardId] = useState<string | null>(null);
   const [resolvedBoardRouteId, setResolvedBoardRouteId] = useState<string | null>(null);
 
@@ -125,6 +128,7 @@ const BoardPage = () => {
   const workspaceRole = useAppSelector(selectCurrentUserWorkspaceRole);
   const boardChatFlagEnabled = useAppSelector(selectBoardChatEnabled);
   const githubEditingFlagEnabled = useAppSelector(selectGithubEditingEnabled);
+  const cardDetail = useAppSelector(selectCardDetail);
   // [why] VIEWER guests have read-only access; MEMBER guests can write.
   // Non-guests always get full write access (canBoardGuestWrite returns true for null).
   const isViewerGuest = isGuest && !canBoardGuestWrite(board?.callerGuestType ?? null);
@@ -785,6 +789,43 @@ const BoardPage = () => {
       addToast('Failed to unstar board.', 'error');
     }
   }, [api, boardId, addToast]);
+
+  // ── Dynamic document title ────────────────────────────────────────────────
+  // [why] Sets the browser tab title based on context: card > tab > board > app name.
+  useEffect(() => {
+    const appName = 'ChimeDeck';
+    const boardTitle = board?.title;
+
+    // Card open via ?card= query param or /c/:cardId route — use cardDetail slice
+    // [why] ?card= uses short_id which doesn't match board's cards map keys.
+    const openCardId = queryCardId ?? cardRouteId;
+    if (openCardId && cardDetail?.title && boardTitle) {
+      document.title = `${cardDetail.title} | ${boardTitle} | ${appName}`;
+      return;
+    }
+
+    // Board page with a non-default tab
+    const tabLabels: Record<string, string> = {
+      activities: 'Activities',
+      'archived-cards': 'Archived Cards',
+      'health-check': 'Health Check',
+      documentation: 'Documentation',
+    };
+    if (boardTitle && activeTab !== 'board') {
+      const tabLabel = tabLabels[activeTab] ?? activeTab;
+      document.title = `${tabLabel} | ${boardTitle} | ${appName}`;
+      return;
+    }
+
+    // Default board view
+    if (boardTitle) {
+      document.title = `${boardTitle} | ${appName}`;
+      return;
+    }
+
+    // Fallback
+    document.title = appName;
+  }, [queryCardId, cardRouteId, cardDetail?.title, board?.title, activeTab]);
 
   if (status === 'loading' && !board) {
     return (
