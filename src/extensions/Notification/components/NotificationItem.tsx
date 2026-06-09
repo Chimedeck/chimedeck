@@ -8,6 +8,7 @@ import { selectCurrentUser } from '~/slices/authSlice';
 import CommentReactions from '~/extensions/Comment/components/CommentReactions';
 import {
   markReadThunk,
+  markUnreadThunk,
   deleteNotificationThunk,
   notificationSliceActions,
 } from '../slices/notificationSlice';
@@ -253,10 +254,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
     if (allReadInStack) {
       notificationsInStack.forEach((entry) => {
         if (entry.read) {
-          dispatch({
-            type: 'notifications/setNotificationReadState',
-            payload: { id: entry.id, read: false },
-          });
+          void dispatch(markUnreadThunk({ id: entry.id }));
         }
       });
     }

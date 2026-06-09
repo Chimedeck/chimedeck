@@ -99,6 +99,18 @@ export const clearAllNotificationsThunk = createAppAsyncThunk(
   },
 );
 
+export const markUnreadThunk = createAppAsyncThunk(
+  'notifications/markUnread',
+  async ({ id }: { id: string }, { rejectWithValue }) => {
+    try {
+      await notificationApi.markUnread({ id });
+      return id;
+    } catch {
+      return rejectWithValue('mark-unread-failed');
+    }
+  },
+);
+
 // ---------- Slice ----------
 
 const notificationSlice = createSlice({
@@ -197,6 +209,13 @@ const notificationSlice = createSlice({
         if (n && !n.read) {
           n.read = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
+        }
+      })
+      .addCase(markUnreadThunk.fulfilled, (state, action) => {
+        const n = state.notifications.find((n) => n.id === action.payload);
+        if (n && n.read) {
+          n.read = false;
+          state.unreadCount += 1;
         }
       })
       .addCase(markAllReadThunk.fulfilled, (state) => {
