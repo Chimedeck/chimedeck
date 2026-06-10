@@ -62,6 +62,11 @@ export default function SprintGenEvent({
   const runId = typeof payload.runId === 'string' ? payload.runId : '';
   const changedFiles = filesFromPayload(payload);
   const artifactLinks = artifactsFromPayload(payload);
+  // [why] Read tier-policy metadata from the event payload to gate
+  // approve button visibility according to the user's subscription tier.
+  const requiresHumanApproval = typeof payload.requiresHumanApproval === 'boolean'
+    ? payload.requiresHumanApproval
+    : false;
 
   const isCompleted = action === 'sprint_generation_completed';
   const isFailed = action === 'sprint_generation_failed';
@@ -94,7 +99,7 @@ export default function SprintGenEvent({
         <ApproveRerunControls
           runType="sprint-generation"
           runId={runId}
-          approvalRequired={isCompleted}
+          approvalRequired={isCompleted && requiresHumanApproval}
           isRunning={isStarted}
           runSucceeded={isCompleted}
           onApprove={onApprove}

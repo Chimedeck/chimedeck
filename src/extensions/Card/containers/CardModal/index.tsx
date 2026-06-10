@@ -52,6 +52,8 @@ import { cardSliceActions } from '../../cardSlice';
 import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
+import { selectInnerCardChatEnabled } from '~/slices/featureFlagsSlice';
+import { startCardChatSession, type CardChatSession } from '../../../CardChat/api';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
 import { printCard } from '../../utils/printCard';
@@ -96,6 +98,12 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const boardMembersRef = useRef<CardMember[]>([]);
   const [copyModalOpen, setCopyModalOpen] = useState(false);
   const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const innerCardChatEnabled = useAppSelector(selectInnerCardChatEnabled);
+
+  // Card-chat drawer state
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [chatSession, setChatSession] = useState<CardChatSession | null>(null);
+  const [chatStarting, setChatStarting] = useState(false);
 
   const api = apiClient;
 
@@ -255,6 +263,75 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const handleMoveCard = useCallback(() => {
     setMoveModalOpen(true);
   }, []);
+
+  // ── Card Chat / AI Assist ──────────────────────────────────────────────
+  const handleChatStart = useCallback(async () => {
+    if (!cardId || chatStarting) return;
+    setChatStarting(true);
+    try {
+      const { data: session } = await startCardChatSession({
+        api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
+        cardId,
+      });
+      setChatSession(session);
+      setChatDrawerOpen(true);
+    } catch {
+      // [why] Silently fail — the button is gated by feature flag so server
+      // issues are the only expected errors (e.g. disabled at runtime).
+    } finally {
+      setChatStarting(false);
+    }
+  }, [cardId, chatStarting]);
+
+  const handleChatClose = useCallback(() => {
+    setChatDrawerOpen(false);
+    // Session stays alive — pause happens inside CardChatDrawer on unmount
+  }, []);
+
+  // Sprint 176 — rich event renderer callbacks for ActivityFeed.
+  // [why] These wire approve/re-run/edit actions on sprint-gen and as-built
+  // activity events to the real API endpoints. Approve triggers the AI edit
+  // orchestrator's human-in-the-loop approval; re-run re-triggers sprint
+  // generation; edit opens the card's diff viewer for generated files.
+  const handleFileClick = useCallback((path: string) => {
+    // [why] Navigate to a file diff viewer showing the generated/updated file.
+    // For now, open in a new tab at the specs repo URL path.
+    window.open(`/files/${path}`, '_blank');
+  }, []);
+
+  const handleEditRunApprove = useCallback(async (runId: string) => {
+    // [why] Human-in-the-loop approval of AI-generated edits before commit.
+    // POST /api/v1/cards/:cardId/ai/edit/:runId/approve
+    if (!cardId) return;
+    try {
+      await apiClient.post(`/cards/${cardId}/ai/edit/${runId}/approve`, {});
+    } catch (err) {
+      // [why] Silently handle — the approval may fail if the run doesn't
+      // exist or is not in COMMITTED state. Activity feed will show the
+      // next event when the status changes.
+      console.debug('[CardModal] approve failed for run %s:', runId, err instanceof Error ? err.message : String(err));
+    }
+  }, [cardId]);
+
+  const handleEditRunRerun = useCallback(async (runId: string) => {
+    // [why] Re-trigger sprint generation for the card. Falls back to calling
+    // POST /api/v1/cards/:cardId/sprint/generate. As-built re-runs are
+    // handled via POST /api/v1/cards/:cardId/as-built/sync.
+    // TODO: distinguish run type and call the appropriate endpoint.
+    if (!cardId) return;
+    try {
+      await apiClient.post(`/cards/${cardId}/sprint/generate`, { runId });
+    } catch (err) {
+      console.debug('[CardModal] re-run failed for run %s:', runId, err instanceof Error ? err.message : String(err));
+    }
+  }, [cardId]);
+
+  const handleEditRunEdit = useCallback(async (runId: string) => {
+    // [why] Open the card's diff viewer at the run-specific file page.
+    // Navigates to a diff view showing the generated file changes for this run.
+    if (!cardId) return;
+    window.open(`/cards/${cardId}/diff/${runId}`, '_blank');
+  }, [cardId]);
 
   const handlePrint = useCallback(async () => {
     if (!card) return;
@@ -1051,6 +1128,16 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       onCoverAttachmentChange={handleCoverAttachmentChange}
       onAttachmentCountChange={handleAttachmentCountChange}
       isViewerGuest={isViewerGuest}
+      innerCardChatEnabled={innerCardChatEnabled}
+      chatDrawerOpen={chatDrawerOpen}
+      chatSession={chatSession}
+      onChatStart={handleChatStart}
+      onChatClose={handleChatClose}
+      // Sprint 176 — activity event rich renderer callbacks
+      onFileClick={handleFileClick}
+      onApprove={handleEditRunApprove}
+      onRerun={handleEditRunRerun}
+      onEdit={handleEditRunEdit}
       />
       {copyModalOpen && card && activeWorkspaceId && (
         <CopyCardModal

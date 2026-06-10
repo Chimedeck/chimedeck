@@ -64,6 +64,11 @@ export default function AsBuiltEvent({
   const runId = typeof payload.runId === 'string' ? payload.runId : '';
   const changedFiles = filesFromPayload(payload);
   const links = commitLinksFromPayload(payload);
+  // [why] As-built sync defaults to not requiring human approval —
+  // it's a documentation sync that auto-commits.
+  const requiresHumanApproval = typeof payload.requiresHumanApproval === 'boolean'
+    ? payload.requiresHumanApproval
+    : false;
 
   const isCompleted = action === 'as_built_sync_completed';
   const isFailed = action === 'as_built_sync_failed';
@@ -96,7 +101,7 @@ export default function AsBuiltEvent({
         <ApproveRerunControls
           runType="as-built-sync"
           runId={runId}
-          approvalRequired={isCompleted}
+          approvalRequired={isCompleted && requiresHumanApproval}
           isRunning={isStarted}
           runSucceeded={isCompleted}
           onApprove={onApprove}
