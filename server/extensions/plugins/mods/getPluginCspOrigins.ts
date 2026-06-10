@@ -72,15 +72,18 @@ function collectWorkspaceOrigins(rows: Record<string, unknown>[]): Set<string> {
 /** Adds a single origin to a set if the value is a valid URL string. */
 function addOrigin(set: Set<string>, value: unknown): void {
   if (typeof value !== 'string') return;
-  const origin = toOrigin(value);
+  // [why] connector_url may be stored without a protocol (e.g. "plugin.com/connector.html").
+  // Prepend https:// so new URL() can parse it — same approach as normaliseDomain.
+  const normalised = value.startsWith('http') ? value : `https://${value}`;
+  const origin = toOrigin(normalised);
   if (origin) set.add(origin);
 }
 
-/** Adds origins from an array-like unknown value to a set using toOrigin. */
+/** Adds origins from an array-like unknown value to a set using normaliseDomain. */
 function addOrigins(set: Set<string>, value: unknown): void {
   if (!Array.isArray(value)) return;
   for (const d of value as string[]) {
-    const origin = toOrigin(d);
+    const origin = normaliseDomain(d);
     if (origin) set.add(origin);
   }
 }
