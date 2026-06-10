@@ -189,5 +189,109 @@ export function getActivityEventMeta(
     return { label: `updated due date for "${item}"`, dotColor: 'bg-yellow-500' };
   }
 
+  // --- Sprint 176: sprint generation events ---
+
+  if (eventType === 'sprint_generation_started') {
+    return { label: 'started sprint generation', dotColor: 'bg-purple-500' };
+  }
+
+  if (eventType === 'sprint_generation_artifact_created') {
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    return {
+      label: fileCount ? `generated ${fileCount} sprint artifact(s)` : 'generated sprint artifacts',
+      dotColor: 'bg-indigo-500',
+    };
+  }
+
+  if (eventType === 'sprint_generation_card_created') {
+    const cardCount = typeof payload?.cardCount === 'number' ? payload.cardCount : 0;
+    return {
+      label: cardCount ? `created ${cardCount} sprint card(s)` : 'created sprint cards in board',
+      dotColor: 'bg-emerald-500',
+    };
+  }
+
+  if (eventType === 'sprint_generation_quota_exceeded') {
+    const hint = typeof payload?.upgradeHint === 'string' && payload.upgradeHint
+      ? ` — ${payload.upgradeHint}`
+      : '';
+    return {
+      label: `sprint generation quota exceeded${hint}`,
+      dotColor: 'bg-amber-500',
+    };
+  }
+
+  if (eventType === 'sprint_generation_completed') {
+    const sprintCount = typeof payload?.sprintCount === 'number' ? payload.sprintCount : null;
+    return {
+      label: sprintCount != null
+        ? `completed sprint generation — ${sprintCount} sprint(s) created`
+        : 'completed sprint generation',
+      dotColor: 'bg-emerald-600',
+    };
+  }
+
+  if (eventType === 'sprint_generation_failed') {
+    const reason = typeof payload?.reason === 'string' && payload.reason ? `: ${payload.reason}` : '';
+    return {
+      label: `sprint generation failed${reason}`,
+      dotColor: 'bg-red-500',
+    };
+  }
+
+  // --- Sprint 176: as-built sync events ---
+
+  if (eventType === 'as_built_sync_started') {
+    return { label: 'started as-built sync', dotColor: 'bg-purple-500' };
+  }
+
+  if (eventType === 'as_built_sync_evidence_collected') {
+    const prCount = typeof payload?.prCount === 'number' ? payload.prCount : 0;
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    const parts: string[] = [];
+    if (prCount) parts.push(`${prCount} PR(s)`);
+    if (fileCount) parts.push(`${fileCount} file(s)`);
+    return {
+      label: parts.length
+        ? `collected as-built evidence (${parts.join(', ')})`
+        : 'collected as-built evidence',
+      dotColor: 'bg-blue-400',
+    };
+  }
+
+  if (eventType === 'as_built_sync_docs_updated') {
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    return {
+      label: fileCount ? `updated ${fileCount} doc(s) with as-built changes` : 'updated docs with as-built changes',
+      dotColor: 'bg-indigo-500',
+    };
+  }
+
+  if (eventType === 'as_built_sync_committed') {
+    const commitHash = typeof payload?.commitHash === 'string' && payload.commitHash
+      ? ` ${payload.commitHash.slice(0, 7)}`
+      : '';
+    return {
+      label: `committed as-built sync changes${commitHash}`,
+      dotColor: 'bg-emerald-500',
+    };
+  }
+
+  if (eventType === 'as_built_sync_completed') {
+    const fileCount = typeof payload?.fileCount === 'number' ? payload.fileCount : 0;
+    return {
+      label: fileCount ? `completed as-built sync — ${fileCount} file(s) updated` : 'completed as-built sync',
+      dotColor: 'bg-emerald-600',
+    };
+  }
+
+  if (eventType === 'as_built_sync_failed') {
+    const reason = typeof payload?.reason === 'string' && payload.reason ? `: ${payload.reason}` : '';
+    return {
+      label: `as-built sync failed${reason}`,
+      dotColor: 'bg-red-500',
+    };
+  }
+
   return EVENT_LABELS[eventType] ?? FALLBACK;
 }

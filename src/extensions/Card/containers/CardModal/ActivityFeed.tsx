@@ -11,6 +11,7 @@ import { listAttachments } from '~/extensions/Attachments/api';
 import type { Attachment } from '~/extensions/Attachments/types';
 import type { ActivityData } from '../../slices/cardDetailSlice';
 import type { CommentData } from '../../api/cardDetail';
+import { ActivityEventRenderer, isRichEventType } from '~/extensions/CardActivity';
 
 interface BoardMember {
   id: string;
@@ -47,6 +48,15 @@ interface Props {
    * can then call `insertMarkdownRef.current(md)` to insert text without a network call.
    */
   insertMarkdownRef?: React.MutableRefObject<((md: string) => void) | null>;
+  // Sprint 176 — rich event renderer callbacks
+  /** Callback when a file path in a diff summary is clicked. */
+  onFileClick?: (path: string) => void;
+  /** Callback for approve action on sprint generation / as-built sync runs. */
+  onApprove?: (runId: string) => void | Promise<void>;
+  /** Callback for re-run action on sprint generation / as-built sync runs. */
+  onRerun?: (runId: string) => void | Promise<void>;
+  /** Callback for edit action on sprint generation / as-built sync runs. */
+  onEdit?: (runId: string) => void | Promise<void>;
 }
 
 /** Consistent avatar colour based on user id. */
@@ -184,6 +194,10 @@ const ActivityFeed = ({
   canAddComment = true,
   onAttachmentsChange,
   insertMarkdownRef,
+  onFileClick,
+  onApprove,
+  onRerun,
+  onEdit,
 }: Props) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   // [why] Local ref that is passed to CommentEditor so it can register its insert function.
@@ -295,12 +309,26 @@ const ActivityFeed = ({
             );
           }
 
-          return renderSystemEventRow({
-            activity: item.activity,
-            memberMap,
-            currentUserId,
-            attachmentMap,
-          });
+          return (
+            <>
+              {renderSystemEventRow({
+                activity: item.activity,
+                memberMap,
+                currentUserId,
+                attachmentMap,
+              })}
+              {isRichEventType(item.activity.action) && (
+                <ActivityEventRenderer
+                  activity={item.activity}
+                  cardId={cardId}
+                  onFileClick={onFileClick}
+                  onApprove={onApprove}
+                  onRerun={onRerun}
+                  onEdit={onEdit}
+                />
+              )}
+            </>
+          );
         })}
       </div>
     </div>
