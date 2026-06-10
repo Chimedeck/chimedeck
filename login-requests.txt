@@ -1,5 +1,0 @@
-128. [POST] http://localhost:5173/api/v1/auth/refresh => [401] Unauthorized
-129. [POST] http://localhost:5173/api/v1/auth/refresh => [401] Unauthorized
-137. [POST] http://localhost:5173/api/v1/auth/token => [401] Unauthorized
-
-Note: 134 static requests not shown, run with "static" option to see them.
