@@ -116,17 +116,23 @@ export async function queryWorkspaceSearch({
   includeArchived = false,
   limit: rawLimit,
 }: WorkspaceSearchOptions): Promise<WorkspaceSearchOutput> {
-  if (q.length < 2) {
+  const isMatchAll = q === '*';
+
+  if (!isMatchAll && q.length < 2) {
     return { status: 400, name: 'search-query-too-short', message: 'Query must be at least 2 characters' };
   }
 
-  const tsquery = buildQuery({ q });
-  if (!tsquery) {
+  const tsquery = isMatchAll ? null : buildQuery({ q });
+  if (!isMatchAll && !tsquery) {
     return { status: 400, name: 'search-query-invalid', message: 'Query contains no searchable terms' };
   }
 
   const limit = Math.min(rawLimit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const results: WorkspaceSearchResult[] = [];
+
+  // [why] Extract a guaranteed non-null tsquery for the branches that need it,
+  // so we avoid forbidden non-null assertions later.
+  const safeTsquery = tsquery ?? '';
 
   // Log the permission filter being applied so access control decisions are observable.
   searchLog.permissionFilterApplied({
@@ -134,22 +140,26 @@ export async function queryWorkspaceSearch({
     userId,
     callerRole,
     type: type ?? null,
-    includeArchived: includeArchived ?? false,
+    includeArchived,
   });
 
   // ── Board search ──────────────────────────────────────────────────────────
   if (!type || type === 'board') {
-    const boardQ = db('boards')
-      .select(
-        db.raw(
-          `boards.id, boards.short_id, boards.title, boards.workspace_id, boards.state,
+    const rankExpr = "ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) AS rank";
+    const selectExpr = `boards.id, boards.short_id, boards.title, boards.workspace_id, boards.state,
            boards.background, 'board' as type,
-           ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) AS rank`,
-          [tsquery],
-        ),
-      )
-      .where('boards.workspace_id', workspaceId)
-      .whereRaw(`boards.search_vector @@ to_tsquery('english', ?)`, [tsquery]);
+           ${isMatchAll ? '0 as rank' : rankExpr}`;
+
+    const boardQ = db('boards')
+      .where('boards.workspace_id', workspaceId);
+
+    if (isMatchAll) {
+      boardQ.select(db.raw(selectExpr));
+    } else {
+      boardQ
+        .select(db.raw(selectExpr, [safeTsquery]))
+        .whereRaw("boards.search_vector @@ to_tsquery('english', ?)", [safeTsquery]);
+    }
 
     if (!includeArchived) boardQ.where('boards.state', 'ACTIVE');
     if (cursor) boardQ.where('boards.id', '>', cursor);
@@ -157,7 +167,14 @@ export async function queryWorkspaceSearch({
     // Apply caller-specific board visibility filter
     applyBoardAccessFilter(boardQ, userId, callerRole);
 
-    const boards = await boardQ.orderBy('rank', 'desc').limit(limit);
+    if (isMatchAll) {
+      boardQ.orderBy('boards.updated_at', 'desc').limit(limit);
+    } else {
+      boardQ.orderByRaw("ts_rank_cd(boards.search_vector, to_tsquery('english', ?)) DESC", [safeTsquery]).limit(limit);
+    }
+
+    const boards = await boardQ;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
     results.push(...boards.map((b) => ({
       ...b,
       type: 'board' as const,
@@ -169,20 +186,24 @@ export async function queryWorkspaceSearch({
 
   // ── Card search ───────────────────────────────────────────────────────────
   if (!type || type === 'card') {
+    const rankExpr = "ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank";
+    const selectExpr = `cards.id, cards.short_id, cards.title, cards.list_id, boards.id as board_id,
+           boards.short_id as board_short_id,
+           boards.workspace_id, cards.archived, 'card' as type,
+           ${isMatchAll ? '0 as rank' : rankExpr}`;
+
     const cardQ = db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
       .join('boards', 'lists.board_id', 'boards.id')
-      .select(
-        db.raw(
-          `cards.id, cards.short_id, cards.title, cards.list_id, boards.id as board_id,
-           boards.short_id as board_short_id,
-           boards.workspace_id, cards.archived, 'card' as type,
-           ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
-          [tsquery],
-        ),
-      )
-      .where('boards.workspace_id', workspaceId)
-      .whereRaw(`cards.search_vector @@ to_tsquery('english', ?)`, [tsquery]);
+      .where('boards.workspace_id', workspaceId);
+
+    if (isMatchAll) {
+      cardQ.select(db.raw(selectExpr));
+    } else {
+      cardQ
+        .select(db.raw(selectExpr, [safeTsquery]))
+        .whereRaw("cards.search_vector @@ to_tsquery('english', ?)", [safeTsquery]);
+    }
 
     if (!includeArchived) cardQ.where('cards.archived', false);
     if (cursor) cardQ.where('cards.id', '>', cursor);
@@ -190,7 +211,14 @@ export async function queryWorkspaceSearch({
     // Apply the same board-level access filter (boards table is joined)
     applyBoardAccessFilter(cardQ, userId, callerRole);
 
-    const cards = await cardQ.orderBy('rank', 'desc').limit(limit);
+    if (isMatchAll) {
+      cardQ.orderBy('cards.updated_at', 'desc').limit(limit);
+    } else {
+      cardQ.orderByRaw("ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) DESC", [safeTsquery]).limit(limit);
+    }
+
+    const cards = await cardQ;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
     results.push(...cards.map((c) => ({ ...c, type: 'card' as const, rank: Number(c.rank) })));
   }
 

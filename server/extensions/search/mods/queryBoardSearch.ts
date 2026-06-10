@@ -29,12 +29,16 @@ export interface BoardSearchOutput {
   message?: string;
 }
 
+const MATCH_ALL = '*';
+
 export async function queryBoardSearch({
   boardId,
   q,
   limit: rawLimit,
 }: BoardSearchOptions): Promise<BoardSearchOutput> {
-  if (q.length < 2) {
+  const isMatchAll = q === MATCH_ALL;
+
+  if (!isMatchAll && q.length < 2) {
     return {
       status: 400,
       name: 'search-query-too-short',
@@ -42,8 +46,8 @@ export async function queryBoardSearch({
     };
   }
 
-  const tsquery = buildQuery({ q });
-  if (!tsquery) {
+  const tsquery = isMatchAll ? null : buildQuery({ q });
+  if (!isMatchAll && !tsquery) {
     return {
       status: 400,
       name: 'search-query-invalid',
@@ -53,6 +57,33 @@ export async function queryBoardSearch({
 
   const limit = Math.min(rawLimit ?? DEFAULT_LIMIT, MAX_LIMIT);
   const results: BoardSearchResult[] = [];
+
+  if (isMatchAll) {
+    // [why] * wildcard returns all non-archived cards in the board without full-text filtering.
+    // Sort by updated_at descending so the most recent cards appear first.
+    const cards = await db('cards')
+      .join('lists', 'cards.list_id', 'lists.id')
+      .select('cards.id', 'cards.title', 'cards.list_id')
+      .where('lists.board_id', boardId)
+      .where('cards.archived', false)
+      .orderBy('cards.updated_at', 'desc')
+      .limit(limit);
+
+    for (const row of cards) {
+      results.push({
+        type: 'card',
+        id: row.id,
+        title: row.title,
+        listId: row.list_id,
+        rank: 0,
+      });
+    }
+
+    return {
+      status: 200,
+      data: results.map(({ rank: _rank, ...rest }) => rest as BoardSearchResult),
+    };
+  }
 
   // Search cards within the board (joined through lists to enforce board scope)
   const cards = await db('cards')

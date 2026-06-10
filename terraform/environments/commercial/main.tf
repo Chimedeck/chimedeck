@@ -312,6 +312,14 @@ resource "aws_lb_target_group" "fleet_r1" {
   vpc_id      = module.vpc_r1[0].vpc_id
   target_type = "ip"
 
+  # [why] Keep MCP follow-up requests on the same instance because sessions
+  # are in-memory and keyed by mcp-session-id.
+  stickiness {
+    enabled         = true
+    type            = "lb_cookie"
+    cookie_duration = 3600
+  }
+
   health_check {
     path                = "/health"
     healthy_threshold   = 2
@@ -486,6 +494,14 @@ resource "aws_lb_target_group" "fleet_r2" {
   vpc_id      = module.vpc_r2[0].vpc_id
   target_type = "ip"
 
+  # [why] Keep MCP follow-up requests on the same instance because sessions
+  # are in-memory and keyed by mcp-session-id.
+  stickiness {
+    enabled         = true
+    type            = "lb_cookie"
+    cookie_duration = 3600
+  }
+
   health_check {
     path                = "/health"
     healthy_threshold   = 2
@@ -655,6 +671,14 @@ resource "aws_lb_target_group" "fleet_r3" {
   protocol    = "HTTP"
   vpc_id      = module.vpc_r3[0].vpc_id
   target_type = "ip"
+
+  # [why] Keep MCP follow-up requests on the same instance because sessions
+  # are in-memory and keyed by mcp-session-id.
+  stickiness {
+    enabled         = true
+    type            = "lb_cookie"
+    cookie_duration = 3600
+  }
 
   health_check {
     path                = "/health"
