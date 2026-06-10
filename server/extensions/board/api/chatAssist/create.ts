@@ -112,6 +112,9 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
   const result = await boardChatAssistApiDeps.assistBoardChat(assistInput);
 
   if (result.status !== 200) {
+    if (result.status >= 500) {
+      console.error(`[chat/assist] 5xx from assist handler: status=${String(result.status)} name=${result.name ?? ''} message=${result.message ?? ''}`);
+    }
     return Response.json(
       {
         error: {

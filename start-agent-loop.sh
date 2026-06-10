@@ -56,7 +56,7 @@ TEST_CREDENTIALS_FILE="specs/tests/TEST_CREDENTIALS.md"
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
 MODEL_RECAP="minimax-m3"
 MODEL_PLAN="minimax-m3"
-MODEL_EXECUTE="minimax-m3"
+MODEL_EXECUTE="deepseek-v4-pro"
 MODEL_TEST_FREE="minimax-m3"
 MODEL_TEST_EVAL="minimax-m3"
 

@@ -68,3 +68,20 @@ export async function createBoardChatMessage({
 }): Promise<{ data: BoardChatMessage }> {
   return api.post<{ data: BoardChatMessage }>(`/boards/${boardId}/chat/messages`, { content });
 }
+
+export interface BoardChatAssistResponse {
+  model: string;
+  message?: string;
+}
+
+export async function requestBoardChatAssist({
+  api,
+  boardId,
+  prompt,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  prompt: string;
+}): Promise<{ data: BoardChatAssistResponse }> {
+  return api.post<{ data: BoardChatAssistResponse }>(`/boards/${boardId}/chat/assist`, { prompt });
+}

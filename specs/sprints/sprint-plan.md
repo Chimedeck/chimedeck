@@ -195,6 +195,12 @@
 | [168](./sprint-168.md) | Board Setting: GitHub Project URL | Board settings field `github_project_url`; only workspace members on board can set/update; audit event + validation | ⬜ Needs 79 + 114 |
 | [169](./sprint-169.md) | Backend Repo Fetch + Specs Markdown Delivery | Backend function accepts GitHub project URL and returns downloaded repo path using GitHub App installation-token fetch; manifest-first + lazy `specs/**/*.md` loading for client view/edit | ⬜ Needs 168 |
 | [170](./sprint-170.md) | Specs Markdown Editor + Commit Sync | Board `Documentation` tab next to `Health Check` opens TipTap markdown-mode editor; delta-save API for edits/new files; backend git service commit-and-push with app bot alias identity | ⬜ Needs 169 |
+| [171](./sprint-171.md) | Inner Card Chat + AI Assist Refinement Loop | Card-level `AI Assist` entry, BA persona `/goal` questioning loop, quality score meter, pause/resume on card close, `READY_FOR_REVIEW` transition at score `>= 90` | ⬜ Needs 164 + 166 + 167 + 07 |
+| [172](./sprint-172.md) | Dynamic Workflow Phase Metadata on Columns | Column rectangle metadata in state-transition graph (`workflowPhases`, phase config), editor controls, resolver API for move-time phase lookup | ⬜ Needs 153 + 155 + 156 + 157 |
+| [173](./sprint-173.md) | Metadata Trigger Engine for Card Move Lifecycle | Move-time destination-column phase evaluation, async trigger jobs, idempotent run records, tier-aware phase gating for `SYNC_DOCUMENT`/`READY_FOR_DEV`/`GENERATE_SPRINT`/`UPDATE_AS_BUILT` | ⬜ Needs 172 + 154 + 159 + 160 |
+| [174](./sprint-174.md) | Deep Context Gathering and Impact Analysis Service | Unified search across specs/code/cards/commit history, duplicate-effort detection, impact map, deterministic file-scope planner, context snapshot persistence | ⬜ Needs 169 + 170 + 173 |
+| [175](./sprint-175.md) | Multi-Turn AI Editing Orchestrator for Specs Repo | Ordered run-state pipeline: `POST /ai/edit` -> context gather -> file scope -> create files -> edit files -> commit; resumable, auditable, path-guarded | ⬜ Needs 173 + 174 + 170 |
+| [176](./sprint-176.md) | Requirement-to-Sprint Generation and As-Built Sync | On `GENERATE_SPRINT`, create sprint docs + child sprint cards; on `UPDATE_AS_BUILT`, sync architecture/security/changelog docs with traceable commits and tier-aware depth | ⬜ Needs 171 + 173 + 175 + 159 |
 
 
 ---
@@ -229,6 +235,8 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `TRELLO_COMPAT_ENABLED` | Sprint 142 | Enable the `/trello/1/*` Trello-compatible API layer backed by ChimeDeck data (default: `false`; no Trello credentials required) |
 | `STATE_TRANSITIONS_ENABLED` | Sprint 153 | Enable board-level enforceable state transitions: DB migration, graph API, enforcement guard, and graph editor UI (default: `false`) |
 | `SUBSCRIPTIONS_ENABLED` | Sprint 158 | Master switch for all subscription functionality (Stripe checkout/portal/webhook processing, entitlements, feature gates, resource limits, tier rate limits, and billing UI). When `false`, every workspace resolves to `SUBSCRIPTIONS_DEFAULT_UNLIMITED_TIER` (default `tier_4`) and all subscription-specific enforcement/UX is bypassed or hidden (default: `false`) |
+| `INNER_CARD_CHAT_ENABLED` | Sprint 171 | Enables card-scoped `AI Assist` chat session APIs, UI entry points, and BA refinement loop (when `false`, card chat controls are hidden and routes return `501`) |
+| `AGENTIC_WORKFLOW_ENABLED` | Sprint 173 | Enables metadata-driven phase trigger execution (`SYNC_DOCUMENT`, `READY_FOR_DEV`, `GENERATE_SPRINT`, `UPDATE_AS_BUILT`) and orchestration pipelines (when `false`, moves never enqueue AI phase runs) |
 
 ---
 
@@ -372,6 +380,72 @@ Sprint 167 ─────────── OpenAI-compatible adapter: configur
 Sprint 168 ─────────── Board settings extension: github_project_url field with org-member-only edit permission
 Sprint 169 ─────────── Repository bridge: resolve project URL -> downloaded repository path with GitHub App installation-token fetch; manifest-first and lazy specs markdown delivery
 Sprint 170 ─────────── Specs authoring workflow: board `Documentation` tab (next to Health Check) opens TipTap markdown-mode editor UI, delta-save endpoint, git-service commit-and-push with app bot alias identity
+──── Agentic Workflow + Dynamic State-Phase Automation ────────────────────────────
+Sprint 171 ─────────── Inner Card Chat: card-scoped `AI Assist`, BA persona `/goal` loop, quality scoring to 90+, pause/resume lifecycle
+Sprint 172 ─────────── Dynamic column workflow metadata in state-transition diagram editor (`workflowPhases`, phase config)
+Sprint 173 ─────────── Move-trigger engine: evaluate destination column metadata and enqueue tier-aware phase jobs (`SYNC_DOCUMENT`, `READY_FOR_DEV`, `GENERATE_SPRINT`, `UPDATE_AS_BUILT`)
+Sprint 174 ─────────── Deep context service: search specs/code/cards/commits, duplicate detection, impact analysis, deterministic file-scope planning
+Sprint 175 ─────────── Multi-turn edit orchestrator: `POST /ai/edit` -> gather context -> scope files -> create -> edit -> commit (resumable + auditable)
+Sprint 176 ─────────── Requirement-to-sprint + as-built sync: generate sprint docs/cards from refined requirements and finalize architecture/security/changelog updates
+```
+
+## Agentic Workflow Dependency Graph (Sprints 171-176)
+
+```mermaid
+flowchart LR
+	S7[Sprint 07\nCard Core]
+	S153[Sprint 153\nState Transitions DB + API]
+	S154[Sprint 154\nMove Enforcement]
+	S155[Sprint 155\nGraph Editor Foundation]
+	S156[Sprint 156\nGraph Editor Edges + Real-Time]
+	S157[Sprint 157\nKanban Enforcement UI]
+	S159[Sprint 159\nTier Entitlements Resolver]
+	S160[Sprint 160\nFeature Gating Middleware]
+	S164[Sprint 164\nBoard Chat Entry]
+	S166[Sprint 166\nConversation Storage]
+	S167[Sprint 167\nOpenAI Adapter + Tool Calls]
+	S169[Sprint 169\nRepo Fetch + Specs Delivery]
+	S170[Sprint 170\nSpecs Editor + Commit Sync]
+
+	S171[Sprint 171\nInner Card Chat + Refinement Loop]
+	S172[Sprint 172\nDynamic Column Phase Metadata]
+	S173[Sprint 173\nMove Metadata Trigger Engine]
+	S174[Sprint 174\nDeep Context + Impact Analysis]
+	S175[Sprint 175\nMulti-Turn Edit Orchestrator]
+	S176[Sprint 176\nSprint Generation + As-Built Sync]
+
+	S164 --> S171
+	S166 --> S171
+	S167 --> S171
+	S7 --> S171
+
+	S153 --> S172
+	S155 --> S172
+	S156 --> S172
+	S157 --> S172
+
+	S172 --> S173
+	S154 --> S173
+	S159 --> S173
+	S160 --> S173
+
+	S169 --> S174
+	S170 --> S174
+	S173 --> S174
+
+	S173 --> S175
+	S174 --> S175
+	S170 --> S175
+
+	S171 --> S176
+	S173 --> S176
+	S175 --> S176
+	S159 --> S176
+
+	classDef new fill:#e8f5e9,stroke:#2e7d32,stroke-width:1.5px,color:#1b5e20;
+	classDef prereq fill:#fff8e1,stroke:#ef6c00,stroke-width:1px,color:#e65100;
+	class S171,S172,S173,S174,S175,S176 new;
+	class S7,S153,S154,S155,S156,S157,S159,S160,S164,S166,S167,S169,S170 prereq;
 ```
 
 ---

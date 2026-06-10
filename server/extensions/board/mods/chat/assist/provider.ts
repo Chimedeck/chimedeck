@@ -6,7 +6,10 @@ import type {
   BoardChatAssistToolCall,
 } from '../../../types';
 
-const ASSIST_PROVIDER_TIMEOUT_MS = 15_000;
+// [why] Reasoning models (e.g. deepseek-v4-pro) can take 30-90s to generate a
+// full response. 15s was too aggressive and caused the provider fetch to abort,
+// which was then surfaced as "unreachable" rather than a timeout.
+const ASSIST_PROVIDER_TIMEOUT_MS = 120_000;
 
 interface ChatCompletionResponse {
   model?: unknown;
@@ -151,7 +154,8 @@ export async function requestBoardChatAssistCompletion({
       body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(boardChatAssistProviderDeps.timeoutMs),
     });
-  } catch {
+  } catch (error) {
+    console.error('[chat/assist] Provider fetch failed (network error or timeout):', error instanceof Error ? error.message : String(error));
     return {
       status: 502,
       name: 'assist-provider-unreachable',
@@ -161,8 +165,9 @@ export async function requestBoardChatAssistCompletion({
 
   if (!response.ok) {
     const providerMessage = await readProviderFailureMessage(response);
+  console.error('[chat/assist] Provider returned non-OK status:', response.status, providerMessage ?? '(no body)');
 
-    if (response.status === 429) {
+  if (response.status === 429) {
       return {
         status: 429,
         name: 'assist-rate-limited',

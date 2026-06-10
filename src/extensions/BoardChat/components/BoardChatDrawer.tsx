@@ -8,6 +8,7 @@ import { LockClosedIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
 import {
   createBoardChatMessage,
+  requestBoardChatAssist,
   getBoardChatPermissions,
   patchBoardChatPermissions,
   type BoardChatPermissions,
@@ -52,6 +53,8 @@ const BoardChatDrawer = ({
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [aiTyping, setAiTyping] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
   const guestCanView = permissions?.guest_can_view === true;
   const guestCanUse = permissions?.guest_can_use === true;
@@ -142,6 +145,46 @@ const BoardChatDrawer = ({
     } finally {
       setUpdatingPermissions(false);
     }
+  };
+
+  const triggerAiAssist = async (prompt: string): Promise<void> => {
+    setAiResponse(null);
+    setAiTyping(true);
+    try {
+      const res = await requestBoardChatAssist({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        boardId,
+        prompt,
+      });
+      setAiResponse(res.data.message ?? null);
+    } catch {
+      setAiResponse(null);
+    } finally {
+      setAiTyping(false);
+    }
+  };
+
+  const handleSendMessage = async (): Promise<void> => {
+    const trimmed = composerText.trim();
+    if (!trimmed || composerDisabled) return;
+
+    setSendError(null);
+    setSendingMessage(true);
+    try {
+      await createBoardChatMessage({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        boardId,
+        content: trimmed,
+      });
+      setComposerText('');
+      setRefreshKey((current) => current + 1);
+    } catch {
+      setSendError('Failed to send message');
+      return;
+    } finally {
+      setSendingMessage(false);
+    }
+    await triggerAiAssist(trimmed);
   };
 
   return (
@@ -277,6 +320,37 @@ const BoardChatDrawer = ({
             </ul>
           )}
 
+          {/* AI typing indicator */}
+          {aiTyping && (
+            <li className="rounded-md bg-bg-overlay p-3 list-none">
+              <div className="flex gap-2 items-center">
+                <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-white">AI</span>
+                </div>
+                <div className="flex gap-1 items-center h-4">
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
+                </div>
+              </div>
+            </li>
+          )}
+
+          {/* AI response */}
+          {!aiTyping && aiResponse && (
+            <li className="rounded-md bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 p-3 list-none">
+              <div className="flex gap-2">
+                <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-white">AI</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Board AI</p>
+                  <p className="text-sm text-base break-words mt-1 whitespace-pre-wrap">{aiResponse}</p>
+                </div>
+              </div>
+            </li>
+          )}
+
           {/* Scroll anchor */}
           <div ref={historyEndRef} />
         </div>
@@ -300,28 +374,7 @@ const BoardChatDrawer = ({
             />
             <button
               disabled={composerDisabled || !composerText.trim()}
-              onClick={() => {
-                const trimmed = composerText.trim();
-                if (!trimmed || composerDisabled) return;
-
-                setSendError(null);
-                setSendingMessage(true);
-                void createBoardChatMessage({
-                  api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
-                  boardId,
-                  content: trimmed,
-                })
-                  .then(() => {
-                    setComposerText('');
-                    setRefreshKey((current) => current + 1);
-                  })
-                  .catch(() => {
-                    setSendError('Failed to send message');
-                  })
-                  .finally(() => {
-                    setSendingMessage(false);
-                  });
-              }}
+              onClick={() => { void handleSendMessage(); }}
               className="self-end rounded-md bg-primary px-3 py-2 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Send
