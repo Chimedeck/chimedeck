@@ -54,11 +54,11 @@ ARCH_DIR="specs/architecture"          # architecture decision records
 TEST_CREDENTIALS_FILE="specs/tests/TEST_CREDENTIALS.md"
 
 # Model identifiers (as accepted by the GitHub Copilot CLI --model flag)
-MODEL_RECAP="minimax-m3"
-MODEL_PLAN="minimax-m3"
+MODEL_RECAP="deepseek-v4-pro"
+MODEL_PLAN="deepseek-v4-pro"
 MODEL_EXECUTE="deepseek-v4-pro"
-MODEL_TEST_FREE="minimax-m3"
-MODEL_TEST_EVAL="minimax-m3"
+MODEL_TEST_FREE="deepseek-v4-pro"
+MODEL_TEST_EVAL="deepseek-v4-pro"
 
 # Temp directory for inter-phase context passing
 TMP_DIR="$(mktemp -d)"

@@ -24,6 +24,7 @@ out/
 .env.development
 .env.test
 .env.production
+.env.agent
 
 # Logs
 logs/
