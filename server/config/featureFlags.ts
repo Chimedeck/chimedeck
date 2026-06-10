@@ -8,4 +8,15 @@ export const featureFlags = {
   get SUBSCRIPTIONS_ENABLED() {
     return Bun.env['SUBSCRIPTIONS_ENABLED'] === 'true';
   },
+  // [context] Master switch for the agentic workflow pipeline (inner card chat,
+  // phase triggers, AI context, AI editing, sprint generation, as-built sync).
+  // When false, all agentic features are hidden and their APIs return 404.
+  get AGENTIC_WORKFLOW_ENABLED() {
+    return Bun.env['AGENTIC_WORKFLOW_ENABLED'] === 'true';
+  },
+  // [context] Per-feature switch for AI Context gathering (gather + file-scope).
+  // Independent of AGENTIC_WORKFLOW_ENABLED for fine-grained control.
+  get AI_CONTEXT_ENABLED() {
+    return Bun.env['AI_CONTEXT_ENABLED'] === 'true';
+  },
 } as const;

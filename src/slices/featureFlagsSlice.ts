@@ -30,6 +30,12 @@ interface FeatureFlagsState {
   boardChatEnabled: boolean;
   // Whether GitHub-backed documentation editing should be enabled
   githubEditingEnabled: boolean;
+  // Whether card-scoped inner chat (AI Assist refinement loop) is enabled
+  innerCardChatEnabled: boolean;
+  // Whether the agentic workflow pipeline (phase triggers, AI context/edit/sprint-gen) is enabled
+  agenticWorkflowEnabled: boolean;
+  // Whether AI context gathering (gather + file-scope) is enabled
+  aiContextEnabled: boolean;
   status: 'idle' | 'loading' | 'ready' | 'error';
 }
 
@@ -48,6 +54,9 @@ const initialState: FeatureFlagsState = {
   chatEmbeddingEnabled: true,
   boardChatEnabled: false,
   githubEditingEnabled: false,
+  innerCardChatEnabled: false,
+  agenticWorkflowEnabled: false,
+  aiContextEnabled: false,
   status: 'idle',
 };
 
@@ -69,6 +78,9 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
             chatEmbeddingEnabled?: boolean;
             boardChatEnabled?: boolean;
             githubEditingEnabled?: boolean;
+            innerCardChatEnabled?: boolean;
+            agenticWorkflowEnabled?: boolean;
+            aiContextEnabled?: boolean;
           };
         }
         | {
@@ -83,15 +95,36 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
           chatEmbeddingEnabled?: boolean;
           boardChatEnabled?: boolean;
           githubEditingEnabled?: boolean;
+          innerCardChatEnabled?: boolean;
+          agenticWorkflowEnabled?: boolean;
+          aiContextEnabled?: boolean;
         }
       >('/flags');
 
       // apiClient auto-unwraps Axios responses, but keep compatibility with wrapped shapes.
-      if (response && typeof response === 'object' && 'data' in response && response.data) {
-        return response.data;
-      }
-
-      return response;
+      // [why] Narrow the union type — apiClient.get can return { data: {...} } | {...} | AxiosResponse.
+      const payload = (() => {
+        if (response && typeof response === 'object' && 'data' in response && response.data) {
+          return response.data as Record<string, unknown>;
+        }
+        return response as Record<string, unknown>;
+      })();
+      return payload as {
+        adminEmailDomains?: string;
+        adminInviteEmailEnabled?: boolean;
+        sesEnabled?: boolean;
+        notificationPreferencesEnabled?: boolean;
+        emailNotificationsEnabled?: boolean;
+        emailVerificationEnabled?: boolean;
+        stateTransitionsEnabled?: boolean;
+        subscriptionsEnabled?: boolean;
+        chatEmbeddingEnabled?: boolean;
+        boardChatEnabled?: boolean;
+        githubEditingEnabled?: boolean;
+        innerCardChatEnabled?: boolean;
+        agenticWorkflowEnabled?: boolean;
+        aiContextEnabled?: boolean;
+      };
     } catch {
       return rejectWithValue('flags-fetch-failed');
     }
@@ -120,6 +153,9 @@ const featureFlagsSlice = createSlice({
         state.chatEmbeddingEnabled = payload.chatEmbeddingEnabled ?? true;
         state.boardChatEnabled = payload.boardChatEnabled ?? false;
         state.githubEditingEnabled = payload.githubEditingEnabled ?? false;
+        state.innerCardChatEnabled = payload.innerCardChatEnabled ?? false;
+        state.agenticWorkflowEnabled = payload.agenticWorkflowEnabled ?? false;
+        state.aiContextEnabled = payload.aiContextEnabled ?? false;
         state.status = 'ready';
       })
       .addCase(fetchFeatureFlagsThunk.rejected, (state) => {
@@ -153,5 +189,11 @@ export const selectBoardChatEnabled = (state: RootState) =>
   state.featureFlags.boardChatEnabled;
 export const selectGithubEditingEnabled = (state: RootState) =>
   state.featureFlags.githubEditingEnabled;
+export const selectInnerCardChatEnabled = (state: RootState) =>
+  state.featureFlags.innerCardChatEnabled;
+export const selectAgenticWorkflowEnabled = (state: RootState) =>
+  state.featureFlags.agenticWorkflowEnabled;
+export const selectAiContextEnabled = (state: RootState) =>
+  state.featureFlags.aiContextEnabled;
 export const selectFeatureFlagsStatus = (state: RootState) =>
   state.featureFlags.status;

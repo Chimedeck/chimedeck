@@ -17,4 +17,7 @@ export const defaults: Record<string, boolean> = {
   TRELLO_COMPAT_ENABLED: false,
   BOARD_CHAT_ENABLED: true,
   GITHUB_EDITING_ENABLED: true,
+  INNER_CARD_CHAT_ENABLED: false,
+  AGENTIC_WORKFLOW_ENABLED: false,
+  AI_CONTEXT_ENABLED: false,
 };
