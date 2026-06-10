@@ -1,4 +1,0 @@
-408. [GET] http://localhost:5173/api/v1/boards/rrqErQtr/settings/integrations => [200] OK
-409. [GET] http://localhost:5173/api/v1/boards/rrqErQtr/settings/integrations => [200] OK
-
-Note: 378 static requests not shown, run with "static" option to see them.

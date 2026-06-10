@@ -1,1 +1,0 @@
-"ChimeDeck\nTest\nSearch\n⌘K\nBoards\nMembers\nAll Workspaces\nPlugin Docs\nMCP Docs\nCLI Docs\nAPI Docs\nB\nBoard Chat Denied\nSettings\nAPI Tokens\nWebhooks\nLog out\nDark\nWorkspaces\n+ New Workspace\nTest\n\nCreated 16/04/2026\n\nOpen"

@@ -1,6 +1,0 @@
-143. [GET] http://localhost:5173/api/v1/workspaces => [500] Internal Server Error
-148. [GET] http://localhost:5173/api/v1/workspaces => [200] OK
-161. [GET] http://localhost:5173/api/v1/workspaces/2499d916-fb90-4a88-bb01-1ce0ef856114/boards => [200] OK
-162. [GET] http://localhost:5173/api/v1/workspaces/2499d916-fb90-4a88-bb01-1ce0ef856114/boards => [200] OK
-
-Note: 144 static requests not shown, run with "static" option to see them.

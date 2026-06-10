@@ -1,5 +1,0 @@
-128. [POST] http://localhost:5173/api/v1/auth/refresh => [500] Internal Server Error
-129. [POST] http://localhost:5173/api/v1/auth/refresh => [500] Internal Server Error
-137. [POST] http://localhost:5173/api/v1/auth/token => [500] Internal Server Error
-
-Note: 134 static requests not shown, run with "static" option to see them.
