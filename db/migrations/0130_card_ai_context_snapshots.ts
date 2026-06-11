@@ -8,6 +8,11 @@ import type { Knex } from 'knex';
  * reproducibility.
  */
 export async function up(knex: Knex): Promise<void> {
+  const tableExists = await knex.schema.hasTable('card_ai_context_snapshots');
+  if (tableExists) {
+    return;
+  }
+
   await knex.schema.createTable('card_ai_context_snapshots', (table) => {
     table.string('id').primary();
     table.string('card_id').notNullable();
@@ -31,5 +36,8 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists('card_ai_context_snapshots');
+  // [why] 0124 is the canonical owner of this table; 0130 only guards
+  // compatibility for environments where the table might still be missing.
+  // Do not drop here to avoid removing a table created by an earlier migration.
+  void knex;
 }
