@@ -113,6 +113,7 @@ const CardModalBottomBar = ({
           {powerUps.open && (
             <div className="absolute bottom-full left-0 mb-1 z-10 w-56 rounded-xl bg-bg-surface border border-border shadow-lg p-2">
               <CardPluginButtons
+                boardId={boardId}
                 cardId={cardId}
                 listId={listId}
                 {...(cardTitle !== undefined ? { cardTitle } : {})}

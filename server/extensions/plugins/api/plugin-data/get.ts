@@ -73,8 +73,9 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
     );
   }
 
+  let canonicalResourceId: string;
   try {
-    await validateResourceBelongsToBoard(scope, resourceId, boardId);
+    canonicalResourceId = await validateResourceBelongsToBoard(scope, resourceId, boardId);
   } catch (err) {
     if (err instanceof ResourceBoardMismatchError) {
       return Response.json(
@@ -88,7 +89,7 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
   const query = db('plugin_data').where({
     plugin_id: plugin.id,
     scope,
-    resource_id: resourceId,
+    resource_id: canonicalResourceId,
     board_id: boardId,
     key,
   });

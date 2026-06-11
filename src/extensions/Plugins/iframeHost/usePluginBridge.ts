@@ -105,9 +105,15 @@ export function usePluginBridge({
   const pendingCapabilityRef = useRef<Map<string, PendingCapabilityRequest>>(new Map());
   // Last context sent to each plugin via CAPABILITY_INVOKE, used to answer CTX_* queries
   const pluginContextRef = useRef<Map<string, CapabilityContext>>(new Map());
-  // [why] JWT token cache keyed by pluginId — avoids a token round-trip on every DATA_GET/SET.
+  // [why] JWT token cache keyed by boardId + pluginId — avoids a token round-trip on every DATA_GET/SET.
   // Tokens are valid for 1 h; we evict 5 min early to avoid clock-skew rejections.
   const pluginTokenCacheRef = useRef<Map<string, { token: string; expiresAt: number }>>(new Map());
+
+  // [why] Prevent cross-board token reuse when navigating between boards that
+  // share the same plugin id in one SPA session.
+  useEffect(() => {
+    pluginTokenCacheRef.current.clear();
+  }, [boardId]);
 
   // Derive allowed origins from active plugins
   const getAllowedOrigins = useCallback((): Map<string, string> => {
@@ -154,7 +160,8 @@ export function usePluginBridge({
   // the JWT endpoint is the only sanctioned way for the host app to authenticate.
   const getPluginToken = useCallback(
     async (pluginId: string): Promise<string> => {
-      const cached = pluginTokenCacheRef.current.get(pluginId);
+      const cacheKey = `${boardId}:${pluginId}`;
+      const cached = pluginTokenCacheRef.current.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) return cached.token;
 
       const resp = await apiClient.get<{ data: { token: string; expiresIn: number } }>(
@@ -162,7 +169,7 @@ export function usePluginBridge({
       );
       const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
       // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
-      pluginTokenCacheRef.current.set(pluginId, {
+      pluginTokenCacheRef.current.set(cacheKey, {
         token,
         expiresAt: Date.now() + (expiresIn - 300) * 1000,
       });
@@ -205,7 +212,6 @@ export function usePluginBridge({
           key,
           visibility,
           pluginId: bp.plugin.id,
-          boardId,
         });
         if (resourceId) params.set('resourceId', resourceId);
         if (visibility === 'private' && currentUserId) {
@@ -227,7 +233,7 @@ export function usePluginBridge({
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [boardId, currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource],
   );
 
   // Handle DATA_SET — proxy request to server plugin-data API
@@ -247,7 +253,6 @@ export function usePluginBridge({
           value,
           visibility,
           pluginId: bp.plugin.id,
-          boardId,
           resourceId,
           ...(visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
         }, {
@@ -266,7 +271,7 @@ export function usePluginBridge({
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [boardId, currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource],
   );
 
   // Extract only the requested fields from a context object.

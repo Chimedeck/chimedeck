@@ -861,72 +861,70 @@ const BoardPage = () => {
     if (activeTab === 'board') {
       return (
         <div className="flex flex-col flex-1 overflow-hidden">
-          <PluginIframeContainer boardId={boardId ?? ''}>
-            {activeView === 'KANBAN' ? (
-              <BoardCanvas
-                boardId={boardId ?? ''}
-                boardTitle={board.title}
-                currentUserId={currentUser?.id ?? ''}
-                listOrder={listOrder}
-                lists={lists}
-                cardsByList={filteredCardsByList}
-                cards={filteredCards}
-                onCardMove={handleCardMove}
-                onListReorder={handleListReorder}
-                onDragStart={handleDragStart}
-                onDragCommit={handleDragCommit}
-                onDragRollback={handleDragRollback}
-                onAddCard={handleAddCard}
-                onAddList={handleAddList}
-                onRenameList={handleRenameList}
-                onCopyList={handleCopyList}
-                onMoveList={handleMoveList}
-                onMoveAllCards={handleMoveAllCards}
-                onArchiveList={handleArchiveList}
-                onArchiveAllCards={handleArchiveAllCards}
-                onDeleteList={handleDeleteList}
-                onChangeListColor={handleChangeListColor}
-                onSortList={handleSortList}
-                listColors={listColors}
-                listSummaries={listSummaries}
-                onCardClick={handleCardClick}
-                isReadOnly={board.state === 'ARCHIVED'}
-                isViewerGuest={isViewerGuest}
-                customFieldValuesMap={customFieldValuesMap}
-                unreadNotificationCountByCardId={unreadNotificationCountByCardId}
-                hasBackground={!!board.background}
-                collapseEmptyLists={filters.collapseLists && isFiltering}
-              />
-            ) : activeView === 'TABLE' ? (
-              <TableView
-                cards={Object.values(filteredCards)}
-                lists={lists}
-                onCardClick={handleCardClick}
-              />
-            ) : activeView === 'CALENDAR' ? (
-              <CalendarView
-                cards={Object.values(filteredCards)}
-                lists={lists}
-                onCardClick={handleCardClick}
-                addToast={addToast}
-              />
-            ) : activeView === 'TIMELINE' ? (
-              <TimelineView
-                cards={Object.values(filteredCards)}
-                lists={lists}
-                onCardClick={handleCardClick}
-                addToast={addToast}
-              />
-            ) : null}
-            <AutomationPanel
+          {activeView === 'KANBAN' ? (
+            <BoardCanvas
               boardId={boardId ?? ''}
-              isOpen={automationPanel.isOpen}
-              activeTab={automationPanel.activeTab}
-              onClose={automationPanel.closePanel}
-              onTabChange={automationPanel.setActiveTab}
+              boardTitle={board.title}
+              currentUserId={currentUser?.id ?? ''}
+              listOrder={listOrder}
+              lists={lists}
+              cardsByList={filteredCardsByList}
+              cards={filteredCards}
+              onCardMove={handleCardMove}
+              onListReorder={handleListReorder}
+              onDragStart={handleDragStart}
+              onDragCommit={handleDragCommit}
+              onDragRollback={handleDragRollback}
+              onAddCard={handleAddCard}
+              onAddList={handleAddList}
+              onRenameList={handleRenameList}
+              onCopyList={handleCopyList}
+              onMoveList={handleMoveList}
+              onMoveAllCards={handleMoveAllCards}
+              onArchiveList={handleArchiveList}
+              onArchiveAllCards={handleArchiveAllCards}
+              onDeleteList={handleDeleteList}
+              onChangeListColor={handleChangeListColor}
+              onSortList={handleSortList}
+              listColors={listColors}
+              listSummaries={listSummaries}
+              onCardClick={handleCardClick}
+              isReadOnly={board.state === 'ARCHIVED'}
+              isViewerGuest={isViewerGuest}
+              customFieldValuesMap={customFieldValuesMap}
+              unreadNotificationCountByCardId={unreadNotificationCountByCardId}
+              hasBackground={!!board.background}
+              collapseEmptyLists={filters.collapseLists && isFiltering}
             />
-            <ToastRegion toasts={toasts} onDismiss={dismissToast} />
-          </PluginIframeContainer>
+          ) : activeView === 'TABLE' ? (
+            <TableView
+              cards={Object.values(filteredCards)}
+              lists={lists}
+              onCardClick={handleCardClick}
+            />
+          ) : activeView === 'CALENDAR' ? (
+            <CalendarView
+              cards={Object.values(filteredCards)}
+              lists={lists}
+              onCardClick={handleCardClick}
+              addToast={addToast}
+            />
+          ) : activeView === 'TIMELINE' ? (
+            <TimelineView
+              cards={Object.values(filteredCards)}
+              lists={lists}
+              onCardClick={handleCardClick}
+              addToast={addToast}
+            />
+          ) : null}
+          <AutomationPanel
+            boardId={boardId ?? ''}
+            isOpen={automationPanel.isOpen}
+            activeTab={automationPanel.activeTab}
+            onClose={automationPanel.closePanel}
+            onTabChange={automationPanel.setActiveTab}
+          />
+          <ToastRegion toasts={toasts} onDismiss={dismissToast} />
         </div>
       );
     }
@@ -1107,14 +1105,16 @@ const BoardPage = () => {
           </div>
         </div>
 
-        {/* Tab content */}
-        {tabContent}
+        <PluginIframeContainer boardId={boardId ?? ''}>
+          {/* Tab content */}
+          {tabContent}
 
-        {/* Card detail modal — always mounted so ?card= links work from any tab */}
-        <CardModalContainer
-          {...(cardRouteId ? { forcedCardId: cardRouteId } : {})}
-          {...(cardRouteId ? { onCloseCard: handleRouteCardClose } : {})}
-        />
+          {/* Card detail modal — always mounted so ?card= links work from any tab */}
+          <CardModalContainer
+            {...(cardRouteId ? { forcedCardId: cardRouteId } : {})}
+            {...(cardRouteId ? { onCloseCard: handleRouteCardClose } : {})}
+          />
+        </PluginIframeContainer>
 
         {/* Board settings panel */}
         {settingsOpen && (

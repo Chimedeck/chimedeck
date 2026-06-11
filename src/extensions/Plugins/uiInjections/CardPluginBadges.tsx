@@ -2,7 +2,6 @@
 // Resolves the 'card-badges' capability via the plugin bridge and shows
 // colour-coded badge chips below the card's existing metadata.
 import { memo, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { usePluginBridgeContext } from '../iframeHost/usePluginBridge';
 
 interface PluginBadge {
@@ -13,6 +12,7 @@ interface PluginBadge {
 }
 
 interface Props {
+  boardId?: string;
   cardId: string;
   listId: string;
   cardTitle?: string;
@@ -96,13 +96,13 @@ function hasSameBadges(prev: PluginBadge[], next: PluginBadge[]): boolean {
 }
 
 function CardPluginBadgesComponent({
+  boardId,
   cardId,
   listId,
   cardTitle,
   listTitle,
   boardTitle,
 }: Readonly<Props>) {
-  const { boardId } = useParams<{ boardId: string }>();
   const bridge = usePluginBridgeContext();
   const [badges, setBadges] = useState<PluginBadge[]>([]);
 

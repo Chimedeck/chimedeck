@@ -242,8 +242,11 @@ async function router(req: Request): Promise<Response> {
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;
 
-  // Serve the SDK static bundle at /sdk/jh-instance.js
-  if (path === pluginsConfig.sdkServePath && req.method === 'GET') {
+  // Serve the SDK static bundle from both the legacy and API plugin script paths.
+  if (
+    req.method === 'GET' &&
+    (path === pluginsConfig.sdkServePath || path === pluginsConfig.sdkApiServePath)
+  ) {
     const sdkFile = Bun.file(pluginsConfig.sdkBundlePath);
     if (await sdkFile.exists()) {
       return new Response(sdkFile, {

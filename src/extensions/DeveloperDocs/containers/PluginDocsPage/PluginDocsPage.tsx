@@ -12,6 +12,8 @@ import {
   InfoCallout, WarnCallout, Table, NavItem,
 } from '~/extensions/DeveloperDocs/components/DocsPrimitives';
 
+const PLUGIN_SDK_URL = 'https://journeyhorizon.chimedeck.com/api/plugins/scripts/jh-instance.js';
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 const PluginDocsPage = () => {
@@ -200,7 +202,7 @@ const PluginDocsPage = () => {
                   rowId: 'jh-instance',
                   cells: [
                     { key: 'sdk', content: <Code>jhInstance</Code> },
-                    { key: 'url', content: <Code>/sdk/jh-instance.js</Code> },
+                    { key: 'url', content: <Code>{PLUGIN_SDK_URL}</Code> },
                     { key: 'proto', content: <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">postMessage</Badge> },
                     { key: 'desc', content: 'Primary plugin SDK. Trello Power-Up compatible.' },
                   ],
@@ -223,8 +225,8 @@ const PluginDocsPage = () => {
               The <Code>jhInstance</Code> SDK
             </H2>
             <P>
-              The platform serves the SDK at <Code>/sdk/jh-instance.js</Code>. Load it in your{' '}
-              <Code>connector.html</Code> before your own scripts. It attaches the global
+              Load the SDK from <Code>{PLUGIN_SDK_URL}</Code> in your <Code>connector.html</Code>{' '}
+              before your own scripts. It attaches the global
               <Code> window.jhInstance</Code>.
             </P>
             <Pre>{`<!-- connector.html -->
@@ -233,7 +235,7 @@ const PluginDocsPage = () => {
   <head><meta charset="utf-8"></head>
   <body>
     <!-- 1. Load the SDK from the platform origin -->
-    <script src="https://<your-platform-domain>/sdk/jh-instance.js"></script>
+    <script src="${PLUGIN_SDK_URL}"></script>
     <!-- 2. Load your plugin logic -->
     <script src="/client.js"></script>
   </body>
@@ -683,7 +685,7 @@ window.TrelloPowerUp = window.jhInstance;
 <html>
   <head><meta charset="utf-8"></head>
   <body>
-    <script src="https://<platform-domain>/sdk/jh-instance.js"></script>
+    <script src="${PLUGIN_SDK_URL}"></script>
     <script src="/client.js"></script>
   </body>
 </html>`}</Pre>

@@ -89,8 +89,9 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
 
   const resolvedUserId = visibility === 'private' ? (userId as string) : null;
 
+  let canonicalResourceId: string;
   try {
-    await validateResourceBelongsToBoard(scope as 'card' | 'list' | 'board' | 'member', resourceId, boardId);
+    canonicalResourceId = await validateResourceBelongsToBoard(scope as 'card' | 'list' | 'board' | 'member', resourceId, boardId);
   } catch (err) {
     if (err instanceof ResourceBoardMismatchError) {
       return Response.json(
@@ -106,7 +107,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   const existingQuery = db('plugin_data').where({
     plugin_id: plugin.id,
     scope: scope as string,
-    resource_id: resourceId,
+    resource_id: canonicalResourceId,
     board_id: boardId,
     key,
   });
@@ -128,7 +129,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
       id: randomUUID(),
       plugin_id: plugin.id,
       scope: scope as string,
-      resource_id: resourceId,
+      resource_id: canonicalResourceId,
       board_id: boardId,
       user_id: resolvedUserId,
       key,
