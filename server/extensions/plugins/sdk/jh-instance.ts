@@ -37,6 +37,13 @@ interface PostMessageResponse {
 const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
 // ────────────────────────────────────────────────────────────────────
+// Token cache — client-side storage for Trello-compatible tokens
+// ────────────────────────────────────────────────────────────────────
+
+let cachedToken: string | null = null;
+let cachedMemberId: string | null = null;
+
+// ────────────────────────────────────────────────────────────────────
 // Callback registry — stores functions replaced by opaque IDs so they
 // can survive the postMessage serialization boundary
 // ────────────────────────────────────────────────────────────────────
@@ -118,17 +125,32 @@ class FrameContext {
   get(scope: Scope, visibility: Visibility, key: string): Promise<unknown> {
     // Auto-resolve resourceId and boardId from args injected by the host so the
     // plugin never has to pass them explicitly — they always match the current context.
-    const resourceId = (this.args[scope] as Record<string, unknown> | undefined)?.id as string | undefined;
-    const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as string | undefined;
+    const resourceId = (this.args[scope] as Record<string, unknown> | undefined)?.id as
+      | string
+      | undefined;
+    const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as
+      | string
+      | undefined;
     return sendToHost('DATA_GET', { scope, visibility, key, resourceId, boardId });
   }
 
   set(scope: Scope, visibility: Visibility, key: string, value: unknown): Promise<void> {
     // Auto-resolve resourceId and boardId from args injected by the host so the
     // plugin never has to pass them explicitly — they always match the current context.
-    const resourceId = (this.args[scope] as Record<string, unknown> | undefined)?.id as string | undefined;
-    const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as string | undefined;
-    return sendToHost('DATA_SET', { scope, visibility, key, value, resourceId, boardId }) as Promise<void>;
+    const resourceId = (this.args[scope] as Record<string, unknown> | undefined)?.id as
+      | string
+      | undefined;
+    const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as
+      | string
+      | undefined;
+    return sendToHost('DATA_SET', {
+      scope,
+      visibility,
+      key,
+      value,
+      resourceId,
+      boardId,
+    }) as Promise<void>;
   }
 
   // ── Context reads ─────────────────────────────────────────────────
@@ -151,11 +173,21 @@ class FrameContext {
 
   // ── UI actions ────────────────────────────────────────────────────
 
-  popup(options: { title: string; url: string; args?: Record<string, unknown>; mouseEvent?: MouseEvent }): void {
+  popup(options: {
+    title: string;
+    url: string;
+    args?: Record<string, unknown>;
+    mouseEvent?: MouseEvent;
+  }): void {
     sendToHost('UI_POPUP', options);
   }
 
-  modal(options: { title?: string; url: string; fullscreen?: boolean; accentColor?: string }): void {
+  modal(options: {
+    title?: string;
+    url: string;
+    fullscreen?: boolean;
+    accentColor?: string;
+  }): void {
     sendToHost('UI_MODAL', options);
   }
 
@@ -173,9 +205,10 @@ class FrameContext {
 
   sizeTo(element: HTMLElement | string): void {
     const selector = typeof element === 'string' ? element : null;
-    const height = typeof element === 'string'
-      ? document.querySelector(element)?.scrollHeight ?? document.body.scrollHeight
-      : element.scrollHeight;
+    const height =
+      typeof element === 'string'
+        ? (document.querySelector(element)?.scrollHeight ?? document.body.scrollHeight)
+        : element.scrollHeight;
     sendToHost('UI_SIZE_TO', { height, selector });
   }
 
@@ -199,16 +232,43 @@ class RestApiClient {
     return sendToHost('API_IS_AUTHORIZED', {}) as Promise<boolean>;
   }
 
-  authorize(options: { scope?: string } = {}): Promise<void> {
+  authorize(options: { scope?: string; expiration?: string } = {}): Promise<void> {
     return sendToHost('API_AUTHORIZE', options) as Promise<void>;
   }
 
-  getToken(): Promise<string | null> {
-    return sendToHost('API_GET_TOKEN', {}) as Promise<string | null>;
+  // Return cached token if available, otherwise request a new one
+  async getToken(): Promise<string | null> {
+    if (cachedToken) {
+      return cachedToken;
+    }
+    const token = (await sendToHost('API_GET_TOKEN', {})) as string | null;
+    if (token) {
+      cachedToken = token;
+    }
+    return token;
   }
 
   request(path: string, options?: RequestInit): Promise<Response> {
     return sendToHost('API_REQUEST', { path, options }) as Promise<Response>;
+  }
+
+  // [Trello compatibility] Store token for use by window.Trello.setToken()
+  setToken(token: string | null): void {
+    cachedToken = token;
+    // When token is set, assume we have a valid member (use a placeholder ID)
+    // The actual member ID would come from the API authorization response
+    if (token) {
+      cachedMemberId = 'me';
+    } else {
+      cachedMemberId = null;
+    }
+  }
+
+  // [Trello compatibility] Clear cached token
+  clearToken(): Promise<void> {
+    cachedToken = null;
+    cachedMemberId = null;
+    return Promise.resolve();
   }
 }
 
@@ -224,7 +284,12 @@ window.addEventListener('message', async (event: MessageEvent) => {
   const data = event.data as PostMessageRequest & { capability?: string; options?: unknown };
   if (!data || !data.jhSdk || data.type !== 'CAPABILITY_INVOKE') return;
 
-  const { id, payload } = data as { jhSdk: true; id: string; type: string; payload: { capability: string; args?: Record<string, unknown>; options?: unknown } };
+  const { id, payload } = data as {
+    jhSdk: true;
+    id: string;
+    type: string;
+    payload: { capability: string; args?: Record<string, unknown>; options?: unknown };
+  };
   const { capability, args = {}, options } = payload;
 
   const handler = capabilityHandlers.get(capability);
@@ -235,13 +300,23 @@ window.addEventListener('message', async (event: MessageEvent) => {
     // Serialize callbacks so they survive the postMessage boundary
     const result = serializeResult(raw);
     window.parent.postMessage(
-      { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result } },
-      '*',
+      {
+        jhSdk: true,
+        id: nextId(),
+        type: 'RESOLVE_CAPABILITY_RESPONSE',
+        payload: { requestId: id, result },
+      },
+      '*'
     );
   } catch (err) {
     window.parent.postMessage(
-      { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result: null } },
-      '*',
+      {
+        jhSdk: true,
+        id: nextId(),
+        type: 'RESOLVE_CAPABILITY_RESPONSE',
+        payload: { requestId: id, result: null },
+      },
+      '*'
     );
   }
 });
@@ -249,10 +324,15 @@ window.addEventListener('message', async (event: MessageEvent) => {
 // Handle BUTTON_CLICKED — host dispatches this when a button registered by a plugin is clicked.
 // Look up the callback by its opaque ID and invoke it with a fresh FrameContext.
 window.addEventListener('message', async (event: MessageEvent) => {
-  const data = event.data as PostMessageRequest & { payload?: { callbackId?: string; args?: Record<string, unknown> } };
+  const data = event.data as PostMessageRequest & {
+    payload?: { callbackId?: string; args?: Record<string, unknown> };
+  };
   if (!data || !data.jhSdk || data.type !== 'BUTTON_CLICKED') return;
 
-  const { callbackId, args = {} } = (data.payload ?? {}) as { callbackId?: string; args?: Record<string, unknown> };
+  const { callbackId, args = {} } = (data.payload ?? {}) as {
+    callbackId?: string;
+    args?: Record<string, unknown>;
+  };
   if (!callbackId) return;
 
   const cb = callbackRegistry.get(callbackId);
@@ -281,10 +361,7 @@ const jhInstance = {
    * Register capability handlers and signal readiness to the host.
    * Call once in connector.html / client.js.
    */
-  initialize(
-    capabilities: Record<string, CapabilityHandler>,
-    config: JhInstanceConfig
-  ): void {
+  initialize(capabilities: Record<string, CapabilityHandler>, config: JhInstanceConfig): void {
     for (const [name, handler] of Object.entries(capabilities)) {
       capabilityHandlers.set(name, handler);
     }
@@ -328,6 +405,45 @@ const jhInstance = {
 };
 
 // ────────────────────────────────────────────────────────────────────
+// Trello compatibility object — window.Trello for Power-Up compatibility
+// ────────────────────────────────────────────────────────────────────
+
+const trelloCompat = {
+  /**
+   * [Trello compatibility] Set the token for future Trello API calls.
+   * Caches token in module scope so subsequent getToken() calls can reuse it.
+   */
+  setToken(token: string | null): void {
+    cachedToken = token;
+    if (token) {
+      cachedMemberId = 'me';
+    } else {
+      cachedMemberId = null;
+    }
+  },
+
+  /**
+   * [Trello compatibility] Namespace for member operations.
+   */
+  members: {
+    /**
+     * Get member info — returns cached member data if token was set,
+     * otherwise throws to indicate the token is not available.
+     */
+    get(_memberId: 'me'): Promise<{ id: string }> {
+      if (cachedMemberId && cachedToken) {
+        return Promise.resolve({
+          id: cachedMemberId,
+        });
+      }
+
+      // Throw if no token is cached — indicates authorization is required
+      return Promise.reject(new Error('No token available. Call t.getRestApi().authorize() first.'));
+    },
+  },
+};
+
+// ────────────────────────────────────────────────────────────────────
 // Attach to global scope — must run in browser context
 // ────────────────────────────────────────────────────────────────────
 
@@ -335,6 +451,7 @@ declare global {
   interface Window {
     jhInstance: typeof jhInstance;
     TrelloPowerUp: typeof jhInstance;
+    Trello: typeof trelloCompat;
   }
 }
 
@@ -342,3 +459,6 @@ window.jhInstance = jhInstance;
 
 // Compatibility shim: alias so existing TrelloPowerUp client.js files work unchanged
 window.TrelloPowerUp = jhInstance;
+
+// Trello compatibility: expose window.Trello for Power-Up client code
+window.Trello = trelloCompat;

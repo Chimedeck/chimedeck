@@ -114,6 +114,49 @@ type CustomFieldRow = {
   options?: Array<{ id: string; value?: string | { text?: string } | null; color?: string | null }> | string | null;
 };
 
+type PluginDataRow = {
+  plugin_id?: string | null;
+  scope?: string | null;
+  resource_id?: string | null;
+  board_id?: string | null;
+  user_id?: string | null;
+  value?: unknown;
+};
+
+type PluginDataVisibility = 'private' | 'shared' | 'public';
+
+function parsePluginDataValue(raw: unknown): unknown {
+  if (typeof raw !== 'string') return raw;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return raw;
+  }
+}
+
+function resolvePluginDataVisibility(row: PluginDataRow): PluginDataVisibility {
+  if (row.user_id) return 'private';
+
+  const parsed = parsePluginDataValue(row.value);
+  if (parsed && typeof parsed === 'object') {
+    const payload = parsed as Record<string, unknown>;
+    const scope = typeof payload.scope === 'string' ? payload.scope : undefined;
+    const visibility = typeof payload.visibility === 'string' ? payload.visibility : undefined;
+    const normalized = (scope ?? visibility)?.trim().toLowerCase();
+    if (normalized === 'public') return 'public';
+    if (normalized === 'shared') return 'shared';
+    if (normalized === 'private') return 'private';
+  }
+
+  return 'shared';
+}
+
+function toPluginDataValueString(raw: unknown): string | undefined {
+  if (raw === null || raw === undefined) return undefined;
+  if (typeof raw === 'string') return raw;
+  return JSON.stringify(raw);
+}
+
 function toBoolean(value: unknown, fallback = false): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value !== 0;
@@ -1289,6 +1332,28 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       value_option_id?: string | null;
     }>;
     return Response.json(values.map((row) => serializeCustomFieldItem(row, customFieldTypeById.get(row.custom_field_id))));
+  }
+
+  if (subPath === 'pluginData' && req.method === 'GET') {
+    const rows = await db('plugin_data').where({
+      scope: 'card',
+      resource_id: context.card.id,
+      board_id: context.board.id,
+    }) as PluginDataRow[];
+
+    const visibleRows = rows.filter((row) => {
+      const visibility = resolvePluginDataVisibility(row);
+      return visibility === 'shared' || visibility === 'public';
+    });
+
+    return Response.json(
+      visibleRows.map((row) => {
+        const value = toPluginDataValueString(row.value);
+        return value === undefined
+          ? { idPlugin: row.plugin_id ?? undefined }
+          : { idPlugin: row.plugin_id ?? undefined, value };
+      }),
+    );
   }
 
   if (subPath === 'attachments' && req.method === 'GET') {

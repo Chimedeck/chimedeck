@@ -108,11 +108,15 @@ export function usePluginBridge({
   // [why] JWT token cache keyed by boardId + pluginId — avoids a token round-trip on every DATA_GET/SET.
   // Tokens are valid for 1 h; we evict 5 min early to avoid clock-skew rejections.
   const pluginTokenCacheRef = useRef<Map<string, { token: string; expiresAt: number }>>(new Map());
+  // [why] Trello-compatible API token cache — tokens for /trello/1/* endpoints scoped per plugin + scope.
+  // Default TTL is 1 hour; we cache to avoid re-issuing on every API call.
+  const trelloTokenCacheRef = useRef<Map<string, { token: string; expiresAt: number }>>(new Map());
 
   // [why] Prevent cross-board token reuse when navigating between boards that
   // share the same plugin id in one SPA session.
   useEffect(() => {
     pluginTokenCacheRef.current.clear();
+    trelloTokenCacheRef.current.clear();
   }, [boardId]);
 
   // Derive allowed origins from active plugins
@@ -300,6 +304,130 @@ export function usePluginBridge({
     [extractContextFields, replyToSource],
   );
 
+  // Fetch (or return cached) a short-lived JWT for Trello-compatible API access.
+  // These tokens are used to call /trello/1/* endpoints with plugin authorization.
+  const getTrelloToken = useCallback(
+    async (
+      pluginId: string,
+      scope: string = 'read',
+      expirationSeconds: number = 3600,
+    ): Promise<string | null> => {
+      const cacheKey = `${boardId}:${pluginId}:${scope}`;
+      const cached = trelloTokenCacheRef.current.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) return cached.token;
+
+      try {
+        const resp = await apiClient.post<{ data: { token: string; expiresIn: number } }>(
+          `/boards/${boardId}/plugins/${pluginId}/trello-token`,
+          { scope, expirationSeconds },
+        );
+        const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
+        // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
+        trelloTokenCacheRef.current.set(cacheKey, {
+          token,
+          expiresAt: Date.now() + (expiresIn - 300) * 1000,
+        });
+        return token;
+      } catch {
+        return null;
+      }
+    },
+    [boardId],
+  );
+
+  // Handle API_AUTHORIZE — request Trello API authorization and cache the token.
+  const handleApiAuthorize = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & { payload: { scope?: string; expiration?: string } },
+      source: MessageEventSource | null,
+    ) => {
+      const { scope = 'read', expiration = '1hour' } = msg.payload;
+      // Map expiration string to seconds
+      const expirationSeconds = expiration === '30min' ? 1800 : 3600; // default 1hour
+      const token = await getTrelloToken(bp.plugin.id, scope, expirationSeconds);
+      const result = token ? undefined : null;
+      const response: SdkResponse = { jhSdk: true, id: msg.id, result };
+      if (!token) response.error = 'Failed to authorize Trello API access';
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [getTrelloToken, replyToSource],
+  );
+
+  // Handle API_GET_TOKEN — return cached Trello API token.
+  const handleApiGetToken = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage,
+      source: MessageEventSource | null,
+    ) => {
+      const token = await getTrelloToken(bp.plugin.id, 'read', 3600);
+      const response: SdkResponse = { jhSdk: true, id: msg.id, result: token ?? null };
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [getTrelloToken, replyToSource],
+  );
+
+  // Handle API_REQUEST — make an HTTP request using Trello API token.
+  const handleApiRequest = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & { payload: { path: string; options?: RequestInit } },
+      source: MessageEventSource | null,
+    ) => {
+      try {
+        const { path, options = {} } = msg.payload;
+        const token = await getTrelloToken(bp.plugin.id, 'read', 3600);
+        if (!token) {
+          const response: SdkResponse = {
+            jhSdk: true,
+            id: msg.id,
+            error: 'Failed to obtain Trello API token',
+          };
+          replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+          return;
+        }
+
+        // Construct full URL to Trello-compatible API
+        const trelloUrl = `${window.location.origin}/trello/1${path}`;
+        const headers = new Headers(options.headers || {});
+        headers.set('Authorization', `Bearer ${token}`);
+
+        const resp = await fetch(trelloUrl, {
+          ...options,
+          headers,
+        });
+
+        // Convert Response to serializable object
+        const contentType = resp.headers.get('content-type') || '';
+        let data: unknown;
+        if (contentType.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          data = await resp.text();
+        }
+
+        const result = {
+          status: resp.status,
+          statusText: resp.statusText,
+          headers: Object.fromEntries(resp.headers.entries()),
+          data,
+        };
+
+        const response: SdkResponse = { jhSdk: true, id: msg.id, result };
+        replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+      } catch (err) {
+        const response: SdkResponse = {
+          jhSdk: true,
+          id: msg.id,
+          error: err instanceof Error ? err.message : 'API request failed',
+        };
+        replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+      }
+    },
+    [getTrelloToken, replyToSource],
+  );
+
   // Handle RESOLVE_CAPABILITY_RESPONSE — plugin answered a capability request
   const handleCapabilityResponse = useCallback(
     (msg: SdkMessage & { payload: { requestId: string; result: unknown } }) => {
@@ -397,6 +525,27 @@ export function usePluginBridge({
           void handleDataSet(
             bp,
             data as SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
+            event.source,
+          );
+          break;
+        case 'API_AUTHORIZE':
+          void handleApiAuthorize(
+            bp,
+            data as SdkMessage & { payload: { scope?: string; expiration?: string } },
+            event.source,
+          );
+          break;
+        case 'API_GET_TOKEN':
+          void handleApiGetToken(
+            bp,
+            data,
+            event.source,
+          );
+          break;
+        case 'API_REQUEST':
+          void handleApiRequest(
+            bp,
+            data as SdkMessage & { payload: { path: string; options?: RequestInit } },
             event.source,
           );
           break;
@@ -508,7 +657,7 @@ export function usePluginBridge({
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, handleApiAuthorize, handleApiGetToken, handleApiRequest, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
 
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(

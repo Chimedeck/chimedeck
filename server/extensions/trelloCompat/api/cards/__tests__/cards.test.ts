@@ -19,6 +19,7 @@ type DataStore = {
   activities: Row[];
   custom_fields: Row[];
   card_custom_field_values: Row[];
+  plugin_data: Row[];
 };
 
 class QueryBuilder {
@@ -171,6 +172,48 @@ function createStore(): DataStore {
       },
     ],
     card_custom_field_values: [],
+    plugin_data: [
+      {
+        id: 'pd-shared-1',
+        plugin_id: 'plugin-card-size',
+        scope: 'card',
+        resource_id: 'card-1',
+        board_id: 'board-1',
+        user_id: null,
+        key: 'size',
+        value: '{"firstStageAmount":100,"secondStageAmount":250,"scope":"shared"}',
+      },
+      {
+        id: 'pd-public-1',
+        plugin_id: 'plugin-public',
+        scope: 'card',
+        resource_id: 'card-1',
+        board_id: 'board-1',
+        user_id: null,
+        key: 'public-data',
+        value: '{"scope":"public","plan":"starter"}',
+      },
+      {
+        id: 'pd-private-1',
+        plugin_id: 'plugin-private',
+        scope: 'card',
+        resource_id: 'card-1',
+        board_id: 'board-1',
+        user_id: 'user-admin',
+        key: 'secret',
+        value: '{"scope":"private","secret":true}',
+      },
+      {
+        id: 'pd-board-scope-1',
+        plugin_id: 'plugin-board-level',
+        scope: 'board',
+        resource_id: 'board-1',
+        board_id: 'board-1',
+        user_id: null,
+        key: 'ignored',
+        value: '{"scope":"shared","ignored":true}',
+      },
+    ],
   };
 }
 
@@ -354,6 +397,29 @@ describe('trelloCompat cards', () => {
     expect(items).toHaveLength(1);
     expect(items[0]?.idCustomField).toBe('cf-text-1');
     expect(items[0]?.value.text).toBe('hello');
+  });
+
+  it('GET /cards/{id}/pluginData returns shared/public values in Trello-compatible shape', async () => {
+    const req = new Request('http://localhost/trello/1/cards/card-1/pluginData', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer hf_admin_token' },
+    });
+
+    const res = await trelloCompatRouter(req, '/trello/1/cards/card-1/pluginData');
+    expect(res?.status).toBe(200);
+    const body = await res!.json() as Array<{ idPlugin?: string; value?: string }>;
+
+    expect(body).toHaveLength(2);
+    expect(body).toEqual([
+      {
+        idPlugin: 'plugin-card-size',
+        value: '{"firstStageAmount":100,"secondStageAmount":250,"scope":"shared"}',
+      },
+      {
+        idPlugin: 'plugin-public',
+        value: '{"scope":"public","plan":"starter"}',
+      },
+    ]);
   });
 
   it('returns Trello-style 422 when state transition enforcement blocks card move', async () => {
