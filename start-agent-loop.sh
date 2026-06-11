@@ -25,6 +25,14 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_AGENT_FILE="${SCRIPT_DIR}/.env.agent"
+
+if [[ -f "$ENV_AGENT_FILE" ]]; then
+  # Load custom Copilot provider/model exports before any CLI calls.
+  source "$ENV_AGENT_FILE"
+fi
+
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------

@@ -24,12 +24,14 @@ import type {
   StateTransitionWaypoint,
 } from '../../api';
 import ColumnNode from './ColumnNode';
+import ColumnPhaseEditor from '../ColumnPhaseEditor';
 import EdgeInspector from './EdgeInspector';
 import GraphEditorToolbar from './GraphEditorToolbar';
 import StickyNoteNode from './StickyNoteNode';
 import TransitionEdge from './TransitionEdge';
 import { useGraphEditorKeyboardShortcuts } from './keyboardShortcuts';
 import type { GraphEditorEdge, GraphEditorNode } from './useGraphEditor';
+import type { WorkflowPhase, PhaseConfig } from '../../api';
 import translations from '../../translations/en.json';
 
 const nodeTypes: NodeTypes = {
@@ -69,6 +71,9 @@ interface Props {
   onSelectAll: () => void;
   onEscape: () => void;
   selectedEdge: GraphEditorEdge | null;
+  // Sprint 172 — workflow phase editor for column nodes
+  selectedColumnNode: GraphEditorNode | null;
+  onColumnPhaseChange: (nodeId: string, phases: WorkflowPhase[], config: PhaseConfig) => void;
   editable: boolean;
 }
 
@@ -100,6 +105,8 @@ const GraphCanvas = ({
   onSelectAll,
   onEscape,
   selectedEdge,
+  selectedColumnNode,
+  onColumnPhaseChange,
   editable,
 }: Props) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -173,7 +180,11 @@ const GraphCanvas = ({
           if ((event.target as HTMLElement | null)?.closest('[data-edge-inspector="true"]')) {
             return;
           }
+          if ((event.target as HTMLElement | null)?.closest('[data-column-inspector="true"]')) {
+            return;
+          }
           onSelectEdge(null);
+          onEscape();
         }}
         connectionMode={ConnectionMode.Loose}
         fitView
@@ -241,6 +252,43 @@ const GraphCanvas = ({
             onSelectEdge(null);
           }}
         />
+      )}
+
+      {selectedColumnNode && !selectedEdge && (
+        <aside
+          data-column-inspector="true"
+          className="nodrag nopan pointer-events-auto absolute right-4 top-4 z-20 w-72 rounded-lg border border-border bg-bg-surface p-3 shadow-xl"
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-base">
+              {translations['StateTransitions.columnInspectorTitle'] ?? 'Column Phases'}
+            </h3>
+            <button
+              type="button"
+              aria-label={translations['StateTransitions.columnInspectorClose'] ?? 'Close'}
+              className="rounded p-1 text-muted hover:bg-bg-overlay hover:text-base"
+              onClick={() => {
+                onSelectEdge(null);
+                onEscape();
+              }}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <ColumnPhaseEditor
+            selectedPhases={(selectedColumnNode.data.workflowPhases as WorkflowPhase[] | undefined) ?? []}
+            phaseConfig={{
+              serviceTierOverride: (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.serviceTierOverride ?? null,
+              autoRun: (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.autoRun ?? false,
+              requiresHumanApproval: (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.requiresHumanApproval ?? true,
+            }}
+            onChange={(phases, config) => {
+              onColumnPhaseChange(selectedColumnNode.id, phases, config);
+            }}
+          />
+        </aside>
       )}
     </div>
   );

@@ -19,4 +19,14 @@ export const featureFlags = {
   get AI_CONTEXT_ENABLED() {
     return Bun.env['AI_CONTEXT_ENABLED'] === 'true';
   },
+  // [context] Per-feature switch for AI Edit Orchestrator (Sprint 175).
+  // Independent of AGENTIC_WORKFLOW_ENABLED for fine-grained control.
+  get AI_EDIT_ENABLED() {
+    return Bun.env['AI_EDIT_ENABLED'] === 'true';
+  },
+  // [context] Per-feature switch for Sprint Generation pipeline (Sprint 176).
+  // Independent of AGENTIC_WORKFLOW_ENABLED for fine-grained control.
+  get SPRINT_GENERATION_ENABLED() {
+    return Bun.env['SPRINT_GENERATION_ENABLED'] === 'true';
+  },
 } as const;

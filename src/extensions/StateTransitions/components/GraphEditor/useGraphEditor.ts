@@ -45,6 +45,9 @@ export interface GraphEditorNodeData extends Record<string, unknown>, StickyNote
   noteId?: string;
   noteContent?: string;
   isEditing?: boolean;
+  // Sprint 172 — workflow phase metadata from persisted graph
+  workflowPhases?: string[];
+  phaseConfig?: Record<string, Record<string, unknown>>;
 }
 
 export type GraphEditorNode = Node<GraphEditorNodeData, GraphEditorNodeType>;
@@ -181,6 +184,9 @@ const toReactFlowNodes = (lists: List[], graph: StateTransitionGraph | null): Gr
         data: {
           label: list.title,
           listId: list.id,
+          // Sprint 172 — carry workflow phase metadata from persisted graph node
+          workflowPhases: persisted?.workflowPhases,
+          phaseConfig: persisted?.phaseConfig,
         },
       };
     }),
@@ -191,13 +197,23 @@ const toReactFlowNodes = (lists: List[], graph: StateTransitionGraph | null): Gr
 const toGraphNodes = (nodes: GraphEditorNode[]): StateTransitionNode[] =>
   nodes
     .filter((node) => isColumnNode(node))
-    .map((node) => ({
-      id: node.id,
-      listId: node.data.listId ?? node.id,
-      label: node.data.label ?? '',
-      positionX: Math.round(node.position.x),
-      positionY: Math.round(node.position.y),
-    }));
+    .map((node) => {
+      const nodeData: StateTransitionNode = {
+        id: node.id,
+        listId: node.data.listId ?? node.id,
+        label: node.data.label ?? '',
+        positionX: Math.round(node.position.x),
+        positionY: Math.round(node.position.y),
+      };
+      // Sprint 172 — carry workflow phase metadata back to API payload
+      if (node.data.workflowPhases !== undefined && Array.isArray(node.data.workflowPhases) && node.data.workflowPhases.length > 0) {
+        nodeData.workflowPhases = node.data.workflowPhases;
+      }
+      if (node.data.phaseConfig !== undefined && Object.keys(node.data.phaseConfig).length > 0) {
+        nodeData.phaseConfig = node.data.phaseConfig;
+      }
+      return nodeData;
+    });
 
 const toGraphNotes = (nodes: GraphEditorNode[]): StateTransitionNote[] =>
   nodes
@@ -786,6 +802,19 @@ export const useGraphEditor = ({
     setSelectedEdgeId(edgeId);
   }, []);
 
+  // Sprint 172 — update a single column node's data (workflowPhases/phaseConfig)
+  // and mark the graph dirty so the save button activates.
+  const setNodeData = useCallback((nodeId: string, dataPatch: Partial<GraphEditorNodeData>) => {
+    setNodes((current) => {
+      const next = current.map((node) =>
+        node.id === nodeId ? { ...node, data: { ...node.data, ...dataPatch } } : node,
+      );
+      nodesRef.current = next;
+      persistDebounced(next, edgesRef.current);
+      return next;
+    });
+  }, [persistDebounced]);
+
   const onSelectionChange = useCallback((selection: { nodes: GraphEditorNode[]; edges: GraphEditorEdge[] }) => {
     setSelectedNodeIds(selection.nodes.map((node) => node.id));
     setSelectedEdgeIds(selection.edges.map((edge) => edge.id));
@@ -972,6 +1001,8 @@ export const useGraphEditor = ({
     selectedEdges,
     selectEdge,
     updateEdge,
+    setNodeData,
+    selectedColumnNode: selectedNodes.find(isColumnNode) ?? null,
     previewEdgeOffset,
     commitEdgeOffset,
     previewEdgeWaypoints,

@@ -53,7 +53,7 @@ import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectInnerCardChatEnabled } from '~/slices/featureFlagsSlice';
-import { startCardChatSession, type CardChatSession } from '../../../CardChat/api';
+import { startCardChatSession, resumeCardChatSession, getCardChatSession, type CardChatSession } from '../../../CardChat/api';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
 import { printCard } from '../../utils/printCard';
@@ -265,15 +265,40 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   }, []);
 
   // ── Card Chat / AI Assist ──────────────────────────────────────────────
+  // [why] Check for an existing session first — if one exists in IDLE or PAUSED
+  // state, resume it instead of creating a new session. This preserves the
+  // refinement history and avoids losing context.
   const handleChatStart = useCallback(async () => {
     if (!cardId || chatStarting) return;
     setChatStarting(true);
     try {
-      const { data: session } = await startCardChatSession({
-        api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
+      // [why] GET /chat returns the current session (or null if none).
+      const existing = await getCardChatSession({
+        api: apiClient as { get: <T>(url: string) => Promise<T> },
         cardId,
       });
-      setChatSession(session);
+      const existingSession = existing?.data?.session;
+
+      if (existingSession && (existingSession.status === 'IDLE' || existingSession.status === 'PAUSED')) {
+        // [why] Resume the existing session rather than starting a new one.
+        const { data: resumed } = await resumeCardChatSession({
+          api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
+          cardId,
+          sessionId: existingSession.id,
+        });
+        setChatSession(resumed);
+      } else if (existingSession && existingSession.status === 'ACTIVE_REFINEMENT') {
+        // [why] Session is already active — just open the drawer with it.
+        setChatSession(existingSession);
+      } else {
+        // No existing session or session is terminal (READY_FOR_REVIEW) —
+        // start a new one.
+        const { data: session } = await startCardChatSession({
+          api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
+          cardId,
+        });
+        setChatSession(session);
+      }
       setChatDrawerOpen(true);
     } catch {
       // [why] Silently fail — the button is gated by feature flag so server

@@ -64,6 +64,9 @@ export function serializeGraph(graph: StateTransitionGraph): StateTransitionGrap
       label: node.label,
       positionX: node.positionX,
       positionY: node.positionY,
+      // Sprint 172 — preserve workflow phase metadata on nodes
+      ...(node.workflowPhases === undefined ? {} : { workflowPhases: node.workflowPhases }),
+      ...(node.phaseConfig === undefined ? {} : { phaseConfig: node.phaseConfig }),
     })),
     edges: graph.edges.map((edge) => ({
       id: edge.id,

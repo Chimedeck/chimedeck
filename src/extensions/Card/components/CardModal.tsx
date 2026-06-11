@@ -18,6 +18,8 @@ import CardPluginSection from '../../Plugins/uiInjections/CardPluginSection';
 import CustomFieldsSection from '../../CustomFields/CustomFieldsSection';
 import { AttachmentPanel } from '../../Attachments/components/AttachmentPanel';
 import { useAttachmentUpload } from '../../Attachments/hooks/useAttachmentUpload';
+import CardChatDrawer from '../../CardChat/components/CardChatDrawer';
+import type { CardChatSession } from '../../CardChat/api';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
@@ -93,6 +95,21 @@ interface Props {
   onAttachmentCountChange?: (counts: { fileCount: number; linkedCardCount: number }) => void;
   /** True when the current user is a VIEWER guest — hides write-action controls. */
   isViewerGuest?: boolean;
+  /** AI Assist card-chat state. */
+  innerCardChatEnabled?: boolean;
+  chatDrawerOpen?: boolean;
+  chatSession?: CardChatSession | null;
+  onChatStart?: () => void;
+  onChatClose?: () => void;
+  // Sprint 176 — rich event renderer callbacks
+  /** Callback when a file path in a diff summary is clicked. */
+  onFileClick?: (path: string) => void;
+  /** Callback for approve action on sprint generation / as-built sync runs. */
+  onApprove?: (runId: string) => void | Promise<void>;
+  /** Callback for re-run action on AI edit runs. */
+  onRerun?: (runId: string) => void | Promise<void>;
+  /** Callback for edit action on AI edit runs. */
+  onEdit?: (runId: string) => void | Promise<void>;
 }
 
 const COVER_COLORS = [
@@ -170,6 +187,15 @@ const CardModal = ({
   onCoverAttachmentChange,
   onAttachmentCountChange,
   isViewerGuest = false,
+  innerCardChatEnabled = false,
+  chatDrawerOpen = false,
+  chatSession = null,
+  onChatStart,
+  onChatClose,
+  onFileClick,
+  onApprove,
+  onRerun,
+  onEdit,
 }: Props) => {
   const isReadOnly = card.archived;
   const canEditCover = !isReadOnly && !isViewerGuest;
@@ -560,6 +586,10 @@ const CardModal = ({
                       canAddComment={!isViewerGuest}
                       onAttachmentsChange={handleEditorAttachmentsChange}
                       insertMarkdownRef={insertMarkdownRef}
+                      onFileClick={onFileClick}
+                      onApprove={onApprove}
+                      onRerun={onRerun}
+                      onEdit={onEdit}
                     />
                   </div>
                 }
@@ -643,6 +673,7 @@ const CardModal = ({
               archived={card.archived}
               disabled={isReadOnly}
               activityVisible={activityVisible}
+              innerCardChatEnabled={innerCardChatEnabled}
               onToggleActivity={() => setActivityVisible((v) => !v)}
               onArchive={onArchive}
               onDelete={onDelete}
@@ -650,9 +681,19 @@ const CardModal = ({
               onCopyCard={onCopyCard}
               onMoveCard={onMoveCard}
               onPrint={onPrint}
+              onAIAssist={onChatStart}
             />
           </div>
         </Dialog.Content>
+
+        {/* Card Chat Drawer — rendered inside Portal so it layers above the modal */}
+        {chatDrawerOpen && chatSession && (
+          <CardChatDrawer
+            cardId={card.id}
+            session={chatSession}
+            onClose={() => onChatClose?.()}
+          />
+        )}
       </Dialog.Portal>
     </Dialog.Root>
   );

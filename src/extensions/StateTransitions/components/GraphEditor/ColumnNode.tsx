@@ -1,6 +1,7 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Squares2X2Icon } from '@heroicons/react/24/outline';
 import type { GraphEditorNode } from './useGraphEditor';
+import PhaseChip from '../PhaseChip';
 
 const sourceHandleClass = 'h-4 w-4 rounded-full border-2 border-neutral-300 bg-white dark:border-neutral-600 dark:bg-neutral-800';
 const targetHandleClass = 'h-4 w-4 rounded-full border-0 bg-transparent opacity-0';
@@ -34,6 +35,16 @@ const ColumnNode = ({ data }: NodeProps<GraphEditorNode>) => {
           {data.label}
         </span>
       </div>
+      {/** Sprint 172 — render workflow phase chips if configured on this column */}
+      {data.workflowPhases !== undefined && (
+        Array.isArray(data.workflowPhases) && data.workflowPhases.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {data.workflowPhases.map((phase) => (
+              <PhaseChip key={phase} phase={phase} />
+            ))}
+          </div>
+        )
+      )}
     </div>
   );
 };

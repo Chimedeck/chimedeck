@@ -16,6 +16,9 @@ import { listRouter } from './extensions/list/api/index';
 import { cardRouter } from './extensions/card/api/index';
 import { cardChatRouter } from './extensions/cardChat/api/index';
 import { aiContextRouter } from './extensions/aiContext/api/index';
+import { aiEditOrchestratorRouter } from './extensions/aiEditOrchestrator/api/index';
+import { sprintGenerationRouter } from './extensions/sprintGeneration/api/index';
+import { asBuiltSyncRouter } from './extensions/asBuiltSync/api/index';
 import { labelRouter } from './extensions/label/api/index';
 import { handleWsUpgrade, wsHandlers } from './extensions/realtime/api/index';
 import { handlePropagationPing } from './extensions/realtime/api/metrics';
@@ -130,6 +133,10 @@ async function router(req: Request): Promise<Response> {
     const githubEditingEnabled = await flags.isEnabled('GITHUB_EDITING_ENABLED');
     const innerCardChatEnabled = await flags.isEnabled('INNER_CARD_CHAT_ENABLED');
     const agenticWorkflowEnabled = await flags.isEnabled('AGENTIC_WORKFLOW_ENABLED');
+    const aiContextEnabled = await flags.isEnabled('AI_CONTEXT_ENABLED');
+    const aiEditEnabled = await flags.isEnabled('AI_EDIT_ENABLED');
+    const sprintGenerationEnabled = await flags.isEnabled('SPRINT_GENERATION_ENABLED');
+    const asBuiltSyncEnabled = await flags.isEnabled('AS_BUILT_SYNC_ENABLED');
     return Response.json({
       data: {
         sesEnabled,
@@ -147,6 +154,10 @@ async function router(req: Request): Promise<Response> {
         githubEditingEnabled,
         innerCardChatEnabled,
         agenticWorkflowEnabled,
+        aiContextEnabled,
+        aiEditEnabled,
+        sprintGenerationEnabled,
+        asBuiltSyncEnabled,
       },
     });
   }
@@ -208,6 +219,24 @@ async function router(req: Request): Promise<Response> {
   // label router to avoid conflicts.
   const aiContextResponse = await aiContextRouter(req, path);
   if (aiContextResponse) return aiContextResponse;
+
+  // AI Edit Orchestrator routes — match /api/v1/cards/:cardId/ai/edit.
+  // [why] Placed after aiContext (same /ai/ prefix) and before label router
+  // to avoid route conflicts.
+  const aiEditResponse = await aiEditOrchestratorRouter(req, path);
+  if (aiEditResponse) return aiEditResponse;
+
+  // Sprint generation routes — match /api/v1/cards/:cardId/sprint/generate.
+  // [why] Placed after aiEditOrchestrator and before label router to avoid
+  // route conflicts.
+  const sprintGenResponse = await sprintGenerationRouter(req, path);
+  if (sprintGenResponse) return sprintGenResponse;
+
+  // As-Built Sync routes — match /api/v1/cards/:cardId/as-built/sync.
+  // [why] Placed after sprintGeneration (same card-scoped path prefix) and
+  // before label router to avoid route conflicts.
+  const asBuiltSyncResponse = await asBuiltSyncRouter(req, path);
+  if (asBuiltSyncResponse) return asBuiltSyncResponse;
 
   const labelResponse = await labelRouter(req, path);
   if (labelResponse) return labelResponse;

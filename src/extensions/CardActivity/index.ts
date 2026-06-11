@@ -4,5 +4,5 @@
 // diffs, artifact links, approve/re-run controls) that need richer UI.
 // This extension provides event-type-aware renderers that slot into
 // the existing ActivityFeed in CardModal.
-export { ActivityEventRenderer } from './components/ActivityEventRenderer';
+export { ActivityEventRenderer, isRichEventType } from './components/ActivityEventRenderer';
 export type { ActivityEventRendererProps } from './components/ActivityEventRenderer';

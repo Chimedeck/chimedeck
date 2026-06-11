@@ -20,4 +20,7 @@ export const defaults: Record<string, boolean> = {
   INNER_CARD_CHAT_ENABLED: false,
   AGENTIC_WORKFLOW_ENABLED: false,
   AI_CONTEXT_ENABLED: false,
+  AI_EDIT_ENABLED: false,
+  SPRINT_GENERATION_ENABLED: false,
+  AS_BUILT_SYNC_ENABLED: false,
 };

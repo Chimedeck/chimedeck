@@ -36,6 +36,8 @@ interface FeatureFlagsState {
   agenticWorkflowEnabled: boolean;
   // Whether AI context gathering (gather + file-scope) is enabled
   aiContextEnabled: boolean;
+  // Whether AI edit orchestrator (Sprint 175) is enabled
+  aiEditEnabled: boolean;
   status: 'idle' | 'loading' | 'ready' | 'error';
 }
 
@@ -57,6 +59,7 @@ const initialState: FeatureFlagsState = {
   innerCardChatEnabled: false,
   agenticWorkflowEnabled: false,
   aiContextEnabled: false,
+  aiEditEnabled: false,
   status: 'idle',
 };
 
@@ -81,6 +84,7 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
             innerCardChatEnabled?: boolean;
             agenticWorkflowEnabled?: boolean;
             aiContextEnabled?: boolean;
+            aiEditEnabled?: boolean;
           };
         }
         | {
@@ -98,6 +102,7 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
           innerCardChatEnabled?: boolean;
           agenticWorkflowEnabled?: boolean;
           aiContextEnabled?: boolean;
+          aiEditEnabled?: boolean;
         }
       >('/flags');
 
@@ -124,6 +129,7 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
         innerCardChatEnabled?: boolean;
         agenticWorkflowEnabled?: boolean;
         aiContextEnabled?: boolean;
+        aiEditEnabled?: boolean;
       };
     } catch {
       return rejectWithValue('flags-fetch-failed');
@@ -156,6 +162,7 @@ const featureFlagsSlice = createSlice({
         state.innerCardChatEnabled = payload.innerCardChatEnabled ?? false;
         state.agenticWorkflowEnabled = payload.agenticWorkflowEnabled ?? false;
         state.aiContextEnabled = payload.aiContextEnabled ?? false;
+        state.aiEditEnabled = payload.aiEditEnabled ?? false;
         state.status = 'ready';
       })
       .addCase(fetchFeatureFlagsThunk.rejected, (state) => {
@@ -195,5 +202,7 @@ export const selectAgenticWorkflowEnabled = (state: RootState) =>
   state.featureFlags.agenticWorkflowEnabled;
 export const selectAiContextEnabled = (state: RootState) =>
   state.featureFlags.aiContextEnabled;
+export const selectAiEditEnabled = (state: RootState) =>
+  state.featureFlags.aiEditEnabled;
 export const selectFeatureFlagsStatus = (state: RootState) =>
   state.featureFlags.status;

@@ -1,5 +1,6 @@
 import { publisher } from '../../../mods/pubsub/publisher';
 import { invalidateRulesCacheFromStateTransitionEvent } from '../enforcement/rules';
+import { invalidatePhaseCacheFromStateTransitionEvent } from '../mods/phaseResolver';
 import type { StateTransitionGraph, StateTransitionUpdatedEvent } from './types';
 
 type BroadcastStateTransitionUpdatedInput = {
@@ -28,6 +29,8 @@ export async function broadcastStateTransitionUpdated({
     timestamp: new Date(updatedAt).toISOString(),
   };
 
+  // [why] Invalidate caches BEFORE publishing so WS receivers read fresh data.
   invalidateRulesCacheFromStateTransitionEvent(payload);
+  invalidatePhaseCacheFromStateTransitionEvent(payload);
   await publisher.publish(boardId, JSON.stringify(payload));
 }

@@ -11,7 +11,8 @@ export type BooleanFeatureKey =
   | 'plugins'
   | 'customFields'
   | 'apiTokens'
-  | 'stateTransitions';
+  | 'stateTransitions'
+  | 'agenticWorkflow';
 
 export type BooleanFeatures = Record<BooleanFeatureKey, boolean>;
 
@@ -69,6 +70,7 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
       customFields: false,
       apiTokens: false,
       stateTransitions: false,
+      agenticWorkflow: false,
     },
   },
 
@@ -91,6 +93,7 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
       customFields: true,
       apiTokens: true,
       stateTransitions: true,
+      agenticWorkflow: false,
     },
   },
 
@@ -113,6 +116,7 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
       customFields: true,
       apiTokens: true,
       stateTransitions: true,
+      agenticWorkflow: false,
     },
   },
 
@@ -135,6 +139,7 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
       customFields: true,
       apiTokens: true,
       stateTransitions: true,
+      agenticWorkflow: true,
     },
   },
 
@@ -157,6 +162,7 @@ export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
       customFields: true,
       apiTokens: true,
       stateTransitions: true,
+      agenticWorkflow: true,
     },
   },
 };

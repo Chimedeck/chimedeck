@@ -156,6 +156,8 @@ const GraphEditor = ({
     selectedEdges,
     selectEdge,
     updateEdge,
+    setNodeData,
+    selectedColumnNode,
     previewEdgeOffset,
     commitEdgeOffset,
     previewEdgeWaypoints,
@@ -423,6 +425,10 @@ const GraphEditor = ({
                 onSelectAll={selectAllElements}
                 onEscape={clearSelection}
                 selectedEdge={selectedEdge}
+                selectedColumnNode={selectedColumnNode}
+                onColumnPhaseChange={(nodeId, phases, config) => {
+                  setNodeData(nodeId, { workflowPhases: phases, phaseConfig: config });
+                }}
                 editable={editable && !isError && activeModal === null}
               />
             </ReactFlowProvider>

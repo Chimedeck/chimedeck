@@ -12,6 +12,7 @@ import {
   LinkIcon,
   PrinterIcon,
   PuzzlePieceIcon,
+  SparklesIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { Bars3Icon } from '@heroicons/react/24/solid';
@@ -30,6 +31,7 @@ interface Props {
   archived: boolean;
   disabled?: boolean;
   activityVisible: boolean;
+  innerCardChatEnabled?: boolean;
   onToggleActivity: () => void;
   onArchive: () => Promise<void>;
   onDelete: () => Promise<void>;
@@ -37,6 +39,7 @@ interface Props {
   onCopyCard: () => void;
   onMoveCard: () => void;
   onPrint: () => void;
+  onAIAssist?: () => void;
 }
 
 // ------------------------------------------------------------------
@@ -81,6 +84,7 @@ const CardModalBottomBar = ({
   archived,
   disabled,
   activityVisible,
+  innerCardChatEnabled,
   onToggleActivity,
   onArchive,
   onDelete,
@@ -88,6 +92,7 @@ const CardModalBottomBar = ({
   onCopyCard,
   onMoveCard,
   onPrint,
+  onAIAssist,
 }: Props) => {
   const powerUps = usePopover();
   const automations = usePopover();
@@ -161,6 +166,20 @@ const CardModalBottomBar = ({
           </button>
           {actions.open && (
             <div className="absolute bottom-full left-0 mb-1 z-10 w-52 rounded-xl bg-bg-surface border border-border shadow-lg p-2">
+              {/* AI Assist — gated by feature flag */}
+              {innerCardChatEnabled && onAIAssist && (
+                <>
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
+                    onClick={() => { actions.setOpen(false); onAIAssist(); }}
+                  >
+                    <SparklesIcon className="w-4 h-4 shrink-0 text-blue-500" />
+                    AI Assist
+                  </button>
+                  <div className="border-t border-border my-1" />
+                </>
+              )}
               <button
                 type="button"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"

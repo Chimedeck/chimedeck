@@ -43,6 +43,11 @@ export const FEATURE_KEYS = {
     readPerMinute: 'ratelimit:read-per-minute',
     writePerMinute: 'ratelimit:write-per-minute',
   },
+
+  // Agentic workflow phases (Sprint 173)
+  phase: {
+    agenticWorkflow: 'phase:agentic-workflow',
+  },
 } as const;
 
 // Flat list of all feature keys for validation

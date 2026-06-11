@@ -488,3 +488,3412 @@ Taken directly from [requirements §14](../architecture/requirements.md):
 - [ ] Lighthouse Performance ≥ 80 and Accessibility ≥ 90 on board page
 - [ ] All modals are keyboard-accessible and closeable with `Escape`
 - [ ] No `console.error` during normal usage flows
+
+### Sprint 1: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-1.md](./sprint-1.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 2: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-2.md](./sprint-2.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 3: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-3.md](./sprint-3.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 4: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-4.md](./sprint-4.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 5: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-5.md](./sprint-5.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 6: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 7: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 8: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 9: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-9.md](./sprint-9.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 10: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-10.md](./sprint-10.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 11: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-11.md](./sprint-11.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 12: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-12.md](./sprint-12.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 13: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-13.md](./sprint-13.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 14: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-14.md](./sprint-14.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 15: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-15.md](./sprint-15.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 16: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-16.md](./sprint-16.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 17: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-17.md](./sprint-17.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 18: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-18.md](./sprint-18.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 19: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-19.md](./sprint-19.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 20: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-20.md](./sprint-20.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 21: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-21.md](./sprint-21.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 22: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-22.md](./sprint-22.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 23: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-23.md](./sprint-23.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 24: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-24.md](./sprint-24.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 25: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-25.md](./sprint-25.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 26: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-26.md](./sprint-26.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 27: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-27.md](./sprint-27.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 28: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-28.md](./sprint-28.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 29: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-29.md](./sprint-29.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 30: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-30.md](./sprint-30.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 31: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-31.md](./sprint-31.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 32: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-32.md](./sprint-32.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 33: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-33.md](./sprint-33.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 34: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-34.md](./sprint-34.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 35: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-35.md](./sprint-35.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 36: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-36.md](./sprint-36.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 37: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-37.md](./sprint-37.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 38: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-38.md](./sprint-38.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 39: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-39.md](./sprint-39.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 40: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-40.md](./sprint-40.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 41: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-41.md](./sprint-41.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 42: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-42.md](./sprint-42.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 43: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-43.md](./sprint-43.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 44: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-44.md](./sprint-44.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 45: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-45.md](./sprint-45.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 46: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-46.md](./sprint-46.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 47: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-47.md](./sprint-47.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 48: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-48.md](./sprint-48.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 49: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-49.md](./sprint-49.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 50: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-50.md](./sprint-50.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 51: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-51.md](./sprint-51.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 52: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-52.md](./sprint-52.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 53: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-53.md](./sprint-53.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 54: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-54.md](./sprint-54.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 55: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-55.md](./sprint-55.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 56: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-56.md](./sprint-56.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 57: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-57.md](./sprint-57.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 58: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-58.md](./sprint-58.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 59: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-59.md](./sprint-59.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 60: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-60.md](./sprint-60.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 61: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-61.md](./sprint-61.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 62: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-62.md](./sprint-62.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 63: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-63.md](./sprint-63.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 64: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-64.md](./sprint-64.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 65: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-65.md](./sprint-65.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 66: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-66.md](./sprint-66.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 67: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-67.md](./sprint-67.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 68: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-68.md](./sprint-68.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 69: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-69.md](./sprint-69.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 70: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-70.md](./sprint-70.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 71: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-71.md](./sprint-71.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 72: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-72.md](./sprint-72.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 73: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-73.md](./sprint-73.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 74: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-74.md](./sprint-74.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 75: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-75.md](./sprint-75.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 76: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-76.md](./sprint-76.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 77: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-77.md](./sprint-77.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 78: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-78.md](./sprint-78.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 79: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-79.md](./sprint-79.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 80: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-80.md](./sprint-80.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 81: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-81.md](./sprint-81.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 82: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-82.md](./sprint-82.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 83: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-83.md](./sprint-83.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 84: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-84.md](./sprint-84.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 85: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-85.md](./sprint-85.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 86: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-86.md](./sprint-86.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 87: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-87.md](./sprint-87.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 88: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-88.md](./sprint-88.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 89: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-89.md](./sprint-89.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 90: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-90.md](./sprint-90.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 91: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-91.md](./sprint-91.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 92: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-92.md](./sprint-92.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 93: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-93.md](./sprint-93.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 94: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-94.md](./sprint-94.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 95: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-95.md](./sprint-95.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 96: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-96.md](./sprint-96.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 97: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-97.md](./sprint-97.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 98: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-98.md](./sprint-98.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 99: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-99.md](./sprint-99.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 100: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-100.md](./sprint-100.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 101: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-101.md](./sprint-101.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 102: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-102.md](./sprint-102.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 103: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-103.md](./sprint-103.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 104: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-104.md](./sprint-104.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 105: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-105.md](./sprint-105.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 106: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-106.md](./sprint-106.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 107: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-107.md](./sprint-107.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 108: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-108.md](./sprint-108.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 109: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-109.md](./sprint-109.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 110: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-110.md](./sprint-110.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 111: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-111.md](./sprint-111.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 112: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-112.md](./sprint-112.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 113: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-113.md](./sprint-113.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 114: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-114.md](./sprint-114.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 115: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-115.md](./sprint-115.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 116: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-116.md](./sprint-116.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 117: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-117.md](./sprint-117.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 118: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-118.md](./sprint-118.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 119: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-119.md](./sprint-119.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 120: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-120.md](./sprint-120.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 121: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-121.md](./sprint-121.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 122: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-122.md](./sprint-122.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 123: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-123.md](./sprint-123.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 124: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-124.md](./sprint-124.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 125: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-125.md](./sprint-125.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 126: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-126.md](./sprint-126.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 127: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-127.md](./sprint-127.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 128: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-128.md](./sprint-128.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 129: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-129.md](./sprint-129.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 130: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-130.md](./sprint-130.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 131: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-131.md](./sprint-131.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 132: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-132.md](./sprint-132.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 133: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-133.md](./sprint-133.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 134: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-134.md](./sprint-134.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 135: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-135.md](./sprint-135.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 136: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-136.md](./sprint-136.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 137: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-137.md](./sprint-137.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 138: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-138.md](./sprint-138.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 139: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-139.md](./sprint-139.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 140: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-140.md](./sprint-140.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 141: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-141.md](./sprint-141.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 142: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-142.md](./sprint-142.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 143: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-143.md](./sprint-143.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 144: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-144.md](./sprint-144.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 145: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-145.md](./sprint-145.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 146: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-146.md](./sprint-146.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 147: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-147.md](./sprint-147.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 148: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-148.md](./sprint-148.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 149: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-149.md](./sprint-149.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 150: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-150.md](./sprint-150.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 151: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-151.md](./sprint-151.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 152: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-152.md](./sprint-152.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 153: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-153.md](./sprint-153.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 154: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-154.md](./sprint-154.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 155: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-155.md](./sprint-155.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 156: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-156.md](./sprint-156.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 157: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-157.md](./sprint-157.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 158: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-158.md](./sprint-158.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 159: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-159.md](./sprint-159.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 160: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-160.md](./sprint-160.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 161: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-161.md](./sprint-161.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 162: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-162.md](./sprint-162.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 163: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-163.md](./sprint-163.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 164: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-164.md](./sprint-164.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 165: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-165.md](./sprint-165.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 166: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-166.md](./sprint-166.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 167: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-167.md](./sprint-167.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 168: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-168.md](./sprint-168.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 169: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-169.md](./sprint-169.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 170: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-170.md](./sprint-170.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 171: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-171.md](./sprint-171.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 172: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-172.md](./sprint-172.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 173: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-173.md](./sprint-173.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 174: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-174.md](./sprint-174.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 175: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-175.md](./sprint-175.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 176: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-176.md](./sprint-176.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 177: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-177.md](./sprint-177.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 178: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-178.md](./sprint-178.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 179: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-179.md](./sprint-179.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 180: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-180.md](./sprint-180.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 181: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-181.md](./sprint-181.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 182: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-182.md](./sprint-182.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 183: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-183.md](./sprint-183.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 184: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-184.md](./sprint-184.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 185: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-185.md](./sprint-185.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 186: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-186.md](./sprint-186.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 187: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-187.md](./sprint-187.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 188: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-188.md](./sprint-188.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 189: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-189.md](./sprint-189.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 190: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-190.md](./sprint-190.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 191: undefined
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-191.md](./sprint-191.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 192: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-192.md](./sprint-192.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 193: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-193.md](./sprint-193.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 194: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-194.md](./sprint-194.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 195: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-195.md](./sprint-195.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 196: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-196.md](./sprint-196.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 197: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-197.md](./sprint-197.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 6: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-6.md](./sprint-6.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 7: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-7.md](./sprint-7.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 8: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-8.md](./sprint-8.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 198: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-198.md](./sprint-198.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 199: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-199.md](./sprint-199.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 200: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-200.md](./sprint-200.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 201: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-201.md](./sprint-201.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 202: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-202.md](./sprint-202.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 203: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-203.md](./sprint-203.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 204: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-204.md](./sprint-204.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 205: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-205.md](./sprint-205.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 206: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-206.md](./sprint-206.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 207: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-207.md](./sprint-207.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 208: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-208.md](./sprint-208.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 209: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-209.md](./sprint-209.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 210: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-210.md](./sprint-210.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 211: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-211.md](./sprint-211.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 212: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-212.md](./sprint-212.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 213: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-213.md](./sprint-213.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 214: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-214.md](./sprint-214.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 215: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-215.md](./sprint-215.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 216: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-216.md](./sprint-216.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 217: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-217.md](./sprint-217.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 218: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-218.md](./sprint-218.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 219: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-219.md](./sprint-219.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 220: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-220.md](./sprint-220.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 221: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-221.md](./sprint-221.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 222: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-222.md](./sprint-222.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 223: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-223.md](./sprint-223.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 224: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-224.md](./sprint-224.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 225: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-225.md](./sprint-225.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 226: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-226.md](./sprint-226.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 227: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-227.md](./sprint-227.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 228: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-228.md](./sprint-228.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 229: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-229.md](./sprint-229.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 230: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-230.md](./sprint-230.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 231: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-231.md](./sprint-231.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 232: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-232.md](./sprint-232.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 233: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-233.md](./sprint-233.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 234: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-234.md](./sprint-234.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 235: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-235.md](./sprint-235.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 236: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-236.md](./sprint-236.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 237: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-237.md](./sprint-237.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 238: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-238.md](./sprint-238.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 239: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-239.md](./sprint-239.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 240: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-240.md](./sprint-240.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 241: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-241.md](./sprint-241.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 242: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-242.md](./sprint-242.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 243: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-243.md](./sprint-243.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 244: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-244.md](./sprint-244.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 245: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-245.md](./sprint-245.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 246: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-246.md](./sprint-246.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 247: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-247.md](./sprint-247.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 248: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-248.md](./sprint-248.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 249: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-249.md](./sprint-249.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 250: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-250.md](./sprint-250.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 251: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-251.md](./sprint-251.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 252: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-252.md](./sprint-252.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 253: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-253.md](./sprint-253.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 254: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-254.md](./sprint-254.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 255: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-255.md](./sprint-255.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 256: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-256.md](./sprint-256.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 257: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-257.md](./sprint-257.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 258: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-258.md](./sprint-258.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 259: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-259.md](./sprint-259.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 260: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-260.md](./sprint-260.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 261: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-261.md](./sprint-261.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 262: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-262.md](./sprint-262.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 263: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-263.md](./sprint-263.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 264: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-264.md](./sprint-264.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 265: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-265.md](./sprint-265.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 266: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-266.md](./sprint-266.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 267: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-267.md](./sprint-267.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 268: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-268.md](./sprint-268.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 269: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-269.md](./sprint-269.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 270: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-270.md](./sprint-270.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 271: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-271.md](./sprint-271.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 272: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-272.md](./sprint-272.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 273: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-273.md](./sprint-273.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 274: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-274.md](./sprint-274.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 275: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-275.md](./sprint-275.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 276: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-276.md](./sprint-276.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 277: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-277.md](./sprint-277.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 278: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-278.md](./sprint-278.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 279: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-279.md](./sprint-279.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 280: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-280.md](./sprint-280.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 281: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-281.md](./sprint-281.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 282: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-282.md](./sprint-282.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 283: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-283.md](./sprint-283.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 284: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-284.md](./sprint-284.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 285: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-285.md](./sprint-285.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 286: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-286.md](./sprint-286.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 287: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-287.md](./sprint-287.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 288: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-288.md](./sprint-288.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 289: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-289.md](./sprint-289.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 290: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-290.md](./sprint-290.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 291: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-291.md](./sprint-291.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 292: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-292.md](./sprint-292.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 293: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-293.md](./sprint-293.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 294: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-294.md](./sprint-294.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 295: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-295.md](./sprint-295.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 296: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-296.md](./sprint-296.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 297: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-297.md](./sprint-297.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 298: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-298.md](./sprint-298.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 299: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-299.md](./sprint-299.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 300: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-300.md](./sprint-300.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 301: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-301.md](./sprint-301.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 302: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-302.md](./sprint-302.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 303: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-303.md](./sprint-303.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 304: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-304.md](./sprint-304.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 305: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-305.md](./sprint-305.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 306: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-306.md](./sprint-306.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 307: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-307.md](./sprint-307.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 308: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-308.md](./sprint-308.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 309: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-309.md](./sprint-309.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 310: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-310.md](./sprint-310.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 311: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-311.md](./sprint-311.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 312: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-312.md](./sprint-312.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 313: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-313.md](./sprint-313.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 314: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-314.md](./sprint-314.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 315: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-315.md](./sprint-315.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 316: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-316.md](./sprint-316.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 317: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-317.md](./sprint-317.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 318: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-318.md](./sprint-318.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 319: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-319.md](./sprint-319.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 320: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-320.md](./sprint-320.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 321: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-321.md](./sprint-321.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 322: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-322.md](./sprint-322.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 323: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-323.md](./sprint-323.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 324: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-324.md](./sprint-324.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 325: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-325.md](./sprint-325.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 326: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-326.md](./sprint-326.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 327: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-327.md](./sprint-327.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 328: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-328.md](./sprint-328.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 329: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-329.md](./sprint-329.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 330: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-330.md](./sprint-330.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 331: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-331.md](./sprint-331.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 332: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-332.md](./sprint-332.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 333: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-333.md](./sprint-333.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 334: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-334.md](./sprint-334.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 335: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-335.md](./sprint-335.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 336: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-336.md](./sprint-336.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 337: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-337.md](./sprint-337.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 338: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-338.md](./sprint-338.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 339: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-339.md](./sprint-339.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 340: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-340.md](./sprint-340.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 341: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-341.md](./sprint-341.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 342: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-342.md](./sprint-342.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 343: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-343.md](./sprint-343.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 344: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-344.md](./sprint-344.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 345: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-345.md](./sprint-345.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 346: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-346.md](./sprint-346.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 347: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-347.md](./sprint-347.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 348: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-348.md](./sprint-348.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 349: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-349.md](./sprint-349.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 350: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-350.md](./sprint-350.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 351: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-351.md](./sprint-351.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 352: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-352.md](./sprint-352.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 353: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-353.md](./sprint-353.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 354: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-354.md](./sprint-354.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 355: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-355.md](./sprint-355.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 356: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-356.md](./sprint-356.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 357: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-357.md](./sprint-357.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 358: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-358.md](./sprint-358.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 359: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-359.md](./sprint-359.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 360: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-360.md](./sprint-360.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 361: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-361.md](./sprint-361.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 362: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-362.md](./sprint-362.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 363: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-363.md](./sprint-363.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 364: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-364.md](./sprint-364.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 365: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-365.md](./sprint-365.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 366: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-366.md](./sprint-366.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 367: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-367.md](./sprint-367.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 368: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-368.md](./sprint-368.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 369: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-369.md](./sprint-369.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 370: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-370.md](./sprint-370.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 371: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-371.md](./sprint-371.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 372: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-372.md](./sprint-372.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 373: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-373.md](./sprint-373.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 374: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-374.md](./sprint-374.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 375: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-375.md](./sprint-375.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 376: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-376.md](./sprint-376.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 377: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-377.md](./sprint-377.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 378: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-378.md](./sprint-378.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 379: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-379.md](./sprint-379.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 380: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-380.md](./sprint-380.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 381: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-381.md](./sprint-381.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 382: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-382.md](./sprint-382.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 383: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-383.md](./sprint-383.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 384: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-384.md](./sprint-384.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 385: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-385.md](./sprint-385.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 386: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-386.md](./sprint-386.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 387: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-387.md](./sprint-387.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 388: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-388.md](./sprint-388.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 389: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-389.md](./sprint-389.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 390: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-390.md](./sprint-390.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 391: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-391.md](./sprint-391.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 392: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-392.md](./sprint-392.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 393: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-393.md](./sprint-393.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 394: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-394.md](./sprint-394.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 395: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-395.md](./sprint-395.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 396: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-396.md](./sprint-396.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 397: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-397.md](./sprint-397.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 398: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-398.md](./sprint-398.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 399: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-399.md](./sprint-399.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 400: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-400.md](./sprint-400.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 401: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-401.md](./sprint-401.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 402: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-402.md](./sprint-402.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 403: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-403.md](./sprint-403.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 404: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-404.md](./sprint-404.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 405: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-405.md](./sprint-405.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 406: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-406.md](./sprint-406.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 407: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-407.md](./sprint-407.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 408: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-408.md](./sprint-408.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 409: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-409.md](./sprint-409.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 410: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-410.md](./sprint-410.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 411: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-411.md](./sprint-411.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 412: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-412.md](./sprint-412.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 413: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-413.md](./sprint-413.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 414: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-414.md](./sprint-414.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 415: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-415.md](./sprint-415.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 416: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-416.md](./sprint-416.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 417: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-417.md](./sprint-417.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 418: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-418.md](./sprint-418.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 419: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-419.md](./sprint-419.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 420: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-420.md](./sprint-420.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 421: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-421.md](./sprint-421.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 422: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-422.md](./sprint-422.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 423: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-423.md](./sprint-423.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 424: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-424.md](./sprint-424.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 425: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-425.md](./sprint-425.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 426: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-426.md](./sprint-426.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 427: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-427.md](./sprint-427.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 428: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-428.md](./sprint-428.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 429: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-429.md](./sprint-429.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 430: Search Performance
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-430.md](./sprint-430.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 3 items
+
+### Sprint 431: Search Performance — Part 1/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-431.md](./sprint-431.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 432: Search Performance — Part 2/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-432.md](./sprint-432.md)
+- **Requirements**: 2 EARS requirements
+- **Acceptance Criteria**: 1 items
+
+### Sprint 433: Search Performance — Part 3/3
+
+- **Status**: ⬜ Planned
+- **Spec**: [sprint-433.md](./sprint-433.md)
+- **Requirements**: 4 EARS requirements
+- **Acceptance Criteria**: 1 items

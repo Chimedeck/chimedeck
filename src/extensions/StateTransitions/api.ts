@@ -6,6 +6,22 @@ export type StateTransitionAction = ActionTypeId;
 export type StateTransitionDirection = 'one_way' | 'two_way';
 export type StateTransitionStyle = 'straight' | 'orthogonal' | 'smooth' | 'curved';
 
+// ── Sprint 172 — Workflow Phase Metadata ──
+
+export type WorkflowPhase =
+  | 'NEW_DRAFT'
+  | 'REFINED_PENDING_REVIEW'
+  | 'SYNC_DOCUMENT'
+  | 'READY_FOR_DEV'
+  | 'GENERATE_SPRINT'
+  | 'UPDATE_AS_BUILT';
+
+export interface PhaseConfig {
+  serviceTierOverride: string | null;
+  autoRun: boolean;
+  requiresHumanApproval: boolean;
+}
+
 export interface StateTransitionWaypoint {
   x: number;
   y: number;
@@ -17,6 +33,8 @@ export interface StateTransitionNode {
   label: string;
   positionX: number;
   positionY: number;
+  workflowPhases?: WorkflowPhase[];
+  phaseConfig?: PhaseConfig;
 }
 
 export interface StateTransitionEdge {

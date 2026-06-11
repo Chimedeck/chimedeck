@@ -23,6 +23,8 @@
   "StateTransitions.edgeInspectorDirection": "Direction",
   "StateTransitions.edgeInspectorStyle": "Style",
   "StateTransitions.edgeInspectorDelete": "Delete edge",
+  "StateTransitions.columnInspectorTitle": "Column Phases",
+  "StateTransitions.columnInspectorClose": "Close column inspector",
   "StateTransitions.edgeDirectionOneWay": "→ One-way",
   "StateTransitions.edgeDirectionTwoWay": "↔ Two-way",
   "StateTransitions.edgeStyleStraight": "─ Straight",

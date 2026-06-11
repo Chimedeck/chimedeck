@@ -1,8 +1,10 @@
-import type { StateTransitionAction, StateTransitionDirection, StateTransitionGraph, StateTransitionStyle } from './types';
+import type { StateTransitionAction, StateTransitionDirection, StateTransitionGraph, StateTransitionStyle, WorkflowPhase } from './types';
+import { VALID_WORKFLOW_PHASES } from './config/workflowPhases';
 
 const VALID_ACTIONS: StateTransitionAction[] = ['allowed_move_to'];
 const VALID_DIRECTIONS: StateTransitionDirection[] = ['one_way', 'two_way'];
 const VALID_STYLES: StateTransitionStyle[] = ['straight', 'orthogonal', 'smooth', 'curved'];
+const VALID_PHASE_SET = new Set<string>(VALID_WORKFLOW_PHASES);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -51,6 +53,13 @@ export function validateGraphShape(
     if (nodeIds.has(node.id)) {
       return { ok: false, message: 'node.id must be unique' };
     }
+
+    // Sprint 172 — validate workflow phases if present
+    if (node.workflowPhases !== undefined) {
+      const phaseValidation = validateNodePhases(node);
+      if (!phaseValidation.ok) return phaseValidation;
+    }
+
     nodeIds.add(node.id);
   }
 
@@ -240,4 +249,56 @@ export function findOutOfSyncNodeLabel(
     }
   }
   return null;
+}
+
+// ── Sprint 172 — Workflow Phase Validation ──
+
+/**
+ * Validate workflow phases on a single node.
+ * Returns ok: false with a descriptive message if any phase or config is invalid.
+ */
+export function validateNodePhases(
+  node: { workflowPhases?: unknown; phaseConfig?: unknown },
+): { ok: true } | { ok: false; message: string } {
+  const phases = node.workflowPhases;
+
+  // Absent phases = valid (backward-compatible)
+  if (phases === undefined || phases === null) return { ok: true };
+
+  if (!Array.isArray(phases)) {
+    return { ok: false, message: 'workflowPhases must be an array when provided' };
+  }
+
+  const seen = new Set<string>();
+  for (const phase of phases) {
+    if (typeof phase !== 'string') {
+      return { ok: false, message: 'each workflowPhases entry must be a string' };
+    }
+    if (!VALID_PHASE_SET.has(phase)) {
+      return { ok: false, message: `unknown workflow phase "${phase}"` };
+    }
+    if (seen.has(phase)) {
+      return { ok: false, message: `duplicate workflow phase "${phase}"` };
+    }
+    seen.add(phase);
+  }
+
+  // Validate phaseConfig if present
+  const config = node.phaseConfig;
+  if (config !== undefined && config !== null) {
+    if (!isRecord(config)) {
+      return { ok: false, message: 'phaseConfig must be an object when provided' };
+    }
+    if (config.serviceTierOverride !== undefined && config.serviceTierOverride !== null && typeof config.serviceTierOverride !== 'string') {
+      return { ok: false, message: 'phaseConfig.serviceTierOverride must be a string or null' };
+    }
+    if (config.autoRun !== undefined && typeof config.autoRun !== 'boolean') {
+      return { ok: false, message: 'phaseConfig.autoRun must be a boolean' };
+    }
+    if (config.requiresHumanApproval !== undefined && typeof config.requiresHumanApproval !== 'boolean') {
+      return { ok: false, message: 'phaseConfig.requiresHumanApproval must be a boolean' };
+    }
+  }
+
+  return { ok: true };
 }
