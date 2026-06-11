@@ -69,6 +69,13 @@ function normalizeBadgeResults(results: unknown[]): PluginBadge[] {
 }
 
 function cacheBadgeResult(key: string, badges: PluginBadge[]): void {
+  // WHY: empty badge results can happen before plugin iframes are ready.
+  // Caching empties makes later plugin-load re-renders stick to [] forever.
+  if (badges.length === 0) {
+    badgeResultCache.delete(key);
+    return;
+  }
+
   badgeResultCache.set(key, badges);
   if (badgeResultCache.size > 3000) {
     const firstKey = badgeResultCache.keys().next().value;
@@ -120,7 +127,7 @@ function CardPluginBadgesComponent({
     });
 
     const cachedBadges = badgeResultCache.get(cacheKey);
-    if (cachedBadges) {
+    if (cachedBadges && cachedBadges.length > 0) {
       setBadges((prev) => (hasSameBadges(prev, cachedBadges) ? prev : cachedBadges));
       return;
     }
@@ -158,7 +165,7 @@ function CardPluginBadgesComponent({
     return () => {
       cancelled = true;
     };
-  }, [bridge, boardId, cardId, listId]);
+  }, [bridge, boardId, cardId, listId, cardTitle, listTitle, boardTitle]);
 
   if (badges.length === 0) return null;
 
@@ -192,7 +199,11 @@ function CardPluginBadgesComponent({
 const CardPluginBadges = memo(
   CardPluginBadgesComponent,
   (prev, next) => prev.cardId === next.cardId
-    && prev.listId === next.listId,
+    && prev.listId === next.listId
+    && prev.boardId === next.boardId
+    && prev.cardTitle === next.cardTitle
+    && prev.listTitle === next.listTitle
+    && prev.boardTitle === next.boardTitle,
 );
 
 export default CardPluginBadges;
