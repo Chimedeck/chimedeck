@@ -179,7 +179,14 @@ class FrameContext {
     args?: Record<string, unknown>;
     mouseEvent?: MouseEvent;
   }): void {
-    sendToHost('UI_POPUP', options);
+    // WHY: auto-extract click coordinates from the BUTTON_CLICKED args so the host
+    // can position the popup near the button that triggered it, instead of at (100,100).
+    const clientX = (this.args.clientX as number | undefined) ?? options.mouseEvent?.clientX;
+    const clientY = (this.args.clientY as number | undefined) ?? options.mouseEvent?.clientY;
+    sendToHost('UI_POPUP', {
+      ...options,
+      mouseEvent: clientX !== undefined && clientY !== undefined ? { clientX, clientY } : undefined,
+    });
   }
 
   modal(options: {
@@ -356,12 +363,22 @@ interface JhInstanceConfig {
   appName: string;
 }
 
+let initialized = false;
+
 const jhInstance = {
   /**
    * Register capability handlers and signal readiness to the host.
    * Call once in connector.html / client.js.
+   *
+   * Idempotent — subsequent calls are no-ops. This guards against
+   * React StrictMode double-mounting (which destroys and recreates
+   * the iframe, causing the SDK script to re-execute) and any other
+   * edge case that might reload the plugin iframe.
    */
   initialize(capabilities: Record<string, CapabilityHandler>, config: JhInstanceConfig): void {
+    if (initialized) return;
+    initialized = true;
+
     for (const [name, handler] of Object.entries(capabilities)) {
       capabilityHandlers.set(name, handler);
     }

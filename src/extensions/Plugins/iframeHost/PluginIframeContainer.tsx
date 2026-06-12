@@ -43,10 +43,18 @@ const defaultPopup: PluginPopupState = {
 };
 
 const PluginIframeContainerInner = ({ boardId, children }: Props) => {
+  const dispatch = useAppDispatch();
   const boardPlugins = useAppSelector(selectBoardPlugins);
   const currentUser = useAppSelector(selectCurrentUser);
   const [modal, setModal] = useState<PluginModalState>(defaultModal);
   const [popup, setPopup] = useState<PluginPopupState>(defaultPopup);
+
+  // Load active plugins when the board opens; refresh whenever boardId changes.
+  useEffect(() => {
+    if (boardId) {
+      void dispatch(fetchBoardPluginsThunk({ boardId }));
+    }
+  }, [dispatch, boardId]);
 
   const handleOpenModal = useCallback((state: Omit<PluginModalState, 'open'>) => {
     setModal({ ...state, open: true });
@@ -96,17 +104,10 @@ const PluginIframeContainerInner = ({ boardId, children }: Props) => {
   );
 };
 
-const PluginIframeContainer = ({ boardId, children }: Props) => {
-  const dispatch = useAppDispatch();
-
-  // Load active plugins when the board opens; refresh whenever boardId changes.
-  useEffect(() => {
-    if (boardId) {
-      dispatch(fetchBoardPluginsThunk({ boardId }));
-    }
-  }, [dispatch, boardId]);
-
-  return <PluginIframeContainerInner boardId={boardId}>{children}</PluginIframeContainerInner>;
-};
+// WHY: PluginIframeContainer is a thin wrapper that used to define PluginIframeContainerInner
+// inside itself — that caused React to treat it as a new component type on every render,
+// unmounting/remounting all plugin iframes and triggering initialize() multiple times.
+// Now PluginIframeContainerInner is at module scope so its identity is stable.
+const PluginIframeContainer = PluginIframeContainerInner;
 
 export default PluginIframeContainer;

@@ -91,6 +91,9 @@ const CardPluginButtons = ({ boardId, cardId, listId, cardTitle, listTitle, boar
               card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
               list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
               board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
+              // WHY: pass click coordinates so the SDK can position t.popup() near the button
+              clientX: e.clientX,
+              clientY: e.clientY,
             },
           },
         });
