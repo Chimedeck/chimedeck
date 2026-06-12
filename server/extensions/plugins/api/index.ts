@@ -15,6 +15,7 @@ import { handleCreatePlugin } from './registry/create';
 import { handleUpdatePlugin } from './registry/update';
 import { handleDeletePlugin } from './registry/delete';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
+import { handleBatchGetPluginData } from './plugin-data/batch';
 
 // Returns a Response if the path matches a plugin route, otherwise null.
 export async function pluginsRouter(req: Request, pathname: string): Promise<Response | null> {
@@ -72,6 +73,11 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
   if (pathname === '/api/v1/plugins/data') {
     if (req.method === 'GET') return handleGetPluginData(req);
     if (req.method === 'PUT') return handleSetPluginData(req);
+  }
+
+  // Plugin data batch routes: /api/v1/plugins/data/batch
+  if (pathname === '/api/v1/plugins/data/batch') {
+    if (req.method === 'POST') return handleBatchGetPluginData(req);
   }
 
   // Plugin registry routes: /api/v1/plugins[/:pluginId]

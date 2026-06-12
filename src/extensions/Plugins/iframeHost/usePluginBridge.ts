@@ -86,6 +86,10 @@ interface PluginState {
   iframeId: string;
 }
 
+// [why] card-level capabilities can trigger batched DATA_GET work across many cards.
+// 3s is too aggressive and can resolve partial/empty results before plugin handlers finish.
+const CAPABILITY_RESPONSE_TIMEOUT_MS = 12000;
+
 export function usePluginBridge({
   boardId,
   plugins,
@@ -274,6 +278,77 @@ export function usePluginBridge({
         };
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
+    },
+    [currentUserId, getPluginToken, replyToSource],
+  );
+
+  // Handle DATA_GET_BATCH — proxy multiple DATA_GET requests in a single server round-trip.
+  // WHY: on boards with many cards, each card's capability handler issues 4+ DATA_GET calls.
+  // Without batching, that's 4N HTTP requests. With batching, all requests across all cards
+  // are collapsed into ONE server request per 1-second window.
+  const handleDataGetBatch = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & {
+        payload: {
+          items: Array<{
+            subId: string;
+            scope: string;
+            visibility: string;
+            key: string;
+            resourceId: string;
+            boardId: string;
+          }>;
+        };
+      },
+      source: MessageEventSource | null,
+    ) => {
+      const { items } = msg.payload;
+      let results: Array<{ subId: string; result: unknown; error?: string }>;
+      try {
+        const token = await getPluginToken(bp.plugin.id);
+
+        const resp = await apiClient.post<{ data: Array<{ subId: string; value: unknown; error?: string }> }>(
+          '/plugins/data/batch',
+          {
+            items: items.map((item) => ({
+              subId: item.subId,
+              scope: item.scope,
+              key: item.key,
+              visibility: item.visibility,
+              resourceId: item.resourceId,
+              boardId: item.boardId,
+              ...(item.visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
+            })),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        // Map server response back to subId-keyed results
+        const serverResults = (resp as unknown as { data: Array<{ subId: string; value: unknown; error?: string }> }).data;
+        results = serverResults.map((r) => ({
+          subId: r.subId,
+          result: r.value ?? null,
+          ...(r.error ? { error: r.error } : {}),
+        }));
+      } catch {
+        // On total failure, return errors for all items
+        results = items.map((item) => ({
+          subId: item.subId,
+          result: null,
+          error: 'batch-request-failed',
+        }));
+      }
+      const response: SdkResponse & { payload: { results: typeof results } } = {
+        jhSdk: true,
+        id: msg.id,
+        payload: { results },
+      };
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
     [currentUserId, getPluginToken, replyToSource],
   );
@@ -528,6 +603,24 @@ export function usePluginBridge({
             event.source,
           );
           break;
+        case 'DATA_GET_BATCH':
+          void handleDataGetBatch(
+            bp,
+            data as SdkMessage & {
+              payload: {
+                items: Array<{
+                  subId: string;
+                  scope: string;
+                  visibility: string;
+                  key: string;
+                  resourceId: string;
+                  boardId: string;
+                }>;
+              };
+            },
+            event.source,
+          );
+          break;
         case 'API_AUTHORIZE':
           void handleApiAuthorize(
             bp,
@@ -657,7 +750,7 @@ export function usePluginBridge({
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, handleApiAuthorize, handleApiGetToken, handleApiRequest, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+  }, [findPluginByOrigin, handleDataGet, handleDataGetBatch, handleDataSet, handleCapabilityResponse, handleCtxQuery, handleApiAuthorize, handleApiGetToken, handleApiRequest, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
 
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(
@@ -691,14 +784,14 @@ export function usePluginBridge({
             });
           }
 
-          // Timeout: resolve with partial results after 3 s to avoid stale UI
+          // Timeout: resolve with partial results after a bounded wait to avoid stale UI.
           setTimeout(() => {
             const pending = pendingCapabilityRef.current.get(requestId);
             if (pending) {
               pending.resolve(pending.results);
               pendingCapabilityRef.current.delete(requestId);
             }
-          }, 3000);
+          }, CAPABILITY_RESPONSE_TIMEOUT_MS);
         });
       };
 

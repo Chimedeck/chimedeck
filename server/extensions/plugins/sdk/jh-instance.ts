@@ -31,6 +31,101 @@ interface PostMessageResponse {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// CTX cache — 1-second TTL for card/list/board/member context reads.
+// WHY: when a board has many cards, every card-badges handler calls
+// t.list('id','name') which sends a CTX_LIST postMessage. Caching
+// avoids redundant postMessage round-trips for identical requests.
+// ────────────────────────────────────────────────────────────────────
+
+const ctxCache = new Map<string, { value: unknown; expiresAt: number }>();
+const CTX_CACHE_TTL = 1000; // 1 second
+
+function getCachedCtx(cacheKey: string): unknown {
+  const entry = ctxCache.get(cacheKey);
+  if (entry && entry.expiresAt > Date.now()) return entry.value;
+  ctxCache.delete(cacheKey);
+  return undefined;
+}
+
+function setCachedCtx(cacheKey: string, value: unknown): void {
+  ctxCache.set(cacheKey, { value, expiresAt: Date.now() + CTX_CACHE_TTL });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// DATA_GET batching — collects individual DATA_GET requests over a
+// 1-second window and flushes them as a single DATA_GET_BATCH message.
+// WHY: on boards with many cards, each card's capability handler issues
+// 4+ DATA_GET calls. Without batching, that's 4N HTTP requests to the
+// server. With batching, all requests across all cards are collapsed
+// into ONE server round-trip per 1-second window.
+// ────────────────────────────────────────────────────────────────────
+
+interface DataGetQueueItem {
+  resolve: (v: unknown) => void;
+  reject: (e: Error) => void;
+  scope: Scope;
+  visibility: Visibility;
+  key: string;
+  resourceId: string;
+  boardId: string;
+  cacheKey: string;
+}
+
+const dataGetQueue: DataGetQueueItem[] = [];
+let dataGetFlushTimer: ReturnType<typeof setTimeout> | null = null;
+const DATA_GET_BATCH_WINDOW = 1000; // 1 second
+const DATA_GET_CACHE_TTL = 1000; // 1 second
+
+// Cache for individual DATA_GET results — avoids re-enqueuing identical requests
+const dataGetCache = new Map<string, { value: unknown; expiresAt: number }>();
+
+// Maps batch request IDs to sub-id → promise handlers
+const pendingBatch = new Map<string, Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; cacheKey: string }>>();
+
+function enqueueDataGet(item: DataGetQueueItem): void {
+  dataGetQueue.push(item);
+  dataGetFlushTimer ??= setTimeout(flushDataGetQueue, DATA_GET_BATCH_WINDOW);
+}
+
+function flushDataGetQueue(): void {
+  dataGetFlushTimer = null;
+  const batch = dataGetQueue.splice(0);
+  if (batch.length === 0) return;
+
+  const batchId = nextId();
+  const subIdToEntry = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; cacheKey: string }>();
+
+  const items = batch.map((item) => {
+    const subId = nextId();
+    subIdToEntry.set(subId, {
+      resolve: item.resolve,
+      reject: item.reject,
+      cacheKey: item.cacheKey,
+    });
+    return {
+      subId,
+      scope: item.scope,
+      visibility: item.visibility,
+      key: item.key,
+      resourceId: item.resourceId,
+      boardId: item.boardId,
+    };
+  });
+
+  pendingBatch.set(batchId, subIdToEntry);
+
+  window.parent.postMessage(
+    {
+      jhSdk: true,
+      id: batchId,
+      type: 'DATA_GET_BATCH',
+      payload: { items },
+    },
+    '*'
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Pending promise registry — maps request IDs to resolve/reject pairs
 // ────────────────────────────────────────────────────────────────────
 
@@ -88,10 +183,47 @@ function sendToHost(type: string, payload?: unknown): Promise<unknown> {
   });
 }
 
+// Handle DATA_GET_BATCH responses — resolve individual sub-promises and cache results
+function handleBatchResponse(
+  batchId: string,
+  results: Array<{ subId: string; result: unknown; error?: string }>,
+): void {
+  const batchEntry = pendingBatch.get(batchId);
+  if (!batchEntry) return;
+  pendingBatch.delete(batchId);
+
+  for (const item of results) {
+    const entry = batchEntry.get(item.subId);
+    if (!entry) continue;
+    batchEntry.delete(item.subId);
+    if (item.error) {
+      entry.reject(new Error(item.error));
+    } else {
+      dataGetCache.set(entry.cacheKey, {
+        value: item.result,
+        expiresAt: Date.now() + DATA_GET_CACHE_TTL,
+      });
+      entry.resolve(item.result);
+    }
+  }
+  // Reject any remaining sub-promises that didn't get a response
+  for (const [, entry] of batchEntry) {
+    entry.reject(new Error('No response for batched DATA_GET'));
+  }
+}
+
 // Listen for responses from the host
 window.addEventListener('message', (event: MessageEvent) => {
-  const data = event.data as PostMessageResponse;
+  const data = event.data as PostMessageResponse & {
+    payload?: { results?: Array<{ subId: string; result: unknown; error?: string }> };
+  };
   if (!data || !data.jhSdk || !data.id) return;
+
+  // Handle DATA_GET_BATCH responses
+  if (data.payload?.results) {
+    handleBatchResponse(data.id, data.payload.results);
+    return;
+  }
 
   const entry = pending.get(data.id);
   if (!entry) return;
@@ -131,7 +263,31 @@ class FrameContext {
     const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as
       | string
       | undefined;
-    return sendToHost('DATA_GET', { scope, visibility, key, resourceId, boardId });
+
+    if (!resourceId || !boardId) {
+      return Promise.reject(new Error('Missing resourceId or boardId in context'));
+    }
+
+    // Check the 1-second DATA_GET cache first
+    const cacheKey = `DATA_GET:${scope}:${visibility}:${key}:${resourceId}:${boardId}`;
+    const cached = dataGetCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return Promise.resolve(cached.value);
+    }
+
+    // Enqueue for batched flush — the result will be cached on response
+    return new Promise((resolve, reject) => {
+      enqueueDataGet({
+        resolve,
+        reject,
+        scope,
+        visibility,
+        key,
+        resourceId,
+        boardId,
+        cacheKey,
+      });
+    });
   }
 
   set(scope: Scope, visibility: Visibility, key: string, value: unknown): Promise<void> {
@@ -143,6 +299,13 @@ class FrameContext {
     const boardId = (this.args.board as Record<string, unknown> | undefined)?.id as
       | string
       | undefined;
+
+    // Invalidate the DATA_GET cache for this key so subsequent reads fetch fresh data
+    if (resourceId && boardId) {
+      const cacheKey = `DATA_GET:${scope}:${visibility}:${key}:${resourceId}:${boardId}`;
+      dataGetCache.delete(cacheKey);
+    }
+
     return sendToHost('DATA_SET', {
       scope,
       visibility,
@@ -155,20 +318,89 @@ class FrameContext {
 
   // ── Context reads ─────────────────────────────────────────────────
 
+  private resolveContextFromArgs(
+    key: 'card' | 'list' | 'board' | 'member',
+    fields: string[],
+  ): Record<string, unknown> | null {
+    const raw = this.args[key];
+    if (!raw || typeof raw !== 'object') return null;
+    const source = raw as Record<string, unknown>;
+    if (fields.length === 0) return source;
+
+    const out: Record<string, unknown> = {};
+    for (const field of fields) {
+      if (!(field in source)) return null;
+      out[field] = source[field];
+    }
+    return out;
+  }
+
   card(...fields: string[]): Promise<Record<string, unknown>> {
-    return sendToHost('CTX_CARD', { fields }) as Promise<Record<string, unknown>>;
+    const cacheKey = `CTX_CARD:${String(this.args.card?.id ?? '')}:${fields.join(',')}`;
+    const cached = getCachedCtx(cacheKey);
+    if (cached !== undefined) return Promise.resolve(cached as Record<string, unknown>);
+
+    const fromArgs = this.resolveContextFromArgs('card', fields);
+    if (fromArgs) {
+      setCachedCtx(cacheKey, fromArgs);
+      return Promise.resolve(fromArgs);
+    }
+
+    return sendToHost('CTX_CARD', { fields }).then((result) => {
+      setCachedCtx(cacheKey, result);
+      return result as Record<string, unknown>;
+    });
   }
 
   list(...fields: string[]): Promise<Record<string, unknown>> {
-    return sendToHost('CTX_LIST', { fields }) as Promise<Record<string, unknown>>;
+    const cacheKey = `CTX_LIST:${String(this.args.list?.id ?? '')}:${fields.join(',')}`;
+    const cached = getCachedCtx(cacheKey);
+    if (cached !== undefined) return Promise.resolve(cached as Record<string, unknown>);
+
+    const fromArgs = this.resolveContextFromArgs('list', fields);
+    if (fromArgs) {
+      setCachedCtx(cacheKey, fromArgs);
+      return Promise.resolve(fromArgs);
+    }
+
+    return sendToHost('CTX_LIST', { fields }).then((result) => {
+      setCachedCtx(cacheKey, result);
+      return result as Record<string, unknown>;
+    });
   }
 
   board(...fields: string[]): Promise<Record<string, unknown>> {
-    return sendToHost('CTX_BOARD', { fields }) as Promise<Record<string, unknown>>;
+    const cacheKey = `CTX_BOARD:${String(this.args.board?.id ?? '')}:${fields.join(',')}`;
+    const cached = getCachedCtx(cacheKey);
+    if (cached !== undefined) return Promise.resolve(cached as Record<string, unknown>);
+
+    const fromArgs = this.resolveContextFromArgs('board', fields);
+    if (fromArgs) {
+      setCachedCtx(cacheKey, fromArgs);
+      return Promise.resolve(fromArgs);
+    }
+
+    return sendToHost('CTX_BOARD', { fields }).then((result) => {
+      setCachedCtx(cacheKey, result);
+      return result as Record<string, unknown>;
+    });
   }
 
   member(...fields: string[]): Promise<Record<string, unknown>> {
-    return sendToHost('CTX_MEMBER', { fields }) as Promise<Record<string, unknown>>;
+    const cacheKey = `CTX_MEMBER:${String(this.args.member?.id ?? '')}:${fields.join(',')}`;
+    const cached = getCachedCtx(cacheKey);
+    if (cached !== undefined) return Promise.resolve(cached as Record<string, unknown>);
+
+    const fromArgs = this.resolveContextFromArgs('member', fields);
+    if (fromArgs) {
+      setCachedCtx(cacheKey, fromArgs);
+      return Promise.resolve(fromArgs);
+    }
+
+    return sendToHost('CTX_MEMBER', { fields }).then((result) => {
+      setCachedCtx(cacheKey, result);
+      return result as Record<string, unknown>;
+    });
   }
 
   // ── UI actions ────────────────────────────────────────────────────
