@@ -20,7 +20,7 @@ export interface PluginCspOrigins {
    * load URL from frame with URL chrome-error://chromewebdata/."
    */
   frameAncestors: string[];
-  imageSrc?: string[]; // [future] Origins to add to img-src (e.g. S3 bucket URL, CDN)
+  imageSrc: string[]; // [future] Origins to add to img-src (e.g. S3 bucket URL, CDN)
 }
 
 function toOrigin(url: string): string | null {

@@ -333,7 +333,7 @@ Bun.serve({
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, 'https://sentry.jhorizon.io', ...pluginOrigins.connectSrc],
-      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
+      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io', ...pluginOrigins.imageSrc],
       extraStyleSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       extraScriptSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       frameAncestors: isAttachmentViewPath ? "'self'" : "'none'",
