@@ -5,9 +5,10 @@ import { jwtVerify } from 'jose';
 import { db } from '../../../common/db';
 
 export interface PluginTokenClaims {
-  sub: string;     // userId
+  sub: string;          // userId
   pluginId: string;
-  boardId: string;
+  boardId: string;           // short_id when available (matches client URL params); long UUID for old tokens
+  boardCanonicalId?: string | undefined; // always long UUID — used for DB queries; absent on old tokens
 }
 
 export async function resolvePluginToken(
@@ -62,6 +63,7 @@ export async function resolvePluginToken(
       sub: payload.sub as string,
       pluginId: payload['pluginId'] as string,
       boardId: payload['boardId'] as string,
+      boardCanonicalId: payload['boardCanonicalId'] as string | undefined,
     };
 
     return { plugin, claims };

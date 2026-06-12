@@ -20,6 +20,7 @@ export interface PluginCspOrigins {
    * load URL from frame with URL chrome-error://chromewebdata/."
    */
   frameAncestors: string[];
+  imageSrc?: string[]; // [future] Origins to add to img-src (e.g. S3 bucket URL, CDN)
 }
 
 function toOrigin(url: string): string | null {
@@ -36,20 +37,23 @@ function normaliseDomain(d: string): string | null {
   return toOrigin(d.startsWith('http') ? d : `https://${d}`);
 }
 
-/** Collects frame-src and connect-src origins from plugin rows. */
+/** Collects frame-src, connect-src, and image-src origins from plugin rows. */
 function collectPluginOrigins(plugins: Record<string, unknown>[]): {
   frameSrc: Set<string>;
   connectSrc: Set<string>;
+  imageSrc: Set<string>;
 } {
   const frameSrc = new Set<string>();
   const connectSrc = new Set<string>();
+  const imageSrc = new Set<string>();
 
   for (const p of plugins) {
     addOrigin(frameSrc, p.connector_url);
     addOrigins(connectSrc, p.whitelisted_domains);
+    addOrigins(imageSrc, p.connector_url); // [future] only add to imageSrc if plugin declares it needs image permissions
   }
 
-  return { frameSrc, connectSrc };
+  return { frameSrc, connectSrc, imageSrc };
 }
 
 /** Collects frame-ancestors origins from workspace-level plugin_domains. */
@@ -102,7 +106,7 @@ export async function getPluginCspOrigins(): Promise<PluginCspOrigins> {
     .select('plugin_domains');
 
   const pluginOrigins = collectPluginOrigins(plugins as Record<string, unknown>[]);
-  const workspaceOrigins = collectWorkspaceOrigins(workspaceDomains as Record<string, unknown> []);
+  const workspaceOrigins = collectWorkspaceOrigins(workspaceDomains as Record<string, unknown>[]);
 
   // frame-ancestors = plugin connector_urls + workspace-level plugin domains
   const frameAncestors = new Set([...pluginOrigins.frameSrc, ...workspaceOrigins]);
@@ -111,5 +115,6 @@ export async function getPluginCspOrigins(): Promise<PluginCspOrigins> {
     frameSrc: [...pluginOrigins.frameSrc],
     connectSrc: [...pluginOrigins.connectSrc],
     frameAncestors: [...frameAncestors],
+    imageSrc: [...pluginOrigins.imageSrc], // [future] populate from plugin data as needed
   };
 }

@@ -44,9 +44,24 @@ interface ValidatedItem {
 
 // ─── Validation helpers ────────────────────────────────────────────────
 
-function validateBatchItems(items: BatchItem[], boardId: string): Response | null {
+// Check whether an incoming boardId matches the token's board scope.
+// Accepts both the short_id (claims.boardId) and the long UUID (claims.boardCanonicalId)
+// because client URLs use short_ids while tokens may encode either format.
+function boardIdMatchesClaims(
+  incoming: string,
+  claimsBoardId: string,
+  claimsCanonicalId: string | undefined,
+): boolean {
+  return incoming === claimsBoardId || (claimsCanonicalId !== undefined && incoming === claimsCanonicalId);
+}
+
+function validateBatchItems(
+  items: BatchItem[],
+  boardId: string,
+  boardCanonicalId: string | undefined,
+): Response | null {
   for (const item of items) {
-    if (item.boardId && item.boardId !== boardId) {
+    if (item.boardId && !boardIdMatchesClaims(item.boardId, boardId, boardCanonicalId)) {
       return Response.json(
         { error: { code: 'forbidden', message: `boardId in item ${item.subId} does not match token scope` } },
         { status: 403 },
@@ -183,7 +198,9 @@ export async function handleBatchGetPluginData(req: Request): Promise<Response> 
   const result = await resolvePluginToken(req);
   if (result instanceof Response) return result;
   const { plugin, claims } = result;
-  const boardId = claims.boardId;
+  // Use the canonical long UUID for all DB operations; fall back to boardId for old tokens
+  // that predate the boardCanonicalId claim.
+  const boardId = claims.boardCanonicalId ?? claims.boardId;
 
   let body: { items?: BatchItem[] };
   try {
@@ -204,7 +221,7 @@ export async function handleBatchGetPluginData(req: Request): Promise<Response> 
   }
 
   // Validate all items upfront
-  const validationError = validateBatchItems(items, boardId);
+  const validationError = validateBatchItems(items, claims.boardId, claims.boardCanonicalId);
   if (validationError) return validationError;
 
   // Resolve canonical resource IDs and validate board membership

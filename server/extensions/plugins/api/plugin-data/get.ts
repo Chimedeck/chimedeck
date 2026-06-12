@@ -21,15 +21,23 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
 
   const url = new URL(req.url);
   // boardId from token claims — the query param must match to prevent cross-board access.
+  // Accept both the short_id (claims.boardId) and the long UUID (claims.boardCanonicalId)
+  // because client URLs use short_ids while tokens may encode either format.
   const boardIdParam = url.searchParams.get('boardId');
-  const boardId = claims.boardId;
+  // Use canonical long UUID for DB queries; fall back to boardId for old tokens.
+  const boardId = claims.boardCanonicalId ?? claims.boardId;
   const scope = url.searchParams.get('scope') as Scope | null;
   const resourceId = url.searchParams.get('resourceId');
   const key = url.searchParams.get('key');
   const visibility = (url.searchParams.get('visibility') ?? 'shared') as Visibility;
   const userId = url.searchParams.get('userId');
 
-  if (boardIdParam && boardIdParam !== boardId) {
+  const incomingMatchesClaims =
+    !boardIdParam ||
+    boardIdParam === claims.boardId ||
+    (claims.boardCanonicalId !== undefined && boardIdParam === claims.boardCanonicalId);
+
+  if (!incomingMatchesClaims) {
     return Response.json(
       { error: { code: 'forbidden', message: 'boardId does not match token scope' } },
       { status: 403 },
