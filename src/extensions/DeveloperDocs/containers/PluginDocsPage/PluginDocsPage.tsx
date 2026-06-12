@@ -12,7 +12,7 @@ import {
   InfoCallout, WarnCallout, Table, NavItem,
 } from '~/extensions/DeveloperDocs/components/DocsPrimitives';
 
-const PLUGIN_SDK_URL = 'https://journeyhorizon.chimedeck.com/api/plugins/scripts/jh-instance.js';
+const PLUGIN_SDK_URL = 'https://journeyhorizon.chimedeck.com/sdk/jh-instance.js';
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
