@@ -11,7 +11,10 @@ import {
   requestBoardChatAssist,
   getBoardChatPermissions,
   patchBoardChatPermissions,
+  commitBoardChatProposals,
   type BoardChatPermissions,
+  type BoardChatAssistActionCard,
+  type BoardChatAssistCommitProposal,
 } from '../api';
 import type { GuestType } from '~/extensions/Board/mods/guestPermissions';
 
@@ -21,6 +24,7 @@ interface Props {
   callerGuestType?: GuestType | null;
   canManageGuestPermissions?: boolean;
   onClose: () => void;
+  onDocsChanged?: () => void;
 }
 
 const normalizePermissions = (input: Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>) => {
@@ -44,6 +48,7 @@ const BoardChatDrawer = ({
   callerGuestType = null,
   canManageGuestPermissions = false,
   onClose,
+  onDocsChanged,
 }: Props) => {
   const [permissions, setPermissions] = useState<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'> | null>(null);
   const [permissionsState, setPermissionsState] = useState<'loading' | 'loaded' | 'error'>('loading');
@@ -55,6 +60,10 @@ const BoardChatDrawer = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [aiTyping, setAiTyping] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [actionCards, setActionCards] = useState<BoardChatAssistActionCard[]>([]);
+  const [committingCards, setCommittingCards] = useState<Set<string>>(new Set());
+  const [commitError, setCommitError] = useState<string | null>(null);
+  const [dismissedCards, setDismissedCards] = useState<Set<string>>(new Set());
   const historyEndRef = useRef<HTMLDivElement>(null);
   const guestCanView = permissions?.guest_can_view === true;
   const guestCanUse = permissions?.guest_can_use === true;
@@ -149,6 +158,7 @@ const BoardChatDrawer = ({
 
   const triggerAiAssist = async (prompt: string): Promise<void> => {
     setAiResponse(null);
+    setActionCards([]);
     setAiTyping(true);
     try {
       const res = await requestBoardChatAssist({
@@ -157,10 +167,27 @@ const BoardChatDrawer = ({
         prompt,
       });
       setAiResponse(res.data.message ?? null);
+      // [why] Capture action cards (document proposals, card creations) from
+      // the AI response so they can be displayed in the chat drawer.
+      const cards: BoardChatAssistActionCard[] = [];
+      if (res.data.actionCard) cards.push(res.data.actionCard);
+      if (res.data.actionCards) cards.push(...res.data.actionCards);
+      setActionCards(cards);
+      // [why] If the AI proposed or modified documentation, notify the parent
+      // so the Documentation tab can reload its file tree.
+      if (cards.length > 0 && onDocsChanged) {
+        onDocsChanged();
+      }
     } catch {
       setAiResponse(null);
+      setActionCards([]);
     } finally {
       setAiTyping(false);
+      // [why] AI response is now persisted server-side in assistBoardChat.
+      // Bump refreshKey so history reload picks up the persisted AI message
+      // for future drawer opens. The inline aiResponse stays visible for
+      // immediate feedback during the current session.
+      setRefreshKey((current) => current + 1);
     }
   };
 
@@ -185,6 +212,58 @@ const BoardChatDrawer = ({
       setSendingMessage(false);
     }
     await triggerAiAssist(trimmed);
+  };
+
+  // [why] Commit confirmed document proposals to the board's GitHub repository.
+  // Builds the payload from the action card's in-memory content and calls the
+  // server commit endpoint. Updates the action card state on success.
+  const handleCommitProposal = async (card: BoardChatAssistActionCard): Promise<void> => {
+    if (!card.documentPath || !card.documentContent || !card.commitMessage) return;
+
+    setCommitError(null);
+    setCommittingCards((prev) => new Set(prev).add(card.idempotencyKey));
+
+    try {
+      const proposal: BoardChatAssistCommitProposal = {
+        toolCallId: card.toolCallId,
+        idempotencyKey: card.idempotencyKey,
+        path: card.documentPath,
+        content: card.documentContent,
+        commitMessage: card.commitMessage,
+      };
+
+      await commitBoardChatProposals({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        boardId,
+        proposals: [proposal],
+      });
+
+      // [why] Mark as confirmed so the UI shows success state and the
+      // Documentation tab can pick up the new file on next refresh.
+      setActionCards((prev) =>
+        prev.map((c) =>
+          c.idempotencyKey === card.idempotencyKey
+            ? { ...c, state: 'confirmed' as const }
+            : c,
+        ),
+      );
+
+      if (onDocsChanged) onDocsChanged();
+    } catch (err) {
+      setCommitError(err instanceof Error ? err.message : 'Failed to commit proposal');
+    } finally {
+      setCommittingCards((prev) => {
+        const next = new Set(prev);
+        next.delete(card.idempotencyKey);
+        return next;
+      });
+    }
+  };
+
+  // [why] Dismiss a proposal without committing — removes it from the visible
+  // action cards list so the user can clear proposals they don't want.
+  const handleDismissProposal = (card: BoardChatAssistActionCard): void => {
+    setDismissedCards((prev) => new Set(prev).add(card.idempotencyKey));
   };
 
   return (
@@ -300,19 +379,32 @@ const BoardChatDrawer = ({
           {!isPermissionCheckPendingForGuest && !isGuestDeniedHistory && state === 'loaded' && messages.length > 0 && (
             <ul className="space-y-3">
               {messages.map((msg) => (
-                <li key={msg.id} className="rounded-md bg-bg-overlay p-3">
+                <li
+                  key={msg.id}
+                  className={`rounded-md p-3 ${
+                    msg.isAssistant
+                      ? 'bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-bg-overlay'
+                  }`}
+                >
                   <div className="flex gap-2">
-                    {msg.avatar && (
+                    {msg.isAssistant ? (
+                      <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-bold text-white">AI</span>
+                      </div>
+                    ) : msg.avatar ? (
                       <img
                         src={msg.avatar}
                         alt={msg.userName}
                         className="h-6 w-6 rounded-full flex-shrink-0"
                       />
-                    )}
+                    ) : null}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-base">{msg.userName}</p>
+                      <p className={`text-xs font-semibold ${msg.isAssistant ? 'text-indigo-700 dark:text-indigo-300' : 'text-base'}`}>
+                        {msg.userName}
+                      </p>
                       <p className="text-xs text-muted">{new Date(msg.createdAt).toLocaleTimeString()}</p>
-                      <p className="text-sm text-base break-words mt-1">{msg.text}</p>
+                      <p className="text-sm text-base break-words mt-1 whitespace-pre-wrap">{msg.text}</p>
                     </div>
                   </div>
                 </li>
@@ -320,37 +412,137 @@ const BoardChatDrawer = ({
             </ul>
           )}
 
-          {/* AI typing indicator */}
+          {/* AI typing indicator — wrapped in ul for valid HTML */}
           {aiTyping && (
-            <li className="rounded-md bg-bg-overlay p-3 list-none">
-              <div className="flex gap-2 items-center">
-                <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-bold text-white">AI</span>
+            <ul className="space-y-3">
+              <li className="rounded-md bg-bg-overlay p-3">
+                <div className="flex gap-2 items-center">
+                  <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-white">AI</span>
+                  </div>
+                  <div className="flex gap-1 items-center h-4">
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
+                  </div>
                 </div>
-                <div className="flex gap-1 items-center h-4">
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
-                </div>
-              </div>
-            </li>
+              </li>
+            </ul>
           )}
 
-          {/* AI response */}
+          {/* AI response — wrapped in ul for valid HTML */}
           {!aiTyping && aiResponse && (
-            <li className="rounded-md bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 p-3 list-none">
-              <div className="flex gap-2">
-                <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[10px] font-bold text-white">AI</span>
+            <ul className="space-y-3">
+              <li className="rounded-md bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 p-3">
+                <div className="flex gap-2">
+                  <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-white">AI</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Board AI</p>
+                    <p className="text-sm text-base break-words mt-1 whitespace-pre-wrap">{aiResponse}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Board AI</p>
-                  <p className="text-sm text-base break-words mt-1 whitespace-pre-wrap">{aiResponse}</p>
-                </div>
-              </div>
-            </li>
+              </li>
+            </ul>
           )}
 
+          {/* Action cards — document proposals and card creations from AI */}
+          {!aiTyping && actionCards.some((c) => !dismissedCards.has(c.idempotencyKey)) && (
+            <>
+              {commitError && (
+                <p className="text-xs text-danger bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
+                  {commitError}
+                </p>
+              )}
+              <ul className="space-y-3">
+                {actionCards
+                  .filter((c) => !dismissedCards.has(c.idempotencyKey))
+                  .map((card) => {
+                    const isCommitting = committingCards.has(card.idempotencyKey);
+                    const isConfirmed = card.state === 'confirmed';
+                    return (
+                <li
+                  key={card.idempotencyKey}
+                  className={`rounded-md border p-3 ${
+                    isConfirmed
+                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                      : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800'
+                  }`}
+                >
+                  <div className="flex gap-2">
+                    <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
+                    }`}>
+                      <span className="text-[10px] font-bold text-white">
+                        {isConfirmed ? '✓' : 'AI'}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-semibold ${
+                        isConfirmed ? 'text-green-700 dark:text-green-300' : 'text-indigo-700 dark:text-indigo-300'
+                      }`}>Board AI</p>
+                      {card.toolName === 'propose_github_document' && card.documentPath && (
+                        <div className="mt-1">
+                          <p className={`text-xs font-mono ${
+                            isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'
+                          }`}>
+                            {isConfirmed ? '✅ Committed: ' : '📄 Proposed: '}<code>{card.documentPath}</code>
+                          </p>
+                          {card.documentContent && !isConfirmed && (
+                            <details className="mt-1">
+                              <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
+                                View content ({card.documentContent.length} chars)
+                              </summary>
+                              <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
+                                {card.documentContent}
+                              </pre>
+                            </details>
+                          )}
+                          {card.commitMessage && (
+                            <p className="text-xs text-muted mt-1">
+                              Commit: {card.commitMessage}
+                            </p>
+                          )}
+                          {/* Confirm / Dismiss buttons — only for suggested proposals */}
+                          {!isConfirmed && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                type="button"
+                                disabled={isCommitting}
+                                onClick={() => { void handleCommitProposal(card); }}
+                                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isCommitting}
+                                onClick={() => handleDismissProposal(card)}
+                                className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                ✕ Dismiss
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {card.toolName === 'create_board_card' && card.cardTitle && (
+                        <div className="mt-1">
+                          <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                            🃏 Created card: <strong>{card.cardTitle}</strong>
+                            {card.listName ? ` in ${card.listName}` : ''}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
           {/* Scroll anchor */}
           <div ref={historyEndRef} />
         </div>

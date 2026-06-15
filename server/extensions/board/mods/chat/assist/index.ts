@@ -1,5 +1,6 @@
 import { db } from '../../../../../common/db';
 import { dispatchEvent } from '../../../../../mods/events/dispatch';
+import { writeBoardChatMessage } from '../messages/write';
 import type {
   BoardChatAssistInput,
   BoardChatAssistMessage,
@@ -10,6 +11,9 @@ import type {
 import { CREATE_BOARD_CARD_TOOL, createBoardCard } from './createBoardCard';
 import { SEARCH_CARDS_TOOL, searchCards } from './searchCards';
 import { PROPOSE_GITHUB_DOCUMENT_TOOL, buildDocumentActionCard } from './proposeGithubDocument';
+import { READ_SPECS_FILE_TOOL, readSpecsFileTool } from './readSpecsFile';
+import { LIST_SPECS_FILES_TOOL, listSpecsFilesTool } from './listSpecsFiles';
+import { DELETE_SPECS_FILE_TOOL, deleteSpecsFileTool } from './deleteSpecsFile';
 import { requestBoardChatAssistCompletion } from './provider';
 
 const DEFAULT_CONTEXT_LIMIT = 12;
@@ -25,6 +29,9 @@ interface ContextMessageRow {
 const ALL_TOOLS = [
   CREATE_BOARD_CARD_TOOL,
   SEARCH_CARDS_TOOL,
+  READ_SPECS_FILE_TOOL,
+  LIST_SPECS_FILES_TOOL,
+  DELETE_SPECS_FILE_TOOL,
   PROPOSE_GITHUB_DOCUMENT_TOOL,
 ] as const;
 
@@ -59,10 +66,16 @@ function buildAssistMessages({
         'You have access to the following tools:',
         '- search_cards: search for existing cards on this board by keyword. Use this FIRST when the user asks about existing work, card status, or "what do we have" questions — avoid creating duplicates.',
         '- create_board_card: create a new card on the board. Use this when the user explicitly wants to track a task, idea, or action item.',
+        '- read_specs_file: read the contents of a markdown documentation file from the board\'s GitHub repository. Use this to inspect existing specs before proposing edits. The file must be under specs/ and end with .md.',
+        '- list_specs_files: list all markdown documentation files under specs/ in the board\'s GitHub repository. Use this to discover what documentation already exists before proposing changes.',
+        '- delete_specs_file: delete a markdown documentation file from the board\'s GitHub repository. Use this to remove obsolete or incorrect specs. This executes immediately.',
         '- propose_github_document: propose a markdown document to add to the board\'s GitHub repository. The document will be shown on-screen for review before being saved — nothing is committed until the user confirms. Call this once per file you want to propose.',
         '',
         'Guidelines:',
         '- Always search before creating — if the user asks about something that might already exist, call search_cards first.',
+        '- For documentation requests: call list_specs_files ONCE to discover what exists, then call search_cards ONCE for relevant cards. After ONE round of discovery tools, proceed directly to propose_github_document. Do NOT repeat list_specs_files or search_cards — one call each is sufficient.',
+        '- When asked to create NEW documentation (not editing existing files), skip read_specs_file and go straight to propose_github_document after listing files.',
+        '- When asked to UPDATE existing documentation, follow the reason-act loop: list → read → propose edits. Never propose changes without reading the current content first.',
         '- For documentation requests, propose one file at a time. If the user asks for multiple documents or a full docs structure, call propose_github_document multiple times in one response — the system collects all proposals and shows them together.',
         '- Each proposed document must have its own path under specs/ (e.g. specs/architecture/auth.md, specs/api/endpoints.md).',
         '- When creating cards, ask the user which list to use if you don\'t know it.',
@@ -100,6 +113,10 @@ export const boardChatAssistDeps = {
     const rows = await db('board_chat_messages as m')
       .leftJoin('users as u', 'm.author_id', 'u.id')
       .where('m.board_id', boardId)
+      // [why] Exclude assistant messages from context — feeding the AI's own
+      // previous responses back creates a self-reinforcing loop where the model
+      // repeats "let me check first" instead of calling propose_github_document.
+      .where('m.is_assistant', false)
       .orderBy('m.created_at', 'desc')
       .limit(limit)
       .select(
@@ -111,7 +128,11 @@ export const boardChatAssistDeps = {
   requestBoardChatAssistCompletion,
   createBoardCard,
   searchCards,
+  readSpecsFileTool,
+  listSpecsFilesTool,
+  deleteSpecsFileTool,
   dispatchEvent,
+  writeBoardChatMessage,
 };
 
 function hasToolCalls(data: BoardChatAssistOutput['data']): data is NonNullable<BoardChatAssistOutput['data']> & {
@@ -132,8 +153,9 @@ interface ToolCallResult {
   error?: BoardChatAssistOutput;
 }
 
-// [why] Handle a single tool call. Search and create_board_card execute immediately;
-// propose_github_document builds a suggested action card without touching disk.
+// [why] Handle a single tool call. Search, create_board_card, read/list/delete
+// specs execute immediately; propose_github_document builds a suggested action
+// card without touching disk.
 async function executeOneToolCall(
   toolCall: BoardChatAssistToolCall,
   model: string,
@@ -142,6 +164,9 @@ async function executeOneToolCall(
   deps: {
     createBoardCard: typeof createBoardCard;
     searchCards: typeof searchCards;
+    readSpecsFileTool: typeof readSpecsFileTool;
+    listSpecsFilesTool: typeof listSpecsFilesTool;
+    deleteSpecsFileTool: typeof deleteSpecsFileTool;
     dispatchEvent: typeof dispatchEvent;
   },
 ): Promise<ToolCallResult> {
@@ -193,6 +218,42 @@ async function executeOneToolCall(
     }
     output.message = `Proposed document: \`${actionCard.documentPath ?? 'unknown'}\``;
     output.actionCard = actionCard;
+    return output;
+  }
+
+  if (toolName === 'read_specs_file') {
+    const result = await deps.readSpecsFileTool({
+      board: ctx.board,
+      toolCall,
+      model,
+      ...maybeUsage(usage),
+    });
+    if (result.status !== 200) { output.error = result; return output; }
+    if (result.data?.message) output.message = result.data.message;
+    return output;
+  }
+
+  if (toolName === 'list_specs_files') {
+    const result = await deps.listSpecsFilesTool({
+      board: ctx.board,
+      toolCall,
+      model,
+      ...maybeUsage(usage),
+    });
+    if (result.status !== 200) { output.error = result; return output; }
+    if (result.data?.message) output.message = result.data.message;
+    return output;
+  }
+
+  if (toolName === 'delete_specs_file') {
+    const result = await deps.deleteSpecsFileTool({
+      board: ctx.board,
+      toolCall,
+      model,
+      ...maybeUsage(usage),
+    });
+    if (result.status !== 200) { output.error = result; return output; }
+    if (result.data?.message) output.message = result.data.message;
     return output;
   }
 
@@ -254,9 +315,10 @@ async function runToolUseIteration(
 
   // [why] Append assistant response to conversation. content may be null
   // when the response contains only tool calls (some providers do this).
+  // Ollama rejects null content — use empty string as fallback.
   conversation.push({
     role: 'assistant',
-    content: data.message ?? null,
+    content: data.message ?? '',
     ...(data.toolCalls ? { toolCalls: data.toolCalls } : {}),
   });
 
@@ -375,6 +437,24 @@ export async function assistBoardChat({
   // [why] Broadcast proposals after ALL iterations complete so clients
   // receive the full batch in one burst.
   broadcastProposals(allActionCards, boardId, actorId);
+
+  // [why] Persist the AI response as a chat message so it survives page
+  // reloads. Without this, only user messages are stored and AI responses
+  // vanish when the drawer is reopened. Must be awaited so the message is
+  // definitely in the DB before the client refreshes history.
+  const aiText = allMessages.join('\n\n');
+  if (aiText) {
+    try {
+      await boardChatAssistDeps.writeBoardChatMessage({
+        boardId,
+        authorId: null,
+        content: aiText,
+        isAssistant: true,
+      });
+    } catch (err) {
+      console.error(`[chat/assist] Failed to persist AI response: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   return {
     status: 200,

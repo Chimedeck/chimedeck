@@ -65,6 +65,7 @@ export async function writeBoardChatMessage({
   boardId,
   authorId,
   content,
+  isAssistant = false,
 }: WriteBoardChatMessageInput): Promise<WriteBoardChatMessageResult> {
   const now = new Date().toISOString();
   const normalizedContent = content.trim();
@@ -78,8 +79,9 @@ export async function writeBoardChatMessage({
     id: messageId,
     thread_id: thread.id,
     board_id: boardId,
-    author_id: authorId,
+    author_id: authorId ?? null,
     content: normalizedContent,
+    is_assistant: isAssistant,
     created_at: now,
     updated_at: now,
   };

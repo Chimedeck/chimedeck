@@ -30,6 +30,7 @@ import { handleGetChatPermissions, handlePatchChatPermissions } from './chatPerm
 import { handleGetChatMessages, handleCreateChatMessage } from './chatMessages/index';
 import { handleCreateChatSearch } from './chatSearch/index';
 import { handleCreateChatAssist } from './chatAssist/index';
+import { handleCommitDocumentProposals } from './chatAssist/commit';
 import { handleGetBoardIntegrations, handlePatchBoardIntegrations } from './integrations/index';
 import { handleLoadSpecsManifest, handleReadSpecsFile } from './specs/index';
 import { handlePutSpecsFile, handleCommitSpecs } from './github/specs/index';

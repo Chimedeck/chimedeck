@@ -7,6 +7,7 @@ let completionQueue: BoardChatAssistOutput[];
 let completionCalls: Array<{ messages: unknown[]; tools?: unknown[] }> = [];
 let createBoardCardCalls: Array<unknown> = [];
 let recentMessagesCalls: Array<{ boardId: string; limit: number }> = [];
+let writeMessageCalls: Array<{ boardId: string; authorId: string | null; content: string; isAssistant: boolean }> = [];
 
 const assistModule = await import('../index');
 const { assistBoardChat, boardChatAssistDeps } = assistModule;
@@ -24,6 +25,7 @@ beforeEach(() => {
   completionCalls = [];
   createBoardCardCalls = [];
   recentMessagesCalls = [];
+  writeMessageCalls = [];
 
   boardChatAssistDeps.fetchRecentBoardMessages = async ({ boardId, limit }) => {
     recentMessagesCalls.push({ boardId, limit });
@@ -77,6 +79,18 @@ beforeEach(() => {
     sequence: 1n,
     created_at: new Date(),
   });
+  boardChatAssistDeps.writeBoardChatMessage = async (input) => {
+    writeMessageCalls.push(input);
+    return {
+      status: 201,
+      data: {
+        thread: { id: 'thread-1', board_id: input.boardId, created_at: '', updated_at: '', last_message_at: '' },
+        message: { id: 'msg-ai-1', thread_id: 'thread-1', board_id: input.boardId, author_id: input.authorId ?? null, content: input.content, is_assistant: input.isAssistant ?? false, created_at: '', updated_at: '' },
+        vector: null,
+        queuedForEmbeddingRetry: false,
+      },
+    };
+  };
 });
 
 describe('assistBoardChat', () => {
@@ -93,9 +107,13 @@ describe('assistBoardChat', () => {
     expect(result.status).toBe(200);
     expect(result.data?.message).toBe('Plain text reply');
     expect(completionCalls).toHaveLength(1);
-    expect(completionCalls[0]?.tools).toHaveLength(3);
+    expect(completionCalls[0]?.tools).toHaveLength(6);
     expect(createBoardCardCalls).toHaveLength(0);
     expect(recentMessagesCalls).toEqual([{ boardId: 'board-1', limit: 3 }]);
+    // [why] AI response is now persisted as a chat message with isAssistant flag
+    expect(writeMessageCalls).toEqual([
+      { boardId: 'board-1', authorId: null, content: 'Plain text reply', isAssistant: true },
+    ]);
   });
 
   it('executes create_board_card tool calls and returns action metadata', async () => {
@@ -140,6 +158,10 @@ describe('assistBoardChat', () => {
     expect(result.data?.message).toBe('Card created.');
     expect(createBoardCardCalls).toHaveLength(1);
     expect(completionCalls).toHaveLength(2);
+    // [why] AI response is now persisted as a chat message with isAssistant flag
+    expect(writeMessageCalls).toEqual([
+      { boardId: 'board-1', authorId: null, content: 'Card created.', isAssistant: true },
+    ]);
   });
 
   it('rejects unsupported tool calls with a typed 422 error', async () => {
@@ -176,5 +198,6 @@ describe('assistBoardChat', () => {
     expect(result.name).toBe('unsupported-tool');
     expect(createBoardCardCalls).toHaveLength(0);
     expect(completionCalls).toHaveLength(1);
+    expect(writeMessageCalls).toEqual([]);
   });
 });

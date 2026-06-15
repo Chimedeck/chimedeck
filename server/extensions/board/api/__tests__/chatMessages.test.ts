@@ -10,7 +10,7 @@ let board: BoardRow;
 let authenticated = true;
 let callerRole: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST' = 'MEMBER';
 let guestAccessError: Response | null = null;
-let writeCalls: Array<{ boardId: string; authorId: string; content: string }> = [];
+let writeCalls: Array<{ boardId: string; authorId?: string | null; content: string; isAssistant?: boolean }> = [];
 
 const chatMessagesModule = await import('../chatMessages/create');
 const { handleCreateChatMessage, boardChatApiDeps } = chatMessagesModule;
@@ -45,7 +45,7 @@ beforeEach(() => {
     return null;
   };
   boardChatApiDeps.requireGuestCanUseBoardChat = async () => guestAccessError;
-  boardChatApiDeps.writeBoardChatMessage = async (input: { boardId: string; authorId: string; content: string }) => {
+  boardChatApiDeps.writeBoardChatMessage = async (input: { boardId: string; authorId?: string | null; content: string; isAssistant?: boolean }) => {
     writeCalls.push(input);
     return {
       status: 201,

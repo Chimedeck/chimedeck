@@ -16,6 +16,7 @@ import { writeSpecsFile } from '../../mods/specs/write';
 import { commitSpecsChanges } from '../../mods/specs/commit';
 import { normalizeGithubProjectUrl } from '../../mods/githubProjectUrl';
 import { dispatchEvent } from '../../../../mods/events/dispatch';
+import { invalidateSpecsCachesForBoard } from '../../mods/specs';
 import type {
   BoardChatAssistActionCard,
   BoardChatAssistCommitProposal,
@@ -31,6 +32,7 @@ export const commitDocumentProposalsDeps = {
   commitSpecsChanges,
   normalizeGithubProjectUrl,
   dispatchEvent,
+  invalidateSpecsCachesForBoard,
 };
 
 function requireCommitAccess(req: WorkspaceScopedRequest): Response | null {

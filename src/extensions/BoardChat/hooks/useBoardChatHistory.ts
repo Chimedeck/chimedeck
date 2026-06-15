@@ -6,11 +6,12 @@ export type HistoryState = 'loading' | 'empty' | 'error' | 'loaded';
 
 export interface ChatMessage {
   id: string;
-  userId: string;
+  userId: string | null;
   userName: string;
   text: string;
   createdAt: string;
   avatar?: string;
+  isAssistant: boolean;
 }
 
 export interface UseBoardChatHistoryResult {
@@ -59,6 +60,7 @@ export const useBoardChatHistory = ({
           text: message.content,
           createdAt: message.created_at,
           avatar: message.avatar ?? undefined,
+          isAssistant: message.is_assistant,
         }));
         setMessages(nextMessages);
         setState(nextMessages.length > 0 ? 'loaded' : 'empty');

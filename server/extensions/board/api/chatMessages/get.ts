@@ -37,6 +37,7 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
       'm.board_id',
       'm.author_id',
       'm.content',
+      'm.is_assistant',
       'm.created_at',
       'm.updated_at',
       db.raw('COALESCE(u.name, u.email) as author_name'),
@@ -62,13 +63,16 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
     board_id: row.board_id,
     author_id: row.author_id,
     content: row.content,
+    is_assistant: row.is_assistant,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    userName: row.author_name,
-    avatar: buildAvatarProxyUrl({
-      userId: row.author_id,
-      avatarUrl: row.author_avatar_url ?? null,
-    }),
+    userName: row.is_assistant ? 'Board AI' : row.author_name,
+    avatar: row.is_assistant
+      ? null
+      : buildAvatarProxyUrl({
+          userId: row.author_id,
+          avatarUrl: row.author_avatar_url ?? null,
+        }),
   }));
 
   const nextCursor = hasMore && data.length > 0 ? data[data.length - 1]!.id : null;

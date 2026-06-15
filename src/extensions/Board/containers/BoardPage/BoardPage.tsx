@@ -242,6 +242,9 @@ const BoardPage = () => {
 
   // ── Board chat panel ──────────────────────────────────────────────────────
   const [boardChatOpen, setBoardChatOpen] = useState(false);
+  // [why] Incremented when AI chat assist modifies documentation, forcing
+  // SpecsWorkspacePage to remount and reload its file tree from the server.
+  const [docsRefreshKey, setDocsRefreshKey] = useState(0);
 
   // ── Board filters ─────────────────────────────────────────────────────────
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
@@ -946,6 +949,7 @@ const BoardPage = () => {
     if (activeTab === 'documentation' && isDocumentationEnabled) {
       return (
         <SpecsWorkspacePage
+          key={docsRefreshKey}
           boardId={boardId ?? ''}
           accessToken={accessToken ?? null}
           canEdit={canEditDocs}
@@ -1139,6 +1143,7 @@ const BoardPage = () => {
             callerGuestType={board?.callerGuestType ?? null}
             canManageGuestPermissions={canManageGuestChatPermissions}
             onClose={() => setBoardChatOpen(false)}
+            onDocsChanged={() => setDocsRefreshKey((k) => k + 1)}
           />
         )}
 

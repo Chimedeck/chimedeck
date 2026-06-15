@@ -12,8 +12,9 @@ export interface BoardChatMessage {
   id: string;
   thread_id: string;
   board_id: string;
-  author_id: string;
+  author_id: string | null;
   content: string;
+  is_assistant: boolean;
   created_at: string;
   updated_at: string;
   userName: string;
@@ -69,9 +70,28 @@ export async function createBoardChatMessage({
   return api.post<{ data: BoardChatMessage }>(`/boards/${boardId}/chat/messages`, { content });
 }
 
+export interface BoardChatAssistActionCard {
+  state: 'suggested' | 'confirmed' | 'dismissed';
+  toolName: string;
+  toolCallId: string;
+  idempotencyKey: string;
+  source: 'board-chat-assist';
+  boardId: string;
+  workspaceId: string;
+  cardId?: string;
+  cardTitle?: string;
+  listId?: string;
+  listName?: string | null;
+  documentPath?: string;
+  documentContent?: string;
+  commitMessage?: string;
+}
+
 export interface BoardChatAssistResponse {
   model: string;
   message?: string;
+  actionCard?: BoardChatAssistActionCard;
+  actionCards?: BoardChatAssistActionCard[];
 }
 
 export async function requestBoardChatAssist({
@@ -84,4 +104,40 @@ export async function requestBoardChatAssist({
   prompt: string;
 }): Promise<{ data: BoardChatAssistResponse }> {
   return api.post<{ data: BoardChatAssistResponse }>(`/boards/${boardId}/chat/assist`, { prompt });
+}
+
+export interface BoardChatAssistCommitProposal {
+  toolCallId: string;
+  idempotencyKey: string;
+  path: string;
+  content: string;
+  commitMessage: string;
+}
+
+export interface BoardChatAssistCommitResponse {
+  committed: Array<{
+    path: string;
+    commitHash: string;
+    actionCard: BoardChatAssistActionCard;
+  }>;
+  errors: Array<{
+    path: string;
+    name: string;
+    message: string;
+  }>;
+}
+
+export async function commitBoardChatProposals({
+  api,
+  boardId,
+  proposals,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  proposals: BoardChatAssistCommitProposal[];
+}): Promise<{ data: BoardChatAssistCommitResponse }> {
+  return api.post<{ data: BoardChatAssistCommitResponse }>(
+    `/boards/${boardId}/chat/assist/commit`,
+    { proposals },
+  );
 }

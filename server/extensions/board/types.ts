@@ -72,8 +72,9 @@ export interface BoardChatMessage {
   id: string;
   thread_id: string;
   board_id: string;
-  author_id: string;
+  author_id: string | null;
   content: string;
+  is_assistant: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -99,8 +100,9 @@ export interface BoardChatEmbedding {
 
 export interface WriteBoardChatMessageInput {
   boardId: string;
-  authorId: string;
+  authorId?: string | null;
   content: string;
+  isAssistant?: boolean;
 }
 
 export interface WriteBoardChatMessageResult {

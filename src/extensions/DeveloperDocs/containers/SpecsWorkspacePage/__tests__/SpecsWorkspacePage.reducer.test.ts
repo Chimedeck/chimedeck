@@ -12,6 +12,7 @@ function cloneInitialState(overrides: Partial<WorkspaceState> = {}): WorkspaceSt
     ...baseInitialState,
     dirtyPaths: new Set(baseInitialState.dirtyPaths),
     pendingCommitPaths: new Set(baseInitialState.pendingCommitPaths),
+    committedPaths: new Set(baseInitialState.committedPaths),
     ...overrides,
   };
 }

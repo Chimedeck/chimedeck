@@ -15,7 +15,7 @@ export const PROPOSE_GITHUB_DOCUMENT_TOOL: BoardChatAssistToolDefinition = {
   function: {
     name: 'propose_github_document',
     description:
-      'Propose a markdown documentation file to write to the board\'s linked GitHub repository. The file will be shown to the user as a suggested change; it is only saved when the user confirms it. Use this to document decisions, architecture, requirements, or meeting notes. Call this tool once for each file you want to propose.',
+      'Generates and proposes a complete Product Requirements Document (PRD) based on your analysis of the provided cards. The output must be written in comprehensive Markdown and STRICTLY include three specific sections: Business Case, Functional Requirements, and Non-Functional Requirements. This tool creates a draft in the linked GitHub repository that the user must review and confirm. Call this tool exactly once for each distinct document you need to propose.',
     parameters: {
       type: 'object',
       properties: {

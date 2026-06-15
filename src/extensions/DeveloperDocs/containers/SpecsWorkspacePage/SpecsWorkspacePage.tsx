@@ -155,6 +155,10 @@ interface WorkspaceState {
   editorContent: Record<string, string>;
   dirtyPaths: Set<string>;
   pendingCommitPaths: Set<string>;
+  // [why] Tracks files known to be committed to the repo. When the manifest loads,
+  // any file NOT in this set is a new/uncommitted file that should be added to
+  // pendingCommitPaths so the user can see and commit it.
+  committedPaths: Set<string>;
   lastSaveAttemptContent: Record<string, string>;
   isSaving: boolean;
   saveError: string | null;
@@ -210,6 +214,17 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         files: state.files ?? [],
       };
     case 'manifest/loaded':
+      // [why] Detect files that aren't yet known to be committed (e.g. created by
+      // AI chat or CLI) and add them to pendingCommitPaths so the user can see
+      // and commit them from the Documentation tab.
+      const manifestPaths = new Set(action.files.map((f) => f.path));
+      const nextPendingCommitPaths = new Set(state.pendingCommitPaths);
+      for (const path of manifestPaths) {
+        if (!state.committedPaths.has(path) && !nextPendingCommitPaths.has(path)) {
+          nextPendingCommitPaths.add(path);
+        }
+      }
+
       return {
         ...state,
         manifestStatus: 'loaded',
@@ -220,6 +235,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
             : (action.files[0]?.path ?? null),
         fileStatus: 'idle',
         fileError: null,
+        pendingCommitPaths: nextPendingCommitPaths,
       };
     case 'manifest/error':
       return {
@@ -242,7 +258,12 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       const nextPendingCommitPaths = new Set(nextState.pendingCommitPaths);
       if (action.forceEditorContent) {
         nextDirtyPaths.delete(action.path);
-        nextPendingCommitPaths.delete(action.path);
+        // [why] Only remove from pendingCommitPaths if the file is already known
+        // to be committed. New files (created by AI chat / CLI) should stay in
+        // pendingCommitPaths so the user can see and commit them.
+        if (state.committedPaths.has(action.path)) {
+          nextPendingCommitPaths.delete(action.path);
+        }
       }
 
       return {
@@ -350,8 +371,12 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
     case 'commit/success':
       {
         const nextPendingCommitPaths = new Set(state.pendingCommitPaths);
+        const nextCommittedPaths = new Set(state.committedPaths);
         for (const changedFile of action.changedFiles) {
           nextPendingCommitPaths.delete(changedFile);
+          // [why] Track files that have been committed so we don't re-mark them
+          // as new on subsequent manifest reloads.
+          nextCommittedPaths.add(changedFile);
         }
 
         return {
@@ -359,6 +384,7 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
           commitStatus: 'success',
           commitError: null,
           pendingCommitPaths: nextPendingCommitPaths,
+          committedPaths: nextCommittedPaths,
           commitMessage: '',
           lastSaveAttemptContent: action.changedFiles.reduce<Record<string, string>>((acc, path) => {
             acc[path] = state.savedContent[path] ?? '';
@@ -388,6 +414,9 @@ const initialState: WorkspaceState = {
   editorContent: {},
   dirtyPaths: new Set(),
   pendingCommitPaths: new Set(),
+  // [why] Start with an empty set per session — the manifest/loaded handler will
+  // detect which files are new (not yet committed) and add them to pendingCommitPaths.
+  committedPaths: new Set(),
   lastSaveAttemptContent: {},
   isSaving: false,
   saveError: null,
@@ -667,6 +696,7 @@ const SpecsWorkspacePage = ({
             files={state.files}
             selectedPath={state.selectedPath}
             dirtyPaths={state.dirtyPaths}
+            pendingCommitPaths={state.pendingCommitPaths}
             onSelect={handleSelectFile}
           />
         </div>

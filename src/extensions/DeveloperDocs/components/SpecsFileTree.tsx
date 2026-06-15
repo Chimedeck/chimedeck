@@ -13,6 +13,9 @@ export interface SpecsFileTreeProps {
   files: SpecsManifestEntry[];
   selectedPath: string | null;
   dirtyPaths: Set<string>;
+  // [why] Files that are locally saved but not yet committed — show an indigo
+  // indicator so users can see which files need committing.
+  pendingCommitPaths: Set<string>;
   onSelect: (path: string) => void;
 }
 
@@ -80,12 +83,14 @@ function TreeNodes({
   nodes,
   selectedPath,
   dirtyPaths,
+  pendingCommitPaths,
   onSelect,
   depth,
 }: {
   nodes: TreeNode[];
   selectedPath: string | null;
   dirtyPaths: Set<string>;
+  pendingCommitPaths: Set<string>;
   onSelect: (path: string) => void;
   depth: number;
 }) {
@@ -106,6 +111,7 @@ function TreeNodes({
                 nodes={node.children}
                 selectedPath={selectedPath}
                 dirtyPaths={dirtyPaths}
+                pendingCommitPaths={pendingCommitPaths}
                 onSelect={onSelect}
                 depth={depth + 1}
               />
@@ -115,6 +121,7 @@ function TreeNodes({
 
         const isSelected = selectedPath === node.path;
         const isDirty = dirtyPaths.has(node.path);
+        const isPendingCommit = !isDirty && pendingCommitPaths.has(node.path);
 
         return (
           <button
@@ -139,6 +146,13 @@ function TreeNodes({
                 title="Unsaved changes"
               />
             )}
+            {isPendingCommit && (
+              <span
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500"
+                aria-label="Ready to commit"
+                title="Ready to commit — this file has changes waiting to be committed"
+              />
+            )}
           </button>
         );
       })}
@@ -146,7 +160,7 @@ function TreeNodes({
   );
 }
 
-const SpecsFileTree = ({ files, selectedPath, dirtyPaths, onSelect }: SpecsFileTreeProps) => {
+const SpecsFileTree = ({ files, selectedPath, dirtyPaths, pendingCommitPaths, onSelect }: SpecsFileTreeProps) => {
   const tree = useMemo(() => buildTree(files), [files]);
 
   if (files.length === 0) {
@@ -164,6 +178,7 @@ const SpecsFileTree = ({ files, selectedPath, dirtyPaths, onSelect }: SpecsFileT
         nodes={tree}
         selectedPath={selectedPath}
         dirtyPaths={dirtyPaths}
+        pendingCommitPaths={pendingCommitPaths}
         onSelect={onSelect}
         depth={0}
       />
