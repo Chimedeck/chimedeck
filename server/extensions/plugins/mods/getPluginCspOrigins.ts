@@ -50,7 +50,7 @@ function collectPluginOrigins(plugins: Record<string, unknown>[]): {
   for (const p of plugins) {
     addOrigin(frameSrc, p.connector_url);
     addOrigins(connectSrc, p.whitelisted_domains);
-    addOrigins(imageSrc, p.connector_url); // [future] only add to imageSrc if plugin declares it needs image permissions
+    addOrigin(imageSrc, p.connector_url);
   }
 
   return { frameSrc, connectSrc, imageSrc };
