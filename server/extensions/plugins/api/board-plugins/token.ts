@@ -66,10 +66,16 @@ export async function handleGetPluginToken(
   // Sign a short-lived token. The HMAC secret is the plugin's api_key — server-side only.
   // Claims: pluginId + boardId scope it to exactly one plugin on one board.
   // userId allows private-visibility data isolation per user.
+  //
+  // boardId is the short_id when available (matching client URL params) so plugin iframes
+  // that receive the board short_id from the URL can pass it through without a mismatch.
+  // boardCanonicalId is always the long UUID — used for DB queries server-side.
+  const boardShortId = board.short_id as string | null | undefined;
   const secret = new TextEncoder().encode(boardPlugin.api_key as string);
   const token = await new SignJWT({
     pluginId: boardPlugin.id,
-    boardId,
+    boardId: boardShortId ?? boardId,
+    boardCanonicalId: boardId,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(authedReq.currentUser!.id)

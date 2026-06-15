@@ -12,6 +12,7 @@ export const pluginsConfig = {
 
   // Path where the built SDK bundle is served.
   sdkServePath: '/sdk/jh-instance.js',
+  sdkApiServePath: '/api/plugins/scripts/jh-instance.js',
 
   // Filesystem path to the built SDK bundle (relative to server root).
   sdkBundlePath: `${import.meta.dir}/../../../../public/sdk/jh-instance.js`,

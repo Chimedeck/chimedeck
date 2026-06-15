@@ -4,6 +4,7 @@ import { handleEnableBoardPlugin } from './board-plugins/enable';
 import { handleDisableBoardPlugin } from './board-plugins/disable';
 import { handleSetBoardPluginAllowedDomains } from './board-plugins/allowed-domains';
 import { handleGetPluginToken } from './board-plugins/token';
+import { handleGetTrelloCompatToken } from './board-plugins/trello-token';
 import { handleListAvailableBoardPlugins } from './board-plugins/available';
 import { handleGetPluginData } from './plugin-data/get';
 import { handleSetPluginData } from './plugin-data/set';
@@ -14,11 +15,12 @@ import { handleCreatePlugin } from './registry/create';
 import { handleUpdatePlugin } from './registry/update';
 import { handleDeletePlugin } from './registry/delete';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
+import { handleBatchGetPluginData } from './plugin-data/batch';
 
 // Returns a Response if the path matches a plugin route, otherwise null.
 export async function pluginsRouter(req: Request, pathname: string): Promise<Response | null> {
-  // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId[/allowed-domains|/token]]
-  const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?(\/allowed-domains|\/token)?$/);
+  // Board plugin routes: /api/v1/boards/:boardId/plugins[/:pluginId[/allowed-domains|/token|/trello-token]]
+  const boardPluginsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/plugins(\/[^/]+)?(\/allowed-domains|\/token|\/trello-token)?$/);
   if (boardPluginsMatch) {
     const boardIdentifier = boardPluginsMatch[1] as string;
     const boardId = await resolveBoardId(boardIdentifier);
@@ -48,6 +50,12 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
       return handleGetPluginToken(req, boardId, pluginId);
     }
 
+    // POST /api/v1/boards/:boardId/plugins/:pluginId/trello-token — issue Trello-compatible token
+    if (pluginSegment !== '' && subResource === '/trello-token' && req.method === 'POST') {
+      const pluginId = pluginSegment.slice(1);
+      return handleGetTrelloCompatToken(req, boardId, pluginId);
+    }
+
     // GET /api/v1/boards/:boardId/plugins — list active plugins
     if (pluginSegment === '' && req.method === 'GET') return handleListBoardPlugins(req, boardId);
 
@@ -65,6 +73,11 @@ export async function pluginsRouter(req: Request, pathname: string): Promise<Res
   if (pathname === '/api/v1/plugins/data') {
     if (req.method === 'GET') return handleGetPluginData(req);
     if (req.method === 'PUT') return handleSetPluginData(req);
+  }
+
+  // Plugin data batch routes: /api/v1/plugins/data/batch
+  if (pathname === '/api/v1/plugins/data/batch') {
+    if (req.method === 'POST') return handleBatchGetPluginData(req);
   }
 
   // Plugin registry routes: /api/v1/plugins[/:pluginId]

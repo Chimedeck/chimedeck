@@ -288,6 +288,7 @@ const CardItemContent = memo(({
         </div>
       )}
       <CardPluginBadges
+        {...(typeof boardId === 'string' ? { boardId } : {})}
         cardId={card.id}
         listId={card.list_id}
         cardTitle={card.title}

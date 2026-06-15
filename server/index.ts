@@ -5,7 +5,10 @@ import { appConfig } from './config/app';
 import { flags } from './mods/flags';
 import { logRequest } from './mods/logger';
 import { applySecurityHeaders } from './mods/helmet';
-import { getPluginCspOrigins, type PluginCspOrigins } from './extensions/plugins/mods/getPluginCspOrigins';
+import {
+  getPluginCspOrigins,
+  type PluginCspOrigins,
+} from './extensions/plugins/mods/getPluginCspOrigins';
 import { parseJsonBody } from './middlewares/parser';
 import { csrfGuard } from './middlewares/csrfGuard';
 import { authRouter } from './extensions/auth/api/index';
@@ -99,10 +102,7 @@ async function serveOpenApiSpec(specFileName: string, notFoundMessage: string): 
     }
   }
 
-  return Response.json(
-    { error: { code: 'not-found', message: notFoundMessage } },
-    { status: 404 }
-  );
+  return Response.json({ error: { code: 'not-found', message: notFoundMessage } }, { status: 404 });
 }
 
 async function router(req: Request): Promise<Response> {
@@ -117,16 +117,15 @@ async function router(req: Request): Promise<Response> {
     return serveOpenApiSpec('trello-openapi.yaml', 'Trello OpenAPI spec not found');
   }
 
-
-
-
   if (path === '/health' && req.method === 'GET') {
     return Response.json({ status: 'ok' });
   }
 
   if (path === '/api/v1/flags' && req.method === 'GET') {
     const sesEnabled = await flags.isEnabled('SES_ENABLED');
-    const notificationPreferencesEnabled = await flags.isEnabled('NOTIFICATION_PREFERENCES_ENABLED');
+    const notificationPreferencesEnabled = await flags.isEnabled(
+      'NOTIFICATION_PREFERENCES_ENABLED'
+    );
     const emailNotificationsEnabled = await flags.isEnabled('EMAIL_NOTIFICATIONS_ENABLED');
     const emailVerificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
     const boardChatEnabled = await flags.isEnabled('BOARD_CHAT_ENABLED');
@@ -289,8 +288,11 @@ async function router(req: Request): Promise<Response> {
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;
 
-  // Serve the SDK static bundle at /sdk/jh-instance.js
-  if (path === pluginsConfig.sdkServePath && req.method === 'GET') {
+  // Serve the SDK static bundle from both the legacy and API plugin script paths.
+  if (
+    req.method === 'GET' &&
+    (path === pluginsConfig.sdkServePath || path === pluginsConfig.sdkApiServePath)
+  ) {
     const sdkFile = Bun.file(pluginsConfig.sdkBundlePath);
     if (await sdkFile.exists()) {
       return new Response(sdkFile, {
@@ -320,7 +322,12 @@ async function router(req: Request): Promise<Response> {
 // frame-src / connect-src directives so the browser permits loading plugin
 // iframes and their outbound API calls. We cache for 60 s to avoid a DB hit
 // on every request while still reflecting new plugin registrations promptly.
-let _pluginOriginCache: PluginCspOrigins = { frameSrc: [], connectSrc: [], frameAncestors: [] };
+let _pluginOriginCache: PluginCspOrigins = {
+  frameSrc: [],
+  connectSrc: [],
+  frameAncestors: [],
+  imageSrc: [],
+};
 let _pluginOriginCacheExpiry = 0;
 const PLUGIN_ORIGIN_TTL_MS = 60_000;
 
@@ -377,7 +384,7 @@ Bun.serve({
     applySecurityHeaders(headers, {
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, 'https://sentry.jhorizon.io', ...pluginOrigins.connectSrc],
-      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
+      extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io', ...pluginOrigins.imageSrc],
       extraStyleSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       extraScriptSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
       frameAncestors: isAttachmentViewPath ? "'self'" : "'none'",

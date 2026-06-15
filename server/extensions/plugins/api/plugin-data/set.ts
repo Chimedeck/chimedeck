@@ -41,9 +41,18 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   const { boardId: boardIdBody, scope, resourceId, key, visibility = 'shared', value, userId } = body;
 
   // boardId is sourced from the token claims — the body param must match if provided.
-  const boardId = claims.boardId;
+  // Use canonical long UUID for DB operations; fall back to boardId for old tokens.
+  const boardId = claims.boardCanonicalId ?? claims.boardId;
 
-  if (boardIdBody && typeof boardIdBody === 'string' && boardIdBody !== boardId) {
+  // Accept both the short_id (claims.boardId) and the long UUID (claims.boardCanonicalId)
+  // because client URLs use short_ids while tokens may encode either format.
+  const incomingMatchesClaims =
+    !boardIdBody ||
+    typeof boardIdBody !== 'string' ||
+    boardIdBody === claims.boardId ||
+    (claims.boardCanonicalId !== undefined && boardIdBody === claims.boardCanonicalId);
+
+  if (!incomingMatchesClaims) {
     return Response.json(
       { error: { code: 'forbidden', message: 'boardId does not match token scope' } },
       { status: 403 },
@@ -89,8 +98,9 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
 
   const resolvedUserId = visibility === 'private' ? (userId as string) : null;
 
+  let canonicalResourceId: string;
   try {
-    await validateResourceBelongsToBoard(scope as 'card' | 'list' | 'board' | 'member', resourceId, boardId);
+    canonicalResourceId = await validateResourceBelongsToBoard(scope as 'card' | 'list' | 'board' | 'member', resourceId, boardId);
   } catch (err) {
     if (err instanceof ResourceBoardMismatchError) {
       return Response.json(
@@ -106,7 +116,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   const existingQuery = db('plugin_data').where({
     plugin_id: plugin.id,
     scope: scope as string,
-    resource_id: resourceId,
+    resource_id: canonicalResourceId,
     board_id: boardId,
     key,
   });
@@ -128,7 +138,7 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
       id: randomUUID(),
       plugin_id: plugin.id,
       scope: scope as string,
-      resource_id: resourceId,
+      resource_id: canonicalResourceId,
       board_id: boardId,
       user_id: resolvedUserId,
       key,

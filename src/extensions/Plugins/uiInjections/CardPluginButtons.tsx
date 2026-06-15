@@ -3,7 +3,6 @@
 // button sends BUTTON_CLICKED to all active plugins that can handle it;
 // the plugin responds with UI_POPUP / UI_MODAL (handled in iteration 10).
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { usePluginBridgeContext } from '../iframeHost/usePluginBridge';
 import { selectBoardPlugins } from '../containers/PluginDashboardPage/PluginDashboardPage.duck';
@@ -16,6 +15,7 @@ interface PluginButton {
 }
 
 interface Props {
+  boardId: string;
   cardId: string;
   listId: string;
   cardTitle?: string;
@@ -30,8 +30,7 @@ interface Props {
   variant?: 'chip' | 'sidebar';
 }
 
-const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, cardAmount, cardCurrency, variant = 'chip' }: Props) => {
-  const { boardId } = useParams<{ boardId: string }>();
+const CardPluginButtons = ({ boardId, cardId, listId, cardTitle, listTitle, boardTitle, cardAmount, cardCurrency, variant = 'chip' }: Props) => {
   const bridge = usePluginBridgeContext();
   const boardPlugins = useAppSelector(selectBoardPlugins);
   const [buttons, setButtons] = useState<PluginButton[]>([]);
@@ -92,6 +91,9 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
               card: { id: cardId, ...(cardTitle ? { name: cardTitle } : {}) },
               list: { id: listId, ...(listTitle ? { name: listTitle } : {}) },
               board: { id: boardId, ...(boardTitle ? { name: boardTitle } : {}) },
+              // WHY: pass click coordinates so the SDK can position t.popup() near the button
+              clientX: e.clientX,
+              clientY: e.clientY,
             },
           },
         });

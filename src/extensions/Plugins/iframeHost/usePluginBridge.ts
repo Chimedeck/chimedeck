@@ -86,6 +86,10 @@ interface PluginState {
   iframeId: string;
 }
 
+// [why] card-level capabilities can trigger batched DATA_GET work across many cards.
+// 3s is too aggressive and can resolve partial/empty results before plugin handlers finish.
+const CAPABILITY_RESPONSE_TIMEOUT_MS = 12000;
+
 export function usePluginBridge({
   boardId,
   plugins,
@@ -105,9 +109,19 @@ export function usePluginBridge({
   const pendingCapabilityRef = useRef<Map<string, PendingCapabilityRequest>>(new Map());
   // Last context sent to each plugin via CAPABILITY_INVOKE, used to answer CTX_* queries
   const pluginContextRef = useRef<Map<string, CapabilityContext>>(new Map());
-  // [why] JWT token cache keyed by pluginId — avoids a token round-trip on every DATA_GET/SET.
+  // [why] JWT token cache keyed by boardId + pluginId — avoids a token round-trip on every DATA_GET/SET.
   // Tokens are valid for 1 h; we evict 5 min early to avoid clock-skew rejections.
   const pluginTokenCacheRef = useRef<Map<string, { token: string; expiresAt: number }>>(new Map());
+  // [why] Trello-compatible API token cache — tokens for /trello/1/* endpoints scoped per plugin + scope.
+  // Default TTL is 1 hour; we cache to avoid re-issuing on every API call.
+  const trelloTokenCacheRef = useRef<Map<string, { token: string; expiresAt: number }>>(new Map());
+
+  // [why] Prevent cross-board token reuse when navigating between boards that
+  // share the same plugin id in one SPA session.
+  useEffect(() => {
+    pluginTokenCacheRef.current.clear();
+    trelloTokenCacheRef.current.clear();
+  }, [boardId]);
 
   // Derive allowed origins from active plugins
   const getAllowedOrigins = useCallback((): Map<string, string> => {
@@ -154,7 +168,8 @@ export function usePluginBridge({
   // the JWT endpoint is the only sanctioned way for the host app to authenticate.
   const getPluginToken = useCallback(
     async (pluginId: string): Promise<string> => {
-      const cached = pluginTokenCacheRef.current.get(pluginId);
+      const cacheKey = `${boardId}:${pluginId}`;
+      const cached = pluginTokenCacheRef.current.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) return cached.token;
 
       const resp = await apiClient.get<{ data: { token: string; expiresIn: number } }>(
@@ -162,7 +177,7 @@ export function usePluginBridge({
       );
       const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
       // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
-      pluginTokenCacheRef.current.set(pluginId, {
+      pluginTokenCacheRef.current.set(cacheKey, {
         token,
         expiresAt: Date.now() + (expiresIn - 300) * 1000,
       });
@@ -205,7 +220,6 @@ export function usePluginBridge({
           key,
           visibility,
           pluginId: bp.plugin.id,
-          boardId,
         });
         if (resourceId) params.set('resourceId', resourceId);
         if (visibility === 'private' && currentUserId) {
@@ -227,7 +241,7 @@ export function usePluginBridge({
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [boardId, currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource],
   );
 
   // Handle DATA_SET — proxy request to server plugin-data API
@@ -247,7 +261,6 @@ export function usePluginBridge({
           value,
           visibility,
           pluginId: bp.plugin.id,
-          boardId,
           resourceId,
           ...(visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
         }, {
@@ -266,7 +279,78 @@ export function usePluginBridge({
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [boardId, currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource],
+  );
+
+  // Handle DATA_GET_BATCH — proxy multiple DATA_GET requests in a single server round-trip.
+  // WHY: on boards with many cards, each card's capability handler issues 4+ DATA_GET calls.
+  // Without batching, that's 4N HTTP requests. With batching, all requests across all cards
+  // are collapsed into ONE server request per 1-second window.
+  const handleDataGetBatch = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & {
+        payload: {
+          items: Array<{
+            subId: string;
+            scope: string;
+            visibility: string;
+            key: string;
+            resourceId: string;
+            boardId: string;
+          }>;
+        };
+      },
+      source: MessageEventSource | null,
+    ) => {
+      const { items } = msg.payload;
+      let results: Array<{ subId: string; result: unknown; error?: string }>;
+      try {
+        const token = await getPluginToken(bp.plugin.id);
+
+        const resp = await apiClient.post<{ data: Array<{ subId: string; value: unknown; error?: string }> }>(
+          '/plugins/data/batch',
+          {
+            items: items.map((item) => ({
+              subId: item.subId,
+              scope: item.scope,
+              key: item.key,
+              visibility: item.visibility,
+              resourceId: item.resourceId,
+              boardId: item.boardId,
+              ...(item.visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
+            })),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        // Map server response back to subId-keyed results
+        const serverResults = (resp as unknown as { data: Array<{ subId: string; value: unknown; error?: string }> }).data;
+        results = serverResults.map((r) => ({
+          subId: r.subId,
+          result: r.value ?? null,
+          ...(r.error ? { error: r.error } : {}),
+        }));
+      } catch {
+        // On total failure, return errors for all items
+        results = items.map((item) => ({
+          subId: item.subId,
+          result: null,
+          error: 'batch-request-failed',
+        }));
+      }
+      const response: SdkResponse & { payload: { results: typeof results } } = {
+        jhSdk: true,
+        id: msg.id,
+        payload: { results },
+      };
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [currentUserId, getPluginToken, replyToSource],
   );
 
   // Extract only the requested fields from a context object.
@@ -293,6 +377,130 @@ export function usePluginBridge({
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
     [extractContextFields, replyToSource],
+  );
+
+  // Fetch (or return cached) a short-lived JWT for Trello-compatible API access.
+  // These tokens are used to call /trello/1/* endpoints with plugin authorization.
+  const getTrelloToken = useCallback(
+    async (
+      pluginId: string,
+      scope: string = 'read',
+      expirationSeconds: number = 3600,
+    ): Promise<string | null> => {
+      const cacheKey = `${boardId}:${pluginId}:${scope}`;
+      const cached = trelloTokenCacheRef.current.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) return cached.token;
+
+      try {
+        const resp = await apiClient.post<{ data: { token: string; expiresIn: number } }>(
+          `/boards/${boardId}/plugins/${pluginId}/trello-token`,
+          { scope, expirationSeconds },
+        );
+        const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
+        // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
+        trelloTokenCacheRef.current.set(cacheKey, {
+          token,
+          expiresAt: Date.now() + (expiresIn - 300) * 1000,
+        });
+        return token;
+      } catch {
+        return null;
+      }
+    },
+    [boardId],
+  );
+
+  // Handle API_AUTHORIZE — request Trello API authorization and cache the token.
+  const handleApiAuthorize = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & { payload: { scope?: string; expiration?: string } },
+      source: MessageEventSource | null,
+    ) => {
+      const { scope = 'read', expiration = '1hour' } = msg.payload;
+      // Map expiration string to seconds
+      const expirationSeconds = expiration === '30min' ? 1800 : 3600; // default 1hour
+      const token = await getTrelloToken(bp.plugin.id, scope, expirationSeconds);
+      const result = token ? undefined : null;
+      const response: SdkResponse = { jhSdk: true, id: msg.id, result };
+      if (!token) response.error = 'Failed to authorize Trello API access';
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [getTrelloToken, replyToSource],
+  );
+
+  // Handle API_GET_TOKEN — return cached Trello API token.
+  const handleApiGetToken = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage,
+      source: MessageEventSource | null,
+    ) => {
+      const token = await getTrelloToken(bp.plugin.id, 'read', 3600);
+      const response: SdkResponse = { jhSdk: true, id: msg.id, result: token ?? null };
+      replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+    },
+    [getTrelloToken, replyToSource],
+  );
+
+  // Handle API_REQUEST — make an HTTP request using Trello API token.
+  const handleApiRequest = useCallback(
+    async (
+      bp: BoardPlugin,
+      msg: SdkMessage & { payload: { path: string; options?: RequestInit } },
+      source: MessageEventSource | null,
+    ) => {
+      try {
+        const { path, options = {} } = msg.payload;
+        const token = await getTrelloToken(bp.plugin.id, 'read', 3600);
+        if (!token) {
+          const response: SdkResponse = {
+            jhSdk: true,
+            id: msg.id,
+            error: 'Failed to obtain Trello API token',
+          };
+          replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+          return;
+        }
+
+        // Construct full URL to Trello-compatible API
+        const trelloUrl = `${window.location.origin}/trello/1${path}`;
+        const headers = new Headers(options.headers || {});
+        headers.set('Authorization', `Bearer ${token}`);
+
+        const resp = await fetch(trelloUrl, {
+          ...options,
+          headers,
+        });
+
+        // Convert Response to serializable object
+        const contentType = resp.headers.get('content-type') || '';
+        let data: unknown;
+        if (contentType.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          data = await resp.text();
+        }
+
+        const result = {
+          status: resp.status,
+          statusText: resp.statusText,
+          headers: Object.fromEntries(resp.headers.entries()),
+          data,
+        };
+
+        const response: SdkResponse = { jhSdk: true, id: msg.id, result };
+        replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+      } catch (err) {
+        const response: SdkResponse = {
+          jhSdk: true,
+          id: msg.id,
+          error: err instanceof Error ? err.message : 'API request failed',
+        };
+        replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
+      }
+    },
+    [getTrelloToken, replyToSource],
   );
 
   // Handle RESOLVE_CAPABILITY_RESPONSE — plugin answered a capability request
@@ -392,6 +600,45 @@ export function usePluginBridge({
           void handleDataSet(
             bp,
             data as SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
+            event.source,
+          );
+          break;
+        case 'DATA_GET_BATCH':
+          void handleDataGetBatch(
+            bp,
+            data as SdkMessage & {
+              payload: {
+                items: Array<{
+                  subId: string;
+                  scope: string;
+                  visibility: string;
+                  key: string;
+                  resourceId: string;
+                  boardId: string;
+                }>;
+              };
+            },
+            event.source,
+          );
+          break;
+        case 'API_AUTHORIZE':
+          void handleApiAuthorize(
+            bp,
+            data as SdkMessage & { payload: { scope?: string; expiration?: string } },
+            event.source,
+          );
+          break;
+        case 'API_GET_TOKEN':
+          void handleApiGetToken(
+            bp,
+            data,
+            event.source,
+          );
+          break;
+        case 'API_REQUEST':
+          void handleApiRequest(
+            bp,
+            data as SdkMessage & { payload: { path: string; options?: RequestInit } },
             event.source,
           );
           break;
@@ -503,7 +750,7 @@ export function usePluginBridge({
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [findPluginByOrigin, handleDataGet, handleDataSet, handleCapabilityResponse, handleCtxQuery, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+  }, [findPluginByOrigin, handleDataGet, handleDataGetBatch, handleDataSet, handleCapabilityResponse, handleCtxQuery, handleApiAuthorize, handleApiGetToken, handleApiRequest, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
 
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(
@@ -537,14 +784,14 @@ export function usePluginBridge({
             });
           }
 
-          // Timeout: resolve with partial results after 3 s to avoid stale UI
+          // Timeout: resolve with partial results after a bounded wait to avoid stale UI.
           setTimeout(() => {
             const pending = pendingCapabilityRef.current.get(requestId);
             if (pending) {
               pending.resolve(pending.results);
               pendingCapabilityRef.current.delete(requestId);
             }
-          }, 3000);
+          }, CAPABILITY_RESPONSE_TIMEOUT_MS);
         });
       };
 
