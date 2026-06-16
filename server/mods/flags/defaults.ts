@@ -23,4 +23,5 @@ export const defaults: Record<string, boolean> = {
   AI_EDIT_ENABLED: false,
   SPRINT_GENERATION_ENABLED: false,
   AS_BUILT_SYNC_ENABLED: false,
+  MULTI_INSTANCE_HANDLING_ENABLED: false,
 };

@@ -16,6 +16,8 @@ import { READ_SPECS_FILE_TOOL, readSpecsFileTool } from './readSpecsFile';
 import { LIST_SPECS_FILES_TOOL, listSpecsFilesTool } from './listSpecsFiles';
 import { DELETE_SPECS_FILE_TOOL, deleteSpecsFileTool } from './deleteSpecsFile';
 import { requestBoardChatAssistCompletion } from './provider';
+import { recordSessionInstance } from './multiInstanceSessionTracker';
+import { env } from '../../../../../config/env';
 
 const DEFAULT_CONTEXT_LIMIT = 12;
 const MAX_CONTEXT_LIMIT = 50;
@@ -591,6 +593,16 @@ export async function assistBoardChat({
   // [why] Broadcast proposals after ALL iterations complete so clients
   // receive the full batch in one burst.
   broadcastProposals(allActionCards, boardId, actorId);
+
+  // [why] In multi-instance deployments behind an ALB, record which instance
+  // handled this session so the commit endpoint can verify the request lands
+  // on the same instance that holds the locally-written proposal files.
+  // Only record when there are actual document proposals (propose_github_document)
+  // — card creation doesn't touch the local git clone, and users can resume
+  // older chats that may have had card-only action cards.
+  if (env.MULTI_INSTANCE_HANDLING_ENABLED && allActionCards.some((c) => c.toolName === 'propose_github_document')) {
+    recordSessionInstance(sessionId, request);
+  }
 
   // [why] Persist the AI response as a chat message so it survives page
   // reloads. Scoped to the active session.

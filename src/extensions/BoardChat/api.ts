@@ -202,14 +202,16 @@ export interface BoardChatAssistCommitResponse {
 export async function commitBoardChatProposals({
   api,
   boardId,
+  sessionId,
   proposals,
 }: {
   api: { post: <T>(url: string, data: unknown) => Promise<T> };
   boardId: string;
+  sessionId: string;
   proposals: BoardChatAssistCommitProposal[];
 }): Promise<{ data: BoardChatAssistCommitResponse }> {
   return api.post<{ data: BoardChatAssistCommitResponse }>(
     `/boards/${boardId}/chat/assist/commit`,
-    { proposals },
+    { proposals, sessionId },
   );
 }

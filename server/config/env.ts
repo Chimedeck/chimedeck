@@ -103,6 +103,11 @@ export const env = {
   // own handler has stored one). Generate with: openssl rand -hex 32
   GITHUB_APP_WEBHOOK_SECRET: Bun.env['GITHUB_APP_WEBHOOK_SECRET'] ?? '',
 
+  // Multi-instance handling — when true, commit requests are validated against
+  // ALB sticky-session cookies (AWSALB/AWSELB) to ensure they land on the same
+  // instance that holds the locally-written proposal files.
+  MULTI_INSTANCE_HANDLING_ENABLED: Bun.env['MULTI_INSTANCE_HANDLING_ENABLED'] === 'true',
+
   // OpenTelemetry — when false, no SDK is initialised and spans are no-ops
   OTEL_ENABLED: Bun.env['OTEL_ENABLED'] === 'true',
   OTEL_EXPORTER_URL: Bun.env['OTEL_EXPORTER_URL'] ?? 'http://localhost:4318/v1/traces',

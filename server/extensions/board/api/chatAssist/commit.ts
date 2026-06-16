@@ -17,6 +17,8 @@ import { commitSpecsChanges } from '../../mods/specs/commit';
 import { normalizeGithubProjectUrl } from '../../mods/githubProjectUrl';
 import { dispatchEvent } from '../../../../mods/events/dispatch';
 import { invalidateSpecsCachesForBoard } from '../../mods/specs';
+import { verifySessionInstance } from '../../mods/chat/assist/multiInstanceSessionTracker';
+import { env } from '../../../../config/env';
 import type {
   BoardChatAssistActionCard,
   BoardChatAssistCommitProposal,
@@ -33,6 +35,7 @@ export const commitDocumentProposalsDeps = {
   normalizeGithubProjectUrl,
   dispatchEvent,
   invalidateSpecsCachesForBoard,
+  verifySessionInstance,
 };
 
 function requireCommitAccess(req: WorkspaceScopedRequest): Response | null {
@@ -194,6 +197,19 @@ export async function handleCommitDocumentProposals(req: Request, boardId: strin
   const proposalsOrError = parseProposals(body);
   if (proposalsOrError instanceof Response) return proposalsOrError;
   const proposals = proposalsOrError;
+
+  // [why] In multi-instance deployments, verify this commit request is hitting
+  // the same ALB instance that handled the original proposal generation. If the
+  // sticky session expired and the request landed on a different instance, the
+  // locally-written proposal files won't exist here — return a clear error so
+  // the user knows to re-prompt instead of getting a confusing git failure.
+  if (env.MULTI_INSTANCE_HANDLING_ENABLED) {
+    const sessionId = (body as { sessionId?: unknown }).sessionId;
+    if (typeof sessionId === 'string' && sessionId.trim() !== '') {
+      const instanceError = verifySessionInstance(sessionId, req);
+      if (instanceError) return instanceError;
+    }
+  }
 
   const urlResult = commitDocumentProposalsDeps.normalizeGithubProjectUrl({ value: board.github_project_url });
   if (!urlResult.ok) {

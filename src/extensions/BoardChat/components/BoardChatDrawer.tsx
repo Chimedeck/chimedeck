@@ -323,6 +323,7 @@ const BoardChatDrawer = ({
   // server commit endpoint. Updates the action card state on success.
   const handleCommitProposal = async (card: BoardChatAssistActionCard): Promise<void> => {
     if (!card.documentPath || !card.documentContent || !card.commitMessage) return;
+    if (!activeSessionId) return;
 
     setCommitError(null);
     setCommittingCards((prev) => new Set(prev).add(card.idempotencyKey));
@@ -339,6 +340,7 @@ const BoardChatDrawer = ({
       await commitBoardChatProposals({
         api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
         boardId,
+        sessionId: activeSessionId,
         proposals: [proposal],
       });
 
@@ -354,6 +356,17 @@ const BoardChatDrawer = ({
 
       if (onDocsChanged) onDocsChanged();
     } catch (err) {
+      // [why] Extract the server's structured error message for 409
+      // (session-instance-mismatch) so the user sees a clear explanation
+      // instead of a generic "Request failed" message.
+      const axiosErr = err as { response?: { status?: number; data?: unknown } };
+      if (axiosErr.response?.status === 409 && axiosErr.response.data) {
+        const data = axiosErr.response.data as { name?: string; data?: { message?: string } };
+        if (data.name === 'session-instance-mismatch' && data.data?.message) {
+          setCommitError(data.data.message);
+          return;
+        }
+      }
       setCommitError(err instanceof Error ? err.message : 'Failed to commit proposal');
     } finally {
       setCommittingCards((prev) => {
@@ -664,101 +677,114 @@ const BoardChatDrawer = ({
             </ul>
           )}
 
+          {/* [why] Commit error displayed as a standalone chat message so it
+              persists even after the user dismisses the action cards. This
+              ensures the "session timed out, re-prompt" message remains visible
+              in the chat history. */}
+          {!aiTyping && commitError && (
+            <ul className="space-y-3">
+              <li className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+                <div className="flex gap-2">
+                  <div className="h-6 w-6 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-white">!</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-red-700 dark:text-red-300">Commit Error</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">{commitError}</p>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          )}
+
           {/* Action cards — document proposals and card creations from AI */}
           {!aiTyping && actionCards.some((c) => !dismissedCards.has(c.idempotencyKey)) && (
-            <>
-              {commitError && (
-                <p className="text-xs text-danger bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
-                  {commitError}
-                </p>
-              )}
-              <ul className="space-y-3">
-                {actionCards
-                  .filter((c) => !dismissedCards.has(c.idempotencyKey))
-                  .map((card) => {
-                    const isCommitting = committingCards.has(card.idempotencyKey);
-                    const isConfirmed = card.state === 'confirmed';
-                    return (
-                <li
-                  key={card.idempotencyKey}
-                  className={`rounded-md border p-3 ${
-                    isConfirmed
-                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                      : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800'
-                  }`}
-                >
-                  <div className="flex gap-2">
-                    <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
-                    }`}>
-                      <span className="text-[10px] font-bold text-white">
-                        {isConfirmed ? '✓' : 'AI'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-semibold ${
-                        isConfirmed ? 'text-green-700 dark:text-green-300' : 'text-indigo-700 dark:text-indigo-300'
-                      }`}>Board AI</p>
-                      {card.toolName === 'propose_github_document' && card.documentPath && (
-                        <div className="mt-1">
-                          <p className={`text-xs font-mono ${
-                            isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'
-                          }`}>
-                            {isConfirmed ? '✅ Committed: ' : '📄 Proposed: '}<code>{card.documentPath}</code>
-                          </p>
-                          {card.documentContent && !isConfirmed && (
-                            <details className="mt-1">
-                              <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
-                                View content ({card.documentContent.length} chars)
-                              </summary>
-                              <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
-                                {card.documentContent}
-                              </pre>
-                            </details>
+            <ul className="space-y-3">
+              {actionCards
+                .filter((c) => !dismissedCards.has(c.idempotencyKey))
+                .map((card) => {
+                  const isCommitting = committingCards.has(card.idempotencyKey);
+                  const isConfirmed = card.state === 'confirmed';
+                  return (
+                    <li
+                      key={card.idempotencyKey}
+                      className={`rounded-md border p-3 ${
+                        isConfirmed
+                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                          : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800'
+                      }`}
+                    >
+                      <div className="flex gap-2">
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
+                        }`}>
+                          <span className="text-[10px] font-bold text-white">
+                            {isConfirmed ? '✓' : 'AI'}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-semibold ${
+                            isConfirmed ? 'text-green-700 dark:text-green-300' : 'text-indigo-700 dark:text-indigo-300'
+                          }`}>Board AI</p>
+                          {card.toolName === 'propose_github_document' && card.documentPath && (
+                            <div className="mt-1">
+                              <p className={`text-xs font-mono ${
+                                isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'
+                              }`}>
+                                {isConfirmed ? '✅ Committed: ' : '📄 Proposed: '}<code>{card.documentPath}</code>
+                              </p>
+                              {card.documentContent && !isConfirmed && (
+                                <details className="mt-1">
+                                  <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
+                                    View content ({card.documentContent.length} chars)
+                                  </summary>
+                                  <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
+                                    {card.documentContent}
+                                  </pre>
+                                </details>
+                              )}
+                              {card.commitMessage && (
+                                <p className="text-xs text-muted mt-1">
+                                  Commit: {card.commitMessage}
+                                </p>
+                              )}
+                              {/* Confirm / Dismiss buttons — only for suggested proposals */}
+                              {!isConfirmed && (
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    type="button"
+                                    disabled={isCommitting}
+                                    onClick={() => { void handleCommitProposal(card); }}
+                                    className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isCommitting}
+                                    onClick={() => handleDismissProposal(card)}
+                                    className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    ✕ Dismiss
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           )}
-                          {card.commitMessage && (
-                            <p className="text-xs text-muted mt-1">
-                              Commit: {card.commitMessage}
-                            </p>
-                          )}
-                          {/* Confirm / Dismiss buttons — only for suggested proposals */}
-                          {!isConfirmed && (
-                            <div className="flex gap-2 mt-2">
-                              <button
-                                type="button"
-                                disabled={isCommitting}
-                                onClick={() => { void handleCommitProposal(card); }}
-                                className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isCommitting}
-                                onClick={() => handleDismissProposal(card)}
-                                className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                ✕ Dismiss
-                              </button>
+                          {card.toolName === 'create_board_card' && card.cardTitle && (
+                            <div className="mt-1">
+                              <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                                🃏 Created card: <strong>{card.cardTitle}</strong>
+                                {card.listName ? ` in ${card.listName}` : ''}
+                              </p>
                             </div>
                           )}
                         </div>
-                      )}
-                      {card.toolName === 'create_board_card' && card.cardTitle && (
-                        <div className="mt-1">
-                          <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                            🃏 Created card: <strong>{card.cardTitle}</strong>
-                            {card.listName ? ` in ${card.listName}` : ''}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </li>
+                      </div>
+                    </li>
                   );
                 })}
-              </ul>
-            </>
+            </ul>
           )}
           {/* Scroll anchor */}
           <div ref={historyEndRef} />
