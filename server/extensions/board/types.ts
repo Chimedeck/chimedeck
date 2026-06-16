@@ -63,6 +63,8 @@ export interface PatchBoardChatPermissionsBody {
 export interface BoardChatThread {
   id: string;
   board_id: string;
+  name: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
   last_message_at: string | null;
@@ -100,6 +102,7 @@ export interface BoardChatEmbedding {
 
 export interface WriteBoardChatMessageInput {
   boardId: string;
+  sessionId: string;
   authorId?: string | null;
   content: string;
   isAssistant?: boolean;
@@ -202,6 +205,7 @@ export interface BoardChatAssistMessage {
 
 export interface BoardChatAssistInput {
   boardId: string;
+  sessionId: string;
   prompt: string;
   contextLimit?: number;
 }

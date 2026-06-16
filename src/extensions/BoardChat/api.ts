@@ -1,5 +1,6 @@
 // Client API helpers for board chat settings and runtime access controls.
 // Sprint 165: chat permission toggles (guest_can_view / guest_can_use).
+// Sprint 199: session-scoped chat — all message/assist calls now require sessionId.
 
 export interface BoardChatPermissions {
   board_id: string;
@@ -19,6 +20,16 @@ export interface BoardChatMessage {
   updated_at: string;
   userName: string;
   avatar: string | null;
+}
+
+export interface BoardChatSession {
+  id: string;
+  board_id: string;
+  name: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string | null;
 }
 
 export interface PatchBoardChatPermissionsBody {
@@ -51,23 +62,82 @@ export async function patchBoardChatPermissions({
 export async function getBoardChatMessages({
   api,
   boardId,
+  sessionId,
 }: {
   api: { get: <T>(url: string) => Promise<T> };
   boardId: string;
+  sessionId?: string;
 }): Promise<{ data: BoardChatMessage[] }> {
-  return api.get<{ data: BoardChatMessage[] }>(`/boards/${boardId}/chat/messages`);
+  const params = new URLSearchParams();
+  if (sessionId) params.set('sessionId', sessionId);
+  const qs = params.toString();
+  const url = `/boards/${boardId}/chat/messages${qs ? '?' + qs : ''}`;
+  return api.get<{ data: BoardChatMessage[] }>(url);
 }
 
+// Sprint 199 — session-scoped: all message posting requires a sessionId.
 export async function createBoardChatMessage({
   api,
   boardId,
+  sessionId,
   content,
 }: {
   api: { post: <T>(url: string, data: unknown) => Promise<T> };
   boardId: string;
+  sessionId: string;
   content: string;
 }): Promise<{ data: BoardChatMessage }> {
-  return api.post<{ data: BoardChatMessage }>(`/boards/${boardId}/chat/messages`, { content });
+  return api.post<{ data: BoardChatMessage }>(`/boards/${boardId}/chat/messages`, { content, sessionId });
+}
+
+// ---- Sessions (Sprint 199) ----
+
+export async function createBoardChatSession({
+  api,
+  boardId,
+  name,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  name?: string;
+}): Promise<{ data: BoardChatSession }> {
+  return api.post<{ data: BoardChatSession }>(`/boards/${boardId}/chat/sessions`, { name });
+}
+
+export async function listBoardChatSessions({
+  api,
+  boardId,
+}: {
+  api: { get: <T>(url: string) => Promise<T> };
+  boardId: string;
+}): Promise<{ data: BoardChatSession[] }> {
+  return api.get<{ data: BoardChatSession[] }>(`/boards/${boardId}/chat/sessions`);
+}
+
+export async function getBoardChatSession({
+  api,
+  boardId,
+  sessionId,
+}: {
+  api: { get: <T>(url: string) => Promise<T> };
+  boardId: string;
+  sessionId: string;
+}): Promise<{ data: BoardChatSession }> {
+  return api.get<{ data: BoardChatSession }>(`/boards/${boardId}/chat/sessions/${sessionId}`);
+}
+
+export async function updateBoardChatSession({
+  api,
+  boardId,
+  sessionId,
+  name,
+}: {
+  api: { patch: <T>(url: string, data: unknown) => Promise<T> };
+  boardId: string;
+  sessionId: string;
+  name?: string;
+}): Promise<{ data: BoardChatSession }> {
+  return api.patch<{ data: BoardChatSession }>(`/boards/${boardId}/chat/sessions/${sessionId}`, { name });
 }
 
 export interface BoardChatAssistActionCard {
@@ -97,13 +167,15 @@ export interface BoardChatAssistResponse {
 export async function requestBoardChatAssist({
   api,
   boardId,
+  sessionId,
   prompt,
 }: {
   api: { post: <T>(url: string, data: unknown) => Promise<T> };
   boardId: string;
+  sessionId: string;
   prompt: string;
 }): Promise<{ data: BoardChatAssistResponse }> {
-  return api.post<{ data: BoardChatAssistResponse }>(`/boards/${boardId}/chat/assist`, { prompt });
+  return api.post<{ data: BoardChatAssistResponse }>(`/boards/${boardId}/chat/assist`, { prompt, sessionId });
 }
 
 export interface BoardChatAssistCommitProposal {

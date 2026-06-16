@@ -20,7 +20,7 @@ export const CREATE_BOARD_CARD_TOOL: BoardChatAssistToolDefinition = {
   type: 'function',
   function: {
     name: 'create_board_card',
-    description: 'Create a new card on the current board.',
+    description: 'Create a new card on the current board. If listId is omitted, the card is created in the Backlog list (first list whose name contains "backlog", case-insensitive).',
     parameters: {
       type: 'object',
       properties: {
@@ -30,7 +30,7 @@ export const CREATE_BOARD_CARD_TOOL: BoardChatAssistToolDefinition = {
         },
         listId: {
           type: 'string',
-          description: 'Target list ID',
+          description: 'Target list ID. Omit to default to the Backlog list.',
         },
         description: {
           type: 'string',
@@ -41,7 +41,7 @@ export const CREATE_BOARD_CARD_TOOL: BoardChatAssistToolDefinition = {
           description: 'Optional start date in ISO 8601 format',
         },
       },
-      required: ['title', 'listId'],
+      required: ['title'],
       additionalProperties: false,
     },
   },
@@ -49,7 +49,7 @@ export const CREATE_BOARD_CARD_TOOL: BoardChatAssistToolDefinition = {
 
 interface CreateBoardCardArguments {
   title: string;
-  listId: string;
+  listId?: string | null;
   description?: string | null;
   startDate?: string | null;
 }
@@ -124,12 +124,14 @@ function normalizeToolArguments(rawArguments: string): CreateBoardCardArguments 
     };
   }
 
-  if (typeof candidate.listId !== 'string' || candidate.listId.trim() === '') {
-    return {
-      status: 422,
-      name: 'invalid-tool-payload',
-      message: 'create_board_card.listId must be a non-empty string',
-    };
+  if (typeof candidate.listId !== 'undefined' && candidate.listId !== null) {
+    if (typeof candidate.listId !== 'string' || candidate.listId.trim() === '') {
+      return {
+        status: 422,
+        name: 'invalid-tool-payload',
+        message: 'create_board_card.listId must be a non-empty string when provided',
+      };
+    }
   }
 
   if (typeof candidate.description !== 'undefined' && candidate.description !== null && typeof candidate.description !== 'string') {
@@ -161,7 +163,7 @@ function normalizeToolArguments(rawArguments: string): CreateBoardCardArguments 
 
   return {
     title: candidate.title.trim(),
-    listId: candidate.listId.trim(),
+    listId: typeof candidate.listId === 'string' ? candidate.listId.trim() : null,
     description: typeof candidate.description === 'string' ? candidate.description.trim() : null,
     startDate: typeof candidate.startDate === 'string' ? candidate.startDate : null,
   };
@@ -242,7 +244,29 @@ async function runCreateBoardCard({
   if (cached) return cached;
 
   const execution = (async (): Promise<BoardChatAssistOutput> => {
-    const list = await db('lists').where({ id: normalized.listId }).first();
+    let listId = normalized.listId;
+
+    // [why] Default to Backlog when no listId is provided — resolves the
+    // first list whose title contains "backlog" (case-insensitive).
+    if (!listId) {
+      const backlogList = await db('lists')
+        .where({ board_id: board.id })
+        .whereRaw('LOWER(title) LIKE ?', ['%backlog%'])
+        .orderBy('position', 'asc')
+        .first();
+
+      if (!backlogList) {
+        return {
+          status: 404,
+          name: 'backlog-list-not-found',
+          message: 'No Backlog list found on this board. Please specify a listId.',
+        };
+      }
+
+      listId = backlogList.id;
+    }
+
+    const list = await db('lists').where({ id: listId }).first();
     if (!list || list.board_id !== board.id) {
       return {
         status: 404,

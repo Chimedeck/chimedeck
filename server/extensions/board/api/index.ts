@@ -31,6 +31,7 @@ import { handleGetChatMessages, handleCreateChatMessage } from './chatMessages/i
 import { handleCreateChatSearch } from './chatSearch/index';
 import { handleCreateChatAssist } from './chatAssist/index';
 import { handleCommitDocumentProposals } from './chatAssist/commit';
+import { handleCreateSession, handleListSessions, handleGetSession, handleUpdateSession } from './chatSessions/index';
 import { handleGetBoardIntegrations, handlePatchBoardIntegrations } from './integrations/index';
 import { handleLoadSpecsManifest, handleReadSpecsFile } from './specs/index';
 import { handlePutSpecsFile, handleCommitSpecs } from './github/specs/index';
@@ -203,7 +204,24 @@ export async function boardRouter(req: Request, pathname: string): Promise<Respo
     // PATCH /api/v1/boards/:id/settings/integrations — update board integration settings
     if (sub === '/settings/integrations' && req.method === 'PATCH') return handlePatchBoardIntegrations(req, boardId);
 
-    // POST /api/v1/boards/:id/chat/messages — persist a board chat message
+    // Sprint 199 — session-scoped board chat
+    // GET /api/v1/boards/:id/chat/sessions — list all chat sessions for this board
+    if (sub === '/chat/sessions' && req.method === 'GET') return handleListSessions(req, boardId);
+
+    // POST /api/v1/boards/:id/chat/sessions — create a new chat session
+    if (sub === '/chat/sessions' && req.method === 'POST') return handleCreateSession(req, boardId);
+
+    // GET /api/v1/boards/:id/chat/sessions/:sessionId — get a single session
+    // PATCH /api/v1/boards/:id/chat/sessions/:sessionId — update a session (e.g. rename)
+    const sessionDetailMatch = sub.match(/^\/chat\/sessions\/([^/]+)$/);
+    if (sessionDetailMatch && req.method === 'GET') {
+      return handleGetSession(req, boardId, sessionDetailMatch[1] as string);
+    }
+    if (sessionDetailMatch && req.method === 'PATCH') {
+      return handleUpdateSession(req, boardId, sessionDetailMatch[1] as string);
+    }
+
+    // POST /api/v1/boards/:id/chat/messages — persist a board chat message (session-scoped)
     if (sub === '/chat/messages' && req.method === 'POST') return handleCreateChatMessage(req, boardId);
 
     // GET /api/v1/boards/:id/chat/messages — load board chat history

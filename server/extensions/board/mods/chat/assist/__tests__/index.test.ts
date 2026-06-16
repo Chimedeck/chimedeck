@@ -7,7 +7,7 @@ let completionQueue: BoardChatAssistOutput[];
 let completionCalls: Array<{ messages: unknown[]; tools?: unknown[] }> = [];
 let createBoardCardCalls: Array<unknown> = [];
 let recentMessagesCalls: Array<{ boardId: string; limit: number }> = [];
-let writeMessageCalls: Array<{ boardId: string; authorId: string | null; content: string; isAssistant: boolean }> = [];
+let writeMessageCalls: Array<{ boardId: string; sessionId: string; authorId: string | null; content: string; isAssistant: boolean }> = [];
 
 const assistModule = await import('../index');
 const { assistBoardChat, boardChatAssistDeps } = assistModule;
@@ -97,6 +97,7 @@ describe('assistBoardChat', () => {
   it('returns the plain assistant response when no tool call is requested', async () => {
     const result = await assistBoardChat({
       boardId: 'board-1',
+      sessionId: 'thread-1',
       prompt: 'What should we do next?',
       contextLimit: 3,
       request: new Request('http://localhost'),
@@ -112,7 +113,7 @@ describe('assistBoardChat', () => {
     expect(recentMessagesCalls).toEqual([{ boardId: 'board-1', limit: 3 }]);
     // [why] AI response is now persisted as a chat message with isAssistant flag
     expect(writeMessageCalls).toEqual([
-      { boardId: 'board-1', authorId: null, content: 'Plain text reply', isAssistant: true },
+      { boardId: 'board-1', sessionId: 'thread-1', authorId: null, content: 'Plain text reply', isAssistant: true },
     ]);
   });
 
@@ -146,6 +147,7 @@ describe('assistBoardChat', () => {
 
     const result = await assistBoardChat({
       boardId: 'board-1',
+      sessionId: 'thread-1',
       prompt: 'Create a planning card',
       request: new Request('http://localhost'),
       actorId: 'user-1',
@@ -160,7 +162,7 @@ describe('assistBoardChat', () => {
     expect(completionCalls).toHaveLength(2);
     // [why] AI response is now persisted as a chat message with isAssistant flag
     expect(writeMessageCalls).toEqual([
-      { boardId: 'board-1', authorId: null, content: 'Card created.', isAssistant: true },
+      { boardId: 'board-1', sessionId: 'thread-1', authorId: null, content: 'Card created.', isAssistant: true },
     ]);
   });
 
@@ -187,6 +189,7 @@ describe('assistBoardChat', () => {
 
     const result = await assistBoardChat({
       boardId: 'board-1',
+      sessionId: 'thread-1',
       prompt: 'Create something',
       request: new Request('http://localhost'),
       actorId: 'user-1',

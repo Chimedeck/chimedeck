@@ -83,6 +83,16 @@ beforeEach(() => {
     board_chat_messages: [],
     board_chat_message_vectors: [],
   };
+  // Pre-create a session thread so tests don't fail on "session not found"
+  store.board_chat_threads.push({
+    id: 'thread-1',
+    board_id: 'board-1',
+    name: null,
+    created_by: null,
+    created_at: '2026-06-15T00:00:00.000Z',
+    updated_at: '2026-06-15T00:00:00.000Z',
+    last_message_at: null,
+  });
   generateEmbeddingImpl = async () => ({
     provider: 'http',
     model: 'text-embedding-3-small',
@@ -116,6 +126,7 @@ describe('writeBoardChatMessage', () => {
   it('stores raw text and vector metadata when embedding succeeds', async () => {
     const result = await writeBoardChatMessage({
       boardId: 'board-1',
+      sessionId: 'thread-1',
       authorId: 'user-1',
       content: '  hello board chat  ',
     });
@@ -136,6 +147,7 @@ describe('writeBoardChatMessage', () => {
 
     const result = await writeBoardChatMessage({
       boardId: 'board-1',
+      sessionId: 'thread-1',
       authorId: 'user-1',
       content: 'retry later',
     });

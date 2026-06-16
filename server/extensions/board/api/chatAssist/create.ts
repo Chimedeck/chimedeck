@@ -3,6 +3,7 @@ import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../.
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { requireGuestCanUseBoardChat } from '../../middlewares/chatPermissions';
 import { assistBoardChat } from '../../mods/chat/assist';
+import { getBoardChatSession } from '../../mods/chat/sessions';
 
 const MAX_CONTEXT_LIMIT = 50;
 
@@ -12,10 +13,12 @@ export const boardChatAssistApiDeps = {
   requireWorkspaceMembership,
   requireGuestCanUseBoardChat,
   assistBoardChat,
+  getBoardChatSession,
 };
 
 interface CreateChatAssistBody {
   prompt?: unknown;
+  sessionId?: unknown;
   contextLimit?: unknown;
 }
 
@@ -78,6 +81,23 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
     );
   }
 
+  if (typeof body.sessionId !== 'string' || body.sessionId.trim() === '') {
+    return Response.json(
+      { error: { code: 'missing-session-id', message: 'sessionId is required — create a session via POST /chat/sessions first' } },
+      { status: 400 },
+    );
+  }
+
+  // [why] Validate the session belongs to this board before calling assist.
+  try {
+    await boardChatAssistApiDeps.getBoardChatSession({ sessionId: body.sessionId, boardId });
+  } catch {
+    return Response.json(
+      { error: { code: 'session-not-found', message: 'Session not found for this board' } },
+      { status: 404 },
+    );
+  }
+
   let contextLimit: number | undefined;
   if (typeof body.contextLimit !== 'undefined') {
     if (typeof body.contextLimit !== 'number' || !Number.isFinite(body.contextLimit)) {
@@ -103,6 +123,7 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
 
   const assistInput = {
     boardId,
+    sessionId: body.sessionId,
     prompt,
     ...(typeof contextLimit === 'number' ? { contextLimit } : {}),
     request: req,

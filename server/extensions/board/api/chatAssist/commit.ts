@@ -111,7 +111,15 @@ async function writeProposalFiles(
       continue;
     }
     try {
-      await commitDocumentProposalsDeps.writeSpecsFile({ repoPath, filePath: normalizedPath, content: proposal.content });
+      await commitDocumentProposalsDeps.writeSpecsFile({
+        repoPath,
+        filePath: normalizedPath,
+        content: proposal.content,
+        // [why] Pass '*' so the commit endpoint can overwrite files that already
+        // exist from a previous turn. The user explicitly approved this proposal,
+        // so there is no concurrent-edit conflict to guard against.
+        ifMatch: '*',
+      });
       changed.push(normalizedPath);
     } catch (err) {
       errors.push({ path: proposal.path, name: 'write-failed', message: err instanceof Error ? err.message : 'Failed to write file' });

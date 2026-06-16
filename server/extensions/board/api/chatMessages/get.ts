@@ -1,4 +1,5 @@
 // GET /api/v1/boards/:boardId/chat/messages
+// Sprint 199 — optional sessionId query param to scope history to one session.
 import { db } from '../../../../common/db';
 import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
 import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
@@ -22,6 +23,7 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
 
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;
+  const sessionId = url.searchParams.get('sessionId') ?? null;
   const limitParam = Number.parseInt(url.searchParams.get('limit') ?? `${DEFAULT_LIMIT}`, 10);
   const limit = Math.min(Number.isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam, MAX_LIMIT);
 
@@ -44,8 +46,19 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
       'u.avatar_url as author_avatar_url',
     );
 
+  // [why] Scope to a specific session when provided — keeps history bounded
+  // and prevents token overload from cross-session context bleeding.
+  if (sessionId) {
+    query = query.where('m.thread_id', sessionId);
+  }
+
   if (cursor) {
-    const cursorRow = await db('board_chat_messages').where({ id: cursor, board_id: boardId }).first();
+    const cursorQuery = db('board_chat_messages').where({ id: cursor, board_id: boardId });
+    // [why] Only match cursor within the same session context.
+    if (sessionId) {
+      cursorQuery.where('thread_id', sessionId);
+    }
+    const cursorRow = await cursorQuery.first();
     if (cursorRow) {
       query = query.where(function () {
         this.where('m.created_at', '>', cursorRow.created_at).orWhere(function () {

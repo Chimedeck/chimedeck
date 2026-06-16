@@ -1,4 +1,6 @@
 // Sprint 166 — raw message persistence with best-effort embedding side path.
+// Sprint 199 — session-scoped messages: sessionId is required; auto-thread
+// creation is replaced by explicit session creation via /chat/sessions.
 import { randomUUID } from 'crypto';
 import { db } from '../../../../../common/db';
 import type {
@@ -18,34 +20,28 @@ export const boardChatWriteDeps = {
   enqueueBoardChatEmbeddingRetry,
 };
 
-async function ensureBoardChatThread({
+// [why] Validates that a session exists and belongs to this board.
+// No auto-creation — the user must explicitly create a session first.
+async function resolveBoardChatThread({
+  sessionId,
   boardId,
-  now,
 }: {
+  sessionId: string;
   boardId: string;
-  now: string;
 }): Promise<BoardChatThread> {
-  const existing = (await boardChatWriteDeps.db('board_chat_threads').where({ board_id: boardId }).first()) as
-    | BoardChatThread
-    | undefined;
-  if (existing) return existing;
+  const thread = (await boardChatWriteDeps
+    .db('board_chat_threads')
+    .where({ id: sessionId, board_id: boardId })
+    .first()) as BoardChatThread | undefined;
 
-  const threadId = randomUUID();
-  await boardChatWriteDeps.db('board_chat_threads').insert({
-    id: threadId,
-    board_id: boardId,
-    created_at: now,
-    updated_at: now,
-    last_message_at: null,
-  });
+  if (!thread) {
+    throw Object.assign(
+      new Error('board-chat-session-not-found'),
+      { code: 'board-chat-session-not-found', status: 404 },
+    );
+  }
 
-  return {
-    id: threadId,
-    board_id: boardId,
-    created_at: now,
-    updated_at: now,
-    last_message_at: null,
-  };
+  return thread;
 }
 
 async function markThreadActivity({
@@ -63,6 +59,7 @@ async function markThreadActivity({
 
 export async function writeBoardChatMessage({
   boardId,
+  sessionId,
   authorId,
   content,
   isAssistant = false,
@@ -73,7 +70,7 @@ export async function writeBoardChatMessage({
     throw new Error('missing-board-chat-content');
   }
 
-  const thread = await ensureBoardChatThread({ boardId, now });
+  const thread = await resolveBoardChatThread({ sessionId, boardId });
   const messageId = randomUUID();
   const message: BoardChatMessage = {
     id: messageId,

@@ -1,20 +1,29 @@
 // BoardChatDrawer — right-side slide-in drawer for board chat history and composition.
 // Sprint 164: Shows loading/empty/error states; sticky composer footer shell.
 // Sprint 165: Wires real history endpoint and message send.
+// Sprint 199: Session-scoped chat — users must create/select a session before chatting.
+// Sprint 208: Real-time AI progress streaming via WebSocket — replaces static
+// typing indicator with per-iteration phase labels and tool names.
 
 import { useEffect, useState, useRef } from 'react';
+import type React from 'react';
 import { useBoardChatHistory } from '../hooks/useBoardChatHistory';
-import { LockClosedIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { LockClosedIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
+import { socket } from '~/extensions/Realtime/client/socket';
+import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
 import {
   createBoardChatMessage,
   requestBoardChatAssist,
   getBoardChatPermissions,
   patchBoardChatPermissions,
   commitBoardChatProposals,
+  listBoardChatSessions,
+  createBoardChatSession,
   type BoardChatPermissions,
   type BoardChatAssistActionCard,
   type BoardChatAssistCommitProposal,
+  type BoardChatSession,
 } from '../api';
 import type { GuestType } from '~/extensions/Board/mods/guestPermissions';
 
@@ -64,11 +73,26 @@ const BoardChatDrawer = ({
   const [committingCards, setCommittingCards] = useState<Set<string>>(new Set());
   const [commitError, setCommitError] = useState<string | null>(null);
   const [dismissedCards, setDismissedCards] = useState<Set<string>>(new Set());
+  // Sprint 199 — session-scoped chat
+  const [sessions, setSessions] = useState<BoardChatSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
+  // Sprint 208 — real-time AI progress streaming
+  const [aiProgress, setAiProgress] = useState<{
+    phase: 'thinking' | 'executing_tools' | 'done';
+    toolNames?: string[] | undefined;
+    message?: string | undefined;
+    // [why] Document paths streamed from propose_github_document tool calls
+    // so the client can show "Creating specs/pricing.md…" instead of just
+    // "Running: propose_github_document" with bouncing dots.
+    documentPaths?: string[] | undefined;
+  } | null>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
   const guestCanView = permissions?.guest_can_view === true;
   const guestCanUse = permissions?.guest_can_use === true;
-  const historyEnabled = !!boardId && (!isGuest || (permissionsState === 'loaded' && guestCanView));
-  const { messages, state, error } = useBoardChatHistory({ boardId, enabled: historyEnabled, refreshKey });
+  const historyEnabled = !!boardId && !!activeSessionId && (!isGuest || (permissionsState === 'loaded' && guestCanView));
+  const { messages, state, error } = useBoardChatHistory({ boardId, sessionId: activeSessionId ?? undefined, enabled: historyEnabled, refreshKey });
 
   useEffect(() => {
     if (!boardId) return;
@@ -107,6 +131,63 @@ const BoardChatDrawer = ({
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // [why] Subscribe to realtime AI progress events so the chat drawer shows
+  // per-iteration streaming updates (phase labels, tool names) instead of a
+  // static typing indicator for the entire multi-minute tool-use loop.
+  useEffect(() => {
+    if (!boardId) return;
+
+    const handleProgress = (event: RealtimeEvent) => {
+      if (event.type !== 'board_chat.assist_progress') return;
+      const payload = event.payload as {
+        sessionId: string;
+        phase: 'thinking' | 'executing_tools' | 'done';
+        toolNames?: string[];
+        message?: string;
+        actionCards?: BoardChatAssistActionCard[];
+        documentPaths?: string[];
+      } | null;
+      if (!payload) return;
+      // [why] Only process events for the active session to avoid cross-session bleed.
+      if (payload.sessionId !== activeSessionId) return;
+
+      if (payload.phase === 'done') {
+        setAiProgress(null);
+        return;
+      }
+
+      setAiProgress({
+        phase: payload.phase,
+        toolNames: payload.toolNames,
+        message: payload.message,
+        documentPaths: payload.documentPaths,
+      });
+
+      // [why] Action cards arrive progressively — append them as they come
+      // so document proposals appear in realtime during the loop.
+      if (payload.actionCards && payload.actionCards.length > 0) {
+        const incomingCards = payload.actionCards;
+        setActionCards((prev) => {
+          const existingKeys = new Set(prev.map((c) => c.idempotencyKey));
+          const newCards = incomingCards.filter(
+            (c) => !existingKeys.has(c.idempotencyKey)
+          );
+          return newCards.length > 0 ? [...prev, ...newCards] : prev;
+        });
+      }
+    };
+
+    const unsubscribe = socket.subscribe({ onEvent: handleProgress });
+    return unsubscribe;
+  }, [boardId, activeSessionId]);
+
+  // [why] Clear progress when AI typing ends (HTTP response received).
+  useEffect(() => {
+    if (!aiTyping) {
+      setAiProgress(null);
+    }
+  }, [aiTyping]);
 
   // Close on Escape key
   useEffect(() => {
@@ -156,7 +237,7 @@ const BoardChatDrawer = ({
     }
   };
 
-  const triggerAiAssist = async (prompt: string): Promise<void> => {
+  const triggerAiAssist = async (prompt: string, sessionId: string): Promise<void> => {
     setAiResponse(null);
     setActionCards([]);
     setAiTyping(true);
@@ -164,6 +245,7 @@ const BoardChatDrawer = ({
       const res = await requestBoardChatAssist({
         api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
         boardId,
+        sessionId,
         prompt,
       });
       setAiResponse(res.data.message ?? null);
@@ -195,12 +277,34 @@ const BoardChatDrawer = ({
     const trimmed = composerText.trim();
     if (!trimmed || composerDisabled) return;
 
+    // [why] Auto-create a session on the first message — the user
+    // shouldn't have to manually create a session before chatting.
+    let sessionId = activeSessionId;
+    if (!sessionId) {
+      setCreatingSession(true);
+      try {
+        const res = await createBoardChatSession({
+          api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+          boardId,
+        });
+        sessionId = res.data.id;
+        setSessions((prev) => [...prev, res.data]);
+        setActiveSessionId(sessionId);
+      } catch {
+        setSendError('Failed to create session');
+        return;
+      } finally {
+        setCreatingSession(false);
+      }
+    }
+
     setSendError(null);
     setSendingMessage(true);
     try {
       await createBoardChatMessage({
         api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
         boardId,
+        sessionId,
         content: trimmed,
       });
       setComposerText('');
@@ -211,7 +315,7 @@ const BoardChatDrawer = ({
     } finally {
       setSendingMessage(false);
     }
-    await triggerAiAssist(trimmed);
+    await triggerAiAssist(trimmed, sessionId);
   };
 
   // [why] Commit confirmed document proposals to the board's GitHub repository.
@@ -266,6 +370,53 @@ const BoardChatDrawer = ({
     setDismissedCards((prev) => new Set(prev).add(card.idempotencyKey));
   };
 
+  // Sprint 199 — fetch board chat sessions on mount
+  useEffect(() => {
+    if (!boardId || isGuest) return;
+    let cancelled = false;
+
+    const fetchSessions = async () => {
+      setSessionsLoading(true);
+      try {
+        const res = await listBoardChatSessions({
+          api: apiClient as { get: <T>(url: string) => Promise<T> },
+          boardId,
+        });
+        if (cancelled) return;
+        setSessions(res.data);
+        // [why] Never auto-select a session — sessions are created
+        // automatically when the user sends their first message.
+        setActiveSessionId(null);
+      } catch {
+        if (cancelled) return;
+      } finally {
+        if (!cancelled) setSessionsLoading(false);
+      }
+    };
+
+    void fetchSessions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, isGuest]);
+
+  const handleCreateSession = async (): Promise<void> => {
+    setCreatingSession(true);
+    try {
+      const res = await createBoardChatSession({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        boardId,
+      });
+      setSessions((prev) => [...prev, res.data]);
+      setActiveSessionId(res.data.id);
+    } catch {
+      // Silently fail — UI will show empty state
+    } finally {
+      setCreatingSession(false);
+    }
+  };
+
   return (
     // Backdrop — click to close
     <div
@@ -291,6 +442,54 @@ const BoardChatDrawer = ({
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Session selector bar — Sprint 199 */}
+        {!isGuest && (
+          <div className="px-4 py-2 border-b border-border bg-bg-surface flex items-center gap-2">
+            {/* Session dropdown */}
+            <select
+              value={activeSessionId ?? ''}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                const val = e.target.value;
+                if (val === '__new__') {
+                  void handleCreateSession();
+                  return;
+                }
+                if (val === '') {
+                  setActiveSessionId(null);
+                } else {
+                  setActiveSessionId(val);
+                  // [why] Refresh messages when switching sessions.
+                  setRefreshKey((k) => k + 1);
+                }
+              }}
+              className="flex-1 rounded-md border border-border bg-bg-base px-2 py-1.5 text-xs text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={sessionsLoading}
+            >
+              <option value="">— Start a new session —</option>
+              {sessions.length === 0 && (
+                <option value="__new__">+ Create first session</option>
+              )}
+              {sessions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name ? s.name : `Session ${s.id.slice(0, 8)}`} — {s.last_message_at ? new Date(s.last_message_at).toLocaleDateString() : 'empty'}
+                </option>
+              ))}
+            </select>
+
+            {/* New session button */}
+            <button
+              type="button"
+              disabled={creatingSession}
+              onClick={() => { void handleCreateSession(); }}
+              className="rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 flex-shrink-0"
+              title="New chat session"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              New
+            </button>
+          </div>
+        )}
 
         {/* History area — scrollable */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -412,35 +611,53 @@ const BoardChatDrawer = ({
             </ul>
           )}
 
-          {/* AI typing indicator — wrapped in ul for valid HTML */}
+          {/* AI typing / progress indicator — shows realtime phase and tool names when streaming */}
           {aiTyping && (
             <ul className="space-y-3">
               <li className="rounded-md bg-bg-overlay p-3">
-                <div className="flex gap-2 items-center">
-                  <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[10px] font-bold text-white">AI</span>
-                  </div>
-                  <div className="flex gap-1 items-center h-4">
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
-                  </div>
-                </div>
-              </li>
-            </ul>
-          )}
-
-          {/* AI response — wrapped in ul for valid HTML */}
-          {!aiTyping && aiResponse && (
-            <ul className="space-y-3">
-              <li className="rounded-md bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 p-3">
-                <div className="flex gap-2">
-                  <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                <div className="flex gap-2 items-start">
+                  <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-[10px] font-bold text-white">AI</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Board AI</p>
-                    <p className="text-sm text-base break-words mt-1 whitespace-pre-wrap">{aiResponse}</p>
+                    {aiProgress ? (
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                          {aiProgress.phase === 'thinking' && 'Thinking…'}
+                          {aiProgress.phase === 'executing_tools' && (
+                            aiProgress.toolNames && aiProgress.toolNames.length > 0
+                              ? `Running: ${aiProgress.toolNames.map((n) => n.replace(/_/g, ' ')).join(', ')}`
+                              : 'Executing tools…'
+                          )}
+                        </p>
+                        {/* [why] Show document paths being created so the user sees
+                            "Creating specs/pricing.md…" instead of just bouncing dots */}
+                        {aiProgress.documentPaths && aiProgress.documentPaths.length > 0 && (
+                          <ul className="space-y-0.5">
+                            {aiProgress.documentPaths.map((path) => (
+                              <li key={path} className="text-xs text-indigo-500 dark:text-indigo-400 font-mono flex items-center gap-1">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                                Creating {path}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {aiProgress.message && (
+                          <p className="text-xs text-muted">{aiProgress.message}</p>
+                        )}
+                        <div className="flex gap-1 items-center h-4">
+                          <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:0ms]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:150ms]" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:300ms]" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-1 items-center h-4">
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </li>

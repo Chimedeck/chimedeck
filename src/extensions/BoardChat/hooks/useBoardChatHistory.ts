@@ -24,19 +24,21 @@ export interface UseBoardChatHistoryResult {
 
 export const useBoardChatHistory = ({
   boardId,
+  sessionId,
   enabled = true,
   refreshKey = 0,
 }: {
   boardId: string;
+  sessionId?: string | undefined;
   enabled?: boolean;
   refreshKey?: number;
 }): UseBoardChatHistoryResult => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [state, setState] = useState<HistoryState>(enabled && boardId ? 'loading' : 'empty');
+  const [state, setState] = useState<HistoryState>(enabled && boardId && sessionId ? 'loading' : 'empty');
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (!enabled || !boardId) {
+    if (!enabled || !boardId || !sessionId) {
       setMessages([]);
       setState('empty');
       setError(undefined);
@@ -50,6 +52,7 @@ export const useBoardChatHistory = ({
     void getBoardChatMessages({
       api: apiClient as { get: <T>(url: string) => Promise<T> },
       boardId,
+      sessionId,
     })
       .then((res) => {
         if (cancelled) return;
@@ -75,7 +78,7 @@ export const useBoardChatHistory = ({
     return () => {
       cancelled = true;
     };
-  }, [boardId, enabled, refreshKey]);
+  }, [boardId, sessionId, enabled, refreshKey]);
 
   return {
     messages,
