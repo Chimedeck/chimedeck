@@ -12,6 +12,8 @@ import { LockClosedIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline
 import { apiClient } from '~/common/api/client';
 import { socket } from '~/extensions/Realtime/client/socket';
 import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 import {
   createBoardChatMessage,
   requestBoardChatAssist,
@@ -447,13 +449,11 @@ const BoardChatDrawer = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h2 className="text-base font-semibold">Board Chat</h2>
-          <button
-            className="text-muted hover:text-subtle transition-colors"
-            onClick={onClose}
+          <IconButton
             aria-label="Close board chat"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+            icon={<XMarkIcon className="h-5 w-5" />}
+            onClick={onClose}
+          />
         </div>
 
         {/* Session selector bar — Sprint 199 */}
@@ -491,16 +491,17 @@ const BoardChatDrawer = ({
             </select>
 
             {/* New session button */}
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
               disabled={creatingSession}
               onClick={() => { void handleCreateSession(); }}
-              className="rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 flex-shrink-0"
               title="New chat session"
+              className="gap-1 flex-shrink-0"
             >
               <PlusIcon className="h-3.5 w-3.5" />
               New
-            </button>
+            </Button>
           </div>
         )}
 
@@ -751,22 +752,22 @@ const BoardChatDrawer = ({
                               {/* Confirm / Dismiss buttons — only for suggested proposals */}
                               {!isConfirmed && (
                                 <div className="flex gap-2 mt-2">
-                                  <button
-                                    type="button"
+                                  <Button
+                                    variant="success"
+                                    size="sm"
                                     disabled={isCommitting}
                                     onClick={() => { void handleCommitProposal(card); }}
-                                    className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                   >
                                     {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
-                                  </button>
-                                  <button
-                                    type="button"
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
                                     disabled={isCommitting}
                                     onClick={() => handleDismissProposal(card)}
-                                    className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                   >
                                     ✕ Dismiss
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -807,13 +808,15 @@ const BoardChatDrawer = ({
               className="flex-1 rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-base placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
             />
-            <button
+            <Button
+              variant="primary"
+              size="sm"
+              className="self-end"
               disabled={composerDisabled || !composerText.trim()}
               onClick={() => { void handleSendMessage(); }}
-              className="self-end rounded-md bg-primary px-3 py-2 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Send
-            </button>
+            </Button>
           </div>
           {isGuestComposerDenied && (
             <p className="mt-2 text-xs text-muted">Guests are not allowed to send messages on this board.</p>

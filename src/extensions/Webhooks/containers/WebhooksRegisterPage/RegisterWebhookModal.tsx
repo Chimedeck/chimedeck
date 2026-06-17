@@ -197,9 +197,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                         <span className="text-xs font-semibold uppercase tracking-wide text-subtle">
                           {group.label}
                         </span>
-                        <button
-                          type="button"
-                          className="text-xs text-primary hover:underline"
+                        <Button
+                          variant="link"
+                          size="sm"
                           onClick={() =>
                             allSelected
                               ? clearAllInGroup(available)
@@ -210,7 +210,7 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                           {allSelected
                             ? translations['RegisterWebhookModal.clearAll']
                             : translations['RegisterWebhookModal.selectAll']}
-                        </button>
+                        </Button>
                       </div>
                       <div className="space-y-1">
                         {available.map((event) => (

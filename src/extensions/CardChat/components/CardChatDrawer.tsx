@@ -8,6 +8,8 @@ import { XMarkIcon, SparklesIcon, ArrowPathIcon, DocumentTextIcon, PlusIcon } fr
 import { apiClient } from '~/common/api/client';
 import { socket } from '~/extensions/Realtime/client/socket';
 import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
+import Button from '~/common/components/Button';
+import IconButton from '~/common/components/IconButton';
 import {
   createCardChatMessage,
   pauseCardChatSession,
@@ -457,13 +459,11 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
             <h2 className="text-base font-semibold">AI Assist</h2>
             <RefinementStatusBadge session={currentSession} />
           </div>
-          <button
-            className="text-muted hover:text-subtle transition-colors"
-            onClick={handleClose}
+          <IconButton
             aria-label="Close card chat"
-          >
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+            icon={<XMarkIcon className="h-5 w-5" />}
+            onClick={handleClose}
+          />
         </div>
 
         {/* Session selector bar — Sprint 208 */}
@@ -495,16 +495,17 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
             <option value="__new__">+ New session</option>
           </select>
 
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="sm"
             disabled={creatingSession}
             onClick={() => { void handleCreateSession(); }}
-            className="rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 flex-shrink-0"
             title="New chat session"
+            className="gap-1 flex-shrink-0"
           >
             <PlusIcon className="h-3.5 w-3.5" />
             New
-          </button>
+          </Button>
         </div>
 
         {/* Quality score */}
@@ -666,22 +667,22 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                               )}
                               {!isConfirmed && (
                                 <div className="flex gap-2 mt-2">
-                                  <button
-                                    type="button"
+                                  <Button
+                                    variant="success"
+                                    size="sm"
                                     disabled={isCommitting}
                                     onClick={() => { void handleCommitActionCard(card); }}
-                                    className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                   >
                                     {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
-                                  </button>
-                                  <button
-                                    type="button"
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
                                     disabled={isCommitting}
                                     onClick={() => handleDismissActionCard(card)}
-                                    className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                   >
                                     ✕ Dismiss
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -719,22 +720,22 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                     <p className="mt-1 text-xs text-danger">{applyError}</p>
                   )}
                   <div className="flex gap-2 mt-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="success"
+                      size="sm"
                       disabled={applyingDescription}
                       onClick={handleApplyDescription}
-                      className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {applyingDescription ? 'Applying…' : '✓ Confirm & Apply'}
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       disabled={applyingDescription}
                       onClick={handleDismissProposal}
-                      className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       ✕ Dismiss
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -754,14 +755,15 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
               {resumeError && (
                 <p className="text-xs text-danger">{resumeError}</p>
               )}
-              <button
-                type="button"
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-40"
+              <Button
+                variant="primary"
+                size="sm"
+                className="flex-shrink-0"
                 onClick={() => void handleResume()}
                 disabled={resuming}
               >
                 {resuming ? 'Resuming…' : 'Resume'}
-              </button>
+              </Button>
             </div>
           )}
           {currentSession.status === 'READY_FOR_REVIEW' && (
@@ -832,14 +834,15 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                 onKeyDown={handleKeyDown}
                 disabled={currentSession.status !== 'ACTIVE_REFINEMENT' || sendingMessage || refining}
               />
-              <button
-                type="button"
-                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-40 flex-shrink-0"
+              <Button
+                variant="primary"
+                size="sm"
+                className="flex-shrink-0"
                 onClick={() => void handleSendMessage()}
                 disabled={!canSend || refining}
               >
                 {sendingMessage ? '…' : 'Send'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

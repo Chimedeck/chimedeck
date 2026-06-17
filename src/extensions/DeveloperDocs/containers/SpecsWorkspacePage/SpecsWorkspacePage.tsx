@@ -5,6 +5,7 @@
 // Sprint 170: Documentation board tab, workspace shell, manifest load, file read, delta save, commit sync.
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { apiClient } from '~/common/api/client';
+import Button from '~/common/components/Button';
 import SpecsFileTree from '../../components/SpecsFileTree';
 import SpecsMarkdownEditor from '../../components/SpecsMarkdownEditor';
 import type { SpecsManifestEntry } from '../../components/SpecsFileTree';
@@ -466,6 +467,21 @@ const SpecsWorkspacePage = ({
     };
   }, [boardId]);
 
+  const handleRetry = useCallback(() => {
+    dispatch({ type: 'manifest/loading' });
+    fetchSpecsManifest({ api, boardId })
+      .then((manifest) => dispatch({ type: 'manifest/loaded', files: manifest.files }))
+      .catch((err: unknown) => {
+        const extracted = extractManifestErrorMessage(err, 'Failed to load specs manifest');
+        dispatch({
+          type: 'manifest/error',
+          message: extracted.message,
+          name: extracted.name,
+          status: extracted.status,
+        });
+      });
+  }, [api, boardId]);
+
   useEffect(() => {
     const { selectedPath } = state;
     if (!selectedPath) return;
@@ -513,21 +529,6 @@ const SpecsWorkspacePage = ({
     },
     [canEdit, state.selectedPath],
   );
-
-  const handleRetry = useCallback(() => {
-    dispatch({ type: 'manifest/loading' });
-    fetchSpecsManifest({ api, boardId })
-      .then((manifest) => dispatch({ type: 'manifest/loaded', files: manifest.files }))
-      .catch((err: unknown) => {
-        const extracted = extractManifestErrorMessage(err, 'Failed to load specs manifest');
-        dispatch({
-          type: 'manifest/error',
-          message: extracted.message,
-          name: extracted.name,
-          status: extracted.status,
-        });
-      });
-  }, [api, boardId]);
 
   const handleReloadSelectedFile = useCallback(async () => {
     if (!state.selectedPath) return;
@@ -660,13 +661,14 @@ const SpecsWorkspacePage = ({
               : (state.manifestError ?? 'Failed to load documentation.')}
         </p>
         {!isNotConfigured && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleRetry}
-            className="rounded-md bg-bg-overlay px-3 py-1.5 text-sm text-subtle hover:bg-bg-sunken"
+            className="shrink-0 border-red-300 bg-white text-red-900 hover:bg-red-50 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/50"
           >
             Retry
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -754,13 +756,14 @@ const SpecsWorkspacePage = ({
                     <p className="text-sm font-medium text-red-900 dark:text-red-200">File conflict detected</p>
                     <p className="text-xs text-red-800 dark:text-red-300">{state.saveError}</p>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleReloadSelectedFile}
-                    className="shrink-0 rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-900 hover:bg-red-50 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/50"
+                    className="shrink-0 border-red-300 bg-white text-red-900 hover:bg-red-50 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/50"
                   >
                     Reload file
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

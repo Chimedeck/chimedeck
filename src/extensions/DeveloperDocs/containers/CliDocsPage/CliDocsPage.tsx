@@ -2,6 +2,7 @@
 // Route: /developer/cli (private, within AppShell)
 import { useNavigate } from 'react-router-dom';
 import { CommandLineIcon } from '@heroicons/react/24/outline';
+import Button from '~/common/components/Button';
 import {
   Section,
   H2,
@@ -38,12 +39,14 @@ const CliDocsPage = () => {
 
       <main className="flex-1 overflow-y-auto">
         <div className="border-b border-border bg-bg-base px-8 py-5">
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => navigate(-1)}
-            className="mb-2 flex items-center gap-1 text-sm text-muted hover:text-subtle"
+            className="mb-2"
           >
             ← Back
-          </button>
+          </Button>
           <div className="flex items-center gap-3">
             <CommandLineIcon className="h-7 w-7 text-indigo-400" />
             <div>

@@ -2,6 +2,7 @@
 // Collapsed by default; expands to show prose and a JS code example.
 import { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/24/outline';
+import Button from '~/common/components/Button';
 import translations from '../../translations/en.json';
 
 // [why] Exact implementation must mirror server/extensions/webhooks/mods/sign.ts:
@@ -146,10 +147,11 @@ export default function SignatureVerificationSnippet() {
             >
               <code>{VERIFICATION_SNIPPET}</code>
             </pre>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleCopy}
-              className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-bg-surface/80 px-2 py-1 text-xs text-muted hover:text-text-primary transition-colors"
+              className="absolute right-2 top-2 gap-1 bg-bg-surface/80 hover:text-text-primary"
               aria-label={copied ? translations['SignatureSnippet.copied'] : translations['SignatureSnippet.copy']}
               data-testid="signature-snippet-copy"
             >
@@ -164,7 +166,7 @@ export default function SignatureVerificationSnippet() {
                   {translations['SignatureSnippet.copy']}
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       )}

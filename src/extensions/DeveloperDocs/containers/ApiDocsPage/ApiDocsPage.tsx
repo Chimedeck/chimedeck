@@ -7,6 +7,7 @@ import {
   ChevronUpIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
+import Button from '~/common/components/Button';
 
 declare global {
   interface Window {
@@ -335,14 +336,16 @@ const ApiDocsPage = () => {
 
       <div className="flex min-h-full min-w-0 flex-1 flex-col">
         <div className="border-b border-border bg-bg-base px-8 py-5">
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => {
               navigate(-1);
             }}
-            className="mb-2 flex items-center gap-1 text-sm text-muted hover:text-subtle"
+            className="mb-2"
           >
             ← Back
-          </button>
+          </Button>
           <div className="flex items-center gap-3">
             <DocumentTextIcon className="h-7 w-7 text-indigo-400" />
             <div>
