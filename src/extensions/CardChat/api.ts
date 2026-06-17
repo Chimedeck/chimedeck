@@ -178,3 +178,79 @@ export async function proposeCardDescription({
     sessionId,
   });
 }
+
+/**
+ * List all chat sessions for a card so the user can switch between
+ * past conversations instead of always starting fresh.
+ */
+export async function listCardChatSessions({
+  api,
+  cardId,
+}: {
+  api: { get: <T>(url: string) => Promise<T> };
+  cardId: string;
+}): Promise<{ data: CardChatSession[] }> {
+  return api.get<{ data: CardChatSession[] }>(`/cards/${cardId}/chat/sessions`);
+}
+
+export interface CardChatAssistActionCard {
+  state: 'suggested' | 'confirmed' | 'dismissed';
+  toolName: string;
+  toolCallId: string;
+  idempotencyKey: string;
+  source: 'card-chat-assist';
+  cardId: string;
+  workspaceId: string;
+  descriptionContent?: string;
+  descriptionPreview?: string;
+}
+
+export interface CardChatAssistResponse {
+  userMessage: CardChatMessage;
+  message?: string;
+  actionCards?: CardChatAssistActionCard[];
+}
+
+/**
+ * Request AI assist for a card-chat session with tool-use capability.
+ * The AI can call write_card_description to propose a description update,
+ * which appears as an action card for user confirmation.
+ */
+export async function requestCardChatAssist({
+  api,
+  cardId,
+  sessionId,
+  prompt,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  cardId: string;
+  sessionId: string;
+  prompt: string;
+}): Promise<{ data: CardChatAssistResponse }> {
+  return api.post<{ data: CardChatAssistResponse }>(`/cards/${cardId}/chat/assist`, {
+    sessionId,
+    prompt,
+  });
+}
+
+export interface CardChatAssistCommitProposal {
+  toolCallId: string;
+  idempotencyKey: string;
+  description: string;
+}
+
+/**
+ * Commit a confirmed description proposal to the card.
+ * Applies the AI-proposed description to the card.
+ */
+export async function commitCardChatProposal({
+  api,
+  cardId,
+  proposal,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  cardId: string;
+  proposal: CardChatAssistCommitProposal;
+}): Promise<{ data: { success: boolean } }> {
+  return api.post<{ data: { success: boolean } }>(`/cards/${cardId}/chat/assist/commit-description`, proposal);
+}

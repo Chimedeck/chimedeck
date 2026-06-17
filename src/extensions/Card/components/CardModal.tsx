@@ -694,6 +694,7 @@ const CardModal = ({
           {chatDrawerOpen && chatSession && (
             <CardChatDrawer
               cardId={card.id}
+              boardId={boardId}
               session={chatSession}
               onClose={() => onChatClose?.()}
               onDescriptionSave={onDescriptionSave}

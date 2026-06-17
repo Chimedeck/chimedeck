@@ -149,12 +149,26 @@ export interface CardChatActivityInput {
 // ── AI Provider (reuses board-chat assist provider config) ──
 
 export interface CardChatProviderMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  toolCalls?: Array<{
+    id: string;
+    type: 'function';
+    function: { name: string; arguments: string };
+  }>;
+  toolCallId?: string;
 }
 
 export interface CardChatProviderInput {
   messages: CardChatProviderMessage[];
+  tools?: Array<{
+    type: 'function';
+    function: {
+      name: string;
+      description: string;
+      parameters: Record<string, unknown>;
+    };
+  }>;
 }
 
 export interface CardChatProviderOutput {
@@ -162,6 +176,11 @@ export interface CardChatProviderOutput {
   data?: {
     model: string;
     message: string;
+    toolCalls?: Array<{
+      id: string;
+      type: 'function';
+      function: { name: string; arguments: string };
+    }>;
     usage?: {
       prompt_tokens?: number;
       completion_tokens?: number;

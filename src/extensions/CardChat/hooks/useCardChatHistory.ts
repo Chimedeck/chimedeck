@@ -25,19 +25,21 @@ export interface UseCardChatHistoryResult {
 
 export const useCardChatHistory = ({
   cardId,
+  sessionId,
   enabled = true,
   refreshKey = 0,
 }: {
   cardId: string;
+  sessionId?: string | undefined;
   enabled?: boolean;
   refreshKey?: number;
 }): UseCardChatHistoryResult => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [state, setState] = useState<HistoryState>(enabled && cardId ? 'loading' : 'empty');
+  const [state, setState] = useState<HistoryState>(enabled && cardId && sessionId ? 'loading' : 'empty');
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    if (!enabled || !cardId) {
+    if (!enabled || !cardId || !sessionId) {
       setMessages([]);
       setState('empty');
       setError(undefined);
@@ -54,7 +56,12 @@ export const useCardChatHistory = ({
     })
       .then((res) => {
         if (cancelled) return;
-        const nextMessages = (res.data ?? []).map((message) => ({
+        // [why] Filter messages to the active session so switching sessions
+        // shows only the relevant conversation history.
+        const sessionMessages = (res.data ?? []).filter(
+          (message) => message.session_id === sessionId,
+        );
+        const nextMessages = sessionMessages.map((message) => ({
           id: message.id,
           sessionId: message.session_id,
           role: message.role,
@@ -77,7 +84,7 @@ export const useCardChatHistory = ({
     return () => {
       cancelled = true;
     };
-  }, [cardId, enabled, refreshKey]);
+  }, [cardId, sessionId, enabled, refreshKey]);
 
   return {
     messages,

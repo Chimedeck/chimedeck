@@ -38,13 +38,14 @@ async function readFailureMessage(response: Response): Promise<string | null> {
 }
 
 /**
- * Request a text-only chat completion from the configured AI provider.
- * This is intentionally simpler than the board-chat assist provider
- * because the BA persona loop does not use tool calls — it is a pure
- * conversational refinement loop.
+ * Request a chat completion from the configured AI provider.
+ * Supports both text-only and tool-use completions.
+ * When tools are provided, the LLM may return tool_calls instead of
+ * a text message.
  */
 export async function requestCardChatCompletion({
   messages,
+  tools,
 }: CardChatProviderInput): Promise<CardChatProviderOutput> {
   let config: { model: string; baseUrl: string; apiKey: string };
   try {
@@ -57,10 +58,16 @@ export async function requestCardChatCompletion({
     };
   }
 
-  const requestBody = {
+  const requestBody: Record<string, unknown> = {
     model: config.model,
     messages,
   };
+
+  // [why] Only include tools when provided — the BA persona loop
+  // uses text-only completions, while the assist endpoint uses tools.
+  if (tools && tools.length > 0) {
+    requestBody.tools = tools;
+  }
 
   let response: Response;
   try {
@@ -115,7 +122,15 @@ export async function requestCardChatCompletion({
   let payload: {
     model?: unknown;
     choices?: Array<{
-      message?: { content?: unknown };
+      message?: {
+        content?: unknown;
+        reasoning?: unknown;
+        tool_calls?: Array<{
+          id?: unknown;
+          type?: unknown;
+          function?: { name?: unknown; arguments?: unknown };
+        }>;
+      };
     }>;
   };
   try {
@@ -137,11 +152,29 @@ export async function requestCardChatCompletion({
       ? choiceMessage.reasoning.trim()
       : null;
 
-  if (!message) {
+  // [why] Extract tool calls from the response for the assist endpoint.
+  const rawToolCalls = choiceMessage?.tool_calls;
+  const toolCalls: Array<{
+    id: string;
+    type: 'function';
+    function: { name: string; arguments: string };
+  }> | undefined = Array.isArray(rawToolCalls) && rawToolCalls.length > 0
+    ? rawToolCalls
+        .filter((tc): tc is { id: string; type: 'function'; function: { name: string; arguments: string } } =>
+          typeof tc.id === 'string' &&
+          tc.type === 'function' &&
+          typeof tc.function?.name === 'string' &&
+          typeof tc.function?.arguments === 'string',
+        )
+    : undefined;
+
+  // [why] Tool calls without a text message are valid — the LLM is
+  // responding with actions rather than text.
+  if (!message && !toolCalls) {
     return {
       status: 502,
       name: 'assist-provider-response-invalid',
-      message: 'AI provider response does not contain a completion message',
+      message: 'AI provider response does not contain a completion message or tool calls',
     };
   }
 
@@ -153,7 +186,8 @@ export async function requestCardChatCompletion({
     status: 200,
     data: {
       model,
-      message: message.trim(),
+      message: message ?? '',
+      ...(toolCalls ? { toolCalls } : {}),
     },
   };
 }

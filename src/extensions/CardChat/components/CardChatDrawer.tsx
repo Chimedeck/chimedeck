@@ -1,17 +1,24 @@
 // CardChatDrawer — right-side slide-in drawer for card-scoped chat + AI Assist.
 // Sprint 171: Shows message list with cursor pagination, composer input,
 // refinement status badge, quality score meter, and AI response display.
-// Auto-pauses session on drawer close.
+// Sprint 208: Session-scoped history persistence, real-time AI progress
+// streaming via WebSocket, and write-to-card action cards with confirm/dismiss.
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { XMarkIcon, SparklesIcon, ArrowPathIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, SparklesIcon, ArrowPathIcon, DocumentTextIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
+import { socket } from '~/extensions/Realtime/client/socket';
+import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
 import {
   createCardChatMessage,
   pauseCardChatSession,
   resumeCardChatSession,
   refineCardChat,
+  listCardChatSessions,
+  startCardChatSession,
+  requestCardChatAssist,
+  commitCardChatProposal,
   type CardChatSession,
-  type RefineCardChatResult,
+  type CardChatAssistActionCard,
 } from '../api';
 import { useCardChatHistory } from '../hooks/useCardChatHistory';
 import RefinementStatusBadge from './RefinementStatusBadge';
@@ -19,28 +26,56 @@ import QualityScoreMeter from './QualityScoreMeter';
 
 interface Props {
   cardId: string;
+  boardId: string;
   session: CardChatSession;
   onClose: () => void;
   onDescriptionSave?: (description: string) => void;
 }
 
-const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) => {
+const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }: Props) => {
+  const REFINE_SUGGESTION_PROMPT = 'Refine the card details and propose an updated card description based on the latest conversation.';
+
+  // ── Session state ──────────────────────────────────────────────────────
+  const [currentSession, setCurrentSession] = useState<CardChatSession>(session);
+  const [sessions, setSessions] = useState<CardChatSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [creatingSession, setCreatingSession] = useState(false);
+
+  // ── Composer state ─────────────────────────────────────────────────────
   const [composerText, setComposerText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+
+  // ── Message history ────────────────────────────────────────────────────
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // ── Refinement state ───────────────────────────────────────────────────
   const [refining, setRefining] = useState(false);
   const [refineError, setRefineError] = useState<string | null>(null);
-  const [currentSession, setCurrentSession] = useState<CardChatSession>(session);
+
+  // ── Resume state ───────────────────────────────────────────────────────
   const [resuming, setResuming] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
-  // [why] Propose-description state: AI generates a description suggestion
-  // from the conversation, user confirms or dismisses before applying.
+
+  // ── Propose-description state ──────────────────────────────────────────
   const [proposing, setProposing] = useState(false);
   const [proposeError, setProposeError] = useState<string | null>(null);
   const [proposedDescription, setProposedDescription] = useState<string | null>(null);
   const [applyingDescription, setApplyingDescription] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
+
+  // ── Sprint 208 — AI assist state ───────────────────────────────────────
+  const [aiTyping, setAiTyping] = useState(false);
+  const [aiProgress, setAiProgress] = useState<{
+    phase: 'thinking' | 'executing_tools' | 'done';
+    toolNames?: string[] | undefined;
+    message?: string | undefined;
+  } | null>(null);
+  const [actionCards, setActionCards] = useState<CardChatAssistActionCard[]>([]);
+  const [committingCards, setCommittingCards] = useState<Set<string>>(new Set());
+  const [commitError, setCommitError] = useState<string | null>(null);
+  const [dismissedCards, setDismissedCards] = useState<Set<string>>(new Set());
+
   const historyEndRef = useRef<HTMLDivElement>(null);
 
   // [why] Sync session from props when it changes externally (e.g. session resumes).
@@ -50,16 +85,45 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
 
   const { messages, state, error } = useCardChatHistory({
     cardId,
+    sessionId: currentSession.id,
     enabled: true,
     refreshKey,
   });
 
-  // Scroll to latest message when new ones arrive
+  // ── Fetch sessions on mount ────────────────────────────────────────────
+  useEffect(() => {
+    if (!cardId) return;
+    let cancelled = false;
+
+    const fetchSessions = async () => {
+      setSessionsLoading(true);
+      try {
+        const res = await listCardChatSessions({
+          api: apiClient as { get: <T>(url: string) => Promise<T> },
+          cardId,
+        });
+        if (cancelled) return;
+        setSessions(res.data);
+      } catch {
+        if (cancelled) return;
+      } finally {
+        if (!cancelled) setSessionsLoading(false);
+      }
+    };
+
+    void fetchSessions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cardId]);
+
+  // ── Scroll to latest message ───────────────────────────────────────────
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Close on Escape key
+  // ── Close on Escape key ────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleClose();
@@ -68,7 +132,60 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // [why] Auto-pause session on drawer close to preserve resumable state.
+  // ── Sprint 208 — realtime AI progress subscription ────────────────────
+  useEffect(() => {
+    if (!boardId) return;
+
+    const handleProgress = (event: RealtimeEvent) => {
+      if (event.type !== 'card_chat.assist_progress') return;
+      const payload = event.payload as {
+        sessionId: string;
+        cardId: string;
+        phase: 'thinking' | 'executing_tools' | 'done';
+        toolNames?: string[];
+        message?: string;
+        actionCards?: CardChatAssistActionCard[];
+      } | null;
+      if (!payload) return;
+      // [why] Only process events for the active session to avoid cross-session bleed.
+      if (payload.sessionId !== currentSession.id) return;
+
+      if (payload.phase === 'done') {
+        setAiProgress(null);
+        return;
+      }
+
+      setAiProgress({
+        phase: payload.phase,
+        toolNames: payload.toolNames,
+        message: payload.message,
+      });
+
+      // [why] Action cards arrive progressively — append them as they come.
+      if (payload.actionCards && payload.actionCards.length > 0) {
+        const incomingCards = payload.actionCards;
+        setActionCards((prev) => {
+          const existingKeys = new Set(prev.map((c) => c.idempotencyKey));
+          const newCards = incomingCards.filter(
+            (c) => !existingKeys.has(c.idempotencyKey),
+          );
+          return newCards.length > 0 ? [...prev, ...newCards] : prev;
+        });
+      }
+    };
+
+    const unsubscribe = socket.subscribe({ onEvent: handleProgress });
+    return unsubscribe;
+  }, [boardId, currentSession.id]);
+
+  // [why] Clear progress when AI typing ends (HTTP response received).
+  useEffect(() => {
+    if (!aiTyping) {
+      setAiProgress(null);
+    }
+  }, [aiTyping]);
+
+  // ── Auto-pause session on drawer close ─────────────────────────────────
   const handleClose = () => {
     if (currentSession.status === 'ACTIVE_REFINEMENT') {
       void pauseCardChatSession({
@@ -80,31 +197,96 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
     onClose();
   };
 
+  // ── Create a new session ───────────────────────────────────────────────
+  const handleCreateSession = async (): Promise<void> => {
+    setCreatingSession(true);
+    try {
+      const res = await startCardChatSession({
+        api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
+        cardId,
+      });
+      setSessions((prev) => [res.data, ...prev]);
+      setCurrentSession(res.data);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      // Silently fail
+    } finally {
+      setCreatingSession(false);
+    }
+  };
+
+  // ── Switch to a different session ──────────────────────────────────────
+  const handleSwitchSession = (sessionId: string) => {
+    const target = sessions.find((s) => s.id === sessionId);
+    if (!target) return;
+    setCurrentSession(target);
+    setRefreshKey((k) => k + 1);
+    // [why] Clear action cards and AI state when switching sessions.
+    setActionCards([]);
+    setDismissedCards(new Set());
+    setCommitError(null);
+    setAiTyping(false);
+    setAiProgress(null);
+  };
+
+  // ── Sprint 208 — AI assist with tool-use ───────────────────────────────
+  const triggerAiAssist = async (prompt: string, sessionId: string): Promise<void> => {
+    setActionCards([]);
+    setDismissedCards(new Set());
+    setCommitError(null);
+    setAiTyping(true);
+    try {
+      const res = await requestCardChatAssist({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        cardId,
+        sessionId,
+        prompt,
+      });
+      // [why] Capture action cards (description proposals) from the AI response.
+      if (res.data.actionCards && res.data.actionCards.length > 0) {
+        setActionCards(res.data.actionCards);
+      }
+    } catch {
+      setActionCards([]);
+      // [why] Re-throw so handleSendMessage can fall back to simple message creation.
+      throw new Error('AI assist failed');
+    } finally {
+      setAiTyping(false);
+      setRefreshKey((current) => current + 1);
+    }
+  };
+
+  // ── Send message (now uses assist endpoint) ────────────────────────────
   const handleSendMessage = async (): Promise<void> => {
     const trimmed = composerText.trim();
     if (!trimmed || sendingMessage || currentSession.status !== 'ACTIVE_REFINEMENT') return;
 
     setSendError(null);
     setSendingMessage(true);
+    setComposerText('');
     try {
-      await createCardChatMessage({
-        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
-        cardId,
-        sessionId: currentSession.id,
-        content: trimmed,
-      });
-      setComposerText('');
-      setRefreshKey((current) => current + 1);
+      // [why] Use the assist endpoint so the AI can call tools (e.g. write_card_description)
+      // and we get real-time progress streaming. Falls back to simple message if assist fails.
+      await triggerAiAssist(trimmed, currentSession.id);
     } catch {
-      setSendError('Failed to send message');
+      // [why] If assist fails, fall back to simple message creation.
+      try {
+        await createCardChatMessage({
+          api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+          cardId,
+          sessionId: currentSession.id,
+          content: trimmed,
+        });
+        setRefreshKey((current) => current + 1);
+      } catch {
+        setSendError('Failed to send message');
+      }
     } finally {
       setSendingMessage(false);
     }
   };
 
-  // [why] Trigger the server-side BA persona refinement loop. The server
-  // runs up to 8 turns of targeted questioning and returns the latest
-  // assistant message + updated session with quality score.
+  // ── Refine ─────────────────────────────────────────────────────────────
   const handleRefine = useCallback(async (): Promise<void> => {
     if (refining || currentSession.status !== 'ACTIVE_REFINEMENT') return;
 
@@ -118,6 +300,9 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
       });
       setCurrentSession(result.data.session);
       setRefreshKey((current) => current + 1);
+
+      // [why] After refinement, generate one fresh description suggestion.
+      await triggerAiAssist(REFINE_SUGGESTION_PROMPT, currentSession.id);
     } catch {
       setRefineError('Refinement failed. Please try again.');
     } finally {
@@ -125,8 +310,7 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
     }
   }, [refining, currentSession.status, currentSession.id, cardId]);
 
-  // [why] Resume a paused/idle session back to ACTIVE_REFINEMENT so the user
-  // can continue refining requirements without starting a new session.
+  // ── Resume ─────────────────────────────────────────────────────────────
   const handleResume = useCallback(async (): Promise<void> => {
     if (resuming || (currentSession.status !== 'PAUSED' && currentSession.status !== 'IDLE')) return;
 
@@ -146,9 +330,7 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
     }
   }, [resuming, currentSession.status, currentSession.id, cardId]);
 
-  // [why] Ask the AI to synthesize the conversation into a structured
-  // card description proposal. Sends a system message through the existing
-  // message flow — the AI's auto-reply becomes the proposal.
+  // ── Propose description ────────────────────────────────────────────────
   const handleProposeDescription = useCallback(async (): Promise<void> => {
     if (proposing || currentSession.status !== 'ACTIVE_REFINEMENT') return;
 
@@ -163,8 +345,6 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
         content: 'PROPOSE_DESCRIPTION',
         role: 'system',
       });
-      // [why] The server auto-generates an assistant reply. If present,
-      // use it as the proposed description.
       if (result.data.assistantMessage) {
         setProposedDescription(result.data.assistantMessage.content);
       } else {
@@ -178,8 +358,7 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
     }
   }, [proposing, currentSession.status, currentSession.id, cardId]);
 
-  // [why] Apply the confirmed description proposal to the card via
-  // the parent's onDescriptionSave callback (same path as manual edits).
+  // ── Apply description ──────────────────────────────────────────────────
   const handleApplyDescription = useCallback((): void => {
     if (!proposedDescription || applyingDescription || !onDescriptionSave) return;
 
@@ -195,13 +374,58 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
     }
   }, [proposedDescription, applyingDescription, onDescriptionSave]);
 
-  // [why] Dismiss the proposal without applying — clears the suggestion
-  // so the user can continue refining or request a new proposal.
   const handleDismissProposal = useCallback((): void => {
     setProposedDescription(null);
     setProposeError(null);
   }, []);
 
+  // ── Sprint 208 — commit action card (write to card) ────────────────────
+  const handleCommitActionCard = async (card: CardChatAssistActionCard): Promise<void> => {
+    if (!card.descriptionContent) return;
+
+    setCommitError(null);
+    setCommittingCards((prev) => new Set(prev).add(card.idempotencyKey));
+
+    try {
+      await commitCardChatProposal({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        cardId,
+        proposal: {
+          toolCallId: card.toolCallId,
+          idempotencyKey: card.idempotencyKey,
+          description: card.descriptionContent,
+        },
+      });
+
+      // [why] Mark as confirmed so the UI shows success state.
+      setActionCards((prev) =>
+        prev.map((c) =>
+          c.idempotencyKey === card.idempotencyKey
+            ? { ...c, state: 'confirmed' as const }
+            : c,
+        ),
+      );
+
+      // [why] Also notify parent so the card description updates in the modal.
+      if (onDescriptionSave) {
+        onDescriptionSave(card.descriptionContent);
+      }
+    } catch (err) {
+      setCommitError(err instanceof Error ? err.message : 'Failed to apply description');
+    } finally {
+      setCommittingCards((prev) => {
+        const next = new Set(prev);
+        next.delete(card.idempotencyKey);
+        return next;
+      });
+    }
+  };
+
+  const handleDismissActionCard = (card: CardChatAssistActionCard): void => {
+    setDismissedCards((prev) => new Set(prev).add(card.idempotencyKey));
+  };
+
+  // ── Keyboard handler ───────────────────────────────────────────────────
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -239,6 +463,47 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
             aria-label="Close card chat"
           >
             <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Session selector bar — Sprint 208 */}
+        <div className="px-4 py-2 border-b border-border bg-bg-surface flex items-center gap-2">
+          <select
+            value={currentSession.id}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              const val = e.target.value;
+              if (val === '__new__') {
+                void handleCreateSession();
+                return;
+              }
+              handleSwitchSession(val);
+            }}
+            className="flex-1 rounded-md border border-border bg-bg-base px-2 py-1.5 text-xs text-base focus:outline-none focus:ring-2 focus:ring-primary"
+            disabled={sessionsLoading}
+          >
+            {sessions.length === 0 && !sessionsLoading && (
+              <option value={currentSession.id}>
+                Session {currentSession.id.slice(0, 8)}
+              </option>
+            )}
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.id === currentSession.id ? '✓ ' : ''}
+                Session {s.id.slice(0, 8)} — {s.last_actor_at ? new Date(s.last_actor_at).toLocaleDateString() : 'new'}
+              </option>
+            ))}
+            <option value="__new__">+ New session</option>
+          </select>
+
+          <button
+            type="button"
+            disabled={creatingSession}
+            onClick={() => { void handleCreateSession(); }}
+            className="rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 flex-shrink-0"
+            title="New chat session"
+          >
+            <PlusIcon className="h-3.5 w-3.5" />
+            New
           </button>
         </div>
 
@@ -298,11 +563,140 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
             </div>
           ))}
 
+          {/* Sprint 208 — AI typing / progress indicator */}
+          {aiTyping && (
+            <div className="rounded-md bg-bg-overlay p-3">
+              <div className="flex gap-2 items-start">
+                <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[10px] font-bold text-white">AI</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  {aiProgress ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                        {aiProgress.phase === 'thinking' && 'Thinking…'}
+                        {aiProgress.phase === 'executing_tools' && (
+                          aiProgress.toolNames && aiProgress.toolNames.length > 0
+                            ? `Running: ${aiProgress.toolNames.map((n) => n.replaceAll('_', ' ')).join(', ')}`
+                            : 'Executing tools…'
+                        )}
+                      </p>
+                      {aiProgress.message && (
+                        <p className="text-xs text-muted">{aiProgress.message}</p>
+                      )}
+                      <div className="flex gap-1 items-center h-4">
+                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:0ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:150ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-1 items-center h-4">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:0ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:150ms]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sprint 208 — commit error */}
+          {!aiTyping && commitError && (
+            <div className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+              <div className="flex gap-2">
+                <div className="h-6 w-6 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-white">!</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-300">Commit Error</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{commitError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sprint 208 — Action cards (write-to-card proposals) */}
+          {!aiTyping && actionCards.some((c) => !dismissedCards.has(c.idempotencyKey)) && (
+            <div className="space-y-3">
+              {actionCards
+                .filter((c) => !dismissedCards.has(c.idempotencyKey))
+                .map((card) => {
+                  const isCommitting = committingCards.has(card.idempotencyKey);
+                  const isConfirmed = card.state === 'confirmed';
+                  return (
+                    <div
+                      key={card.idempotencyKey}
+                      className={`rounded-md border p-3 ${
+                        isConfirmed
+                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                          : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800'
+                      }`}
+                    >
+                      <div className="flex gap-2">
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
+                        }`}>
+                          <span className="text-[10px] font-bold text-white">
+                            {isConfirmed ? '✓' : 'AI'}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-semibold ${
+                            isConfirmed ? 'text-green-700 dark:text-green-300' : 'text-indigo-700 dark:text-indigo-300'
+                          }`}>Card AI</p>
+                          {card.toolName === 'write_card_description' && card.descriptionContent && (
+                            <div className="mt-1">
+                              <p className={`text-xs ${
+                                isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'
+                              }`}>
+                                {isConfirmed ? '✅ Applied: ' : '📝 Proposed: '}
+                                {card.descriptionPreview ?? 'Description update'}
+                              </p>
+                              {!isConfirmed && (
+                                <details className="mt-1">
+                                  <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
+                                    View proposed description
+                                  </summary>
+                                  <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
+                                    {card.descriptionContent}
+                                  </pre>
+                                </details>
+                              )}
+                              {!isConfirmed && (
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    type="button"
+                                    disabled={isCommitting}
+                                    onClick={() => { void handleCommitActionCard(card); }}
+                                    className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={isCommitting}
+                                    onClick={() => handleDismissActionCard(card)}
+                                    className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    ✕ Dismiss
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
           <div ref={historyEndRef} />
 
-          {/* [why] Description proposal card — shown when AI generates a
-               suggested card description from the conversation. Uses the
-               same confirm/dismiss pattern as BoardChat's commit UI. */}
+          {/* Description proposal card (legacy Propose button flow) */}
           {proposedDescription && (
             <div className="rounded-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-3">
               <div className="flex gap-2">
@@ -323,9 +717,6 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
                   </details>
                   {applyError && (
                     <p className="mt-1 text-xs text-danger">{applyError}</p>
-                  )}
-                  {refineError && (
-                    <p className="mt-1 text-xs text-danger">{refineError}</p>
                   )}
                   <div className="flex gap-2 mt-2">
                     <button
@@ -387,72 +778,69 @@ const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) 
           {proposeError && (
             <p className="mb-2 text-xs text-danger">{proposeError}</p>
           )}
-          <div className="flex gap-2">
-            {/* [why] Refine button triggers server-side BA loop — only available
-                 when session is active and not currently refining. */}
+          <div className="space-y-2">
             {currentSession.status === 'ACTIVE_REFINEMENT' && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0"
+                  onClick={() => void handleRefine()}
+                  disabled={refining}
+                  aria-label="Refine with AI"
+                >
+                  {refining ? (
+                    <>
+                      <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                      Refining…
+                    </>
+                  ) : (
+                    'Refine'
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0"
+                  onClick={() => void handleProposeDescription()}
+                  disabled={proposing || refining}
+                  aria-label="Propose card description from chat"
+                >
+                  {proposing ? (
+                    <>
+                      <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                      Proposing…
+                    </>
+                  ) : (
+                    <>
+                      <DocumentTextIcon className="h-3.5 w-3.5" />
+                      Propose
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                className="flex-1 min-w-0 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm text-base placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                placeholder={
+                  currentSession.status === 'ACTIVE_REFINEMENT'
+                    ? 'Describe what you want to build…'
+                    : 'Session is not active'
+                }
+                value={composerText}
+                onChange={(e) => setComposerText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={currentSession.status !== 'ACTIVE_REFINEMENT' || sendingMessage || refining}
+              />
               <button
                 type="button"
-                className="rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
-                onClick={() => void handleRefine()}
-                disabled={refining}
-                aria-label="Refine with AI"
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-40 flex-shrink-0"
+                onClick={() => void handleSendMessage()}
+                disabled={!canSend || refining}
               >
-                {refining ? (
-                  <>
-                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                    Refining…
-                  </>
-                ) : (
-                  'Refine'
-                )}
+                {sendingMessage ? '…' : 'Send'}
               </button>
-            )}
-            {/* [why] Propose Description button — asks AI to synthesize the
-                 conversation into a structured card description. Only available
-                 when session is active and has messages. */}
-            {currentSession.status === 'ACTIVE_REFINEMENT' && (
-              <button
-                type="button"
-                className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
-                onClick={() => void handleProposeDescription()}
-                disabled={proposing || refining}
-                aria-label="Propose card description from chat"
-              >
-                {proposing ? (
-                  <>
-                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                    Proposing…
-                  </>
-                ) : (
-                  <>
-                    <DocumentTextIcon className="h-3.5 w-3.5" />
-                    Propose
-                  </>
-                )}
-              </button>
-            )}
-            <input
-              type="text"
-              className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm text-base placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              placeholder={
-                currentSession.status === 'ACTIVE_REFINEMENT'
-                  ? 'Describe what you want to build…'
-                  : 'Session is not active'
-              }
-              value={composerText}
-              onChange={(e) => setComposerText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={currentSession.status !== 'ACTIVE_REFINEMENT' || sendingMessage || refining}
-            />
-            <button
-              type="button"
-              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-40"
-              onClick={() => void handleSendMessage()}
-              disabled={!canSend || refining}
-            >
-              {sendingMessage ? '…' : 'Send'}
-            </button>
+            </div>
           </div>
         </div>
       </div>

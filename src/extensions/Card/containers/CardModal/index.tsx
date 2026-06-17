@@ -53,7 +53,7 @@ import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectInnerCardChatEnabled } from '~/slices/featureFlagsSlice';
-import { startCardChatSession, type CardChatSession } from '../../../CardChat/api';
+import { startCardChatSession, getCardChatSession, type CardChatSession } from '../../../CardChat/api';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
 import apiClient from '~/common/api/client';
 import { printCard } from '../../utils/printCard';
@@ -177,9 +177,11 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       const mutationId = nextMutationId();
       dispatch(cardDetailSliceActions.applyOptimisticCardUpdate({ mutationId, fields: { description } }));
       patchCard({ api, cardId: card.id, fields: { description } })
-        .then((updatedCard) =>
-          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard })),
-        )
+        .then((updatedCard) => {
+          dispatch(cardDetailSliceActions.confirmCardUpdate({ mutationId, card: updatedCard }));
+          // [why] Keep board-level card state in sync with description updates from AI Assist.
+          dispatch(boardSliceActions.updateCard({ card: updatedCard }));
+        })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
     },
     [api, card, dispatch],
@@ -265,14 +267,24 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   }, []);
 
   // ── Card Chat / AI Assist ──────────────────────────────────────────────
-  // [why] Always start a new session when the user opens AI Assist.
-  // Each AI Assist invocation should be a fresh, independent conversation —
-  // not a continuation of a previous session's history.
+  // [why] Sprint 208 — reuse existing sessions instead of always creating
+  // new ones. If a PAUSED or ACTIVE_REFINEMENT session exists, resume it.
+  // Otherwise, create a fresh session.
   const handleChatStart = useCallback(async () => {
     if (!cardId || chatStarting) return;
     setChatStarting(true);
     try {
-      // [why] Always create a new session — never resume an old one.
+      // [why] Check for an existing session first — reuse if available.
+      const existing = await getCardChatSession({
+        api: apiClient as { get: <T>(url: string) => Promise<T> },
+        cardId,
+      });
+      if (existing.data?.session) {
+        setChatSession(existing.data.session);
+        setChatDrawerOpen(true);
+        return;
+      }
+      // [why] No existing session — create a new one.
       const { data: session } = await startCardChatSession({
         api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
         cardId,
