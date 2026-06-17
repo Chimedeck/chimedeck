@@ -78,6 +78,11 @@ export async function getCardChatMessages({
   return api.get<CardChatMessagesResponse>(`/cards/${cardId}/chat/messages`);
 }
 
+export interface CreateCardChatMessageResponse {
+  userMessage: CardChatMessage;
+  assistantMessage?: CardChatMessage;
+}
+
 export async function createCardChatMessage({
   api,
   cardId,
@@ -90,8 +95,8 @@ export async function createCardChatMessage({
   sessionId: string;
   content: string;
   role?: 'user' | 'assistant' | 'system';
-}): Promise<{ data: CardChatMessage }> {
-  return api.post<{ data: CardChatMessage }>(`/cards/${cardId}/chat/messages`, {
+}): Promise<{ data: CreateCardChatMessageResponse }> {
+  return api.post<{ data: CreateCardChatMessageResponse }>(`/cards/${cardId}/chat/messages`, {
     sessionId,
     content,
     ...(role ? { role } : {}),
@@ -146,6 +151,30 @@ export async function refineCardChat({
   sessionId: string;
 }): Promise<{ data: RefineCardChatResult }> {
   return api.post<{ data: RefineCardChatResult }>(`/cards/${cardId}/chat/refine`, {
+    sessionId,
+  });
+}
+
+export interface ProposeDescriptionResult {
+  proposedDescription: string;
+  sessionId: string;
+}
+
+/**
+ * Ask the AI to synthesize the conversation history into a structured
+ * card description proposal. Returns the proposed Markdown description
+ * for user confirmation before applying.
+ */
+export async function proposeCardDescription({
+  api,
+  cardId,
+  sessionId,
+}: {
+  api: { post: <T>(url: string, data: unknown) => Promise<T> };
+  cardId: string;
+  sessionId: string;
+}): Promise<{ data: ProposeDescriptionResult }> {
+  return api.post<{ data: ProposeDescriptionResult }>(`/cards/${cardId}/chat/propose-description`, {
     sessionId,
   });
 }

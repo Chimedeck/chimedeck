@@ -128,8 +128,16 @@ export async function requestCardChatCompletion({
     };
   }
 
-  const message = payload.choices?.[0]?.message?.content;
-  if (typeof message !== 'string' || message.trim() === '') {
+  // [why] Reasoning models (e.g. deepseek-v4-pro) put their response in
+  // the `reasoning` field instead of `content`. Check both fields.
+  const choiceMessage = payload.choices?.[0]?.message;
+  const message = typeof choiceMessage?.content === 'string' && choiceMessage.content.trim() !== ''
+    ? choiceMessage.content.trim()
+    : typeof choiceMessage?.reasoning === 'string' && choiceMessage.reasoning.trim() !== ''
+      ? choiceMessage.reasoning.trim()
+      : null;
+
+  if (!message) {
     return {
       status: 502,
       name: 'assist-provider-response-invalid',

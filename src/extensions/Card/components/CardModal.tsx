@@ -339,7 +339,7 @@ const CardModal = ({
                       loading="eager"
                       draggable={false}
                     />
-                    )
+                  )
                   : <span className="sr-only">Card cover color</span>}
               </div>
             )}
@@ -684,16 +684,22 @@ const CardModal = ({
               onAIAssist={onChatStart}
             />
           </div>
-        </Dialog.Content>
 
-        {/* Card Chat Drawer — rendered inside Portal so it layers above the modal */}
-        {chatDrawerOpen && chatSession && (
-          <CardChatDrawer
-            cardId={card.id}
-            session={chatSession}
-            onClose={() => onChatClose?.()}
-          />
-        )}
+          {/* [why] Card Chat Drawer rendered inside Dialog.Content as an
+               absolutely-positioned child. Since Dialog.Content is fixed
+               inset-0, the drawer's fixed backdrop and absolute panel
+               position correctly within the viewport. Clicks on the drawer
+               don't trigger Radix's onPointerDownOutside because they're
+               inside Dialog.Content. */}
+          {chatDrawerOpen && chatSession && (
+            <CardChatDrawer
+              cardId={card.id}
+              session={chatSession}
+              onClose={() => onChatClose?.()}
+              onDescriptionSave={onDescriptionSave}
+            />
+          )}
+        </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   );

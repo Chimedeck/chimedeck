@@ -9,6 +9,7 @@ import { handleRefineCardChat } from './refine';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import type { BoardVisibilityScopedRequest } from '../../../middlewares/boardVisibility';
 import type { WorkspaceScopedRequest } from '../../../middlewares/permissionManager';
+import { handleProposeCardDescription } from './proposeDescription';
 
 /**
  * Card-chat router — matches /api/v1/cards/:cardId/chat[/sub].
@@ -71,6 +72,9 @@ export async function cardChatRouter(req: Request, pathname: string): Promise<Re
 
   // POST /api/v1/cards/:cardId/chat/refine
   if (sub === '/refine' && req.method === 'POST') return handleRefineCardChat(req, cardId);
+
+  // POST /api/v1/cards/:cardId/chat/propose-description
+  if (sub === '/propose-description' && req.method === 'POST') return handleProposeCardDescription(req, cardId);
 
   return null;
 }

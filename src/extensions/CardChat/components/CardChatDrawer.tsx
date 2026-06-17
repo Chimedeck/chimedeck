@@ -3,7 +3,7 @@
 // refinement status badge, quality score meter, and AI response display.
 // Auto-pauses session on drawer close.
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { XMarkIcon, SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, SparklesIcon, ArrowPathIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
 import {
   createCardChatMessage,
@@ -21,9 +21,10 @@ interface Props {
   cardId: string;
   session: CardChatSession;
   onClose: () => void;
+  onDescriptionSave?: (description: string) => void;
 }
 
-const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
+const CardChatDrawer = ({ cardId, session, onClose, onDescriptionSave }: Props) => {
   const [composerText, setComposerText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -31,9 +32,15 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
   const [refining, setRefining] = useState(false);
   const [refineError, setRefineError] = useState<string | null>(null);
   const [currentSession, setCurrentSession] = useState<CardChatSession>(session);
-  const [refineResult, setRefineResult] = useState<RefineCardChatResult | null>(null);
   const [resuming, setResuming] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
+  // [why] Propose-description state: AI generates a description suggestion
+  // from the conversation, user confirms or dismisses before applying.
+  const [proposing, setProposing] = useState(false);
+  const [proposeError, setProposeError] = useState<string | null>(null);
+  const [proposedDescription, setProposedDescription] = useState<string | null>(null);
+  const [applyingDescription, setApplyingDescription] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
 
   // [why] Sync session from props when it changes externally (e.g. session resumes).
@@ -109,7 +116,6 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
         cardId,
         sessionId: currentSession.id,
       });
-      setRefineResult(result.data);
       setCurrentSession(result.data.session);
       setRefreshKey((current) => current + 1);
     } catch {
@@ -140,6 +146,62 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
     }
   }, [resuming, currentSession.status, currentSession.id, cardId]);
 
+  // [why] Ask the AI to synthesize the conversation into a structured
+  // card description proposal. Sends a system message through the existing
+  // message flow — the AI's auto-reply becomes the proposal.
+  const handleProposeDescription = useCallback(async (): Promise<void> => {
+    if (proposing || currentSession.status !== 'ACTIVE_REFINEMENT') return;
+
+    setProposeError(null);
+    setProposedDescription(null);
+    setProposing(true);
+    try {
+      const result = await createCardChatMessage({
+        api: apiClient as { post: <T>(url: string, data: unknown) => Promise<T> },
+        cardId,
+        sessionId: currentSession.id,
+        content: 'PROPOSE_DESCRIPTION',
+        role: 'system',
+      });
+      // [why] The server auto-generates an assistant reply. If present,
+      // use it as the proposed description.
+      if (result.data.assistantMessage) {
+        setProposedDescription(result.data.assistantMessage.content);
+      } else {
+        setProposeError('AI did not generate a proposal');
+      }
+      setRefreshKey((current) => current + 1);
+    } catch {
+      setProposeError('Failed to generate description proposal');
+    } finally {
+      setProposing(false);
+    }
+  }, [proposing, currentSession.status, currentSession.id, cardId]);
+
+  // [why] Apply the confirmed description proposal to the card via
+  // the parent's onDescriptionSave callback (same path as manual edits).
+  const handleApplyDescription = useCallback((): void => {
+    if (!proposedDescription || applyingDescription || !onDescriptionSave) return;
+
+    setApplyError(null);
+    setApplyingDescription(true);
+    try {
+      onDescriptionSave(proposedDescription);
+      setProposedDescription(null);
+    } catch {
+      setApplyError('Failed to apply description');
+    } finally {
+      setApplyingDescription(false);
+    }
+  }, [proposedDescription, applyingDescription, onDescriptionSave]);
+
+  // [why] Dismiss the proposal without applying — clears the suggestion
+  // so the user can continue refining or request a new proposal.
+  const handleDismissProposal = useCallback((): void => {
+    setProposedDescription(null);
+    setProposeError(null);
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -152,14 +214,15 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
   return (
     // Backdrop — click to close
     <div
-      className="fixed inset-0 z-40 bg-black/50"
+      className="fixed inset-0 z-[51] bg-black/50"
       onClick={handleClose}
       aria-label="Close card chat drawer"
+      data-card-chat-drawer="true"
     >
       {/* Drawer panel — stop propagation so clicks inside don't close */}
       <div
-        className="absolute right-0 top-0 h-full w-96 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute right-0 top-0 h-full w-96 bg-bg-base border-l border-border flex flex-col shadow-2xl z-[51]"
+        onClick={(e) => { e.stopPropagation(); }}
         role="dialog"
         aria-label="Card AI Assist"
       >
@@ -236,6 +299,56 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
           ))}
 
           <div ref={historyEndRef} />
+
+          {/* [why] Description proposal card — shown when AI generates a
+               suggested card description from the conversation. Uses the
+               same confirm/dismiss pattern as BoardChat's commit UI. */}
+          {proposedDescription && (
+            <div className="rounded-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 p-3">
+              <div className="flex gap-2">
+                <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <DocumentTextIcon className="h-3.5 w-3.5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                    AI Description Proposal
+                  </p>
+                  <details className="mt-1" open>
+                    <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
+                      View proposed description
+                    </summary>
+                    <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
+                      {proposedDescription}
+                    </pre>
+                  </details>
+                  {applyError && (
+                    <p className="mt-1 text-xs text-danger">{applyError}</p>
+                  )}
+                  {refineError && (
+                    <p className="mt-1 text-xs text-danger">{refineError}</p>
+                  )}
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      type="button"
+                      disabled={applyingDescription}
+                      onClick={handleApplyDescription}
+                      className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {applyingDescription ? 'Applying…' : '✓ Confirm & Apply'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={applyingDescription}
+                      onClick={handleDismissProposal}
+                      className="rounded-md border border-border bg-bg-base px-3 py-1.5 text-xs font-medium text-muted hover:bg-bg-overlay hover:text-subtle disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      ✕ Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Composer — sticky bottom */}
@@ -271,6 +384,9 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
           {refineError && (
             <p className="mb-2 text-xs text-danger">{refineError}</p>
           )}
+          {proposeError && (
+            <p className="mb-2 text-xs text-danger">{proposeError}</p>
+          )}
           <div className="flex gap-2">
             {/* [why] Refine button triggers server-side BA loop — only available
                  when session is active and not currently refining. */}
@@ -289,6 +405,30 @@ const CardChatDrawer = ({ cardId, session, onClose }: Props) => {
                   </>
                 ) : (
                   'Refine'
+                )}
+              </button>
+            )}
+            {/* [why] Propose Description button — asks AI to synthesize the
+                 conversation into a structured card description. Only available
+                 when session is active and has messages. */}
+            {currentSession.status === 'ACTIVE_REFINEMENT' && (
+              <button
+                type="button"
+                className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center gap-1.5"
+                onClick={() => void handleProposeDescription()}
+                disabled={proposing || refining}
+                aria-label="Propose card description from chat"
+              >
+                {proposing ? (
+                  <>
+                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                    Proposing…
+                  </>
+                ) : (
+                  <>
+                    <DocumentTextIcon className="h-3.5 w-3.5" />
+                    Propose
+                  </>
                 )}
               </button>
             )}

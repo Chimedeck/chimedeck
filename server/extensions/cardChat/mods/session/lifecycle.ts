@@ -27,6 +27,8 @@ const ALLOWED_TRANSITIONS: Record<CardChatSessionStatus, CardChatSessionStatus[]
 
 // [why] One active session per card — find by card_id + non-terminal status.
 // IDLE sessions are also considered "findable" so resume can transition them to ACTIVE_REFINEMENT.
+// [why] No longer used by startSession (which always creates new sessions),
+// but kept for pause/resume/ensureActiveSession which need to find existing sessions.
 async function findActiveSession(cardId: string): Promise<CardChatSession | null> {
   const row = await sessionLifecycleDeps
     .db('card_chat_sessions')
@@ -38,19 +40,16 @@ async function findActiveSession(cardId: string): Promise<CardChatSession | null
 }
 
 /**
- * Start a new card-chat session, or return the existing active one.
- * Always creates in ACTIVE_REFINEMENT state.
+ * Start a new card-chat session.
+ * [why] Always creates a fresh session — each AI Assist invocation
+ * should be an independent conversation, not a continuation of
+ * a previous session's history.
  */
 export async function startSession({
   cardId,
   workspaceId,
   userId,
 }: StartSessionInput): Promise<{ status: 201; data: { session: CardChatSession } }> {
-  const existing = await findActiveSession(cardId);
-  if (existing) {
-    return { status: 201, data: { session: existing } };
-  }
-
   const now = new Date().toISOString();
   const sessionId = randomUUID();
 
