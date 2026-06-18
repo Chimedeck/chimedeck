@@ -16,6 +16,9 @@ export interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   status: 'idle' | 'loading' | 'error';
+  // [why] Separate status for load-more so the initial fetch error doesn't
+  // block the "Load more" button, and load-more errors can be surfaced independently.
+  loadMoreStatus: 'idle' | 'loading' | 'error';
   hasMore: boolean;
   cursor: string | null;
 }
@@ -24,6 +27,7 @@ const initialState: NotificationState = {
   notifications: [],
   unreadCount: 0,
   status: 'idle',
+  loadMoreStatus: 'idle',
   hasMore: false,
   cursor: null,
 };
@@ -191,7 +195,11 @@ const notificationSlice = createSlice({
       .addCase(fetchNotificationsThunk.rejected, (state) => {
         state.status = 'error';
       })
+      .addCase(fetchMoreNotificationsThunk.pending, (state) => {
+        state.loadMoreStatus = 'loading';
+      })
       .addCase(fetchMoreNotificationsThunk.fulfilled, (state, action) => {
+        state.loadMoreStatus = 'idle';
         const existingIds = new Set(state.notifications.map((n) => n.id));
         const newOnes = action.payload.data
           .filter(shouldIncludeNotification)
@@ -200,6 +208,9 @@ const notificationSlice = createSlice({
         state.unreadCount = state.notifications.filter((n) => !n.read).length;
         state.hasMore = action.payload.metadata.hasMore;
         state.cursor = action.payload.metadata.cursor;
+      })
+      .addCase(fetchMoreNotificationsThunk.rejected, (state) => {
+        state.loadMoreStatus = 'error';
       })
       .addCase(markReadThunk.fulfilled, (state, action) => {
         const n = state.notifications.find((n) => n.id === action.payload);
@@ -249,5 +260,7 @@ export const selectNotifications = (state: RootState) => state.notifications.not
 export const selectUnreadCount = (state: RootState) => state.notifications.unreadCount;
 export const selectNotificationStatus = (state: RootState) => state.notifications.status;
 export const selectNotificationHasMore = (state: RootState) => state.notifications.hasMore;
+export const selectNotificationLoadMoreStatus = (state: RootState) =>
+  state.notifications.loadMoreStatus;
 
 export default notificationSlice.reducer;

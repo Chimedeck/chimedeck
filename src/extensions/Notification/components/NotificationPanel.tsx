@@ -5,7 +5,7 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import {
   selectNotifications,
   selectNotificationHasMore,
-  selectNotificationStatus,
+  selectNotificationLoadMoreStatus,
   markAllReadThunk,
   fetchMoreNotificationsThunk,
   clearAllNotificationsThunk,
@@ -64,7 +64,7 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
   const dispatch = useAppDispatch();
   const notifications = useAppSelector(selectNotifications);
   const hasMore = useAppSelector(selectNotificationHasMore);
-  const status = useAppSelector(selectNotificationStatus);
+  const loadMoreStatus = useAppSelector(selectNotificationLoadMoreStatus);
   const groupedNotifications = useMemo(
     () => groupContinuousCardDiscussionNotifications(notifications),
     [notifications]
@@ -139,19 +139,35 @@ const NotificationPanel: FC<Props> = ({ onClose, onNavigate }) => {
             })}
           </div>
 
-          {hasMore && (
+          {(hasMore || loadMoreStatus === 'error') && (
             <div className="px-4 py-3 text-center">
-              <Button
-                variant="link"
-                size="sm"
-                onClick={handleLoadMore}
-                disabled={status === 'loading'}
-                className="text-indigo-400 hover:text-indigo-300"
-              >
-                {status === 'loading'
-                  ? translations['Notifications.loading']
-                  : translations['Notifications.loadMore']}
-              </Button>
+              {loadMoreStatus === 'error' ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-sm text-danger">
+                    {translations['Notifications.loadMoreError']}
+                  </p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handleLoadMore}
+                    className="text-indigo-400 hover:text-indigo-300"
+                  >
+                    {translations['Notifications.loadMore']}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  disabled={loadMoreStatus === 'loading'}
+                  className="text-indigo-400 hover:text-indigo-300"
+                >
+                  {loadMoreStatus === 'loading'
+                    ? translations['Notifications.loading']
+                    : translations['Notifications.loadMore']}
+                </Button>
+              )}
             </div>
           )}
         </>
