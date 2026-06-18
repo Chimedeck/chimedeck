@@ -10,70 +10,7 @@ import { ChecklistItem } from './ChecklistItem';
 import { ChecklistProgress } from './ChecklistProgress';
 import type { Attachment } from '../../Attachments/types';
 import translations from '../translations/en.json';
-
-const LOW_SENTINEL = '';
-const HIGH_SENTINEL = '~';
-const BASE = 95;
-const NUMERIC_POSITION_PATTERN = /^-?\d+(?:\.\d+)?$/;
-
-const toDigit = (char: string): number => (char.codePointAt(0) ?? 32) - 32;
-const toChar = (digit: number): string => String.fromCodePoint(digit + 32);
-
-const toDigits = (value: string): number[] => Array.from(value).map(toDigit);
-const fromDigits = (digits: number[]): string => digits.map(toChar).join('');
-
-const compareDigits = (left: number[], right: number[]): number => {
-  const maxLength = Math.max(left.length, right.length);
-  for (let index = 0; index < maxLength; index += 1) {
-    const leftDigit = left[index] ?? 0;
-    const rightDigit = right[index] ?? BASE - 1;
-    if (leftDigit < rightDigit) return -1;
-    if (leftDigit > rightDigit) return 1;
-  }
-  return 0;
-};
-
-const betweenPositions = (left: string, right: string): string => {
-  if (left === right) return `${left}O`;
-
-  const leftDigits = left === LOW_SENTINEL ? [] : toDigits(left);
-  const rightDigits = right === HIGH_SENTINEL ? [] : toDigits(right);
-
-  if (
-    left !== LOW_SENTINEL &&
-    right !== HIGH_SENTINEL &&
-    compareDigits(leftDigits, rightDigits) >= 0
-  ) {
-    return `${left}O`;
-  }
-
-  const output: number[] = [];
-  let index = 0;
-
-  for (;;) {
-    const leftDigit = leftDigits[index] ?? 0;
-    const rightDigit = rightDigits[index] ?? BASE - 1;
-
-    if (rightDigit - leftDigit > 1) {
-      output.push(Math.floor((leftDigit + rightDigit) / 2));
-      break;
-    }
-
-    output.push(leftDigit);
-    index += 1;
-  }
-
-  return fromDigits(output);
-};
-
-const compareChecklistItemPosition = (left: string, right: string): number => {
-  if (left === right) return 0;
-  if (NUMERIC_POSITION_PATTERN.test(left) && NUMERIC_POSITION_PATTERN.test(right)) {
-    const delta = Number(left) - Number(right);
-    if (delta !== 0) return delta;
-  }
-  return left < right ? -1 : 1;
-};
+import { compareChecklistItemPosition } from '../utils/position';
 
 interface SortableChecklistItemRowProps {
   checklistId: string;

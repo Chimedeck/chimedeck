@@ -58,6 +58,7 @@ import { selectCurrentUser } from '~/slices/authSlice';
 import { selectIsGuestInActiveWorkspace } from '~/extensions/Workspace/slices/workspaceSlice';
 import { selectActiveWorkspaceId } from '~/extensions/Workspace/duck/workspaceDuck';
 import { selectInnerCardChatEnabled } from '~/slices/featureFlagsSlice';
+import { HIGH_SENTINEL, betweenPositions } from '../../utils/position';
 import {
   startCardChatSession,
   getCardChatSession,
@@ -537,13 +538,22 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         0
       );
       const tempId = `temp-item-${nextMutationId()}`;
+      // Compute the correct bottom position so the optimistic item sorts
+      // at the end of the list — avoids a flash where items appear to re-order
+      // before the server confirms the real position.
+      const targetChecklist = checklists.find((c) => c.id === checklistId);
+      const lastItem = targetChecklist?.items
+        .slice()
+        .sort((a, b) => (a.position < b.position ? -1 : 1))
+        .at(-1);
+      const optimisticPosition = betweenPositions(lastItem?.position ?? '', HIGH_SENTINEL);
       const tempItem: ChecklistItem = {
         id: tempId,
         card_id: card?.id ?? '',
         checklist_id: checklistId,
         title,
         checked: false,
-        position: String(Date.now()),
+        position: optimisticPosition,
         assigned_member_id: null,
         due_date: null,
         linked_card_id: null,
