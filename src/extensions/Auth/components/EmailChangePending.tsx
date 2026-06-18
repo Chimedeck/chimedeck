@@ -20,7 +20,7 @@ export default function EmailChangePending({ pendingEmail, onDismiss }: EmailCha
       </div>
       <IconButton
         onClick={onDismiss}
-        aria-label="Dismiss"
+        aria-label={translations['alert.dismissAria']}
         icon={<XMarkIcon className="h-5 w-5" aria-hidden="true" />}
         variant="ghost"
         className="text-indigo-400 hover:text-indigo-200"

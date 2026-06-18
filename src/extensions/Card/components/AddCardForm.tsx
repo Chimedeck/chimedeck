@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
+import translations from '../translations/en.json';
 
 interface Props {
   listId: string;
@@ -51,19 +52,14 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Card title…"
+        placeholder={translations['card.addForm.titlePlaceholder']}
         rows={2}
         disabled={submitting}
-        className="w-full rounded-lg bg-bg-overlay border border-border px-2.5 pt-3 pb-2 text-sm leading-5 text-base resize-none focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-subtle"
-        aria-label="New card title"
+        className="w-full resize-none rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
+        aria-label={translations['card.addForm.titleAria']}
       />
       <div className="flex items-center gap-2">
-        <Button
-          variant="primary"
-          size="sm"
-          type="submit"
-          disabled={!title.trim() || submitting}
-        >
+        <Button variant="primary" size="sm" type="submit" disabled={!title.trim() || submitting}>
           Add card
         </Button>
         <Button
@@ -71,7 +67,7 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
           size="icon"
           type="button"
           onClick={onCancel}
-          aria-label="Cancel"
+          aria-label={translations['card.addForm.cancelAria']}
         >
           <XMarkIcon className="h-4 w-4" aria-hidden="true" />
         </Button>

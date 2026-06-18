@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
 import IconButton from '~/common/components/IconButton';
+import translations from '../translations/en.json';
 
 interface Props {
   listTitle: string;
@@ -36,7 +37,7 @@ const ListDeleteDialog = ({ listTitle, cardCount, onConfirm, onCancel }: Props) 
           <IconButton
             type="button"
             onClick={onCancel}
-            aria-label="Close"
+            aria-label={translations['List.deleteDialogCloseAria']}
             icon={<XMarkIcon className="w-5 h-5" aria-hidden="true" />}
             variant="ghost"
           />

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Label } from '../api';
 import { LabelChip } from './LabelChip';
 import Button from '../../../common/components/Button';
+import translations from '../translations/en.json';
 
 const PRESET_COLORS = [
   { name: 'Slate', hex: '#64748b' },
@@ -104,7 +105,7 @@ const CardLabels = ({
                 {/* Search / create input */}
                 <input
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Label name…"
+                  placeholder={translations['card.labels.namePlaceholder']}
                   value={newLabelName}
                   onChange={(e) => setNewLabelName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}

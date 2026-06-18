@@ -1,6 +1,7 @@
 // CardValue — editable amount + currency sidebar section for the card modal.
 import { useState, useEffect } from 'react';
 import Button from '../../../common/components/Button';
+import translations from '../translations/en.json';
 
 const CURRENCY_REGEX = /^[A-Z]{3}$/;
 
@@ -75,7 +76,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           value={currencyInput}
           onChange={(e) => setCurrencyInput(e.target.value.toUpperCase())}
           disabled={disabled || saving}
-          aria-label="Currency"
+          aria-label={translations['card.value.currencyAria']}
         />
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}

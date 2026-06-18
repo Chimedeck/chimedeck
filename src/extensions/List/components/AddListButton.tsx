@@ -1,5 +1,6 @@
 // AddListButton — inline form to create a new list at the end of the board.
 import { useState } from 'react';
+import translations from '../translations/en.json';
 
 interface Props {
   onAdd: (title: string) => void;
@@ -23,7 +24,7 @@ const AddListButton = ({ onAdd }: Props) => {
       <button
         className="flex h-10 w-64 shrink-0 items-center gap-2 rounded-lg bg-bg-surface/70 px-3 text-sm font-medium text-muted shadow hover:bg-bg-surface hover:text-base"
         onClick={() => setOpen(true)}
-        aria-label="Add a list"
+        aria-label={translations['List.addListButtonAria']}
       >
         + Add a list
       </button>
@@ -53,7 +54,10 @@ const AddListButton = ({ onAdd }: Props) => {
         </button>
         <button
           type="button"
-          onClick={() => { setOpen(false); setTitle(''); }}
+          onClick={() => {
+            setOpen(false);
+            setTitle('');
+          }}
           className="rounded px-2 py-1 text-sm text-muted hover:bg-bg-overlay"
         >
           Cancel

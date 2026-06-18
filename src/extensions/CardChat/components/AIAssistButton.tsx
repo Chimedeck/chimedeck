@@ -3,6 +3,7 @@
 // On click: starts a card-chat session and opens the CardChatDrawer.
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
+import translations from '../translations/en.json';
 
 interface Props {
   cardId: string;
@@ -23,7 +24,7 @@ const AIAssistButton = ({ cardId, enabled, disabled, onStartChat }: Props) => {
       onClick={() => onStartChat(cardId)}
     >
       <SparklesIcon className="w-4 h-4 shrink-0 text-blue-500" />
-      AI Assist
+      {translations['CardChat.aiAssistButton']}
     </Button>
   );
 };

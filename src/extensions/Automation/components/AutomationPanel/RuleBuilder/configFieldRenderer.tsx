@@ -2,6 +2,7 @@
 // based on the field definition from the configSchema.
 // Falls back to a plain text input for unknown types.
 import type { JSX } from 'react';
+import translations from '../../../translations/en.json';
 
 export interface FieldDef {
   type: string;
@@ -279,7 +280,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
               type="button"
               className="flex-shrink-0 rounded p-1 text-muted hover:text-danger hover:bg-bg-overlay transition-colors"
               onClick={() => update(items.filter((_, i) => i !== idx))}
-              title="Remove item"
+              title={translations['automation.configField.removeItemTitle']}
             >
               ×
             </button>

@@ -205,7 +205,7 @@ const TransitionEdge = ({
             <button
               type="button"
               className="nodrag nopan h-5 w-5 cursor-grab rounded-full border-2 border-emerald-300/80 bg-emerald-400/35 hover:bg-emerald-400/50"
-              aria-label="Adjust connector curve"
+              aria-label={translations['StateTransitions.adjustCurveAria']}
               onPointerDown={(event) => {
                 event.preventDefault();
                 event.stopPropagation();

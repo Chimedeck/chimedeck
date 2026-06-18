@@ -71,5 +71,9 @@
   "AcceptInvitePage.errorExpired": "This invite has expired.",
   "AcceptInvitePage.errorAlreadyUsed": "This invite has already been used.",
   "AcceptInvitePage.errorGeneric": "Failed to accept invite. Please try again.",
-  "AcceptInvitePage.inviteInfo": "You have been invited to join {workspaceName} as {role}."
+  "AcceptInvitePage.inviteInfo": "You have been invited to join {workspaceName} as {role}.",
+  "Sidebar.ariaNavLabel": "Sidebar",
+  "Sidebar.searchAriaLabel": "Search (⌘K)",
+  "Sidebar.searchLabel": "Search",
+  "Sidebar.inviteExternalUserAria": "Invite External User"
 }

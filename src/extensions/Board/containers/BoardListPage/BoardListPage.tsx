@@ -33,6 +33,7 @@ import {
   unstarBoardThunk,
   toggleStarredFilter,
 } from './BoardListPage.duck';
+import translations from '../../translations/en.json';
 
 const BoardListPage = () => {
   const dispatch = useAppDispatch();
@@ -150,9 +151,9 @@ const BoardListPage = () => {
   return (
     <div className="px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-base">Boards</h1>
+        <h1 className="text-2xl font-bold text-base">{translations['BoardListPage.title']}</h1>
         <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
-          Create Board
+          {translations['Board.createBoard']}
         </Button>
       </div>
 
@@ -160,11 +161,11 @@ const BoardListPage = () => {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
           type="search"
-          placeholder="Filter boards…"
+          placeholder={translations['BoardListPage.filterPlaceholder']}
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
           className="h-8 w-56 rounded border border-border bg-bg-overlay px-3 text-sm text-base placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-          aria-label="Filter boards by name"
+          aria-label={translations['BoardListPage.filterAriaLabel']}
         />
       </div>
 
@@ -190,7 +191,7 @@ const BoardListPage = () => {
           }`}
         >
           <StarIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>Starred only</span>
+          <span>{translations['BoardListPage.starredOnly']}</span>
         </button>
       </div>
 

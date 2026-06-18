@@ -23,6 +23,7 @@ import type { CardChatSession } from '../../CardChat/api';
 
 import type { ActivityData } from '../slices/cardDetailSlice';
 import type { CommentData } from '../api/cardDetail';
+import translations from '../translations/en.json';
 
 interface BoardMember {
   id: string;
@@ -457,7 +458,7 @@ const CardModal = ({
               </div>
               <Dialog.Close
                 className="rounded-lg p-2 text-subtle hover:bg-bg-overlay hover:text-base transition-colors flex-shrink-0"
-                aria-label="Close"
+                aria-label={translations['card.modal.closeAria']}
               >
                 <XMarkIcon className="h-5 w-5" aria-hidden="true" />
               </Dialog.Close>

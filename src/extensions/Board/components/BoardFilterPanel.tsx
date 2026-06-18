@@ -12,6 +12,7 @@ import {
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { contrastText } from '~/extensions/Card/components/LabelChip';
 import type { Card } from '~/extensions/Card/api';
+import translations from '../translations/en.json';
 
 // ── Filter state ───────────────────────────────────────────────────────────────
 
@@ -363,7 +364,7 @@ export default function BoardFilterPanel({
             onClick={resetFilters}
             disabled={!hasActiveFilters}
             className="rounded px-1.5 py-0.5 text-xs font-medium text-subtle hover:text-base transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Reset filters"
+            aria-label={translations['BoardFilterPanel.resetAriaLabel']}
           >
             Reset
           </button>
@@ -371,7 +372,7 @@ export default function BoardFilterPanel({
             type="button"
             onClick={onClose}
             className="rounded p-0.5 text-subtle hover:text-base transition-colors"
-            aria-label="Close filter panel"
+            aria-label={translations['BoardFilterPanel.closeAriaLabel']}
           >
             ✕
           </button>
@@ -384,7 +385,7 @@ export default function BoardFilterPanel({
           <MagnifyingGlassIcon className="h-4 w-4 text-muted shrink-0" aria-hidden="true" />
           <input
             type="search"
-            placeholder="Enter a keyword..."
+            placeholder={translations['BoardFilterPanel.keywordPlaceholder']}
             value={filters.keyword}
             onChange={(e) => set({ keyword: e.target.value })}
             className="flex-1 bg-transparent text-sm text-base placeholder:text-muted focus:outline-none"
@@ -453,7 +454,7 @@ export default function BoardFilterPanel({
                   <MagnifyingGlassIcon className="h-3.5 w-3.5 text-muted shrink-0" aria-hidden="true" />
                   <input
                     type="search"
-                    placeholder="Search members..."
+                    placeholder={translations['BoardFilterPanel.memberSearchPlaceholder']}
                     value={memberSearch}
                     onChange={(e) => setMemberSearch(e.target.value)}
                     className="flex-1 bg-transparent text-xs text-base placeholder:text-muted focus:outline-none"
@@ -567,7 +568,7 @@ export default function BoardFilterPanel({
                   <MagnifyingGlassIcon className="h-3.5 w-3.5 text-muted shrink-0" aria-hidden="true" />
                   <input
                     type="search"
-                    placeholder="Search labels..."
+                    placeholder={translations['BoardFilterPanel.labelSearchPlaceholder']}
                     value={labelSearch}
                     onChange={(e) => setLabelSearch(e.target.value)}
                     className="flex-1 bg-transparent text-xs text-base placeholder:text-muted focus:outline-none"

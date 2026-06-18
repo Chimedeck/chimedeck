@@ -62,9 +62,7 @@ const PluginRegistryRow = ({
       {/* Name + Author */}
       <td className="px-4 py-3 max-w-[180px]">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm text-base truncate">
-            {plugin.name}
-          </span>
+          <span className="font-medium text-sm text-base truncate">{plugin.name}</span>
           {!plugin.isActive && (
             <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded px-1.5 py-0.5 whitespace-nowrap">
               {translations['plugins.registry.row.inactiveBadge']}
@@ -72,17 +70,13 @@ const PluginRegistryRow = ({
           )}
         </div>
         {plugin.authorEmail && (
-          <p className="text-xs text-subtle truncate mt-0.5">
-            {plugin.authorEmail}
-          </p>
+          <p className="text-xs text-subtle truncate mt-0.5">{plugin.authorEmail}</p>
         )}
       </td>
 
       {/* Description */}
       <td className="px-4 py-3 max-w-[240px]">
-        <p className="text-sm text-muted line-clamp-2">
-          {plugin.description}
-        </p>
+        <p className="text-sm text-muted line-clamp-2">{plugin.description}</p>
       </td>
 
       {/* Categories */}
@@ -129,7 +123,7 @@ const PluginRegistryRow = ({
                   onClick={handleConfirmYes}
                   disabled={isDeactivating}
                   className="px-2 py-1 rounded bg-danger hover:opacity-90 text-white transition-colors disabled:opacity-50" // [theme-exception] text-white on danger button
-                  aria-label="Confirm deactivate"
+                  aria-label={translations['plugins.registry.confirmDeactivateAria']}
                 >
                   {isDeactivating
                     ? translations['plugins.registry.row.deactivating']
@@ -139,7 +133,7 @@ const PluginRegistryRow = ({
                   type="button"
                   onClick={handleConfirmNo}
                   className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-muted hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
-                  aria-label="Cancel deactivate"
+                  aria-label={translations['plugins.registry.cancelDeactivateAria']}
                 >
                   {translations['plugins.registry.row.confirmNo']}
                 </button>

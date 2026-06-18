@@ -177,7 +177,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex gap-2 mb-5" role="group" aria-label="Service type">
+        <div className="flex gap-2 mb-5" role="group" aria-label={translations['AddServiceModal.serviceTypeAria']}>
           <button
             type="button"
             onClick={() => handleModeSwitch('preset')}

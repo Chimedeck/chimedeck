@@ -71,22 +71,23 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
         }`}
         style={{ width: 128, height: 128 }}
         onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         role="button"
         tabIndex={0}
-        aria-label="Upload avatar"
+        aria-label={translations['avatarUploader.uploadAria']}
         onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
       >
         {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt="Avatar"
-            className="h-full w-full rounded-full object-cover"
-          />
+          <img src={avatarUrl} alt="Avatar" className="h-full w-full rounded-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center rounded-full bg-indigo-600 text-3xl font-bold text-white"> {/* [theme-exception]: avatar on colored bg */}
+          <span className="flex h-full w-full items-center justify-center rounded-full bg-indigo-600 text-3xl font-bold text-white">
+            {' '}
+            {/* [theme-exception]: avatar on colored bg */}
             {getInitials(name) || '?'}
           </span>
         )}
@@ -131,7 +132,9 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       </div>
 
       {localError && (
-        <p className="text-sm text-danger" role="alert">{localError}</p>
+        <p className="text-sm text-danger" role="alert">
+          {localError}
+        </p>
       )}
     </div>
   );

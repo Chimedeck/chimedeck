@@ -76,7 +76,7 @@ export default function Sidebar() {
     <>
       <nav
         className="flex h-full w-64 flex-col border-r border-border bg-bg-surface"
-        aria-label="Sidebar"
+        aria-label={translations['Sidebar.ariaNavLabel']}
       >
         {/* Logo */}
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
@@ -280,7 +280,7 @@ export default function Sidebar() {
                   <Button
                     variant="ghost"
                     onClick={() => dispatch(openInviteModal())}
-                    aria-label="Invite External User"
+                    aria-label={translations['Sidebar.inviteExternalUserAria']}
                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-normal justify-start"
                   >
                     <UserPlusIcon className="h-5 w-5 shrink-0" aria-hidden="true" />

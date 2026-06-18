@@ -9,6 +9,7 @@ import type { Checklist, ChecklistItem as ChecklistItemType } from '../api';
 import { ChecklistItem } from './ChecklistItem';
 import { ChecklistProgress } from './ChecklistProgress';
 import type { Attachment } from '../../Attachments/types';
+import translations from '../translations/en.json';
 
 const LOW_SENTINEL = '';
 const HIGH_SENTINEL = '~';
@@ -273,8 +274,8 @@ export const ChecklistSection = ({
                 size="icon"
                 className="text-muted hover:text-danger"
                 onClick={() => { void onDelete(); }}
-                title="Delete checklist"
-                aria-label="Delete checklist"
+                title={translations['card.checklist.deleteTitle']}
+                aria-label={translations['card.checklist.deleteAria']}
               >
                 <TrashIcon className="h-3.5 w-3.5" />
               </Button>

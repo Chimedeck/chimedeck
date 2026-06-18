@@ -9,6 +9,7 @@ import LayoutSingleColumn from '~/layout/LayoutSingleColumn';
 import { inspectInvite, acceptInvite, type Invite } from '../../api';
 import RoleBadge from '../../components/RoleBadge';
 import Button from '~/common/components/Button';
+import translations from '../../translations/en.json';
 
 // TODO: replace with real api instance from context/store extras once wired in.
 declare const api: Parameters<typeof inspectInvite>[0]['api'];
@@ -111,14 +112,14 @@ const AcceptInvitePage = () => {
   })();
 
   return (
-    <Page title="Accept Invite">
+    <Page title={translations['AcceptInvitePage.title']}>
       <LayoutSingleColumn
         topbar={<TopbarContainer />}
         footer={<FooterContainer />}
         contentClassName="p-6"
       >
         <div className="mx-auto max-w-md space-y-4">
-          <h1 className="text-2xl font-bold">Accept Invite</h1>
+          <h1 className="text-2xl font-bold">{translations['AcceptInvitePage.title']}</h1>
           {bodyContent}
         </div>
       </LayoutSingleColumn>

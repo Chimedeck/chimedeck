@@ -17,5 +17,6 @@
   "UserProfile.saveButton": "Save Changes",
   "UserProfile.cancelButton": "Cancel",
   "UserProfile.successMessage": "Profile updated",
-  "UserProfile.errorMessage": "Failed to save changes. Please try again."
+  "UserProfile.errorMessage": "Failed to save changes. Please try again.",
+  "UserProfile.tabsAriaLabel": "Profile settings tabs"
 }

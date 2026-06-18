@@ -1437,8 +1437,8 @@ const CommentEditor = ({
           {linkOverlayPosition && linkOverlayTarget && !linkEditOpen && (
             <button
               type="button"
-              aria-label="Configure link"
-              title="Configure link"
+              aria-label={translations['comment.link.displayFullUrlAria']}
+              title={translations['comment.link.displayFullUrlTitle']}
               className="absolute z-30 inline-flex h-6 w-6 items-center justify-center rounded-md border border-border bg-bg-base text-muted shadow-sm hover:text-base"
               style={{ left: linkOverlayPosition.left, top: linkOverlayPosition.top }}
               onMouseDown={(event) => {
@@ -1484,7 +1484,7 @@ const CommentEditor = ({
                 <button
                   type="button"
                   title="Display as button"
-                  aria-label="Display as button"
+                  aria-label={translations['comment.link.displayAsButtonAria']}
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${activeEditorLink.mode === 'button' ? 'bg-indigo-600 text-inverse' : 'text-muted hover:bg-bg-base hover:text-base'}`}
                   onClick={() => {
                     applyLinkChange({
@@ -1499,7 +1499,7 @@ const CommentEditor = ({
                 <button
                   type="button"
                   title="Display as card"
-                  aria-label="Display as card"
+                  aria-label={translations['comment.link.displayAsCardAria']}
                   className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${activeEditorLink.mode === 'card' ? 'bg-indigo-600 text-inverse' : 'text-muted hover:bg-bg-base hover:text-base'}`}
                   onClick={() => {
                     applyLinkChange({
@@ -1531,7 +1531,7 @@ const CommentEditor = ({
               <button
                 type="button"
                 title="Open Link In New Tab"
-                aria-label="Open Link In New Tab"
+                aria-label={translations['comment.link.openInNewTabAria']}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-bg-overlay hover:text-base"
                 onClick={() => {
                   const normalized = normalizeHttpUrlInput(activeEditorLink.href) ?? activeEditorLink.href;
@@ -1544,7 +1544,7 @@ const CommentEditor = ({
               <button
                 type="button"
                 title="Copy link"
-                aria-label="Copy link"
+                aria-label={translations['comment.link.copyAria']}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:bg-bg-overlay hover:text-base"
                 onClick={() => {
                   void navigator.clipboard.writeText(activeEditorLink.href);
@@ -1556,7 +1556,7 @@ const CommentEditor = ({
               <button
                 type="button"
                 title="Delete link"
-                aria-label="Delete link"
+                aria-label={translations['comment.link.deleteTitle']}
                 className="inline-flex h-7 w-7 items-center justify-center rounded-md text-danger hover:bg-bg-overlay"
                 onClick={() => {
                   if (!editor) return;
@@ -1598,7 +1598,7 @@ const CommentEditor = ({
                     event.preventDefault();
                     commitLinkEdit();
                   }}
-                  placeholder="Paste or search for link"
+                  placeholder={translations['comment.link.displayTextPlaceholder']}
                   className="w-full rounded-md border border-border bg-bg-overlay px-2.5 py-2 text-sm text-base outline-none focus:ring-2 focus:ring-primary"
                 />
                 <input

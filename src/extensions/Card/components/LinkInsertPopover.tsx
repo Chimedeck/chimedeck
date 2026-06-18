@@ -8,6 +8,7 @@ import { getMarkRange } from '@tiptap/core';
 import Button from '../../../common/components/Button';
 import { fetchLinkPreview } from '~/extensions/Attachments/api';
 import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+import translations from '../translations/en.json';
 
 const LINK_CLASS_BUTTON = 'cd-link-button';
 
@@ -199,7 +200,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Paste a link"
+          placeholder={translations['card.linkInsert.pasteLinkPlaceholder']}
           className={inputCls}
         />
       </div>
@@ -214,7 +215,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           value={displayText}
           onChange={(e) => setDisplayText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Text to display"
+          placeholder={translations['card.linkInsert.displayTextPlaceholder']}
           className={inputCls}
         />
         <p className="mt-1 text-[11px] text-muted">Give this link a title or description</p>

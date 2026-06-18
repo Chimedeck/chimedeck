@@ -43,6 +43,7 @@ import { useStateTransitionGuard } from '~/extensions/StateTransitions/hooks/use
 import TransitionsActiveBanner from '~/extensions/StateTransitions/components/TransitionsActiveBanner';
 import { useTransitionsBanner } from '~/extensions/StateTransitions/hooks/useTransitionsBanner';
 import { stateTransitionsEditorPath } from '~/common/routing/shortUrls';
+import translations from '../translations/en.json';
 
 interface DragPlaceholder {
   listId: string;
@@ -1594,7 +1595,7 @@ const BoardCanvas = ({
           ref={boardScrollerRef}
           className="flex gap-3 p-4 overflow-x-auto overflow-y-hidden flex-1"
           role="list"
-          aria-label="Board lists"
+          aria-label={translations['BoardCanvas.listsAriaLabel']}
         >
           {listOrder.map((listId) => {
             const list = lists[listId];

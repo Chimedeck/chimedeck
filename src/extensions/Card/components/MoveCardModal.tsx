@@ -9,6 +9,7 @@ import Button from '../../../common/components/Button';
 import type { Board } from '../../Board/api';
 import type { List } from '../../List/api';
 import type { Card } from '../api';
+import translations from '../translations/en.json';
 
 interface CardRow {
   id: string;
@@ -154,7 +155,7 @@ const MoveCardModal = ({
           className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none"
           onInteractOutside={(e) => { e.preventDefault(); onClose(); }}
           onEscapeKeyDown={onClose}
-          aria-label="Move card"
+          aria-label={translations['card.moveModal.closeAria']}
         >
           <Dialog.Title className="sr-only">Move card</Dialog.Title>
           <div className="relative w-80 rounded-2xl bg-bg-surface shadow-2xl overflow-hidden pointer-events-auto">

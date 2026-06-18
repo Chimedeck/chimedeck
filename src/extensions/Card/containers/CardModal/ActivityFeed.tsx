@@ -12,6 +12,7 @@ import type { Attachment } from '~/extensions/Attachments/types';
 import type { ActivityData } from '../../slices/cardDetailSlice';
 import type { CommentData } from '../../api/cardDetail';
 import { ActivityEventRenderer, isRichEventType } from '~/extensions/CardActivity';
+import translations from '../../translations/en.json';
 
 interface BoardMember {
   id: string;
@@ -274,7 +275,7 @@ const ActivityFeed = ({
           cardId={cardId}
           availableAttachments={attachments}
           {...(onAttachmentsChange ? { onAttachmentsChange } : {})}
-          placeholder="Add a comment…"
+          placeholder={translations['card.activity.commentPlaceholder']}
           onSubmit={handleAddComment}
           submitLabel="Comment"
           insertMarkdownRef={resolvedInsertRef}

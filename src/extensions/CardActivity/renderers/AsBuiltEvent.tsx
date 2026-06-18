@@ -8,6 +8,7 @@ import GeneratedDiffSummary from '~/extensions/SprintGeneration/components/Gener
 import ApproveRerunControls from '~/extensions/SprintGeneration/components/ApproveRerunControls';
 import SprintArtifactLinks from '~/extensions/SprintGeneration/components/SprintArtifactLinks';
 import type { SprintArtifactLink } from '~/extensions/SprintGeneration/components/SprintArtifactLinks';
+import translations from '../translations/en.json';
 
 interface AsBuiltEventProps {
   activity: ActivityData;
@@ -92,7 +93,7 @@ export default function AsBuiltEvent({
       {(isCommitted || isCompleted) && links.length > 0 && (
         <SprintArtifactLinks
           artifacts={links}
-          title="As-Built Sync Artifacts"
+          title={translations['AsBuiltEvent.syncArtifactsTitle']}
         />
       )}
 

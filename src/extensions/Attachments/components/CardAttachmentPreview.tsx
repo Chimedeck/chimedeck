@@ -99,7 +99,7 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
               type="button"
               onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
               className="flex items-center gap-0.5 text-muted hover:text-subtle rounded px-1 py-0.5 hover:bg-bg-overlay transition-colors"
-              aria-label="Card attachment options"
+              aria-label={translations['attachments.cardAttachment.optionsAria']}
             >
               <EllipsisHorizontalIcon className="h-4 w-4" aria-hidden="true" />
             </button>

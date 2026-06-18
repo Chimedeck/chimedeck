@@ -40,7 +40,7 @@ export default function DeleteWebhookDialog({ webhook, onClose, onDeleted }: Pro
             {translations['DeleteWebhookDialog.title']}
           </h3>
           <IconButton
-            aria-label="Close dialog"
+            aria-label={translations['DeleteWebhookDialog.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}

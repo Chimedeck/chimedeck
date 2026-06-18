@@ -9,6 +9,7 @@ import Button from '~/common/components/Button';
 import SpecsFileTree from '../../components/SpecsFileTree';
 import SpecsMarkdownEditor from '../../components/SpecsMarkdownEditor';
 import type { SpecsManifestEntry } from '../../components/SpecsFileTree';
+import translations from '../../translations/en.json';
 
 interface SpecsManifest {
   ref: string;
@@ -806,9 +807,9 @@ const SpecsWorkspacePage = ({
 
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
                   <span>{state.pendingCommitPaths.size} file(s) ready</span>
-                  {state.isSaving && <span>Saving current file…</span>}
-                  {state.commitStatus === 'committing' && <span>Creating commit…</span>}
-                  {state.commitStatus === 'success' && <span>Commit created</span>}
+                  {state.isSaving && <span>{translations['SpecsWorkspacePage.savingFile']}</span>}
+                  {state.commitStatus === 'committing' && <span>{translations['SpecsWorkspacePage.creatingCommit']}</span>}
+                  {state.commitStatus === 'success' && <span>{translations['SpecsWorkspacePage.commitCreated']}</span>}
                   {saveFailure && !saveConflict && <span className="text-danger">{state.saveError}</span>}
                   {saveConflict && (
                     <>

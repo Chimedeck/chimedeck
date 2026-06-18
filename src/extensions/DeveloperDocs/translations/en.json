@@ -1,0 +1,13 @@
+{
+  "SpecsFileTree.unsavedChangesAria": "Unsaved changes",
+  "SpecsFileTree.unsavedChangesTitle": "Unsaved changes",
+  "SpecsFileTree.readyToCommitAria": "Ready to commit",
+  "SpecsFileTree.readyToCommitTitle": "Ready to commit — this file has changes waiting to be committed",
+  "SpecsFileTree.navAria": "Specs file tree",
+  "SpecsWorkspacePage.savingFile": "Saving current file…",
+  "SpecsWorkspacePage.creatingCommit": "Creating commit…",
+  "SpecsWorkspacePage.commitCreated": "Commit created",
+  "SpecsWorkspacePage.commitButton": "Commit changes",
+  "SpecsWorkspacePage.filesReady": "{count} file(s) ready",
+  "SpecsWorkspacePage.reloadFile": "Reload file"
+}

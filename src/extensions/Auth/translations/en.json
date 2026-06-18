@@ -88,5 +88,15 @@
   },
   "loginPage": {
     "forgotPassword": "Forgot password?"
-  }
+  },
+  "signupForm.ariaLabel": "Sign up form",
+  "signupForm.namePlaceholder": "Jane Smith",
+  "signupForm.emailPlaceholder": "you@example.com",
+  "signupForm.passwordPlaceholder": "Min. 8 characters",
+  "signupForm.confirmPasswordPlaceholder": "Repeat your password",
+  "loginForm.ariaLabel": "Sign in form",
+  "loginForm.emailPlaceholder": "you@example.com",
+  "loginForm.passwordPlaceholder": "••••••••",
+  "forgotPassword.emailPlaceholder": "you@example.com",
+  "alert.dismissAria": "Dismiss"
 }

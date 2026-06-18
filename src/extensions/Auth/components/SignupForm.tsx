@@ -71,7 +71,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
     : null;
 
   return (
-    <form onSubmit={handleSubmit} noValidate aria-label="Sign up form">
+    <form onSubmit={handleSubmit} noValidate aria-label={translations['signupForm.ariaLabel']}>
       <div className="flex flex-col gap-4">
         {/* Name */}
         <div className="flex flex-col gap-1">
@@ -85,7 +85,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, name: validateName(name) }))}
-            placeholder="Jane Smith"
+            placeholder={translations['signupForm.namePlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.name ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
           {errors.name && <p className="text-danger text-sm">{errors.name}</p>}
@@ -103,7 +103,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
-            placeholder="you@example.com"
+            placeholder={translations['signupForm.emailPlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
           {errors.email && <p className="text-danger text-sm">{errors.email}</p>}
@@ -117,7 +117,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onBlur={() => setErrors((prev) => ({ ...prev, password: validatePassword(password) }))}
-          placeholder="Min. 8 characters"
+          placeholder={translations['signupForm.passwordPlaceholder']}
           error={errors.password}
         />
 
@@ -129,7 +129,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           onBlur={() => setErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) }))}
-          placeholder="Repeat your password"
+          placeholder={translations['signupForm.confirmPasswordPlaceholder']}
           error={errors.confirm}
         />
 

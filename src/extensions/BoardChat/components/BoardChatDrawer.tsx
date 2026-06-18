@@ -28,6 +28,7 @@ import {
   type BoardChatSession,
 } from '../api';
 import type { GuestType } from '~/extensions/Board/mods/guestPermissions';
+import translations from '../translations/en.json';
 
 interface Props {
   boardId: string;
@@ -121,7 +122,7 @@ const BoardChatDrawer = ({
         if (cancelled) return;
         setPermissions({ guest_can_view: false, guest_can_use: false });
         setPermissionsState('error');
-        setPermissionsError('Failed to load chat permissions');
+        setPermissionsError(translations['BoardChat.drawer.updatePermissionsError']);
       });
 
     return () => {
@@ -293,7 +294,7 @@ const BoardChatDrawer = ({
         setSessions((prev) => [...prev, res.data]);
         setActiveSessionId(sessionId);
       } catch {
-        setSendError('Failed to create session');
+        setSendError(translations['BoardChat.drawer.createSessionError']);
         return;
       } finally {
         setCreatingSession(false);
@@ -312,7 +313,7 @@ const BoardChatDrawer = ({
       setComposerText('');
       setRefreshKey((current) => current + 1);
     } catch {
-      setSendError('Failed to send message');
+      setSendError(translations['BoardChat.drawer.sendError']);
       return;
     } finally {
       setSendingMessage(false);
@@ -369,7 +370,7 @@ const BoardChatDrawer = ({
           return;
         }
       }
-      setCommitError(err instanceof Error ? err.message : 'Failed to commit proposal');
+      setCommitError(err instanceof Error ? err.message : translations['BoardChat.drawer.commitErrorFallback']);
     } finally {
       setCommittingCards((prev) => {
         const next = new Set(prev);
@@ -437,20 +438,20 @@ const BoardChatDrawer = ({
     <div
       className="fixed inset-0 z-30 bg-black/50"
       onClick={onClose}
-      aria-label="Close board chat drawer"
+      aria-label={translations['BoardChat.drawer.closeBackdropAria']}
     >
       {/* Drawer panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-96 bg-bg-base border-l border-border flex flex-col shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
-        aria-label="Board Chat"
+        aria-label={translations['BoardChat.drawer.dialogAria']}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h2 className="text-base font-semibold">Board Chat</h2>
+          <h2 className="text-base font-semibold">{translations['BoardChat.drawer.title']}</h2>
           <IconButton
-            aria-label="Close board chat"
+            aria-label={translations['BoardChat.drawer.closeButtonAria']}
             icon={<XMarkIcon className="h-5 w-5" />}
             onClick={onClose}
           />
@@ -481,11 +482,11 @@ const BoardChatDrawer = ({
             >
               <option value="">— Start a new session —</option>
               {sessions.length === 0 && (
-                <option value="__new__">+ Create first session</option>
+                <option value="__new__">{translations['BoardChat.drawer.createFirstSession']}</option>
               )}
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name ? s.name : `Session ${s.id.slice(0, 8)}`} — {s.last_message_at ? new Date(s.last_message_at).toLocaleDateString() : 'empty'}
+                  {s.name ? s.name : translations['BoardChat.drawer.sessionLabel'].replace('{id}', s.id.slice(0, 8))} — {s.last_message_at ? new Date(s.last_message_at).toLocaleDateString() : translations['BoardChat.drawer.sessionDateEmpty']}
                 </option>
               ))}
             </select>
@@ -496,11 +497,11 @@ const BoardChatDrawer = ({
               size="sm"
               disabled={creatingSession}
               onClick={() => { void handleCreateSession(); }}
-              title="New chat session"
+              title={translations['BoardChat.drawer.newSessionTitle']}
               className="gap-1 flex-shrink-0"
             >
               <PlusIcon className="h-3.5 w-3.5" />
-              New
+              {translations['BoardChat.drawer.newSessionButton']}
             </Button>
           </div>
         )}
@@ -508,7 +509,7 @@ const BoardChatDrawer = ({
         {/* History area — scrollable */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           <div className="rounded-md border border-border bg-bg-surface px-3 py-3 space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">GUEST ACCESS (MEMBER ONLY)</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{translations['BoardChat.drawer.guestAccessHeading']}</p>
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"
@@ -525,7 +526,7 @@ const BoardChatDrawer = ({
                     : 'border-border bg-bg-base text-subtle hover:bg-bg-overlay'
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
-                ALLOW GUEST TO VIEW
+                {translations['BoardChat.drawer.allowGuestView']}
               </button>
               <button
                 type="button"
@@ -542,18 +543,18 @@ const BoardChatDrawer = ({
                     : 'border-border bg-bg-base text-subtle hover:bg-bg-overlay'
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
-                ALLOW GUEST TO USE
+                {translations['BoardChat.drawer.allowGuestUse']}
               </button>
             </div>
             {!canManageGuestPermissions && (
               <p className="flex items-center gap-1.5 text-xs text-muted">
                 <LockClosedIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                Only board admins and owners can change guest chat permissions.
+                {translations['BoardChat.drawer.guestPermissionLocked']}
               </p>
             )}
             {isGuest && (
               <p className="text-xs text-muted">
-                You are currently a guest {callerGuestType ? `(${callerGuestType})` : ''}.
+                {translations['BoardChat.drawer.guestSelfNotice']}{callerGuestType ? ` (${callerGuestType})` : ''}.
               </p>
             )}
             {permissionsError && <p className="text-xs text-danger">{permissionsError}</p>}
@@ -561,31 +562,31 @@ const BoardChatDrawer = ({
 
           {isPermissionCheckPendingForGuest && (
             <div className="flex items-center justify-center h-24">
-              <p className="text-muted text-sm">Checking guest chat access…</p>
+              <p className="text-muted text-sm">{translations['BoardChat.drawer.checkingGuestAccess']}</p>
             </div>
           )}
 
           {isGuestDeniedHistory && (
             <div className="flex items-center justify-center h-24">
-              <p className="text-muted text-sm">Guest access does not allow viewing chat history.</p>
+              <p className="text-muted text-sm">{translations['BoardChat.drawer.guestDeniedHistory']}</p>
             </div>
           )}
 
           {!isPermissionCheckPendingForGuest && !isGuestDeniedHistory && state === 'loading' && (
             <div className="flex items-center justify-center h-full">
-              <p className="text-muted text-sm">Loading history…</p>
+              <p className="text-muted text-sm">{translations['BoardChat.drawer.loadingHistory']}</p>
             </div>
           )}
 
           {!isPermissionCheckPendingForGuest && !isGuestDeniedHistory && state === 'empty' && (
             <div className="flex items-center justify-center h-full">
-              <p className="text-muted text-sm">No messages yet. Start a conversation!</p>
+              <p className="text-muted text-sm">{translations['BoardChat.drawer.emptyState']}</p>
             </div>
           )}
 
           {!isPermissionCheckPendingForGuest && !isGuestDeniedHistory && state === 'error' && (
             <div className="flex items-center justify-center h-full">
-              <p className="text-red-500 text-sm">{error || 'Failed to load history'}</p>
+              <p className="text-red-500 text-sm">{error || translations['BoardChat.drawer.loadErrorFallback']}</p>
             </div>
           )}
 
@@ -603,7 +604,7 @@ const BoardChatDrawer = ({
                   <div className="flex gap-2">
                     {msg.isAssistant ? (
                       <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-bold text-white">AI</span>
+                        <span className="text-[10px] font-bold text-white">{translations['BoardChat.drawer.aiBadge']}</span>
                       </div>
                     ) : msg.avatar ? (
                       <img
@@ -631,17 +632,17 @@ const BoardChatDrawer = ({
               <li className="rounded-md bg-bg-overlay p-3">
                 <div className="flex gap-2 items-start">
                   <div className="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[10px] font-bold text-white">AI</span>
+                    <span className="text-[10px] font-bold text-white">{translations['BoardChat.drawer.aiBadge']}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     {aiProgress ? (
                       <div className="space-y-1">
                         <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                          {aiProgress.phase === 'thinking' && 'Thinking…'}
+                          {aiProgress.phase === 'thinking' && translations['BoardChat.drawer.thinking']}
                           {aiProgress.phase === 'executing_tools' && (
                             aiProgress.toolNames && aiProgress.toolNames.length > 0
-                              ? `Running: ${aiProgress.toolNames.map((n) => n.replace(/_/g, ' ')).join(', ')}`
-                              : 'Executing tools…'
+                              ? translations['BoardChat.drawer.runningTools'].replace('{tools}', aiProgress.toolNames.map((n) => n.replace(/_/g, ' ')).join(', '))
+                              : translations['BoardChat.drawer.executingTools']
                           )}
                         </p>
                         {/* [why] Show document paths being created so the user sees
@@ -651,7 +652,7 @@ const BoardChatDrawer = ({
                             {aiProgress.documentPaths.map((path) => (
                               <li key={path} className="text-xs text-indigo-500 dark:text-indigo-400 font-mono flex items-center gap-1">
                                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                                Creating {path}
+                                {translations['BoardChat.drawer.creatingDoc'].replace('{path}', path)}
                               </li>
                             ))}
                           </ul>
@@ -690,7 +691,7 @@ const BoardChatDrawer = ({
                     <span className="text-[10px] font-bold text-white">!</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-red-700 dark:text-red-300">Commit Error</p>
+                    <p className="text-xs font-semibold text-red-700 dark:text-red-300">{translations['BoardChat.drawer.commitErrorTitle']}</p>
                     <p className="text-xs text-red-600 dark:text-red-400 mt-1">{commitError}</p>
                   </div>
                 </div>
@@ -720,24 +721,24 @@ const BoardChatDrawer = ({
                           isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
                         }`}>
                           <span className="text-[10px] font-bold text-white">
-                            {isConfirmed ? '✓' : 'AI'}
+                            {isConfirmed ? '✓' : translations['BoardChat.drawer.aiBadge']}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-xs font-semibold ${
                             isConfirmed ? 'text-green-700 dark:text-green-300' : 'text-indigo-700 dark:text-indigo-300'
-                          }`}>Board AI</p>
+                          }`}>{translations['BoardChat.drawer.boardAiLabel']}</p>
                           {card.toolName === 'propose_github_document' && card.documentPath && (
                             <div className="mt-1">
                               <p className={`text-xs font-mono ${
                                 isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'
                               }`}>
-                                {isConfirmed ? '✅ Committed: ' : '📄 Proposed: '}<code>{card.documentPath}</code>
+                                {isConfirmed ? translations['BoardChat.drawer.committedPrefix'] : translations['BoardChat.drawer.proposedPrefix']}<code>{card.documentPath}</code>
                               </p>
                               {card.documentContent && !isConfirmed && (
                                 <details className="mt-1">
                                   <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
-                                    View content ({card.documentContent.length} chars)
+                                    {translations['BoardChat.drawer.viewContent'].replace('{length}', String(card.documentContent.length))}
                                   </summary>
                                   <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
                                     {card.documentContent}
@@ -746,7 +747,7 @@ const BoardChatDrawer = ({
                               )}
                               {card.commitMessage && (
                                 <p className="text-xs text-muted mt-1">
-                                  Commit: {card.commitMessage}
+                                  {translations['BoardChat.drawer.commitLabel']} {card.commitMessage}
                                 </p>
                               )}
                               {/* Confirm / Dismiss buttons — only for suggested proposals */}
@@ -758,7 +759,7 @@ const BoardChatDrawer = ({
                                     disabled={isCommitting}
                                     onClick={() => { void handleCommitProposal(card); }}
                                   >
-                                    {isCommitting ? 'Committing…' : '✓ Confirm & Commit'}
+                                    {isCommitting ? translations['BoardChat.drawer.committing'] : translations['BoardChat.drawer.confirmAndCommit']}
                                   </Button>
                                   <Button
                                     variant="secondary"
@@ -766,7 +767,7 @@ const BoardChatDrawer = ({
                                     disabled={isCommitting}
                                     onClick={() => handleDismissProposal(card)}
                                   >
-                                    ✕ Dismiss
+                                    {translations['BoardChat.drawer.dismiss']}
                                   </Button>
                                 </div>
                               )}
@@ -775,7 +776,7 @@ const BoardChatDrawer = ({
                           {card.toolName === 'create_board_card' && card.cardTitle && (
                             <div className="mt-1">
                               <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                                🃏 Created card: <strong>{card.cardTitle}</strong>
+                                {translations['BoardChat.drawer.createdCardPrefix']}<strong>{card.cardTitle}</strong>
                                 {card.listName ? ` in ${card.listName}` : ''}
                               </p>
                             </div>
@@ -800,10 +801,10 @@ const BoardChatDrawer = ({
               disabled={composerDisabled}
               placeholder={
                 isPermissionCheckPendingForGuest
-                  ? 'Checking guest chat permissions…'
+                  ? translations['BoardChat.drawer.composerPlaceholderChecking']
                   : isGuestComposerDenied
-                    ? 'Guest access does not allow sending messages.'
-                    : 'Type a message…'
+                    ? translations['BoardChat.drawer.composerPlaceholderGuestDenied']
+                    : translations['BoardChat.drawer.composerPlaceholder']
               }
               className="flex-1 rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-base placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
@@ -815,11 +816,11 @@ const BoardChatDrawer = ({
               disabled={composerDisabled || !composerText.trim()}
               onClick={() => { void handleSendMessage(); }}
             >
-              Send
+              {translations['BoardChat.drawer.send']}
             </Button>
           </div>
           {isGuestComposerDenied && (
-            <p className="mt-2 text-xs text-muted">Guests are not allowed to send messages on this board.</p>
+            <p className="mt-2 text-xs text-muted">{translations['BoardChat.drawer.guestComposerDenied']}</p>
           )}
           {sendError && <p className="mt-2 text-xs text-danger">{sendError}</p>}
         </div>

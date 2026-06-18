@@ -51,7 +51,7 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
   const mappedApiError = apiError ? (API_ERROR_MAP[apiError] ?? translations.errors.loginFailed) : null;
 
   return (
-    <form onSubmit={handleSubmit} noValidate aria-label="Sign in form">
+    <form onSubmit={handleSubmit} noValidate aria-label={translations['loginForm.ariaLabel']}>
       <div className="flex flex-col gap-4">
         {/* Email */}
         <div className="flex flex-col gap-1">
@@ -65,7 +65,7 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
-            placeholder="you@example.com"
+            placeholder={translations['loginForm.emailPlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
           {errors.email && <p className="text-danger text-sm">{errors.email}</p>}
@@ -79,7 +79,7 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onBlur={() => setErrors((prev) => ({ ...prev, password: validatePassword(password) }))}
-          placeholder="••••••••"
+          placeholder={translations['loginForm.passwordPlaceholder']}
           error={errors.password}
         />
 

@@ -1,4 +1,5 @@
 import IconButton from '~/common/components/IconButton';
+import translations from '../translations/en.json';
 
 // BoardChatButton — header icon to open the board chat drawer.
 // Only visible to non-guest members when BOARD_CHAT_ENABLED is true.
@@ -11,8 +12,8 @@ interface Props {
 const BoardChatButton = ({ onClick, hasBackground = false }: Props) => {
   return (
     <IconButton
-      aria-label="Board chat"
-      title="Open board chat"
+      aria-label={translations['BoardChat.button.ariaLabel']}
+      title={translations['BoardChat.button.title']}
       icon={(
         <svg
           xmlns="http://www.w3.org/2000/svg"

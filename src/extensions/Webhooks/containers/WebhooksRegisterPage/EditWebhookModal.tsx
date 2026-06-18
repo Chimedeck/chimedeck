@@ -138,7 +138,7 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
             {translations['EditWebhookModal.title']}
           </h3>
           <IconButton
-            aria-label="Close modal"
+            aria-label={translations['EditWebhookModal.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}
@@ -154,7 +154,7 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
               onChange={(e) => setLabel(e.target.value)}
               maxLength={100}
               required
-              placeholder="e.g. My production server"
+              placeholder={translations['EditWebhookModal.labelPlaceholder']}
               data-testid="webhook-label-input"
             />
 
@@ -167,7 +167,7 @@ export default function EditWebhookModal({ webhook, onClose, onUpdated }: Props)
               }}
               error={urlError}
               required
-              placeholder="https://example.com/webhook"
+              placeholder={translations['EditWebhookModal.urlPlaceholder']}
               type="url"
               data-testid="webhook-url-input"
             />

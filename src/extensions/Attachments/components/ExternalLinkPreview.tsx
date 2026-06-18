@@ -272,7 +272,7 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
             size="icon"
             onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
             className="h-6 w-6 p-0.5 text-muted hover:text-subtle hover:bg-bg-overlay"
-            aria-label="Link options"
+            aria-label={translations['attachments.externalLink.optionsAria']}
           >
             <EllipsisHorizontalIcon className="h-4 w-4" aria-hidden="true" />
           </Button>

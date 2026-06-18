@@ -60,7 +60,7 @@ const EditProfilePage = () => {
         </div>
 
         {/* Tab navigation */}
-        <nav className="flex gap-1 border-b border-border -mx-8 px-8" role="tablist" aria-label="Profile settings tabs">
+        <nav className="flex gap-1 border-b border-border -mx-8 px-8" role="tablist" aria-label={translations['UserProfile.tabsAriaLabel']}>
           <button
             role="tab"
             aria-selected={activeTab === 'profile'}

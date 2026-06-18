@@ -4,5 +4,7 @@
     "table": "Table",
     "calendar": "Calendar",
     "timeline": "Timeline"
-  }
+  },
+  "boardViewSwitcher.menuAria": "Board view",
+  "boardViewSwitcher.selectorAria": "Board view"
 }

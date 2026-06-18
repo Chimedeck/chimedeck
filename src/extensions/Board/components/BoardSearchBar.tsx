@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { DocumentTextIcon, Bars3Icon } from '@heroicons/react/24/outline';
 import { searchBoard, type BoardSearchResult } from '~/extensions/Search/api';
+import translations from '../translations/en.json';
 
 const DEBOUNCE_MS = 300;
 const MIN_CHARS = 2;
@@ -158,7 +159,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
           ref={inputRef}
           type="text"
           role="searchbox"
-          aria-label="Search cards and lists on this board"
+          aria-label={translations['BoardSearchBar.searchAriaLabel']}
           aria-controls="board-search-panel"
           aria-expanded={showPanel}
           value={inputValue}
@@ -167,13 +168,13 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
           onFocus={() => {
             if (inputValue.trim().length >= MIN_CHARS) setPanelOpen(true);
           }}
-          placeholder="Search a card name or description..."
+          placeholder={translations['BoardSearchBar.searchPlaceholder']}
           className="min-w-0 flex-1 bg-transparent text-sm text-subtle placeholder:text-subtle focus:outline-none"
         />
         {inputValue && (
           <button
             type="button"
-            aria-label="Clear search"
+            aria-label={translations['BoardSearchBar.clearAriaLabel']}
             onClick={clearSearch}
             className="flex-shrink-0 rounded text-muted hover:text-subtle focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
@@ -187,7 +188,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
         <div
           id="board-search-panel"
           role="listbox"
-          aria-label="Board search results"
+          aria-label={translations['BoardSearchBar.resultsAriaLabel']}
           className="absolute left-0 top-full mt-1 z-30 w-80 rounded-md border border-border bg-bg-surface shadow-xl py-1 max-h-72 overflow-y-auto"
         >
           {isBelowMinChars ? (

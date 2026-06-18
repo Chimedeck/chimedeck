@@ -6,6 +6,7 @@ import type { List } from '../api';
 import Button from '../../../common/components/Button';
 import type { ListSortBy } from '../types';
 import KanbanColumnLockIndicator from '~/extensions/StateTransitions/components/KanbanColumnHeader';
+import translations from '../translations/en.json';
 
 const SORT_OPTIONS: Array<{ value: ListSortBy; label: string }> = [
   { value: 'created-desc', label: 'Date created (newest first)' },
@@ -408,7 +409,7 @@ const ListHeader = ({
                     variant="ghost"
                     className="h-7 w-7 rounded p-0 text-subtle"
                     onClick={() => setSortMenuOpen(false)}
-                    aria-label="Close sort menu"
+                    aria-label={translations['List.closeSortMenuAria']}
                   >
                     ×
                   </Button>
@@ -440,7 +441,7 @@ const ListHeader = ({
                     variant="ghost"
                     className="h-7 w-7 rounded p-0 text-subtle"
                     onClick={() => setMoveCardsMenuOpen(false)}
-                    aria-label="Close move cards menu"
+                    aria-label={translations['List.closeMoveCardsMenuAria']}
                   >
                     ×
                   </Button>
@@ -476,7 +477,7 @@ const ListHeader = ({
                     variant="ghost"
                     className="h-7 w-7 rounded p-0 text-subtle"
                     onClick={() => setMoveListMenuOpen(false)}
-                    aria-label="Close move list menu"
+                    aria-label={translations['List.closeMoveListMenuAria']}
                   >
                     ×
                   </Button>

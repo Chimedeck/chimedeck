@@ -40,7 +40,7 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
             {translations['WebhookCreatedModal.title']}
           </h3>
           <IconButton
-            aria-label="Close modal"
+            aria-label={translations['WebhookCreatedModal.closeAria']}
             icon={<XMarkIcon className="h-4 w-4" />}
             variant="ghost"
             onClick={onClose}

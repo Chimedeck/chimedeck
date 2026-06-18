@@ -4,6 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
+import translations from '../translations/en.json';
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 function parseDate(s: string): Date | undefined {
@@ -196,7 +197,7 @@ export const CardDatesPicker = ({
           size="icon"
           type="button"
           onClick={onClose}
-          aria-label="Close dates picker"
+          aria-label={translations['card.datesPicker.closeAria']}
         >
           <XMarkIcon className="h-4 w-4" />
         </Button>
@@ -210,7 +211,7 @@ export const CardDatesPicker = ({
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
               onClick={() => shiftYear(-1)}
-              aria-label="Previous year"
+              aria-label={translations['card.datesPicker.prevYearAria']}
             >
               <ChevronDoubleLeftIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -218,7 +219,7 @@ export const CardDatesPicker = ({
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
               onClick={() => shiftMonth(-1)}
-              aria-label="Previous month"
+              aria-label={translations['card.datesPicker.prevMonthAria']}
             >
               <ChevronLeftIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -231,7 +232,7 @@ export const CardDatesPicker = ({
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
               onClick={() => shiftMonth(1)}
-              aria-label="Next month"
+              aria-label={translations['card.datesPicker.nextMonthAria']}
             >
               <ChevronRightIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -239,7 +240,7 @@ export const CardDatesPicker = ({
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
               onClick={() => shiftYear(1)}
-              aria-label="Next year"
+              aria-label={translations['card.datesPicker.nextYearAria']}
             >
               <ChevronDoubleRightIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -275,13 +276,13 @@ export const CardDatesPicker = ({
               className={`flex-shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
                 startEnabled ? 'bg-blue-600 border-blue-600' : 'bg-transparent border-slate-500'
               }`}
-              aria-label="Toggle start date"
+              aria-label={translations['card.datesPicker.toggleStartDateAria']}
             >
               {startEnabled && <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />}
             </button>
             <input
               type="text"
-              placeholder="M/D/YYYY"
+              placeholder={translations['card.datesPicker.datePlaceholder']}
               value={startInput}
               onChange={(e) => setStartInput(e.target.value)}
               onFocus={() => { setActiveField('start'); setStartEnabled(true); }}
@@ -303,13 +304,13 @@ export const CardDatesPicker = ({
               className={`flex-shrink-0 h-4 w-4 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
                 draftDue ? 'bg-blue-600 border-blue-600' : 'bg-transparent border-slate-500'
               }`}
-              aria-label="Toggle due date"
+              aria-label={translations['card.datesPicker.toggleDueDateAria']}
             >
               {draftDue && <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />}
             </button>
             <input
               type="text"
-              placeholder="M/D/YYYY"
+              placeholder={translations['card.datesPicker.datePlaceholder']}
               value={dueInput}
               onChange={(e) => setDueInput(e.target.value)}
               onFocus={() => setActiveField('due')}
@@ -319,7 +320,7 @@ export const CardDatesPicker = ({
             />
             <input
               type="text"
-              placeholder="H:MM AM"
+              placeholder={translations['card.datesPicker.timePlaceholder']}
               value={timeInput}
               onChange={(e) => setTimeInput(e.target.value)}
               disabled={!draftDue || disabled}

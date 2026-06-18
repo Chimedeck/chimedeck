@@ -33,7 +33,7 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
     <div className="rounded-xl border border-indigo-700 bg-indigo-950/60 p-4 text-sm text-indigo-200 relative">
       <IconButton
         onClick={handleDismiss}
-        aria-label="Dismiss"
+        aria-label={translations['alert.dismissAria']}
         icon={<XMarkIcon className="h-4 w-4" aria-hidden="true" />}
         variant="ghost"
         className="absolute top-3 right-3 text-indigo-400 hover:text-indigo-200"

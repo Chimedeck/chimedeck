@@ -9,6 +9,7 @@ import Button from '../../../common/components/Button';
 import { normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
 import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
 import { escapeScriptTags } from '~/common/utils/escapeScriptTags';
+import translations from '../translations/en.json';
 
 /**
  * Add target="_blank" rel="noopener noreferrer" to external links that don't already
@@ -130,7 +131,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   const isLong = draft.length > SHOW_MORE_THRESHOLD;
 
   return (
-    <section aria-label="Description">
+    <section aria-label={translations['card.description.sectionAria']}>
       <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
         Description
       </h3>
@@ -144,7 +145,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             onKeyDown={handleKeyDown}
             placeholder="Add a more detailed description…"
             className="w-full bg-bg-overlay border border-border rounded-lg p-3 text-base text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] font-mono"
-            aria-label="Card description editor"
+            aria-label={translations['card.description.editorAria']}
             autoFocus
           />
           <div className="flex gap-2 mt-2">

@@ -48,6 +48,7 @@
   "StateTransitions.deleteColumnModalBody": "Removing this column from the diagram will also delete {listTitles} and all its cards from the board. This cannot be undone.",
   "StateTransitions.deleteColumnButton": "Delete column",
   "StateTransitions.deleting": "Deleting...",
+  "StateTransitions.adjustCurveAria": "Adjust connector curve",
   "StateTransitions.deleteColumnFailed": "Failed to delete one or more columns.",
   "StateTransitions.moveNotAllowedTitle": "Move not allowed",
   "StateTransitions.moveNotAllowedBody": "Cards in \"{fromListName}\" cannot be moved to \"{toListName}\" directly.",

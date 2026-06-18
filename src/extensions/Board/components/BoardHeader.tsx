@@ -8,6 +8,7 @@ import PollingIndicator from '~/extensions/Realtime/PollingIndicator';
 import AutomationHeaderButton from '~/extensions/Automation/components/AutomationHeaderButton';
 import BoardButtonsBar from '~/extensions/Automation/components/BoardButtons/BoardButtonsBar';
 import BoardChatButton from '~/extensions/BoardChat/components/BoardChatButton';
+import translations from '../translations/en.json';
 
 interface Member {
   id: string;
@@ -201,7 +202,7 @@ const BoardHeader = ({
               type="button"
               onClick={onOpenMembers}
               className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-inverse transition-colors"
-              aria-label="Share board — invite members"
+              aria-label={translations['BoardHeader.shareAriaLabel']}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -248,7 +249,7 @@ const BoardHeader = ({
             <button
               className={`rounded p-1.5 transition-colors${hasBackground ? ' text-white/90 hover:bg-white/20 hover:text-white' : ' text-muted hover:bg-bg-surface hover:text-subtle'}`}
               onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Board settings"
+              aria-label={translations['BoardHeader.settingsAriaLabel']}
               aria-haspopup="true"
               aria-expanded={menuOpen}
             >

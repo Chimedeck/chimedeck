@@ -5,6 +5,7 @@ import { useViewPreference } from './hooks';
 import BoardViewTab from './BoardViewTab';
 import { VIEW_TYPES } from './constants';
 import type { ViewType } from './types';
+import translations from './translations/en.json';
 
 interface Props {
   boardId: string;
@@ -22,7 +23,12 @@ interface Props {
   segmented?: boolean;
 }
 
-const BoardViewSwitcher = ({ boardId, hasBackground = false, inline = false, segmented = false }: Props) => {
+const BoardViewSwitcher = ({
+  boardId,
+  hasBackground = false,
+  inline = false,
+  segmented = false,
+}: Props) => {
   const { activeView, switchView } = useViewPreference({ boardId });
 
   const tabElements = VIEW_TYPES.map((viewType: ViewType) => (
@@ -45,7 +51,7 @@ const BoardViewSwitcher = ({ boardId, hasBackground = false, inline = false, seg
     return (
       <div
         role="tablist"
-        aria-label="Board view"
+        aria-label={translations['boardViewSwitcher.selectorAria']}
         className="inline-flex items-center"
         data-testid="board-view-switcher"
       >
@@ -57,7 +63,7 @@ const BoardViewSwitcher = ({ boardId, hasBackground = false, inline = false, seg
   return (
     <div
       role="tablist"
-      aria-label="Board view"
+      aria-label={translations['boardViewSwitcher.selectorAria']}
       className={`flex gap-1 border-b px-4${hasBackground ? ' border-black/10' : ' border-border'}`}
       data-testid="board-view-switcher"
     >

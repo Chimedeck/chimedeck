@@ -24,6 +24,7 @@ import { useHealthCheckProbe } from '../../hooks/useHealthCheckProbe';
 import { HEALTH_CHECK_POLL_INTERVAL_MS } from '../../config/healthCheckConfig';
 import Button from '../../../../common/components/Button';
 import Spinner from '../../../../common/components/Spinner';
+import translations from '../../translations/en.json';
 
 const TOTAL_COUNTDOWN_SECONDS = Math.round(HEALTH_CHECK_POLL_INTERVAL_MS / 1000);
 
@@ -117,8 +118,8 @@ export function HealthCheckTab({ boardId }: Props) {
             onClick={handleManualRefresh}
             disabled={isRefreshing || isLoading}
             className="flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Refresh health checks"
-            title="Refresh all services now"
+            aria-label={translations['HealthCheckTab.refreshAria']}
+            title={translations['HealthCheckTab.refreshTitle']}
           >
             <ArrowPathIcon
               className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -134,7 +135,7 @@ export function HealthCheckTab({ boardId }: Props) {
             size="sm"
             onClick={() => setAddModalOpen(true)}
             className="flex items-center gap-1.5"
-            aria-label="Add service to monitor"
+            aria-label={translations['HealthCheckTab.addServiceAria']}
           >
             <PlusIcon className="h-4 w-4" aria-hidden="true" />
             Add
@@ -164,7 +165,7 @@ export function HealthCheckTab({ boardId }: Props) {
       )}
 
       {/* Content area */}
-      <div className="flex-1 overflow-y-auto" role="table" aria-label="Health check services">
+      <div className="flex-1 overflow-y-auto" role="table" aria-label={translations['HealthCheckTab.servicesTableAria']}>
         {isLoading && entries.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="h-6 w-6" />

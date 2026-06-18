@@ -25,6 +25,7 @@ import { ChecklistSection } from './ChecklistSection';
 import type { Checklist } from '../api';
 import Button from '../../../common/components/Button';
 import type { Attachment } from '../../Attachments/types';
+import translations from '../translations/en.json';
 
 // Fractional position helpers — same algorithm as ChecklistSection item ordering.
 const LOW_SENTINEL = '';
@@ -169,7 +170,7 @@ const SortableChecklistRow = ({
               {...listeners}
               type="button"
               className="cursor-grab text-muted hover:text-subtle active:cursor-grabbing focus:outline-none"
-              aria-label="Drag to reorder checklist"
+              aria-label={translations['card.checklist.dragHandleAria']}
             >
               <Bars3Icon className="h-4 w-4" />
             </button>
@@ -178,7 +179,7 @@ const SortableChecklistRow = ({
               disabled={isFirst}
               onClick={onMoveUp}
               className="text-muted hover:text-subtle disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none"
-              aria-label="Move checklist up"
+              aria-label={translations['card.checklist.moveUpAria']}
             >
               <ChevronUpIcon className="h-3 w-3" />
             </button>
@@ -187,7 +188,7 @@ const SortableChecklistRow = ({
               disabled={isLast}
               onClick={onMoveDown}
               className="text-muted hover:text-subtle disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none"
-              aria-label="Move checklist down"
+              aria-label={translations['card.checklist.moveDownAria']}
             >
               <ChevronDownIcon className="h-3 w-3" />
             </button>
@@ -450,7 +451,7 @@ const CardChecklist = ({
   if (checklists.length === 0 && disabled) return null;
 
   return (
-    <section aria-label="Checklists">
+    <section aria-label={translations['card.checklist.sectionAria']}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">
           Checklists
@@ -475,7 +476,7 @@ const CardChecklist = ({
         <div className="mb-4 flex gap-2">
           <input
             className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
-            placeholder="Checklist title (optional)"
+            placeholder={translations['card.checklist.titlePlaceholder']}
             value={newChecklistTitle}
             onChange={(e) => {
               setNewChecklistTitle(e.target.value);

@@ -3,6 +3,7 @@
 // Clicking a file calls onSelect; the currently selected path is highlighted.
 import { useMemo } from 'react';
 import { DocumentTextIcon, FolderIcon, FolderOpenIcon } from '@heroicons/react/24/outline';
+import translations from '../translations/en.json';
 
 export interface SpecsManifestEntry {
   path: string;
@@ -142,15 +143,15 @@ function TreeNodes({
             {isDirty && (
               <span
                 className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500"
-                aria-label="Unsaved changes"
-                title="Unsaved changes"
+                aria-label={translations['SpecsFileTree.unsavedChangesAria']}
+                title={translations['SpecsFileTree.unsavedChangesTitle']}
               />
             )}
             {isPendingCommit && (
               <span
                 className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500"
-                aria-label="Ready to commit"
-                title="Ready to commit — this file has changes waiting to be committed"
+                aria-label={translations['SpecsFileTree.readyToCommitAria']}
+                title={translations['SpecsFileTree.readyToCommitTitle']}
               />
             )}
           </button>
@@ -173,7 +174,7 @@ const SpecsFileTree = ({ files, selectedPath, dirtyPaths, pendingCommitPaths, on
   }
 
   return (
-    <nav aria-label="Specs file tree" className="py-1">
+    <nav aria-label={translations['SpecsFileTree.navAria']} className="py-1">
       <TreeNodes
         nodes={tree}
         selectedPath={selectedPath}
