@@ -4,12 +4,14 @@ import { useMemo, useState } from 'react';
 import { PlusIcon, Bars3Icon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import {
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -20,7 +22,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { ChecklistSection } from './ChecklistSection';
-import type { Checklist } from '../api';
+import { ChecklistItem } from './ChecklistItem';
+import type { Checklist, ChecklistItem as ChecklistItemType } from '../api';
 import Button from '../../../common/components/Button';
 import type { Attachment } from '../../Attachments/types';
 import translations from '../translations/en.json';
@@ -442,6 +445,11 @@ const CardChecklist = ({
 }: Props) => {
   const [addingChecklist, setAddingChecklist] = useState(false);
   const [newChecklistTitle, setNewChecklistTitle] = useState('');
+  // [why] Track the active drag item so DragOverlay can render a floating copy
+  // that follows the cursor. Without this, checklist items become invisible when
+  // dragged across different SortableContext containers (different checklists)
+  // because useSortable's transform is relative to the original container.
+  const [activeDragItem, setActiveDragItem] = useState<ChecklistItemType | null>(null);
 
   const orderedChecklists = useMemo(
     () => [...checklists].sort((left, right) => comparePosition(left.position, right.position)),
@@ -482,7 +490,24 @@ const CardChecklist = ({
     void onChecklistReorder(cl.id, computePositionBetween(leftPos, rightPos));
   };
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const meta = (active.data.current as DragMeta | undefined) ?? {};
+    if (meta.type !== 'checklist-item') return;
+
+    const checklistId = meta.checklistId;
+    const itemId = meta.itemId ?? String(active.id);
+    if (!checklistId || !itemId) return;
+
+    const checklist = orderedChecklists.find((cl) => cl.id === checklistId);
+    const item = checklist?.items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    setActiveDragItem(item);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragItem(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -575,7 +600,12 @@ const CardChecklist = ({
         </div>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext
           items={orderedChecklists.map((cl) => `checklist:${cl.id}`)}
           strategy={verticalListSortingStrategy}
@@ -609,6 +639,24 @@ const CardChecklist = ({
             ))}
           </div>
         </SortableContext>
+        <DragOverlay>
+          {activeDragItem && (
+            <div className="opacity-90">
+              <ChecklistItem
+                item={activeDragItem}
+                onToggle={async () => {}}
+                onRename={async () => {}}
+                onDelete={async () => {}}
+                onAssign={async () => {}}
+                onDueDateChange={async () => {}}
+                onConvertToCard={async () => {}}
+                boardMembers={boardMembers}
+                showDragHandle
+                {...(attachments === undefined ? {} : { attachments })}
+              />
+            </div>
+          )}
+        </DragOverlay>
       </DndContext>
     </section>
   );
