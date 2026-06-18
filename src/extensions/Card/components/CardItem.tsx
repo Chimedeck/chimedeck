@@ -62,8 +62,10 @@ interface CardItemContentProps {
 
 function getDuePillClass(done: boolean, overdue: boolean, dueSoon: boolean): string {
   if (done) return 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30';
-  if (overdue) return 'text-red-700 dark:text-danger bg-red-50 dark:bg-red-900/30';
-  if (dueSoon) return 'text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30';
+  if (overdue)
+    return 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/40 font-bold animate-pulse';
+  if (dueSoon)
+    return 'text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 font-semibold';
   return 'text-muted';
 }
 
