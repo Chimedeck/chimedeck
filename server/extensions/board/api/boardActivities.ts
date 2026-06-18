@@ -19,7 +19,7 @@ interface CursorPayload {
 }
 
 function encodeCursor(created_at: string | Date, id: string): string {
-  const iso = typeof created_at === 'string' ? created_at : (created_at as Date).toISOString();
+  const iso = typeof created_at === 'string' ? created_at : (created_at).toISOString();
   return Buffer.from(JSON.stringify({ created_at: iso, id })).toString('base64');
 }
 

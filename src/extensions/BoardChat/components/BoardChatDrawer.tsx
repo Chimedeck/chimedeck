@@ -200,7 +200,7 @@ const BoardChatDrawer = ({
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [onClose]);
 
   const controlsLocked = !canManageGuestPermissions || permissionsState !== 'loaded' || updatingPermissions;
@@ -443,7 +443,7 @@ const BoardChatDrawer = ({
       {/* Drawer panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-96 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
         role="dialog"
         aria-label={translations['BoardChat.drawer.dialogAria']}
       >
@@ -765,7 +765,7 @@ const BoardChatDrawer = ({
                                     variant="secondary"
                                     size="sm"
                                     disabled={isCommitting}
-                                    onClick={() => handleDismissProposal(card)}
+                                    onClick={() => { handleDismissProposal(card); }}
                                   >
                                     {translations['BoardChat.drawer.dismiss']}
                                   </Button>
@@ -797,7 +797,7 @@ const BoardChatDrawer = ({
           <div className="flex gap-2">
             <textarea
               value={composerText}
-              onChange={(e) => setComposerText(e.target.value)}
+              onChange={(e) => { setComposerText(e.target.value); }}
               disabled={composerDisabled}
               placeholder={
                 isPermissionCheckPendingForGuest

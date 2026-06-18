@@ -563,7 +563,7 @@ async function listBoardMemberships(boardId: string): Promise<Array<{ id: string
   }> = boardMembers.map((row) => ({
     id: row.id,
     idMember: row.user_id,
-    memberType: (row.role === 'ADMIN' ? 'admin' : 'normal') as 'admin' | 'normal',
+    memberType: (row.role === 'ADMIN' ? 'admin' : 'normal'),
     unconfirmed: false as const,
     deactivated: false as const,
   }));

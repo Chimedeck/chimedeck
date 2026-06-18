@@ -65,7 +65,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
       }
     };
     // Defer so the same mousedown that opened us doesn't immediately close us
-    const timer = setTimeout(() => document.addEventListener('mousedown', handler), 0);
+    const timer = setTimeout(() => { document.addEventListener('mousedown', handler); }, 0);
     return () => {
       clearTimeout(timer);
       document.removeEventListener('mousedown', handler);
@@ -187,7 +187,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
       ref={containerRef}
       className="absolute left-0 top-full z-50 mt-1 w-72 rounded-xl border border-border bg-bg-base p-4 shadow-2xl"
       // [why] Prevent mousedown inside the popover from blurring the editor
-      onMouseDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => { e.stopPropagation(); }}
     >
       <div className="mb-3">
         <label htmlFor="link-insert-url" className="mb-1 block text-xs font-semibold text-subtle">
@@ -198,7 +198,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           ref={urlInputRef}
           type="url"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => { setUrl(e.target.value); }}
           onKeyDown={handleKeyDown}
           placeholder={translations['card.linkInsert.pasteLinkPlaceholder']}
           className={inputCls}
@@ -213,7 +213,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           id="link-insert-display"
           type="text"
           value={displayText}
-          onChange={(e) => setDisplayText(e.target.value)}
+          onChange={(e) => { setDisplayText(e.target.value); }}
           onKeyDown={handleKeyDown}
           placeholder={translations['card.linkInsert.displayTextPlaceholder']}
           className={inputCls}

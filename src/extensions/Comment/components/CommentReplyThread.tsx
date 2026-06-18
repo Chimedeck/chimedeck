@@ -124,7 +124,7 @@ const CommentReplyThread = ({
         <Button
           variant="link"
           size="sm"
-          onClick={() => onExpandToggle(!expanded)}
+          onClick={() => { onExpandToggle(!expanded); }}
           className="mt-1"
         >
           {expanded

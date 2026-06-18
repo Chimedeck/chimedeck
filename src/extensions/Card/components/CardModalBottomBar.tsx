@@ -109,7 +109,7 @@ const CardModalBottomBar = ({
             className={barButtonClass}
             aria-expanded={powerUps.open}
             aria-haspopup="true"
-            onClick={() => powerUps.setOpen((v) => !v)}
+            onClick={() => { powerUps.setOpen((v) => !v); }}
           >
             <PuzzlePieceIcon className="w-4 h-4" />
             Power-ups
@@ -140,7 +140,7 @@ const CardModalBottomBar = ({
             aria-expanded={automations.open}
             aria-haspopup="true"
             disabled={disabled}
-            onClick={() => automations.setOpen((v) => !v)}
+            onClick={() => { automations.setOpen((v) => !v); }}
           >
             <BoltIcon className="w-4 h-4" />
             Automations
@@ -160,7 +160,7 @@ const CardModalBottomBar = ({
             className={barButtonClass}
             aria-expanded={actions.open}
             aria-haspopup="true"
-            onClick={() => actions.setOpen((v) => !v)}
+            onClick={() => { actions.setOpen((v) => !v); }}
           >
             Actions
             <ChevronUpIcon className={`w-3 h-3 transition-transform ${actions.open ? '' : 'rotate-180'}`} />

@@ -62,7 +62,7 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
         {...(builder.existing ? { existing: builder.existing } : {})}
         {...(builder.initialConfig ? { initialConfig: builder.initialConfig } : {})}
         onSave={handleSaved}
-        onClose={() => setBuilder(null)}
+        onClose={() => { setBuilder(null); }}
       />
     );
   }
@@ -74,7 +74,7 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
         {...(builder.existing ? { existing: builder.existing } : {})}
         {...(builder.initialConfig ? { initialConfig: builder.initialConfig } : {})}
         onSave={handleSaved}
-        onClose={() => setBuilder(null)}
+        onClose={() => { setBuilder(null); }}
       />
     );
   }
@@ -92,15 +92,15 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
         <ScheduleList
           boardId={boardId}
           automations={scheduleAutomations}
-          onCreateScheduled={() => setBuilder({ type: 'scheduled' })}
-          onCreateDueDate={() => setBuilder({ type: 'duedate' })}
+          onCreateScheduled={() => { setBuilder({ type: 'scheduled' }); }}
+          onCreateDueDate={() => { setBuilder({ type: 'duedate' }); }}
           onEdit={handleEdit}
           onChanged={onChanged}
         />
       ) : (
         <ScheduleEmptyState
-          onCreateScheduled={() => setBuilder({ type: 'scheduled' })}
-          onCreateDueDate={() => setBuilder({ type: 'duedate' })}
+          onCreateScheduled={() => { setBuilder({ type: 'scheduled' }); }}
+          onCreateDueDate={() => { setBuilder({ type: 'duedate' }); }}
         />
       )}
     </div>

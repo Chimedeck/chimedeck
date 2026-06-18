@@ -29,7 +29,7 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const current = THEME_META[theme]!;
+  const current = THEME_META[theme];
 
   // Close on outside click
   useEffect(() => {
@@ -38,13 +38,13 @@ export function ThemeToggle() {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [open]);
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Theme: ${current.label}`}
@@ -62,7 +62,7 @@ export function ThemeToggle() {
           className="absolute right-0 top-full mt-1 w-40 rounded-lg border border-border bg-bg-surface shadow-lg py-1 z-50"
         >
           {THEME_ORDER.map((t) => {
-            const meta = THEME_META[t]!;
+            const meta = THEME_META[t];
             const active = t === theme;
             return (
               <button

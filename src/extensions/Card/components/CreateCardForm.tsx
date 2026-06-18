@@ -43,7 +43,7 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
         placeholder="Enter a title for this card…"
         rows={2}
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => { setTitle(e.target.value); }}
         autoFocus
         aria-label="New card title"
         disabled={submitting}

@@ -13,7 +13,7 @@ class QueryBuilder {
     private readonly tableName: keyof DataStore,
   ) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
@@ -23,7 +23,7 @@ class QueryBuilder {
   }
 
   private executeSync(): Row[] {
-    return (this.store[this.tableName] as Row[]).filter((row) =>
+    return (this.store[this.tableName]).filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
   }

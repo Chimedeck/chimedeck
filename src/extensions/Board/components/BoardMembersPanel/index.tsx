@@ -158,7 +158,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
         role="dialog"
         aria-label="Board Members"
       >
@@ -178,7 +178,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
         <div className="flex border-b border-border">
           <button
             type="button"
-            onClick={() => setActiveTab('members')}
+            onClick={() => { setActiveTab('members'); }}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'members'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
@@ -192,7 +192,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
           {/* Guests tab — only admins can invite guests; all can view */}
           <button
             type="button"
-            onClick={() => setActiveTab('guests')}
+            onClick={() => { setActiveTab('guests'); }}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'guests'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'

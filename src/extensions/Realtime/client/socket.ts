@@ -151,10 +151,10 @@ class RealtimeSocket {
       for (const activeBoardId of this.boardRefCounts.keys()) {
         this.send({ type: 'subscribe', board_id: activeBoardId });
       }
-      this.openHandlers.forEach((h) => h());
+      this.openHandlers.forEach((h) => { h(); });
       // Notify that polling is no longer needed now that WS is back
       if (wasPolling) {
-        this.pollingInactiveHandlers.forEach((h) => h());
+        this.pollingInactiveHandlers.forEach((h) => { h(); });
       }
     });
 
@@ -186,11 +186,11 @@ class RealtimeSocket {
         return;
       }
       this.failedAttempts++;
-      this.closeHandlers.forEach((h) => h());
+      this.closeHandlers.forEach((h) => { h(); });
       if (!this.intentionalClose && this.connectionRefCount > 0) {
         // Activate polling fallback once threshold is reached
         if (this.failedAttempts === POLLING_FALLBACK_THRESHOLD) {
-          this.pollingActiveHandlers.forEach((h) => h());
+          this.pollingActiveHandlers.forEach((h) => { h(); });
         }
         this._scheduleReconnect();
       }

@@ -26,7 +26,7 @@ const MentionList = forwardRef<MentionListHandle, Props>(({ items, command }, re
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Reset selection whenever the suggestion list changes
-  useEffect(() => setSelectedIndex(0), [items]);
+  useEffect(() => { setSelectedIndex(0); }, [items]);
 
   const selectItem = (index: number) => {
     const item = items[index];
@@ -67,8 +67,8 @@ const MentionList = forwardRef<MentionListHandle, Props>(({ items, command }, re
             name={item.name}
             avatarUrl={item.avatar_url}
             highlighted={i === selectedIndex}
-            onSelect={() => selectItem(i)}
-            onMouseEnter={() => setSelectedIndex(i)}
+            onSelect={() => { selectItem(i); }}
+            onMouseEnter={() => { setSelectedIndex(i); }}
           />
         </li>
       ))}

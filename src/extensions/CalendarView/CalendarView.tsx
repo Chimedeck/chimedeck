@@ -91,7 +91,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
         {/* Mode toggle */}
         <div className="flex rounded border border-border" role="group" aria-label={translations['CalendarView.ariaMode']}>
           <button
-            onClick={() => setMode('month')}
+            onClick={() => { setMode('month'); }}
             className={`px-3 py-1 text-xs rounded-l ${mode === 'month' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'month'}
             data-testid="calendar-mode-month"
@@ -99,7 +99,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
             {translations['CalendarView.monthView']}
           </button>
           <button
-            onClick={() => setMode('week')}
+            onClick={() => { setMode('week'); }}
             className={`px-3 py-1 text-xs rounded-r ${mode === 'week' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'week'}
             data-testid="calendar-mode-week"

@@ -109,7 +109,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
             <span className="mr-1 text-xs text-muted">Role:</span>
             <button
               type="button"
-              onClick={() => setGuestType('VIEWER')}
+              onClick={() => { setGuestType('VIEWER'); }}
               aria-pressed={guestType === 'VIEWER'}
               className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                 guestType === 'VIEWER'
@@ -121,7 +121,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
             </button>
             <button
               type="button"
-              onClick={() => setGuestType('MEMBER')}
+              onClick={() => { setGuestType('MEMBER'); }}
               aria-pressed={guestType === 'MEMBER'}
               className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                 guestType === 'MEMBER'

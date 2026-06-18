@@ -142,11 +142,11 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
 
   await db('plugins').insert({
     id,
-    name: name as string,
-    slug: slug as string,
+    name: name,
+    slug: slug,
     description: description && typeof description === 'string' ? description : null,
     icon_url: iconUrl && typeof iconUrl === 'string' ? iconUrl : null,
-    connector_url: connectorUrl as string,
+    connector_url: connectorUrl,
     manifest_url: manifestUrl && typeof manifestUrl === 'string' ? manifestUrl : null,
     author: body.author && typeof body.author === 'string' ? body.author : null,
     author_email:

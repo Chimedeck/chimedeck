@@ -40,7 +40,7 @@ export async function handleLinkPreview(req: Request): Promise<Response> {
 /** Fetch up to HTML_LIMIT bytes from the URL and extract the page title. Returns null on failure. */
 async function fetchPageTitle(rawUrl: string): Promise<string | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => { controller.abort(); }, FETCH_TIMEOUT_MS);
   try {
     const resp = await fetch(rawUrl, {
       signal: controller.signal,

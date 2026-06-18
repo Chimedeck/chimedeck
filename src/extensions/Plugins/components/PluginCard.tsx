@@ -81,7 +81,7 @@ const PluginCard = (props: Props) => {
         {/* Edit pencil — platform admins only, always visible when onEdit provided */}
         {props.onEdit && (
           <button
-            onClick={() => props.onEdit!(plugin)}
+            onClick={() => { props.onEdit!(plugin); }}
             title={translations['plugins.card.editTitle']}
             className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.editAriaLabel']}
@@ -93,7 +93,7 @@ const PluginCard = (props: Props) => {
         {/* Settings gear — only for active plugins with show-settings capability */}
         {hasSettings && props.mode === 'disable' && props.onSettings && (
           <button
-            onClick={() => (props as DisableCardProps).onSettings?.((props as DisableCardProps).boardPlugin)}
+            onClick={() => (props).onSettings?.((props).boardPlugin)}
             title={translations['plugins.card.settingsTitle']}
             className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.settingsAriaLabel']}

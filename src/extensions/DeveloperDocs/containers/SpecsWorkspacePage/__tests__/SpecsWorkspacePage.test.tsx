@@ -18,7 +18,7 @@ vi.mock('../../../components/SpecsFileTree', () => ({
     <ul>
       {files.map((f) => (
         <li key={f.path}>
-          <button onClick={() => onSelect(f.path)}>{f.path}</button>
+          <button onClick={() => { onSelect(f.path); }}>{f.path}</button>
         </li>
       ))}
     </ul>
@@ -39,7 +39,7 @@ vi.mock('../../../components/SpecsMarkdownEditor', () => ({
     <div data-testid="markdown-editor">
       <span data-testid="editor-content">{content}</span>
       {!readOnly && (
-        <button data-testid="editor-change" onClick={() => onChange('edited content')}>
+        <button data-testid="editor-change" onClick={() => { onChange('edited content'); }}>
           Type
         </button>
       )}

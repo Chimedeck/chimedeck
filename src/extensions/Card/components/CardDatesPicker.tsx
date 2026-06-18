@@ -210,7 +210,7 @@ export const CardDatesPicker = ({
             <button
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
-              onClick={() => shiftYear(-1)}
+              onClick={() => { shiftYear(-1); }}
               aria-label={translations['card.datesPicker.prevYearAria']}
             >
               <ChevronDoubleLeftIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
@@ -218,7 +218,7 @@ export const CardDatesPicker = ({
             <button
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
-              onClick={() => shiftMonth(-1)}
+              onClick={() => { shiftMonth(-1); }}
               aria-label={translations['card.datesPicker.prevMonthAria']}
             >
               <ChevronLeftIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
@@ -231,7 +231,7 @@ export const CardDatesPicker = ({
             <button
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
-              onClick={() => shiftMonth(1)}
+              onClick={() => { shiftMonth(1); }}
               aria-label={translations['card.datesPicker.nextMonthAria']}
             >
               <ChevronRightIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
@@ -239,7 +239,7 @@ export const CardDatesPicker = ({
             <button
               type="button"
               className="h-7 w-7 rounded text-muted hover:bg-bg-overlay hover:text-base transition-colors"
-              onClick={() => shiftYear(1)}
+              onClick={() => { shiftYear(1); }}
               aria-label={translations['card.datesPicker.nextYearAria']}
             >
               <ChevronDoubleRightIcon className="mx-auto h-3.5 w-3.5" aria-hidden="true" />
@@ -284,7 +284,7 @@ export const CardDatesPicker = ({
               type="text"
               placeholder={translations['card.datesPicker.datePlaceholder']}
               value={startInput}
-              onChange={(e) => setStartInput(e.target.value)}
+              onChange={(e) => { setStartInput(e.target.value); }}
               onFocus={() => { setActiveField('start'); setStartEnabled(true); }}
               onBlur={handleStartBlur}
               disabled={disabled}
@@ -312,8 +312,8 @@ export const CardDatesPicker = ({
               type="text"
               placeholder={translations['card.datesPicker.datePlaceholder']}
               value={dueInput}
-              onChange={(e) => setDueInput(e.target.value)}
-              onFocus={() => setActiveField('due')}
+              onChange={(e) => { setDueInput(e.target.value); }}
+              onFocus={() => { setActiveField('due'); }}
               onBlur={handleDueBlur}
               disabled={disabled}
               className="flex-1 min-w-0 bg-bg-overlay border border-border rounded px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
@@ -322,7 +322,7 @@ export const CardDatesPicker = ({
               type="text"
               placeholder={translations['card.datesPicker.timePlaceholder']}
               value={timeInput}
-              onChange={(e) => setTimeInput(e.target.value)}
+              onChange={(e) => { setTimeInput(e.target.value); }}
               disabled={!draftDue || disabled}
               className="w-24 flex-shrink-0 bg-bg-overlay border border-border rounded px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             />

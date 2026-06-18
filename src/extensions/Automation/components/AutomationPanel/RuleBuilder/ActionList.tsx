@@ -39,7 +39,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
   useEffect(() => {
     apiClient
       .get(`/boards/${boardId}/workspace/boards`)
-      .then((res: any) => setWorkspaceBoards(res.data ?? []))
+      .then((res: any) => { setWorkspaceBoards(res.data ?? []); })
       .catch(() => {});
   }, [boardId]);
 
@@ -67,7 +67,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
         }
         setCustomFieldsById(map);
       })
-      .catch(() => setCustomFieldsById({}));
+      .catch(() => { setCustomFieldsById({}); });
   }, [boardId]);
   // Track which action is being configured (by local id).
   const [configuringId, setConfiguringId] = useState<string | null>(null);
@@ -130,8 +130,8 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
               <div key={action.id}>
                 <ActionItem
                   item={action}
-                  onDelete={() => handleDelete(action.id)}
-                  onConfigChange={(cfg) => handleConfigChange(action.id, cfg)}
+                  onDelete={() => { handleDelete(action.id); }}
+                  onConfigChange={(cfg) => { handleConfigChange(action.id, cfg); }}
                   workspaceBoards={workspaceBoards}
                   customFieldsById={customFieldsById}
                 />
@@ -142,7 +142,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
                     <ActionConfig
                       actionType={meta}
                       config={action.config}
-                      onChange={(cfg) => handleConfigChange(action.id, cfg)}
+                      onChange={(cfg) => { handleConfigChange(action.id, cfg); }}
                       boardId={boardId}
                     />
                   ) : null;
@@ -156,7 +156,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
                       type="button"
                       className="mt-0.5 ml-9 text-xs text-blue-400 hover:underline"
                       onClick={() =>
-                        setConfiguringId((prev) => (prev === action.id ? null : action.id))
+                        { setConfiguringId((prev) => (prev === action.id ? null : action.id)); }
                       }
                     >
                       {configuringId === action.id ? translations['automation.actionList.hideConfig'] : translations['automation.actionList.configure']}
@@ -172,7 +172,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
       {showPicker && (
         <ActionPicker
           onSelect={handlePickAction}
-          onCancel={() => setShowPicker(false)}
+          onCancel={() => { setShowPicker(false); }}
         />
       )}
 
@@ -180,7 +180,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
         <button
           type="button"
           className="flex items-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted transition-colors hover:border-border hover:text-subtle focus:outline-none focus:ring-2 focus:ring-blue-500"
-          onClick={() => setShowPicker(true)}
+          onClick={() => { setShowPicker(true); }}
         >
           <PlusIcon className="h-4 w-4" aria-hidden="true" />
           {translations['automation.actionList.addAction']}

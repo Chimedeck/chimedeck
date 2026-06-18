@@ -72,7 +72,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
                 id="workspace-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); }}
                 placeholder={translations['CreateWorkspaceModal.namePlaceholder']}
                 required
                 autoFocus
@@ -86,7 +86,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
                 {isBlockedByWorkspaceLimit && error.data?.upgradeUrl && (
                   <button
                     type="button"
-                    onClick={() => navigate(error.data!.upgradeUrl!)}
+                    onClick={() => { navigate(error.data!.upgradeUrl!); }}
                     className="text-sm text-primary underline underline-offset-2"
                   >
                     {translations['CreateWorkspaceModal.upgradeWorkspaceLink']}

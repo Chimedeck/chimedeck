@@ -31,7 +31,7 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [onClose]);
 
   // Close on Escape
@@ -40,7 +40,7 @@ export function CardAssetPicker({ attachments, onUploadNew, onInsert, onClose }:
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => { document.removeEventListener('keydown', handler); };
   }, [onClose]);
 
   return (

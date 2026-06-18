@@ -102,7 +102,7 @@ const QuickStartTemplates: FC<Props> = ({ onUseTemplate }) => (
         return (
           <button
             key={tpl.id}
-            onClick={() => onUseTemplate(tpl)}
+            onClick={() => { onUseTemplate(tpl); }}
             className="flex items-start gap-3 rounded-md border border-border bg-bg-surface px-3 py-3 text-left hover:border-blue-500 hover:bg-bg-overlay transition-colors group"
           >
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted group-hover:text-blue-400" aria-hidden="true" />

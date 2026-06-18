@@ -64,8 +64,8 @@ describe('startSession', () => {
   it('creates a new session when none exists', async () => {
     const { startSession } = await import('../lifecycle');
 
-    q('first')!.mockResolvedValueOnce(null);
-    q('insert')!.mockResolvedValueOnce(undefined);
+    q('first').mockResolvedValueOnce(null);
+    q('insert').mockResolvedValueOnce(undefined);
 
     const result = await startSession({
       cardId: 'card-1',
@@ -96,7 +96,7 @@ describe('startSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(existingSession);
+    q('first').mockResolvedValueOnce(existingSession);
 
     const result = await startSession({
       cardId: 'card-1',
@@ -125,7 +125,7 @@ describe('startSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(pausedSession);
+    q('first').mockResolvedValueOnce(pausedSession);
 
     const result = await startSession({
       cardId: 'card-1',
@@ -154,8 +154,8 @@ describe('pauseSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(activeSession);
-    q('update')!.mockResolvedValueOnce(1);
+    q('first').mockResolvedValueOnce(activeSession);
+    q('update').mockResolvedValueOnce(1);
 
     const result = await pauseSession({
       sessionId: 'session-1',
@@ -170,7 +170,7 @@ describe('pauseSession', () => {
   it('returns 404 for non-existent session', async () => {
     const { pauseSession } = await import('../lifecycle');
 
-    q('first')!.mockResolvedValueOnce(null);
+    q('first').mockResolvedValueOnce(null);
 
     const result = await pauseSession({
       sessionId: 'nonexistent',
@@ -199,7 +199,7 @@ describe('pauseSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(pausedSession);
+    q('first').mockResolvedValueOnce(pausedSession);
 
     const result = await pauseSession({
       sessionId: 'session-1',
@@ -228,7 +228,7 @@ describe('pauseSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(readySession);
+    q('first').mockResolvedValueOnce(readySession);
 
     const result = await pauseSession({
       sessionId: 'session-1',
@@ -247,8 +247,8 @@ describe('ensureActiveSession', () => {
   it('creates a new session when none exists', async () => {
     const { ensureActiveSession } = await import('../lifecycle');
 
-    q('first')!.mockResolvedValueOnce(null);
-    q('insert')!.mockResolvedValueOnce(undefined);
+    q('first').mockResolvedValueOnce(null);
+    q('insert').mockResolvedValueOnce(undefined);
 
     const result = await ensureActiveSession({
       cardId: 'card-1',
@@ -275,7 +275,7 @@ describe('ensureActiveSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(activeSession);
+    q('first').mockResolvedValueOnce(activeSession);
 
     const result = await ensureActiveSession({
       cardId: 'card-1',
@@ -303,8 +303,8 @@ describe('ensureActiveSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(pausedSession);
-    q('update')!.mockResolvedValueOnce(1);
+    q('first').mockResolvedValueOnce(pausedSession);
+    q('update').mockResolvedValueOnce(1);
 
     const result = await ensureActiveSession({
       cardId: 'card-1',
@@ -334,8 +334,8 @@ describe('resumeSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(pausedSession);
-    q('update')!.mockResolvedValueOnce(1);
+    q('first').mockResolvedValueOnce(pausedSession);
+    q('update').mockResolvedValueOnce(1);
 
     const result = await resumeSession({
       sessionId: 'session-1',
@@ -363,8 +363,8 @@ describe('resumeSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(idleSession);
-    q('update')!.mockResolvedValueOnce(1);
+    q('first').mockResolvedValueOnce(idleSession);
+    q('update').mockResolvedValueOnce(1);
 
     const result = await resumeSession({
       sessionId: 'session-1',
@@ -391,7 +391,7 @@ describe('resumeSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(activeSession);
+    q('first').mockResolvedValueOnce(activeSession);
 
     const result = await resumeSession({
       sessionId: 'session-1',
@@ -419,7 +419,7 @@ describe('resumeSession', () => {
       updated_at: '2026-01-01T00:00:00.000Z',
     };
 
-    q('first')!.mockResolvedValueOnce(readySession);
+    q('first').mockResolvedValueOnce(readySession);
 
     const result = await resumeSession({
       sessionId: 'session-1',
@@ -436,7 +436,7 @@ describe('resumeSession', () => {
   it('returns 404 for non-existent session', async () => {
     const { resumeSession } = await import('../lifecycle');
 
-    q('first')!.mockResolvedValueOnce(null);
+    q('first').mockResolvedValueOnce(null);
 
     const result = await resumeSession({
       sessionId: 'nonexistent',

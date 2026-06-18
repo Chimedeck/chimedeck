@@ -86,7 +86,7 @@ const CardLabels = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-base flex items-center gap-1 transition-colors"
-            onClick={() => setPickerOpen((v) => !v)}
+            onClick={() => { setPickerOpen((v) => !v); }}
             aria-haspopup="true"
             aria-expanded={pickerOpen}
           >
@@ -98,7 +98,7 @@ const CardLabels = ({
               {/* Backdrop to close picker */}
               <div
                 className="fixed inset-0 z-10"
-                onClick={() => setPickerOpen(false)}
+                onClick={() => { setPickerOpen(false); }}
                 aria-hidden="true"
               />
               <div className="absolute left-0 top-6 z-20 w-64 rounded-xl bg-bg-surface border border-border shadow-2xl p-3 space-y-3">
@@ -107,7 +107,7 @@ const CardLabels = ({
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={translations['card.labels.namePlaceholder']}
                   value={newLabelName}
-                  onChange={(e) => setNewLabelName(e.target.value)}
+                  onChange={(e) => { setNewLabelName(e.target.value); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
                   autoFocus
                 />
@@ -125,7 +125,7 @@ const CardLabels = ({
                           selectedColor === c.hex ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''
                         }`}
                         style={{ backgroundColor: c.hex }}
-                        onClick={() => setSelectedColor(c.hex)}
+                        onClick={() => { setSelectedColor(c.hex); }}
                         aria-label={c.name}
                       />
                     ))}

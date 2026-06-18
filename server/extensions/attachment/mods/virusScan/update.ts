@@ -20,7 +20,7 @@ export async function updateScanResult({
   // Fire-and-forget thumbnail generation when an image passes the virus scan
   if (status === 'READY') {
     generateThumbnail({ attachmentId }).catch((err) =>
-      console.error(`[thumbnail] failed for ${attachmentId}:`, err),
+      { console.error(`[thumbnail] failed for ${attachmentId}:`, err); },
     );
   }
 

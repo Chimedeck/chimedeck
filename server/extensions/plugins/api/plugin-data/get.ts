@@ -103,7 +103,7 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
   });
 
   if (visibility === 'private') {
-    query.where('user_id', userId!);
+    query.where('user_id', userId);
   } else {
     query.whereNull('user_id');
   }

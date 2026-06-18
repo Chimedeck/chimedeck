@@ -32,7 +32,7 @@ const ColorGrid = ({
           selected === c.hex ? 'ring-2 ring-primary ring-offset-1' : ''
         }`}
         style={{ backgroundColor: c.hex }}
-        onClick={() => onChange(c.hex)}
+        onClick={() => { onChange(c.hex); }}
         aria-label={c.name}
       >
         {selected === c.hex && (
@@ -84,8 +84,8 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
     if (!modalOpen) return;
     setLoading(true);
     getBoardLabels({ api: apiClient, boardId })
-      .then((fetched) => setLabels(fetched))
-      .finally(() => setLoading(false));
+      .then((fetched) => { setLabels(fetched); })
+      .finally(() => { setLoading(false); });
   }, [modalOpen, boardId]);
 
   // Focus the right input when view changes
@@ -103,7 +103,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
     if (!modalOpen) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => { document.removeEventListener('keydown', handler); };
   }, [modalOpen]);
 
   const closeModal = () => {
@@ -196,7 +196,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
       {/* Entry row — matches the style of the Plugins row */}
       <button
         type="button"
-        onClick={() => setModalOpen(true)}
+        onClick={() => { setModalOpen(true); }}
         className="w-full text-left px-3 py-2 rounded text-sm text-subtle hover:bg-bg-surface flex items-center gap-2 transition-colors"
       >
         <TagIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -208,8 +208,8 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60" />
           <Dialog.Content
             className="fixed inset-0 z-50 flex items-start justify-center pt-24 pointer-events-none"
-            onInteractOutside={() => closeModal()}
-            onEscapeKeyDown={() => closeModal()}
+            onInteractOutside={() => { closeModal(); }}
+            onEscapeKeyDown={() => { closeModal(); }}
             aria-label="Labels"
           >
             <Dialog.Title className="sr-only">Labels</Dialog.Title>
@@ -222,7 +222,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                 <button
                   type="button"
                   className="flex items-center gap-1 text-sm text-muted hover:text-base transition-colors"
-                  onClick={() => setView('list')}
+                  onClick={() => { setView('list'); }}
                 >
                   {/* left chevron */}
                   <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -251,7 +251,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Search labels..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
                 />
 
                 {loading && (
@@ -275,14 +275,14 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                             className="flex-1 flex items-center justify-center rounded-md px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90 min-w-0 truncate"
                             style={{ backgroundColor: label.color, color: contrastText(label.color) }}
                             title={label.name}
-                            onClick={() => openEdit(label)}
+                            onClick={() => { openEdit(label); }}
                           >
                             {label.name}
                           </button>
                           <button
                             type="button"
                             className="flex-shrink-0 rounded p-1.5 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
-                            onClick={() => openEdit(label)}
+                            onClick={() => { openEdit(label); }}
                             aria-label={`Edit ${label.name}`}
                           >
                             <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -345,7 +345,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                     className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Label name"
                     value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
+                    onChange={(e) => { setFormName(e.target.value); }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         void (view === 'create' ? handleCreate() : handleSaveEdit());
@@ -362,7 +362,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                     <button
                       type="button"
                       className="mt-2 flex items-center gap-1.5 text-xs text-subtle hover:text-base transition-colors"
-                      onClick={() => setFormColor('')}
+                      onClick={() => { setFormColor(''); }}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
@@ -389,7 +389,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                   <button
                     type="button"
                     className="w-full rounded-lg border border-danger/40 text-danger hover:bg-danger/10 text-sm py-2 transition-colors"
-                    onClick={() => setConfirmDelete(true)}
+                    onClick={() => { setConfirmDelete(true); }}
                   >
                     Delete label
                   </button>
@@ -414,7 +414,7 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
                       <button
                         type="button"
                         className="flex-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
-                        onClick={() => setConfirmDelete(false)}
+                        onClick={() => { setConfirmDelete(false); }}
                         disabled={deleting}
                       >
                         Cancel

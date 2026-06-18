@@ -244,7 +244,7 @@ export async function runSprintGenerationPipeline({
   });
 
   // 7. Create sprint cards
-  let createdFiles = genResult.data.artifacts.map(a => a.filePath);
+  const createdFiles = genResult.data.artifacts.map(a => a.filePath);
   const cardResult = await deps.createSprintCards({
     cardId,
     workspaceId,

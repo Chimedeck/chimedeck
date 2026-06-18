@@ -71,13 +71,13 @@ describe('readRequirements', () => {
     expect(result.status).toBe(200);
     expect(result.data).toBeDefined();
     expect(result.data!.requirementPacket).toBeDefined();
-    expect(result.data!.requirementPacket!.businessValue).toBe('Increase user engagement by 30%');
-    expect(result.data!.requirementPacket!.earsRequirements).toHaveLength(1);
-    expect(result.data!.requirementPacket!.acceptanceCriteria).toHaveLength(2);
-    expect(result.data!.requirementPacket!.constraints).toHaveLength(2);
-    expect(result.data!.requirementPacket!.qualityScore).toBe(95);
+    expect(result.data!.requirementPacket.businessValue).toBe('Increase user engagement by 30%');
+    expect(result.data!.requirementPacket.earsRequirements).toHaveLength(1);
+    expect(result.data!.requirementPacket.acceptanceCriteria).toHaveLength(2);
+    expect(result.data!.requirementPacket.constraints).toHaveLength(2);
+    expect(result.data!.requirementPacket.qualityScore).toBe(95);
     expect(result.data!.contextSnapshot).toBeDefined();
-    expect(result.data!.contextSnapshot!.totalChunks).toBe(5);
+    expect(result.data!.contextSnapshot.totalChunks).toBe(5);
   });
 
   it('returns error when card has no READY_FOR_REVIEW session', async () => {
@@ -155,8 +155,8 @@ describe('readRequirements', () => {
 
     expect(result.status).toBe(200);
     // Default fallback context — not null
-    expect(result.data!.contextSnapshot!.snapshotId).toBe('');
-    expect(result.data!.contextSnapshot!.totalChunks).toBe(0);
+    expect(result.data!.contextSnapshot.snapshotId).toBe('');
+    expect(result.data!.contextSnapshot.totalChunks).toBe(0);
   });
 
   it('uses latest READY_FOR_REVIEW session when multiple exist', async () => {
@@ -200,6 +200,6 @@ describe('readRequirements', () => {
     const result = await readRequirements(input);
 
     expect(result.status).toBe(200);
-    expect(result.data!.requirementPacket!.qualityScore).toBe(96);
+    expect(result.data!.requirementPacket.qualityScore).toBe(96);
   });
 });

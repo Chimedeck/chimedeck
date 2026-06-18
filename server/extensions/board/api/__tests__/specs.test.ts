@@ -179,7 +179,7 @@ function resetDeps() {
 beforeEach(() => {
   // Clear module-level caches between tests.
   const { specsManifestCache, specsManifestInflight, specsFileCache, specsFileInflight } =
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     require('../../mods/specs/cache');
   specsManifestCache.clear();
   specsManifestInflight.clear();
@@ -267,7 +267,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     specsLoadDeps.downloadRepositoryFromProjectUrl = () => {
       callCount++;
       return new Promise<{ repoPath: string; ref: string; fetchedAt: string }>((resolve) => {
-        resolveTask = () => resolve({ repoPath: FAKE_REPO_PATH, ref: FAKE_REF, fetchedAt: FAKE_FETCHED_AT });
+        resolveTask = () => { resolve({ repoPath: FAKE_REPO_PATH, ref: FAKE_REF, fetchedAt: FAKE_FETCHED_AT }); };
       });
     };
 

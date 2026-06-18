@@ -75,7 +75,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
           e.preventDefault();
           setDragOver(true);
         }}
-        onDragLeave={() => setDragOver(false)}
+        onDragLeave={() => { setDragOver(false); }}
         onDrop={handleDrop}
         role="button"
         tabIndex={0}

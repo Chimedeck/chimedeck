@@ -43,7 +43,7 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
     .map((a) => a.referenced_card_id as string | null)
     .filter((id): id is string => Boolean(id));
 
-  let refCardMap: Record<
+  const refCardMap: Record<
     string,
     {
       id: string;

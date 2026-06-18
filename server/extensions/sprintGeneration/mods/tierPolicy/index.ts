@@ -40,7 +40,7 @@ export function resolveTierPolicy({
   // Enforce sprint count cap
   const maxSprints = quota.maxSprints === 'unlimited'
     ? ('unlimited' as const)
-    : (quota.maxSprints as number);
+    : (quota.maxSprints);
 
   const truncatedSprints: Array<{ sprintNumber: number; reason: string }> = [];
   const effectiveSprintCount = maxSprints === 'unlimited'

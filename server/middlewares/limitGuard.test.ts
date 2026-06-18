@@ -106,7 +106,7 @@ describe('buildLimitResponse', () => {
       expect(res).not.toBeNull();
       expect(res!.status).toBe(402);
 
-      const body = (await res!.json()) as any;
+      const body = (await res!.json());
       expect(body.error.code).toBe('limit-reached');
       expect(body.error.data.limit).toBe('maxBoardsPerWorkspace');
       expect(body.error.data.currentUsage).toBe(2);
@@ -119,13 +119,13 @@ describe('buildLimitResponse', () => {
 
     test('response body has error.code = limit-reached', async () => {
       const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 1, 'workspace-1');
-      const body = (await res!.json()) as any;
+      const body = (await res!.json());
       expect(body.error.code).toBe('limit-reached');
     });
 
     test('personal quota is reported as a number', async () => {
       const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 1, 'workspace-1');
-      const body = (await res!.json()) as any;
+      const body = (await res!.json());
       expect(typeof body.error.data.quota).toBe('number');
     });
   });

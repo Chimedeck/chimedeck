@@ -205,7 +205,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
-  const previousDueDate = ((existingCard as { due_date?: string | null } | undefined)?.due_date ?? null) as string | null;
+  const previousDueDate = ((existingCard as { due_date?: string | null } | undefined)?.due_date ?? null);
   const descriptionChanged =
     body.description !== undefined &&
     ((updates.description ?? null) !== ((existingCard as { description?: string | null } | undefined)?.description ?? null));

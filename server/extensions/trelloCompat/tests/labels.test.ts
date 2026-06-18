@@ -27,18 +27,18 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
 
-  orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+  orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderByField = field;
     this.orderByDirection = direction;
     return this;
   }
 
-  select(...columns: string[]): QueryBuilder {
+  select(...columns: string[]): this {
     this.pickedColumns = columns.length > 0 ? columns : null;
     return this;
   }
@@ -51,7 +51,7 @@ class QueryBuilder {
   async insert(payload: Row | Row[]): Promise<void> {
     const rows = Array.isArray(payload) ? payload : [payload];
     for (const row of rows) {
-      (this.store[this.tableName] as Row[]).push({ ...row });
+      (this.store[this.tableName]).push({ ...row });
     }
   }
 
@@ -62,7 +62,7 @@ class QueryBuilder {
   }
 
   async delete(): Promise<number> {
-    const rows = this.store[this.tableName] as Row[];
+    const rows = this.store[this.tableName];
     const before = rows.length;
     const keep = rows.filter((row) => !this.filters.every((filter) => filter(row)));
     this.store[this.tableName] = keep;
@@ -77,7 +77,7 @@ class QueryBuilder {
   }
 
   private executeSync(clone = true): Row[] {
-    const source = this.store[this.tableName] as Row[];
+    const source = this.store[this.tableName];
     let rows = source.filter((row) => this.filters.every((filter) => filter(row)));
 
     if (this.orderByField) {

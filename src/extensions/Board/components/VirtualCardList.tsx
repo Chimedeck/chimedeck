@@ -3,7 +3,7 @@
 // Install: bun add @tanstack/react-virtual
 import { useRef } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type VirtualizerRow = { key: string; index: number; start: number; size: number };
 
 interface Card {

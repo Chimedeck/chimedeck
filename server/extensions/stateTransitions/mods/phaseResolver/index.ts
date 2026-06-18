@@ -65,7 +65,7 @@ export async function resolveColumnWorkflowPhases({
   if (!graph) return [];
 
   const node = graph.nodes.find((n) => n.listId === listId);
-  return (node?.workflowPhases as WorkflowPhase[] | undefined) ?? [];
+  return (node?.workflowPhases) ?? [];
 }
 
 /**

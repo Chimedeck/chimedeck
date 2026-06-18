@@ -100,7 +100,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
       <IconButton
         type="button"
         variant="ghost"
-        onClick={() => onRemove(entry.id)}
+        onClick={() => { onRemove(entry.id); }}
         disabled={isProbing}
         aria-label={`Remove ${entry.name}`}
         title={`Remove ${entry.name}`}

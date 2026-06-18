@@ -31,7 +31,7 @@ const AcceptInvitePage = () => {
       return;
     }
     inspectInvite({ api, token })
-      .then((res) => setState({ status: 'ready', invite: res.data }))
+      .then((res) => { setState({ status: 'ready', invite: res.data }); })
       .catch((err) => {
         const errorName =
           err?.response?.data?.error?.code ?? 'unknown-error';

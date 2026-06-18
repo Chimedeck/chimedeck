@@ -62,7 +62,7 @@ const DueDateCommandBuilder: FC<Props> = ({
       id: a.id,
       actionType: a.actionType,
       label: a.actionType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      config: a.config as Record<string, unknown>,
+      config: a.config,
     })) ??
       initialConfig
         ? []
@@ -208,7 +208,7 @@ const DueDateCommandBuilder: FC<Props> = ({
                     <button
                       key={value}
                       type="button"
-                      onClick={() => setTriggerMoment(value as TriggerMoment)}
+                      onClick={() => { setTriggerMoment(value as TriggerMoment); }}
                       className={`flex flex-col items-center gap-1 rounded-md py-2.5 px-2 text-xs font-medium transition-colors ${
                         triggerMoment === value
                           ? 'bg-primary text-white' // [theme-exception]: text-white on active-state primary button
@@ -245,7 +245,7 @@ const DueDateCommandBuilder: FC<Props> = ({
                         <button
                           key={u}
                           type="button"
-                          onClick={() => setOffsetUnit(u)}
+                          onClick={() => { setOffsetUnit(u); }}
                           className={`rounded-md px-3 py-2 text-xs font-medium capitalize transition-colors ${
                             offsetUnit === u
                               ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
@@ -302,7 +302,7 @@ const DueDateCommandBuilder: FC<Props> = ({
                   id="due-date-name"
                   type="text"
                   value={commandName}
-                  onChange={(e) => setNameOverride(e.target.value)}
+                  onChange={(e) => { setNameOverride(e.target.value); }}
                   maxLength={120}
                   className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={translations['automation.dueDateBuilder.commandNamePlaceholder']}
@@ -326,7 +326,7 @@ const DueDateCommandBuilder: FC<Props> = ({
           <Button
             variant="secondary"
             type="button"
-            onClick={step === 1 ? onClose : () => setStep(1)}
+            onClick={step === 1 ? onClose : () => { setStep(1); }}
             className="flex items-center gap-1"
           >
             {step === 1 ? (
@@ -344,7 +344,7 @@ const DueDateCommandBuilder: FC<Props> = ({
               variant="primary"
               type="button"
               disabled={!canProceedStep1}
-              onClick={() => setStep(2)}
+              onClick={() => { setStep(2); }}
             >
               {translations['automation.dueDateBuilder.next']}
             </Button>

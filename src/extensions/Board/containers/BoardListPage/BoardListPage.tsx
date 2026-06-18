@@ -136,9 +136,9 @@ const BoardListPage = () => {
           <BoardCard
             key={board.id}
             board={board}
-            onClick={() => navigate(boardPath(board))}
+            onClick={() => { navigate(boardPath(board)); }}
             onArchive={() => handleArchive(board.id)}
-            onDelete={() => handleDelete(board.id)}
+            onDelete={() => { handleDelete(board.id); }}
             onDuplicate={() => handleDuplicate(board.id)}
             onStar={() => handleStar(board.id)}
             onUnstar={() => handleUnstar(board.id)}
@@ -152,7 +152,7 @@ const BoardListPage = () => {
     <div className="px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-base">{translations['BoardListPage.title']}</h1>
-        <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
+        <Button variant="primary" size="md" onClick={() => { setShowCreateModal(true); }}>
           {translations['Board.createBoard']}
         </Button>
       </div>
@@ -163,7 +163,7 @@ const BoardListPage = () => {
           type="search"
           placeholder={translations['BoardListPage.filterPlaceholder']}
           value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
+          onChange={(e) => { setFilterText(e.target.value); }}
           className="h-8 w-56 rounded border border-border bg-bg-overlay px-3 text-sm text-base placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label={translations['BoardListPage.filterAriaLabel']}
         />
@@ -198,7 +198,7 @@ const BoardListPage = () => {
       {pageContent}
       {showCreateModal && (
         <CreateBoardModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { setShowCreateModal(false); }}
           onCreate={handleCreate}
         />
       )}

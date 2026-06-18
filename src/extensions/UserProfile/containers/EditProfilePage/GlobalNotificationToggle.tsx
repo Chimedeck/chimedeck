@@ -59,7 +59,7 @@ const GlobalNotificationToggle = () => {
         setEnabled(true);
         setError(translations['UserProfile.notificationsLoadError']);
       })
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); });
   }, []);
 
   const handleToggle = async (next: boolean) => {

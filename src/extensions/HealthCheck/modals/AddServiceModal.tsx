@@ -180,7 +180,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         <div className="flex gap-2 mb-5" role="group" aria-label={translations['AddServiceModal.serviceTypeAria']}>
           <button
             type="button"
-            onClick={() => handleModeSwitch('preset')}
+            onClick={() => { handleModeSwitch('preset'); }}
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               mode === 'preset'
                 ? 'bg-primary text-inverse'
@@ -192,7 +192,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
           </button>
           <button
             type="button"
-            onClick={() => handleModeSwitch('custom')}
+            onClick={() => { handleModeSwitch('custom'); }}
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               mode === 'custom'
                 ? 'bg-primary text-inverse'
@@ -223,7 +223,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                 <select
                   id="preset-select"
                   value={selectedPresetKey}
-                  onChange={(e) => setSelectedPresetKey(e.target.value)}
+                  onChange={(e) => { setSelectedPresetKey(e.target.value); }}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 >
@@ -258,7 +258,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   id="custom-name"
                   type="text"
                   value={custom.name}
-                  onChange={(e) => setCustom((prev) => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => { setCustom((prev) => ({ ...prev, name: e.target.value })); }}
                   placeholder={translations['AddServiceModal.customNamePlaceholder']}
                   disabled={submitting}
                   maxLength={100}
@@ -276,7 +276,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   id="custom-url"
                   type="url"
                   value={custom.url}
-                  onChange={(e) => setCustom((prev) => ({ ...prev, url: e.target.value }))}
+                  onChange={(e) => { setCustom((prev) => ({ ...prev, url: e.target.value })); }}
                   placeholder={translations['AddServiceModal.customUrlPlaceholder']}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
@@ -296,7 +296,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   min={100}
                   max={599}
                   value={custom.expectedStatus}
-                  onChange={(e) => setCustom((prev) => ({ ...prev, expectedStatus: e.target.value }))}
+                  onChange={(e) => { setCustom((prev) => ({ ...prev, expectedStatus: e.target.value })); }}
                   placeholder={translations['AddServiceModal.customExpectedStatusPlaceholder']}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"

@@ -81,7 +81,7 @@ export default function SignatureVerificationSnippet() {
   function handleCopy() {
     navigator.clipboard.writeText(VERIFICATION_SNIPPET).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => { setCopied(false); }, 2000);
     });
   }
 
@@ -96,7 +96,7 @@ export default function SignatureVerificationSnippet() {
         className="flex w-full items-center gap-2 px-5 py-4 text-left text-sm font-medium text-text-primary hover:bg-bg-surface/60 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
         aria-expanded={expanded}
         aria-controls="signature-snippet-body"
-        onClick={() => setExpanded((prev) => !prev)}
+        onClick={() => { setExpanded((prev) => !prev); }}
         data-testid="signature-snippet-toggle"
       >
         {expanded ? (

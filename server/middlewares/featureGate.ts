@@ -31,7 +31,7 @@ const TIER_DISPLAY: Record<SubscriptionTier, CanonicalTierId> = {
  */
 function tierIndex(tier: SubscriptionTier): number {
   const canonical = TIER_DISPLAY[tier];
-  return TIER_ORDER.indexOf(canonical as CanonicalTierId);
+  return TIER_ORDER.indexOf(canonical);
 }
 
 /**

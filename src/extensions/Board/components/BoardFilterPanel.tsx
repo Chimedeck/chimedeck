@@ -286,7 +286,7 @@ export default function BoardFilterPanel({
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [containerRef, onClose]);
 
   // Close on Escape
@@ -295,10 +295,10 @@ export default function BoardFilterPanel({
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => { document.removeEventListener('keydown', handler); };
   }, [onClose]);
 
-  const set = (patch: Partial<BoardFilters>) => onChange({ ...filters, ...patch });
+  const set = (patch: Partial<BoardFilters>) => { onChange({ ...filters, ...patch }); };
 
   const resetFilters = () => {
     onChange({
@@ -325,13 +325,13 @@ export default function BoardFilterPanel({
   };
 
   const toggleDueDate = (v: BoardFilters['dueDate']) =>
-    set({ dueDate: filters.dueDate === v ? 'all' : v });
+    { set({ dueDate: filters.dueDate === v ? 'all' : v }); };
 
   const toggleDueComplete = (v: 'complete' | 'incomplete') =>
-    set({ dueComplete: filters.dueComplete === v ? 'all' : v });
+    { set({ dueComplete: filters.dueComplete === v ? 'all' : v }); };
 
   const toggleActivity = (v: BoardFilters['activity']) =>
-    set({ activity: filters.activity === v ? 'all' : v });
+    { set({ activity: filters.activity === v ? 'all' : v }); };
 
   // Derived member data
   const currentMember = boardMembers.find((m) => m.user_id === currentUserId);
@@ -387,7 +387,7 @@ export default function BoardFilterPanel({
             type="search"
             placeholder={translations['BoardFilterPanel.keywordPlaceholder']}
             value={filters.keyword}
-            onChange={(e) => set({ keyword: e.target.value })}
+            onChange={(e) => { set({ keyword: e.target.value }); }}
             className="flex-1 bg-transparent text-sm text-base placeholder:text-muted focus:outline-none"
             // [why] autoFocus so the user can start typing immediately after opening the panel
             autoFocus
@@ -401,7 +401,7 @@ export default function BoardFilterPanel({
         {/* Static rows */}
         <CheckRow
           checked={filters.noMembers}
-          onChange={() => set({ noMembers: !filters.noMembers })}
+          onChange={() => { set({ noMembers: !filters.noMembers }); }}
         >
           No members
         </CheckRow>
@@ -409,12 +409,12 @@ export default function BoardFilterPanel({
           <MemberCheckRow
             member={currentMember}
             checked={filters.assignedToMe}
-            onChange={() => set({ assignedToMe: !filters.assignedToMe })}
+            onChange={() => { set({ assignedToMe: !filters.assignedToMe }); }}
           />
         ) : (
           <CheckRow
             checked={filters.assignedToMe}
-            onChange={() => set({ assignedToMe: !filters.assignedToMe })}
+            onChange={() => { set({ assignedToMe: !filters.assignedToMe }); }}
           >
             Cards assigned to me
           </CheckRow>
@@ -428,7 +428,7 @@ export default function BoardFilterPanel({
               key={m.user_id}
               member={m}
               checked
-              onChange={() => toggleMemberId(m.user_id)}
+              onChange={() => { toggleMemberId(m.user_id); }}
             />
           ))}
 
@@ -437,7 +437,7 @@ export default function BoardFilterPanel({
           <div className="mt-1">
             <button
               type="button"
-              onClick={() => setMemberDropdownOpen((v) => !v)}
+              onClick={() => { setMemberDropdownOpen((v) => !v); }}
               className="flex w-full items-center justify-between rounded border border-border bg-bg-overlay px-2.5 py-1.5 text-sm text-muted hover:text-base transition-colors"
             >
               <span>Select members</span>
@@ -456,7 +456,7 @@ export default function BoardFilterPanel({
                     type="search"
                     placeholder={translations['BoardFilterPanel.memberSearchPlaceholder']}
                     value={memberSearch}
-                    onChange={(e) => setMemberSearch(e.target.value)}
+                    onChange={(e) => { setMemberSearch(e.target.value); }}
                     className="flex-1 bg-transparent text-xs text-base placeholder:text-muted focus:outline-none"
                   />
                 </div>
@@ -470,7 +470,7 @@ export default function BoardFilterPanel({
                         key={m.user_id}
                         member={m}
                         checked={filters.memberIds.has(m.user_id)}
-                        onChange={() => toggleMemberId(m.user_id)}
+                        onChange={() => { toggleMemberId(m.user_id); }}
                       />
                     ))
                   )}
@@ -484,32 +484,32 @@ export default function BoardFilterPanel({
         <SectionHeading icon={<BoltIcon className="h-3.5 w-3.5" />}>Card status</SectionHeading>
         <CheckRow
           checked={filters.dueComplete === 'complete'}
-          onChange={() => toggleDueComplete('complete')}
+          onChange={() => { toggleDueComplete('complete'); }}
         >
           Marked as complete
         </CheckRow>
         <CheckRow
           checked={filters.dueComplete === 'incomplete'}
-          onChange={() => toggleDueComplete('incomplete')}
+          onChange={() => { toggleDueComplete('incomplete'); }}
         >
           Not marked as complete
         </CheckRow>
 
         {/* ── Due date ── */}
         <SectionHeading icon={<CalendarDaysIcon className="h-3.5 w-3.5" />}>Due date</SectionHeading>
-        <CheckRow checked={filters.dueDate === 'noDate'} onChange={() => toggleDueDate('noDate')}>
+        <CheckRow checked={filters.dueDate === 'noDate'} onChange={() => { toggleDueDate('noDate'); }}>
           No dates
         </CheckRow>
-        <CheckRow checked={filters.dueDate === 'overdue'} onChange={() => toggleDueDate('overdue')}>
+        <CheckRow checked={filters.dueDate === 'overdue'} onChange={() => { toggleDueDate('overdue'); }}>
           Overdue
         </CheckRow>
-        <CheckRow checked={filters.dueDate === 'dueDay'} onChange={() => toggleDueDate('dueDay')}>
+        <CheckRow checked={filters.dueDate === 'dueDay'} onChange={() => { toggleDueDate('dueDay'); }}>
           Due in the next day
         </CheckRow>
-        <CheckRow checked={filters.dueDate === 'dueWeek'} onChange={() => toggleDueDate('dueWeek')}>
+        <CheckRow checked={filters.dueDate === 'dueWeek'} onChange={() => { toggleDueDate('dueWeek'); }}>
           Due in the next week
         </CheckRow>
-        <CheckRow checked={filters.dueDate === 'dueMonth'} onChange={() => toggleDueDate('dueMonth')}>
+        <CheckRow checked={filters.dueDate === 'dueMonth'} onChange={() => { toggleDueDate('dueMonth'); }}>
           Due in the next month
         </CheckRow>
 
@@ -517,7 +517,7 @@ export default function BoardFilterPanel({
         <SectionHeading icon={<TagIcon className="h-3.5 w-3.5" />}>Labels</SectionHeading>
         <CheckRow
           checked={filters.noLabels}
-          onChange={() => set({ noLabels: !filters.noLabels })}
+          onChange={() => { set({ noLabels: !filters.noLabels }); }}
         >
           No labels
         </CheckRow>
@@ -527,7 +527,7 @@ export default function BoardFilterPanel({
           <CheckRow
             key={label.id}
             checked={filters.labelIds.has(label.id)}
-            onChange={() => toggleLabelId(label.id)}
+            onChange={() => { toggleLabelId(label.id); }}
             swatch={{ color: label.color }}
           >
             {label.name}
@@ -539,7 +539,7 @@ export default function BoardFilterPanel({
           <CheckRow
             key={label.id}
             checked
-            onChange={() => toggleLabelId(label.id)}
+            onChange={() => { toggleLabelId(label.id); }}
             swatch={{ color: label.color }}
           >
             {label.name}
@@ -551,7 +551,7 @@ export default function BoardFilterPanel({
           <div className="mt-1">
             <button
               type="button"
-              onClick={() => setLabelDropdownOpen((v) => !v)}
+              onClick={() => { setLabelDropdownOpen((v) => !v); }}
               className="flex w-full items-center justify-between rounded border border-border bg-bg-overlay px-2.5 py-1.5 text-sm text-muted hover:text-base transition-colors"
             >
               <span>Select labels</span>
@@ -570,7 +570,7 @@ export default function BoardFilterPanel({
                     type="search"
                     placeholder={translations['BoardFilterPanel.labelSearchPlaceholder']}
                     value={labelSearch}
-                    onChange={(e) => setLabelSearch(e.target.value)}
+                    onChange={(e) => { setLabelSearch(e.target.value); }}
                     className="flex-1 bg-transparent text-xs text-base placeholder:text-muted focus:outline-none"
                   />
                 </div>
@@ -583,7 +583,7 @@ export default function BoardFilterPanel({
                       <CheckRow
                         key={label.id}
                         checked={filters.labelIds.has(label.id)}
-                        onChange={() => toggleLabelId(label.id)}
+                        onChange={() => { toggleLabelId(label.id); }}
                         swatch={{ color: label.color }}
                       >
                         {label.name}
@@ -600,25 +600,25 @@ export default function BoardFilterPanel({
         <SectionHeading icon={<BoltIcon className="h-3.5 w-3.5" />}>Activity</SectionHeading>
         <CheckRow
           checked={filters.activity === 'week'}
-          onChange={() => toggleActivity('week')}
+          onChange={() => { toggleActivity('week'); }}
         >
           Active in the last week
         </CheckRow>
         <CheckRow
           checked={filters.activity === 'twoWeeks'}
-          onChange={() => toggleActivity('twoWeeks')}
+          onChange={() => { toggleActivity('twoWeeks'); }}
         >
           Active in the last two weeks
         </CheckRow>
         <CheckRow
           checked={filters.activity === 'fourWeeks'}
-          onChange={() => toggleActivity('fourWeeks')}
+          onChange={() => { toggleActivity('fourWeeks'); }}
         >
           Active in the last four weeks
         </CheckRow>
         <CheckRow
           checked={filters.activity === 'noActivity'}
-          onChange={() => toggleActivity('noActivity')}
+          onChange={() => { toggleActivity('noActivity'); }}
         >
           Without activity in the last four weeks
         </CheckRow>
@@ -631,7 +631,7 @@ export default function BoardFilterPanel({
           type="button"
           role="switch"
           aria-checked={filters.collapseLists}
-          onClick={() => set({ collapseLists: !filters.collapseLists })}
+          onClick={() => { set({ collapseLists: !filters.collapseLists }); }}
           className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
             filters.collapseLists ? 'bg-primary' : 'bg-border'
           }`}

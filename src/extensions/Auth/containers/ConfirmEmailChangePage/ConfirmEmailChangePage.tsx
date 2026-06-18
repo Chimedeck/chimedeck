@@ -28,10 +28,10 @@ export default function ConfirmEmailChangePage() {
   useEffect(() => {
     if (status === 'success') {
       const timer = setTimeout(
-        () => navigate('/login', { replace: true, state: { toast: translations.changeEmail.confirmed } }),
+        () => { navigate('/login', { replace: true, state: { toast: translations.changeEmail.confirmed } }); },
         1500,
       );
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); };
     }
   }, [status, navigate]);
 

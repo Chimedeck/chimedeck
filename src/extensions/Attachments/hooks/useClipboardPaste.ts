@@ -57,6 +57,6 @@ export function useClipboardPaste({ enabled, onFiles, onLink }: UseClipboardPast
     }
 
     document.addEventListener('paste', handlePaste);
-    return () => document.removeEventListener('paste', handlePaste);
+    return () => { document.removeEventListener('paste', handlePaste); };
   }, [enabled, onFiles, onLink]);
 }

@@ -1,4 +1,4 @@
-import { StateTransitionForbiddenError } from '../stateTransitions/common/errors';
+import type { StateTransitionForbiddenError } from '../stateTransitions/common/errors';
 
 export function toTrelloStateTransitionForbiddenResponse(
   error: StateTransitionForbiddenError,

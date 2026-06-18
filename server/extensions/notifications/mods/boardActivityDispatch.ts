@@ -97,7 +97,7 @@ export async function handleBoardActivityNotification({
     const now = new Date().toISOString();
 
     // Derive card_id and board_id for the notification row from event payload
-    const payload = event.payload as Record<string, unknown>;
+    const payload = event.payload;
     const cardId = (
       (payload.card as { id?: string } | undefined)?.id ??
       (payload.cardId as string | undefined) ??
@@ -222,7 +222,7 @@ async function buildTemplateData({
   boardName: string;
   actorId: string;
 }): Promise<Record<string, string> | null> {
-  const payload = event.payload as Record<string, unknown>;
+  const payload = event.payload;
 
   if (eventType === 'card.created') {
     const card = payload.card as { id: string; title: string; list_id: string } | undefined;

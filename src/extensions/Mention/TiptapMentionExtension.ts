@@ -30,7 +30,7 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
           try {
             const result = (await apiClient.get(
               `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-            )) as { data: MentionSuggestion[] };
+            ));
             resolve(result.data);
           } catch {
             resolve([]);

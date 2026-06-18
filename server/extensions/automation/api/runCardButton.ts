@@ -64,12 +64,12 @@ export async function handleRunCardButton(
     type: 'CARD_BUTTON',
     boardId: list.board_id as string,
     entityId: cardId,
-    actorId: currentUser.id as string,
+    actorId: currentUser.id,
     payload: { cardId, automationId, triggeredManually: true },
   };
 
   const evalContext: EvaluationContext = {
-    actorId: currentUser.id as string,
+    actorId: currentUser.id,
     cardId,
   };
 

@@ -54,7 +54,7 @@ function usePopover() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); };
   }, [open]);
 
   return { open, setOpen, ref };
@@ -132,7 +132,7 @@ const ColorGrid = ({
           selected === c.hex ? 'ring-2 ring-bg-surface ring-offset-2 ring-offset-bg-base' : ''
         }`}
         style={{ backgroundColor: c.hex }}
-        onClick={() => onChange(c.hex)}
+        onClick={() => { onChange(c.hex); }}
         aria-label={c.name}
       />
     ))}
@@ -246,7 +246,7 @@ const LabelSection = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div
             className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-bg-surface border border-border shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
           >
@@ -266,7 +266,7 @@ const LabelSection = ({
               <button
                 type="button"
                 className="rounded p-0.5 text-subtle hover:text-base"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); }}
                 aria-label="Close"
               >
                 ✕
@@ -280,7 +280,7 @@ const LabelSection = ({
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary mb-1"
                   placeholder="Search labels..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
                   autoFocus
                 />
                 {filteredLabels.length === 0 && (
@@ -312,7 +312,7 @@ const LabelSection = ({
                       <button
                         type="button"
                         className="flex-shrink-0 rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
-                        onClick={() => openEdit(label)}
+                        onClick={() => { openEdit(label); }}
                         aria-label={`Edit ${label.name}`}
                       >
                         <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -350,7 +350,7 @@ const LabelSection = ({
                     className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Label name"
                     value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
+                    onChange={(e) => { setFormName(e.target.value); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { void (view === 'create' ? handleCreate() : handleSaveEdit()); } }}
                     autoFocus
                   />
@@ -476,13 +476,13 @@ const MemberSection = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-2 space-y-1">
             <input
               className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Search members..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); }}
               autoFocus
             />
             {boardMembers.length === 0 && (
@@ -616,7 +616,7 @@ const DatesButton = ({
       <button
         type="button"
         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${pillClass}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
         disabled={disabled}
         aria-label="Dates"
         aria-expanded={open}
@@ -628,7 +628,7 @@ const DatesButton = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div className="absolute left-0 top-full mt-1 z-20">
             <CardDatesPicker
               startDate={startDate}
@@ -636,7 +636,7 @@ const DatesButton = ({
               disabled={disabled}
               onSave={handleSave}
               onRemove={handleRemove}
-              onClose={() => setOpen(false)}
+              onClose={() => { setOpen(false); }}
             />
           </div>
         </>
@@ -687,7 +687,7 @@ const MoneyButton = ({
       <button
         type="button"
         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${pillClass}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
         disabled={disabled}
         aria-label="Card pricing"
         aria-expanded={open}
@@ -699,7 +699,7 @@ const MoneyButton = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-3">
             <CardValue
               amount={amount}

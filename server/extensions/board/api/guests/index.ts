@@ -60,7 +60,7 @@ async function handleInviteGuestById(req: Request, boardId: string): Promise<Res
       { status: 400 },
     );
   }
-  const guestType: GuestType = (rawGuestType as GuestType | undefined) ?? 'VIEWER';
+  const guestType: GuestType = (rawGuestType) ?? 'VIEWER';
 
   const targetUser = await db('users').where({ id: userId }).first();
   if (!targetUser) {

@@ -57,7 +57,7 @@ export function useMentionInput({
           // apiClient auto-attaches the Bearer token and unwraps response.data
           const result = (await apiClient.get(
             `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-          )) as { data: MentionSuggestion[] };
+          ));
           if (result.data.length === 0) {
             dismissSuggestions();
           } else {

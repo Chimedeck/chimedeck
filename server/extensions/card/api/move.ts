@@ -315,7 +315,7 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
         cardId,
         cardTitle: updatedCard.title,
         fromListId,
-        fromListName: sourceList!.title ?? null,
+        fromListName: sourceList.title ?? null,
         toListId: updatedCard.list_id,
         toListName: targetList.title ?? null,
         boardId: board.id,

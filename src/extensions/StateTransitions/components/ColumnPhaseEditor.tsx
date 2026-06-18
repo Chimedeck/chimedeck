@@ -50,7 +50,7 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
         } else {
           next.add(phase);
         }
-        const phases = Array.from(next) as WorkflowPhase[];
+        const phases = Array.from(next);
         onChange(phases, localConfig);
         return next;
       });
@@ -62,7 +62,7 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
     (key: keyof PhaseConfig, value: boolean | string | null) => {
       setLocalConfig((prev) => {
         const next = { ...prev, [key]: value };
-        onChange(Array.from(localPhases) as WorkflowPhase[], next);
+        onChange(Array.from(localPhases), next);
         return next;
       });
     },
@@ -91,7 +91,7 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
                   type="checkbox"
                   className="sr-only"
                   checked={isSelected}
-                  onChange={() => handlePhaseToggle(phase)}
+                  onChange={() => { handlePhaseToggle(phase); }}
                 />
                 {PHASE_LABELS[phase]}
               </label>
@@ -109,7 +109,7 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
             type="button"
             role="switch"
             aria-checked={localConfig.autoRun}
-            onClick={() => handleConfigChange('autoRun', !localConfig.autoRun)}
+            onClick={() => { handleConfigChange('autoRun', !localConfig.autoRun); }}
             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
               localConfig.autoRun ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
             }`}
@@ -128,7 +128,7 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
             type="button"
             role="switch"
             aria-checked={localConfig.requiresHumanApproval}
-            onClick={() => handleConfigChange('requiresHumanApproval', !localConfig.requiresHumanApproval)}
+            onClick={() => { handleConfigChange('requiresHumanApproval', !localConfig.requiresHumanApproval); }}
             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
               localConfig.requiresHumanApproval
                 ? 'bg-primary'

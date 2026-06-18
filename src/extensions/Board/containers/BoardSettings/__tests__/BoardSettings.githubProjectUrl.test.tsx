@@ -57,7 +57,7 @@ describe('GithubProjectUrlSetting', () => {
       render(<GithubProjectUrlSetting boardId={boardId} />);
 
       await waitFor(() => {
-        const input = screen.getByRole('textbox') as HTMLInputElement;
+        const input = screen.getByRole('textbox');
         expect(input.value).toBe('');
       });
     });
@@ -101,7 +101,7 @@ describe('GithubProjectUrlSetting', () => {
     it('should prevent input changes when disabled', async () => {
       render(<GithubProjectUrlSetting boardId={boardId} disabled={true} />);
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
+      const input = screen.getByRole('textbox');
       await waitFor(() => {
         expect(input.disabled).toBe(true);
       });

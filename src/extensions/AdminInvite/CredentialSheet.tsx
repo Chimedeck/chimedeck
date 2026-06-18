@@ -34,7 +34,7 @@ export default function CredentialSheet({
     try {
       await navigator.clipboard.writeText(clipboardText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setTimeout(() => { setCopied(false); }, 2500);
     } catch {
       // Fallback — clipboard unavailable in some test environments
     }

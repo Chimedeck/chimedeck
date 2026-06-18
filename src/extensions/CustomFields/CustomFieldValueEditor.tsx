@@ -102,7 +102,7 @@ const CustomFieldValueEditor = ({
           placeholder={translations['CustomFieldValue.textPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => { setDraft(e.target.value); }}
           onBlur={() => {
             if (draft !== resolvedDisplayValue(field, value)) {
               save({ value_text: draft || null });
@@ -138,7 +138,7 @@ const CustomFieldValueEditor = ({
           placeholder={translations['CustomFieldValue.numberPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => { setDraft(e.target.value); }}
           onBlur={() => {
             const num = parseFloat(draft);
             const current = value?.value_number ? parseFloat(value.value_number) : null;

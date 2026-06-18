@@ -471,7 +471,7 @@ const SpecsWorkspacePage = ({
   const handleRetry = useCallback(() => {
     dispatch({ type: 'manifest/loading' });
     fetchSpecsManifest({ api, boardId })
-      .then((manifest) => dispatch({ type: 'manifest/loaded', files: manifest.files }))
+      .then((manifest) => { dispatch({ type: 'manifest/loaded', files: manifest.files }); })
       .catch((err: unknown) => {
         const extracted = extractManifestErrorMessage(err, 'Failed to load specs manifest');
         dispatch({
@@ -789,7 +789,7 @@ const SpecsWorkspacePage = ({
                       id="specs-commit-message"
                       type="text"
                       value={state.commitMessage}
-                      onChange={(e) => dispatch({ type: 'commit/message', message: e.target.value })}
+                      onChange={(e) => { dispatch({ type: 'commit/message', message: e.target.value }); }}
                       placeholder="Update specs"
                       className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                     />

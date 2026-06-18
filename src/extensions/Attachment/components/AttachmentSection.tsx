@@ -69,13 +69,13 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
       ))}
       <AttachmentUploader cardId={cardId} onUploadComplete={handleUploadComplete} />
       <button
-        onClick={() => setShowUrlModal(true)}
+        onClick={() => { setShowUrlModal(true); }}
         style={{ marginTop: 8, fontSize: 12, cursor: 'pointer' }}
       >
         {translations['attachment.section.addUrl']}
       </button>
       {showUrlModal && (
-        <AttachmentUrlModal cardId={cardId} onAdd={handleAddUrl} onClose={() => setShowUrlModal(false)} />
+        <AttachmentUrlModal cardId={cardId} onAdd={handleAddUrl} onClose={() => { setShowUrlModal(false); }} />
       )}
     </section>
   );

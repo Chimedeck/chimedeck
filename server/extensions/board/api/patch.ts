@@ -58,7 +58,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   }
 
   if ('monetization_type' in body) {
-    if (!VALID_MONETIZATION_TYPES.includes(body.monetization_type as MonetizationType | null)) {
+    if (!VALID_MONETIZATION_TYPES.includes(body.monetization_type)) {
       return Response.json(
         {
           name: 'bad-request',

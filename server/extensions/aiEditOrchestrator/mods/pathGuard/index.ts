@@ -21,7 +21,7 @@ const DISALLOWED_PREFIXES = [
  */
 function normalisePath(filePath: string): string {
   // Strip leading slashes and trailing slashes
-  let normalised = filePath.replace(/^\/+/, '').replace(/\/+$/, '');
+  const normalised = filePath.replace(/^\/+/, '').replace(/\/+$/, '');
 
   // Resolve `..` segments — reject any that escape root
   const segments = normalised.split('/');
@@ -45,7 +45,7 @@ function normalisePath(filePath: string): string {
  */
 function isAllowedPath(normalised: string): boolean {
   return ALLOWED_PATHS.some(
-    allowed => normalised.startsWith(allowed) || normalised === allowed.replace(/\/+$/, ''),
+    (allowed) => normalised.startsWith(allowed) || normalised === allowed.replace(/\/+$/, '')
   );
 }
 
@@ -54,7 +54,7 @@ function isAllowedPath(normalised: string): boolean {
  */
 function isDisallowedPath(normalised: string): boolean {
   return DISALLOWED_PREFIXES.some(
-    prefix => normalised.startsWith(prefix) || normalised.includes(prefix),
+    (prefix) => normalised.startsWith(prefix) || normalised.includes(prefix)
   );
 }
 

@@ -38,7 +38,7 @@ export default function GenerateTokenModal({ onSubmit, onCancel, isLoading }: Pr
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); }}
               placeholder={translations['GenerateTokenModal.namePlaceholder']}
               required
               className="w-full rounded-lg bg-bg-overlay px-3 py-2 text-sm text-base border border-border focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-subtle"
@@ -53,7 +53,7 @@ export default function GenerateTokenModal({ onSubmit, onCancel, isLoading }: Pr
                 type="checkbox"
                 id="no-expiry"
                 checked={noExpiry}
-                onChange={(e) => setNoExpiry(e.target.checked)}
+                onChange={(e) => { setNoExpiry(e.target.checked); }}
                 className="h-4 w-4 rounded border-border bg-bg-base text-blue-600"
               />
               <label htmlFor="no-expiry" className="text-sm text-subtle">
@@ -64,7 +64,7 @@ export default function GenerateTokenModal({ onSubmit, onCancel, isLoading }: Pr
               <input
                 type="date"
                 value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
+                onChange={(e) => { setExpiresAt(e.target.value); }}
                 min={new Date().toISOString().split('T')[0]}
                 className="w-full rounded-lg bg-bg-overlay px-3 py-2 text-sm text-base border border-border focus:outline-none focus:ring-2 focus:ring-primary"
               />

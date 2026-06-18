@@ -183,7 +183,7 @@ const CopyCardModal = ({
               id="copy-card-title"
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => { setTitle(e.target.value); }}
               className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
               autoFocus
             />
@@ -197,7 +197,7 @@ const CopyCardModal = ({
                 <input
                   type="checkbox"
                   checked={keepChecklists}
-                  onChange={(e) => setKeepChecklists(e.target.checked)}
+                  onChange={(e) => { setKeepChecklists(e.target.checked); }}
                   className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
                 />
                 <span className="text-sm text-base">
@@ -213,7 +213,7 @@ const CopyCardModal = ({
                 <input
                   type="checkbox"
                   checked={keepMembers}
-                  onChange={(e) => setKeepMembers(e.target.checked)}
+                  onChange={(e) => { setKeepMembers(e.target.checked); }}
                   className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
                 />
                 <span className="text-sm text-base">
@@ -240,7 +240,7 @@ const CopyCardModal = ({
                 <select
                   id="copy-card-board"
                   value={selectedBoardId}
-                  onChange={(e) => setSelectedBoardId(e.target.value)}
+                  onChange={(e) => { setSelectedBoardId(e.target.value); }}
                   className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {boards.map((b) => (
@@ -260,7 +260,7 @@ const CopyCardModal = ({
                   <select
                     id="copy-card-list"
                     value={selectedListId}
-                    onChange={(e) => handleListChange(e.target.value)}
+                    onChange={(e) => { handleListChange(e.target.value); }}
                     className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {lists.map((l) => (
@@ -278,7 +278,7 @@ const CopyCardModal = ({
                   <select
                     id="copy-card-position"
                     value={selectedPosition}
-                    onChange={(e) => setSelectedPosition(Number(e.target.value))}
+                    onChange={(e) => { setSelectedPosition(Number(e.target.value)); }}
                     className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {Array.from({ length: maxPosition }, (_, i) => i + 1).map((pos) => (

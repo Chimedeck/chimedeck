@@ -220,7 +220,7 @@ export async function handleUpsertCardFieldValue(
   );
   if (membershipError) return membershipError;
 
-  if ((ctx.board as Record<string, unknown>).state === 'ARCHIVED') {
+  if ((ctx.board).state === 'ARCHIVED') {
     return Response.json(
       { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
       { status: 403 },
@@ -236,7 +236,7 @@ export async function handleUpsertCardFieldValue(
   }
 
   // Ensure the field belongs to the same board as the card
-  if (field.board_id !== (ctx.board as Record<string, unknown>).id) {
+  if (field.board_id !== (ctx.board).id) {
     return Response.json(
       {
         error: {
@@ -287,8 +287,8 @@ export async function handleUpsertCardFieldValue(
 
   const previousValue = toComparableFieldValue(fieldType, existing);
   const newValue = toComparableFieldValue(fieldType, saved);
-  const cardTitle = typeof (ctx.card as Record<string, unknown>).title === 'string'
-    ? (ctx.card as Record<string, unknown>).title as string
+  const cardTitle = typeof (ctx.card).title === 'string'
+    ? (ctx.card).title
     : '';
   const fieldName = typeof field.name === 'string' ? field.name : '';
 
@@ -297,7 +297,7 @@ export async function handleUpsertCardFieldValue(
     const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
     await dispatchEvent({
       type: 'card.custom_field_value_updated',
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: (ctx.board).id as string,
       entityId: cardId,
       actorId,
       payload: {
@@ -311,7 +311,7 @@ export async function handleUpsertCardFieldValue(
     const activity = await writeActivity({
       entityType: 'card',
       entityId: cardId,
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: (ctx.board).id as string,
       action: 'card.custom_field.updated',
       actorId,
       payload: {
@@ -329,7 +329,7 @@ export async function handleUpsertCardFieldValue(
     });
     publishCardActivityEvent({
       activity,
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: (ctx.board).id as string,
     }).catch(() => {});
   }
 
@@ -360,7 +360,7 @@ export async function handleDeleteCardFieldValue(
   );
   if (membershipError) return membershipError;
 
-  if ((ctx.board as Record<string, unknown>).state === 'ARCHIVED') {
+  if ((ctx.board).state === 'ARCHIVED') {
     return Response.json(
       { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
       { status: 403 },
@@ -380,14 +380,14 @@ export async function handleDeleteCardFieldValue(
 
   const field = await db('custom_fields').where({ id: fieldId }).first();
   const fieldType = (field?.field_type as FieldType | undefined) ?? null;
-  const cardTitle = typeof (ctx.card as Record<string, unknown>).title === 'string'
-    ? (ctx.card as Record<string, unknown>).title as string
+  const cardTitle = typeof (ctx.card).title === 'string'
+    ? (ctx.card).title
     : '';
   const fieldName = field && typeof (field as Record<string, unknown>).name === 'string'
     ? ((field as Record<string, unknown>).name as string)
     : '';
   const previousValue = fieldType
-    ? toComparableFieldValue(fieldType, existing as CardCustomFieldValueRow)
+    ? toComparableFieldValue(fieldType, existing)
     : null;
 
   await db('card_custom_field_values')
@@ -399,7 +399,7 @@ export async function handleDeleteCardFieldValue(
     const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
     await dispatchEvent({
       type: 'card.custom_field_value_updated',
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: (ctx.board).id as string,
       entityId: cardId,
       actorId,
       payload: {
@@ -414,7 +414,7 @@ export async function handleDeleteCardFieldValue(
       const activity = await writeActivity({
         entityType: 'card',
         entityId: cardId,
-        boardId: (ctx.board as Record<string, unknown>).id as string,
+        boardId: (ctx.board).id as string,
         action: 'card.custom_field.updated',
         actorId,
         payload: {
@@ -432,7 +432,7 @@ export async function handleDeleteCardFieldValue(
       });
       publishCardActivityEvent({
         activity,
-        boardId: (ctx.board as Record<string, unknown>).id as string,
+        boardId: (ctx.board).id as string,
       }).catch(() => {});
     }
   }

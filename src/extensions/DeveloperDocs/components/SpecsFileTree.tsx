@@ -128,7 +128,7 @@ function TreeNodes({
           <button
             key={node.path}
             type="button"
-            onClick={() => onSelect(node.path)}
+            onClick={() => { onSelect(node.path); }}
             style={{ paddingLeft: `${(depth + 1) * 12}px` }}
             className={[
               'flex w-full items-center gap-1.5 rounded py-1 pr-2 text-left text-sm transition-colors',

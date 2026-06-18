@@ -159,7 +159,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
           aria-label="Search commands"
           placeholder="Search commands…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); }}
           className="w-full bg-transparent text-xs text-base placeholder:text-subtle outline-none"
         />
       </div>
@@ -186,7 +186,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
                   ? 'font-semibold text-indigo-600 dark:text-indigo-300'
                   : 'text-base',
               ].join(' ')}
-              onMouseEnter={() => setActiveIndex(idx)}
+              onMouseEnter={() => { setActiveIndex(idx); }}
               onMouseDown={(e) => {
                 // Prevent editor blur so focus returns after command.
                 e.preventDefault();

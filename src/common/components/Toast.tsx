@@ -22,8 +22,8 @@ interface Props {
 const Toast = ({ toast, onDismiss }: Props) => {
   useEffect(() => {
     const ms = toast.durationMs ?? (toast.variant === 'error' ? 6000 : 4000);
-    const timer = setTimeout(() => onDismiss(toast.id), ms);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => { onDismiss(toast.id); }, ms);
+    return () => { clearTimeout(timer); };
   }, [toast, onDismiss]);
 
   const borderClass =

@@ -60,7 +60,7 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
       { status: 400 },
     );
   }
-  const guestType: GuestType = (rawGuestType as GuestType | undefined) ?? 'VIEWER';
+  const guestType: GuestType = (rawGuestType) ?? 'VIEWER';
 
   const guestCount = await getGuestCountForBoard(boardId);
   const limitError = await applyLimitGuard({

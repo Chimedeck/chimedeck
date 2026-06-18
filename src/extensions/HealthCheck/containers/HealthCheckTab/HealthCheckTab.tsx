@@ -133,7 +133,7 @@ export function HealthCheckTab({ boardId }: Props) {
             type="button"
             variant="primary"
             size="sm"
-            onClick={() => setAddModalOpen(true)}
+            onClick={() => { setAddModalOpen(true); }}
             className="flex items-center gap-1.5"
             aria-label={translations['HealthCheckTab.addServiceAria']}
           >
@@ -171,7 +171,7 @@ export function HealthCheckTab({ boardId }: Props) {
             <Spinner className="h-6 w-6" />
           </div>
         ) : isEmpty ? (
-          <HealthCheckEmptyState onAddService={() => setAddModalOpen(true)} />
+          <HealthCheckEmptyState onAddService={() => { setAddModalOpen(true); }} />
         ) : (
           <div role="rowgroup">
             {entries.map((entry) => (
@@ -190,7 +190,7 @@ export function HealthCheckTab({ boardId }: Props) {
       <AddServiceModal
         boardId={boardId}
         isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        onClose={() => { setAddModalOpen(false); }}
       />
     </div>
   );

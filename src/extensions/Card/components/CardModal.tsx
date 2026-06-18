@@ -362,7 +362,7 @@ const CardModal = ({
                 <button
                   type="button"
                   className="rounded-lg px-2.5 py-2 text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors disabled:opacity-40"
-                  onClick={() => setCoverMenuOpen((openState) => !openState)}
+                  onClick={() => { setCoverMenuOpen((openState) => !openState); }}
                   disabled={!canEditCover}
                 >
                   <span className="inline-flex items-center gap-1.5">
@@ -379,7 +379,7 @@ const CardModal = ({
                     <div className="mb-3 grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => onCoverSizeChange('FULL')}
+                        onClick={() => { onCoverSizeChange('FULL'); }}
                         className={`rounded-md border p-1.5 text-left text-xs transition-colors ${selectedCoverSize === 'FULL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                           : 'border-border text-muted hover:bg-bg-overlay'}`}
@@ -395,7 +395,7 @@ const CardModal = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onCoverSizeChange('SMALL')}
+                        onClick={() => { onCoverSizeChange('SMALL'); }}
                         className={`rounded-md border p-1.5 text-left text-xs transition-colors ${selectedCoverSize === 'SMALL'
                           ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                           : 'border-border text-muted hover:bg-bg-overlay'}`}
@@ -420,7 +420,7 @@ const CardModal = ({
                         <button
                           key={color}
                           type="button"
-                          onClick={() => onCoverColorChange(color)}
+                          onClick={() => { onCoverColorChange(color); }}
                           className={`h-7 w-full rounded ${card.cover_color === color ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : ''}`}
                           style={{ backgroundColor: color }}
                           aria-label={`Set card cover color ${color}`}
@@ -675,7 +675,7 @@ const CardModal = ({
               disabled={isReadOnly}
               activityVisible={activityVisible}
               innerCardChatEnabled={innerCardChatEnabled}
-              onToggleActivity={() => setActivityVisible((v) => !v)}
+              onToggleActivity={() => { setActivityVisible((v) => !v); }}
               onArchive={onArchive}
               onDelete={onDelete}
               onCopyLink={onCopyLink}

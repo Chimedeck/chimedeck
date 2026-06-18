@@ -64,7 +64,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    return () => { document.removeEventListener('mousedown', handleMouseDown); };
   }, []);
 
   // Reset search state when the user navigates to a different board
@@ -217,7 +217,7 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
                 role="option"
                 aria-selected={false}
                 className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-bg-overlay focus:bg-bg-overlay focus:outline-none"
-                onClick={() => handleSelect(result)}
+                onClick={() => { handleSelect(result); }}
               >
                 <span
                   className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-white ${ // [theme-exception] text-white on colored bg chip (indigo/emerald)

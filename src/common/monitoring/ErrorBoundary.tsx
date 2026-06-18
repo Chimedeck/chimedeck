@@ -18,7 +18,7 @@ function FallbackUI({ resetError }: { resetError: () => void }) {
         <Button variant="primary" size="md" onClick={resetError}>
           Try again
         </Button>
-        <Button variant="secondary" size="md" onClick={() => window.location.reload()}>
+        <Button variant="secondary" size="md" onClick={() => { window.location.reload(); }}>
           Reload page
         </Button>
       </div>

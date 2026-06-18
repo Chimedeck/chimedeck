@@ -34,7 +34,7 @@ export async function aiEditOrchestratorRouter(
   if (!editMatch) return null;
 
   const cardIdentifier = editMatch[1] as string;
-  const runId = editMatch[2] as string | undefined;
+  const runId = editMatch[2];
   const subAction = editMatch[3] as 'approve' | 'reject' | undefined;
 
   const cardId = await resolveCardId(cardIdentifier);

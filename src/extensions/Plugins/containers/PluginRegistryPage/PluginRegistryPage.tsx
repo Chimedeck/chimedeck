@@ -284,7 +284,7 @@ const PluginRegistryPage = () => {
         open={registerOpen}
         isSubmitting={isSubmittingRegister}
         serverError={registerServerError}
-        onClose={() => setRegisterOpen(false)}
+        onClose={() => { setRegisterOpen(false); }}
         onSubmit={handleRegisterSubmit}
       />
 

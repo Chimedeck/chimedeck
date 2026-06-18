@@ -362,7 +362,7 @@ export function useCardCustomFieldValues(cardId: string | undefined): UseCardCus
   const [loading, setLoading] = useState(false);
   const [tick, setTick] = useState(0);
 
-  const refetch = useCallback(() => setTick((t) => t + 1), []);
+  const refetch = useCallback(() => { setTick((t) => t + 1); }, []);
 
   useEffect(() => {
     if (!cardId) return;

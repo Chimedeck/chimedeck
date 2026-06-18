@@ -231,7 +231,7 @@ const PluginDashboardPage = () => {
         </div>
         {isAdmin ? (
           <button
-            onClick={() => setRegisterOpen(true)}
+            onClick={() => { setRegisterOpen(true); }}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2" // [theme-exception] text-white on bg-blue-600 button
           >
             {translations['plugins.dashboard.registerPlugin']}

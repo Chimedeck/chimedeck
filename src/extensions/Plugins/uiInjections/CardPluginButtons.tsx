@@ -106,7 +106,7 @@ const CardPluginButtons = ({ boardId, cardId, listId, cardTitle, listTitle, boar
 
   if (variant === 'sidebar') {
     return (
-      <div className="space-y-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <div className="space-y-1" onClick={(e) => { e.stopPropagation(); }} onKeyDown={(e) => { e.stopPropagation(); }}>
         {buttons.map((btn) => {
           const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
           // [plugin-button-exception] Plugin-injected buttons use raw <button> to preserve
@@ -115,7 +115,7 @@ const CardPluginButtons = ({ boardId, cardId, listId, cardTitle, listTitle, boar
             <button
               key={btnKey}
               type="button"
-              onClick={(e) => handleButtonClick(btn, e)}
+              onClick={(e) => { handleButtonClick(btn, e); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-subtle hover:bg-bg-overlay rounded-lg transition-colors"
             >
               {btn.icon && (
@@ -132,7 +132,7 @@ const CardPluginButtons = ({ boardId, cardId, listId, cardTitle, listTitle, boar
   return (
     // WHY: stopPropagation on the wrapper prevents card-click when clicking
     // on any part of the buttons row that isn't a button itself
-    <div className="mt-1.5 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+    <div className="mt-1.5 flex flex-wrap gap-1" onClick={(e) => { e.stopPropagation(); }} onKeyDown={(e) => { e.stopPropagation(); }}>
       {buttons.map((btn) => {
         const btnKey = `${btn.text ?? ''}-${btn.icon ?? ''}`;
         // [plugin-button-exception] Plugin-injected buttons use raw <button> to preserve
@@ -140,7 +140,7 @@ const CardPluginButtons = ({ boardId, cardId, listId, cardTitle, listTitle, boar
         return (
           <button
             key={btnKey}
-            onClick={(e) => handleButtonClick(btn, e)}
+            onClick={(e) => { handleButtonClick(btn, e); }}
             className="inline-flex items-center gap-1 rounded bg-bg-overlay px-2 py-0.5 text-xs text-base hover:bg-bg-sunken transition-colors"
           >
             {btn.icon && (

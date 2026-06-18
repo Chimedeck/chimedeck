@@ -1165,7 +1165,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
           currentListId={card.list_id}
           workspaceId={activeWorkspaceId}
           api={api}
-          onClose={() => setCopyModalOpen(false)}
+          onClose={() => { setCopyModalOpen(false); }}
           onSuccess={(newCard) => {
             setCopyModalOpen(false);
             dispatch(boardSliceActions.addCard({ card: newCard }));
@@ -1179,7 +1179,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
           currentListId={card.list_id}
           workspaceId={activeWorkspaceId}
           api={api}
-          onClose={() => setMoveModalOpen(false)}
+          onClose={() => { setMoveModalOpen(false); }}
           onSuccess={(movedCard) => {
             setMoveModalOpen(false);
             const isSameBoard = movedCard.list_id in boardLists;

@@ -424,7 +424,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
               key={entry.clientId}
               attachment={tempAttachment}
               uploadProgress={entry.phase === 'uploading' ? entry.progress : null}
-              onDelete={() => removeEntry(entry.clientId)}
+              onDelete={() => { removeEntry(entry.clientId); }}
             />
           );
         })}
@@ -511,7 +511,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
                 type="url"
                 placeholder={translations['attachments.panel.link.urlPlaceholder']}
                 value={linkUrl}
-                onChange={(e) => handleLinkUrlChange(e.target.value)}
+                onChange={(e) => { handleLinkUrlChange(e.target.value); }}
                 required
                 className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
                 data-testid="link-url-input"
@@ -555,7 +555,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
                   type="text"
                   placeholder={translations['attachments.panel.link.namePlaceholder']}
                   value={linkName}
-                  onChange={(e) => setLinkName(e.target.value)}
+                  onChange={(e) => { setLinkName(e.target.value); }}
                   className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
                   data-testid="link-name-input"
                 />
@@ -590,7 +590,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
           ) : (
             <button
               type="button"
-              onClick={() => setShowLinkForm(true)}
+              onClick={() => { setShowLinkForm(true); }}
               className="flex items-center gap-1 text-xs text-muted hover:text-subtle transition-colors"
               data-testid="attach-link-button"
             >

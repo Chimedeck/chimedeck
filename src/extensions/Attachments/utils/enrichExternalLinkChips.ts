@@ -49,7 +49,7 @@ function updateAnchorContent(anchor: HTMLAnchorElement, title: string, faviconUr
 }
 
 export async function enrichExternalLinkChips(root: HTMLElement): Promise<void> {
-  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  const anchors = Array.from(root.querySelectorAll('a[href]'));
   if (anchors.length === 0) return;
 
   await Promise.all(anchors.map(async (anchor) => {

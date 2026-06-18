@@ -116,7 +116,7 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
     <>
       <div className="w-24">
         <button
-          onClick={() => setLightboxOpen(true)}
+          onClick={() => { setLightboxOpen(true); }}
           className="relative h-16 w-full rounded overflow-hidden border border-border hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label={translations['attachments.thumbnail.image.preview.ariaLabel'].replace('{name}', attachment.name)}
         >
@@ -130,7 +130,7 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
         {fullSrc && (
           <button
             type="button"
-            onClick={() => setLightboxOpen(true)}
+            onClick={() => { setLightboxOpen(true); }}
             className="mt-1 block w-full truncate text-left text-[10px] text-link hover:underline"
             title={displayName}
           >
@@ -139,7 +139,7 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
         )}
       </div>
       {lightboxOpen && fullSrc && (
-        <ImageLightbox src={fullSrc} name={attachment.name} onClose={() => setLightboxOpen(false)} />
+        <ImageLightbox src={fullSrc} name={attachment.name} onClose={() => { setLightboxOpen(false); }} />
       )}
     </>
   );
@@ -292,7 +292,7 @@ export function VideoThumbnail({ attachment }: Props): React.ReactElement {
   return (
     <>
       <button
-        onClick={() => setLightboxOpen(true)}
+        onClick={() => { setLightboxOpen(true); }}
         className="relative w-24 h-16 rounded overflow-hidden border border-border bg-bg-surface hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center group"
         aria-label={translations['attachments.thumbnail.video.play.ariaLabel'].replace('{name}', attachment.name)}
       >
@@ -301,7 +301,7 @@ export function VideoThumbnail({ attachment }: Props): React.ReactElement {
         <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" />
       </button>
       {lightboxOpen && (
-        <VideoLightbox src={src} name={attachment.name} onClose={() => setLightboxOpen(false)} />
+        <VideoLightbox src={src} name={attachment.name} onClose={() => { setLightboxOpen(false); }} />
       )}
     </>
   );

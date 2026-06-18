@@ -68,7 +68,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
       id: a.id,
       actionType: a.actionType,
       label: a.actionType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      config: a.config as Record<string, unknown>,
+      config: a.config,
     })) ??
       initialConfig
         ? []
@@ -224,7 +224,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                     <button
                       key={f}
                       type="button"
-                      onClick={() => setFrequency(f)}
+                      onClick={() => { setFrequency(f); }}
                       className={`rounded-md py-2 text-xs font-medium capitalize transition-colors ${
                         frequency === f
                           ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
@@ -249,7 +249,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                         key={d}
                         type="button"
                         title={DAY_OF_WEEK_FULL[i]}
-                        onClick={() => setDayOfWeek(i)}
+                        onClick={() => { setDayOfWeek(i); }}
                         className={`rounded py-1.5 text-xs font-medium transition-colors ${
                           dayOfWeek === i
                             ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
@@ -273,7 +273,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                     <select
                       value={dayOfMonth === 'last' ? 'last' : String(dayOfMonth)}
                       onChange={(e) =>
-                        setDayOfMonth(e.target.value === 'last' ? 'last' : Number(e.target.value))
+                        { setDayOfMonth(e.target.value === 'last' ? 'last' : Number(e.target.value)); }
                       }
                       className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                     >
@@ -296,7 +296,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                   </label>
                   <select
                     value={month}
-                    onChange={(e) => setMonth(Number(e.target.value))}
+                    onChange={(e) => { setMonth(Number(e.target.value)); }}
                     className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {[
@@ -320,7 +320,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                 <div className="flex items-center gap-2">
                   <select
                     value={hour}
-                    onChange={(e) => setHour(Number(e.target.value))}
+                    onChange={(e) => { setHour(Number(e.target.value)); }}
                     className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-label={translations['automation.scheduledBuilder.hourAriaLabel']}
                   >
@@ -333,7 +333,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                   <span className="text-muted font-bold">:</span>
                   <select
                     value={minute}
-                    onChange={(e) => setMinute(Number(e.target.value))}
+                    onChange={(e) => { setMinute(Number(e.target.value)); }}
                     className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-label={translations['automation.scheduledBuilder.minuteAriaLabel']}
                   >
@@ -382,7 +382,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
                   id="schedule-name"
                   type="text"
                   value={commandName}
-                  onChange={(e) => setNameOverride(e.target.value)}
+                  onChange={(e) => { setNameOverride(e.target.value); }}
                   maxLength={120}
                   className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={translations['automation.scheduledBuilder.commandNamePlaceholder']}
@@ -405,7 +405,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
         <div className="flex items-center justify-between border-t border-border px-5 py-4">
           <button
             type="button"
-            onClick={step === 1 ? onClose : () => setStep((s) => (s - 1) as 1 | 2 | 3)}
+            onClick={step === 1 ? onClose : () => { setStep((s) => (s - 1) as 1 | 2 | 3); }}
             className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-subtle bg-bg-surface hover:bg-bg-overlay transition-colors"
           >
             {step === 1 ? (
@@ -422,7 +422,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
             <button
               type="button"
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
-              onClick={() => setStep((s) => (s + 1) as 2 | 3)}
+              onClick={() => { setStep((s) => (s + 1) as 2 | 3); }}
               className="flex items-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors" // [theme-exception] text-white on primary button
             >
               {translations['automation.scheduledBuilder.next']}

@@ -209,7 +209,7 @@ describe('CardChatDrawer', () => {
     );
 
     expect(screen.getByText(/Session is paused/)).toBeInTheDocument();
-    const input = screen.getByPlaceholderText('Session is not active') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('Session is not active');
     expect(input.disabled).toBe(true);
   });
 
@@ -290,7 +290,7 @@ describe('CardChatDrawer', () => {
       <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
     );
 
-    const input = screen.getByPlaceholderText('Describe what you want to build…') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('Describe what you want to build…');
     fireEvent.change(input, { target: { value: 'Build a login page' } });
     fireEvent.click(screen.getByText('Send'));
 
@@ -314,7 +314,7 @@ describe('CardChatDrawer', () => {
       <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
     );
 
-    const input = screen.getByPlaceholderText('Describe what you want to build…') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('Describe what you want to build…');
     fireEvent.change(input, { target: { value: 'test' } });
     fireEvent.click(screen.getByText('Send'));
 
@@ -328,7 +328,7 @@ describe('CardChatDrawer', () => {
       <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
     );
 
-    const sendButton = screen.getByText('Send') as HTMLButtonElement;
+    const sendButton = screen.getByText('Send');
     expect(sendButton.disabled).toBe(true);
   });
 
@@ -345,7 +345,7 @@ describe('CardChatDrawer', () => {
       <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
     );
 
-    const input = screen.getByPlaceholderText('Describe what you want to build…') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('Describe what you want to build…');
     fireEvent.change(input, { target: { value: 'test' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -401,11 +401,11 @@ describe('CardChatDrawer', () => {
       });
 
       // Composer should be disabled during refinement
-      const input = screen.getByPlaceholderText('Describe what you want to build…') as HTMLInputElement;
+      const input = screen.getByPlaceholderText('Describe what you want to build…');
       expect(input.disabled).toBe(true);
 
       // Send button should be disabled during refinement
-      const sendButton = screen.getByText('Send') as HTMLButtonElement;
+      const sendButton = screen.getByText('Send');
       expect(sendButton.disabled).toBe(true);
     });
 

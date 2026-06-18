@@ -56,11 +56,11 @@ const BoardCustomFieldsPanel = () => {
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
   const setFieldBusy = (id: string, busy: boolean) =>
-    setBusyIds((prev) => {
+    { setBusyIds((prev) => {
       const next = new Set(prev);
       busy ? next.add(id) : next.delete(id);
       return next;
-    });
+    }); };
 
   // ─── Create ──────────────────────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ const BoardCustomFieldsPanel = () => {
                   type="text"
                   value={renameValue}
                   autoFocus
-                  onChange={(e) => setRenameValue(e.target.value)}
+                  onChange={(e) => { setRenameValue(e.target.value); }}
                   onBlur={() => commitRename(field)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') commitRename(field);
@@ -221,7 +221,7 @@ const BoardCustomFieldsPanel = () => {
                 <button
                   type="button"
                   className="flex-1 text-left text-sm text-base hover:text-base truncate"
-                  onClick={() => startRename(field)}
+                  onClick={() => { startRename(field); }}
                   aria-label={`Rename field ${field.name}`}
                   disabled={busy}
                 >
@@ -264,7 +264,7 @@ const BoardCustomFieldsPanel = () => {
                 {expandedOptionsId !== field.id && (
                   <button
                     type="button"
-                    onClick={() => openOptionsEditor(field)}
+                    onClick={() => { openOptionsEditor(field); }}
                     className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
                     aria-label={`Edit options for ${field.name}`}
                     disabled={busy}
@@ -313,7 +313,7 @@ const BoardCustomFieldsPanel = () => {
           <input
             type="text"
             value={newField.name}
-            onChange={(e) => setNewField((f) => ({ ...f, name: e.target.value }))}
+            onChange={(e) => { setNewField((f) => ({ ...f, name: e.target.value })); }}
             placeholder={translations['CustomFields.fieldNamePlaceholder']}
             className="w-full bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             autoFocus
@@ -324,7 +324,7 @@ const BoardCustomFieldsPanel = () => {
           <select
             value={newField.field_type}
             onChange={(e) =>
-              setNewField((f) => ({ ...f, field_type: e.target.value as FieldType, options: [] }))
+              { setNewField((f) => ({ ...f, field_type: e.target.value as FieldType, options: [] })); }
             }
             className="w-full bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
             aria-label={translations['CustomFields.typeLabel']}
@@ -340,7 +340,7 @@ const BoardCustomFieldsPanel = () => {
           {newField.field_type === 'DROPDOWN' && (
             <DropdownFieldEditor
               options={newField.options}
-              onChange={(opts) => setNewField((f) => ({ ...f, options: opts }))}
+              onChange={(opts) => { setNewField((f) => ({ ...f, options: opts })); }}
             />
           )}
 
@@ -349,7 +349,7 @@ const BoardCustomFieldsPanel = () => {
             <input
               type="checkbox"
               checked={newField.show_on_card}
-              onChange={(e) => setNewField((f) => ({ ...f, show_on_card: e.target.checked }))}
+              onChange={(e) => { setNewField((f) => ({ ...f, show_on_card: e.target.checked })); }}
               className="accent-blue-500"
               aria-label={translations['CustomFields.showOnCardLabel']}
             />
@@ -381,7 +381,7 @@ const BoardCustomFieldsPanel = () => {
       ) : (
         <button
           type="button"
-          onClick={() => setShowForm(true)}
+          onClick={() => { setShowForm(true); }}
           className="w-full text-left text-xs text-blue-400 hover:text-blue-300 transition-colors py-1"
           aria-label={translations['CustomFields.ariaCreateField']}
         >

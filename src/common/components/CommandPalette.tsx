@@ -151,7 +151,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
     if (isOpen) {
       document.addEventListener('keydown', handleGlobalKeyDown);
     }
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    return () => { document.removeEventListener('keydown', handleGlobalKeyDown); };
   }, [isOpen, handleGlobalKeyDown]);
 
   // Re-focus input when palette opens and reset query
@@ -241,7 +241,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
       {/* Panel */}
       <div
         className="w-full max-w-xl overflow-hidden rounded-xl bg-bg-surface shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
       >
         {/* Search input */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -250,7 +250,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); }}
             onKeyDown={handleInputKeyDown}
             placeholder={scopeMeta.placeholder}
             className="flex-1 bg-transparent text-sm text-base placeholder:text-subtle outline-none"
@@ -270,8 +270,8 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
               ref={(el) => { scopeTabRefs.current[idx] = el; }}
               role="tab"
               aria-selected={scope === s.value}
-              onClick={() => changeScope(s.value)}
-              onKeyDown={(e) => handleTabKeyDown(e, idx)}
+              onClick={() => { changeScope(s.value); }}
+              onKeyDown={(e) => { handleTabKeyDown(e, idx); }}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 scope === s.value
                   ? 'bg-primary text-inverse'
@@ -331,7 +331,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                         result={r}
                         onSelect={handleSelect}
                         buttonRef={(el) => { resultRefs.current[flatIdx] = el; }}
-                        onKeyDown={(e) => handleResultKeyDown(e, flatIdx)}
+                        onKeyDown={(e) => { handleResultKeyDown(e, flatIdx); }}
                       />
                     );
                   })}
@@ -350,7 +350,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                         result={r}
                         onSelect={handleSelect}
                         buttonRef={(el) => { resultRefs.current[flatIdx] = el; }}
-                        onKeyDown={(e) => handleResultKeyDown(e, flatIdx)}
+                        onKeyDown={(e) => { handleResultKeyDown(e, flatIdx); }}
                       />
                     );
                   })}
@@ -368,7 +368,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                   result={r}
                   onSelect={handleSelect}
                   buttonRef={(el) => { resultRefs.current[idx] = el; }}
-                  onKeyDown={(e) => handleResultKeyDown(e, idx)}
+                  onKeyDown={(e) => { handleResultKeyDown(e, idx); }}
                 />
               ))}
             </section>

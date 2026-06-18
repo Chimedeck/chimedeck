@@ -116,7 +116,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => { setExpanded((v) => !v); }}
             aria-label={expanded ? translations['automation.runLogRow.collapseAriaLabel'] : translations['automation.runLogRow.expandAriaLabel']}
           >
             {expanded ? (

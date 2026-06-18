@@ -129,7 +129,7 @@ function renderListSelect(args: RenderArgs): JSX.Element {
   return (
     <div key={key}>
       <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
-      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value || undefined)} required={fieldDef.required}>
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => { onChange(e.target.value || undefined); }} required={fieldDef.required}>
         <option value="">Any list…</option>
         {(boardLists ?? []).map((list) => <option key={list.id} value={list.id}>{list.title}</option>)}
       </select>
@@ -163,7 +163,7 @@ function renderListMultiSelect(args: RenderArgs): JSX.Element {
                 type="checkbox"
                 className="h-3.5 w-3.5 rounded border-border bg-bg-sunken text-blue-500 focus:ring-1 focus:ring-blue-500"
                 checked={selected.includes(list.id)}
-                onChange={() => toggle(list.id)}
+                onChange={() => { toggle(list.id); }}
               />
               {list.title}
             </label>
@@ -180,7 +180,7 @@ function renderBoardSelect(args: RenderArgs): JSX.Element {
   return (
     <div key={key}>
       <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
-      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value || undefined)} required={fieldDef.required}>
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => { onChange(e.target.value || undefined); }} required={fieldDef.required}>
         <option value="">Select a board…</option>
         {(workspaceBoards ?? []).map((b) => <option key={b.id} value={b.id}>{b.title}</option>)}
       </select>
@@ -195,7 +195,7 @@ function renderTargetListSelect(args: RenderArgs): JSX.Element {
   return (
     <div key={key}>
       <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
-      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value || undefined)} required={fieldDef.required} disabled={lists.length === 0}>
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => { onChange(e.target.value || undefined); }} required={fieldDef.required} disabled={lists.length === 0}>
         <option value="">{lists.length === 0 ? 'Select a board first…' : 'Select a list…'}</option>
         {lists.map((list) => <option key={list.id} value={list.id}>{list.title}</option>)}
       </select>
@@ -209,7 +209,7 @@ function renderEnumSelect(args: RenderArgs): JSX.Element {
   return (
     <div key={key}>
       <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
-      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} required={fieldDef.required}>
+      <select id={id} className={SELECT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => { onChange(e.target.value); }} required={fieldDef.required}>
         <option value="">Choose…</option>
         {(fieldDef.options ?? []).map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
@@ -222,7 +222,7 @@ function renderBoolean(args: RenderArgs): JSX.Element {
   const id = `cfg-${key}`;
   return (
     <div key={key} className="flex items-center gap-2">
-      <input id={id} type="checkbox" className="h-4 w-4 rounded border-border bg-bg-overlay text-blue-500 focus:ring-2 focus:ring-blue-500" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+      <input id={id} type="checkbox" className="h-4 w-4 rounded border-border bg-bg-overlay text-blue-500 focus:ring-2 focus:ring-blue-500" checked={!!value} onChange={(e) => { onChange(e.target.checked); }} />
       <label htmlFor={id} className="text-xs font-medium text-muted">{fieldDef.label}</label>
     </div>
   );
@@ -234,7 +234,7 @@ function renderNumber(args: RenderArgs): JSX.Element {
   return (
     <div key={key}>
       <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
-      <input id={id} type="number" className={SELECT_CLASS} value={typeof value === 'number' ? value : ''} onChange={(e) => onChange(Number(e.target.value))} required={fieldDef.required} />
+      <input id={id} type="number" className={SELECT_CLASS} value={typeof value === 'number' ? value : ''} onChange={(e) => { onChange(Number(e.target.value)); }} required={fieldDef.required} />
     </div>
   );
 }
@@ -245,7 +245,7 @@ function renderText(args: RenderArgs): JSX.Element {
   return (
     <div key={key}>
       <FieldLabel id={id} label={fieldDef.label} required={fieldDef.required} />
-      <input id={id} type="text" className={INPUT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} required={fieldDef.required} />
+      <input id={id} type="text" className={INPUT_CLASS} value={typeof value === 'string' ? value : ''} onChange={(e) => { onChange(e.target.value); }} required={fieldDef.required} />
     </div>
   );
 }
@@ -254,7 +254,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
   const { key, fieldDef } = args;
   const items: string[] = Array.isArray(args.value) ? (args.value as string[]) : [];
 
-  const update = (next: string[]) => args.onChange(next.length > 0 ? next : undefined);
+  const update = (next: string[]) => { args.onChange(next.length > 0 ? next : undefined); };
 
   return (
     <div key={key}>
@@ -279,7 +279,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
             <button
               type="button"
               className="flex-shrink-0 rounded p-1 text-muted hover:text-danger hover:bg-bg-overlay transition-colors"
-              onClick={() => update(items.filter((_, i) => i !== idx))}
+              onClick={() => { update(items.filter((_, i) => i !== idx)); }}
               title={translations['automation.configField.removeItemTitle']}
             >
               ×
@@ -289,7 +289,7 @@ function renderStringList(args: RenderArgs): JSX.Element {
         <button
           type="button"
           className="mt-0.5 self-start rounded border border-dashed border-border px-2 py-1 text-xs text-muted hover:border-border hover:text-subtle transition-colors"
-          onClick={() => update([...items, ''])}
+          onClick={() => { update([...items, '']); }}
         >
           + Add item
         </button>

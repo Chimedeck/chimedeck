@@ -38,7 +38,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
@@ -65,7 +65,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
       {/* Panel — stop click from bubbling to backdrop */}
       <div
         className="w-full max-w-xl rounded-xl bg-bg-base shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
       >
         <div className="border-b border-border p-4">
           <SearchInput value={query} onChange={setQuery} autoFocus />

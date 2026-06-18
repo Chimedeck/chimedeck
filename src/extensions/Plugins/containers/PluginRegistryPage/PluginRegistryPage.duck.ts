@@ -50,7 +50,7 @@ export const fetchPluginsThunk = createAppAsyncThunk(
     q,
     category,
     status,
-  }: { q?: string; category?: string | null; status?: RegistryStatus } = {}) => {
+  }: { q?: string; category?: string | null; status?: RegistryStatus }) => {
     const params: FetchAvailablePluginsParams = {};
     if (q) params.q = q;
     if (category) params.category = category;

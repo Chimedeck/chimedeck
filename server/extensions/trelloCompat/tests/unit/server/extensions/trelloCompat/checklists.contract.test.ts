@@ -21,8 +21,8 @@ describe('trelloCompat checklists adapter contract', () => {
       assigned_member_id: null,
     }));
 
-    expect(() => assertTrelloShape('checkitem', completeItem)).not.toThrow();
-    expect(() => assertTrelloShape('checkitem', incompleteItem)).not.toThrow();
+    expect(() => { assertTrelloShape('checkitem', completeItem); }).not.toThrow();
+    expect(() => { assertTrelloShape('checkitem', incompleteItem); }).not.toThrow();
 
     expect(completeItem).toMatchObject({
       id: 'item-1',
@@ -50,7 +50,7 @@ describe('trelloCompat checklists adapter contract', () => {
       checkItems: [checkItem],
     }));
 
-    expect(() => assertTrelloShape('checklist', checklist)).not.toThrow();
+    expect(() => { assertTrelloShape('checklist', checklist); }).not.toThrow();
     expect(checklist).toMatchObject({
       id: 'checklist-2',
       idBoard: 'board-1',

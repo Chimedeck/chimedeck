@@ -142,7 +142,7 @@ const AutomationRow = ({ boardId, automation, onEdit, onDeleted, onToggled }: Ro
           disabled={deleting}
           aria-label={confirmDelete ? translations['automation.list.row.confirmDeleteAriaLabel'] : translations['automation.list.row.deleteAriaLabel']}
           title={confirmDelete ? translations['automation.list.row.confirmDeleteTitle'] : translations['automation.list.row.deleteTitle']}
-          onBlur={() => setConfirmDelete(false)}
+          onBlur={() => { setConfirmDelete(false); }}
         >
           <TrashIcon className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -175,7 +175,7 @@ const AutomationList = ({ boardId, automations, onCreateRule, onEditRule, onChan
             key={automation.id}
             boardId={boardId}
             automation={automation}
-            onEdit={() => onEditRule(automation)}
+            onEdit={() => { onEditRule(automation); }}
             onDeleted={onChanged}
             onToggled={onChanged}
           />

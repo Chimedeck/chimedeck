@@ -565,7 +565,7 @@ export const ChecklistItem = ({
                 <button
                   type="button"
                   className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
-                  onClick={() => setAssignOpen(false)}
+                  onClick={() => { setAssignOpen(false); }}
                   aria-label="Close assign popover"
                 >
                   <XMarkIcon className="h-4 w-4" aria-hidden="true" />
@@ -576,7 +576,7 @@ export const ChecklistItem = ({
                 className="mb-2 w-full rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Search members"
                 value={memberQuery}
-                onChange={(event) => setMemberQuery(event.target.value)}
+                onChange={(event) => { setMemberQuery(event.target.value); }}
               />
               <div className="max-h-56 space-y-1 overflow-y-auto">
                 <button
@@ -634,7 +634,7 @@ export const ChecklistItem = ({
                 <button
                   type="button"
                   className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
-                  onClick={() => setDueOpen(false)}
+                  onClick={() => { setDueOpen(false); }}
                   aria-label="Close due date popover"
                 >
                   <XMarkIcon className="h-4 w-4" aria-hidden="true" />
@@ -649,7 +649,7 @@ export const ChecklistItem = ({
                       id={`checklist-item-due-date-${item.id}`}
                       type="date"
                       value={dueDateInput}
-                      onChange={(event) => setDueDateInput(event.target.value)}
+                      onChange={(event) => { setDueDateInput(event.target.value); }}
                       onFocus={(event) => {
                         openNativePicker(event.currentTarget);
                       }}
@@ -662,7 +662,7 @@ export const ChecklistItem = ({
                     <input
                       type="time"
                       value={dueTimeInput}
-                      onChange={(event) => setDueTimeInput(event.target.value)}
+                      onChange={(event) => { setDueTimeInput(event.target.value); }}
                       onFocus={(event) => {
                         openNativePicker(event.currentTarget);
                       }}

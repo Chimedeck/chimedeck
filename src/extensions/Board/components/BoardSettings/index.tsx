@@ -83,7 +83,7 @@ const BoardSettings = ({ onClose, currentUserId, isGuest = false }: Props) => {
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); }}
         role="dialog"
         aria-label="Board Settings"
       >

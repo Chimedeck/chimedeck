@@ -83,7 +83,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
               type="checkbox"
               id={`allowed-domain-${domain}`}
               checked={selected.includes(domain)}
-              onChange={() => toggleDomain(domain)}
+              onChange={() => { toggleDomain(domain); }}
               className="w-3.5 h-3.5 accent-blue-500 cursor-pointer"
             />
             <label

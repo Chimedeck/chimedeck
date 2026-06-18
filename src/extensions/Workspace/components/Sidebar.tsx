@@ -89,7 +89,7 @@ export default function Sidebar() {
           <div className="relative">
             <Button
               variant="ghost"
-              onClick={() => setSwitcherOpen((o) => !o)}
+              onClick={() => { setSwitcherOpen((o) => !o); }}
               aria-expanded={switcherOpen}
               aria-haspopup="listbox"
               aria-label={translations['WorkspaceSwitcher.label']}
@@ -118,7 +118,7 @@ export default function Sidebar() {
                   <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                     <Button
                       variant="ghost"
-                      onClick={() => handleSwitchWorkspace(ws.id)}
+                      onClick={() => { handleSwitchWorkspace(ws.id); }}
                       className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                     >
                       {ws.name}
@@ -292,7 +292,7 @@ export default function Sidebar() {
           ) : (
             <Button
               variant="ghost"
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => { setShowCreateModal(true); }}
               className="mt-2 w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-sm font-normal text-muted hover:border-slate-400 dark:hover:border-slate-500"
             >
               {translations['Sidebar.createFirst']}
@@ -305,7 +305,7 @@ export default function Sidebar() {
           <div className="relative">
             <Button
               variant="ghost"
-              onClick={() => setUserMenuOpen((o) => !o)}
+              onClick={() => { setUserMenuOpen((o) => !o); }}
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"
               className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm font-normal justify-start"
@@ -343,7 +343,7 @@ export default function Sidebar() {
                   <NavLink
                     to="/settings/profile"
                     role="menuitem"
-                    onClick={() => setUserMenuOpen(false)}
+                    onClick={() => { setUserMenuOpen(false); }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
                   >
                     {translations['Sidebar.settings']}

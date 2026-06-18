@@ -32,7 +32,7 @@ export function findBlockingWorkspaceForCreate(args: {
   const maxWorkspaces = SUBSCRIPTION_TIERS[tierName].maxWorkspaces;
 
   if (maxWorkspaces === 'unlimited') return null;
-  if (count < (maxWorkspaces as number)) return null;
+  if (count < (maxWorkspaces)) return null;
 
   return args.workspaceIds[0] ?? null;
 }

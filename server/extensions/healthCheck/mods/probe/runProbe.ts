@@ -103,7 +103,7 @@ export async function runProbe({ url, expectedStatus }: { url: string; expectedS
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
   const startTime = Date.now();
 
   try {

@@ -525,7 +525,7 @@ const cardDetailSlice = createSlice({
         state.members = includes.members;
         // [why] Server returns checklists with nested items. Fall back to empty array for
         // old clients that don't have the migration applied yet.
-        state.checklists = (includes.checklists ?? []) as Checklist[];
+        state.checklists = (includes.checklists ?? []);
         state.activities = (includes.activities ?? []) as ActivityData[];
         state.status = 'idle';
       })

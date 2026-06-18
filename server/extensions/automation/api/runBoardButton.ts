@@ -116,12 +116,12 @@ export async function handleRunBoardButton(
       type: 'BOARD_BUTTON',
       boardId,
       entityId: cardId,
-      actorId: currentUser.id as string,
+      actorId: currentUser.id,
       payload: { cardId, automationId, triggeredManually: true, scope: scopeConfig, batchRunLogId },
     };
 
     const evalContext: EvaluationContext = {
-      actorId: currentUser.id as string,
+      actorId: currentUser.id,
       cardId,
     };
 

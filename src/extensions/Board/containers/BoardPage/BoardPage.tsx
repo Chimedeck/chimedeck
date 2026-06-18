@@ -356,7 +356,7 @@ const BoardPage = () => {
     lastSequence,
     onEvent: handleEvent,
     onMutationConflict: () =>
-      addToast('A mutation conflicted with a remote change and was discarded.', 'conflict'),
+      { addToast('A mutation conflicted with a remote change and was discarded.', 'conflict'); },
     onQueueOverflow: () => {
       // Full reload on overflow so state is not stale
       if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
@@ -398,7 +398,7 @@ const BoardPage = () => {
         | undefined;
       const routeCardId = targetCard?.short_id ?? cardId;
       const boardRouteTarget =
-        (board?.short_id as string | undefined) ?? resolvedBoardRouteId ?? boardId;
+        (board?.short_id) ?? resolvedBoardRouteId ?? boardId;
 
       // Keep the board route mounted and open the modal via query param so
       // board-local UI state (e.g. active filters) is not reset.
@@ -425,7 +425,7 @@ const BoardPage = () => {
 
   const handleRouteCardClose = useCallback(() => {
     const boardRouteTarget =
-      (board?.short_id as string | undefined) ?? resolvedBoardRouteId ?? boardId;
+      (board?.short_id) ?? resolvedBoardRouteId ?? boardId;
     if (!boardRouteTarget) return;
     navigate(
       boardPath({
@@ -1004,9 +1004,9 @@ const BoardPage = () => {
             hasBackground={!!board.background}
             useParentGlass={!!board.background}
             isGuest={isGuest}
-            onOpenSettings={() => setSettingsOpen(true)}
-            onOpenMembers={() => setMembersOpen(true)}
-            {...(isBoardChatEnabled && { onOpenBoardChat: () => setBoardChatOpen(true) })}
+            onOpenSettings={() => { setSettingsOpen(true); }}
+            onOpenMembers={() => { setMembersOpen(true); }}
+            {...(isBoardChatEnabled && { onOpenBoardChat: () => { setBoardChatOpen(true); } })}
             {...(!isGuest && {
               onArchive: handleBoardArchive,
               onDelete: handleBoardDelete,
@@ -1040,7 +1040,7 @@ const BoardPage = () => {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => { setActiveTab(tab.id); }}
                     className={`px-3 py-2.5 text-sm font-medium ${tabClass}`}
                   >
                     {tab.label}
@@ -1083,7 +1083,7 @@ const BoardPage = () => {
                     return (
                       <button
                         type="button"
-                        onClick={() => setFilterPanelOpen((v) => !v)}
+                        onClick={() => { setFilterPanelOpen((v) => !v); }}
                         className={`${btnBase} ${btnVariant}`}
                       >
                         <FunnelIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -1095,7 +1095,7 @@ const BoardPage = () => {
                   {filterPanelOpen && (
                     <BoardFilterPanel
                       containerRef={filterContainerRef}
-                      onClose={() => setFilterPanelOpen(false)}
+                      onClose={() => { setFilterPanelOpen(false); }}
                       filters={filters}
                       onChange={setFilters}
                       boardMembers={boardMembers}
@@ -1123,7 +1123,7 @@ const BoardPage = () => {
         {/* Board settings panel */}
         {settingsOpen && (
           <BoardSettings
-            onClose={() => setSettingsOpen(false)}
+            onClose={() => { setSettingsOpen(false); }}
             isGuest={isGuest}
             isViewerGuest={isViewerGuest}
             isBoardParticipant={canManageOwnBoardNotifications}
@@ -1132,7 +1132,7 @@ const BoardPage = () => {
         )}
         {/* Board members panel (Sprint 79) */}
         {membersOpen && (
-          <BoardMembersPanel onClose={() => setMembersOpen(false)} isGuest={isGuest} />
+          <BoardMembersPanel onClose={() => { setMembersOpen(false); }} isGuest={isGuest} />
         )}
 
         {/* Board chat drawer (Sprint 164) */}
@@ -1142,8 +1142,8 @@ const BoardPage = () => {
             isGuest={isGuest}
             callerGuestType={board?.callerGuestType ?? null}
             canManageGuestPermissions={canManageGuestChatPermissions}
-            onClose={() => setBoardChatOpen(false)}
-            onDocsChanged={() => setDocsRefreshKey((k) => k + 1)}
+            onClose={() => { setBoardChatOpen(false); }}
+            onDocsChanged={() => { setDocsRefreshKey((k) => k + 1); }}
           />
         )}
 
@@ -1167,7 +1167,7 @@ const BoardPage = () => {
                 addToast('Failed to delete board.', 'error');
               }
             }}
-            onCancel={() => setBoardDeleteDialog(null)}
+            onCancel={() => { setBoardDeleteDialog(null); }}
           />
         )}
 
@@ -1182,7 +1182,7 @@ const BoardPage = () => {
               await deleteList({ api, listId, confirm: true });
               if (boardId) dispatch(fetchBoardDataThunk({ boardId }));
             }}
-            onCancel={() => setListDeleteDialog(null)}
+            onCancel={() => { setListDeleteDialog(null); }}
           />
         )}
       </div>

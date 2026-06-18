@@ -59,7 +59,7 @@ const McpDocsPage = () => {
           <Button
             variant="link"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={() => { navigate(-1); }}
             className="mb-2"
           >
             ← Back

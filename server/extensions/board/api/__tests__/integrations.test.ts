@@ -11,7 +11,7 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) =>
       Object.entries(criteria).every(([key, value]) => row[key] === value),
     );
@@ -36,7 +36,7 @@ class QueryBuilder {
   }
 
   private executeSync(clone = true): Row[] {
-    const rows = (this.store[this.tableName] as Row[]).filter((row) =>
+    const rows = (this.store[this.tableName]).filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
     return clone ? rows.map((row) => ({ ...row })) : rows;

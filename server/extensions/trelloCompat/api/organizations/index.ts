@@ -120,7 +120,7 @@ async function listSerializedBoardMemberships(boardId: string) {
       ? 'admin'
       : membership.role === 'VIEWER'
         ? 'observer'
-        : 'normal') as 'admin' | 'normal' | 'observer',
+        : 'normal'),
     unconfirmed: false as const,
     deactivated: false as const,
   }));

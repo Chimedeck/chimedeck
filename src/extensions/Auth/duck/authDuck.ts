@@ -59,7 +59,7 @@ export const signupThunk = createAppAsyncThunk(
     try {
       const response = await authApi.signup({ name, email, password });
       // When email verification is enabled, server returns { requiresVerification: true }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const body = response as unknown as { data: { requiresVerification?: boolean } };
       if (body.data?.requiresVerification) {
         return { requiresVerification: true, email };

@@ -17,7 +17,7 @@ const CalendarCardChip = ({ card, onClick }: CalendarCardChipProps) => {
     <button
       draggable
       onDragStart={handleDragStart}
-      onClick={() => onClick(card.id)}
+      onClick={() => { onClick(card.id); }}
       title={card.title}
       aria-label={`${translations['CalendarView.cardAriaPrefix']} ${card.title}`}
       data-testid={`calendar-chip-${card.id}`}

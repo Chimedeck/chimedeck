@@ -58,7 +58,7 @@ export function extractStructuredFields(responseText: string): CardRequirementFi
 
   for (const [key, patterns] of Object.entries(EXTRACTION_PATTERNS)) {
     for (const pattern of patterns) {
-      const match = (pattern as RegExp).exec(responseText);
+      const match = (pattern).exec(responseText);
       if (match?.[1]) {
         const extracted = match[1].trim();
         // [why] Skip false positives where the heading exists but the

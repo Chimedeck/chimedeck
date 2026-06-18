@@ -132,7 +132,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
       if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, []);
 
   // ── Sprint 208 — realtime AI progress subscription ────────────────────
@@ -680,7 +680,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                                     variant="secondary"
                                     size="sm"
                                     disabled={isCommitting}
-                                    onClick={() => handleDismissActionCard(card)}
+                                    onClick={() => { handleDismissActionCard(card); }}
                                   >
                                     {translations['CardChat.drawer.dismiss']}
                                   </Button>
@@ -831,7 +831,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                     : translations['CardChat.drawer.composerPlaceholderInactive']
                 }
                 value={composerText}
-                onChange={(e) => setComposerText(e.target.value)}
+                onChange={(e) => { setComposerText(e.target.value); }}
                 onKeyDown={handleKeyDown}
                 disabled={currentSession.status !== 'ACTIVE_REFINEMENT' || sendingMessage || refining}
               />

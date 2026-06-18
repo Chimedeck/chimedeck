@@ -36,14 +36,14 @@ const ListColumn = ({
       <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing">
         <ListHeader
           list={list}
-          onRename={(title) => onRename(list.id, title)}
+          onRename={(title) => { onRename(list.id, title); }}
           onAddCard={() => {}}
           onCopyList={() => {}}
           onMoveList={() => {}}
           onMoveAllCards={() => {}}
-          onArchive={() => onArchive(list.id)}
+          onArchive={() => { onArchive(list.id); }}
           onArchiveAllCards={() => {}}
-          onDelete={() => onDelete(list.id)}
+          onDelete={() => { onDelete(list.id); }}
           onChangeListColor={() => {}}
           availableLists={[]}
           onSortBy={(sortBy) => {

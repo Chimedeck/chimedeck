@@ -55,7 +55,7 @@ export const CardReference = Node.create({
         priority: 200,
         tag: 'a[href]',
         getAttrs: (node) => {
-          const el = node as HTMLElement;
+          const el = node;
           const href = el.getAttribute('href') ?? '';
           if (!isCardUrl(href)) return false;
           return {

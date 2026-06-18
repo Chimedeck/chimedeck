@@ -39,7 +39,7 @@ const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupP
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [onClose]);
 
   return (
@@ -56,7 +56,7 @@ const ColorPickerPopup = ({ currentColor, onSelect, onClose }: ColorPickerPopupP
             className="relative w-8 h-8 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 flex items-center justify-center"
             style={{ backgroundColor: c }}
             aria-label={`Select colour ${c}`}
-            onClick={() => onSelect(c)}
+            onClick={() => { onSelect(c); }}
           >
             {c === currentColor && (
               <span className="text-white text-xs font-bold drop-shadow" aria-hidden="true">✓</span> // [theme-exception] text-white checkmark on colored option
@@ -114,14 +114,14 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
               style={{ backgroundColor: option.color }}
               aria-label={`Pick colour for option ${option.label}`}
               onClick={() =>
-                setColorPickerOpenId(colorPickerOpenId === option.id ? null : option.id)
+                { setColorPickerOpenId(colorPickerOpenId === option.id ? null : option.id); }
               }
             />
             {colorPickerOpenId === option.id && (
               <ColorPickerPopup
                 currentColor={option.color}
-                onSelect={(c) => handleColorChange(option.id, c)}
-                onClose={() => setColorPickerOpenId(null)}
+                onSelect={(c) => { handleColorChange(option.id, c); }}
+                onClose={() => { setColorPickerOpenId(null); }}
               />
             )}
           </div>
@@ -130,7 +130,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
           <input
             type="text"
             value={option.label}
-            onChange={(e) => handleLabelChange(option.id, e.target.value)}
+            onChange={(e) => { handleLabelChange(option.id, e.target.value); }}
             placeholder={translations['CustomFields.dropdownOptionPlaceholder']}
             className="flex-1 bg-bg-overlay border border-border rounded px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
             aria-label={`Label for dropdown option`}
@@ -139,7 +139,7 @@ const DropdownFieldEditor = ({ options, onChange }: Props) => {
           {/* Remove button */}
           <button
             type="button"
-            onClick={() => handleRemoveOption(option.id)}
+            onClick={() => { handleRemoveOption(option.id); }}
             className="text-muted hover:text-danger transition-colors text-xs px-1"
             aria-label={`Remove option ${option.label}`}
           >

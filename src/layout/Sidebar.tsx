@@ -249,7 +249,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <div className="relative group">
               <Button
                 variant="ghost"
-                onClick={() => setSwitcherOpen((o) => !o)}
+                onClick={() => { setSwitcherOpen((o) => !o); }}
                 aria-label={translations['WorkspaceSwitcher.label']}
                 aria-expanded={switcherOpen}
                 className="flex w-full justify-center rounded-lg p-2 font-normal"
@@ -275,7 +275,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <div className="relative">
               <Button
                 variant="ghost"
-                onClick={() => setSwitcherOpen((o) => !o)}
+                onClick={() => { setSwitcherOpen((o) => !o); }}
                 aria-expanded={switcherOpen}
                 aria-haspopup="listbox"
                 aria-label={translations['WorkspaceSwitcher.label']}
@@ -303,7 +303,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                       <Button
                         variant="ghost"
-                        onClick={() => handleSwitchWorkspace(ws.id)}
+                        onClick={() => { handleSwitchWorkspace(ws.id); }}
                         className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                       >
                         {ws.name}
@@ -452,7 +452,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             !collapsed && (
               <Button
                 variant="ghost"
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => { setShowCreateModal(true); }}
                 className="mt-2 w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm font-normal text-muted hover:border-border-strong hover:text-subtle"
               >
                 {translations['Sidebar.createFirst']}
@@ -469,7 +469,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               <div className="relative group">
                 <Button
                   variant="ghost"
-                  onClick={() => setUserMenuOpen((o) => !o)}
+                  onClick={() => { setUserMenuOpen((o) => !o); }}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
                   aria-label={userDisplayName}
@@ -498,7 +498,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               // Expanded: full user button
               <Button
                 variant="ghost"
-                onClick={() => setUserMenuOpen((o) => !o)}
+                onClick={() => { setUserMenuOpen((o) => !o); }}
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
                 className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm font-normal justify-start"
@@ -537,7 +537,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <NavLink
                     to="/settings/profile"
                     role="menuitem"
-                    onClick={() => setUserMenuOpen(false)}
+                    onClick={() => { setUserMenuOpen(false); }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.settings']}
@@ -547,7 +547,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <NavLink
                     to="/settings/api-tokens"
                     role="menuitem"
-                    onClick={() => setUserMenuOpen(false)}
+                    onClick={() => { setUserMenuOpen(false); }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.apiTokens']}
@@ -557,7 +557,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <NavLink
                     to="/settings/webhooks"
                     role="menuitem"
-                    onClick={() => setUserMenuOpen(false)}
+                    onClick={() => { setUserMenuOpen(false); }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.webhooks']}

@@ -303,7 +303,7 @@ async function router(req: Request): Promise<Response> {
 
   // In production serve the built React SPA so client-side routing works.
   // Try the exact asset path first (JS/CSS chunks), then fall back to index.html.
-  if (appConfig.isDev === false) {
+  if (!appConfig.isDev) {
     const distRoot = `${import.meta.dir}/../dist`;
     const assetFile = await serveStatic(`${distRoot}${path}`);
     if (assetFile) return assetFile;

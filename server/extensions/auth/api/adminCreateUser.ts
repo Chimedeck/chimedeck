@@ -89,7 +89,7 @@ export async function handleAdminCreateUser(req: Request): Promise<Response> {
 
   const sesEnabled = await flags.isEnabled('SES_ENABLED');
   const shouldSend =
-    sendEmail === true && sesEnabled === true && env.ADMIN_INVITE_EMAIL_ENABLED === true;
+    sendEmail === true && sesEnabled && env.ADMIN_INVITE_EMAIL_ENABLED;
 
   let emailSent = false;
   if (shouldSend) {

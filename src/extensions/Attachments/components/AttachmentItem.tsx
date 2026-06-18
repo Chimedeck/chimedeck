@@ -302,12 +302,12 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
     });
   };
 
-  const handleDeleteClick = (): void => setConfirming(true);
+  const handleDeleteClick = (): void => { setConfirming(true); };
   const handleDeleteConfirm = (): void => {
     setConfirming(false);
     onDelete(attachment.id);
   };
-  const handleDeleteCancel = (): void => setConfirming(false);
+  const handleDeleteCancel = (): void => { setConfirming(false); };
 
   // Begin inline rename: pre-fill with current display name and show input
   const handleEditClick = (): void => {
@@ -452,7 +452,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
               aria-label={translations['attachment.rename.save']}
               data-testid="attachment-rename-save"
               // Prevent onBlur from firing before click registers
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={(e) => { e.preventDefault(); }}
             >
               {translations['attachment.rename.save']}
             </Button>
@@ -464,7 +464,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
               aria-label={translations['attachment.rename.cancel']}
               data-testid="attachment-rename-cancel"
               // Prevent onBlur from firing commit before cancel registers
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={(e) => { e.preventDefault(); }}
             >
               {translations['attachment.rename.cancel']}
             </Button>
@@ -504,21 +504,21 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
       </div>
 
       {/* Progress bar — only while uploading */}
-      {isUploading && <UploadProgressBar progress={uploadProgress!} />}
+      {isUploading && <UploadProgressBar progress={uploadProgress} />}
 
       {/* Video player overlay — use proxy view_url */}
       {videoOpen && isVideo && attachment.view_url && (
-        <VideoLightbox src={attachment.view_url} name={attachment.name} onClose={() => setVideoOpen(false)} />
+        <VideoLightbox src={attachment.view_url} name={attachment.name} onClose={() => { setVideoOpen(false); }} />
       )}
 
       {/* PDF preview overlay — use proxy view_url */}
       {pdfOpen && isPdf && attachment.view_url && (
-        <PdfLightbox src={attachment.view_url} name={attachment.name} onClose={() => setPdfOpen(false)} />
+        <PdfLightbox src={attachment.view_url} name={attachment.name} onClose={() => { setPdfOpen(false); }} />
       )}
 
       {/* Image preview overlay — use thumbnail/view proxy url */}
       {imageOpen && isImage && imagePreviewSrc && (
-        <ImageLightbox src={imagePreviewSrc} name={attachment.name} onClose={() => setImageOpen(false)} />
+        <ImageLightbox src={imagePreviewSrc} name={attachment.name} onClose={() => { setImageOpen(false); }} />
       )}
     </div>
   );

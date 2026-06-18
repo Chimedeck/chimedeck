@@ -174,17 +174,17 @@ export function useTimelineDrag({
   );
 
   const handleMoveStart = useCallback(
-    (cardId: string, e: MouseEvent) => startDrag('move', cardId, e),
+    (cardId: string, e: MouseEvent) => { startDrag('move', cardId, e); },
     [startDrag],
   );
 
   const handleResizeLeftStart = useCallback(
-    (cardId: string, e: MouseEvent) => startDrag('resize-left', cardId, e),
+    (cardId: string, e: MouseEvent) => { startDrag('resize-left', cardId, e); },
     [startDrag],
   );
 
   const handleResizeRightStart = useCallback(
-    (cardId: string, e: MouseEvent) => startDrag('resize-right', cardId, e),
+    (cardId: string, e: MouseEvent) => { startDrag('resize-right', cardId, e); },
     [startDrag],
   );
 

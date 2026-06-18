@@ -63,7 +63,7 @@ const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, o
           <button
             type="button"
             className="text-xs text-muted hover:text-base flex items-center gap-1 transition-colors"
-            onClick={() => setPickerOpen((v) => !v)}
+            onClick={() => { setPickerOpen((v) => !v); }}
             aria-haspopup="true"
             aria-expanded={pickerOpen}
           >
@@ -74,7 +74,7 @@ const CardMembers = ({ members, boardMembers, cardId, currentUserId, onAssign, o
             <>
               <div
                 className="fixed inset-0 z-10"
-                onClick={() => setPickerOpen(false)}
+                onClick={() => { setPickerOpen(false); }}
                 aria-hidden="true"
               />
               <div className="absolute left-0 top-6 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-2 space-y-1">

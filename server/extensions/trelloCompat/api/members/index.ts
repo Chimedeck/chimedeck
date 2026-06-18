@@ -131,7 +131,7 @@ async function listBoardMemberships(boardId: string): Promise<Array<{
       ? 'admin'
       : row.role === 'VIEWER'
         ? 'observer'
-        : 'normal') as 'admin' | 'normal' | 'observer',
+        : 'normal'),
     unconfirmed: false as const,
     deactivated: false as const,
   }));

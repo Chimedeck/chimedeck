@@ -31,8 +31,8 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     if (status === 'success') {
       // Slight delay so user sees the success message before redirect
-      const timer = setTimeout(() => navigate('/workspaces', { replace: true }), 1500);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => { navigate('/workspaces', { replace: true }); }, 1500);
+      return () => { clearTimeout(timer); };
     }
   }, [status, navigate]);
 

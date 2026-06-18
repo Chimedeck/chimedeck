@@ -18,7 +18,7 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) =>
       Object.entries(criteria).every(([key, value]) => row[key] === value),
     );
@@ -29,12 +29,12 @@ class QueryBuilder {
     return this.executeSync()[0];
   }
 
-  insert(payload: Row | Row[]): QueryBuilder {
+  insert(payload: Row | Row[]): this {
     this._insert = payload;
     return this;
   }
 
-  onConflict(_cols: string | string[]): QueryBuilder {
+  onConflict(_cols: string | string[]): this {
     return this;
   }
 
@@ -43,7 +43,7 @@ class QueryBuilder {
     if (this._insert !== null) {
       const rows = Array.isArray(this._insert) ? this._insert : [this._insert];
       for (const row of rows) {
-        const table = this.store[this.tableName] as Row[];
+        const table = this.store[this.tableName];
         const conflict = this.filters.some((f) => table.some((r) => f(r)));
         if (!conflict) table.push({ ...row });
       }
@@ -64,14 +64,14 @@ class QueryBuilder {
     // Handle insert with no chained method
     if (this._insert !== null && !this._onConflictIgnore) {
       const rows = Array.isArray(this._insert) ? this._insert : [this._insert];
-      for (const row of rows) (this.store[this.tableName] as Row[]).push({ ...row });
+      for (const row of rows) (this.store[this.tableName]).push({ ...row });
       this._insert = null;
     }
     return Promise.resolve(this.executeSync()).then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName] as Row[]).filter((row) =>
+    const rows = (this.store[this.tableName]).filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
     return clone ? rows.map((row) => ({ ...row })) : rows;

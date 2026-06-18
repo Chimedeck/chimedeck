@@ -78,7 +78,7 @@ describe('board creation limit enforcement', () => {
   describe('402 response body shape', () => {
     test('blocked response has correct error envelope', async () => {
       const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 5);
-      const body = await res!.json() as any;
+      const body = await res!.json();
       expect(body.error.code).toBe('limit-reached');
       expect(body.error.data.limit).toBe('maxBoardsPerWorkspace');
       expect(body.error.data.currentUsage).toBe(5);

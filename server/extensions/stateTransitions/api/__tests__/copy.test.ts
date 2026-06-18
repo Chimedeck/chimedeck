@@ -16,18 +16,18 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
 
-  orderBy(column: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+  orderBy(column: string, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderedBy = column;
     this.orderDirection = direction;
     return this;
   }
 
-  select(...columns: string[]): QueryBuilder {
+  select(...columns: string[]): this {
     this.selectedColumns = columns.length > 0 ? columns : null;
     return this;
   }
@@ -41,7 +41,7 @@ class QueryBuilder {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => ({ ...row }));
     for (const row of inserted) {
-      (this.store[this.tableName] as Row[]).push(row);
+      (this.store[this.tableName]).push(row);
     }
     return {
       returning: async () => inserted.map((row) => ({ ...row })),
@@ -65,7 +65,7 @@ class QueryBuilder {
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName] as Row[]).filter((row) =>
+    let rows = (this.store[this.tableName]).filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
 

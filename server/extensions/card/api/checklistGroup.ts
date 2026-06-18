@@ -80,7 +80,7 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
     // title is optional; default provided below
   }
 
-  const title = (body.title as string | undefined)?.trim() || 'Checklist';
+  const title = (body.title)?.trim() || 'Checklist';
 
   const lastChecklist = await db('checklists')
     .where({ card_id: cardId })

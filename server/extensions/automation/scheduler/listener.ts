@@ -59,7 +59,7 @@ function scheduleReconnect(): void {
   if (reconnectTimer !== null) return;
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
-    connect().catch(() => scheduleReconnect());
+    connect().catch(() => { scheduleReconnect(); });
   }, 5_000);
 }
 

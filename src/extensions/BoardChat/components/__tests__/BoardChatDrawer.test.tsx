@@ -106,8 +106,8 @@ describe('BoardChatDrawer', () => {
       expect(screen.getByText('Guests are not allowed to send messages on this board.')).toBeInTheDocument();
     });
 
-    const textarea = screen.getByPlaceholderText('Guest access does not allow sending messages.') as HTMLTextAreaElement;
-    const sendButton = screen.getByText('Send') as HTMLButtonElement;
+    const textarea = screen.getByPlaceholderText('Guest access does not allow sending messages.');
+    const sendButton = screen.getByText('Send');
     expect(textarea.disabled).toBe(true);
     expect(sendButton.disabled).toBe(true);
   });
@@ -125,8 +125,8 @@ describe('BoardChatDrawer', () => {
       expect(screen.getByText('Only board admins and owners can change guest chat permissions.')).toBeInTheDocument();
     });
 
-    const viewButton = screen.getByRole('button', { name: 'ALLOW GUEST TO VIEW' }) as HTMLButtonElement;
-    const useButton = screen.getByRole('button', { name: 'ALLOW GUEST TO USE' }) as HTMLButtonElement;
+    const viewButton = screen.getByRole('button', { name: 'ALLOW GUEST TO VIEW' });
+    const useButton = screen.getByRole('button', { name: 'ALLOW GUEST TO USE' });
     expect(viewButton.disabled).toBe(true);
     expect(useButton.disabled).toBe(true);
   });

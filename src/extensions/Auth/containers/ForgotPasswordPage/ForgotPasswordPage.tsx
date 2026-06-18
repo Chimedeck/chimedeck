@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   placeholder={translations['forgotPassword.emailPlaceholder']}
                   aria-describedby={emailError ? 'forgot-email-error' : undefined}

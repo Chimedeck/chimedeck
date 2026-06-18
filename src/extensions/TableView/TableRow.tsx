@@ -49,7 +49,7 @@ const TableRow = ({ row, onCardClick }: Props) => {
         <Button
           variant="ghost"
           className="text-sm font-semibold text-base hover:text-primary justify-start underline-offset-2 hover:underline px-0 py-0"
-          onClick={() => onCardClick(row.id)}
+          onClick={() => { onCardClick(row.id); }}
           aria-label={`${translations['TableView.ariaOpenCard']} ${row.title}`}
           data-testid={`table-card-title-${row.id}`}
         >

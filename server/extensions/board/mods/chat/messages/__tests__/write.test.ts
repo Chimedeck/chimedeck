@@ -13,7 +13,7 @@ class QueryBuilder {
 
   constructor(private readonly store: Store, private readonly tableName: keyof Store) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
@@ -22,7 +22,7 @@ class QueryBuilder {
     return this.rows()[0];
   }
 
-  insert(payload: Row | Row[]): QueryBuilder {
+  insert(payload: Row | Row[]): this {
     this._insert = payload;
     return this;
   }
@@ -40,7 +40,7 @@ class QueryBuilder {
     if (this._insert !== null) {
       const rows = Array.isArray(this._insert) ? this._insert : [this._insert];
       for (const row of rows) {
-        (this.store[this.tableName] as Row[]).push({ ...row });
+        (this.store[this.tableName]).push({ ...row });
       }
       this._insert = null;
     }
@@ -48,7 +48,7 @@ class QueryBuilder {
   }
 
   private rows(clone = true): Row[] {
-    const filtered = (this.store[this.tableName] as Row[]).filter((row) =>
+    const filtered = (this.store[this.tableName]).filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
     return clone ? filtered.map((row) => ({ ...row })) : filtered;

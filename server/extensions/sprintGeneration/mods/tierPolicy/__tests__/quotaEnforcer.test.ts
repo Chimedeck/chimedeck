@@ -22,9 +22,9 @@ quotaEnforcerDeps.resolveTierPolicy = (input: { tier: string; sprintCount: numbe
   const effectiveCount =
     quota.maxSprints === 'unlimited'
       ? input.sprintCount
-      : Math.min(input.sprintCount, quota.maxSprints as number);
+      : Math.min(input.sprintCount, quota.maxSprints);
   const truncated: Array<{ sprintNumber: number; reason: string }> = [];
-  if (quota.maxSprints !== 'unlimited' && input.sprintCount > (quota.maxSprints as number)) {
+  if (quota.maxSprints !== 'unlimited' && input.sprintCount > (quota.maxSprints)) {
     for (let i = effectiveCount + 1; i <= input.sprintCount; i++) {
       truncated.push({
         sprintNumber: i,
