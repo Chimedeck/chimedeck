@@ -41,8 +41,7 @@
   "BoardSettings.githubProjectUrlInvalid": "Please enter a valid GitHub project or repository URL",
   "BoardSettings.githubProjectUrlSaveError": "Failed to save GitHub URL",
   "BoardSettings.githubProjectUrlLoadError": "Failed to load GitHub URL",
-  "BoardSettings.githubProjectUrlCleared": "GitHub URL cleared"
-},
+  "BoardSettings.githubProjectUrlCleared": "GitHub URL cleared",
 "BoardCanvas.listsAriaLabel": "Board lists",
 "BoardListPage.title": "Boards",
 "BoardListPage.filterPlaceholder": "Filter boards…",
