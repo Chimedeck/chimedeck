@@ -103,7 +103,10 @@ export async function searchCards(input: SearchCardsInput): Promise<BoardChatAss
   const resultsText =
     cards.length > 0
       ? cards
-          .map((c) => `- "${c.title}" (card ID: ${c.id}, list ID: ${c.listId ?? 'unknown'})`)
+          .map(
+            (c) =>
+              `- "${c.title}" (card ID: ${c.id}, short ID: ${c.short_id ?? 'N/A'}, list ID: ${c.listId ?? 'unknown'})`
+          )
           .join('\n')
       : 'No matching cards found on this board.';
 

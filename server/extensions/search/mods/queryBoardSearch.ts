@@ -11,6 +11,7 @@ const MAX_LIMIT = 50;
 export interface BoardSearchResult {
   type: 'card' | 'list';
   id: string;
+  short_id?: string;
   title: string;
   listId?: string;
   rank: number;
@@ -63,7 +64,7 @@ export async function queryBoardSearch({
     // Sort by updated_at descending so the most recent cards appear first.
     const cards = await db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
-      .select('cards.id', 'cards.title', 'cards.list_id')
+      .select('cards.id', 'cards.short_id', 'cards.title', 'cards.list_id')
       .where('lists.board_id', boardId)
       .where('cards.archived', false)
       .orderBy('cards.updated_at', 'desc')
@@ -73,6 +74,7 @@ export async function queryBoardSearch({
       results.push({
         type: 'card',
         id: row.id,
+        short_id: row.short_id,
         title: row.title,
         listId: row.list_id,
         rank: 0,
@@ -90,7 +92,7 @@ export async function queryBoardSearch({
     .join('lists', 'cards.list_id', 'lists.id')
     .select(
       db.raw(
-        `cards.id, cards.title, cards.list_id, 'card' as type,
+        `cards.id, cards.short_id, cards.title, cards.list_id, 'card' as type,
         ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
         [tsquery]
       )
@@ -105,6 +107,7 @@ export async function queryBoardSearch({
     results.push({
       type: 'card',
       id: row.id,
+      short_id: row.short_id,
       title: row.title,
       listId: row.list_id,
       rank: Number(row.rank),
