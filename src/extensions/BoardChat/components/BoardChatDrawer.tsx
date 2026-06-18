@@ -14,6 +14,8 @@ import { socket } from '~/extensions/Realtime/client/socket';
 import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
 import Button from '~/common/components/Button';
 import IconButton from '~/common/components/IconButton';
+import { Marked } from 'marked';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
 import {
   createBoardChatMessage,
   requestBoardChatAssist,
@@ -55,6 +57,35 @@ const normalizePermissions = (
 
   return { guest_can_view, guest_can_use };
 };
+
+// [why] Use a local marked instance so global extensions configured elsewhere
+// cannot break chat rendering in this component.
+const chatMarked = new Marked({ breaks: true, gfm: true });
+
+/** Add target="_blank" rel="noopener noreferrer" to external links. */
+function addLinkTargetBlank(html: string): string {
+  return html.replace(
+    /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
+    '<a target="_blank" rel="noopener noreferrer"'
+  );
+}
+
+/** Parse markdown text into safe HTML for rendering. */
+function renderMarkdown(text: string): string {
+  if (!text) return '';
+  let html: string;
+  try {
+    html = chatMarked.parse(text) as string;
+  } catch {
+    // [why] Fall back to escaped plain text so a parser error doesn't blank the message.
+    return text
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('\n', '<br>');
+  }
+  return sanitizeUserGeneratedHtml(addLinkTargetBlank(html));
+}
 
 const BoardChatDrawer = ({
   boardId,
@@ -670,9 +701,12 @@ const BoardChatDrawer = ({
                         <p className="text-xs text-muted">
                           {new Date(msg.createdAt).toLocaleTimeString()}
                         </p>
-                        <p className="text-sm text-base break-words mt-1 whitespace-pre-wrap">
-                          {msg.text}
-                        </p>
+                        <div
+                          className="text-sm text-base break-words mt-1 prose prose-sm max-w-none dark:prose-invert"
+                          // [why] Rendered markdown is sanitized first to strip scripts, event
+                          // handlers, and unsafe URLs before injecting into the DOM.
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
+                        />
                       </div>
                     </div>
                   </li>

@@ -16,6 +16,8 @@ import { socket } from '~/extensions/Realtime/client/socket';
 import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
 import Button from '~/common/components/Button';
 import IconButton from '~/common/components/IconButton';
+import { Marked } from 'marked';
+import { sanitizeUserGeneratedHtml } from '~/common/utils/sanitizeUserGeneratedHtml';
 import {
   createCardChatMessage,
   pauseCardChatSession,
@@ -39,6 +41,35 @@ interface Props {
   session: CardChatSession;
   onClose: () => void;
   onDescriptionSave?: (description: string) => void;
+}
+
+// [why] Use a local marked instance so global extensions configured elsewhere
+// cannot break chat rendering in this component.
+const chatMarked = new Marked({ breaks: true, gfm: true });
+
+/** Add target="_blank" rel="noopener noreferrer" to external links. */
+function addLinkTargetBlank(html: string): string {
+  return html.replace(
+    /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
+    '<a target="_blank" rel="noopener noreferrer"'
+  );
+}
+
+/** Parse markdown text into safe HTML for rendering. */
+function renderMarkdown(text: string): string {
+  if (!text) return '';
+  let html: string;
+  try {
+    html = chatMarked.parse(text) as string;
+  } catch {
+    // [why] Fall back to escaped plain text so a parser error doesn't blank the message.
+    return text
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('\n', '<br>');
+  }
+  return sanitizeUserGeneratedHtml(addLinkTargetBlank(html));
 }
 
 const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }: Props) => {
@@ -582,11 +613,19 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
               <div
                 className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
                   message.role === 'assistant' || message.role === 'system'
-                    ? 'bg-bg-overlay text-base'
+                    ? 'bg-bg-overlay text-base prose prose-sm max-w-none dark:prose-invert'
                     : 'bg-blue-600 text-white'
                 }`}
               >
-                <span className="whitespace-pre-wrap break-words">{message.content}</span>
+                {message.role === 'assistant' || message.role === 'system' ? (
+                  <div
+                    // [why] Rendered markdown is sanitized first to strip scripts, event
+                    // handlers, and unsafe URLs before injecting into the DOM.
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content) }}
+                  />
+                ) : (
+                  <span className="whitespace-pre-wrap break-words">{message.content}</span>
+                )}
               </div>
               {(message.authorName || message.role) && (
                 <span className="mt-1 text-[10px] text-muted px-1">
