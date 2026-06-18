@@ -11,12 +11,17 @@ export default function CodeSnippet({ code, language = 'tsx' }: CodeSnippetProps
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000);
-    }).catch(() => {
-      // clipboard unavailable (e.g. HTTP context) — silently ignore
-    });
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => {
+          setCopied(false);
+        }, 2000);
+      })
+      .catch(() => {
+        // clipboard unavailable (e.g. HTTP context) — silently ignore
+      });
   }, [code]);
 
   return (

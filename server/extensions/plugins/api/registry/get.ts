@@ -38,21 +38,21 @@ export async function handleGetPlugin(req: Request, pluginId: string): Promise<R
       'is_public',
       'is_active',
       'created_at',
-      'updated_at',
+      'updated_at'
     )
     .first();
 
   if (!plugin) {
     return Response.json(
       { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (!admin && (!plugin.is_public || !plugin.is_active)) {
     return Response.json(
       { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

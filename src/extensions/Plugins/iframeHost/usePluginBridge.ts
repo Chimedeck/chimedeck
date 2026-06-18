@@ -74,7 +74,9 @@ interface UsePluginBridgeOptions {
   currentUserId?: string | null;
   onOpenModal?: (state: Omit<PluginModalState, 'open'>) => void;
   onCloseModal?: () => void;
-  onUpdateModal?: (update: Partial<Pick<PluginModalState, 'title' | 'fullscreen' | 'accentColor'>>) => void;
+  onUpdateModal?: (
+    update: Partial<Pick<PluginModalState, 'title' | 'fullscreen' | 'accentColor'>>
+  ) => void;
   onOpenPopup?: (state: Omit<PluginPopupState, 'open'>) => void;
   onClosePopup?: () => void;
   onSizeTo?: (height: number) => void;
@@ -148,19 +150,22 @@ export function usePluginBridge({
         }
       });
     },
-    [plugins],
+    [plugins]
   );
 
   // Send a message to a specific plugin iframe
-  const sendToPlugin = useCallback((pluginId: string, message: SdkMessage) => {
-    const iframeId = `plugin-iframe-${pluginId}`;
-    const iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
-    if (!iframe?.contentWindow) return;
+  const sendToPlugin = useCallback(
+    (pluginId: string, message: SdkMessage) => {
+      const iframeId = `plugin-iframe-${pluginId}`;
+      const iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
+      if (!iframe?.contentWindow) return;
 
-    const allowedOrigins = getAllowedOrigins();
-    const targetOrigin = allowedOrigins.get(pluginId) ?? '*';
-    iframe.contentWindow.postMessage(message, targetOrigin);
-  }, [getAllowedOrigins]);
+      const allowedOrigins = getAllowedOrigins();
+      const targetOrigin = allowedOrigins.get(pluginId) ?? '*';
+      iframe.contentWindow.postMessage(message, targetOrigin);
+    },
+    [getAllowedOrigins]
+  );
 
   // Fetch (or return cached) a short-lived JWT for a plugin → used as Bearer token
   // when proxying DATA_GET / DATA_SET to the server plugin-data API.
@@ -173,9 +178,11 @@ export function usePluginBridge({
       if (cached && cached.expiresAt > Date.now()) return cached.token;
 
       const resp = await apiClient.get<{ data: { token: string; expiresIn: number } }>(
-        `/boards/${boardId}/plugins/${pluginId}/token`,
+        `/boards/${boardId}/plugins/${pluginId}/token`
       );
-      const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
+      const { token, expiresIn } = (
+        resp as unknown as { data: { token: string; expiresIn: number } }
+      ).data;
       // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
       pluginTokenCacheRef.current.set(cacheKey, {
         token,
@@ -183,7 +190,7 @@ export function usePluginBridge({
       });
       return token;
     },
-    [boardId],
+    [boardId]
   );
 
   // Reply directly to the window that sent the SDK message (e.g. a modal iframe)
@@ -200,15 +207,17 @@ export function usePluginBridge({
         sendToPlugin(pluginId, message);
       }
     },
-    [getAllowedOrigins, sendToPlugin],
+    [getAllowedOrigins, sendToPlugin]
   );
 
   // Handle DATA_GET — proxy request to server plugin-data API
   const handleDataGet = useCallback(
     async (
       bp: BoardPlugin,
-      msg: SdkMessage & { payload: { scope: string; visibility: string; key: string; resourceId?: string } },
-      source: MessageEventSource | null,
+      msg: SdkMessage & {
+        payload: { scope: string; visibility: string; key: string; resourceId?: string };
+      },
+      source: MessageEventSource | null
     ) => {
       const { scope, visibility, key, resourceId } = msg.payload;
       let result: unknown = null;
@@ -225,14 +234,11 @@ export function usePluginBridge({
         if (visibility === 'private' && currentUserId) {
           params.set('userId', currentUserId);
         }
-        const resp = await apiClient.get<{ data: unknown }>(
-          `/plugins/data?${params.toString()}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const resp = await apiClient.get<{ data: unknown }>(`/plugins/data?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
         // [why] Server returns { data: <value> } — read .data directly (not .data.value).
         result = (resp as unknown as { data: unknown }).data ?? null;
       } catch {
@@ -241,33 +247,45 @@ export function usePluginBridge({
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource]
   );
 
   // Handle DATA_SET — proxy request to server plugin-data API
   const handleDataSet = useCallback(
     async (
       bp: BoardPlugin,
-      msg: SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
-      source: MessageEventSource | null,
+      msg: SdkMessage & {
+        payload: {
+          scope: string;
+          visibility: string;
+          key: string;
+          value: unknown;
+          resourceId?: string;
+        };
+      },
+      source: MessageEventSource | null
     ) => {
       const { scope, visibility, key, value, resourceId } = msg.payload;
       try {
         const token = await getPluginToken(bp.plugin.id);
 
-        await apiClient.put('/plugins/data', {
-          scope,
-          key,
-          value,
-          visibility,
-          pluginId: bp.plugin.id,
-          resourceId,
-          ...(visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        await apiClient.put(
+          '/plugins/data',
+          {
+            scope,
+            key,
+            value,
+            visibility,
+            pluginId: bp.plugin.id,
+            resourceId,
+            ...(visibility === 'private' && currentUserId ? { userId: currentUserId } : {}),
           },
-        });
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         const response: SdkResponse = { jhSdk: true, id: msg.id, result: null };
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       } catch (err) {
@@ -279,7 +297,7 @@ export function usePluginBridge({
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource]
   );
 
   // Handle DATA_GET_BATCH — proxy multiple DATA_GET requests in a single server round-trip.
@@ -301,14 +319,16 @@ export function usePluginBridge({
           }>;
         };
       },
-      source: MessageEventSource | null,
+      source: MessageEventSource | null
     ) => {
       const { items } = msg.payload;
       let results: Array<{ subId: string; result: unknown; error?: string }>;
       try {
         const token = await getPluginToken(bp.plugin.id);
 
-        const resp = await apiClient.post<{ data: Array<{ subId: string; value: unknown; error?: string }> }>(
+        const resp = await apiClient.post<{
+          data: Array<{ subId: string; value: unknown; error?: string }>;
+        }>(
           '/plugins/data/batch',
           {
             items: items.map((item) => ({
@@ -325,11 +345,13 @@ export function usePluginBridge({
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          },
+          }
         );
 
         // Map server response back to subId-keyed results
-        const serverResults = (resp as unknown as { data: Array<{ subId: string; value: unknown; error?: string }> }).data;
+        const serverResults = (
+          resp as unknown as { data: Array<{ subId: string; value: unknown; error?: string }> }
+        ).data;
         results = serverResults.map((r) => ({
           subId: r.subId,
           result: r.value ?? null,
@@ -350,25 +372,33 @@ export function usePluginBridge({
       };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [currentUserId, getPluginToken, replyToSource],
+    [currentUserId, getPluginToken, replyToSource]
   );
 
   // Extract only the requested fields from a context object.
   // If fields is empty/undefined, return the entire object.
   const extractContextFields = useCallback(
-    (obj: Record<string, unknown> | null | undefined, fields?: string[]): Record<string, unknown> | null => {
+    (
+      obj: Record<string, unknown> | null | undefined,
+      fields?: string[]
+    ): Record<string, unknown> | null => {
       if (!obj) return null;
       if (!fields || fields.length === 0) return obj;
       return Object.fromEntries(fields.filter((f) => f in obj).map((f) => [f, obj[f]]));
     },
-    [],
+    []
   );
 
   // Handle CTX_* queries — return the relevant portion of the last CAPABILITY_INVOKE context.
   // WHY: reply to `source` (the actual sender window) rather than the named connector iframe
   // because modal/popup iframes share the plugin origin but are separate windows.
   const handleCtxQuery = useCallback(
-    (bp: BoardPlugin, msg: SdkMessage, contextKey: keyof CapabilityContext, source: MessageEventSource | null) => {
+    (
+      bp: BoardPlugin,
+      msg: SdkMessage,
+      contextKey: keyof CapabilityContext,
+      source: MessageEventSource | null
+    ) => {
       const payload = msg.payload as { fields?: string[] } | undefined;
       const ctx = pluginContextRef.current.get(bp.plugin.id);
       const raw = ctx?.[contextKey] as Record<string, unknown> | undefined;
@@ -376,7 +406,7 @@ export function usePluginBridge({
       const response: SdkResponse = { jhSdk: true, id: msg.id, result };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [extractContextFields, replyToSource],
+    [extractContextFields, replyToSource]
   );
 
   // Fetch (or return cached) a short-lived JWT for Trello-compatible API access.
@@ -385,7 +415,7 @@ export function usePluginBridge({
     async (
       pluginId: string,
       scope: string = 'read',
-      expirationSeconds: number = 3600,
+      expirationSeconds: number = 3600
     ): Promise<string | null> => {
       const cacheKey = `${boardId}:${pluginId}:${scope}`;
       const cached = trelloTokenCacheRef.current.get(cacheKey);
@@ -394,9 +424,11 @@ export function usePluginBridge({
       try {
         const resp = await apiClient.post<{ data: { token: string; expiresIn: number } }>(
           `/boards/${boardId}/plugins/${pluginId}/trello-token`,
-          { scope, expirationSeconds },
+          { scope, expirationSeconds }
         );
-        const { token, expiresIn } = (resp as unknown as { data: { token: string; expiresIn: number } }).data;
+        const { token, expiresIn } = (
+          resp as unknown as { data: { token: string; expiresIn: number } }
+        ).data;
         // Cache with a 5-minute early-expiry buffer to avoid clock-skew rejections.
         trelloTokenCacheRef.current.set(cacheKey, {
           token,
@@ -407,7 +439,7 @@ export function usePluginBridge({
         return null;
       }
     },
-    [boardId],
+    [boardId]
   );
 
   // Handle API_AUTHORIZE — request Trello API authorization and cache the token.
@@ -415,7 +447,7 @@ export function usePluginBridge({
     async (
       bp: BoardPlugin,
       msg: SdkMessage & { payload: { scope?: string; expiration?: string } },
-      source: MessageEventSource | null,
+      source: MessageEventSource | null
     ) => {
       const { scope = 'read', expiration = '1hour' } = msg.payload;
       // Map expiration string to seconds
@@ -426,21 +458,17 @@ export function usePluginBridge({
       if (!token) response.error = 'Failed to authorize Trello API access';
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [getTrelloToken, replyToSource],
+    [getTrelloToken, replyToSource]
   );
 
   // Handle API_GET_TOKEN — return cached Trello API token.
   const handleApiGetToken = useCallback(
-    async (
-      bp: BoardPlugin,
-      msg: SdkMessage,
-      source: MessageEventSource | null,
-    ) => {
+    async (bp: BoardPlugin, msg: SdkMessage, source: MessageEventSource | null) => {
       const token = await getTrelloToken(bp.plugin.id, 'read', 3600);
       const response: SdkResponse = { jhSdk: true, id: msg.id, result: token ?? null };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [getTrelloToken, replyToSource],
+    [getTrelloToken, replyToSource]
   );
 
   // Handle API_REQUEST — make an HTTP request using Trello API token.
@@ -448,7 +476,7 @@ export function usePluginBridge({
     async (
       bp: BoardPlugin,
       msg: SdkMessage & { payload: { path: string; options?: RequestInit } },
-      source: MessageEventSource | null,
+      source: MessageEventSource | null
     ) => {
       try {
         const { path, options = {} } = msg.payload;
@@ -500,7 +528,7 @@ export function usePluginBridge({
         replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
       }
     },
-    [getTrelloToken, replyToSource],
+    [getTrelloToken, replyToSource]
   );
 
   // Handle RESOLVE_CAPABILITY_RESPONSE — plugin answered a capability request
@@ -516,7 +544,7 @@ export function usePluginBridge({
         pendingCapabilityRef.current.delete(requestId);
       }
     },
-    [],
+    []
   );
 
   // Compute effective allowed domains for a plugin.
@@ -533,7 +561,7 @@ export function usePluginBridge({
       // array → restrict to this subset
       return allowed;
     },
-    [plugins],
+    [plugins]
   );
 
   // Check whether a URL is permitted by the plugin's effective domain list.
@@ -549,7 +577,7 @@ export function usePluginBridge({
         return false; // malformed URL → block
       }
     },
-    [getEffectiveDomains],
+    [getEffectiveDomains]
   );
 
   // Send a domain-not-allowed error response back to the plugin
@@ -562,7 +590,7 @@ export function usePluginBridge({
       };
       replyToSource(source, bp.plugin.id, response as unknown as SdkMessage);
     },
-    [replyToSource],
+    [replyToSource]
   );
 
   // Global message listener
@@ -592,15 +620,25 @@ export function usePluginBridge({
         case 'DATA_GET':
           void handleDataGet(
             bp,
-            data as SdkMessage & { payload: { scope: string; visibility: string; key: string; resourceId?: string } },
-            event.source,
+            data as SdkMessage & {
+              payload: { scope: string; visibility: string; key: string; resourceId?: string };
+            },
+            event.source
           );
           break;
         case 'DATA_SET':
           void handleDataSet(
             bp,
-            data as SdkMessage & { payload: { scope: string; visibility: string; key: string; value: unknown; resourceId?: string } },
-            event.source,
+            data as SdkMessage & {
+              payload: {
+                scope: string;
+                visibility: string;
+                key: string;
+                value: unknown;
+                resourceId?: string;
+              };
+            },
+            event.source
           );
           break;
         case 'DATA_GET_BATCH':
@@ -618,33 +656,29 @@ export function usePluginBridge({
                 }>;
               };
             },
-            event.source,
+            event.source
           );
           break;
         case 'API_AUTHORIZE':
           void handleApiAuthorize(
             bp,
             data as SdkMessage & { payload: { scope?: string; expiration?: string } },
-            event.source,
+            event.source
           );
           break;
         case 'API_GET_TOKEN':
-          void handleApiGetToken(
-            bp,
-            data,
-            event.source,
-          );
+          void handleApiGetToken(bp, data, event.source);
           break;
         case 'API_REQUEST':
           void handleApiRequest(
             bp,
             data as SdkMessage & { payload: { path: string; options?: RequestInit } },
-            event.source,
+            event.source
           );
           break;
         case 'RESOLVE_CAPABILITY_RESPONSE':
           handleCapabilityResponse(
-            data as SdkMessage & { payload: { requestId: string; result: unknown } },
+            data as SdkMessage & { payload: { requestId: string; result: unknown } }
           );
           break;
         case 'CTX_CARD':
@@ -749,8 +783,28 @@ export function usePluginBridge({
     };
 
     window.addEventListener('message', handler);
-    return () => { window.removeEventListener('message', handler); };
-  }, [findPluginByOrigin, handleDataGet, handleDataGetBatch, handleDataSet, handleCapabilityResponse, handleCtxQuery, handleApiAuthorize, handleApiGetToken, handleApiRequest, isDomainAllowed, sendDomainError, onOpenModal, onCloseModal, onUpdateModal, onOpenPopup, onClosePopup, onSizeTo]);
+    return () => {
+      window.removeEventListener('message', handler);
+    };
+  }, [
+    findPluginByOrigin,
+    handleDataGet,
+    handleDataGetBatch,
+    handleDataSet,
+    handleCapabilityResponse,
+    handleCtxQuery,
+    handleApiAuthorize,
+    handleApiGetToken,
+    handleApiRequest,
+    isDomainAllowed,
+    sendDomainError,
+    onOpenModal,
+    onCloseModal,
+    onUpdateModal,
+    onOpenPopup,
+    onClosePopup,
+    onSizeTo,
+  ]);
 
   // Resolve a capability across all active plugins that have registered it
   const resolve = useCallback(
@@ -826,7 +880,7 @@ export function usePluginBridge({
         retry();
       });
     },
-    [plugins, sendToPlugin],
+    [plugins, sendToPlugin]
   );
 
   // WHY: memoize the returned object so its reference is stable across renders.

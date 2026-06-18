@@ -16,27 +16,39 @@ import { resolveAttachmentId } from '../../../common/ids/resolveEntityId';
 
 export async function attachmentRouter(req: Request, pathname: string): Promise<Response | null> {
   // POST /api/v1/cards/:id/attachments/multipart/start
-  const multipartStartMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/start$/);
+  const multipartStartMatch = pathname.match(
+    /^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/start$/
+  );
   if (multipartStartMatch && req.method === 'POST') {
     return handleMultipartStart(req, multipartStartMatch[1] as string);
   }
 
   // POST /api/v1/cards/:id/attachments/multipart/part-url
-  const multipartPartUrlMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/part-url$/);
+  const multipartPartUrlMatch = pathname.match(
+    /^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/part-url$/
+  );
   if (multipartPartUrlMatch && req.method === 'POST') {
     return handleMultipartPartUrl(req, multipartPartUrlMatch[1] as string);
   }
 
   // POST /api/v1/cards/:id/attachments/multipart/complete
-  const multipartCompleteMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/complete$/);
+  const multipartCompleteMatch = pathname.match(
+    /^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/complete$/
+  );
   if (multipartCompleteMatch && req.method === 'POST') {
     return handleMultipartComplete(req, multipartCompleteMatch[1] as string);
   }
 
   // DELETE /api/v1/cards/:id/attachments/multipart/:uploadId
-  const multipartAbortMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/([^/]+)$/);
+  const multipartAbortMatch = pathname.match(
+    /^\/api\/v1\/cards\/([^/]+)\/attachments\/multipart\/([^/]+)$/
+  );
   if (multipartAbortMatch && req.method === 'DELETE') {
-    return handleMultipartAbort(req, multipartAbortMatch[1] as string, multipartAbortMatch[2] as string);
+    return handleMultipartAbort(
+      req,
+      multipartAbortMatch[1] as string,
+      multipartAbortMatch[2] as string
+    );
   }
 
   // POST /api/v1/cards/:id/attachments/upload-url
@@ -68,7 +80,10 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   if (viewMatch && req.method === 'GET') {
     const attachmentId = await resolveAttachmentId(viewMatch[1] as string);
     if (!attachmentId) {
-      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+      return Response.json(
+        { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+        { status: 404 }
+      );
     }
     return handleViewAttachment(req, attachmentId);
   }
@@ -78,7 +93,10 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   if (thumbnailMatch && req.method === 'GET') {
     const attachmentId = await resolveAttachmentId(thumbnailMatch[1] as string);
     if (!attachmentId) {
-      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+      return Response.json(
+        { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+        { status: 404 }
+      );
     }
     return handleThumbnailAttachment(req, attachmentId);
   }
@@ -88,7 +106,10 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   if (patchMatch && req.method === 'PATCH') {
     const attachmentId = await resolveAttachmentId(patchMatch[1] as string);
     if (!attachmentId) {
-      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+      return Response.json(
+        { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+        { status: 404 }
+      );
     }
     return handlePatchAttachment(req, attachmentId);
   }
@@ -99,7 +120,10 @@ export async function attachmentRouter(req: Request, pathname: string): Promise<
   if (deleteMatch && req.method === 'DELETE') {
     const attachmentId = await resolveAttachmentId(deleteMatch[1] as string);
     if (!attachmentId) {
-      return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
+      return Response.json(
+        { name: 'attachment-not-found', data: { message: 'Attachment not found' } },
+        { status: 404 }
+      );
     }
     return handleDeleteAttachment(req, attachmentId);
   }

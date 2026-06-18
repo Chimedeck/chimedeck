@@ -13,7 +13,10 @@ import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
 
-export async function handleDeleteAttachment(req: Request, attachmentId: string): Promise<Response> {
+export async function handleDeleteAttachment(
+  req: Request,
+  attachmentId: string
+): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -21,7 +24,7 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   if (!attachment) {
     return Response.json(
       { error: { code: 'attachment-not-found', message: 'Attachment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -29,7 +32,10 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -42,15 +48,20 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
 
   if (!isOwner && !isAdmin) {
     return Response.json(
-      { error: { code: 'attachment-not-owner', message: 'Only the uploader or an ADMIN may delete this attachment' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'attachment-not-owner',
+          message: 'Only the uploader or an ADMIN may delete this attachment',
+        },
+      },
+      { status: 403 }
     );
   }
 
   // Delete S3 objects for FILE attachments (best-effort; continue even on failure)
   if (attachment.type === 'FILE') {
     const keysToDelete = [attachment.s3_key, attachment.thumbnail_key].filter(
-      (key): key is string => typeof key === 'string' && key.length > 0,
+      (key): key is string => typeof key === 'string' && key.length > 0
     );
 
     for (const s3Key of keysToDelete) {
@@ -63,7 +74,9 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   }
 
   // Ensure card cover does not point to a removed attachment.
-  await db('cards').where({ cover_attachment_id: attachmentId }).update({ cover_attachment_id: null });
+  await db('cards')
+    .where({ cover_attachment_id: attachmentId })
+    .update({ cover_attachment_id: null });
 
   await db('attachments').where({ id: attachmentId }).delete();
 
@@ -87,7 +100,11 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_deleted', entity_id: attachment.card_id, payload: { attachmentId } }),
+      JSON.stringify({
+        type: 'attachment_deleted',
+        entity_id: attachment.card_id,
+        payload: { attachmentId },
+      })
     )
     .catch(() => {});
 

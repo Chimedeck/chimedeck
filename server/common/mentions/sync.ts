@@ -25,9 +25,9 @@ export async function syncMentions({
   mentionedByUserId: string;
 }): Promise<SyncResult> {
   // Fetch existing mentioned user IDs before overwrite
-  const existing = await trx('mentions')
+  const existing = (await trx('mentions')
     .where({ source_type: sourceType, source_id: sourceId })
-    .pluck('mentioned_user_id') as string[];
+    .pluck('mentioned_user_id')) as string[];
 
   const nicknames = extractMentions({ text });
   const resolvedUsers = await resolveNicknames({ nicknames, boardId });
@@ -44,7 +44,7 @@ export async function syncMentions({
         mentioned_user_id: userId,
         mentioned_by_user_id: mentionedByUserId,
         created_at: new Date().toISOString(),
-      })),
+      }))
     );
   }
 

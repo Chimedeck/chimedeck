@@ -27,20 +27,23 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   if (!body.uploadId || !body.key || typeof body.partNumber !== 'number') {
     return Response.json(
       { name: 'bad-request', data: { message: 'uploadId, key, and partNumber are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.partNumber < 1 || body.partNumber > 10000) {
     return Response.json(
       { name: 'invalid-part-number', data: { message: 'partNumber must be between 1 and 10000' } },
-      { status: 422 },
+      { status: 422 }
     );
   }
 
@@ -67,8 +70,11 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
     .first();
   if (!attachment) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'No pending attachment matches the provided key' } },
-      { status: 404 },
+      {
+        name: 'attachment-not-found',
+        data: { message: 'No pending attachment matches the provided key' },
+      },
+      { status: 404 }
     );
   }
 
@@ -84,9 +90,15 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
     partUrl = await getSignedUrl(s3Client, command, { expiresIn: PART_URL_TTL_SECONDS });
   } catch (err: unknown) {
     console.error('[multipart/part-url] S3 error:', err);
-    return Response.json({ name: 's3-error', data: { message: 'Failed to generate part URL' } }, { status: 502 });
+    return Response.json(
+      { name: 's3-error', data: { message: 'Failed to generate part URL' } },
+      { status: 502 }
+    );
   }
 
   // [why] Client expects `url`; keep `partUrl` for backward compatibility.
-  return Response.json({ data: { url: partUrl, partUrl, partNumber: body.partNumber } }, { status: 200 });
+  return Response.json(
+    { data: { url: partUrl, partUrl, partNumber: body.partNumber } },
+    { status: 200 }
+  );
 }

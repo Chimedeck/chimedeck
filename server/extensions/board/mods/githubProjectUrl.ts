@@ -37,7 +37,13 @@ const REPO_OWNER_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 
 function isValidRepoName(value: string): boolean {
   // GitHub: cannot start/end with '.', cannot be '..' or '.git'
-  if (!value || value === '..' || value === '.git' || value.startsWith('.') || value.endsWith('.')) {
+  if (
+    !value ||
+    value === '..' ||
+    value === '.git' ||
+    value.startsWith('.') ||
+    value.endsWith('.')
+  ) {
     return false;
   }
   return REPO_NAME_REGEX.test(value);
@@ -103,7 +109,8 @@ function parseReference(segments: string[]): GithubProjectReference | null {
 
 // [why] SSH clone URLs are not valid `URL()` inputs, so they get a dedicated parser.
 // Accepts: git@github.com:owner/repo(.git)?
-const SSH_REPO_REGEX = /^git@github\.com:([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]+?)(?:\.git)?$/;
+const SSH_REPO_REGEX =
+  /^git@github\.com:([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]+?)(?:\.git)?$/;
 
 function parseSshCloneUrl(value: string): GithubProjectReference | null {
   const match = SSH_REPO_REGEX.exec(value.trim());
@@ -139,9 +146,7 @@ export function normalizeGithubProjectUrl({
   value,
 }: {
   value: string;
-}):
-  | { ok: true; value: NormalizedGithubProjectUrl }
-  | { ok: false; message: string } {
+}): { ok: true; value: NormalizedGithubProjectUrl } | { ok: false; message: string } {
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     return { ok: false, message: 'github_project_url must be a non-empty string' };

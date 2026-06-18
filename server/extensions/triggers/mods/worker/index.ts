@@ -3,16 +3,10 @@
 
 import { evaluatePhaseTierEligibility } from '../tierGate/index';
 import { generateIdempotencyKey, isDuplicateRun } from '../idempotency/index';
-import {
-  createTriggerRun,
-  createSkippedTriggerRun,
-} from '../persistence/index';
+import { createTriggerRun, createSkippedTriggerRun } from '../persistence/index';
 import { runTrigger } from './dispatch';
 import { emitTriggerActivity } from '../activities/index';
-import type {
-  EnqueueTriggerInput,
-  EnqueueTriggerResult,
-} from '../../common/types';
+import type { EnqueueTriggerInput, EnqueueTriggerResult } from '../../common/types';
 import { db } from '../../../../common/db';
 
 export const workerDeps = {
@@ -33,16 +27,14 @@ export const workerDeps = {
  * - Fires async dispatch for allowed runs
  */
 export async function enqueuePhaseTriggerRun(
-  input: EnqueueTriggerInput,
+  input: EnqueueTriggerInput
 ): Promise<EnqueueTriggerResult> {
   const idempotencyKey = generateIdempotencyKey(input);
 
   // [why] Reject duplicates before any side effects — idempotency is the first gate.
   const duplicate = await isDuplicateRun(db, idempotencyKey);
   if (duplicate) {
-    console.log(
-      `[triggers/worker] Duplicate run detected for key "${idempotencyKey}" — skipping.`,
-    );
+    console.log(`[triggers/worker] Duplicate run detected for key "${idempotencyKey}" — skipping.`);
     return { status: 'duplicate' };
   }
 
@@ -121,7 +113,7 @@ export async function enqueuePhaseTriggerRun(
   processTriggerRun(run).catch((err) => {
     console.error(
       `[triggers/worker] Async dispatch failed for run ${run.id}:`,
-      err instanceof Error ? err.message : String(err),
+      err instanceof Error ? err.message : String(err)
     );
   });
 

@@ -9,10 +9,7 @@ import type { SuggestionOptions } from '@tiptap/suggestion';
 import tippy, { type Instance } from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import apiClient from '~/common/api/client';
-import MentionList, {
-  type MentionListHandle,
-  type MentionSuggestion,
-} from './MentionList';
+import MentionList, { type MentionListHandle, type MentionSuggestion } from './MentionList';
 
 const DEBOUNCE_MS = 150;
 
@@ -28,9 +25,9 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
           try {
-            const result = (await apiClient.get(
-              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-            ));
+            const result = await apiClient.get(
+              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`
+            );
             resolve(result.data);
           } catch {
             resolve([]);
@@ -115,7 +112,8 @@ export function buildMentionExtension(boardId: string) {
     },
   }).configure({
     HTMLAttributes: {
-      class: 'rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300',
+      class:
+        'rounded bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300',
     },
     renderText({ node }) {
       return `@${node.attrs.label ?? node.attrs.id ?? ''}`;

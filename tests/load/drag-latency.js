@@ -27,7 +27,7 @@ export default function () {
   const res = http.patch(`${baseUrl}/api/v1/cards/${cardId}/move`, payload, {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'X-Requested-With': 'XMLHttpRequest',
     },
   });

@@ -85,7 +85,9 @@ const BoardHeader = ({
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
-    return () => { document.removeEventListener('mousedown', handleMouseDown); };
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
   }, [menuOpen]);
 
   const handleTitleClick = () => {
@@ -145,7 +147,9 @@ const BoardHeader = ({
           type="text"
           value={title}
           autoFocus
-          onChange={(e) => { setTitle(e.target.value); }}
+          onChange={(e) => {
+            setTitle(e.target.value);
+          }}
           onBlur={handleTitleSave}
           onKeyDown={handleKeyDown}
           className={`bg-bg-overlay font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary min-w-0 max-w-xs${hasBackground ? ' text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : ' text-base'}`}
@@ -248,7 +252,9 @@ const BoardHeader = ({
           <div className="relative" ref={menuContainerRef}>
             <button
               className={`rounded p-1.5 transition-colors${hasBackground ? ' text-white/90 hover:bg-white/20 hover:text-white' : ' text-muted hover:bg-bg-surface hover:text-subtle'}`}
-              onClick={() => { setMenuOpen((v) => !v); }}
+              onClick={() => {
+                setMenuOpen((v) => !v);
+              }}
               aria-label={translations['BoardHeader.settingsAriaLabel']}
               aria-haspopup="true"
               aria-expanded={menuOpen}

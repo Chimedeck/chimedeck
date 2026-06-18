@@ -4,11 +4,7 @@
 // doc updater and is persisted on the as-built sync run for traceability.
 
 import { db } from '../../../../common/db';
-import type {
-  CollectEvidenceInput,
-  CollectEvidenceOutput,
-  AsBuiltEvidence,
-} from '../../types';
+import type { CollectEvidenceInput, CollectEvidenceOutput, AsBuiltEvidence } from '../../types';
 
 export const evidenceCollectorDeps = {
   /**
@@ -17,7 +13,7 @@ export const evidenceCollectorDeps = {
    */
   exec: async (
     cmd: string[],
-    cwd?: string,
+    cwd?: string
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
     const proc = Bun.spawnSync({
       cmd,
@@ -62,15 +58,8 @@ async function collectMergedPrs({
 }): Promise<AsBuiltEvidence['mergedPrs']> {
   try {
     const result = await exec(
-      [
-        'git',
-        'log',
-        '--merges',
-        '--format=%H|%s|%ai|%P',
-        '--max-count=20',
-        'origin/main..HEAD',
-      ],
-      repoRoot,
+      ['git', 'log', '--merges', '--format=%H|%s|%ai|%P', '--max-count=20', 'origin/main..HEAD'],
+      repoRoot
     );
 
     if (result.exitCode !== 0) {
@@ -113,10 +102,7 @@ async function collectChangedFiles({
   exec: typeof evidenceCollectorDeps.exec;
 }): Promise<AsBuiltEvidence['changedFiles']> {
   try {
-    const result = await exec(
-      ['git', 'diff', '--name-status', 'origin/main..HEAD'],
-      repoRoot,
-    );
+    const result = await exec(['git', 'diff', '--name-status', 'origin/main..HEAD'], repoRoot);
 
     if (result.exitCode !== 0 || !result.stdout.trim()) {
       return [];
@@ -167,7 +153,7 @@ async function collectTestEvidence({
   ];
 
   const testFiles = changedFiles.filter((f) =>
-    testFilePatterns.some((pattern) => pattern.test(f.path)),
+    testFilePatterns.some((pattern) => pattern.test(f.path))
   );
 
   return testFiles.map((f) => ({
@@ -199,7 +185,7 @@ async function collectCardMetadata({
         'cards.description',
         'lists.id as list_id',
         'lists.name as list_name',
-        'boards.id as board_id',
+        'boards.id as board_id'
       )
       .first();
 
@@ -217,7 +203,7 @@ async function collectCardMetadata({
   } catch (error) {
     console.error(
       `[asBuiltSync/evidenceCollector] Failed to collect card metadata:`,
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
     return {
       title: '',

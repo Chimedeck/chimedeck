@@ -98,7 +98,9 @@ function makeMockStore() {
       }),
       workspaceShell: () => ({
         activeWorkspaceId: 'ws-1',
-        workspaces: [{ id: 'ws-1', name: 'Workspace', callerRole: 'ADMIN', createdAt: '2026-01-01' }],
+        workspaces: [
+          { id: 'ws-1', name: 'Workspace', callerRole: 'ADMIN', createdAt: '2026-01-01' },
+        ],
         status: 'idle',
         createInProgress: false,
         createError: null,
@@ -128,7 +130,7 @@ describe('BoardPage — Documentation tab', () => {
         <Provider store={mockStore}>
           <BoardPage />
         </Provider>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -146,7 +148,7 @@ describe('BoardPage — Documentation tab', () => {
         <Provider store={mockStore}>
           <BoardPage />
         </Provider>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -164,13 +166,17 @@ describe('BoardPage — Documentation tab', () => {
         <Provider store={mockStore}>
           <BoardPage />
         </Provider>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     await waitFor(() => {
-      const tabs = screen.getAllByRole('button').filter((btn) =>
-        ['Board', 'Activities', 'Archived Cards', 'Health Check', 'Documentation'].includes(btn.textContent ?? ''),
-      );
+      const tabs = screen
+        .getAllByRole('button')
+        .filter((btn) =>
+          ['Board', 'Activities', 'Archived Cards', 'Health Check', 'Documentation'].includes(
+            btn.textContent ?? ''
+          )
+        );
       const tabLabels = tabs.map((t) => t.textContent);
       const healthCheckIdx = tabLabels.indexOf('Health Check');
       const docsIdx = tabLabels.indexOf('Documentation');
@@ -189,7 +195,7 @@ describe('BoardPage — Documentation tab', () => {
         <Provider store={mockStore}>
           <BoardPage />
         </Provider>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     await waitFor(() => {
@@ -204,14 +210,16 @@ describe('BoardPage — Documentation tab', () => {
   });
 
   it('hides Documentation tab when integrations fetch fails', async () => {
-    (BoardAPI.getBoardIntegrations as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+    (BoardAPI.getBoardIntegrations as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Network error')
+    );
 
     render(
       <MemoryRouter>
         <Provider store={mockStore}>
           <BoardPage />
         </Provider>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     // Wait for any async effects to settle
@@ -230,7 +238,7 @@ describe('BoardPage — Documentation tab', () => {
         <Provider store={mockStore}>
           <BoardPage />
         </Provider>
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     await waitFor(() => {

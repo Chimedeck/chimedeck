@@ -82,12 +82,14 @@ const MoveCardModal = ({
         // Default to current list when staying on the same board, else first list
         const defaultList =
           boardId === currentBoardId
-            ? nonArchivedLists.find((l) => l.id === currentListId) ?? nonArchivedLists[0]
+            ? (nonArchivedLists.find((l) => l.id === currentListId) ?? nonArchivedLists[0])
             : nonArchivedLists[0];
 
         if (defaultList) {
           setSelectedListId(defaultList.id);
-          const cards = allCards.filter((c) => c.list_id === defaultList.id && !c.archived && c.id !== cardId);
+          const cards = allCards.filter(
+            (c) => c.list_id === defaultList.id && !c.archived && c.id !== cardId
+          );
           setListCards(cards);
           // Default to bottom (after all existing cards)
           setSelectedPosition(cards.length + 1);
@@ -97,7 +99,7 @@ const MoveCardModal = ({
         setListCards([]);
       }
     },
-    [api, cardId, currentBoardId, currentListId],
+    [api, cardId, currentBoardId, currentListId]
   );
 
   useEffect(() => {
@@ -109,11 +111,11 @@ const MoveCardModal = ({
     async (listId: string) => {
       setSelectedListId(listId);
       try {
-        const boardRes = await api.get<BoardWithCards>(
-          `/boards/${selectedBoardId}`,
-        );
+        const boardRes = await api.get<BoardWithCards>(`/boards/${selectedBoardId}`);
         const allCards: CardRow[] = boardRes.includes.cards;
-        const cards = allCards.filter((c) => c.list_id === listId && !c.archived && c.id !== cardId);
+        const cards = allCards.filter(
+          (c) => c.list_id === listId && !c.archived && c.id !== cardId
+        );
         setListCards(cards);
         setSelectedPosition(cards.length + 1);
       } catch {
@@ -121,7 +123,7 @@ const MoveCardModal = ({
         setSelectedPosition(1);
       }
     },
-    [api, cardId, selectedBoardId],
+    [api, cardId, selectedBoardId]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,7 +138,10 @@ const MoveCardModal = ({
       const afterCardId =
         selectedPosition <= 1 ? null : (listCards[selectedPosition - 2]?.id ?? null);
 
-      const result = await api.patch<{ data: Card }>(`/cards/${cardId}/move`, { targetListId: selectedListId, afterCardId });
+      const result = await api.patch<{ data: Card }>(`/cards/${cardId}/move`, {
+        targetListId: selectedListId,
+        afterCardId,
+      });
       onSuccess(result.data);
     } catch {
       setError('Failed to move card. Please try again.');
@@ -148,12 +153,20 @@ const MoveCardModal = ({
   const maxPosition = listCards.length + 1;
 
   return (
-    <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/50" />
         <Dialog.Content
           className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none"
-          onInteractOutside={(e) => { e.preventDefault(); onClose(); }}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
           onEscapeKeyDown={onClose}
           aria-label={translations['card.moveModal.closeAria']}
         >
@@ -175,20 +188,30 @@ const MoveCardModal = ({
               </Dialog.Close>
             </div>
 
-            <form onSubmit={(e) => { void handleSubmit(e); }} className="p-4 space-y-4">
+            <form
+              onSubmit={(e) => {
+                void handleSubmit(e);
+              }}
+              className="p-4 space-y-4"
+            >
               {/* Select destination */}
               <div>
                 <p className="text-xs font-medium text-muted mb-2">Select destination</p>
                 <div className="space-y-2">
                   {/* Board */}
                   <div>
-                    <label htmlFor="move-card-board" className="block text-xs font-medium text-muted mb-1">
+                    <label
+                      htmlFor="move-card-board"
+                      className="block text-xs font-medium text-muted mb-1"
+                    >
                       Board
                     </label>
                     <select
                       id="move-card-board"
                       value={selectedBoardId}
-                      onChange={(e) => { setSelectedBoardId(e.target.value); }}
+                      onChange={(e) => {
+                        setSelectedBoardId(e.target.value);
+                      }}
                       className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       {boards.map((b) => (
@@ -202,13 +225,18 @@ const MoveCardModal = ({
                   {/* List + Position */}
                   <div className="flex gap-2">
                     <div className="flex-1 min-w-0">
-                      <label htmlFor="move-card-list" className="block text-xs font-medium text-muted mb-1">
+                      <label
+                        htmlFor="move-card-list"
+                        className="block text-xs font-medium text-muted mb-1"
+                      >
                         List
                       </label>
                       <select
                         id="move-card-list"
                         value={selectedListId}
-                        onChange={(e) => { void handleListChange(e.target.value); }}
+                        onChange={(e) => {
+                          void handleListChange(e.target.value);
+                        }}
                         className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         {lists.map((l) => (
@@ -220,13 +248,18 @@ const MoveCardModal = ({
                     </div>
 
                     <div className="w-20 flex-shrink-0">
-                      <label htmlFor="move-card-position" className="block text-xs font-medium text-muted mb-1">
+                      <label
+                        htmlFor="move-card-position"
+                        className="block text-xs font-medium text-muted mb-1"
+                      >
                         Position
                       </label>
                       <select
                         id="move-card-position"
                         value={selectedPosition}
-                        onChange={(e) => { setSelectedPosition(Number(e.target.value)); }}
+                        onChange={(e) => {
+                          setSelectedPosition(Number(e.target.value));
+                        }}
                         className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         {Array.from({ length: maxPosition }, (_, i) => i + 1).map((pos) => (

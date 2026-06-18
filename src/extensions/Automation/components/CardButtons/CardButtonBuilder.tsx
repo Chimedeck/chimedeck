@@ -24,7 +24,7 @@ const DEFAULT_ICON: ButtonIconName = 'PlayIcon';
 const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) => {
   const [name, setName] = useState(existing?.name ?? '');
   const [icon, setIcon] = useState<ButtonIconName>(
-    (existing?.icon as ButtonIconName | null) ?? DEFAULT_ICON,
+    (existing?.icon as ButtonIconName | null) ?? DEFAULT_ICON
   );
   const [actions, setActions] = useState<ActionItemData[]>(
     existing?.actions.map((a) => ({
@@ -32,7 +32,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
       actionType: a.actionType,
       label: a.actionType,
       config: a.config,
-    })) ?? [],
+    })) ?? []
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,14 +87,20 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
       role="dialog"
       aria-modal="true"
-      aria-label={existing ? translations['automation.cardButtonBuilder.ariaEdit'] : translations['automation.cardButtonBuilder.ariaCreate']}
+      aria-label={
+        existing
+          ? translations['automation.cardButtonBuilder.ariaEdit']
+          : translations['automation.cardButtonBuilder.ariaCreate']
+      }
     >
       <div className="bg-bg-base border border-border rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-5 p-6">
         {/* Header */}
         <div className="flex items-center gap-2">
           <BoltIcon className="h-5 w-5 text-blue-400 flex-shrink-0" aria-hidden="true" />
           <h2 className="flex-1 text-base font-semibold text-base">
-            {existing ? translations['automation.cardButtonBuilder.titleEdit'] : translations['automation.cardButtonBuilder.titleCreate']}
+            {existing
+              ? translations['automation.cardButtonBuilder.titleEdit']
+              : translations['automation.cardButtonBuilder.titleCreate']}
           </h2>
           <Button
             variant="ghost"
@@ -109,14 +115,19 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
 
         {/* Name */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="btn-name" className="text-xs font-medium text-muted uppercase tracking-wide">
+          <label
+            htmlFor="btn-name"
+            className="text-xs font-medium text-muted uppercase tracking-wide"
+          >
             {translations['automation.cardButtonBuilder.nameLabel']}
           </label>
           <input
             id="btn-name"
             type="text"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
             placeholder={translations['automation.cardButtonBuilder.namePlaceholder']}
             maxLength={80}
             className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-base placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -125,7 +136,9 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
 
         {/* Icon picker */}
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">{translations['automation.cardButtonBuilder.iconLabel']}</span>
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">
+            {translations['automation.cardButtonBuilder.iconLabel']}
+          </span>
           <IconPicker value={icon} onChange={setIcon} />
         </div>
 
@@ -134,17 +147,11 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
           <ActionList actions={actions} onChange={setActions} />
         </div>
 
-        {error && (
-          <p className="text-sm text-danger">{error}</p>
-        )}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-1">
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={onClose}
-          >
+          <Button variant="secondary" type="button" onClick={onClose}>
             {translations['automation.cardButtonBuilder.cancel']}
           </Button>
           <Button
@@ -153,7 +160,11 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
             disabled={!isValid || saving}
             onClick={handleSave}
           >
-            {saving ? translations['automation.cardButtonBuilder.saving'] : existing ? translations['automation.cardButtonBuilder.saveChanges'] : translations['automation.cardButtonBuilder.create']}
+            {saving
+              ? translations['automation.cardButtonBuilder.saving']
+              : existing
+                ? translations['automation.cardButtonBuilder.saveChanges']
+                : translations['automation.cardButtonBuilder.create']}
           </Button>
         </div>
       </div>

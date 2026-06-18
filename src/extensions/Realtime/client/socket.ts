@@ -107,7 +107,13 @@ class RealtimeSocket {
     }
   }
 
-  subscribe({ onEvent, onOpen, onClose, onPollingActive, onPollingInactive }: SocketOptions): () => void {
+  subscribe({
+    onEvent,
+    onOpen,
+    onClose,
+    onPollingActive,
+    onPollingInactive,
+  }: SocketOptions): () => void {
     if (onEvent) this.handlers.add(onEvent);
     if (onOpen) this.openHandlers.add(onOpen);
     if (onClose) this.closeHandlers.add(onClose);
@@ -136,7 +142,10 @@ class RealtimeSocket {
 
   private _open() {
     if (!this.token || this.connectionRefCount === 0) return;
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+    if (
+      this.ws &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
 
@@ -151,10 +160,14 @@ class RealtimeSocket {
       for (const activeBoardId of this.boardRefCounts.keys()) {
         this.send({ type: 'subscribe', board_id: activeBoardId });
       }
-      this.openHandlers.forEach((h) => { h(); });
+      this.openHandlers.forEach((h) => {
+        h();
+      });
       // Notify that polling is no longer needed now that WS is back
       if (wasPolling) {
-        this.pollingInactiveHandlers.forEach((h) => { h(); });
+        this.pollingInactiveHandlers.forEach((h) => {
+          h();
+        });
       }
     });
 
@@ -186,11 +199,15 @@ class RealtimeSocket {
         return;
       }
       this.failedAttempts++;
-      this.closeHandlers.forEach((h) => { h(); });
+      this.closeHandlers.forEach((h) => {
+        h();
+      });
       if (!this.intentionalClose && this.connectionRefCount > 0) {
         // Activate polling fallback once threshold is reached
         if (this.failedAttempts === POLLING_FALLBACK_THRESHOLD) {
-          this.pollingActiveHandlers.forEach((h) => { h(); });
+          this.pollingActiveHandlers.forEach((h) => {
+            h();
+          });
         }
         this._scheduleReconnect();
       }
@@ -222,9 +239,11 @@ class RealtimeSocket {
   private _wsBase(): string {
     if (typeof window === 'undefined') return 'ws://localhost:3000';
 
-    const env = (import.meta as ImportMeta & {
-      env?: Record<string, string | undefined>;
-    }).env;
+    const env = (
+      import.meta as ImportMeta & {
+        env?: Record<string, string | undefined>;
+      }
+    ).env;
     const configuredWsBase = env?.['VITE_WS_BASE_URL']?.trim();
     if (configuredWsBase) {
       return configuredWsBase.replace(/\/$/, '');

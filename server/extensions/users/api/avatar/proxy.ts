@@ -4,9 +4,7 @@
 // Never exposes the presigned URL unless the caller is authenticated.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import { db } from '../../../../common/db';
-import {
-  extractS3KeyFromAvatarUrl,
-} from '../../../../common/avatar/resolveAvatarUrl';
+import { extractS3KeyFromAvatarUrl } from '../../../../common/avatar/resolveAvatarUrl';
 import { presignGetUrl } from '../../../attachment/common/presign';
 
 const PROXY_TTL_SECONDS = 60;
@@ -19,14 +17,14 @@ export async function handleAvatarProxy(req: Request, userId: string): Promise<R
   if (!user) {
     return Response.json(
       { name: 'user-not-found', data: { message: 'User not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (!user.avatar_url) {
     return Response.json(
       { name: 'avatar-not-set', data: { message: 'User has no avatar' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

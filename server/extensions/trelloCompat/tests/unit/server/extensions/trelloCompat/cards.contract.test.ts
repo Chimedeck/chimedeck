@@ -5,18 +5,20 @@ import { serializeCard } from '../../../../../serializers/card';
 
 describe('trelloCompat cards adapter contract', () => {
   it('serializes card payload with required Trello card keys and nested badge/cover keys', () => {
-    const card = serializeCard(createCardFixture({
-      short_id: 42,
-      due_date: '2026-06-01T08:30:00.000Z',
-      start_date: '2026-05-25T09:00:00.000Z',
-      cover_attachment_id: 'attachment-1',
-      cover_size: 'FULL',
-      cover_color: 'blue',
-      attachmentCount: 3,
-      commentCount: 4,
-      checkItemCount: 5,
-      checkItemsChecked: 2,
-    }));
+    const card = serializeCard(
+      createCardFixture({
+        short_id: 42,
+        due_date: '2026-06-01T08:30:00.000Z',
+        start_date: '2026-05-25T09:00:00.000Z',
+        cover_attachment_id: 'attachment-1',
+        cover_size: 'FULL',
+        cover_color: 'blue',
+        attachmentCount: 3,
+        commentCount: 4,
+        checkItemCount: 5,
+        checkItemsChecked: 2,
+      })
+    );
 
     expect(() => {
       assertTrelloShape('card', card);

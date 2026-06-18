@@ -103,7 +103,7 @@ const PluginPopup = ({ popup, onClose }: Props) => {
         referrerPolicy="no-referrer-when-downgrade"
       />
     </div>,
-    document.body,
+    document.body
   );
 };
 

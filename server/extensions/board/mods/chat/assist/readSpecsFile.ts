@@ -14,13 +14,14 @@ export const READ_SPECS_FILE_TOOL: BoardChatAssistToolDefinition = {
   function: {
     name: 'read_specs_file',
     description:
-      'Read the contents of a markdown documentation file from the board\'s linked GitHub repository. Use this to inspect existing specs before proposing edits. The file must be under specs/ and end with .md.',
+      "Read the contents of a markdown documentation file from the board's linked GitHub repository. Use this to inspect existing specs before proposing edits. The file must be under specs/ and end with .md.",
     parameters: {
       type: 'object',
       properties: {
         path: {
           type: 'string',
-          description: 'File path relative to the repository root, must start with "specs/" and end with ".md". Example: "specs/architecture/overview.md".',
+          description:
+            'File path relative to the repository root, must start with "specs/" and end with ".md". Example: "specs/architecture/overview.md".',
         },
       },
       required: ['path'],
@@ -56,7 +57,9 @@ export const readSpecsFileDeps = {
   resolveSpecsFilePath,
 };
 
-function normalizeReadArguments(rawArguments: string): ReadSpecsFileArguments | BoardChatAssistOutput {
+function normalizeReadArguments(
+  rawArguments: string
+): ReadSpecsFileArguments | BoardChatAssistOutput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawArguments);

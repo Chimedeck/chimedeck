@@ -17,10 +17,7 @@ interface Props {
 }
 
 // Derive a display string from a raw CustomFieldValue for a given field.
-function resolvedDisplayValue(
-  field: CustomField,
-  value: CustomFieldValue | null,
-): string {
+function resolvedDisplayValue(field: CustomField, value: CustomFieldValue | null): string {
   if (!value) return '';
   switch (field.field_type) {
     case 'TEXT':
@@ -73,7 +70,7 @@ const CustomFieldValueEditor = ({
         setSaving(false);
       }
     },
-    [api, cardId, field.id, onValueChange],
+    [api, cardId, field.id, onValueChange]
   );
 
   const handleClear = useCallback(async () => {
@@ -102,7 +99,9 @@ const CustomFieldValueEditor = ({
           placeholder={translations['CustomFieldValue.textPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
-          onChange={(e) => { setDraft(e.target.value); }}
+          onChange={(e) => {
+            setDraft(e.target.value);
+          }}
           onBlur={() => {
             if (draft !== resolvedDisplayValue(field, value)) {
               save({ value_text: draft || null });
@@ -138,7 +137,9 @@ const CustomFieldValueEditor = ({
           placeholder={translations['CustomFieldValue.numberPlaceholder']}
           disabled={disabled || saving}
           aria-label={`${field.name} value`}
-          onChange={(e) => { setDraft(e.target.value); }}
+          onChange={(e) => {
+            setDraft(e.target.value);
+          }}
           onBlur={() => {
             const num = parseFloat(draft);
             const current = value?.value_number ? parseFloat(value.value_number) : null;

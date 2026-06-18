@@ -17,7 +17,7 @@ export async function handleGetViewPreference(req: Request, boardId: string): Pr
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

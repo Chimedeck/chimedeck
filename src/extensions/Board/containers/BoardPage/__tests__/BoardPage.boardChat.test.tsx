@@ -19,14 +19,20 @@ vi.mock('~/extensions/BoardChat', () => ({
   BoardChatDrawer: ({ onClose }: { onClose: () => void }) => {
     // Mirror the real drawer's Escape-key behavior so close-on-Escape tests pass.
     React.useEffect(() => {
-      const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+      const handler = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
       document.addEventListener('keydown', handler);
-      return () => { document.removeEventListener('keydown', handler); };
+      return () => {
+        document.removeEventListener('keydown', handler);
+      };
     }, [onClose]);
     return (
       <div role="dialog" aria-label="Board Chat drawer">
         <h2>Board Chat</h2>
-        <button aria-label="Close board chat" onClick={onClose}>Close</button>
+        <button aria-label="Close board chat" onClick={onClose}>
+          Close
+        </button>
       </div>
     );
   },
@@ -106,7 +112,9 @@ describe('BoardPage — Board Chat feature gate', () => {
         }),
         workspaceShell: () => ({
           activeWorkspaceId: 'ws-1',
-          workspaces: [{ id: 'ws-1', name: 'Workspace', callerRole: 'MEMBER', createdAt: '2026-01-01' }],
+          workspaces: [
+            { id: 'ws-1', name: 'Workspace', callerRole: 'MEMBER', createdAt: '2026-01-01' },
+          ],
           status: 'idle',
           createInProgress: false,
           createError: null,
@@ -172,7 +180,9 @@ describe('BoardPage — Board Chat feature gate', () => {
         }),
         workspaceShell: () => ({
           activeWorkspaceId: 'ws-1',
-          workspaces: [{ id: 'ws-1', name: 'Workspace', callerRole: 'GUEST', createdAt: '2026-01-01' }],
+          workspaces: [
+            { id: 'ws-1', name: 'Workspace', callerRole: 'GUEST', createdAt: '2026-01-01' },
+          ],
           status: 'idle',
           createInProgress: false,
           createError: null,

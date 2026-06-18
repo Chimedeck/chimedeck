@@ -14,7 +14,7 @@ export function generateShortId(length = SHORT_ID_LENGTH): string {
 }
 
 export async function generateUniqueShortId(
-  tableName: 'boards' | 'cards' | 'lists' | 'comments' | 'attachments',
+  tableName: 'boards' | 'cards' | 'lists' | 'comments' | 'attachments'
 ): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const shortId = generateShortId();

@@ -5,7 +5,10 @@ import type { CreateSprintCardsInput, SprintArtifact } from '../../../types';
 
 // [why] Shared mock DB and persistence to avoid cross-file mock.module pollution in Bun.
 import { sharedMockDb, sharedMockFirst, resetMockDb } from '../../../__tests__/mockDb';
-import { mockCreateGeneratedSprintCard, persistenceMockModule } from '../../../__tests__/mockPersistence';
+import {
+  mockCreateGeneratedSprintCard,
+  persistenceMockModule,
+} from '../../../__tests__/mockPersistence';
 
 mock.module('../../../../../common/db', () => ({
   db: sharedMockDb,
@@ -14,7 +17,14 @@ mock.module('../../../../../common/db', () => ({
 mock.module('../../persistence', persistenceMockModule);
 
 let uuidCounter = 0;
-const mockUUIDs = ['card-sprint-1', 'card-sprint-2', 'card-sprint-3', 'gen-link-1', 'gen-link-2', 'gen-link-3'];
+const mockUUIDs = [
+  'card-sprint-1',
+  'card-sprint-2',
+  'card-sprint-3',
+  'gen-link-1',
+  'gen-link-2',
+  'gen-link-3',
+];
 
 mock.module('crypto', () => ({
   randomUUID: () => {
@@ -56,8 +66,17 @@ describe('createSprintCards', () => {
 
     const input: CreateSprintCardsInput = {
       artifacts: [
-        makeArtifact({ sprintNumber: 1, title: 'Search Performance', filePath: 'specs/sprints/sprint-1.md' }),
-        makeArtifact({ sprintNumber: 2, title: 'Alternative Queries', filePath: 'specs/sprints/sprint-2.md', dependencies: [1] }),
+        makeArtifact({
+          sprintNumber: 1,
+          title: 'Search Performance',
+          filePath: 'specs/sprints/sprint-1.md',
+        }),
+        makeArtifact({
+          sprintNumber: 2,
+          title: 'Alternative Queries',
+          filePath: 'specs/sprints/sprint-2.md',
+          dependencies: [1],
+        }),
       ],
       cardId: 'card-feature-1',
       workspaceId: 'ws-1',

@@ -54,12 +54,11 @@ export async function createFile({
     try {
       // [why] Bun doesn't have a built-in mkdir -p equivalent natively,
       // so we use the file system to create directories recursively.
-      const mkdirResult =
-        Bun.spawnSync({
-          cmd: ['mkdir', '-p', parentDir],
-          stdout: 'pipe',
-          stderr: 'pipe',
-        });
+      const mkdirResult = Bun.spawnSync({
+        cmd: ['mkdir', '-p', parentDir],
+        stdout: 'pipe',
+        stderr: 'pipe',
+      });
       if (mkdirResult.exitCode !== 0) {
         const errStr = new TextDecoder().decode(mkdirResult.stderr);
         return {

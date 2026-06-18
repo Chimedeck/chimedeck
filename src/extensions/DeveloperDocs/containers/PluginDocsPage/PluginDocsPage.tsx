@@ -9,8 +9,18 @@ import {
 } from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
 import {
-  Section, H2, H3, P, Code, Pre, Divider, Badge,
-  InfoCallout, WarnCallout, Table, NavItem,
+  Section,
+  H2,
+  H3,
+  P,
+  Code,
+  Pre,
+  Divider,
+  Badge,
+  InfoCallout,
+  WarnCallout,
+  Table,
+  NavItem,
 } from '~/extensions/DeveloperDocs/components/DocsPrimitives';
 
 const PLUGIN_SDK_URL = 'https://journeyhorizon.chimedeck.com/sdk/jh-instance.js';
@@ -53,7 +63,9 @@ const PluginDocsPage = () => {
           <Button
             variant="link"
             size="sm"
-            onClick={() => { navigate(-1); }}
+            onClick={() => {
+              navigate(-1);
+            }}
             className="mb-2"
           >
             ← Back
@@ -70,14 +82,13 @@ const PluginDocsPage = () => {
         </div>
 
         <div className="mx-auto max-w-3xl px-8 py-10 space-y-2">
-
           {/* ── Overview ───────────────────────────────────── */}
           <Section id="overview">
             <InfoCallout className="mb-6">
               The plugin system lets first-party extensions add capabilities to boards — card
-              buttons, badges, sections, settings modals, and more. Each plugin is a small
-              web app that the platform loads into a hidden <Code>&lt;iframe&gt;</Code> and
-              communicates with over <Code>postMessage</Code>.
+              buttons, badges, sections, settings modals, and more. Each plugin is a small web app
+              that the platform loads into a hidden <Code>&lt;iframe&gt;</Code> and communicates
+              with over <Code>postMessage</Code>.
             </InfoCallout>
           </Section>
 
@@ -87,7 +98,7 @@ const PluginDocsPage = () => {
             <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 'The plugin is registered in the Plugin Registry with a connector URL and a manifest.',
-                'A board admin enables the plugin from the board\'s Settings → Plugins page.',
+                "A board admin enables the plugin from the board's Settings → Plugins page.",
                 'When the board loads, a hidden <iframe> is mounted pointing at connector.html.',
                 'connector.html loads the jhInstance SDK and calls jhInstance.initialize(capabilities, config).',
                 'The SDK brokers all communication between the plugin iframe and the board UI via postMessage.',
@@ -150,8 +161,8 @@ const PluginDocsPage = () => {
 
             <H3>Step 3 — Register the plugin in the database</H3>
             <P>
-              Insert a row into the <Code>plugins</Code> table. Use the Admin API or run the
-              SQL directly in development:
+              Insert a row into the <Code>plugins</Code> table. Use the Admin API or run the SQL
+              directly in development:
             </P>
             <Pre>{`INSERT INTO plugins (
   id, name, slug, description,
@@ -184,9 +195,9 @@ const PluginDocsPage = () => {
               <strong>Enable</strong>. The platform will load the connector iframe immediately.
             </P>
             <WarnCallout>
-              <strong>Access control:</strong> Only board admins can enable and disable plugins.
-              The server enforces this with a <Code>boardAdminGuard</Code> middleware. A 403
-              response redirects the client back to the board.
+              <strong>Access control:</strong> Only board admins can enable and disable plugins. The
+              server enforces this with a <Code>boardAdminGuard</Code> middleware. A 403 response
+              redirects the client back to the board.
             </WarnCallout>
           </Section>
 
@@ -206,16 +217,23 @@ const PluginDocsPage = () => {
                   cells: [
                     { key: 'sdk', content: <Code>jhInstance</Code> },
                     { key: 'url', content: <Code>{PLUGIN_SDK_URL}</Code> },
-                    { key: 'proto', content: <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">postMessage</Badge> },
+                    {
+                      key: 'proto',
+                      content: (
+                        <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                          postMessage
+                        </Badge>
+                      ),
+                    },
                     { key: 'desc', content: 'Primary plugin SDK. Trello Power-Up compatible.' },
                   ],
                 },
               ]}
             />
             <P>
-              Currently one SDK is provided. <Code>jhInstance</Code> is the only interface
-              plugins should use to communicate with the board. Future SDKs may be added for
-              OAuth flows or webhooks.
+              Currently one SDK is provided. <Code>jhInstance</Code> is the only interface plugins
+              should use to communicate with the board. Future SDKs may be added for OAuth flows or
+              webhooks.
             </P>
           </Section>
 
@@ -310,9 +328,9 @@ t.board('id', 'name').then((board) => {
           <Section id="capabilities">
             <H2>Capabilities</H2>
             <P>
-              Capabilities are declared in <Code>manifest.json</Code> and implemented as
-              handler functions passed to <Code>jhInstance.initialize</Code>. The platform
-              invokes each handler at the appropriate render point.
+              Capabilities are declared in <Code>manifest.json</Code> and implemented as handler
+              functions passed to <Code>jhInstance.initialize</Code>. The platform invokes each
+              handler at the appropriate render point.
             </P>
             <Table
               headers={['Capability', 'Invoked when', 'Return value']}
@@ -381,7 +399,9 @@ t.board('id', 'name').then((board) => {
 
           {/* ── FrameContext ────────────────────────────────── */}
           <Section id="frame-context">
-            <H2>FrameContext (<Code>t</Code>)</H2>
+            <H2>
+              FrameContext (<Code>t</Code>)
+            </H2>
             <P>
               Every capability handler receives a <Code>t</Code> object — an instance of{' '}
               <Code>FrameContext</Code>. It lets you read board/card data and trigger UI actions.
@@ -395,13 +415,20 @@ t.board('id', 'name').then((board) => {
                   rowId: 'ds-get',
                   cells: [
                     { key: 'method', content: <Code>{`t.get(scope, visibility, key)`}</Code> },
-                    { key: 'desc', content: 'Read a stored value. Scope: card | list | board | member. Visibility: private | shared.' },
+                    {
+                      key: 'desc',
+                      content:
+                        'Read a stored value. Scope: card | list | board | member. Visibility: private | shared.',
+                    },
                   ],
                 },
                 {
                   rowId: 'ds-set',
                   cells: [
-                    { key: 'method', content: <Code>{`t.set(scope, visibility, key, value)`}</Code> },
+                    {
+                      key: 'method',
+                      content: <Code>{`t.set(scope, visibility, key, value)`}</Code>,
+                    },
                     { key: 'desc', content: 'Write a value to persistent plugin storage.' },
                   ],
                 },
@@ -421,7 +448,10 @@ await t.set('card', 'shared', 'escrow_amount', 5000);`}</Pre>
                   rowId: 'ctx-card',
                   cells: [
                     { key: 'method', content: <Code>{`t.card(...fields)`}</Code> },
-                    { key: 'fields', content: 'id, name, desc, amount, currency, dueDate, labels, members, …' },
+                    {
+                      key: 'fields',
+                      content: 'id, name, desc, amount, currency, dueDate, labels, members, …',
+                    },
                   ],
                 },
                 {
@@ -465,13 +495,19 @@ console.log(card.name, card.amount, card.currency); // "Fix login bug" 150 "usd"
                   rowId: 'ui-popup',
                   cells: [
                     { key: 'method', content: <Code>{`t.popup({ title, url, args? })`}</Code> },
-                    { key: 'desc', content: 'Open a small popup window loaded with the given URL.' },
+                    {
+                      key: 'desc',
+                      content: 'Open a small popup window loaded with the given URL.',
+                    },
                   ],
                 },
                 {
                   rowId: 'ui-modal',
                   cells: [
-                    { key: 'method', content: <Code>{`t.modal({ url, title?, fullscreen?, accentColor? })`}</Code> },
+                    {
+                      key: 'method',
+                      content: <Code>{`t.modal({ url, title?, fullscreen?, accentColor? })`}</Code>,
+                    },
                     { key: 'desc', content: 'Open a full-screen (or standard) modal.' },
                   ],
                 },
@@ -479,21 +515,31 @@ console.log(card.name, card.amount, card.currency); // "Fix login bug" 150 "usd"
                   rowId: 'ui-close-popup',
                   cells: [
                     { key: 'method', content: <Code>{`t.closePopup()`}</Code> },
-                    { key: 'desc', content: 'Close the currently open popup from within the popup page.' },
+                    {
+                      key: 'desc',
+                      content: 'Close the currently open popup from within the popup page.',
+                    },
                   ],
                 },
                 {
                   rowId: 'ui-close-modal',
                   cells: [
                     { key: 'method', content: <Code>{`t.closeModal()`}</Code> },
-                    { key: 'desc', content: 'Close the currently open modal from within the modal page.' },
+                    {
+                      key: 'desc',
+                      content: 'Close the currently open modal from within the modal page.',
+                    },
                   ],
                 },
                 {
                   rowId: 'ui-size-to',
                   cells: [
                     { key: 'method', content: <Code>{`t.sizeTo(element)`}</Code> },
-                    { key: 'desc', content: 'Resize the popup/modal to fit an element (pass DOM element or selector).' },
+                    {
+                      key: 'desc',
+                      content:
+                        'Resize the popup/modal to fit an element (pass DOM element or selector).',
+                    },
                   ],
                 },
               ]}
@@ -518,8 +564,8 @@ console.log(card.name, card.amount, card.currency); // "Fix login bug" 150 "usd"
           <Section id="rest-api">
             <H2>REST API client</H2>
             <P>
-              Accessed via <Code>t.getRestApi()</Code>. Provides a thin wrapper for
-              authorization flows and authenticated requests to the platform API.
+              Accessed via <Code>t.getRestApi()</Code>. Provides a thin wrapper for authorization
+              flows and authenticated requests to the platform API.
             </P>
             <Table
               headers={['Method', 'Description']}
@@ -528,28 +574,42 @@ console.log(card.name, card.amount, card.currency); // "Fix login bug" 150 "usd"
                   rowId: 'api-is-authorized',
                   cells: [
                     { key: 'method', content: <Code>api.isAuthorized()</Code> },
-                    { key: 'desc', content: 'Returns true if the current user has authorized this plugin.' },
+                    {
+                      key: 'desc',
+                      content: 'Returns true if the current user has authorized this plugin.',
+                    },
                   ],
                 },
                 {
                   rowId: 'api-authorize',
                   cells: [
                     { key: 'method', content: <Code>{`api.authorize({ scope? })`}</Code> },
-                    { key: 'desc', content: 'Trigger the authorization flow (opens show-authorization capability).' },
+                    {
+                      key: 'desc',
+                      content:
+                        'Trigger the authorization flow (opens show-authorization capability).',
+                    },
                   ],
                 },
                 {
                   rowId: 'api-get-token',
                   cells: [
                     { key: 'method', content: <Code>api.getToken()</Code> },
-                    { key: 'desc', content: 'Get the stored access token for the current user (null if not authorized).' },
+                    {
+                      key: 'desc',
+                      content:
+                        'Get the stored access token for the current user (null if not authorized).',
+                    },
                   ],
                 },
                 {
                   rowId: 'api-request',
                   cells: [
                     { key: 'method', content: <Code>{`api.request(path, options?)`}</Code> },
-                    { key: 'desc', content: 'Make an authenticated HTTP request to the platform API.' },
+                    {
+                      key: 'desc',
+                      content: 'Make an authenticated HTTP request to the platform API.',
+                    },
                   ],
                 },
               ]}
@@ -571,8 +631,8 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
           <Section id="pages">
             <H2>Plugin pages</H2>
             <P>
-              In addition to <Code>connector.html</Code>, a plugin can ship extra HTML pages
-              that the SDK opens in popups or modals.
+              In addition to <Code>connector.html</Code>, a plugin can ship extra HTML pages that
+              the SDK opens in popups or modals.
             </P>
             <Table
               headers={['File', 'Required', 'Purpose']}
@@ -581,23 +641,39 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-connector',
                   cells: [
                     { key: 'file', content: <Code>connector.html</Code> },
-                    { key: 'req', content: <Badge color="bg-red-900/50 text-red-300">Required</Badge> },  // [theme-exception]
-                    { key: 'purpose', content: 'Hidden iframe. Registers all capabilities via jhInstance.initialize.' },
+                    {
+                      key: 'req',
+                      content: <Badge color="bg-red-900/50 text-red-300">Required</Badge>,
+                    }, // [theme-exception]
+                    {
+                      key: 'purpose',
+                      content:
+                        'Hidden iframe. Registers all capabilities via jhInstance.initialize.',
+                    },
                   ],
                 },
                 {
                   rowId: 'page-settings',
                   cells: [
                     { key: 'file', content: <Code>settings.html</Code> },
-                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
-                    { key: 'purpose', content: 'Board-level settings UI loaded by show-settings capability.' },
+                    {
+                      key: 'req',
+                      content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge>,
+                    },
+                    {
+                      key: 'purpose',
+                      content: 'Board-level settings UI loaded by show-settings capability.',
+                    },
                   ],
                 },
                 {
                   rowId: 'page-modal',
                   cells: [
                     { key: 'file', content: <Code>modal.html</Code> },
-                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
+                    {
+                      key: 'req',
+                      content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge>,
+                    },
                     { key: 'purpose', content: 'Generic fullscreen modal for complex flows.' },
                   ],
                 },
@@ -605,24 +681,44 @@ const res = await api.request('/api/v1/some-endpoint');`}</Pre>
                   rowId: 'page-section',
                   cells: [
                     { key: 'file', content: <Code>section.html</Code> },
-                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
-                    { key: 'purpose', content: 'Custom section rendered on the card back (section capability).' },
+                    {
+                      key: 'req',
+                      content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge>,
+                    },
+                    {
+                      key: 'purpose',
+                      content: 'Custom section rendered on the card back (section capability).',
+                    },
                   ],
                 },
                 {
                   rowId: 'page-authorize',
                   cells: [
                     { key: 'file', content: <Code>api-client-authorize.html</Code> },
-                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
-                    { key: 'purpose', content: 'Embedded Stripe Checkout page. Reads card amount/currency via t.card(), creates a checkout session, and mounts the Stripe embedded checkout UI.' },
+                    {
+                      key: 'req',
+                      content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge>,
+                    },
+                    {
+                      key: 'purpose',
+                      content:
+                        'Embedded Stripe Checkout page. Reads card amount/currency via t.card(), creates a checkout session, and mounts the Stripe embedded checkout UI.',
+                    },
                   ],
                 },
                 {
                   rowId: 'page-payment-success',
                   cells: [
                     { key: 'file', content: <Code>payment-success.html</Code> },
-                    { key: 'req', content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge> },
-                    { key: 'purpose', content: 'Stripe return_url page. Verifies the checkout session, writes paymentStatus via t.set(), then calls t.closeModal().' },
+                    {
+                      key: 'req',
+                      content: <Badge color="bg-bg-overlay text-subtle">Optional</Badge>,
+                    },
+                    {
+                      key: 'purpose',
+                      content:
+                        'Stripe return_url page. Verifies the checkout session, writes paymentStatus via t.set(), then calls t.closeModal().',
+                    },
                   ],
                 },
               ]}
@@ -664,17 +760,17 @@ setTimeout(() => t.closeModal(), 5000);`}</Pre>
           <Section id="trello-compat">
             <H2>Trello Power-Up compatibility</H2>
             <P>
-              The <Code>jhInstance</Code> API surface is intentionally compatible with the
-              Trello Power-Up <Code>TrelloPowerUp</Code> global. Existing Power-Up{' '}
-              <Code>client.js</Code> files can be alias-imported with a one-liner:
+              The <Code>jhInstance</Code> API surface is intentionally compatible with the Trello
+              Power-Up <Code>TrelloPowerUp</Code> global. Existing Power-Up <Code>client.js</Code>{' '}
+              files can be alias-imported with a one-liner:
             </P>
             <Pre>{`// At the top of your existing Trello client.js
 window.TrelloPowerUp = window.jhInstance;
 
 // All existing TrelloPowerUp.initialize(...) calls now work unchanged`}</Pre>
             <WarnCallout className="mt-2">
-              Not all Trello Power-Up features are supported. Hooks and UI injection points map
-              to our capability names. Test each capability after migration.
+              Not all Trello Power-Up features are supported. Hooks and UI injection points map to
+              our capability names. Test each capability after migration.
             </WarnCallout>
           </Section>
 

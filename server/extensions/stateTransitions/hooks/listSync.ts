@@ -19,20 +19,23 @@ async function syncListChange({
 }: {
   boardId: string;
   reason: StateTransitionListSyncReason;
-  transform: (graph: StateTransitionGraph, activeLists: StateTransitionListLike[]) => StateTransitionGraph;
+  transform: (
+    graph: StateTransitionGraph,
+    activeLists: StateTransitionListLike[]
+  ) => StateTransitionGraph;
 }): Promise<StateTransitionListSyncResult> {
-  const transitionRow = await db('board_state_transitions')
+  const transitionRow = (await db('board_state_transitions')
     .where({ board_id: boardId })
-    .first() as TransitionRow | undefined;
+    .first()) as TransitionRow | undefined;
 
   if (!transitionRow) {
     return { boardId, reason, updated: false };
   }
 
-  const activeLists = await db('lists')
+  const activeLists = (await db('lists')
     .where({ board_id: boardId, archived: false })
     .orderBy('position', 'asc')
-    .select('id', 'title') as StateTransitionListLike[];
+    .select('id', 'title')) as StateTransitionListLike[];
 
   const nextGraph = transform(transitionRow.graph_data, activeLists);
   const changed = JSON.stringify(nextGraph) !== JSON.stringify(transitionRow.graph_data);
@@ -41,18 +44,16 @@ async function syncListChange({
     return { boardId, reason, updated: false };
   }
 
-  await db('board_state_transitions')
-    .where({ board_id: boardId })
-    .update({
-      graph_data: nextGraph,
-      updated_at: new Date().toISOString(),
-    });
+  await db('board_state_transitions').where({ board_id: boardId }).update({
+    graph_data: nextGraph,
+    updated_at: new Date().toISOString(),
+  });
 
   return { boardId, reason, updated: true };
 }
 
 export async function syncStateTransitionsOnListRename(
-  boardId: string,
+  boardId: string
 ): Promise<StateTransitionListSyncResult> {
   return syncListChange({
     boardId,
@@ -62,7 +63,7 @@ export async function syncStateTransitionsOnListRename(
 }
 
 export async function syncStateTransitionsOnListDelete(
-  boardId: string,
+  boardId: string
 ): Promise<StateTransitionListSyncResult> {
   return syncListChange({
     boardId,

@@ -23,11 +23,14 @@ export async function handleGetAutomationQuota(req: Request, boardId: string): P
 
   const membershipError = await requireWorkspaceMembership(
     req as AuthenticatedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) {
     const currentUser = (req as AuthenticatedRequest).currentUser!;
-    const guest = await db('board_guests').where({ board_id: boardId, user_id: currentUser.id }).first().catch(() => null);
+    const guest = await db('board_guests')
+      .where({ board_id: boardId, user_id: currentUser.id })
+      .first()
+      .catch(() => null);
     if (!guest) return membershipError;
   }
 

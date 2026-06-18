@@ -42,32 +42,41 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
   const [isPublic, setIsPublic] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleNameChange = useCallback((val: string) => {
-    setName(val);
-    if (!slugManuallyEdited) {
-      setSlug(deriveSlug(val));
-    }
-  }, [slugManuallyEdited]);
+  const handleNameChange = useCallback(
+    (val: string) => {
+      setName(val);
+      if (!slugManuallyEdited) {
+        setSlug(deriveSlug(val));
+      }
+    },
+    [slugManuallyEdited]
+  );
 
   const handleSlugChange = useCallback((val: string) => {
     setSlug(val);
     setSlugManuallyEdited(true);
   }, []);
 
-  const addCategory = useCallback((raw: string) => {
-    const tag = raw.trim().toLowerCase();
-    if (tag && !categories.includes(tag)) {
-      setCategories((prev) => [...prev, tag]);
-    }
-    setCategoryInput('');
-  }, [categories]);
+  const addCategory = useCallback(
+    (raw: string) => {
+      const tag = raw.trim().toLowerCase();
+      if (tag && !categories.includes(tag)) {
+        setCategories((prev) => [...prev, tag]);
+      }
+      setCategoryInput('');
+    },
+    [categories]
+  );
 
-  const handleCategoryKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addCategory(categoryInput);
-    }
-  }, [categoryInput, addCategory]);
+  const handleCategoryKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        addCategory(categoryInput);
+      }
+    },
+    [categoryInput, addCategory]
+  );
 
   const removeCategory = useCallback((tag: string) => {
     setCategories((prev) => prev.filter((c) => c !== tag));
@@ -77,13 +86,20 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = translations['plugins.registerModal.validation.nameRequired'];
     if (!slug.trim()) errs.slug = translations['plugins.registerModal.validation.slugRequired'];
-    else if (!SLUG_REGEX.test(slug)) errs.slug = translations['plugins.registerModal.validation.slugInvalid'];
-    if (!description.trim()) errs.description = translations['plugins.registerModal.validation.descriptionRequired'];
-    if (!connectorUrl.trim()) errs.connectorUrl = translations['plugins.registerModal.validation.connectorUrlRequired'];
-    else if (!HTTPS_REGEX.test(connectorUrl)) errs.connectorUrl = translations['plugins.registerModal.validation.connectorUrlInvalid'];
-    if (!author.trim()) errs.author = translations['plugins.registerModal.validation.authorRequired'];
-    if (authorEmail && !EMAIL_REGEX.test(authorEmail)) errs.authorEmail = translations['plugins.registerModal.validation.emailInvalid'];
-    if (supportEmail && !EMAIL_REGEX.test(supportEmail)) errs.supportEmail = translations['plugins.registerModal.validation.emailInvalid'];
+    else if (!SLUG_REGEX.test(slug))
+      errs.slug = translations['plugins.registerModal.validation.slugInvalid'];
+    if (!description.trim())
+      errs.description = translations['plugins.registerModal.validation.descriptionRequired'];
+    if (!connectorUrl.trim())
+      errs.connectorUrl = translations['plugins.registerModal.validation.connectorUrlRequired'];
+    else if (!HTTPS_REGEX.test(connectorUrl))
+      errs.connectorUrl = translations['plugins.registerModal.validation.connectorUrlInvalid'];
+    if (!author.trim())
+      errs.author = translations['plugins.registerModal.validation.authorRequired'];
+    if (authorEmail && !EMAIL_REGEX.test(authorEmail))
+      errs.authorEmail = translations['plugins.registerModal.validation.emailInvalid'];
+    if (supportEmail && !EMAIL_REGEX.test(supportEmail))
+      errs.supportEmail = translations['plugins.registerModal.validation.emailInvalid'];
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -109,15 +125,30 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
       categories: finalCategories,
       isPublic,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, slug, description, connectorUrl, manifestUrl, iconUrl, author, authorEmail, supportEmail, categories, categoryInput, isPublic, onSubmit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    name,
+    slug,
+    description,
+    connectorUrl,
+    manifestUrl,
+    iconUrl,
+    author,
+    authorEmail,
+    supportEmail,
+    categories,
+    categoryInput,
+    isPublic,
+    onSubmit,
+  ]);
 
   if (!open) return null;
 
   const field = (label: string, required: boolean, input: React.ReactNode, err?: string) => (
     <div className="flex flex-col gap-1">
       <label className="text-xs font-medium text-subtle">
-        {label}{required && <span className="text-danger ml-0.5">*</span>}
+        {label}
+        {required && <span className="text-danger ml-0.5">*</span>}
       </label>
       {input}
       {err && <p className="text-danger text-xs">{err}</p>}
@@ -154,73 +185,97 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
               {serverError === 'plugin-slug-taken'
                 ? translations['plugins.registerModal.error.slugTaken']
                 : serverError === 'invalid-connector-url'
-                ? translations['plugins.registerModal.error.invalidConnectorUrl']
-                : serverError}
+                  ? translations['plugins.registerModal.error.invalidConnectorUrl']
+                  : serverError}
             </div>
           )}
 
-          {field(translations['plugins.registerModal.field.pluginName'], true,
+          {field(
+            translations['plugins.registerModal.field.pluginName'],
+            true,
             <input
               className={inputCls(errors.name)}
               placeholder={translations['plugins.registerModal.placeholder.pluginName']}
               value={name}
-              onChange={(e) => { handleNameChange(e.target.value); }}
+              onChange={(e) => {
+                handleNameChange(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.name,
+            errors.name
           )}
 
-          {field(translations['plugins.registerModal.field.slug'], true,
+          {field(
+            translations['plugins.registerModal.field.slug'],
+            true,
             <input
               className={inputCls(errors.slug)}
               placeholder={translations['plugins.registerModal.placeholder.slug']}
               value={slug}
-              onChange={(e) => { handleSlugChange(e.target.value); }}
+              onChange={(e) => {
+                handleSlugChange(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.slug,
+            errors.slug
           )}
 
-          {field(translations['plugins.registerModal.field.description'], true,
+          {field(
+            translations['plugins.registerModal.field.description'],
+            true,
             <textarea
               className={`${inputCls(errors.description)} resize-none`}
               rows={3}
               placeholder={translations['plugins.registerModal.placeholder.description']}
               value={description}
-              onChange={(e) => { setDescription(e.target.value); }}
+              onChange={(e) => {
+                setDescription(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.description,
+            errors.description
           )}
 
-          {field(translations['plugins.registerModal.field.connectorUrl'], true,
+          {field(
+            translations['plugins.registerModal.field.connectorUrl'],
+            true,
             <input
               className={inputCls(errors.connectorUrl)}
               placeholder={translations['plugins.registerModal.placeholder.connectorUrl']}
               value={connectorUrl}
-              onChange={(e) => { setConnectorUrl(e.target.value); }}
+              onChange={(e) => {
+                setConnectorUrl(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.connectorUrl,
+            errors.connectorUrl
           )}
 
-          {field(translations['plugins.registerModal.field.manifestUrl'], false,
+          {field(
+            translations['plugins.registerModal.field.manifestUrl'],
+            false,
             <input
               className={inputCls()}
               placeholder={translations['plugins.registerModal.placeholder.manifestUrl']}
               value={manifestUrl}
-              onChange={(e) => { setManifestUrl(e.target.value); }}
+              onChange={(e) => {
+                setManifestUrl(e.target.value);
+              }}
               disabled={isSubmitting}
-            />,
+            />
           )}
 
-          {field(translations['plugins.registerModal.field.iconUrl'], false,
+          {field(
+            translations['plugins.registerModal.field.iconUrl'],
+            false,
             <div className="flex gap-2 items-center">
               <input
                 className={`${inputCls()} flex-1`}
                 placeholder={translations['plugins.registerModal.placeholder.iconUrl']}
                 value={iconUrl}
-                onChange={(e) => { setIconUrl(e.target.value); }}
+                onChange={(e) => {
+                  setIconUrl(e.target.value);
+                }}
                 disabled={isSubmitting}
               />
               {iconUrl && (
@@ -228,57 +283,82 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
                   src={iconUrl}
                   alt="icon preview"
                   className="w-8 h-8 rounded object-cover border border-slate-600 flex-shrink-0"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
                 />
               )}
-            </div>,
+            </div>
           )}
 
-          {field(translations['plugins.registerModal.field.author'], true,
+          {field(
+            translations['plugins.registerModal.field.author'],
+            true,
             <input
               className={inputCls(errors.author)}
               placeholder={translations['plugins.registerModal.placeholder.author']}
               value={author}
-              onChange={(e) => { setAuthor(e.target.value); }}
+              onChange={(e) => {
+                setAuthor(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.author,
+            errors.author
           )}
 
-          {field(translations['plugins.registerModal.field.authorEmail'], false,
+          {field(
+            translations['plugins.registerModal.field.authorEmail'],
+            false,
             <input
               type="email"
               className={inputCls(errors.authorEmail)}
               placeholder={translations['plugins.registerModal.placeholder.authorEmail']}
               value={authorEmail}
-              onChange={(e) => { setAuthorEmail(e.target.value); }}
+              onChange={(e) => {
+                setAuthorEmail(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.authorEmail,
+            errors.authorEmail
           )}
 
-          {field(translations['plugins.registerModal.field.supportEmail'], false,
+          {field(
+            translations['plugins.registerModal.field.supportEmail'],
+            false,
             <input
               type="email"
               className={inputCls(errors.supportEmail)}
               placeholder={translations['plugins.registerModal.placeholder.supportEmail']}
               value={supportEmail}
-              onChange={(e) => { setSupportEmail(e.target.value); }}
+              onChange={(e) => {
+                setSupportEmail(e.target.value);
+              }}
               disabled={isSubmitting}
             />,
-            errors.supportEmail,
+            errors.supportEmail
           )}
 
-          {field(translations['plugins.registerModal.field.categories'], false,
+          {field(
+            translations['plugins.registerModal.field.categories'],
+            false,
             <div>
               <div className="flex flex-wrap gap-1 mb-1">
                 {categories.map((tag) => (
-                  <span key={tag} className="flex items-center gap-1 bg-blue-800 text-blue-200 text-xs rounded px-2 py-0.5">
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 bg-blue-800 text-blue-200 text-xs rounded px-2 py-0.5"
+                  >
                     {tag}
                     <IconButton
-                      icon={<span aria-hidden className="leading-none">×</span>}
+                      icon={
+                        <span aria-hidden className="leading-none">
+                          ×
+                        </span>
+                      }
                       aria-label={`Remove ${tag}`}
-                      onClick={() => { removeCategory(tag); }}
+                      onClick={() => {
+                        removeCategory(tag);
+                      }}
                       className="h-auto w-auto p-0 hover:text-base"
                     />
                   </span>
@@ -288,12 +368,16 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
                 className={inputCls()}
                 placeholder={translations['plugins.registerModal.placeholder.categories']}
                 value={categoryInput}
-                onChange={(e) => { setCategoryInput(e.target.value); }}
+                onChange={(e) => {
+                  setCategoryInput(e.target.value);
+                }}
                 onKeyDown={handleCategoryKeyDown}
-                onBlur={() => { if (categoryInput.trim()) addCategory(categoryInput); }}
+                onBlur={() => {
+                  if (categoryInput.trim()) addCategory(categoryInput);
+                }}
                 disabled={isSubmitting}
               />
-            </div>,
+            </div>
           )}
 
           <div className="flex items-center gap-2">
@@ -301,7 +385,9 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
               type="checkbox"
               id="isPublic"
               checked={isPublic}
-              onChange={(e) => { setIsPublic(e.target.checked); }}
+              onChange={(e) => {
+                setIsPublic(e.target.checked);
+              }}
               disabled={isSubmitting}
               className="w-4 h-4 accent-blue-500"
             />
@@ -313,26 +399,18 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
 
         {/* Footer */}
         <div className="flex justify-end gap-3 px-5 py-4 border-t border-border flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={isSubmitting}>
             {translations['plugins.registerModal.cancel']}
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? translations['plugins.registerModal.registering'] : translations['plugins.registerModal.submit']}
+          <Button variant="primary" size="sm" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting
+              ? translations['plugins.registerModal.registering']
+              : translations['plugins.registerModal.submit']}
           </Button>
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 };
 

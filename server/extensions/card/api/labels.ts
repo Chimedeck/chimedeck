@@ -8,10 +8,16 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { validateCardLabelLimit } from '../mods/labels/validate';
 
-interface CardLabelContext { boardId: string; workspaceId: string; }
+interface CardLabelContext {
+  boardId: string;
+  workspaceId: string;
+}
 
 async function resolveCardLabelContext(cardId: string): Promise<CardLabelContext | null> {
   const card = await db('cards').where({ id: cardId }).first();
@@ -31,7 +37,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -46,7 +52,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   if (!labelContext) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -63,14 +69,14 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.labelId || typeof body.labelId !== 'string') {
     return Response.json(
       { error: { code: 'bad-request', message: 'labelId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -78,19 +84,21 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   if (!label) {
     return Response.json(
       { error: { code: 'label-not-found', message: 'Label not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (label.board_id !== labelContext.boardId) {
     return Response.json(
       { error: { code: 'label-not-in-board', message: 'Label does not belong to this board' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   // Idempotency: already assigned → return 200
-  const existing = await db('card_labels').where({ card_id: cardId, label_id: body.labelId }).first();
+  const existing = await db('card_labels')
+    .where({ card_id: cardId, label_id: body.labelId })
+    .first();
   if (existing) {
     return Response.json({ data: { card_id: cardId, label_id: body.labelId } });
   }
@@ -105,7 +113,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
 export async function handleDetachLabel(
   req: Request,
   cardId: string,
-  labelId: string,
+  labelId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -114,7 +122,7 @@ export async function handleDetachLabel(
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -122,7 +130,7 @@ export async function handleDetachLabel(
   if (!detachContext) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

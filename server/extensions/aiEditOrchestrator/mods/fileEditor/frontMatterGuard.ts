@@ -107,7 +107,7 @@ export function validateFrontMatter({
   const docType = guessDocType(filePath);
   if (docType && KNOWN_DOC_TYPES[docType]) {
     const schema = KNOWN_DOC_TYPES[docType];
-    const missingRequired = schema.required.filter(key => !(key in parsed));
+    const missingRequired = schema.required.filter((key) => !(key in parsed));
     if (missingRequired.length > 0) {
       return {
         valid: false,

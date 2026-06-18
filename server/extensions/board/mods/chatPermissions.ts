@@ -15,7 +15,7 @@ export const CHAT_PERMISSION_DEFAULTS: Omit<BoardChatPermissions, 'board_id' | '
 // a guest_can_use=true inherited from the current state.
 export function normalizeChatPermissions(
   current: Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>,
-  patch: PatchBoardChatPermissionsBody,
+  patch: PatchBoardChatPermissionsBody
 ): Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'> {
   let guest_can_view = patch.guest_can_view ?? current.guest_can_view;
   let guest_can_use = patch.guest_can_use ?? current.guest_can_use;
@@ -36,26 +36,26 @@ export function normalizeChatPermissions(
 }
 
 export function resolveGuestChatPermissions(
-  row: Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined,
+  row: Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined
 ): Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'> {
   const guest_can_view = row?.guest_can_view ?? CHAT_PERMISSION_DEFAULTS.guest_can_view;
   const guest_can_use = row?.guest_can_use ?? CHAT_PERMISSION_DEFAULTS.guest_can_use;
 
   return normalizeChatPermissions(
     { ...CHAT_PERMISSION_DEFAULTS },
-    { guest_can_view, guest_can_use },
+    { guest_can_view, guest_can_use }
   );
 }
 
 export function canGuestViewBoardChat(
-  row: Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined,
+  row: Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined
 ): boolean {
   const effective = resolveGuestChatPermissions(row);
   return effective.guest_can_view;
 }
 
 export function canGuestUseBoardChat(
-  row: Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined,
+  row: Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined
 ): boolean {
   const effective = resolveGuestChatPermissions(row);
   return effective.guest_can_use;

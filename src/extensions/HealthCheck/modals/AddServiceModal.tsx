@@ -92,7 +92,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
             type: 'preset',
             presetKey: preset.key,
             expectedStatus: preset.expectedStatus ?? null,
-          }),
+          })
         ).unwrap();
         onClose();
       } catch (err: unknown) {
@@ -130,7 +130,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
       setSubmitting(true);
       try {
         await dispatch(
-          addHealthCheckThunk({ boardId, name, url, type: 'custom', expectedStatus }),
+          addHealthCheckThunk({ boardId, name, url, type: 'custom', expectedStatus })
         ).unwrap();
         onClose();
       } catch (err: unknown) {
@@ -159,10 +159,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
       <div className="relative w-full max-w-md rounded-xl bg-bg-surface border border-border shadow-2xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2
-            id="add-service-modal-title"
-            className="text-base font-semibold text-base"
-          >
+          <h2 id="add-service-modal-title" className="text-base font-semibold text-base">
             {translations['AddServiceModal.title']}
           </h2>
           <Button
@@ -177,10 +174,16 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex gap-2 mb-5" role="group" aria-label={translations['AddServiceModal.serviceTypeAria']}>
+        <div
+          className="flex gap-2 mb-5"
+          role="group"
+          aria-label={translations['AddServiceModal.serviceTypeAria']}
+        >
           <button
             type="button"
-            onClick={() => { handleModeSwitch('preset'); }}
+            onClick={() => {
+              handleModeSwitch('preset');
+            }}
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               mode === 'preset'
                 ? 'bg-primary text-inverse'
@@ -192,7 +195,9 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
           </button>
           <button
             type="button"
-            onClick={() => { handleModeSwitch('custom'); }}
+            onClick={() => {
+              handleModeSwitch('custom');
+            }}
             className={`flex-1 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
               mode === 'custom'
                 ? 'bg-primary text-inverse'
@@ -214,36 +219,54 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                 {translations['AddServiceModal.presetSelectLabel']}
               </label>
               {presetsStatus === 'loading' && (
-                <p className="text-sm text-muted">{translations['AddServiceModal.presetLoading']}</p>
+                <p className="text-sm text-muted">
+                  {translations['AddServiceModal.presetLoading']}
+                </p>
               )}
               {presetsStatus === 'failed' && (
-                <p className="text-sm text-danger">{translations['AddServiceModal.presetLoadFailed']}</p>
+                <p className="text-sm text-danger">
+                  {translations['AddServiceModal.presetLoadFailed']}
+                </p>
               )}
               {(presetsStatus === 'succeeded' || presets.length > 0) && (
                 <select
                   id="preset-select"
                   value={selectedPresetKey}
-                  onChange={(e) => { setSelectedPresetKey(e.target.value); }}
+                  onChange={(e) => {
+                    setSelectedPresetKey(e.target.value);
+                  }}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 >
-                  <option value="">{translations['AddServiceModal.presetSelectPlaceholder']}</option>
-                  {Array.from(new Set(presets.map((p: HealthCheckPreset) => p.category))).map((cat) => (
-                    <optgroup key={cat} label={cat.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}>
-                      {presets.filter((p: HealthCheckPreset) => p.category === cat).map((p: HealthCheckPreset) => (
-                        <option key={p.key} value={p.key}>{p.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
+                  <option value="">
+                    {translations['AddServiceModal.presetSelectPlaceholder']}
+                  </option>
+                  {Array.from(new Set(presets.map((p: HealthCheckPreset) => p.category))).map(
+                    (cat) => (
+                      <optgroup
+                        key={cat}
+                        label={cat.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                      >
+                        {presets
+                          .filter((p: HealthCheckPreset) => p.category === cat)
+                          .map((p: HealthCheckPreset) => (
+                            <option key={p.key} value={p.key}>
+                              {p.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    )
+                  )}
                 </select>
               )}
               {/* Description for selected preset */}
-              {selectedPresetKey && (() => {
-                const p = presets.find((x: HealthCheckPreset) => x.key === selectedPresetKey);
-                return p?.description ? (
-                  <p className="mt-1.5 text-xs text-muted">{p.description}</p>
-                ) : null;
-              })()}
+              {selectedPresetKey &&
+                (() => {
+                  const p = presets.find((x: HealthCheckPreset) => x.key === selectedPresetKey);
+                  return p?.description ? (
+                    <p className="mt-1.5 text-xs text-muted">{p.description}</p>
+                  ) : null;
+                })()}
             </div>
           ) : (
             <>
@@ -258,7 +281,9 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   id="custom-name"
                   type="text"
                   value={custom.name}
-                  onChange={(e) => { setCustom((prev) => ({ ...prev, name: e.target.value })); }}
+                  onChange={(e) => {
+                    setCustom((prev) => ({ ...prev, name: e.target.value }));
+                  }}
                   placeholder={translations['AddServiceModal.customNamePlaceholder']}
                   disabled={submitting}
                   maxLength={100}
@@ -276,7 +301,9 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   id="custom-url"
                   type="url"
                   value={custom.url}
-                  onChange={(e) => { setCustom((prev) => ({ ...prev, url: e.target.value })); }}
+                  onChange={(e) => {
+                    setCustom((prev) => ({ ...prev, url: e.target.value }));
+                  }}
                   placeholder={translations['AddServiceModal.customUrlPlaceholder']}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
@@ -288,7 +315,9 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   className="block text-sm font-medium text-subtle mb-1.5"
                 >
                   {translations['AddServiceModal.customExpectedStatusLabel']}
-                  <span className="ml-1 text-xs font-normal text-subtle">({translations['AddServiceModal.customExpectedStatusOptional']})</span>
+                  <span className="ml-1 text-xs font-normal text-subtle">
+                    ({translations['AddServiceModal.customExpectedStatusOptional']})
+                  </span>
                 </label>
                 <input
                   id="custom-expected-status"
@@ -296,12 +325,16 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
                   min={100}
                   max={599}
                   value={custom.expectedStatus}
-                  onChange={(e) => { setCustom((prev) => ({ ...prev, expectedStatus: e.target.value })); }}
+                  onChange={(e) => {
+                    setCustom((prev) => ({ ...prev, expectedStatus: e.target.value }));
+                  }}
                   placeholder={translations['AddServiceModal.customExpectedStatusPlaceholder']}
                   disabled={submitting}
                   className="w-full rounded-md bg-bg-overlay border border-border text-base text-sm px-3 py-2 placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
-                <p className="mt-1 text-xs text-subtle">{translations['AddServiceModal.customExpectedStatusHint']}</p>
+                <p className="mt-1 text-xs text-subtle">
+                  {translations['AddServiceModal.customExpectedStatusHint']}
+                </p>
               </div>
             </>
           )}
@@ -333,7 +366,9 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
               size="md"
               disabled={submitting || presetsStatus === 'loading'}
             >
-              {submitting ? translations['AddServiceModal.addingButton'] : translations['AddServiceModal.addButton']}
+              {submitting
+                ? translations['AddServiceModal.addingButton']
+                : translations['AddServiceModal.addButton']}
             </Button>
           </div>
         </form>

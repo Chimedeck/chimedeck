@@ -69,7 +69,9 @@ export function HealthCheckStatusDot({ status, httpStatus, responseTimeMs, error
       setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 });
     }
   };
-  const hideTooltip = () => { setTooltipPos(null); };
+  const hideTooltip = () => {
+    setTooltipPos(null);
+  };
 
   return (
     <span
@@ -94,18 +96,25 @@ export function HealthCheckStatusDot({ status, httpStatus, responseTimeMs, error
       <span className={`relative inline-flex h-3 w-3 rounded-full ${DOT_CLASSES[resolved]}`} />
 
       {/* Tooltip — rendered in a portal so it escapes any overflow:hidden/auto container */}
-      {tooltipPos && createPortal(
-        <span
-          role="tooltip"
-          style={{ position: 'fixed', left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
-          className="whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg pointer-events-none" // [theme-exception] fixed dark tooltip for both modes
-        >
-          {tooltip}
-          {/* Arrow */}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-        </span>,
-        document.body,
-      )}
+      {tooltipPos &&
+        createPortal(
+          <span
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              left: tooltipPos.x,
+              top: tooltipPos.y,
+              transform: 'translate(-50%, -100%)',
+              zIndex: 9999,
+            }}
+            className="whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white shadow-lg pointer-events-none" // [theme-exception] fixed dark tooltip for both modes
+          >
+            {tooltip}
+            {/* Arrow */}
+            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+          </span>,
+          document.body
+        )}
     </span>
   );
 }

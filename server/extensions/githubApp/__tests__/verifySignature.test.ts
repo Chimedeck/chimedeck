@@ -25,7 +25,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: validSignature,
         candidateSecrets: [SECRET],
-      }),
+      })
     ).toBe(true);
   });
 
@@ -35,7 +35,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: validSignature,
         candidateSecrets: ['wrong-key', SECRET, 'also-wrong'],
-      }),
+      })
     ).toBe(true);
   });
 
@@ -45,7 +45,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: null,
         candidateSecrets: [SECRET],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -56,7 +56,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: hex, // no prefix
         candidateSecrets: [SECRET],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -66,7 +66,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY + ' ',
         signatureHeader: validSignature,
         candidateSecrets: [SECRET],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -76,7 +76,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: validSignature,
         candidateSecrets: [],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -86,7 +86,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: validSignature,
         candidateSecrets: [''],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -97,7 +97,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: short,
         candidateSecrets: [SECRET],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -107,7 +107,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: 'sha256=zzzz',
         candidateSecrets: [SECRET],
-      }),
+      })
     ).toBe(false);
   });
 
@@ -117,7 +117,7 @@ describe('verifyGitHubWebhookSignature', () => {
         rawBody: BODY,
         signatureHeader: validSignature,
         candidateSecrets: ['a', 'b', 'c'],
-      }),
+      })
     ).toBe(false);
   });
 });

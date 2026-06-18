@@ -12,7 +12,10 @@
 // | GUEST with board_guest_access row       | allow   | allow     | allow    |
 // | GUEST without board_guest_access row    | 403     | 403       | allow    |
 import { db } from '../common/db';
-import { authenticate, type AuthenticatedRequest } from '../extensions/auth/middlewares/authentication';
+import {
+  authenticate,
+  type AuthenticatedRequest,
+} from '../extensions/auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   type WorkspaceScopedRequest,
@@ -44,13 +47,13 @@ export interface BoardVisibilityScopedRequest extends WorkspaceScopedRequest {
 // Returns null on success, or an error Response.
 export async function applyBoardVisibility(
   req: Request,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   const resolvedBoardId = await resolveBoardId(boardId);
   if (!resolvedBoardId) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -59,7 +62,7 @@ export async function applyBoardVisibility(
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -90,11 +93,12 @@ export async function applyBoardVisibility(
     if (!guestAccess) {
       return Response.json(
         { error: { code: 'board-access-denied', message: 'You do not have access to this board' } },
-        { status: 403 },
+        { status: 403 }
       );
     }
     // Attach guestType so downstream handlers can enforce VIEWER vs MEMBER write gates.
-    (req as BoardVisibilityScopedRequest).guestType = (guestAccess.guest_type ?? 'VIEWER') as GuestType;
+    (req as BoardVisibilityScopedRequest).guestType = (guestAccess.guest_type ??
+      'VIEWER') as GuestType;
     return null;
   }
 
@@ -111,7 +115,7 @@ export async function applyBoardVisibility(
     if (!boardMember) {
       return Response.json(
         { error: { code: 'board-access-denied', message: 'You do not have access to this board' } },
-        { status: 403 },
+        { status: 403 }
       );
     }
   }
@@ -124,14 +128,14 @@ export async function applyBoardVisibility(
 // Use this for list-scoped routes where boardId is not in the URL.
 export async function applyBoardVisibilityFromList(
   req: Request,
-  listId: string,
+  listId: string
 ): Promise<Response | null> {
   const resolvedListId = await resolveListId(listId);
   const list = resolvedListId ? await db('lists').where({ id: resolvedListId }).first() : null;
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   return applyBoardVisibility(req, list.board_id);
@@ -141,13 +145,13 @@ export async function applyBoardVisibilityFromList(
 // Use this for card-scoped routes where boardId is not in the URL.
 export async function applyBoardVisibilityFromCard(
   req: Request,
-  cardId: string,
+  cardId: string
 ): Promise<Response | null> {
   const resolvedCardId = await resolveCardId(cardId);
   if (!resolvedCardId) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -155,14 +159,14 @@ export async function applyBoardVisibilityFromCard(
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   const list = await db('lists').where({ id: card.list_id }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   return applyBoardVisibility(req, list.board_id);
@@ -172,13 +176,13 @@ export async function applyBoardVisibilityFromCard(
 // then applies board visibility. Use this for /api/v1/checklist-items/:id routes.
 export async function applyBoardVisibilityFromChecklistItem(
   req: Request,
-  itemId: string,
+  itemId: string
 ): Promise<Response | null> {
   const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   return applyBoardVisibilityFromCard(req, item.card_id);
@@ -188,13 +192,13 @@ export async function applyBoardVisibilityFromChecklistItem(
 // then applies board visibility. Use this for /api/v1/checklists/:id routes.
 export async function applyBoardVisibilityFromChecklist(
   req: Request,
-  checklistId: string,
+  checklistId: string
 ): Promise<Response | null> {
   const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) {
     return Response.json(
       { error: { code: 'checklist-not-found', message: 'Checklist not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   return applyBoardVisibilityFromCard(req, checklist.card_id);

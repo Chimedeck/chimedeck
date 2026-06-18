@@ -48,7 +48,7 @@ export interface TierQuotas {
 // Canonical tier IDs in ascending order (cheapest to most capable).
 // Used by minimumTierFor() to find the lowest tier that unlocks a feature.
 export const TIER_ORDER = ['tier_1', 'tier_2', 'tier_3', 'tier_4', 'unlimited'] as const;
-export type CanonicalTierId = typeof TIER_ORDER[number];
+export type CanonicalTierId = (typeof TIER_ORDER)[number];
 
 export const SUBSCRIPTION_TIERS: Record<string, TierQuotas> = {
   // Personal — free tier

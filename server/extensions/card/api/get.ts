@@ -17,7 +17,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -27,7 +27,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   if (!list || !board) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -47,7 +47,7 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
     .select('users.id', 'users.email', 'users.name', 'users.avatar_url');
 
   const members = buildAvatarProxyUrlsInCollection(
-    memberRows as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
+    memberRows as Array<{ avatar_url?: string | null } & Record<string, unknown>>
   );
 
   const checklistRows = await db('checklists')
@@ -76,7 +76,13 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
   // Append any ungrouped items as a fallback checklist so old data is never lost
   const ungrouped = itemsByChecklistId.get('__ungrouped__') ?? [];
   if (ungrouped.length > 0) {
-    checklists.push({ id: '__ungrouped__', card_id: cardId, title: 'Checklist', position: 'z', items: ungrouped });
+    checklists.push({
+      id: '__ungrouped__',
+      card_id: cardId,
+      title: 'Checklist',
+      position: 'z',
+      items: ungrouped,
+    });
   }
 
   const url = new URL(req.url);
@@ -100,13 +106,20 @@ export async function handleGetCard(req: Request, cardId: string): Promise<Respo
 
     activities = rows.map((a) => {
       const actor = actorMap.get(a.actor_id);
-      return { ...a, actor_name: actor?.name ?? null, actor_email: actor?.email ?? null, actor_avatar_url: actor?.avatar_url ?? null };
+      return {
+        ...a,
+        actor_name: actor?.name ?? null,
+        actor_email: actor?.email ?? null,
+        actor_avatar_url: actor?.avatar_url ?? null,
+      };
     });
   }
 
   const customFieldValues = await db('card_custom_field_values').where({ card_id: cardId });
 
-  const cardWithCover = await resolveCoverImageUrl(card as { id: string; cover_attachment_id?: string | null });
+  const cardWithCover = await resolveCoverImageUrl(
+    card as { id: string; cover_attachment_id?: string | null }
+  );
 
   return Response.json({
     data: cardWithCover,

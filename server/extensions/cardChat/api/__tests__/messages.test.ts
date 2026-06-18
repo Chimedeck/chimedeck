@@ -35,7 +35,9 @@ mock.module('../../mods/messages/write', () => ({
 // [why] The auth middleware sets currentUser on the request when auth succeeds.
 function addCurrentUser(req: Request): void {
   (req as Record<string, unknown>).currentUser = {
-    id: 'user-1', name: 'Alice', email: 'alice@test.local',
+    id: 'user-1',
+    name: 'Alice',
+    email: 'alice@test.local',
   };
 }
 
@@ -51,14 +53,14 @@ beforeEach(() => {
 describe('handleGetCardChatMessages', () => {
   it('returns 401 when authentication fails', async () => {
     mockAuthenticate.mockResolvedValueOnce(
-      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 }),
+      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 })
     );
 
     const { handleGetCardChatMessages } = await import('../messages/get');
 
     const result = await handleGetCardChatMessages(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages'),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(401);
   });
@@ -66,12 +68,20 @@ describe('handleGetCardChatMessages', () => {
   it('returns messages with pagination metadata', async () => {
     mockAuthenticate.mockResolvedValueOnce(null);
     mockGetMessages.mockResolvedValueOnce({
-      data: [{
-        id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hello',
-        metadata: null, author_id: 'user-1',
-        created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z',
-        authorName: 'Alice', avatar: 'https://example.com/avatar.png',
-      }],
+      data: [
+        {
+          id: 'msg-1',
+          session_id: 'sess-1',
+          role: 'user',
+          content: 'Hello',
+          metadata: null,
+          author_id: 'user-1',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+          authorName: 'Alice',
+          avatar: 'https://example.com/avatar.png',
+        },
+      ],
       metadata: { cursor: null, hasMore: false },
     });
 
@@ -79,10 +89,10 @@ describe('handleGetCardChatMessages', () => {
 
     const result = await handleGetCardChatMessages(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages'),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(200);
-    const body = await result.json() as { data: unknown[]; metadata: { hasMore: boolean } };
+    const body = (await result.json()) as { data: unknown[]; metadata: { hasMore: boolean } };
     expect(body.data).toHaveLength(1);
     expect(body.metadata.hasMore).toBe(false);
   });
@@ -95,7 +105,7 @@ describe('handleGetCardChatMessages', () => {
 
     await handleGetCardChatMessages(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages?cursor=msg-10&limit=20'),
-      cardId,
+      cardId
     );
     expect(mockGetMessages).toHaveBeenCalledWith({ cardId, cursor: 'msg-10', limit: 20 });
   });
@@ -108,7 +118,7 @@ describe('handleGetCardChatMessages', () => {
 
     await handleGetCardChatMessages(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages'),
-      cardId,
+      cardId
     );
     expect(mockGetMessages).toHaveBeenCalledWith({ cardId, cursor: null, limit: 50 });
   });
@@ -122,11 +132,14 @@ describe('handleCreateCardChatMessage', () => {
     const { handleCreateCardChatMessage } = await import('../messages/create');
 
     const result = await handleCreateCardChatMessage(
-      new Request('http://localhost/api/v1/cards/card-abc/chat/messages', { method: 'POST', body: 'not json' }),
-      cardId,
+      new Request('http://localhost/api/v1/cards/card-abc/chat/messages', {
+        method: 'POST',
+        body: 'not json',
+      }),
+      cardId
     );
     expect(result.status).toBe(400);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('invalid-request-body');
   });
 
@@ -138,12 +151,13 @@ describe('handleCreateCardChatMessage', () => {
 
     const result = await handleCreateCardChatMessage(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages', {
-        method: 'POST', body: JSON.stringify({ content: 'Hello' }),
+        method: 'POST',
+        body: JSON.stringify({ content: 'Hello' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(400);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('missing-session-id');
   });
 
@@ -155,12 +169,13 @@ describe('handleCreateCardChatMessage', () => {
 
     const result = await handleCreateCardChatMessage(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-1' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-1' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(400);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('invalid-content');
   });
 
@@ -173,19 +188,31 @@ describe('handleCreateCardChatMessage', () => {
 
     mockWriteMessage.mockResolvedValueOnce({
       status: 201,
-      data: { message: { id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hello world', metadata: null, author_id: 'user-1', created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' } },
+      data: {
+        message: {
+          id: 'msg-1',
+          session_id: 'sess-1',
+          role: 'user',
+          content: 'Hello world',
+          metadata: null,
+          author_id: 'user-1',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        },
+      },
     });
 
     const { handleCreateCardChatMessage } = await import('../messages/create');
 
     const result = await handleCreateCardChatMessage(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-1', content: 'Hello world' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-1', content: 'Hello world' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(201);
-    const body = await result.json() as { data: { id: string; content: string } };
+    const body = (await result.json()) as { data: { id: string; content: string } };
     expect(body.data.id).toBe('msg-1');
     expect(body.data.content).toBe('Hello world');
   });
@@ -202,12 +229,13 @@ describe('handleCreateCardChatMessage', () => {
 
     const result = await handleCreateCardChatMessage(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-1', content: 'x' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-1', content: 'x' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(404);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('session-not-found');
   });
 
@@ -223,12 +251,13 @@ describe('handleCreateCardChatMessage', () => {
 
     const result = await handleCreateCardChatMessage(
       new Request('http://localhost/api/v1/cards/card-abc/chat/messages', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-1', content: 'x' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-1', content: 'x' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(409);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('session-is-paused');
   });
 });

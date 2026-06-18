@@ -9,7 +9,9 @@ function toIsoString(value: string | Date): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }
 
-export function serializeWorkspaceSubscription(row: WorkspaceSubscriptionRow): WorkspaceSubscription {
+export function serializeWorkspaceSubscription(
+  row: WorkspaceSubscriptionRow
+): WorkspaceSubscription {
   return {
     userId: row.user_id,
     tier: row.tier,
@@ -17,7 +19,9 @@ export function serializeWorkspaceSubscription(row: WorkspaceSubscriptionRow): W
     stripeCustomerId: row.stripe_customer_id,
     stripeSubscriptionId: row.stripe_subscription_id,
     stripePriceId: row.stripe_price_id,
-    stripeCurrentPeriodEnd: row.stripe_current_period_end ? toIsoString(row.stripe_current_period_end) : null,
+    stripeCurrentPeriodEnd: row.stripe_current_period_end
+      ? toIsoString(row.stripe_current_period_end)
+      : null,
     createdAt: toIsoString(row.created_at),
     updatedAt: toIsoString(row.updated_at),
   };

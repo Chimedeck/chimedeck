@@ -62,7 +62,15 @@ export interface ListNotificationsResponse {
 }
 
 export const notificationApi = {
-  list({ unread, limit, cursor }: { unread?: boolean; limit?: number; cursor?: string | null } = {}): Promise<ListNotificationsResponse> {
+  list({
+    unread,
+    limit,
+    cursor,
+  }: {
+    unread?: boolean;
+    limit?: number;
+    cursor?: string | null;
+  } = {}): Promise<ListNotificationsResponse> {
     const params: Record<string, string> = {};
     if (unread) params.unread = 'true';
     if (limit) params.limit = String(limit);

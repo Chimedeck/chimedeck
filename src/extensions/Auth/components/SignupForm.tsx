@@ -83,8 +83,12 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             type="text"
             autoComplete="name"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
-            onBlur={() => { setErrors((prev) => ({ ...prev, name: validateName(name) })); }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+            onBlur={() => {
+              setErrors((prev) => ({ ...prev, name: validateName(name) }));
+            }}
             placeholder={translations['signupForm.namePlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.name ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
@@ -101,8 +105,12 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(e) => { setEmail(e.target.value); }}
-            onBlur={() => { setErrors((prev) => ({ ...prev, email: validateEmail(email) })); }}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+            onBlur={() => {
+              setErrors((prev) => ({ ...prev, email: validateEmail(email) }));
+            }}
             placeholder={translations['signupForm.emailPlaceholder']}
             className={`w-full bg-bg-overlay border ${errors.email ? 'border-danger' : 'border-border'} text-base placeholder:text-subtle rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary`}
           />
@@ -115,8 +123,12 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
           label={translations.fields.password}
           autoComplete="new-password"
           value={password}
-          onChange={(e) => { setPassword(e.target.value); }}
-          onBlur={() => { setErrors((prev) => ({ ...prev, password: validatePassword(password) })); }}
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
+          onBlur={() => {
+            setErrors((prev) => ({ ...prev, password: validatePassword(password) }));
+          }}
           placeholder={translations['signupForm.passwordPlaceholder']}
           error={errors.password}
         />
@@ -127,25 +139,25 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
           label={translations.fields.confirmPassword}
           autoComplete="new-password"
           value={confirm}
-          onChange={(e) => { setConfirm(e.target.value); }}
-          onBlur={() => { setErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) })); }}
+          onChange={(e) => {
+            setConfirm(e.target.value);
+          }}
+          onBlur={() => {
+            setErrors((prev) => ({ ...prev, confirm: validateConfirm(confirm, password) }));
+          }}
           placeholder={translations['signupForm.confirmPasswordPlaceholder']}
           error={errors.confirm}
         />
 
         {/* API error */}
         {mappedApiError && (
-          <p role="alert" className="text-danger text-sm">{mappedApiError}</p>
+          <p role="alert" className="text-danger text-sm">
+            {mappedApiError}
+          </p>
         )}
 
         {/* Submit */}
-        <Button
-          type="submit"
-          variant="primary"
-          size="md"
-          disabled={isLoading}
-          className="w-full"
-        >
+        <Button type="submit" variant="primary" size="md" disabled={isLoading} className="w-full">
           {isLoading ? translations.actions.creatingAccount : translations.actions.createAccount}
         </Button>
       </div>

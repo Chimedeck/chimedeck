@@ -14,7 +14,7 @@ export async function handleListLabels(req: Request, workspaceId: string): Promi
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

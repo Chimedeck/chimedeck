@@ -6,14 +6,22 @@ const mockAuthenticate = vi.fn();
 const mockCreateEditRun = vi.fn();
 
 globalThis.Bun = {
-  file: vi.fn().mockReturnValue({ exists: () => Promise.resolve(false), text: () => Promise.resolve('') }),
+  file: vi
+    .fn()
+    .mockReturnValue({ exists: () => Promise.resolve(false), text: () => Promise.resolve('') }),
   write: vi.fn().mockResolvedValue(undefined),
-  spawnSync: vi.fn().mockReturnValue({ exitCode: 0, stdout: Buffer.from(''), stderr: Buffer.from('') }),
+  spawnSync: vi
+    .fn()
+    .mockReturnValue({ exitCode: 0, stdout: Buffer.from(''), stderr: Buffer.from('') }),
 } as any;
 
 vi.mock('../../../../common/db', () => ({ db: vi.fn(() => ({})) }));
 vi.mock('../../../../../config/env', () => ({
-  env: { DATABASE_URL: 'postgres://test:test@localhost:5432/test', JWT_PRIVATE_KEY: 'test', JWT_PUBLIC_KEY: 'test' },
+  env: {
+    DATABASE_URL: 'postgres://test:test@localhost:5432/test',
+    JWT_PRIVATE_KEY: 'test',
+    JWT_PUBLIC_KEY: 'test',
+  },
 }));
 vi.mock('../../../auth/middlewares/authentication', () => ({
   authenticate: (...args: unknown[]) => mockAuthenticate(...args),
@@ -30,14 +38,21 @@ vi.mock('../../mods/persistence', () => ({
 }));
 
 describe('handleCreateEditRun', () => {
-  beforeEach(() => { vi.clearAllMocks(); });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('returns 401 when authentication fails', async () => {
-    mockAuthenticate.mockResolvedValueOnce(new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 }));
+    mockAuthenticate.mockResolvedValueOnce(
+      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 })
+    );
     const { handleCreateEditRun } = await import('../edit');
     const result = await handleCreateEditRun(
-      new Request('http://localhost/api/v1/cards/card-abc/ai/edit', { method: 'POST', body: JSON.stringify({ intent: 'test' }) }),
-      'card-abc',
+      new Request('http://localhost/api/v1/cards/card-abc/ai/edit', {
+        method: 'POST',
+        body: JSON.stringify({ intent: 'test' }),
+      }),
+      'card-abc'
     );
     expect(result.status).toBe(401);
   });
@@ -47,8 +62,11 @@ describe('handleCreateEditRun', () => {
     mockRequireMembership.mockResolvedValueOnce(null);
     const { handleCreateEditRun } = await import('../edit');
     const result = await handleCreateEditRun(
-      new Request('http://localhost/api/v1/cards/card-abc/ai/edit', { method: 'POST', body: JSON.stringify({}) }),
-      'card-abc',
+      new Request('http://localhost/api/v1/cards/card-abc/ai/edit', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
+      'card-abc'
     );
     expect(result.status).toBe(400);
     const body = (await result.json()) as { name: string };
@@ -60,8 +78,11 @@ describe('handleCreateEditRun', () => {
     mockRequireMembership.mockResolvedValueOnce(null);
     const { handleCreateEditRun } = await import('../edit');
     const result = await handleCreateEditRun(
-      new Request('http://localhost/api/v1/cards/card-abc/ai/edit', { method: 'POST', body: 'not json' }),
-      'card-abc',
+      new Request('http://localhost/api/v1/cards/card-abc/ai/edit', {
+        method: 'POST',
+        body: 'not json',
+      }),
+      'card-abc'
     );
     expect(result.status).toBe(400);
     const body = (await result.json()) as { name: string };
@@ -71,14 +92,32 @@ describe('handleCreateEditRun', () => {
   it('returns 201 with run on success', async () => {
     mockAuthenticate.mockResolvedValueOnce(null);
     mockRequireMembership.mockResolvedValueOnce(null);
-    const mockRun = { id: 'run-1', card_id: 'card-abc', workspace_id: 'ws-1', created_by: 'user-1', status: 'REQUESTED', snapshot_id: null, file_scope_plan: null, error_message: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', completed_at: null };
+    const mockRun = {
+      id: 'run-1',
+      card_id: 'card-abc',
+      workspace_id: 'ws-1',
+      created_by: 'user-1',
+      status: 'REQUESTED',
+      snapshot_id: null,
+      file_scope_plan: null,
+      error_message: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      completed_at: null,
+    };
     mockCreateEditRun.mockResolvedValueOnce({ status: 201, data: { run: mockRun } });
 
     const mod = await import('../edit');
     // [why] Override runPipeline after import to avoid orchestrator transitive deps
-    (mod.editApiDeps as { runPipeline: typeof vi.fn }).runPipeline = vi.fn().mockResolvedValue(undefined);
+    (mod.editApiDeps as { runPipeline: typeof vi.fn }).runPipeline = vi
+      .fn()
+      .mockResolvedValue(undefined);
 
-    const req = { json: () => Promise.resolve({ intent: 'add OAuth support' }), currentUser: { id: 'user-1' }, workspaceId: 'ws-1' } as unknown as Request;
+    const req = {
+      json: () => Promise.resolve({ intent: 'add OAuth support' }),
+      currentUser: { id: 'user-1' },
+      workspaceId: 'ws-1',
+    } as unknown as Request;
     const result = await mod.handleCreateEditRun(req, 'card-abc');
     expect(result.status).toBe(201);
     const body = (await result.json()) as { data: { run: { id: string; status: string } } };
@@ -90,7 +129,10 @@ describe('handleCreateEditRun', () => {
     mockAuthenticate.mockResolvedValueOnce(null);
     mockRequireMembership.mockResolvedValueOnce(null);
     const { handleCreateEditRun } = await import('../edit');
-    const req = new Request('http://localhost/api/v1/cards/card-abc/ai/edit', { method: 'POST', body: JSON.stringify({ intent: 'test intent' }) });
+    const req = new Request('http://localhost/api/v1/cards/card-abc/ai/edit', {
+      method: 'POST',
+      body: JSON.stringify({ intent: 'test intent' }),
+    });
     const result = await handleCreateEditRun(req, 'card-abc');
     expect(result.status).toBe(401);
     const body = (await result.json()) as { name: string };

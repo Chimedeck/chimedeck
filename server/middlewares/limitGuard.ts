@@ -49,7 +49,7 @@ export function buildLimitResponse(
   tier: SubscriptionTier,
   limitKey: LimitKey,
   currentUsage: number,
-  workspaceId?: string,
+  workspaceId?: string
 ): Response | null {
   const quota = resolveQuota(tier, limitKey);
 
@@ -68,7 +68,7 @@ export function buildLimitResponse(
         },
       },
     },
-    { status: 402 },
+    { status: 402 }
   );
 }
 

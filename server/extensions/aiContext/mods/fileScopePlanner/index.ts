@@ -30,14 +30,14 @@ const PROTECTED_FILES = [
  * Determine whether a file path is in a creatable zone.
  */
 function isCreatableZone(filePath: string): boolean {
-  return CREATABLE_ZONES.some(zone => filePath.startsWith(zone));
+  return CREATABLE_ZONES.some((zone) => filePath.startsWith(zone));
 }
 
 /**
  * Determine whether a file path is protected from auto-edits.
  */
 function isProtectedFile(filePath: string): boolean {
-  return PROTECTED_FILES.some(p => filePath === p);
+  return PROTECTED_FILES.some((p) => filePath === p);
 }
 
 /**
@@ -61,11 +61,7 @@ export function planFileScope({
 
   // [why] From context chunks: files that exist and are relevant → "edit".
   for (const chunk of chunks) {
-    if (
-      chunk.source === 'docs' &&
-      chunk.sourcePath &&
-      !seenPaths.has(chunk.sourcePath)
-    ) {
+    if (chunk.source === 'docs' && chunk.sourcePath && !seenPaths.has(chunk.sourcePath)) {
       seenPaths.add(chunk.sourcePath);
 
       if (isProtectedFile(chunk.sourcePath)) {
@@ -119,14 +115,12 @@ export function planFileScope({
 
   // Compute overall plan confidence.
   const avgConfidence =
-    files.length > 0
-      ? files.reduce((sum, f) => sum + f.confidence, 0) / files.length
-      : 0.5;
+    files.length > 0 ? files.reduce((sum, f) => sum + f.confidence, 0) / files.length : 0.5;
 
   return {
     files,
     possibleDuplicateCards: duplicateCards,
-    likelyImpactedFiles: impact.likelyImpactedFiles.map(f => f.filePath),
+    likelyImpactedFiles: impact.likelyImpactedFiles.map((f) => f.filePath),
     confidence: Math.round(avgConfidence * 100) / 100,
     snapshotId: '', // [why] Set by caller after snapshot is persisted.
   };

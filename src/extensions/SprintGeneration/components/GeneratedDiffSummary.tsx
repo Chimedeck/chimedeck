@@ -57,17 +57,11 @@ export default function GeneratedDiffSummary({
     <div className="diff-summary" data-testid="diff-summary">
       <h4 style={styles.title}>
         {title}
-        {runId && (
-          <span style={styles.runId}> · Run {runId.slice(0, 8)}</span>
-        )}
+        {runId && <span style={styles.runId}> · Run {runId.slice(0, 8)}</span>}
       </h4>
       <ul style={styles.fileList}>
         {changedFiles.map((file) => (
-          <li
-            key={file.path}
-            style={styles.fileItem}
-            data-testid={`diff-file-${file.status}`}
-          >
+          <li key={file.path} style={styles.fileItem} data-testid={`diff-file-${file.status}`}>
             <span
               style={{
                 ...styles.statusBadge,

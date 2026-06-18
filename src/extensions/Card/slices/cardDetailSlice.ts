@@ -71,10 +71,10 @@ export const fetchCardDetailThunk = createAppAsyncThunk(
   async ({ cardId }: { cardId: string }, { extra }) => {
     const api = (extra as { api: { get: <T>(url: string) => Promise<T> } }).api;
     const result = await api.get<{ data: Card; includes: CardDetail['includes'] }>(
-      `/cards/${cardId}?include=activities`,
+      `/cards/${cardId}?include=activities`
     );
     return result;
-  },
+  }
 );
 
 export const fetchCardActivitiesThunk = createAppAsyncThunk(
@@ -83,7 +83,7 @@ export const fetchCardActivitiesThunk = createAppAsyncThunk(
     const api = (extra as { api: { get: <T>(url: string) => Promise<T> } }).api;
     const result = await api.get<{ data: ActivityData[] }>(`/cards/${cardId}/activity`);
     return result;
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -143,7 +143,13 @@ const cardDetailSlice = createSlice({
     // ── Comment reactions ────────────────────────────────────────────────────
     addReaction(
       state,
-      action: PayloadAction<{ commentId: string; emoji: string; userId: string; reactedByMe?: boolean; actorName?: string | null }>,
+      action: PayloadAction<{
+        commentId: string;
+        emoji: string;
+        userId: string;
+        reactedByMe?: boolean;
+        actorName?: string | null;
+      }>
     ) {
       const { commentId, emoji, userId, reactedByMe = true, actorName = null } = action.payload;
       const comment = state.comments.find((c) => c.id === commentId);
@@ -170,7 +176,12 @@ const cardDetailSlice = createSlice({
 
     removeReaction(
       state,
-      action: PayloadAction<{ commentId: string; emoji: string; userId: string; reactedByMe?: boolean }>,
+      action: PayloadAction<{
+        commentId: string;
+        emoji: string;
+        userId: string;
+        reactedByMe?: boolean;
+      }>
     ) {
       const { commentId, emoji, userId, reactedByMe = true } = action.payload;
       const comment = state.comments.find((c) => c.id === commentId);
@@ -186,10 +197,7 @@ const cardDetailSlice = createSlice({
     },
 
     // ── Threaded replies ─────────────────────────────────────────────────────
-    addReply(
-      state,
-      action: PayloadAction<{ parentId: string; reply: CommentData }>,
-    ) {
+    addReply(state, action: PayloadAction<{ parentId: string; reply: CommentData }>) {
       const { parentId, reply } = action.payload;
       // [why] Both the POST response (handleAddReply) and the WS event (comment_reply_added)
       // dispatch addReply for the submitting user. Guard against double-counting using seenReplyIds.
@@ -214,7 +222,8 @@ const cardDetailSlice = createSlice({
       // Accept match via openCardId, loaded card id, or loaded card short_id.
       const eventCardId = action.payload.entity_id;
       const matchesOpenCard = state.openCardId === eventCardId;
-      const matchesLoadedCard = state.card?.id === eventCardId || state.card?.short_id === eventCardId;
+      const matchesLoadedCard =
+        state.card?.id === eventCardId || state.card?.short_id === eventCardId;
       if (!matchesOpenCard && !matchesLoadedCard) return;
       // Deduplicate: skip if already present (initial fetch + realtime can both deliver the same row).
       if (state.activities.some((a) => a.id === action.payload.id)) return;
@@ -226,18 +235,30 @@ const cardDetailSlice = createSlice({
       state,
       action: PayloadAction<{
         mutationId: string;
-        fields: Partial<Pick<Card, 'title' | 'description' | 'due_date' | 'due_complete' | 'start_date' | 'amount' | 'currency' | 'cover_attachment_id' | 'cover_color' | 'cover_size' | 'cover_image_url'>>;
-      }>,
+        fields: Partial<
+          Pick<
+            Card,
+            | 'title'
+            | 'description'
+            | 'due_date'
+            | 'due_complete'
+            | 'start_date'
+            | 'amount'
+            | 'currency'
+            | 'cover_attachment_id'
+            | 'cover_color'
+            | 'cover_size'
+            | 'cover_image_url'
+          >
+        >;
+      }>
     ) {
       const { mutationId, fields } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
       if (state.card) Object.assign(state.card, fields);
     },
 
-    confirmCardUpdate(
-      state,
-      action: PayloadAction<{ mutationId: string; card: Card }>,
-    ) {
+    confirmCardUpdate(state, action: PayloadAction<{ mutationId: string; card: Card }>) {
       const { mutationId, card } = action.payload;
       delete state.snapshots[mutationId];
       state.card = card;
@@ -258,7 +279,7 @@ const cardDetailSlice = createSlice({
     // ── Optimistic checklist group actions ─────────────────────────────────
     applyOptimisticChecklistAdd(
       state,
-      action: PayloadAction<{ mutationId: string; checklist: Checklist }>,
+      action: PayloadAction<{ mutationId: string; checklist: Checklist }>
     ) {
       const { mutationId, checklist } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -267,7 +288,7 @@ const cardDetailSlice = createSlice({
 
     confirmChecklistAdd(
       state,
-      action: PayloadAction<{ mutationId: string; checklist: Checklist }>,
+      action: PayloadAction<{ mutationId: string; checklist: Checklist }>
     ) {
       const { mutationId, checklist } = action.payload;
       delete state.snapshots[mutationId];
@@ -281,7 +302,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticChecklistDelete(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string }>,
+      action: PayloadAction<{ mutationId: string; checklistId: string }>
     ) {
       const { mutationId, checklistId } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -290,7 +311,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticChecklistRename(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; title: string }>,
+      action: PayloadAction<{ mutationId: string; checklistId: string; title: string }>
     ) {
       const { mutationId, checklistId, title } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -300,7 +321,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticChecklistReorder(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; position: string }>,
+      action: PayloadAction<{ mutationId: string; checklistId: string; position: string }>
     ) {
       const { mutationId, checklistId, position } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -319,7 +340,12 @@ const cardDetailSlice = createSlice({
     // ── Optimistic checklist item actions ───────────────────────────────────
     applyOptimisticChecklistToggle(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string; checked: boolean }>,
+      action: PayloadAction<{
+        mutationId: string;
+        checklistId: string;
+        itemId: string;
+        checked: boolean;
+      }>
     ) {
       const { mutationId, checklistId, itemId, checked } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -330,7 +356,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticChecklistItemAdd(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; item: ChecklistItem }>,
+      action: PayloadAction<{ mutationId: string; checklistId: string; item: ChecklistItem }>
     ) {
       const { mutationId, checklistId, item } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -340,7 +366,7 @@ const cardDetailSlice = createSlice({
 
     confirmChecklistItem(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; item: ChecklistItem }>,
+      action: PayloadAction<{ mutationId: string; checklistId: string; item: ChecklistItem }>
     ) {
       const { mutationId, checklistId, item } = action.payload;
       delete state.snapshots[mutationId];
@@ -356,7 +382,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticChecklistItemDelete(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string }>,
+      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string }>
     ) {
       const { mutationId, checklistId, itemId } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -366,7 +392,12 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticChecklistItemRename(
       state,
-      action: PayloadAction<{ mutationId: string; checklistId: string; itemId: string; title: string }>,
+      action: PayloadAction<{
+        mutationId: string;
+        checklistId: string;
+        itemId: string;
+        title: string;
+      }>
     ) {
       const { mutationId, checklistId, itemId, title } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -381,8 +412,10 @@ const cardDetailSlice = createSlice({
         mutationId: string;
         checklistId: string;
         itemId: string;
-        fields: Partial<Pick<ChecklistItem, 'assigned_member_id' | 'due_date' | 'linked_card_id' | 'position'>>;
-      }>,
+        fields: Partial<
+          Pick<ChecklistItem, 'assigned_member_id' | 'due_date' | 'linked_card_id' | 'position'>
+        >;
+      }>
     ) {
       const { mutationId, checklistId, itemId, fields } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -399,7 +432,7 @@ const cardDetailSlice = createSlice({
         targetChecklistId: string;
         itemId: string;
         position: string;
-      }>,
+      }>
     ) {
       const { mutationId, sourceChecklistId, targetChecklistId, itemId, position } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -427,10 +460,7 @@ const cardDetailSlice = createSlice({
     },
 
     // ── Optimistic label assign/unassign ────────────────────────────────────
-    applyOptimisticLabelAssign(
-      state,
-      action: PayloadAction<{ mutationId: string; label: Label }>,
-    ) {
+    applyOptimisticLabelAssign(state, action: PayloadAction<{ mutationId: string; label: Label }>) {
       const { mutationId, label } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
       if (!state.labels.some((l) => l.id === label.id)) {
@@ -440,7 +470,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticLabelDetach(
       state,
-      action: PayloadAction<{ mutationId: string; labelId: string }>,
+      action: PayloadAction<{ mutationId: string; labelId: string }>
     ) {
       const { mutationId, labelId } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -469,7 +499,7 @@ const cardDetailSlice = createSlice({
     // ── Optimistic member assign/unassign ───────────────────────────────────
     applyOptimisticMemberAssign(
       state,
-      action: PayloadAction<{ mutationId: string; member: CardMember }>,
+      action: PayloadAction<{ mutationId: string; member: CardMember }>
     ) {
       const { mutationId, member } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -480,7 +510,7 @@ const cardDetailSlice = createSlice({
 
     applyOptimisticMemberRemove(
       state,
-      action: PayloadAction<{ mutationId: string; memberId: string }>,
+      action: PayloadAction<{ mutationId: string; memberId: string }>
     ) {
       const { mutationId, memberId } = action.payload;
       state.snapshots[mutationId] = snapshot(state);
@@ -525,7 +555,7 @@ const cardDetailSlice = createSlice({
         state.members = includes.members;
         // [why] Server returns checklists with nested items. Fall back to empty array for
         // old clients that don't have the migration applied yet.
-        state.checklists = (includes.checklists ?? []);
+        state.checklists = includes.checklists ?? [];
         state.activities = (includes.activities ?? []) as ActivityData[];
         state.status = 'idle';
       })
@@ -566,18 +596,21 @@ export const selectOpenCardId = (s: { cardDetail: CardDetailState }) => s.cardDe
 export const selectCardDetail = (s: { cardDetail: CardDetailState }) => s.cardDetail.card;
 export const selectCardDetailLabels = (s: { cardDetail: CardDetailState }) => s.cardDetail.labels;
 export const selectCardDetailMembers = (s: { cardDetail: CardDetailState }) => s.cardDetail.members;
-export const selectCardDetailChecklists = (s: { cardDetail: CardDetailState }) => s.cardDetail.checklists;
+export const selectCardDetailChecklists = (s: { cardDetail: CardDetailState }) =>
+  s.cardDetail.checklists;
 /** @deprecated Use selectCardDetailChecklists — kept for any callers that haven't migrated */
 export const selectCardDetailChecklist = (s: { cardDetail: CardDetailState }) =>
   s.cardDetail.checklists.flatMap((cl) => cl.items);
-export const selectCardDetailComments = (s: { cardDetail: CardDetailState }) => s.cardDetail.comments;
-export const selectCardDetailActivities = (s: { cardDetail: CardDetailState }) => s.cardDetail.activities;
+export const selectCardDetailComments = (s: { cardDetail: CardDetailState }) =>
+  s.cardDetail.comments;
+export const selectCardDetailActivities = (s: { cardDetail: CardDetailState }) =>
+  s.cardDetail.activities;
 export const selectCardDetailStatus = (s: { cardDetail: CardDetailState }) => s.cardDetail.status;
 export const selectCardDetailMeta = createSelector(
   (s: { cardDetail: CardDetailState }) => s.cardDetail.listTitle,
   (s: { cardDetail: CardDetailState }) => s.cardDetail.boardTitle,
   (s: { cardDetail: CardDetailState }) => s.cardDetail.boardId,
-  (listTitle, boardTitle, boardId) => ({ listTitle, boardTitle, boardId }),
+  (listTitle, boardTitle, boardId) => ({ listTitle, boardTitle, boardId })
 );
 
 export const cardDetailSliceActions = cardDetailSlice.actions;

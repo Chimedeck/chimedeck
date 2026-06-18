@@ -20,9 +20,15 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
 
   useEffect(() => {
     getTriggerTypes()
-      .then((res) => { setTriggerTypes(res.data); })
-      .catch(() => { setError(translations['automation.triggerPicker.error.loadFailed']); })
-      .finally(() => { setLoading(false); });
+      .then((res) => {
+        setTriggerTypes(res.data);
+      })
+      .catch(() => {
+        setError(translations['automation.triggerPicker.error.loadFailed']);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const filtered = query
@@ -40,7 +46,9 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
       <button
         type="button"
         className="flex w-full items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-foreground hover:border-border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => { setOpen((o) => !o); }}
+        onClick={() => {
+          setOpen((o) => !o);
+        }}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -52,7 +60,9 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
         ) : (
           <>
             <BoltSlashIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-            <span className="flex-1 text-left text-muted">{translations['automation.triggerPicker.placeholder']}</span>
+            <span className="flex-1 text-left text-muted">
+              {translations['automation.triggerPicker.placeholder']}
+            </span>
           </>
         )}
       </button>
@@ -66,21 +76,25 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
               placeholder={translations['automation.triggerPicker.searchPlaceholder']}
               value={query}
-              onChange={(e) => { setQuery(e.target.value); }}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
               autoFocus
             />
           </div>
 
           {loading && (
-            <p className="px-3 py-4 text-center text-sm text-muted">{translations['automation.triggerPicker.loading']}</p>
+            <p className="px-3 py-4 text-center text-sm text-muted">
+              {translations['automation.triggerPicker.loading']}
+            </p>
           )}
 
-          {error && (
-            <p className="px-3 py-4 text-center text-sm text-danger">{error}</p>
-          )}
+          {error && <p className="px-3 py-4 text-center text-sm text-danger">{error}</p>}
 
           {!loading && !error && filtered.length === 0 && (
-            <p className="px-3 py-4 text-center text-sm text-muted">{translations['automation.triggerPicker.noResults']}</p>
+            <p className="px-3 py-4 text-center text-sm text-muted">
+              {translations['automation.triggerPicker.noResults']}
+            </p>
           )}
 
           {!loading && !error && filtered.length > 0 && (

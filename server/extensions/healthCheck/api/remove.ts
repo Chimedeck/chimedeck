@@ -8,7 +8,7 @@ import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 export async function handleRemoveHealthCheck(
   req: Request,
   boardId: string,
-  healthCheckId: string,
+  healthCheckId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -23,7 +23,7 @@ export async function handleRemoveHealthCheck(
   if (!check) {
     return Response.json(
       { error: { name: 'health-check-not-found', data: { message: 'Health check not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

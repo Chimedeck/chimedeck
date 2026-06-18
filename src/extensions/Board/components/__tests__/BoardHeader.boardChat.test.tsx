@@ -20,12 +20,7 @@ describe('BoardHeader — Board Chat button visibility', () => {
 
   it('shows chat button for non-guest members when onOpenBoardChat is provided', () => {
     render(
-      <BoardHeader
-        board={mockBoard}
-        isGuest={false}
-        onOpenBoardChat={vi.fn()}
-        {...mockHandlers}
-      />
+      <BoardHeader board={mockBoard} isGuest={false} onOpenBoardChat={vi.fn()} {...mockHandlers} />
     );
 
     const chatButton = screen.getByLabelText('Board chat');
@@ -34,12 +29,7 @@ describe('BoardHeader — Board Chat button visibility', () => {
 
   it('hides chat button for guests regardless of handler', () => {
     render(
-      <BoardHeader
-        board={mockBoard}
-        isGuest={true}
-        onOpenBoardChat={vi.fn()}
-        {...mockHandlers}
-      />
+      <BoardHeader board={mockBoard} isGuest={true} onOpenBoardChat={vi.fn()} {...mockHandlers} />
     );
 
     const chatButton = screen.queryByLabelText('Board chat');

@@ -53,12 +53,16 @@ export async function getByWorkspaceId(workspaceId: string): Promise<WorkspaceSu
   return getByUserId(ownerUserId ?? workspaceId);
 }
 
-export async function getOrCreateByWorkspaceId(workspaceId: string): Promise<WorkspaceSubscription> {
+export async function getOrCreateByWorkspaceId(
+  workspaceId: string
+): Promise<WorkspaceSubscription> {
   const ownerUserId = await resolveWorkspaceOwnerUserId(workspaceId);
   return getOrCreateByUserId(ownerUserId ?? workspaceId);
 }
 
-export async function getByStripeCustomerId(stripeCustomerId: string): Promise<WorkspaceSubscription | null> {
+export async function getByStripeCustomerId(
+  stripeCustomerId: string
+): Promise<WorkspaceSubscription | null> {
   const row = await db(TABLE_NAME)
     .where({ stripe_customer_id: stripeCustomerId })
     .first<WorkspaceSubscriptionRow>();
@@ -66,7 +70,9 @@ export async function getByStripeCustomerId(stripeCustomerId: string): Promise<W
   return serializeWorkspaceSubscription(row);
 }
 
-export async function getByStripeSubscriptionId(stripeSubscriptionId: string): Promise<WorkspaceSubscription | null> {
+export async function getByStripeSubscriptionId(
+  stripeSubscriptionId: string
+): Promise<WorkspaceSubscription | null> {
   const row = await db(TABLE_NAME)
     .where({ stripe_subscription_id: stripeSubscriptionId })
     .first<WorkspaceSubscriptionRow>();
@@ -75,7 +81,7 @@ export async function getByStripeSubscriptionId(stripeSubscriptionId: string): P
 }
 
 export async function upsertUserSubscription(
-  input: UpsertUserSubscriptionInput,
+  input: UpsertUserSubscriptionInput
 ): Promise<WorkspaceSubscription> {
   const now = new Date().toISOString();
 
@@ -90,7 +96,9 @@ export async function upsertUserSubscription(
     updated_at: now,
   };
 
-  const existing = await db(TABLE_NAME).where({ user_id: input.userId }).first<{ user_id: string }>();
+  const existing = await db(TABLE_NAME)
+    .where({ user_id: input.userId })
+    .first<{ user_id: string }>();
 
   if (existing) {
     const [updatedRow] = (await db(TABLE_NAME)
@@ -116,7 +124,7 @@ export async function upsertUserSubscription(
 }
 
 export async function upsertWorkspaceSubscription(
-  input: { workspaceId: string } & Omit<UpsertUserSubscriptionInput, 'userId'>,
+  input: { workspaceId: string } & Omit<UpsertUserSubscriptionInput, 'userId'>
 ): Promise<WorkspaceSubscription> {
   const ownerUserId = await resolveWorkspaceOwnerUserId(input.workspaceId);
   return upsertUserSubscription({

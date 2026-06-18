@@ -64,7 +64,11 @@ function cosineSimilarity(left: number[], right: number[]): number {
 
 export const boardChatSearchDeps = {
   generateBoardChatEmbedding,
-  fetchBoardMessageVectors: async ({ boardId }: { boardId: string }): Promise<BoardChatMessageVectorRow[]> => {
+  fetchBoardMessageVectors: async ({
+    boardId,
+  }: {
+    boardId: string;
+  }): Promise<BoardChatMessageVectorRow[]> => {
     const rows = await db('board_chat_message_vectors')
       .where({ board_id: boardId })
       .select('message_id', 'embedding');
@@ -91,7 +95,7 @@ export const boardChatSearchDeps = {
         'm.created_at',
         'm.updated_at',
         db.raw('COALESCE(u.name, u.email) as author_name'),
-        'u.avatar_url as author_avatar_url',
+        'u.avatar_url as author_avatar_url'
       );
     return rows as BoardChatMessageAuthorRow[];
   },
@@ -111,11 +115,14 @@ export async function searchBoardChatMessages({
     };
   }
 
-  const requestedLimit = typeof rawLimit === 'number' && Number.isFinite(rawLimit)
-    ? Math.floor(rawLimit)
-    : DEFAULT_LIMIT;
+  const requestedLimit =
+    typeof rawLimit === 'number' && Number.isFinite(rawLimit)
+      ? Math.floor(rawLimit)
+      : DEFAULT_LIMIT;
   const limit = Math.min(Math.max(requestedLimit, 1), MAX_LIMIT);
-  const queryEmbedding = await boardChatSearchDeps.generateBoardChatEmbedding({ text: normalizedQuery });
+  const queryEmbedding = await boardChatSearchDeps.generateBoardChatEmbedding({
+    text: normalizedQuery,
+  });
   const queryVector = queryEmbedding.values;
   if (queryVector.length === 0) {
     return {
@@ -175,7 +182,8 @@ export async function searchBoardChatMessages({
 
   hits.sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
-    if (right.created_at !== left.created_at) return right.created_at.localeCompare(left.created_at);
+    if (right.created_at !== left.created_at)
+      return right.created_at.localeCompare(left.created_at);
     return right.id.localeCompare(left.id);
   });
 

@@ -17,7 +17,7 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -27,13 +27,13 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -43,7 +43,7 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -54,8 +54,13 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
     body.emoji.trim().length > 32
   ) {
     return Response.json(
-      { error: { code: 'reaction-emoji-invalid', message: 'emoji must be a non-empty string of ≤ 32 characters' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'reaction-emoji-invalid',
+          message: 'emoji must be a non-empty string of ≤ 32 characters',
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -88,7 +93,7 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
   // Fetch actor name for WS payload so clients can show reactor names in tooltips immediately.
   const actor = await db('users')
     .where({ id: actorId })
-    .select(db.raw("COALESCE(name, email) as display_name"))
+    .select(db.raw('COALESCE(name, email) as display_name'))
     .first();
 
   await writeActivity({
@@ -117,7 +122,7 @@ export async function handleAddReaction(req: Request, commentId: string): Promis
           user_id: actorId,
           actor_name: actor?.display_name ?? null,
         },
-      }),
+      })
     )
     .catch(() => {});
 

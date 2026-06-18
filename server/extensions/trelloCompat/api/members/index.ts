@@ -8,7 +8,11 @@ import {
 } from '../../common/errors';
 import { getTrelloAuthUser } from '../../middlewares/trelloAuth';
 import { serializeBoard } from '../../serializers/board';
-import { serializeMember, usernameFromEmail, workspaceRoleToMemberType } from '../../serializers/member';
+import {
+  serializeMember,
+  usernameFromEmail,
+  workspaceRoleToMemberType,
+} from '../../serializers/member';
 import { serializeOrganization } from '../../serializers/organization';
 import { loadTrelloCardById } from '../cards';
 
@@ -54,7 +58,7 @@ async function parseBody(req: Request): Promise<Record<string, unknown>> {
 
   try {
     const parsed = JSON.parse(text) as unknown;
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
   } catch {
     return Object.fromEntries(new URLSearchParams(text).entries());
   }
@@ -83,10 +87,12 @@ function highestWorkspaceRole(roles: string[]): MembershipRole | null {
 
 async function resolveMember(
   identifier: string,
-  currentUser: { id: string; email: string; name?: string; avatar_url?: string | null },
+  currentUser: { id: string; email: string; name?: string; avatar_url?: string | null }
 ): Promise<UserRow | null> {
   if (identifier === 'me') {
-    const current = await db('users').where({ id: currentUser.id }).first() as UserRow | undefined;
+    const current = (await db('users').where({ id: currentUser.id }).first()) as
+      | UserRow
+      | undefined;
     if (current) return current;
     return {
       id: currentUser.id,
@@ -96,42 +102,44 @@ async function resolveMember(
     };
   }
 
-  const byId = await db('users').where({ id: identifier }).first() as UserRow | undefined;
+  const byId = (await db('users').where({ id: identifier }).first()) as UserRow | undefined;
   if (byId) return byId;
 
-  const users = await db('users') as UserRow[];
+  const users = (await db('users')) as UserRow[];
   const normalized = identifier.trim().toLowerCase();
   return users.find((user) => usernameFromEmail(user.email) === normalized) ?? null;
 }
 
-async function resolveMemberType(userId: string): Promise<ReturnType<typeof workspaceRoleToMemberType>> {
-  const memberships = await db('memberships').where({ user_id: userId }).select('role') as Array<{ role: string }>;
+async function resolveMemberType(
+  userId: string
+): Promise<ReturnType<typeof workspaceRoleToMemberType>> {
+  const memberships = (await db('memberships').where({ user_id: userId }).select('role')) as Array<{
+    role: string;
+  }>;
   const highest = highestWorkspaceRole(memberships.map((row) => row.role));
   return workspaceRoleToMemberType(highest);
 }
 
-async function listBoardMemberships(boardId: string): Promise<Array<{
-  id: string;
-  idMember: string;
-  memberType: 'admin' | 'normal' | 'observer';
-  unconfirmed: false;
-  deactivated: false;
-}>> {
-  const boardMembers = await db('board_members')
+async function listBoardMemberships(boardId: string): Promise<
+  Array<{
+    id: string;
+    idMember: string;
+    memberType: 'admin' | 'normal' | 'observer';
+    unconfirmed: false;
+    deactivated: false;
+  }>
+> {
+  const boardMembers = (await db('board_members')
     .where({ board_id: boardId })
-    .orderBy('created_at', 'asc') as Array<{ id: string; user_id: string; role: string }>;
-  const guestRows = await db('board_guest_access')
+    .orderBy('created_at', 'asc')) as Array<{ id: string; user_id: string; role: string }>;
+  const guestRows = (await db('board_guest_access')
     .where({ board_id: boardId })
-    .orderBy('granted_at', 'asc') as Array<{ id: string; user_id: string }>;
+    .orderBy('granted_at', 'asc')) as Array<{ id: string; user_id: string }>;
 
   const memberships = boardMembers.map((row) => ({
     id: row.id,
     idMember: row.user_id,
-    memberType: (row.role === 'ADMIN'
-      ? 'admin'
-      : row.role === 'VIEWER'
-        ? 'observer'
-        : 'normal'),
+    memberType: row.role === 'ADMIN' ? 'admin' : row.role === 'VIEWER' ? 'observer' : 'normal',
     unconfirmed: false as const,
     deactivated: false as const,
   }));
@@ -148,18 +156,26 @@ async function listBoardMemberships(boardId: string): Promise<Array<{
 }
 
 async function listVisibleBoardsForMember(memberId: string): Promise<BoardRow[]> {
-  const memberships = await db('memberships').where({ user_id: memberId }) as Array<{ workspace_id: string; role: string }>;
+  const memberships = (await db('memberships').where({ user_id: memberId })) as Array<{
+    workspace_id: string;
+    role: string;
+  }>;
   const roleByWorkspaceId = new Map<string, MembershipRole>();
   for (const row of memberships) {
     const current = roleByWorkspaceId.get(row.workspace_id);
     if (!(row.role in ROLE_RANK)) continue;
     const role = row.role as MembershipRole;
-    if (!current || ROLE_RANK[role] > ROLE_RANK[current]) roleByWorkspaceId.set(row.workspace_id, role);
+    if (!current || ROLE_RANK[role] > ROLE_RANK[current])
+      roleByWorkspaceId.set(row.workspace_id, role);
   }
 
-  const boards = await db('boards').orderBy('created_at', 'asc') as BoardRow[];
-  const boardMembers = await db('board_members').where({ user_id: memberId }) as Array<{ board_id: string }>;
-  const boardGuests = await db('board_guest_access').where({ user_id: memberId }) as Array<{ board_id: string }>;
+  const boards = (await db('boards').orderBy('created_at', 'asc')) as BoardRow[];
+  const boardMembers = (await db('board_members').where({ user_id: memberId })) as Array<{
+    board_id: string;
+  }>;
+  const boardGuests = (await db('board_guest_access').where({ user_id: memberId })) as Array<{
+    board_id: string;
+  }>;
 
   const boardMemberIds = new Set(boardMembers.map((row) => row.board_id));
   const boardGuestIds = new Set(boardGuests.map((row) => row.board_id));
@@ -191,14 +207,16 @@ async function listSerializedBoardsForMember(memberId: string) {
         ...board,
         idMemberCreator: creator?.idMember ?? '',
         memberships,
-      }),
+      })
     );
   }
   return serialized;
 }
 
 async function listSerializedCardsForMember(memberId: string, filter: 'open' | 'closed' | 'all') {
-  const rows = await db('card_members').where({ user_id: memberId }) as Array<{ card_id: string }>;
+  const rows = (await db('card_members').where({ user_id: memberId })) as Array<{
+    card_id: string;
+  }>;
   const cards = [];
   for (const row of rows) {
     const card = await loadTrelloCardById(row.card_id);
@@ -211,15 +229,15 @@ async function listSerializedCardsForMember(memberId: string, filter: 'open' | '
 }
 
 async function listSerializedOrganizationsForMember(memberId: string) {
-  const memberships = await db('memberships')
+  const memberships = (await db('memberships')
     .where({ user_id: memberId })
-    .orderBy('workspace_id', 'asc') as Array<{ workspace_id: string; role: string }>;
+    .orderBy('workspace_id', 'asc')) as Array<{ workspace_id: string; role: string }>;
   const visibleMemberships = memberships.filter((row) => row.role !== 'GUEST');
   if (visibleMemberships.length === 0) return [];
 
   const workspaceIds = new Set(visibleMemberships.map((row) => row.workspace_id));
-  const workspaces = await db('workspaces') as WorkspaceRow[];
-  const membershipRows = await db('memberships').orderBy('workspace_id', 'asc') as Array<{
+  const workspaces = (await db('workspaces')) as WorkspaceRow[];
+  const membershipRows = (await db('memberships').orderBy('workspace_id', 'asc')) as Array<{
     workspace_id: string;
     user_id: string;
     role: string;
@@ -227,15 +245,22 @@ async function listSerializedOrganizationsForMember(memberId: string) {
 
   return workspaces
     .filter((workspace) => workspaceIds.has(workspace.id))
-    .map((workspace) => serializeOrganization({
-      ...workspace,
-      memberships: membershipRows
-        .filter((membership) => membership.workspace_id === workspace.id && membership.role !== 'GUEST')
-        .map((membership) => ({ user_id: membership.user_id, role: membership.role })),
-    }));
+    .map((workspace) =>
+      serializeOrganization({
+        ...workspace,
+        memberships: membershipRows
+          .filter(
+            (membership) => membership.workspace_id === workspace.id && membership.role !== 'GUEST'
+          )
+          .map((membership) => ({ user_id: membership.user_id, role: membership.role })),
+      })
+    );
 }
 
-export async function membersRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function membersRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -252,13 +277,15 @@ export async function membersRouter(req: AuthenticatedRequest, path: string): Pr
   const memberType = await resolveMemberType(member.id);
 
   if (subPath === '' && req.method === 'GET') {
-    return Response.json(serializeMember({
-      id: member.id,
-      email: member.email,
-      name: member.name ?? fallbackName,
-      avatar_url: member.avatar_url ?? null,
-      memberType,
-    }));
+    return Response.json(
+      serializeMember({
+        id: member.id,
+        email: member.email,
+        name: member.name ?? fallbackName,
+        avatar_url: member.avatar_url ?? null,
+        memberType,
+      })
+    );
   }
 
   if (subPath === '' && req.method === 'PUT') {
@@ -266,19 +293,22 @@ export async function membersRouter(req: AuthenticatedRequest, path: string): Pr
     const body = await parseBody(req);
     const fullName = getInput(url, body, 'fullName');
     if (fullName !== undefined) {
-      if (typeof fullName !== 'string' || !fullName.trim()) return trelloError('invalid value for fullName', 400);
+      if (typeof fullName !== 'string' || !fullName.trim())
+        return trelloError('invalid value for fullName', 400);
       await db('users').where({ id: member.id }).update({ name: fullName.trim() });
     }
 
-    const updated = await db('users').where({ id: member.id }).first() as UserRow | undefined;
+    const updated = (await db('users').where({ id: member.id }).first()) as UserRow | undefined;
     if (!updated) return TRELLO_MEMBER_NOT_FOUND();
-    return Response.json(serializeMember({
-      id: updated.id,
-      email: updated.email,
-      name: updated.name ?? fallbackName,
-      avatar_url: updated.avatar_url ?? null,
-      memberType: await resolveMemberType(updated.id),
-    }));
+    return Response.json(
+      serializeMember({
+        id: updated.id,
+        email: updated.email,
+        name: updated.name ?? fallbackName,
+        avatar_url: updated.avatar_url ?? null,
+        memberType: await resolveMemberType(updated.id),
+      })
+    );
   }
 
   if (subPath === 'boards' && req.method === 'GET') {

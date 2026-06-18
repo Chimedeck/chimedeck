@@ -79,6 +79,8 @@ export async function resolveRequestWorkspaceId(path: string): Promise<string | 
  * Keeping this wrapper separate makes the workspace lookup reusable in the
  * request pipeline without duplicating the resolution logic.
  */
-export async function resolveRequestWorkspaceContext(path: string): Promise<RequestWorkspaceContext> {
+export async function resolveRequestWorkspaceContext(
+  path: string
+): Promise<RequestWorkspaceContext> {
   return { workspaceId: await resolveRequestWorkspaceId(path) };
 }

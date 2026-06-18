@@ -67,7 +67,8 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
 
     if (sub === '' && req.method === 'PATCH') return handleUpdateChecklistItem(req, itemId);
     if (sub === '' && req.method === 'DELETE') return handleDeleteChecklistItem(req, itemId);
-    if (sub === '/convert' && req.method === 'POST') return handleConvertChecklistItemToCard(req, itemId);
+    if (sub === '/convert' && req.method === 'POST')
+      return handleConvertChecklistItemToCard(req, itemId);
   }
 
   // Checklist group routes: /api/v1/checklists/:id[/...]
@@ -84,7 +85,8 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     // DELETE /api/v1/checklists/:id
     if (sub === '' && req.method === 'DELETE') return handleDeleteChecklist(req, checklistId);
     // POST /api/v1/checklists/:id/items
-    if (sub === '/items' && req.method === 'POST') return handleCreateChecklistItemInGroup(req, checklistId);
+    if (sub === '/items' && req.method === 'POST')
+      return handleCreateChecklistItemInGroup(req, checklistId);
   }
 
   // Card-scoped routes: /api/v1/cards/:id[/...]
@@ -95,7 +97,7 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     if (!cardId) {
       return Response.json(
         { error: { code: 'card-not-found', message: 'Card not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     const sub = cardMatch[2] ?? '';
@@ -117,7 +119,8 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     if (sub === '/archive' && req.method === 'PATCH') return handleArchiveCard(req, cardId);
 
     // PATCH /api/v1/cards/:id/description — idempotent offline-replay description save
-    if (sub === '/description' && req.method === 'PATCH') return handlePatchCardDescription(req, cardId);
+    if (sub === '/description' && req.method === 'PATCH')
+      return handlePatchCardDescription(req, cardId);
 
     // PATCH /api/v1/cards/:id/money — update amount, currency, label
     if (sub === '/money' && req.method === 'PATCH') return handlePatchCardMoney(req, cardId);
@@ -154,7 +157,8 @@ export async function cardRouter(req: Request, pathname: string): Promise<Respon
     }
 
     // POST /api/v1/cards/:id/checklist — add checklist item (legacy; adds to first checklist)
-    if (sub === '/checklist' && req.method === 'POST') return handleCreateChecklistItem(req, cardId);
+    if (sub === '/checklist' && req.method === 'POST')
+      return handleCreateChecklistItem(req, cardId);
 
     // POST /api/v1/cards/:id/checklists — create a new named checklist
     if (sub === '/checklists' && req.method === 'POST') return handleCreateChecklist(req, cardId);

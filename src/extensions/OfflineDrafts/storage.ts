@@ -49,7 +49,7 @@ function buildKey(
   userId: string,
   workspaceId: string,
   cardId: string,
-  draftType: DraftType,
+  draftType: DraftType
 ): string {
   return `${userId}::${workspaceId}::${cardId}::${draftType}`;
 }

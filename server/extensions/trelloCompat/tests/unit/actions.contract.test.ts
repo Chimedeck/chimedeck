@@ -67,9 +67,15 @@ describe('trelloCompat actions adapter contract', () => {
   });
 
   it('summarizes reactions by emoji for /reactionsSummary response', () => {
-    const first = serializeReaction(createReactionFixture({ id: 'reaction-1', emoji: ':thumbsup:' }));
-    const second = serializeReaction(createReactionFixture({ id: 'reaction-2', idMember: 'member-2', emoji: ':thumbsup:' }));
-    const third = serializeReaction(createReactionFixture({ id: 'reaction-3', idMember: 'member-3', emoji: ':heart:' }));
+    const first = serializeReaction(
+      createReactionFixture({ id: 'reaction-1', emoji: ':thumbsup:' })
+    );
+    const second = serializeReaction(
+      createReactionFixture({ id: 'reaction-2', idMember: 'member-2', emoji: ':thumbsup:' })
+    );
+    const third = serializeReaction(
+      createReactionFixture({ id: 'reaction-3', idMember: 'member-3', emoji: ':heart:' })
+    );
 
     const summary = serializeReactionsSummary({
       idModel: 'action-comment-1',

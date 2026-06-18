@@ -40,7 +40,13 @@ export async function upsertViewPreference({
   }
 
   const [inserted] = await db('user_board_view_prefs')
-    .insert({ id: generateId(), user_id: userId, board_id: boardId, view_type: viewType, updated_at: now })
+    .insert({
+      id: generateId(),
+      user_id: userId,
+      board_id: boardId,
+      view_type: viewType,
+      updated_at: now,
+    })
     .returning('*');
   return inserted as ViewPreference;
 }

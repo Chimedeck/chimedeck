@@ -4,7 +4,10 @@ import Button from '~/common/components/Button';
 import IconButton from '~/common/components/IconButton';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import { resendVerificationThunk, selectResendStatus } from '../containers/VerifyEmailPage/VerifyEmailPage.duck';
+import {
+  resendVerificationThunk,
+  selectResendStatus,
+} from '../containers/VerifyEmailPage/VerifyEmailPage.duck';
 import translations from '../translations/en.json';
 
 interface VerificationPendingProps {
@@ -39,9 +42,7 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
         className="absolute top-3 right-3 text-indigo-400 hover:text-indigo-200"
       />
 
-      <p className="mb-3">
-        {translations.verifyEmail.pending.replace('{email}', email)}
-      </p>
+      <p className="mb-3">{translations.verifyEmail.pending.replace('{email}', email)}</p>
 
       {resendStatus === 'sent' ? (
         <p className="text-success">{translations.verifyEmail.resendSuccess}</p>

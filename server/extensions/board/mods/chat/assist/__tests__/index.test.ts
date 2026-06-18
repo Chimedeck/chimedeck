@@ -7,7 +7,13 @@ let completionQueue: BoardChatAssistOutput[];
 let completionCalls: Array<{ messages: unknown[]; tools?: unknown[] }> = [];
 let createBoardCardCalls: Array<unknown> = [];
 let recentMessagesCalls: Array<{ boardId: string; limit: number }> = [];
-let writeMessageCalls: Array<{ boardId: string; sessionId: string; authorId: string | null; content: string; isAssistant: boolean }> = [];
+let writeMessageCalls: Array<{
+  boardId: string;
+  sessionId: string;
+  authorId: string | null;
+  content: string;
+  isAssistant: boolean;
+}> = [];
 
 const assistModule = await import('../index');
 const { assistBoardChat, boardChatAssistDeps } = assistModule;
@@ -84,8 +90,23 @@ beforeEach(() => {
     return {
       status: 201,
       data: {
-        thread: { id: 'thread-1', board_id: input.boardId, created_at: '', updated_at: '', last_message_at: '' },
-        message: { id: 'msg-ai-1', thread_id: 'thread-1', board_id: input.boardId, author_id: input.authorId ?? null, content: input.content, is_assistant: input.isAssistant ?? false, created_at: '', updated_at: '' },
+        thread: {
+          id: 'thread-1',
+          board_id: input.boardId,
+          created_at: '',
+          updated_at: '',
+          last_message_at: '',
+        },
+        message: {
+          id: 'msg-ai-1',
+          thread_id: 'thread-1',
+          board_id: input.boardId,
+          author_id: input.authorId ?? null,
+          content: input.content,
+          is_assistant: input.isAssistant ?? false,
+          created_at: '',
+          updated_at: '',
+        },
         vector: null,
         queuedForEmbeddingRetry: false,
       },
@@ -113,7 +134,13 @@ describe('assistBoardChat', () => {
     expect(recentMessagesCalls).toEqual([{ boardId: 'board-1', limit: 3 }]);
     // [why] AI response is now persisted as a chat message with isAssistant flag
     expect(writeMessageCalls).toEqual([
-      { boardId: 'board-1', sessionId: 'thread-1', authorId: null, content: 'Plain text reply', isAssistant: true },
+      {
+        boardId: 'board-1',
+        sessionId: 'thread-1',
+        authorId: null,
+        content: 'Plain text reply',
+        isAssistant: true,
+      },
     ]);
   });
 
@@ -162,7 +189,13 @@ describe('assistBoardChat', () => {
     expect(completionCalls).toHaveLength(2);
     // [why] AI response is now persisted as a chat message with isAssistant flag
     expect(writeMessageCalls).toEqual([
-      { boardId: 'board-1', sessionId: 'thread-1', authorId: null, content: 'Card created.', isAssistant: true },
+      {
+        boardId: 'board-1',
+        sessionId: 'thread-1',
+        authorId: null,
+        content: 'Card created.',
+        isAssistant: true,
+      },
     ]);
   });
 

@@ -17,7 +17,9 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
     try {
       await navigator.clipboard.writeText(apiKey);
       setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     } catch {
       // fallback: select the text
     }
@@ -54,24 +56,22 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
               className="flex-shrink-0 bg-bg-overlay hover:bg-bg-sunken text-subtle text-sm rounded px-3 py-2"
               aria-label={translations['plugins.apiKeyModal.copyAriaLabel']}
             >
-              {copied ? translations['plugins.apiKeyModal.copied'] : translations['plugins.apiKeyModal.copy']}
+              {copied
+                ? translations['plugins.apiKeyModal.copied']
+                : translations['plugins.apiKeyModal.copy']}
             </button>
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex justify-end px-5 py-4 border-t border-border">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onClose}
-          >
+          <Button variant="primary" size="sm" onClick={onClose}>
             {translations['plugins.apiKeyModal.done']}
           </Button>
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 };
 

@@ -25,10 +25,15 @@ class QueryBuilder {
   private orderByDirection: 'asc' | 'desc' = 'asc';
   private pickedColumns: string[] | null = null;
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -51,7 +56,7 @@ class QueryBuilder {
   async insert(payload: Row | Row[]): Promise<void> {
     const rows = Array.isArray(payload) ? payload : [payload];
     for (const row of rows) {
-      (this.store[this.tableName]).push({ ...row });
+      this.store[this.tableName].push({ ...row });
     }
   }
 
@@ -71,7 +76,7 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
@@ -115,7 +120,15 @@ function createStore(): DataStore {
   return {
     users: [{ id: 'user-admin', email: 'admin@example.com', name: 'Admin User', avatar_url: null }],
     memberships: [{ user_id: 'user-admin', workspace_id: 'ws-1', role: 'OWNER' }],
-    boards: [{ id: 'board-1', workspace_id: 'ws-1', title: 'Board One', state: 'ACTIVE', visibility: 'PRIVATE' }],
+    boards: [
+      {
+        id: 'board-1',
+        workspace_id: 'ws-1',
+        title: 'Board One',
+        state: 'ACTIVE',
+        visibility: 'PRIVATE',
+      },
+    ],
     board_members: [{ id: 'bm-1', board_id: 'board-1', user_id: 'user-admin', role: 'ADMIN' }],
     board_guest_access: [],
     lists: [],
@@ -141,7 +154,10 @@ const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) =
     return null;
   }
 
-  return Response.json({ error: { code: 'unauthorized', message: 'Invalid API token' } }, { status: 401 });
+  return Response.json(
+    { error: { code: 'unauthorized', message: 'Invalid API token' } },
+    { status: 401 }
+  );
 });
 
 mock.module('../../auth/middlewares/authentication', () => ({
@@ -149,12 +165,15 @@ mock.module('../../auth/middlewares/authentication', () => ({
 }));
 
 mock.module('../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
 }));
 
 mock.module('../../../common/ids/resolveEntityId', () => ({
   resolveBoardId: async (identifier: string) => {
-    const found = dataStore.boards.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.boards.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
   resolveCardId: async () => null,
@@ -179,7 +198,7 @@ describe('trelloCompat labels', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/labels');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { idBoard: string; name: string; color: string };
+    const body = (await res!.json()) as { idBoard: string; name: string; color: string };
     expect(body.idBoard).toBe('board-1');
     expect(body.name).toBe('Bug');
     expect(body.color).toBe('#FF5733');
@@ -193,7 +212,7 @@ describe('trelloCompat labels', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/labels/label-1');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { id: string; name: string };
+    const body = (await res!.json()) as { id: string; name: string };
     expect(body.id).toBe('label-1');
     expect(body.name).toBe('Urgent');
   });
@@ -207,7 +226,7 @@ describe('trelloCompat labels', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/labels/label-1');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { name: string };
+    const body = (await res!.json()) as { name: string };
     expect(body.name).toBe('Backend Bug');
     expect(dataStore.labels.find((row) => row.id === 'label-1')?.name).toBe('Backend Bug');
   });
@@ -221,7 +240,7 @@ describe('trelloCompat labels', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/labels/label-1/color');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { name: string; color: string };
+    const body = (await res!.json()) as { name: string; color: string };
     expect(body.name).toBe('Urgent');
     expect(body.color).toBe('#123456');
   });

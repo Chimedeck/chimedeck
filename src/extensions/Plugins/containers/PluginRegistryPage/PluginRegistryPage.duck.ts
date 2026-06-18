@@ -50,7 +50,11 @@ export const fetchPluginsThunk = createAppAsyncThunk(
     q,
     category,
     status,
-  }: { q?: string; category?: string | null; status?: RegistryStatus }) => {
+  }: {
+    q?: string;
+    category?: string | null;
+    status?: RegistryStatus;
+  }) => {
     const params: FetchAvailablePluginsParams = {};
     if (q) params.q = q;
     if (category) params.category = category;
@@ -58,7 +62,7 @@ export const fetchPluginsThunk = createAppAsyncThunk(
     if (status === 'active') params.isActive = true;
     if (status === 'inactive') params.isActive = false;
     return fetchAvailablePlugins(params);
-  },
+  }
 );
 
 // [why] Returns the full plugin (including one-time apiKey) directly so the
@@ -67,21 +71,21 @@ export const addPluginThunk = createAppAsyncThunk(
   'pluginRegistry/addPlugin',
   async ({ body }: { body: RegisterPluginBody }) => {
     return registerPluginApi(body);
-  },
+  }
 );
 
 export const deletePluginThunk = createAppAsyncThunk(
   'pluginRegistry/deletePlugin',
   async ({ pluginId }: { pluginId: string }) => {
     return deletePluginApi({ pluginId });
-  },
+  }
 );
 
 export const reactivatePluginThunk = createAppAsyncThunk(
   'pluginRegistry/reactivatePlugin',
   async ({ pluginId }: { pluginId: string }) => {
     return reactivatePluginApi({ pluginId });
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -149,18 +153,22 @@ const pluginRegistrySlice = createSlice({
       })
       .addCase(deletePluginThunk.rejected, (state, action) => {
         state.deleteStatus = 'error';
-        state.deleteError = (action.payload as string) ?? action.error.message ?? 'delete-plugin-failed';
+        state.deleteError =
+          (action.payload as string) ?? action.error.message ?? 'delete-plugin-failed';
       })
       .addCase(reactivatePluginThunk.pending, (state) => {
         state.reactivateStatus = 'loading';
         state.reactivateError = null;
       })
-      .addCase(reactivatePluginThunk.fulfilled, (state, action: PayloadAction<{ data: Plugin }>) => {
-        state.reactivateStatus = 'idle';
-        // Update the plugin in the list if present
-        const idx = state.plugins.findIndex((p) => p.id === action.payload.data.id);
-        if (idx !== -1) state.plugins[idx] = action.payload.data;
-      })
+      .addCase(
+        reactivatePluginThunk.fulfilled,
+        (state, action: PayloadAction<{ data: Plugin }>) => {
+          state.reactivateStatus = 'idle';
+          // Update the plugin in the list if present
+          const idx = state.plugins.findIndex((p) => p.id === action.payload.data.id);
+          if (idx !== -1) state.plugins[idx] = action.payload.data;
+        }
+      )
       .addCase(reactivatePluginThunk.rejected, (state, action) => {
         state.reactivateStatus = 'error';
         state.reactivateError =

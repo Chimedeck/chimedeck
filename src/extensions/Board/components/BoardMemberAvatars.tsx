@@ -12,13 +12,7 @@ interface Props {
 }
 
 // Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
-const COLORS = [
-  'bg-blue-600',
-  'bg-green-700',
-  'bg-purple-600',
-  'bg-pink-600',
-  'bg-amber-700',
-];
+const COLORS = ['bg-blue-600', 'bg-green-700', 'bg-purple-600', 'bg-pink-600', 'bg-amber-700'];
 
 function initials(member: Member): string {
   const name = member.display_name ?? member.email;

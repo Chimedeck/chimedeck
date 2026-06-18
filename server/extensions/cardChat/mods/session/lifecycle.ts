@@ -112,14 +112,11 @@ export async function pauseSession({
   }
 
   const now = new Date().toISOString();
-  await sessionLifecycleDeps
-    .db('card_chat_sessions')
-    .where({ id: sessionId })
-    .update({
-      status: 'PAUSED',
-      last_actor_at: now,
-      updated_at: now,
-    });
+  await sessionLifecycleDeps.db('card_chat_sessions').where({ id: sessionId }).update({
+    status: 'PAUSED',
+    last_actor_at: now,
+    updated_at: now,
+  });
 
   const updated: CardChatSession = {
     ...session,
@@ -172,14 +169,11 @@ export async function resumeSession({
 
   // Only IDLE and PAUSED can be resumed to ACTIVE_REFINEMENT.
   const now = new Date().toISOString();
-  await sessionLifecycleDeps
-    .db('card_chat_sessions')
-    .where({ id: sessionId })
-    .update({
-      status: 'ACTIVE_REFINEMENT',
-      last_actor_at: now,
-      updated_at: now,
-    });
+  await sessionLifecycleDeps.db('card_chat_sessions').where({ id: sessionId }).update({
+    status: 'ACTIVE_REFINEMENT',
+    last_actor_at: now,
+    updated_at: now,
+  });
 
   const updated: CardChatSession = {
     ...session,
@@ -209,14 +203,11 @@ export async function ensureActiveSession({
 
     // Resume paused session back to ACTIVE_REFINEMENT
     const now = new Date().toISOString();
-    await sessionLifecycleDeps
-      .db('card_chat_sessions')
-      .where({ id: existing.id })
-      .update({
-        status: 'ACTIVE_REFINEMENT',
-        last_actor_at: now,
-        updated_at: now,
-      });
+    await sessionLifecycleDeps.db('card_chat_sessions').where({ id: existing.id }).update({
+      status: 'ACTIVE_REFINEMENT',
+      last_actor_at: now,
+      updated_at: now,
+    });
 
     const resumed: CardChatSession = {
       ...existing,

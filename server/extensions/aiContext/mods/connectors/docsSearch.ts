@@ -26,9 +26,10 @@ export const liveDocsFS: DocsFileSystem = {
     try {
       const file = Bun.file(absPath);
       const size = file.size;
-      const text = size > MAX_FILE_SIZE_BYTES
-        ? await file.slice(0, MAX_FILE_SIZE_BYTES).text()
-        : await file.text();
+      const text =
+        size > MAX_FILE_SIZE_BYTES
+          ? await file.slice(0, MAX_FILE_SIZE_BYTES).text()
+          : await file.text();
       return { text, size };
     } catch {
       return null;
@@ -76,7 +77,12 @@ function chunkByHeading(content: string): RawChunk[] {
  * Returns a value between 0 and 1.
  */
 function relevanceScore(chunkText: string, intent: string): number {
-  const intentWords = new Set(intent.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  const intentWords = new Set(
+    intent
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2)
+  );
   const chunkWords = chunkText.toLowerCase().split(/\s+/);
   if (intentWords.size === 0 || chunkWords.length === 0) return 0;
 
@@ -86,7 +92,7 @@ function relevanceScore(chunkText: string, intent: string): number {
   }
   // [why] Bonus for heading matches — headings carry more semantic weight.
   const hasHeadingMatch = Array.from(intentWords).some(
-    w => chunkWords[0]?.includes(w) || (chunkWords[1]?.includes(w) && chunkText.startsWith('#')),
+    (w) => chunkWords[0]?.includes(w) || (chunkWords[1]?.includes(w) && chunkText.startsWith('#'))
   );
   const baseScore = hits / intentWords.size;
   return Math.min(1, hasHeadingMatch ? baseScore * 1.3 : baseScore);

@@ -23,7 +23,9 @@ const AddListButton = ({ onAdd }: Props) => {
     return (
       <button
         className="flex h-10 w-64 shrink-0 items-center gap-2 rounded-lg bg-bg-surface/70 px-3 text-sm font-medium text-muted shadow hover:bg-bg-surface hover:text-base"
-        onClick={() => { setOpen(true); }}
+        onClick={() => {
+          setOpen(true);
+        }}
         aria-label={translations['List.addListButtonAria']}
       >
         + Add a list
@@ -41,7 +43,9 @@ const AddListButton = ({ onAdd }: Props) => {
         type="text"
         placeholder="Enter list title…"
         value={title}
-        onChange={(e) => { setTitle(e.target.value); }}
+        onChange={(e) => {
+          setTitle(e.target.value);
+        }}
         className="rounded border border-border-strong px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       <div className="flex items-center gap-2">

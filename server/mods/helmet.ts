@@ -1,8 +1,8 @@
 export interface SecurityHeaderOptions {
   /**
    * Origins to add to the frame-src directive (e.g. plugin connector_url origins).
-    * Always includes 'self' and blob: so in-app blob-backed previews (e.g. PDFs)
-    * can render safely in iframes.
+   * Always includes 'self' and blob: so in-app blob-backed previews (e.g. PDFs)
+   * can render safely in iframes.
    */
   extraFrameSrc?: string[];
   /**
@@ -53,13 +53,15 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
     extraFrameAncestors = [],
   } = opts;
 
-  const frameSrc = ['\'self\'', 'blob:', ...extraFrameSrc].join(' ');
+  const frameSrc = ["'self'", 'blob:', ...extraFrameSrc].join(' ');
 
-  const connectSrc = ['\'self\'', 'wss:', ...extraConnectSrc].join(' ');
+  const connectSrc = ["'self'", 'wss:', ...extraConnectSrc].join(' ');
 
-  const imgSrc = ['\'self\'', 'data:', 'blob:', ...extraImgSrc].join(' ');
-  const styleSrc = ['\'self\'', "'unsafe-inline'", ...extraStyleSrc].join(' ');
-  const scriptSrc = ['\'self\'', 'https://static.cloudflareinsights.com', ...extraScriptSrc].join(' ');
+  const imgSrc = ["'self'", 'data:', 'blob:', ...extraImgSrc].join(' ');
+  const styleSrc = ["'self'", "'unsafe-inline'", ...extraStyleSrc].join(' ');
+  const scriptSrc = ["'self'", 'https://static.cloudflareinsights.com', ...extraScriptSrc].join(
+    ' '
+  );
 
   // Build frame-ancestors directive.
   // [why] When plugin connector origins are present, frame-ancestors must include
@@ -72,7 +74,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
 
   if (hasExtraAncestors) {
     // Include 'self' so same-origin embeds still work, plus plugin connector origins.
-    frameAncestorsValue = ['\'self\'', ...extraFrameAncestors].join(' ');
+    frameAncestorsValue = ["'self'", ...extraFrameAncestors].join(' ');
     // X-Frame-Options doesn't support multiple origins — omit it and rely on CSP.
     xFrameOptions = '';
   } else if (frameAncestors === "'self'") {
@@ -92,16 +94,10 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   }
   headers.set('X-XSS-Protection', '1; mode=block');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  headers.set(
-    'Strict-Transport-Security',
-    'max-age=63072000; includeSubDomains; preload'
-  );
+  headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   headers.set(
     'Content-Security-Policy',
     `default-src 'self'; script-src ${scriptSrc}; worker-src 'self' blob:; style-src ${styleSrc}; img-src ${imgSrc}; connect-src ${connectSrc}; object-src 'none'; frame-src ${frameSrc}; frame-ancestors ${frameAncestorsValue}`
   );
-  headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=()'
-  );
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
 }

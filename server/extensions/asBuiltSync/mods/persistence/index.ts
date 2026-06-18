@@ -25,10 +25,7 @@ const ALLOWED_TRANSITIONS: Record<AsBuiltSyncRunStatus, AsBuiltSyncRunStatus[]> 
   FAILED: [],
 };
 
-function isValidTransition(
-  from: AsBuiltSyncRunStatus,
-  to: AsBuiltSyncRunStatus,
-): boolean {
+function isValidTransition(from: AsBuiltSyncRunStatus, to: AsBuiltSyncRunStatus): boolean {
   const allowed = ALLOWED_TRANSITIONS[from];
   if (!allowed) return false;
   return allowed.includes(to);
@@ -72,13 +69,8 @@ export async function createAsBuiltSyncRun({
 /**
  * Retrieve an as-built sync run by ID.
  */
-export async function getAsBuiltSyncRun(
-  runId: string,
-): Promise<AsBuiltSyncRun | null> {
-  const row = await persistenceDeps
-    .db('card_as_built_sync_runs')
-    .where({ id: runId })
-    .first();
+export async function getAsBuiltSyncRun(runId: string): Promise<AsBuiltSyncRun | null> {
+  const row = await persistenceDeps.db('card_as_built_sync_runs').where({ id: runId }).first();
   return (row as AsBuiltSyncRun | undefined) ?? null;
 }
 
@@ -87,9 +79,7 @@ export async function getAsBuiltSyncRun(
  * [why] Prevents duplicate sync — idempotency is enforced at the trigger
  * level, but the API endpoint should also check.
  */
-export async function hasSucceededAsBuiltRun(
-  cardId: string,
-): Promise<boolean> {
+export async function hasSucceededAsBuiltRun(cardId: string): Promise<boolean> {
   const row = await persistenceDeps
     .db('card_as_built_sync_runs')
     .where({ card_id: cardId, status: 'SUCCEEDED' })
@@ -124,7 +114,7 @@ export async function updateAsBuiltSyncRunStatus({
 
   if (!isValidTransition(currentRun.status, status)) {
     console.warn(
-      `[asBuiltSync/persistence] Invalid transition: ${currentRun.status} → ${status} for run ${runId}`,
+      `[asBuiltSync/persistence] Invalid transition: ${currentRun.status} → ${status} for run ${runId}`
     );
     return null;
   }
@@ -141,14 +131,10 @@ export async function updateAsBuiltSyncRunStatus({
   if (errorMessage !== undefined) updates.error_message = errorMessage;
   if (outputFiles !== undefined)
     updates.output_files = outputFiles ? JSON.stringify(outputFiles) : null;
-  if (evidence !== undefined)
-    updates.evidence = evidence ? JSON.stringify(evidence) : null;
+  if (evidence !== undefined) updates.evidence = evidence ? JSON.stringify(evidence) : null;
   if (commitHash !== undefined) updates.commit_hash = commitHash;
 
-  await persistenceDeps
-    .db('card_as_built_sync_runs')
-    .where({ id: runId })
-    .update(updates);
+  await persistenceDeps.db('card_as_built_sync_runs').where({ id: runId }).update(updates);
 
   return {
     ...currentRun,
@@ -156,9 +142,7 @@ export async function updateAsBuiltSyncRunStatus({
     output_files: outputFiles ?? currentRun.output_files,
     evidence: evidence ?? currentRun.evidence,
     commit_hash: (updates.commit_hash as string | null) ?? currentRun.commit_hash,
-    error_message:
-      (updates.error_message as string | null) ?? currentRun.error_message,
-    completed_at:
-      (updates.completed_at as string | null) ?? currentRun.completed_at,
+    error_message: (updates.error_message as string | null) ?? currentRun.error_message,
+    completed_at: (updates.completed_at as string | null) ?? currentRun.completed_at,
   };
 }

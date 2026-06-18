@@ -23,7 +23,7 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
   if (!currentUserId) {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
   const url = new URL(req.url);
@@ -37,7 +37,7 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -51,7 +51,7 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
           db('board_members')
             .select(db.raw('1'))
             .whereRaw('board_members.user_id = users.id')
-            .andWhere('board_members.board_id', boardId),
+            .andWhere('board_members.board_id', boardId)
         );
       } else {
         builder.whereExists(
@@ -59,7 +59,7 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
             .select(db.raw('1'))
             .whereRaw('memberships.user_id = users.id')
             .andWhere('memberships.workspace_id', board.workspace_id)
-            .whereNot('memberships.role', 'GUEST'),
+            .whereNot('memberships.role', 'GUEST')
         );
       }
 
@@ -67,7 +67,7 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
         db('board_guest_access')
           .select(db.raw('1'))
           .whereRaw('board_guest_access.user_id = users.id')
-          .andWhere('board_guest_access.board_id', boardId),
+          .andWhere('board_guest_access.board_id', boardId)
       );
     })
     .where((builder) => {
@@ -81,13 +81,13 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
     .select(
       'users.id',
       'users.nickname',
-      db.raw("COALESCE(users.name, users.email) as name"),
-      'users.avatar_url',
+      db.raw('COALESCE(users.name, users.email) as name'),
+      'users.avatar_url'
     )
     .limit(10);
 
   const data = buildAvatarProxyUrlsInCollection(
-    members as Array<{ avatar_url?: string | null } & Record<string, unknown>>,
+    members as Array<{ avatar_url?: string | null } & Record<string, unknown>>
   );
 
   return Response.json({ data });

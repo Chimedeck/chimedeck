@@ -40,44 +40,49 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
   if (!incomingMatchesClaims) {
     return Response.json(
       { error: { code: 'forbidden', message: 'boardId does not match token scope' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
   if (!boardId) {
     return Response.json(
       { error: { code: 'missing-param', message: 'boardId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!scope || !VALID_SCOPES.includes(scope)) {
     return Response.json(
-      { error: { code: 'missing-param', message: 'scope must be one of: card, list, board, member' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'missing-param',
+          message: 'scope must be one of: card, list, board, member',
+        },
+      },
+      { status: 400 }
     );
   }
   if (!resourceId) {
     return Response.json(
       { error: { code: 'missing-param', message: 'resourceId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!key) {
     return Response.json(
       { error: { code: 'missing-param', message: 'key is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!VALID_VISIBILITY.includes(visibility)) {
     return Response.json(
       { error: { code: 'missing-param', message: 'visibility must be private or shared' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (visibility === 'private' && !userId) {
     return Response.json(
       { error: { code: 'missing-param', message: 'userId is required for private visibility' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -88,7 +93,7 @@ export async function handleGetPluginData(req: Request): Promise<Response> {
     if (err instanceof ResourceBoardMismatchError) {
       return Response.json(
         { error: { code: 'resource-board-mismatch', message: err.message } },
-        { status: 403 },
+        { status: 403 }
       );
     }
     throw err;

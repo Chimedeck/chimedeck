@@ -4,11 +4,7 @@ import { generateUniqueShortId } from '../../../../common/ids/shortId';
 import { resolveBoardId } from '../../../../common/ids/resolveEntityId';
 import { between, HIGH_SENTINEL } from '../../../list/mods/fractional';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import {
-  TRELLO_NOT_FOUND,
-  TRELLO_PERMISSION_DENIED,
-  trelloError,
-} from '../../common/errors';
+import { TRELLO_NOT_FOUND, TRELLO_PERMISSION_DENIED, trelloError } from '../../common/errors';
 import { serializeBoard } from '../../serializers/board';
 import { serializeCard as serializeTrelloCard } from '../../serializers/card';
 import { serializeLabel } from '../../serializers/label';
@@ -77,11 +73,7 @@ async function parseBody(req: Request): Promise<Record<string, unknown>> {
   }
 }
 
-function getInput(
-  url: URL,
-  body: Record<string, unknown>,
-  ...keys: string[]
-): unknown {
+function getInput(url: URL, body: Record<string, unknown>, ...keys: string[]): unknown {
   for (const key of keys) {
     const fromQuery = url.searchParams.get(key);
     if (fromQuery !== null) return fromQuery;
@@ -90,7 +82,10 @@ function getInput(
   return undefined;
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
   const memberships = await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .select('role');
@@ -159,7 +154,9 @@ async function listBoardMemberships(boardId: string): Promise<TrelloBoardMembers
     .where({ board_id: boardId })
     .orderBy('granted_at', 'asc');
 
-  const memberships: TrelloBoardMembership[] = (boardMembers as Array<{ id: string; user_id: string; role: string }>).map((row) => ({
+  const memberships: TrelloBoardMembership[] = (
+    boardMembers as Array<{ id: string; user_id: string; role: string }>
+  ).map((row) => ({
     id: row.id,
     idMember: row.user_id,
     memberType: row.role === 'ADMIN' ? 'admin' : 'normal',
@@ -228,25 +225,30 @@ function serializeCard(card: {
   });
 }
 
-async function listCardsForBoard(boardId: string, filter: 'open' | 'closed' | 'all'): Promise<TrelloCard[]> {
+async function listCardsForBoard(
+  boardId: string,
+  filter: 'open' | 'closed' | 'all'
+): Promise<TrelloCard[]> {
   const lists = await db('lists').where({ board_id: boardId }).orderBy('position', 'asc');
   const listIds = new Set((lists as Array<{ id: string }>).map((row) => row.id));
   if (listIds.size === 0) return [];
 
   const allCards = await db('cards').orderBy('position', 'asc');
-  const cards = (allCards as Array<{
-    id: string;
-    short_id?: string | null;
-    list_id: string;
-    title: string;
-    description?: string | null;
-    archived: boolean;
-    due_date?: string | Date | null;
-    due_complete?: boolean | null;
-    start_date?: string | Date | null;
-    created_at?: string | Date | null;
-    updated_at?: string | Date | null;
-  }>).filter((row) => listIds.has(row.list_id));
+  const cards = (
+    allCards as Array<{
+      id: string;
+      short_id?: string | null;
+      list_id: string;
+      title: string;
+      description?: string | null;
+      archived: boolean;
+      due_date?: string | Date | null;
+      due_complete?: boolean | null;
+      start_date?: string | Date | null;
+      created_at?: string | Date | null;
+      updated_at?: string | Date | null;
+    }>
+  ).filter((row) => listIds.has(row.list_id));
 
   const filteredCards = cards.filter((row) => {
     if (filter === 'all') return true;
@@ -260,8 +262,16 @@ async function listCardsForBoard(boardId: string, filter: 'open' | 'closed' | 'a
   const cardMembers = await db('card_members');
   const checklists = await db('checklists');
 
-  const labelsById = new Map((labels as Array<{ id: string; board_id: string; name: string; color: string }>).map((row) => [row.id, row]));
-  const labelsByCardId = new Map<string, Array<{ id: string; board_id: string; name: string; color: string }>>();
+  const labelsById = new Map(
+    (labels as Array<{ id: string; board_id: string; name: string; color: string }>).map((row) => [
+      row.id,
+      row,
+    ])
+  );
+  const labelsByCardId = new Map<
+    string,
+    Array<{ id: string; board_id: string; name: string; color: string }>
+  >();
   for (const row of cardLabels as Array<{ card_id: string; label_id: string }>) {
     if (!cardIds.has(row.card_id)) continue;
     const label = labelsById.get(row.label_id);
@@ -295,10 +305,14 @@ async function listCardsForBoard(boardId: string, filter: 'open' | 'closed' | 'a
       memberIds: membersByCardId.get(row.id) ?? [],
       checklistIds: checklistByCardId.get(row.id) ?? [],
       rank: index,
-    }));
+    })
+  );
 }
 
-export async function boardsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function boardsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = req.currentUser as TrelloAuthUser | undefined;
   if (!user) return trelloError('invalid token', 401);
 
@@ -375,7 +389,7 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
         idMemberCreator: user.id,
         memberships,
       }),
-      { status: 200 },
+      { status: 200 }
     );
   }
 
@@ -421,7 +435,9 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
     const updated = await db('boards').where({ id: board.id }).first();
     const memberships = await listBoardMemberships(board.id);
     const idMemberCreator = await resolveBoardCreatorId(board.id);
-    return Response.json(serializeBoard({ ...(updated as BoardRow), memberships, idMemberCreator }));
+    return Response.json(
+      serializeBoard({ ...(updated as BoardRow), memberships, idMemberCreator })
+    );
   }
 
   if (subPath === '' && req.method === 'DELETE') {
@@ -432,12 +448,21 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
 
   const listPathMatch = subPath.match(/^lists(?:\/(open|closed|all))?$/);
   if (listPathMatch && req.method === 'GET') {
-    const filter = (url.searchParams.get('filter') ?? listPathMatch[1] ?? 'open') as 'open' | 'closed' | 'all';
-    const lists = await db('lists')
-      .where({ board_id: board.id })
-      .orderBy('position', 'asc');
+    const filter = (url.searchParams.get('filter') ?? listPathMatch[1] ?? 'open') as
+      | 'open'
+      | 'closed'
+      | 'all';
+    const lists = await db('lists').where({ board_id: board.id }).orderBy('position', 'asc');
 
-    const filtered = (lists as Array<{ id: string; board_id: string; title: string; archived: boolean; color?: string | null }>)
+    const filtered = (
+      lists as Array<{
+        id: string;
+        board_id: string;
+        title: string;
+        archived: boolean;
+        color?: string | null;
+      }>
+    )
       .filter((row) => {
         if (filter === 'all') return true;
         if (filter === 'closed') return row.archived;
@@ -456,9 +481,7 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
       return trelloError('invalid value for name', 400);
     }
 
-    const existing = await db('lists')
-      .where({ board_id: board.id })
-      .orderBy('position', 'asc');
+    const existing = await db('lists').where({ board_id: board.id }).orderBy('position', 'asc');
     const last = (existing as Array<{ position: string }>).at(-1);
     const listId = randomUUID();
     const shortId = await generateUniqueShortId('lists');
@@ -474,19 +497,38 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
     });
 
     const created = await db('lists').where({ id: listId }).first();
-    return Response.json(serializeList({ ...(created as { id: string; board_id: string; title: string; archived: boolean; color?: string | null }), _rank: existing.length }), { status: 200 });
+    return Response.json(
+      serializeList({
+        ...(created as {
+          id: string;
+          board_id: string;
+          title: string;
+          archived: boolean;
+          color?: string | null;
+        }),
+        _rank: existing.length,
+      }),
+      { status: 200 }
+    );
   }
 
   const cardsPathMatch = subPath.match(/^cards(?:\/(open|closed|all))?$/);
   if (cardsPathMatch && req.method === 'GET') {
-    const filter = (url.searchParams.get('filter') ?? cardsPathMatch[1] ?? 'open') as 'open' | 'closed' | 'all';
+    const filter = (url.searchParams.get('filter') ?? cardsPathMatch[1] ?? 'open') as
+      | 'open'
+      | 'closed'
+      | 'all';
     const cards = await listCardsForBoard(board.id, filter);
     return Response.json(cards);
   }
 
   if (subPath === 'members' && req.method === 'GET') {
-    const boardMembers = await db('board_members').where({ board_id: board.id }).orderBy('created_at', 'asc');
-    const guestRows = await db('board_guest_access').where({ board_id: board.id }).orderBy('granted_at', 'asc');
+    const boardMembers = await db('board_members')
+      .where({ board_id: board.id })
+      .orderBy('created_at', 'asc');
+    const guestRows = await db('board_guest_access')
+      .where({ board_id: board.id })
+      .orderBy('granted_at', 'asc');
 
     const membersById = new Map<string, 'admin' | 'normal' | 'observer'>();
     for (const row of boardMembers as Array<{ user_id: string; role: string }>) {
@@ -507,7 +549,7 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
           name: (dbUser.name as string) ?? (dbUser.email as string),
           avatar_url: (dbUser.avatar_url as string | null | undefined) ?? null,
           memberType,
-        }),
+        })
       );
     }
 
@@ -564,8 +606,12 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
     if (!(await canWriteBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
     const idMember = memberMatch[1] as string;
-    const existing = await db('board_members').where({ board_id: board.id, user_id: idMember }).first();
-    const guest = await db('board_guest_access').where({ board_id: board.id, user_id: idMember }).first();
+    const existing = await db('board_members')
+      .where({ board_id: board.id, user_id: idMember })
+      .first();
+    const guest = await db('board_guest_access')
+      .where({ board_id: board.id, user_id: idMember })
+      .first();
     if (!existing && !guest) return TRELLO_NOT_FOUND();
 
     await db('board_members').where({ board_id: board.id, user_id: idMember }).delete();
@@ -576,7 +622,9 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
   if (subPath === 'labels' && req.method === 'GET') {
     const labels = await db('labels').where({ board_id: board.id }).orderBy('name', 'asc');
     return Response.json(
-      (labels as Array<{ id: string; board_id: string; name: string; color: string }>).map((label) => serializeLabel(label)),
+      (labels as Array<{ id: string; board_id: string; name: string; color: string }>).map(
+        (label) => serializeLabel(label)
+      )
     );
   }
 

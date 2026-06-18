@@ -15,7 +15,10 @@ import { publishToUser } from '../../realtime/userChannel';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 import { dispatchNotificationEmail } from '../../notifications/mods/emailDispatch';
 import { env } from '../../../config/env';
-import { getCardRelatedUserIds, isRecipientRelatedCardNotification } from '../../notifications/mods/relatedCardRecipients';
+import {
+  getCardRelatedUserIds,
+  isRecipientRelatedCardNotification,
+} from '../../notifications/mods/relatedCardRecipients';
 import type { WrittenActivity } from './write';
 import type { NotificationType } from '../../notifications/mods/preferenceGuard';
 
@@ -86,33 +89,50 @@ export async function mapActivityToNotification({
     // [why] Card member assignment/unassignment must always notify the target user,
     // even when they are not currently a board participant row.
     const currentUserId = typeof payload.userId === 'string' ? payload.userId : null;
-    const previousUserId = typeof payload.previousUserId === 'string' ? payload.previousUserId : null;
-    if (notificationType === 'card_member_assigned' && currentUserId && currentUserId !== activity.actor_id) {
+    const previousUserId =
+      typeof payload.previousUserId === 'string' ? payload.previousUserId : null;
+    if (
+      notificationType === 'card_member_assigned' &&
+      currentUserId &&
+      currentUserId !== activity.actor_id
+    ) {
       recipientSet.add(currentUserId);
     }
-    if (notificationType === 'card_member_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
+    if (
+      notificationType === 'card_member_unassigned' &&
+      previousUserId &&
+      previousUserId !== activity.actor_id
+    ) {
       recipientSet.add(previousUserId);
     }
     const recipientIds = CHECKLIST_NOTIFICATION_TYPES.has(notificationType)
       ? (() => {
-        const checklistRecipients = new Set<string>();
+          const checklistRecipients = new Set<string>();
 
-        if (notificationType === 'checklist_item_assigned' && currentUserId && currentUserId !== activity.actor_id) {
-          checklistRecipients.add(currentUserId);
-        }
-
-        if (notificationType === 'checklist_item_unassigned' && previousUserId && previousUserId !== activity.actor_id) {
-          checklistRecipients.add(previousUserId);
-        }
-
-        if (notificationType === 'checklist_item_due_date_updated') {
-          if (currentUserId && currentUserId !== activity.actor_id) {
+          if (
+            notificationType === 'checklist_item_assigned' &&
+            currentUserId &&
+            currentUserId !== activity.actor_id
+          ) {
             checklistRecipients.add(currentUserId);
           }
-        }
 
-        return Array.from(checklistRecipients);
-      })()
+          if (
+            notificationType === 'checklist_item_unassigned' &&
+            previousUserId &&
+            previousUserId !== activity.actor_id
+          ) {
+            checklistRecipients.add(previousUserId);
+          }
+
+          if (notificationType === 'checklist_item_due_date_updated') {
+            if (currentUserId && currentUserId !== activity.actor_id) {
+              checklistRecipients.add(currentUserId);
+            }
+          }
+
+          return Array.from(checklistRecipients);
+        })()
       : Array.from(recipientSet);
 
     if (recipientIds.length === 0) return;
@@ -120,7 +140,7 @@ export async function mapActivityToNotification({
     // Resolve actor display info once for the WS payload.
     const actor = await db('users')
       .where({ id: activity.actor_id })
-      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+      .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
       ? buildAvatarProxyUrl({ userId: actor.id, avatarUrl: actor.avatar_url })
@@ -135,11 +155,10 @@ export async function mapActivityToNotification({
     const now = new Date().toISOString();
     const cardId = (payload.cardId as string | undefined) ?? null;
     const cardTitle = (payload.cardTitle as string | undefined) ?? null;
-    const targetUserId = (
-      (payload.userId as string | undefined)
-      ?? (payload.previousUserId as string | undefined)
-      ?? null
-    );
+    const targetUserId =
+      (payload.userId as string | undefined) ??
+      (payload.previousUserId as string | undefined) ??
+      null;
     const targetUserName = (payload.assigneeName as string | undefined) ?? null;
     const relatedUserIds = await getCardRelatedUserIds({ cardId });
 
@@ -166,8 +185,8 @@ export async function mapActivityToNotification({
         if (!globalEnabled || !boardPreference.notificationsEnabled) continue;
 
         if (
-          boardPreference.onlyRelatedToMe
-          && !isRecipientRelatedCardNotification({
+          boardPreference.onlyRelatedToMe &&
+          !isRecipientRelatedCardNotification({
             type: notificationType,
             recipientId,
             relatedUserIds,
@@ -209,7 +228,7 @@ export async function mapActivityToNotification({
               read: false,
               created_at: now,
             },
-            ['*'],
+            ['*']
           )
           .then(([inserted]) => {
             if (inserted) {

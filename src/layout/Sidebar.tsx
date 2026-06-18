@@ -61,7 +61,16 @@ interface NavItemProps {
   onNavigate?: (() => void) | undefined;
 }
 
-function NavItem({ to, icon, label, collapsed, end, badge, 'aria-label': ariaLabel, onNavigate }: NavItemProps) {
+function NavItem({
+  to,
+  icon,
+  label,
+  collapsed,
+  end,
+  badge,
+  'aria-label': ariaLabel,
+  onNavigate,
+}: NavItemProps) {
   return (
     <li>
       <div className="relative group">
@@ -104,7 +113,15 @@ interface NavButtonProps {
   onNavigate?: (() => void) | undefined;
 }
 
-function NavButton({ onClick, icon, label, collapsed, badge, 'aria-label': ariaLabel, onNavigate }: NavButtonProps) {
+function NavButton({
+  onClick,
+  icon,
+  label,
+  collapsed,
+  badge,
+  'aria-label': ariaLabel,
+  onNavigate,
+}: NavButtonProps) {
   const handleClick = () => {
     onClick();
     onNavigate?.();
@@ -188,7 +205,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
     : (profile?.name ?? user?.name ?? translations['Sidebar.unknownUser']);
 
   const guestBadge = (
-    <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"> {/* [theme-exception] amber guest badge is intentional brand colour */}
+    <span className="ml-auto rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+      {' '}
+      {/* [theme-exception] amber guest badge is intentional brand colour */}
       {layoutTranslations['Sidebar.guestBadge']}
     </span>
   );
@@ -235,7 +254,11 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
                 )
               }
-              aria-label={collapsed ? layoutTranslations['Sidebar.expandAriaLabel'] : layoutTranslations['Sidebar.collapseAriaLabel']}
+              aria-label={
+                collapsed
+                  ? layoutTranslations['Sidebar.expandAriaLabel']
+                  : layoutTranslations['Sidebar.collapseAriaLabel']
+              }
               data-testid="sidebar-toggle"
               className="mr-1.5 text-subtle hover:bg-bg-overlay hover:text-base"
             />
@@ -249,7 +272,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <div className="relative group">
               <Button
                 variant="ghost"
-                onClick={() => { setSwitcherOpen((o) => !o); }}
+                onClick={() => {
+                  setSwitcherOpen((o) => !o);
+                }}
                 aria-label={translations['WorkspaceSwitcher.label']}
                 aria-expanded={switcherOpen}
                 className="flex w-full justify-center rounded-lg p-2 font-normal"
@@ -275,7 +300,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <div className="relative">
               <Button
                 variant="ghost"
-                onClick={() => { setSwitcherOpen((o) => !o); }}
+                onClick={() => {
+                  setSwitcherOpen((o) => !o);
+                }}
                 aria-expanded={switcherOpen}
                 aria-haspopup="listbox"
                 aria-label={translations['WorkspaceSwitcher.label']}
@@ -286,7 +313,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     ? translations['WorkspaceSwitcher.loading']
                     : (activeWorkspace?.name ?? translations['WorkspaceSwitcher.noWorkspaces'])}
                   {isGuest && (
-                    <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"> {/* [theme-exception] amber guest badge */}
+                    <span className="ml-1.5 rounded bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      {' '}
+                      {/* [theme-exception] amber guest badge */}
                       guest
                     </span>
                   )}
@@ -303,7 +332,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                     <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                       <Button
                         variant="ghost"
-                        onClick={() => { handleSwitchWorkspace(ws.id); }}
+                        onClick={() => {
+                          handleSwitchWorkspace(ws.id);
+                        }}
                         className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                       >
                         {ws.name}
@@ -314,7 +345,10 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <li>
                     <Button
                       variant="ghost"
-                      onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
+                      onClick={() => {
+                        setSwitcherOpen(false);
+                        setShowCreateModal(true);
+                      }}
                       className="flex w-full items-center gap-1.5 rounded-none px-3 py-1.5 text-sm text-indigo-400 hover:text-indigo-400 font-normal justify-start"
                     >
                       <PlusIcon className="h-4 w-4" aria-hidden="true" />
@@ -334,7 +368,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             <NavButton
               onClick={() =>
                 document.dispatchEvent(
-                  new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }),
+                  new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true })
                 )
               }
               icon={<MagnifyingGlassIcon className="h-5 w-5" aria-hidden="true" />}
@@ -452,7 +486,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
             !collapsed && (
               <Button
                 variant="ghost"
-                onClick={() => { setShowCreateModal(true); }}
+                onClick={() => {
+                  setShowCreateModal(true);
+                }}
                 className="mt-2 w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm font-normal text-muted hover:border-border-strong hover:text-subtle"
               >
                 {translations['Sidebar.createFirst']}
@@ -469,7 +505,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               <div className="relative group">
                 <Button
                   variant="ghost"
-                  onClick={() => { setUserMenuOpen((o) => !o); }}
+                  onClick={() => {
+                    setUserMenuOpen((o) => !o);
+                  }}
                   aria-expanded={userMenuOpen}
                   aria-haspopup="menu"
                   aria-label={userDisplayName}
@@ -498,7 +536,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
               // Expanded: full user button
               <Button
                 variant="ghost"
-                onClick={() => { setUserMenuOpen((o) => !o); }}
+                onClick={() => {
+                  setUserMenuOpen((o) => !o);
+                }}
                 aria-expanded={userMenuOpen}
                 aria-haspopup="menu"
                 className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm font-normal justify-start"
@@ -537,7 +577,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <NavLink
                     to="/settings/profile"
                     role="menuitem"
-                    onClick={() => { setUserMenuOpen(false); }}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                    }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.settings']}
@@ -547,7 +589,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <NavLink
                     to="/settings/api-tokens"
                     role="menuitem"
-                    onClick={() => { setUserMenuOpen(false); }}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                    }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.apiTokens']}
@@ -557,7 +601,9 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <NavLink
                     to="/settings/webhooks"
                     role="menuitem"
-                    onClick={() => { setUserMenuOpen(false); }}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                    }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay transition-colors"
                   >
                     {translations['Sidebar.webhooks']}

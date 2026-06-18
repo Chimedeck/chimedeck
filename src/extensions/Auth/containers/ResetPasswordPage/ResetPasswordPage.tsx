@@ -2,7 +2,11 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import { resetPasswordThunk, selectResetPasswordStatus, selectResetPasswordError } from './ResetPasswordPage.duck';
+import {
+  resetPasswordThunk,
+  selectResetPasswordStatus,
+  selectResetPasswordError,
+} from './ResetPasswordPage.duck';
 import translations from '../../translations/en.json';
 import Button from '~/common/components/Button';
 
@@ -23,11 +27,12 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (status === 'success') {
-      const timer = setTimeout(
-        () => { navigate('/login', { replace: true, state: { toast: translations.resetPassword.success } }); },
-        1500,
-      );
-      return () => { clearTimeout(timer); };
+      const timer = setTimeout(() => {
+        navigate('/login', { replace: true, state: { toast: translations.resetPassword.success } });
+      }, 1500);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [status, navigate]);
 
@@ -62,7 +67,10 @@ export default function ResetPasswordPage() {
             <span className="text-xl font-bold text-base">{translations.appName}</span>
           </div>
           <p className="text-danger mb-4">{translations.resetPassword.invalidToken}</p>
-          <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 text-sm underline">
+          <Link
+            to="/forgot-password"
+            className="text-indigo-400 hover:text-indigo-300 text-sm underline"
+          >
             {translations.resetPassword.requestNew}
           </Link>
         </div>
@@ -94,7 +102,10 @@ export default function ResetPasswordPage() {
             {apiError === 'invalid-or-expired-token' ? (
               <div>
                 <p className="text-danger mb-2">{translations.resetPassword.invalidToken}</p>
-                <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 text-sm underline">
+                <Link
+                  to="/forgot-password"
+                  className="text-indigo-400 hover:text-indigo-300 text-sm underline"
+                >
                   {translations.resetPassword.requestNew}
                 </Link>
               </div>
@@ -116,7 +127,9 @@ export default function ResetPasswordPage() {
                   type="password"
                   autoComplete="new-password"
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); }}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                  }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'reset-password-error' : undefined}
@@ -137,7 +150,9 @@ export default function ResetPasswordPage() {
                   type="password"
                   autoComplete="new-password"
                   value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); }}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                  }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={errors.confirmPassword ? 'reset-confirm-error' : undefined}

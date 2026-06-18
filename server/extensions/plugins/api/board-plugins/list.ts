@@ -15,7 +15,7 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -50,7 +50,7 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
       'p.updated_at',
       'bp.id as board_plugin_id',
       'bp.enabled_at',
-      'bp.config',
+      'bp.config'
     );
 
   // Reshape flat join rows into the BoardPlugin shape the client expects:

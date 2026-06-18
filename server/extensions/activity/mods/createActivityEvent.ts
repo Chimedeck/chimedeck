@@ -159,7 +159,11 @@ export async function emitCardMemberAssigned({
     cardId: payload.cardId,
     actorId,
     eventType: 'card.member_assigned',
-    payload: { userId: payload.userId, assigneeName: payload.assigneeName, cardTitle: payload.cardTitle },
+    payload: {
+      userId: payload.userId,
+      assigneeName: payload.assigneeName,
+      cardTitle: payload.cardTitle,
+    },
   }).catch(() => {});
   return activity;
 }
@@ -200,7 +204,11 @@ export async function emitCardMemberUnassigned({
     cardId: payload.cardId,
     actorId,
     eventType: 'card.member_removed',
-    payload: { userId: payload.userId, assigneeName: payload.assigneeName, cardTitle: payload.cardTitle },
+    payload: {
+      userId: payload.userId,
+      assigneeName: payload.assigneeName,
+      cardTitle: payload.cardTitle,
+    },
   }).catch(() => {});
   return activity;
 }

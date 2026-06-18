@@ -52,7 +52,7 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
   if (!existingBoard) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -65,9 +65,7 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
     }
   }
 
-  const [updated] = await db('boards')
-    .where({ id: boardId })
-    .update({ background: null }, ['*']);
+  const [updated] = await db('boards').where({ id: boardId }).update({ background: null }, ['*']);
 
   await writeEvent({
     type: 'board.background_changed',

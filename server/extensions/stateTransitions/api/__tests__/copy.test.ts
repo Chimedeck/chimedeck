@@ -14,10 +14,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -41,7 +46,7 @@ class QueryBuilder {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => ({ ...row }));
     for (const row of inserted) {
-      (this.store[this.tableName]).push(row);
+      this.store[this.tableName].push(row);
     }
     return {
       returning: async () => inserted.map((row) => ({ ...row })),
@@ -59,14 +64,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    let rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -108,10 +113,22 @@ function resetStore(): DataStore {
     ],
     lists: [
       { id: 'src-list-1', board_id: 'board-source', title: 'Todo', position: 'a', archived: false },
-      { id: 'src-list-2', board_id: 'board-source', title: 'Doing', position: 'b', archived: false },
+      {
+        id: 'src-list-2',
+        board_id: 'board-source',
+        title: 'Doing',
+        position: 'b',
+        archived: false,
+      },
       { id: 'src-list-3', board_id: 'board-source', title: 'Done', position: 'c', archived: false },
       { id: 'tgt-list-1', board_id: 'board-target', title: 'TODO', position: 'a', archived: false },
-      { id: 'tgt-list-2', board_id: 'board-target', title: 'Doing', position: 'b', archived: false },
+      {
+        id: 'tgt-list-2',
+        board_id: 'board-target',
+        title: 'Doing',
+        position: 'b',
+        archived: false,
+      },
       { id: 'tgt-list-3', board_id: 'board-target', title: 'Done', position: 'c', archived: false },
     ],
     board_members: [
@@ -126,7 +143,13 @@ function resetStore(): DataStore {
         graph_data: {
           nodes: [
             { id: 'src-list-1', listId: 'src-list-1', label: 'Todo', positionX: 10, positionY: 20 },
-            { id: 'src-list-2', listId: 'src-list-2', label: 'Doing', positionX: 30, positionY: 40 },
+            {
+              id: 'src-list-2',
+              listId: 'src-list-2',
+              label: 'Doing',
+              positionX: 30,
+              positionY: 40,
+            },
             { id: 'src-list-3', listId: 'src-list-3', label: 'Done', positionX: 50, positionY: 60 },
           ],
           edges: [
@@ -164,7 +187,8 @@ mock.module('../../../../config/featureFlags', () => ({
 }));
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -196,7 +220,7 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
 
     const res = await handleCopyStateTransitions(req, 'board-source');
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         boardId: string;
         enabled: boolean;
@@ -215,8 +239,16 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
 
     expect(body.data.boardId).toBe('board-target');
     expect(body.data.enabled).toBe(true);
-    expect(body.data.graph.nodes.map((node) => node.id)).toEqual(['tgt-list-1', 'tgt-list-2', 'tgt-list-3']);
-    expect(body.data.graph.nodes.map((node) => node.listId)).toEqual(['tgt-list-1', 'tgt-list-2', 'tgt-list-3']);
+    expect(body.data.graph.nodes.map((node) => node.id)).toEqual([
+      'tgt-list-1',
+      'tgt-list-2',
+      'tgt-list-3',
+    ]);
+    expect(body.data.graph.nodes.map((node) => node.listId)).toEqual([
+      'tgt-list-1',
+      'tgt-list-2',
+      'tgt-list-3',
+    ]);
     expect(body.data.graph.nodes.map((node) => node.label)).toEqual(['TODO', 'Doing', 'Done']);
     expect(body.data.graph.edges).toMatchObject([
       { fromNodeId: 'tgt-list-1', toNodeId: 'tgt-list-2' },
@@ -226,16 +258,24 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
     expect(typeof body.data.updatedAt).toBe('string');
     expect(body.metadata).toEqual({ skippedNodes: 0, copyEnabled: true });
 
-    const persisted = dataStore.board_state_transitions.find((row) => row.board_id === 'board-target') as {
-      enabled: boolean;
-      graph_data: {
-        nodes: Array<{ id: string }>;
-        edges: Array<{ fromNodeId: string; toNodeId: string }>;
-      };
-    } | undefined;
+    const persisted = dataStore.board_state_transitions.find(
+      (row) => row.board_id === 'board-target'
+    ) as
+      | {
+          enabled: boolean;
+          graph_data: {
+            nodes: Array<{ id: string }>;
+            edges: Array<{ fromNodeId: string; toNodeId: string }>;
+          };
+        }
+      | undefined;
     expect(persisted).toBeDefined();
     expect(persisted?.enabled).toBe(true);
-    expect(persisted?.graph_data.nodes.map((node) => node.id)).toEqual(['tgt-list-1', 'tgt-list-2', 'tgt-list-3']);
+    expect(persisted?.graph_data.nodes.map((node) => node.id)).toEqual([
+      'tgt-list-1',
+      'tgt-list-2',
+      'tgt-list-3',
+    ]);
     expect(persisted?.graph_data.edges).toMatchObject([
       { fromNodeId: 'tgt-list-1', toNodeId: 'tgt-list-2' },
       { fromNodeId: 'tgt-list-2', toNodeId: 'tgt-list-3' },
@@ -243,9 +283,9 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
   });
 
   it('drops unmatched nodes and related edges when target board has partial list-name overlap', async () => {
-    dataStore.lists = (dataStore.lists as Array<{ board_id: string; id: string; title: string }>).filter(
-      (list) => list.board_id !== 'board-target' || list.id !== 'tgt-list-2',
-    );
+    dataStore.lists = (
+      dataStore.lists as Array<{ board_id: string; id: string; title: string }>
+    ).filter((list) => list.board_id !== 'board-target' || list.id !== 'tgt-list-2');
 
     const req = new Request('http://localhost/api/v1/boards/board-source/state-transitions/copy', {
       method: 'POST',
@@ -255,7 +295,7 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
 
     const res = await handleCopyStateTransitions(req, 'board-source');
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         graph: {
           nodes: Array<{ id: string }>;
@@ -289,19 +329,22 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
 
     const res = await handleCopyStateTransitions(req, 'board-source');
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { enabled: boolean }; metadata: { copyEnabled: boolean } };
+    const body = (await res.json()) as {
+      data: { enabled: boolean };
+      metadata: { copyEnabled: boolean };
+    };
     expect(body.data.enabled).toBe(false);
     expect(body.metadata.copyEnabled).toBe(false);
 
-    const persisted = dataStore.board_state_transitions.find((row) => row.board_id === 'board-target') as
-      | { enabled: boolean }
-      | undefined;
+    const persisted = dataStore.board_state_transitions.find(
+      (row) => row.board_id === 'board-target'
+    ) as { enabled: boolean } | undefined;
     expect(persisted?.enabled).toBe(false);
   });
 
   it('returns 422 when caller is not ADMIN/OWNER on the target board', async () => {
     const targetMembership = dataStore.board_members.find(
-      (row) => row.board_id === 'board-target' && row.user_id === 'user-admin',
+      (row) => row.board_id === 'board-target' && row.user_id === 'user-admin'
     ) as { role: string } | undefined;
     if (!targetMembership) throw new Error('missing target membership fixture');
     targetMembership.role = 'MEMBER';
@@ -314,14 +357,14 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
 
     const res = await handleCopyStateTransitions(req, 'board-source');
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string; data: Record<string, unknown> };
+    const body = (await res.json()) as { name: string; data: Record<string, unknown> };
     expect(body.name).toBe('state-transition-copy-insufficient-permission');
     expect(body.data).toEqual({});
   });
 
   it('returns 422 when source board has no transitions row', async () => {
     dataStore.board_state_transitions = dataStore.board_state_transitions.filter(
-      (row) => row.board_id !== 'board-source',
+      (row) => row.board_id !== 'board-source'
     );
 
     const req = new Request('http://localhost/api/v1/boards/board-source/state-transitions/copy', {
@@ -332,7 +375,7 @@ describe('POST /api/v1/boards/:boardId/state-transitions/copy', () => {
 
     const res = await handleCopyStateTransitions(req, 'board-source');
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string; data: Record<string, unknown> };
+    const body = (await res.json()) as { name: string; data: Record<string, unknown> };
     expect(body.name).toBe('state-transition-copy-no-source');
     expect(body.data).toEqual({});
   });

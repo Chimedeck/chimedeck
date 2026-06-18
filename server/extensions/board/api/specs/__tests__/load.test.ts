@@ -35,7 +35,10 @@ function makeBoardAccessMock() {
 }
 
 function makeMembershipMock() {
-  return async (req: Request & { callerRole?: string; workspaceId?: string }, workspaceId: string) => {
+  return async (
+    req: Request & { callerRole?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
     return null;
@@ -84,7 +87,9 @@ function resetDeps() {
   specsLoadDeps.now = () => new Date('2025-01-01T00:00:00Z');
 }
 
-beforeEach(() => { resetDeps(); });
+beforeEach(() => {
+  resetDeps();
+});
 
 // Module-level caches from the manifest loader. These persist across test
 // files when running the full suite, so we clear them explicitly here to
@@ -123,7 +128,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest — 403 not configured', ()
     board.github_project_url = null;
     const res = await handleLoadSpecsManifest(makeLoadRequest(), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
     expect(body.data.message).toContain('configure your Github documentation');
   });
@@ -138,7 +143,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest — 403 load failed', () =>
     };
     const res = await handleLoadSpecsManifest(makeLoadRequest(), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-load-failed');
     expect(body.data.message).toContain('do not have access to this respository');
   });
@@ -149,7 +154,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest — 403 load failed', () =>
     };
     const res = await handleLoadSpecsManifest(makeLoadRequest(), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-load-failed');
   });
 });
@@ -161,7 +166,9 @@ describe('GET /api/v1/boards/:boardId/specs/manifest — success', () => {
     const res = await handleLoadSpecsManifest(makeLoadRequest(), 'board-1');
     expect(res.status).toBe(200);
     expect(res.headers.get('ETag')).toBe('"etag-abc"');
-    const body = await res.json() as { data: { ref: string; files: { path: string }[]; etag: string } };
+    const body = (await res.json()) as {
+      data: { ref: string; files: { path: string }[]; etag: string };
+    };
     expect(body.data.ref).toBe('main');
     expect(body.data.files[0]?.path).toBe('specs/overview.md');
   });

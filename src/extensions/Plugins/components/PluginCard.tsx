@@ -39,8 +39,7 @@ const PluginCard = (props: Props) => {
     }
   };
 
-  const hasSettings =
-    props.mode === 'disable' && plugin.capabilities?.includes('show-settings');
+  const hasSettings = props.mode === 'disable' && plugin.capabilities?.includes('show-settings');
 
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-bg-surface border border-border hover:border-border transition-colors">
@@ -58,7 +57,9 @@ const PluginCard = (props: Props) => {
         <div className="flex items-center gap-2">
           <span className="text-base font-medium text-sm truncate">{plugin.name}</span>
           {plugin.author && (
-            <span className="text-muted text-xs">{translations['plugins.card.by']} {plugin.author}</span>
+            <span className="text-muted text-xs">
+              {translations['plugins.card.by']} {plugin.author}
+            </span>
           )}
         </div>
         {plugin.description && (
@@ -68,7 +69,10 @@ const PluginCard = (props: Props) => {
         {plugin.categories?.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {plugin.categories.map((cat) => (
-              <span key={cat} className="text-xs bg-blue-900/50 text-blue-300 rounded px-1.5 py-0.5">
+              <span
+                key={cat}
+                className="text-xs bg-blue-900/50 text-blue-300 rounded px-1.5 py-0.5"
+              >
                 {cat}
               </span>
             ))}
@@ -81,7 +85,9 @@ const PluginCard = (props: Props) => {
         {/* Edit pencil — platform admins only, always visible when onEdit provided */}
         {props.onEdit && (
           <button
-            onClick={() => { props.onEdit!(plugin); }}
+            onClick={() => {
+              props.onEdit!(plugin);
+            }}
             title={translations['plugins.card.editTitle']}
             className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.editAriaLabel']}
@@ -93,7 +99,7 @@ const PluginCard = (props: Props) => {
         {/* Settings gear — only for active plugins with show-settings capability */}
         {hasSettings && props.mode === 'disable' && props.onSettings && (
           <button
-            onClick={() => (props).onSettings?.((props).boardPlugin)}
+            onClick={() => props.onSettings?.(props.boardPlugin)}
             title={translations['plugins.card.settingsTitle']}
             className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.settingsAriaLabel']}
@@ -103,12 +109,7 @@ const PluginCard = (props: Props) => {
         )}
 
         {props.mode === 'enable' ? (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleAction}
-            disabled={loading}
-          >
+          <Button variant="primary" size="sm" onClick={handleAction} disabled={loading}>
             {loading ? translations['plugins.card.enabling'] : translations['plugins.card.enable']}
           </Button>
         ) : (
@@ -117,7 +118,9 @@ const PluginCard = (props: Props) => {
             disabled={loading}
             className="text-xs bg-bg-sunken hover:bg-red-700 disabled:opacity-50 text-subtle hover:text-base rounded px-3 py-1.5 transition-colors"
           >
-            {loading ? translations['plugins.card.disabling'] : translations['plugins.card.disable']}
+            {loading
+              ? translations['plugins.card.disabling']
+              : translations['plugins.card.disable']}
           </button>
         )}
       </div>
@@ -126,4 +129,3 @@ const PluginCard = (props: Props) => {
 };
 
 export default PluginCard;
-

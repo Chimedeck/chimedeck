@@ -14,13 +14,16 @@ export async function handleLinkPreview(req: Request): Promise<Response> {
 
   const rawUrl = new URL(req.url).searchParams.get('url') ?? '';
   if (!rawUrl) {
-    return Response.json({ name: 'bad-request', data: { message: 'url param required' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'url param required' } },
+      { status: 400 }
+    );
   }
 
   if (isForbiddenUrl(rawUrl)) {
     return Response.json(
       { name: 'url-target-forbidden', data: { message: 'URL targets a forbidden address' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -28,7 +31,10 @@ export async function handleLinkPreview(req: Request): Promise<Response> {
   try {
     parsed = new URL(rawUrl);
   } catch {
-    return Response.json({ name: 'invalid-url', data: { message: 'Invalid URL' } }, { status: 400 });
+    return Response.json(
+      { name: 'invalid-url', data: { message: 'Invalid URL' } },
+      { status: 400 }
+    );
   }
 
   // Default favicon path — works for most sites without scraping HTML.
@@ -40,7 +46,9 @@ export async function handleLinkPreview(req: Request): Promise<Response> {
 /** Fetch up to HTML_LIMIT bytes from the URL and extract the page title. Returns null on failure. */
 async function fetchPageTitle(rawUrl: string): Promise<string | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, FETCH_TIMEOUT_MS);
   try {
     const resp = await fetch(rawUrl, {
       signal: controller.signal,
@@ -74,7 +82,10 @@ async function readLimitedHtml(resp: Response): Promise<string> {
   reader.cancel().catch(() => {});
   const combined = new Uint8Array(bytesRead);
   let offset = 0;
-  for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.length; }
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.length;
+  }
   return new TextDecoder().decode(combined);
 }
 

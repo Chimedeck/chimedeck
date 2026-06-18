@@ -21,7 +21,8 @@ export const PROPOSE_GITHUB_DOCUMENT_TOOL: BoardChatAssistToolDefinition = {
       properties: {
         path: {
           type: 'string',
-          description: 'File path relative to the repository root, must start with "specs/" and end with ".md". Example: "specs/architecture/overview.md".',
+          description:
+            'File path relative to the repository root, must start with "specs/" and end with ".md". Example: "specs/architecture/overview.md".',
         },
         content: {
           type: 'string',
@@ -63,7 +64,9 @@ interface ProposeGithubDocumentInput {
   };
 }
 
-function normalizeProposeArguments(rawArguments: string): ProposeDocumentArguments | BoardChatAssistOutput {
+function normalizeProposeArguments(
+  rawArguments: string
+): ProposeDocumentArguments | BoardChatAssistOutput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawArguments);
@@ -213,7 +216,9 @@ export function buildDocumentActionCard(input: {
   };
 }
 
-export async function proposeGithubDocument(input: ProposeGithubDocumentInput): Promise<BoardChatAssistOutput> {
+export async function proposeGithubDocument(
+  input: ProposeGithubDocumentInput
+): Promise<BoardChatAssistOutput> {
   const { actionCard, output } = buildDocumentActionCard({
     board: input.board,
     actorId: input.actorId,
@@ -226,24 +231,28 @@ export async function proposeGithubDocument(input: ProposeGithubDocumentInput): 
 
   // [why] Broadcast the proposal to all connected clients so they see
   // suggested documents in realtime without a page refresh.
-  proposeGithubDocumentDeps.dispatchEvent({
-    type: 'board_chat.document_proposed',
-    boardId: input.boardId,
-    entityId: actionCard.idempotencyKey,
-    actorId: input.actorId,
-    payload: {
-      actionCard,
-    },
-  }).catch(() => {
-    // [why] Fire-and-forget — a failed broadcast must not fail the proposal.
-  });
+  proposeGithubDocumentDeps
+    .dispatchEvent({
+      type: 'board_chat.document_proposed',
+      boardId: input.boardId,
+      entityId: actionCard.idempotencyKey,
+      actorId: input.actorId,
+      payload: {
+        actionCard,
+      },
+    })
+    .catch(() => {
+      // [why] Fire-and-forget — a failed broadcast must not fail the proposal.
+    });
 
   return {
     ...output,
-    data: output.data ? {
-      ...output.data,
-      model: input.model,
-      ...(input.usage ? { usage: input.usage } : {}),
-    } : undefined,
+    data: output.data
+      ? {
+          ...output.data,
+          model: input.model,
+          ...(input.usage ? { usage: input.usage } : {}),
+        }
+      : undefined,
   };
 }

@@ -120,7 +120,9 @@ export default function BillingPage() {
   const workspace = workspaces.find((item) => {
     if (item.id === workspaceId) return true;
     const token = normalizeWorkspaceToken(workspaceId);
-    return normalizeWorkspaceToken(item.name) === token || normalizeWorkspaceToken(item.id) === token;
+    return (
+      normalizeWorkspaceToken(item.name) === token || normalizeWorkspaceToken(item.id) === token
+    );
   });
   const resolvedWorkspaceId = workspace?.id ?? workspaceId;
 
@@ -228,7 +230,7 @@ export default function BillingPage() {
 
   const upgradeTarget = useMemo<PaidTier | null>(
     () => (subscription ? nextTierForUpgrade(subscription.tier) : null),
-    [subscription],
+    [subscription]
   );
 
   const handleUpgrade = useCallback(() => {
@@ -236,10 +238,13 @@ export default function BillingPage() {
     navigate(`/workspace/${resolvedWorkspaceId}/checkout?tier=${upgradeTarget}`);
   }, [navigate, upgradeTarget, resolvedWorkspaceId]);
 
-  const handleCheckoutTier = useCallback((tier: PaidTier) => {
-    if (!resolvedWorkspaceId) return;
-    navigate(`/workspace/${resolvedWorkspaceId}/checkout?tier=${tier}`);
-  }, [navigate, resolvedWorkspaceId]);
+  const handleCheckoutTier = useCallback(
+    (tier: PaidTier) => {
+      if (!resolvedWorkspaceId) return;
+      navigate(`/workspace/${resolvedWorkspaceId}/checkout?tier=${tier}`);
+    },
+    [navigate, resolvedWorkspaceId]
+  );
 
   const handleOpenPortal = useCallback(async () => {
     if (!resolvedWorkspaceId) return;
@@ -255,40 +260,43 @@ export default function BillingPage() {
     }
   }, [resolvedWorkspaceId]);
 
-  const plans = useMemo<PlanCard[]>(() => [
-    {
-      tier: 'tier_1',
-      name: translations['BillingPage.planPersonal'],
-      description: translations['BillingPage.planPersonalDescription'],
-      workspaces: 1,
-      boardsPerWorkspace: 1,
-      boardsTotal: 1,
-    },
-    {
-      tier: 'tier_2',
-      name: translations['BillingPage.planHobby'],
-      description: translations['BillingPage.planHobbyDescription'],
-      workspaces: 1,
-      boardsPerWorkspace: 10,
-      boardsTotal: 10,
-    },
-    {
-      tier: 'tier_3',
-      name: translations['BillingPage.planPro'],
-      description: translations['BillingPage.planProDescription'],
-      workspaces: 5,
-      boardsPerWorkspace: 30,
-      boardsTotal: 150,
-    },
-    {
-      tier: 'tier_4',
-      name: translations['BillingPage.planBusiness'],
-      description: translations['BillingPage.planBusinessDescription'],
-      workspaces: 50,
-      boardsPerWorkspace: 200,
-      boardsTotal: 'unlimited',
-    },
-  ], []);
+  const plans = useMemo<PlanCard[]>(
+    () => [
+      {
+        tier: 'tier_1',
+        name: translations['BillingPage.planPersonal'],
+        description: translations['BillingPage.planPersonalDescription'],
+        workspaces: 1,
+        boardsPerWorkspace: 1,
+        boardsTotal: 1,
+      },
+      {
+        tier: 'tier_2',
+        name: translations['BillingPage.planHobby'],
+        description: translations['BillingPage.planHobbyDescription'],
+        workspaces: 1,
+        boardsPerWorkspace: 10,
+        boardsTotal: 10,
+      },
+      {
+        tier: 'tier_3',
+        name: translations['BillingPage.planPro'],
+        description: translations['BillingPage.planProDescription'],
+        workspaces: 5,
+        boardsPerWorkspace: 30,
+        boardsTotal: 150,
+      },
+      {
+        tier: 'tier_4',
+        name: translations['BillingPage.planBusiness'],
+        description: translations['BillingPage.planBusinessDescription'],
+        workspaces: 50,
+        boardsPerWorkspace: 200,
+        boardsTotal: 'unlimited',
+      },
+    ],
+    []
+  );
 
   if (!workspaceId) {
     return (
@@ -321,16 +329,24 @@ export default function BillingPage() {
           <section className="rounded-xl border border-border bg-bg-surface p-5 space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted">{translations['BillingPage.currentPlan']}</p>
-                <h2 className="mt-1 text-xl font-semibold text-base">{planLabel(subscription.tier)}</h2>
+                <p className="text-xs uppercase tracking-wide text-muted">
+                  {translations['BillingPage.currentPlan']}
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-base">
+                  {planLabel(subscription.tier)}
+                </h2>
               </div>
 
               <div className="text-right text-sm text-muted">
                 <p>
-                  {translations['BillingPage.status']}: <span className="text-base font-medium">{subscription.status}</span>
+                  {translations['BillingPage.status']}:{' '}
+                  <span className="text-base font-medium">{subscription.status}</span>
                 </p>
                 <p>
-                  {translations['BillingPage.renewsOn']}: <span className="text-base font-medium">{formatDate(subscription.stripeCurrentPeriodEnd)}</span>
+                  {translations['BillingPage.renewsOn']}:{' '}
+                  <span className="text-base font-medium">
+                    {formatDate(subscription.stripeCurrentPeriodEnd)}
+                  </span>
                 </p>
               </div>
             </div>
@@ -348,7 +364,9 @@ export default function BillingPage() {
                 )}
 
                 {!upgradeTarget && (
-                  <p className="text-sm text-muted py-2">{translations['BillingPage.noneToUpgrade']}</p>
+                  <p className="text-sm text-muted py-2">
+                    {translations['BillingPage.noneToUpgrade']}
+                  </p>
                 )}
 
                 {subscription.stripeCustomerId && (
@@ -369,7 +387,9 @@ export default function BillingPage() {
 
         {subscription && (
           <section className="rounded-xl border border-border bg-bg-surface p-5">
-            <h3 className="text-lg font-semibold text-base">{translations['BillingPage.plansTitle']}</h3>
+            <h3 className="text-lg font-semibold text-base">
+              {translations['BillingPage.plansTitle']}
+            </h3>
             <div className="mt-4 grid gap-3 md:grid-cols-4">
               {plans.map((plan) => {
                 const isCurrent = subscription.tier === plan.tier;
@@ -377,15 +397,24 @@ export default function BillingPage() {
 
                 if (isCurrent) {
                   actionNode = (
-                    <p className="mt-4 text-xs font-medium text-primary">{translations['BillingPage.currentPlanBadge']}</p>
+                    <p className="mt-4 text-xs font-medium text-primary">
+                      {translations['BillingPage.currentPlanBadge']}
+                    </p>
                   );
                 } else if (isManager) {
-                  const actionLabel = planActionLabel({ currentTier: subscription.tier, targetTier: plan.tier });
+                  const actionLabel = planActionLabel({
+                    currentTier: subscription.tier,
+                    targetTier: plan.tier,
+                  });
                   const isDowngradeToPersonal = plan.tier === 'tier_1';
 
                   actionNode = (
                     <Button
-                      variant={actionLabel === translations['BillingPage.downgrade'] ? 'secondary' : 'primary'}
+                      variant={
+                        actionLabel === translations['BillingPage.downgrade']
+                          ? 'secondary'
+                          : 'primary'
+                      }
                       size="sm"
                       className="mt-4"
                       onClick={() => {
@@ -401,7 +430,11 @@ export default function BillingPage() {
                     </Button>
                   );
                 } else {
-                  actionNode = <p className="mt-4 text-xs text-muted">{translations['BillingPage.memberReadOnly']}</p>;
+                  actionNode = (
+                    <p className="mt-4 text-xs text-muted">
+                      {translations['BillingPage.memberReadOnly']}
+                    </p>
+                  );
                 }
 
                 return (
@@ -420,11 +453,15 @@ export default function BillingPage() {
         )}
 
         <section className="rounded-xl border border-border bg-bg-surface p-5">
-          <h3 className="text-lg font-semibold text-base">{translations['BillingPage.usageTitle']}</h3>
+          <h3 className="text-lg font-semibold text-base">
+            {translations['BillingPage.usageTitle']}
+          </h3>
 
           <div className="mt-4 space-y-4">
             {metrics.map((metric) => {
-              const displayUsed = metric.formatter ? metric.formatter(metric.used) : String(metric.used);
+              const displayUsed = metric.formatter
+                ? metric.formatter(metric.used)
+                : String(metric.used);
               const isUnlimited = metric.limit === 'unlimited';
               const numericLimit = typeof metric.limit === 'number' ? metric.limit : 0;
               let displayLimit = String(metric.limit);
@@ -433,13 +470,17 @@ export default function BillingPage() {
               } else if (metric.formatter) {
                 displayLimit = metric.formatter(numericLimit);
               }
-              const percentage = isUnlimited ? 0 : Math.min((metric.used / Math.max(numericLimit, 1)) * 100, 100);
+              const percentage = isUnlimited
+                ? 0
+                : Math.min((metric.used / Math.max(numericLimit, 1)) * 100, 100);
 
               return (
                 <div key={metric.id} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-base">{metric.label}</span>
-                    <span className="text-muted">{displayUsed} / {displayLimit}</span>
+                    <span className="text-muted">
+                      {displayUsed} / {displayLimit}
+                    </span>
                   </div>
 
                   {!isUnlimited && (

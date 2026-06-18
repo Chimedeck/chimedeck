@@ -18,7 +18,7 @@ export async function handleDeleteCard(req: Request, cardId: string): Promise<Re
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -28,14 +28,19 @@ export async function handleDeleteCard(req: Request, cardId: string): Promise<Re
   if (!list || !board) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -68,7 +73,13 @@ export async function handleDeleteCard(req: Request, cardId: string): Promise<Re
 
   await db('cards').where({ id: cardId }).del();
 
-  await dispatchEvent({ type: 'card.deleted', boardId: list.board_id, entityId: cardId, actorId, payload: { listId: card.list_id } });
+  await dispatchEvent({
+    type: 'card.deleted',
+    boardId: list.board_id,
+    entityId: cardId,
+    actorId,
+    payload: { listId: card.list_id },
+  });
 
   return new Response(null, { status: 204 });
 }

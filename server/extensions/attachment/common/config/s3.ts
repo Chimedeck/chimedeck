@@ -54,7 +54,7 @@ export async function ensureBucketExists(): Promise<void> {
           ...(s3Config.region !== 'us-east-1' && {
             CreateBucketConfiguration: { LocationConstraint: s3Config.region as any },
           }),
-        }),
+        })
       );
       console.info(`[s3] Created bucket '${s3Config.bucket}' on ${s3Config.endpoint}`);
     } else {

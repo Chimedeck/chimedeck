@@ -90,7 +90,7 @@ export async function listCardsByListBatch({
   };
 }> {
   return api.get(
-    `/lists/${listId}/cards?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
+    `/lists/${listId}/cards?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`
   );
 }
 
@@ -262,6 +262,6 @@ export async function patchBoardIntegrations({
 }): Promise<{ data: BoardIntegrations }> {
   return api.patch<{ data: BoardIntegrations }>(
     `/boards/${boardId}/settings/integrations`,
-    settings,
+    settings
   );
 }

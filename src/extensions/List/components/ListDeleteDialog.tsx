@@ -45,7 +45,8 @@ const ListDeleteDialog = ({ listTitle, cardCount, onConfirm, onCancel }: Props) 
 
         <p className="text-sm text-base mb-2">
           <span className="font-medium text-base">"{listTitle}"</span> contains{' '}
-          <span className="font-medium text-base">{cardCount}</span> card{cardCount !== 1 ? 's' : ''}.
+          <span className="font-medium text-base">{cardCount}</span> card
+          {cardCount !== 1 ? 's' : ''}.
         </p>
         <p className="text-sm text-danger mb-6">
           All cards in this list will be permanently deleted. This cannot be undone.

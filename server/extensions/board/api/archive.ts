@@ -17,7 +17,7 @@ export async function handleArchiveBoard(req: Request, boardId: string): Promise
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -32,12 +32,16 @@ export async function handleArchiveBoard(req: Request, boardId: string): Promise
   if (roleError) return roleError;
 
   const newState = board.state === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED';
-  const updated = await db('boards')
-    .where({ id: boardId })
-    .update({ state: newState }, ['*']);
+  const updated = await db('boards').where({ id: boardId }).update({ state: newState }, ['*']);
 
   // Stub event emission.
-  await writeEvent({ type: 'board_archived', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { state: newState } });
+  await writeEvent({
+    type: 'board_archived',
+    boardId,
+    entityId: boardId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { state: newState },
+  });
 
   return Response.json({ data: updated[0] });
 }

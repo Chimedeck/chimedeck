@@ -13,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -47,14 +52,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    let rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -128,7 +133,8 @@ mock.module('../../../../config/featureFlags', () => ({
 }));
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -141,7 +147,7 @@ mock.module('../../../auth/middlewares/authentication', () => ({
 mock.module('../../../board/middlewares/requireBoardWritable', () => ({
   requireBoardWritable: async (
     req: Request & { board?: { id: string; workspace_id: string } },
-    boardId: string,
+    boardId: string
   ) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
     return null;
@@ -180,7 +186,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions list sync', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         graph: { nodes: Array<{ id: string; label: string }> };
       };
@@ -196,7 +202,13 @@ describe('PUT /api/v1/boards/:boardId/state-transitions list sync', () => {
       graph_data: {
         nodes: [
           { id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 10, positionY: 20 },
-          { id: 'list-deleted', listId: 'list-deleted', label: 'Deleted', positionX: 30, positionY: 20 },
+          {
+            id: 'list-deleted',
+            listId: 'list-deleted',
+            label: 'Deleted',
+            positionX: 30,
+            positionY: 20,
+          },
         ],
         edges: [
           {
@@ -220,7 +232,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions list sync', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         graph: {
           nodes: Array<{ id: string }>;

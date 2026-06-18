@@ -164,7 +164,9 @@ describe('pauseSession', () => {
     });
 
     expect(result.status).toBe(200);
-    expect((result as { data: { session: { status: string } } }).data.session.status).toBe('PAUSED');
+    expect((result as { data: { session: { status: string } } }).data.session.status).toBe(
+      'PAUSED'
+    );
   });
 
   it('returns 404 for non-existent session', async () => {
@@ -344,7 +346,9 @@ describe('resumeSession', () => {
     });
 
     expect(result.status).toBe(200);
-    expect((result as { data: { session: { status: string } } }).data.session.status).toBe('ACTIVE_REFINEMENT');
+    expect((result as { data: { session: { status: string } } }).data.session.status).toBe(
+      'ACTIVE_REFINEMENT'
+    );
     expect(q('update')).toHaveBeenCalledTimes(1);
   });
 
@@ -373,7 +377,9 @@ describe('resumeSession', () => {
     });
 
     expect(result.status).toBe(200);
-    expect((result as { data: { session: { status: string } } }).data.session.status).toBe('ACTIVE_REFINEMENT');
+    expect((result as { data: { session: { status: string } } }).data.session.status).toBe(
+      'ACTIVE_REFINEMENT'
+    );
   });
 
   it('returns 200 no-op for already-active session', async () => {

@@ -22,7 +22,7 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -33,29 +33,34 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
   if (!label || typeof label !== 'string' || label.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'label is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!endpointUrl || typeof endpointUrl !== 'string') {
     return Response.json(
       { name: 'bad-request', data: { message: 'endpointUrl is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!Array.isArray(eventTypes) || eventTypes.length === 0) {
     return Response.json(
       { name: 'bad-request', data: { message: 'eventTypes must be a non-empty array' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const invalidTypes = eventTypes.filter((t) => !(WEBHOOK_EVENT_TYPES as readonly string[]).includes(t));
+  const invalidTypes = eventTypes.filter(
+    (t) => !(WEBHOOK_EVENT_TYPES as readonly string[]).includes(t)
+  );
   if (invalidTypes.length > 0) {
     return Response.json(
-      { name: 'invalid-event-types', data: { message: `Unknown event types: ${invalidTypes.join(', ')}` } },
-      { status: 400 },
+      {
+        name: 'invalid-event-types',
+        data: { message: `Unknown event types: ${invalidTypes.join(', ')}` },
+      },
+      { status: 400 }
     );
   }
 
@@ -63,8 +68,11 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
   const allowed = await isEndpointAllowed(endpointUrl);
   if (!allowed) {
     return Response.json(
-      { name: 'endpoint-url-not-allowed', data: { message: 'endpointUrl must be an https:// URL pointing to a public host' } },
-      { status: 422 },
+      {
+        name: 'endpoint-url-not-allowed',
+        data: { message: 'endpointUrl must be an https:// URL pointing to a public host' },
+      },
+      { status: 422 }
     );
   }
 
@@ -102,6 +110,6 @@ export async function handleCreateWebhook(req: Request): Promise<Response> {
         signingSecret,
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

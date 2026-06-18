@@ -35,7 +35,9 @@ export const useCardChatHistory = ({
   refreshKey?: number;
 }): UseCardChatHistoryResult => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [state, setState] = useState<HistoryState>(enabled && cardId && sessionId ? 'loading' : 'empty');
+  const [state, setState] = useState<HistoryState>(
+    enabled && cardId && sessionId ? 'loading' : 'empty'
+  );
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export const useCardChatHistory = ({
         // [why] Filter messages to the active session so switching sessions
         // shows only the relevant conversation history.
         const sessionMessages = (res.data ?? []).filter(
-          (message) => message.session_id === sessionId,
+          (message) => message.session_id === sessionId
         );
         const nextMessages = sessionMessages.map((message) => ({
           id: message.id,

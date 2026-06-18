@@ -16,9 +16,10 @@ export function toTrelloErrorResponse(error: unknown): Response {
   if (isObject(error)) {
     const maybeError = error as TrelloErrorLike;
     const status = typeof maybeError.status === 'number' ? maybeError.status : 500;
-    const message = typeof maybeError.message === 'string' && maybeError.message.trim()
-      ? maybeError.message
-      : 'An unexpected error occurred.';
+    const message =
+      typeof maybeError.message === 'string' && maybeError.message.trim()
+        ? maybeError.message
+        : 'An unexpected error occurred.';
     return trelloError(message, status);
   }
 
@@ -30,7 +31,7 @@ export function toTrelloErrorResponse(error: unknown): Response {
 }
 
 export async function withTrelloErrorHandler(
-  callback: () => Promise<Response | null>,
+  callback: () => Promise<Response | null>
 ): Promise<Response | null> {
   try {
     return await callback();

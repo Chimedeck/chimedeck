@@ -13,9 +13,7 @@ import { execute } from '../engine/index';
 
 const dbUrl = new URL(env.DATABASE_URL);
 const isLocal =
-  dbUrl.hostname === 'localhost' ||
-  dbUrl.hostname === '127.0.0.1' ||
-  dbUrl.hostname === 'postgres';
+  dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1' || dbUrl.hostname === 'postgres';
 const sslConfig = isLocal ? false : { rejectUnauthorized: false };
 
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -59,7 +57,9 @@ function scheduleReconnect(): void {
   if (reconnectTimer !== null) return;
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
-    connect().catch(() => { scheduleReconnect(); });
+    connect().catch(() => {
+      scheduleReconnect();
+    });
   }, 5_000);
 }
 

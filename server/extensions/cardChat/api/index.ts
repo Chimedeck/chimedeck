@@ -4,7 +4,13 @@ import { applyBoardVisibilityFromCard } from '../../../middlewares/boardVisibili
 import { flags } from '../../../mods/flags';
 import { INNER_CARD_CHAT_FLAG_KEY } from '../common/config';
 import { handleGetCardChatMessages, handleCreateCardChatMessage } from './messages';
-import { handleStartCardChatSession, handlePauseCardChatSession, handleResumeCardChatSession, handleGetCardChatSession, handleListCardChatSessions } from './session';
+import {
+  handleStartCardChatSession,
+  handlePauseCardChatSession,
+  handleResumeCardChatSession,
+  handleGetCardChatSession,
+  handleListCardChatSessions,
+} from './session';
 import { handleRefineCardChat } from './refine';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import type { BoardVisibilityScopedRequest } from '../../../middlewares/boardVisibility';
@@ -32,7 +38,7 @@ export async function cardChatRouter(req: Request, pathname: string): Promise<Re
   if (!cardId) {
     return Response.json(
       { name: 'card-not-found', data: { message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   const sub = cardChatMatch[2] ?? '';
@@ -45,7 +51,7 @@ export async function cardChatRouter(req: Request, pathname: string): Promise<Re
         name: 'inner-card-chat-disabled',
         data: { message: 'Card chat feature is disabled' },
       },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -67,28 +73,34 @@ export async function cardChatRouter(req: Request, pathname: string): Promise<Re
   if (sub === '/messages' && req.method === 'POST') return handleCreateCardChatMessage(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/session/start
-  if (sub === '/session/start' && req.method === 'POST') return handleStartCardChatSession(req, cardId);
+  if (sub === '/session/start' && req.method === 'POST')
+    return handleStartCardChatSession(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/session/pause
-  if (sub === '/session/pause' && req.method === 'POST') return handlePauseCardChatSession(req, cardId);
+  if (sub === '/session/pause' && req.method === 'POST')
+    return handlePauseCardChatSession(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/session/resume
-  if (sub === '/session/resume' && req.method === 'POST') return handleResumeCardChatSession(req, cardId);
+  if (sub === '/session/resume' && req.method === 'POST')
+    return handleResumeCardChatSession(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/refine
   if (sub === '/refine' && req.method === 'POST') return handleRefineCardChat(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/propose-description
-  if (sub === '/propose-description' && req.method === 'POST') return handleProposeCardDescription(req, cardId);
+  if (sub === '/propose-description' && req.method === 'POST')
+    return handleProposeCardDescription(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/assist
   if (sub === '/assist' && req.method === 'POST') return handleCardChatAssist(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/assist/commit-description
-  if (sub === '/assist/commit-description' && req.method === 'POST') return handleCommitCardChatProposal(req, cardId);
+  if (sub === '/assist/commit-description' && req.method === 'POST')
+    return handleCommitCardChatProposal(req, cardId);
 
   // POST /api/v1/cards/:cardId/chat/assist/commit (legacy alias)
-  if (sub === '/assist/commit' && req.method === 'POST') return handleCommitCardChatProposal(req, cardId);
+  if (sub === '/assist/commit' && req.method === 'POST')
+    return handleCommitCardChatProposal(req, cardId);
 
   return null;
 }

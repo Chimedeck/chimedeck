@@ -15,7 +15,7 @@ export async function handleGetReplies(req: Request, commentId: string): Promise
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -25,13 +25,13 @@ export async function handleGetReplies(req: Request, commentId: string): Promise
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -50,9 +50,9 @@ export async function handleGetReplies(req: Request, commentId: string): Promise
       'comments.parent_id',
       'comments.created_at',
       'comments.updated_at',
-      db.raw("COALESCE(users.name, users.email) as author_name"),
+      db.raw('COALESCE(users.name, users.email) as author_name'),
       'users.email as author_email',
-      'users.avatar_url as author_avatar_url',
+      'users.avatar_url as author_avatar_url'
     );
 
   const callerUserId = (req as AuthenticatedRequest).currentUser!.id;
@@ -87,7 +87,7 @@ export async function handleGetReplies(req: Request, commentId: string): Promise
       ...r,
       author_avatar_url: buildAvatarProxyUrl({
         userId: (r as Record<string, unknown>).user_id as string,
-        avatarUrl: (r as Record<string, unknown>).author_avatar_url as string | null ?? null,
+        avatarUrl: ((r as Record<string, unknown>).author_avatar_url as string | null) ?? null,
       }),
       reactions,
     };

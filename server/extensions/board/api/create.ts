@@ -27,27 +27,37 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { title?: string; visibility?: BoardVisibility; description?: string; background?: string };
+  let body: {
+    title?: string;
+    visibility?: BoardVisibility;
+    description?: string;
+    background?: string;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.visibility !== undefined && !VALID_VISIBILITY.includes(body.visibility)) {
     return Response.json(
-      { error: { code: 'bad-request', message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'" } },
-      { status: 400 },
+      {
+        error: {
+          code: 'bad-request',
+          message: "visibility must be 'PUBLIC', 'PRIVATE', or 'WORKSPACE'",
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -97,7 +107,13 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
   const board = await db('boards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
-  await dispatchEvent({ type: 'board_created', boardId: id, entityId: id, actorId: creatorId, payload: { workspaceId } });
+  await dispatchEvent({
+    type: 'board_created',
+    boardId: id,
+    entityId: id,
+    actorId: creatorId,
+    payload: { workspaceId },
+  });
 
   return Response.json({ data: board }, { status: 201 });
 }

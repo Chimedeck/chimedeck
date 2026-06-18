@@ -9,7 +9,14 @@ interface Props {
   onMouseEnter: () => void;
 }
 
-const MentionChipRow = ({ nickname, name, avatarUrl, highlighted, onSelect, onMouseEnter }: Props) => {
+const MentionChipRow = ({
+  nickname,
+  name,
+  avatarUrl,
+  highlighted,
+  onSelect,
+  onMouseEnter,
+}: Props) => {
   const initials = name
     .split(' ')
     .map((w) => w[0])

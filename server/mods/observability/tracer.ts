@@ -47,8 +47,10 @@ export async function initTracer(): Promise<void> {
     // Dynamic imports so tsc does not fail when packages are absent.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const otelApi = await import('@opentelemetry/api' as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { NodeTracerProvider, BatchSpanProcessor } = await import('@opentelemetry/sdk-trace-node' as any);
+
+    const { NodeTracerProvider, BatchSpanProcessor } = await import(
+      '@opentelemetry/sdk-trace-node' as any
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { OTLPTraceExporter } = await import('@opentelemetry/exporter-trace-otlp-http' as any);
 

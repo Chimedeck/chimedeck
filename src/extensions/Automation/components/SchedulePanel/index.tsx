@@ -26,7 +26,7 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
   const [builder, setBuilder] = useState<BuilderMode>(null);
 
   const scheduleAutomations = automations.filter(
-    (a) => a.automationType === 'SCHEDULED' || a.automationType === 'DUE_DATE',
+    (a) => a.automationType === 'SCHEDULED' || a.automationType === 'DUE_DATE'
   );
 
   const hasAny = scheduleAutomations.length > 0;
@@ -34,7 +34,9 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
   const handleUseTemplate = useCallback((tpl: QuickStartTemplate) => {
     if (tpl.type === 'scheduled') {
       const triggerCfg = tpl.payload.trigger?.config as Partial<ScheduleConfig> | undefined;
-      setBuilder(triggerCfg ? { type: 'scheduled', initialConfig: triggerCfg } : { type: 'scheduled' });
+      setBuilder(
+        triggerCfg ? { type: 'scheduled', initialConfig: triggerCfg } : { type: 'scheduled' }
+      );
     } else {
       const triggerCfg = tpl.payload.trigger?.config as Partial<DueDateConfig> | undefined;
       setBuilder(triggerCfg ? { type: 'duedate', initialConfig: triggerCfg } : { type: 'duedate' });
@@ -62,7 +64,9 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
         {...(builder.existing ? { existing: builder.existing } : {})}
         {...(builder.initialConfig ? { initialConfig: builder.initialConfig } : {})}
         onSave={handleSaved}
-        onClose={() => { setBuilder(null); }}
+        onClose={() => {
+          setBuilder(null);
+        }}
       />
     );
   }
@@ -74,7 +78,9 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
         {...(builder.existing ? { existing: builder.existing } : {})}
         {...(builder.initialConfig ? { initialConfig: builder.initialConfig } : {})}
         onSave={handleSaved}
-        onClose={() => { setBuilder(null); }}
+        onClose={() => {
+          setBuilder(null);
+        }}
       />
     );
   }
@@ -92,15 +98,23 @@ const SchedulePanel: FC<Props> = ({ boardId, automations, onChanged }) => {
         <ScheduleList
           boardId={boardId}
           automations={scheduleAutomations}
-          onCreateScheduled={() => { setBuilder({ type: 'scheduled' }); }}
-          onCreateDueDate={() => { setBuilder({ type: 'duedate' }); }}
+          onCreateScheduled={() => {
+            setBuilder({ type: 'scheduled' });
+          }}
+          onCreateDueDate={() => {
+            setBuilder({ type: 'duedate' });
+          }}
           onEdit={handleEdit}
           onChanged={onChanged}
         />
       ) : (
         <ScheduleEmptyState
-          onCreateScheduled={() => { setBuilder({ type: 'scheduled' }); }}
-          onCreateDueDate={() => { setBuilder({ type: 'duedate' }); }}
+          onCreateScheduled={() => {
+            setBuilder({ type: 'scheduled' });
+          }}
+          onCreateDueDate={() => {
+            setBuilder({ type: 'duedate' });
+          }}
         />
       )}
     </div>

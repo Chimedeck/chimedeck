@@ -164,9 +164,7 @@ describe('enforceQuota', () => {
   it('allows all artifacts on unlimited tier', async () => {
     const { enforceQuota } = await import('../quotaEnforcer');
 
-    const artifacts = Array.from({ length: 15 }, (_, i) =>
-      makeArtifact(i + 1),
-    );
+    const artifacts = Array.from({ length: 15 }, (_, i) => makeArtifact(i + 1));
 
     const result = enforceQuota({ artifacts, tier: 'tier_4' });
 

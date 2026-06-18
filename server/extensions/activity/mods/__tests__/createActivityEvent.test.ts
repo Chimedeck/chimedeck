@@ -41,7 +41,8 @@ mock.module('../../webhooks/mods/dispatch', () => ({
   dispatchWebhook: dispatchWebhookMock,
 }));
 
-const { emitCardCreated, emitCardMoved, emitCardMemberAssigned } = await import('../createActivityEvent');
+const { emitCardCreated, emitCardMoved, emitCardMemberAssigned } =
+  await import('../createActivityEvent');
 
 beforeEach(() => {
   writeActivityMock.mockClear();

@@ -10,7 +10,7 @@ interface ResolveWorkspaceOptions {
 
 export async function resolveWorkspaceContext(
   req: Request,
-  options: ResolveWorkspaceOptions,
+  options: ResolveWorkspaceOptions
 ): Promise<{ context: WorkspaceContext; response: null } | { context: null; response: Response }> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return { context: null, response: authError };
@@ -62,7 +62,9 @@ export async function resolveWorkspaceContext(
   const memberships = await db('memberships')
     .where({ workspace_id: workspace.id, user_id: currentUser.id })
     .select('role');
-  const role = resolveHighestRole(memberships.map((membership: { role: string }) => membership.role));
+  const role = resolveHighestRole(
+    memberships.map((membership: { role: string }) => membership.role)
+  );
   if (!role) {
     return {
       context: null,
@@ -75,7 +77,7 @@ export async function resolveWorkspaceContext(
       context: null,
       response: Response.json(
         { name: 'current-user-is-not-workspace-admin', data: { requiredRole: options.minRole } },
-        { status: 403 },
+        { status: 403 }
       ),
     };
   }

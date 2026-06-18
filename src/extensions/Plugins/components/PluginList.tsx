@@ -12,7 +12,14 @@ interface Props {
   onEdit?: (plugin: Plugin) => void;
 }
 
-const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSettings, onEdit }: Props) => {
+const PluginList = ({
+  boardPlugins,
+  availablePlugins,
+  onEnable,
+  onDisable,
+  onSettings,
+  onEdit,
+}: Props) => {
   return (
     <div className="space-y-6">
       {/* Active section */}
@@ -64,4 +71,3 @@ const PluginList = ({ boardPlugins, availablePlugins, onEnable, onDisable, onSet
 };
 
 export default PluginList;
-

@@ -30,7 +30,13 @@ const REPO_OWNER_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 
 function isValidRepoName(value: string): boolean {
   // GitHub: cannot start/end with '.', cannot be '..' or '.git'.
-  if (!value || value === '..' || value === '.git' || value.startsWith('.') || value.endsWith('.')) {
+  if (
+    !value ||
+    value === '..' ||
+    value === '.git' ||
+    value.startsWith('.') ||
+    value.endsWith('.')
+  ) {
     return false;
   }
   return REPO_NAME_REGEX.test(value);
@@ -74,19 +80,28 @@ function parseSshCloneUrl(value: string): GithubProjectReference | null {
 // same 4-segment shape (`<bucket>/<owner>/projects/<n>`) but differ in how
 // they validate the owner/repo pair.
 
-function parseOrgProjectUrl(segments: string[], projectNumber: number): GithubProjectReference | null {
+function parseOrgProjectUrl(
+  segments: string[],
+  projectNumber: number
+): GithubProjectReference | null {
   const owner = segments[1] ?? '';
   if (!isValidOwnerName(owner)) return null;
   return { scope: 'org', owner, repository: null, projectNumber };
 }
 
-function parseUserProjectUrl(segments: string[], projectNumber: number): GithubProjectReference | null {
+function parseUserProjectUrl(
+  segments: string[],
+  projectNumber: number
+): GithubProjectReference | null {
   const owner = segments[1] ?? '';
   if (!isValidOwnerName(owner)) return null;
   return { scope: 'user', owner, repository: null, projectNumber };
 }
 
-function parseRepoProjectUrl(segments: string[], projectNumber: number): GithubProjectReference | null {
+function parseRepoProjectUrl(
+  segments: string[],
+  projectNumber: number
+): GithubProjectReference | null {
   const owner = segments[0] ?? '';
   const repository = segments[1] ?? '';
   if (!isValidOwnerName(owner) || !isValidRepoName(repository)) return null;

@@ -45,6 +45,6 @@ export function registerSetStateTransitions(server: McpServer, token: string): v
       return {
         content: [{ type: 'text', text: JSON.stringify(result.data) }],
       };
-    },
+    }
   );
 }

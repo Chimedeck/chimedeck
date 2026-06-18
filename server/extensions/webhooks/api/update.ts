@@ -18,7 +18,7 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
   if (!webhook) {
     return Response.json(
       { name: 'webhook-not-found', data: { message: 'Webhook not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -32,8 +32,11 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
 
   if (!isOwner && !isAdminOrAbove) {
     return Response.json(
-      { name: 'insufficient-permissions', data: { message: 'Only the webhook owner or an admin can update this webhook' } },
-      { status: 403 },
+      {
+        name: 'insufficient-permissions',
+        data: { message: 'Only the webhook owner or an admin can update this webhook' },
+      },
+      { status: 403 }
     );
   }
 
@@ -48,7 +51,7 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -58,7 +61,7 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
     if (typeof body.label !== 'string' || body.label.trim() === '') {
       return Response.json(
         { name: 'bad-request', data: { message: 'label must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates['label'] = body.label.trim();
@@ -68,8 +71,11 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
     const allowed = await isEndpointAllowed(body.endpointUrl);
     if (!allowed) {
       return Response.json(
-        { name: 'endpoint-url-not-allowed', data: { message: 'endpointUrl must be an https:// URL pointing to a public host' } },
-        { status: 422 },
+        {
+          name: 'endpoint-url-not-allowed',
+          data: { message: 'endpointUrl must be an https:// URL pointing to a public host' },
+        },
+        { status: 422 }
       );
     }
     updates['endpoint_url'] = body.endpointUrl;
@@ -79,14 +85,19 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
     if (!Array.isArray(body.eventTypes) || body.eventTypes.length === 0) {
       return Response.json(
         { name: 'bad-request', data: { message: 'eventTypes must be a non-empty array' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
-    const invalidTypes = body.eventTypes.filter((t) => !(WEBHOOK_EVENT_TYPES as readonly string[]).includes(t));
+    const invalidTypes = body.eventTypes.filter(
+      (t) => !(WEBHOOK_EVENT_TYPES as readonly string[]).includes(t)
+    );
     if (invalidTypes.length > 0) {
       return Response.json(
-        { name: 'invalid-event-types', data: { message: `Unknown event types: ${invalidTypes.join(', ')}` } },
-        { status: 400 },
+        {
+          name: 'invalid-event-types',
+          data: { message: `Unknown event types: ${invalidTypes.join(', ')}` },
+        },
+        { status: 400 }
       );
     }
     updates['event_types'] = JSON.stringify(body.eventTypes);
@@ -96,7 +107,7 @@ export async function handleUpdateWebhook(req: Request, webhookId: string): Prom
     if (typeof body.isActive !== 'boolean') {
       return Response.json(
         { name: 'bad-request', data: { message: 'isActive must be a boolean' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates['is_active'] = body.isActive;

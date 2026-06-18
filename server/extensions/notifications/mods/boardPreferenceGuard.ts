@@ -58,7 +58,7 @@ export async function boardPreferenceGuard({
  */
 export function selectChannels(
   boardRow: { in_app_enabled: boolean; email_enabled: boolean } | null | undefined,
-  userRow: { in_app_enabled: boolean; email_enabled: boolean } | null | undefined,
+  userRow: { in_app_enabled: boolean; email_enabled: boolean } | null | undefined
 ): { inApp: boolean; email: boolean } {
   if (boardRow) return { inApp: boardRow.in_app_enabled, email: boardRow.email_enabled };
   if (userRow) return { inApp: userRow.in_app_enabled, email: userRow.email_enabled };

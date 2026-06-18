@@ -41,7 +41,7 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -49,7 +49,7 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   if (!email || !isValidEmail(email)) {
     return Response.json(
       { name: 'invalid-email', data: { message: 'A valid email address is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -57,10 +57,10 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   if (rawGuestType !== undefined && rawGuestType !== 'VIEWER' && rawGuestType !== 'MEMBER') {
     return Response.json(
       { name: 'invalid-guest-type', data: { message: 'guestType must be VIEWER or MEMBER' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
-  const guestType: GuestType = (rawGuestType) ?? 'VIEWER';
+  const guestType: GuestType = rawGuestType ?? 'VIEWER';
 
   const guestCount = await getGuestCountForBoard(boardId);
   const limitError = await applyLimitGuard({
@@ -79,8 +79,11 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
 
   if (existingMember) {
     return Response.json(
-      { name: 'user-already-workspace-member', data: { message: 'This user is already a workspace member' } },
-      { status: 409 },
+      {
+        name: 'user-already-workspace-member',
+        data: { message: 'This user is already a workspace member' },
+      },
+      { status: 409 }
     );
   }
 
@@ -108,7 +111,7 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
   if (existing) {
     return Response.json(
       { name: 'already-invited', data: { message: 'This user is already a guest on this board' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -144,7 +147,7 @@ export async function handleInviteGuestByEmail(req: Request, boardId: string): P
       db.raw('COALESCE(users.name, users.email) as name'),
       'board_guest_access.guest_type as guestType',
       'board_guest_access.granted_at as grantedAt',
-      'board_guest_access.granted_by as grantedBy',
+      'board_guest_access.granted_by as grantedBy'
     )
     .first();
 

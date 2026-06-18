@@ -53,10 +53,7 @@ export async function createEditRun({
  * Retrieve an edit run by ID.
  */
 export async function getEditRun(runId: string): Promise<EditRun | null> {
-  const row = await persistenceDeps
-    .db('card_ai_edit_runs')
-    .where({ id: runId })
-    .first();
+  const row = await persistenceDeps.db('card_ai_edit_runs').where({ id: runId }).first();
   return (row as EditRun | undefined) ?? null;
 }
 
@@ -88,15 +85,12 @@ export async function updateEditRunStatus({
 
   const updatedRun = persistenceDeps.advanceState({ run, nextStatus, errorMessage });
 
-  const updated = await persistenceDeps
-    .db('card_ai_edit_runs')
-    .where({ id: run.id })
-    .update({
-      status: updatedRun.status,
-      error_message: updatedRun.error_message,
-      completed_at: updatedRun.completed_at,
-      updated_at: updatedRun.updated_at,
-    });
+  const updated = await persistenceDeps.db('card_ai_edit_runs').where({ id: run.id }).update({
+    status: updatedRun.status,
+    error_message: updatedRun.error_message,
+    completed_at: updatedRun.completed_at,
+    updated_at: updatedRun.updated_at,
+  });
 
   if (updated === 0) {
     return {
@@ -177,17 +171,10 @@ export async function updateEditStep({
   if (output !== undefined) updates.output = output;
   if (error !== undefined) updates.error = error;
 
-  await persistenceDeps
-    .db('card_ai_edit_steps')
-    .where({ id: step.id })
-    .update(updates);
+  await persistenceDeps.db('card_ai_edit_steps').where({ id: step.id }).update(updates);
 
-  const startedAt =
-    status === 'RUNNING' && !step.started_at
-      ? now
-      : step.started_at;
-  const completedAt =
-    status === 'SUCCEEDED' || status === 'FAILED' ? now : step.completed_at;
+  const startedAt = status === 'RUNNING' && !step.started_at ? now : step.started_at;
+  const completedAt = status === 'SUCCEEDED' || status === 'FAILED' ? now : step.completed_at;
 
   return {
     ...step,

@@ -22,13 +22,7 @@ export function signPayload({
  * Builds the Webhook-Signature header value: `t=<unix_seconds>,v0=<hmac_hex>`.
  * Callers should set this as the `Webhook-Signature` request header.
  */
-export function buildSignatureHeader({
-  secret,
-  body,
-}: {
-  secret: string;
-  body: string;
-}): string {
+export function buildSignatureHeader({ secret, body }: { secret: string; body: string }): string {
   const timestamp = Math.floor(Date.now() / 1000);
   const sig = signPayload({ secret, timestamp, body });
   return `t=${timestamp},v0=${sig}`;

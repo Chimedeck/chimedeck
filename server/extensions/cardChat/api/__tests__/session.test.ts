@@ -40,7 +40,11 @@ mock.module('../session/get', () => ({
 }));
 
 function addAuthContext(req: Request): void {
-  (req as Record<string, unknown>).currentUser = { id: 'user-1', name: 'Alice', email: 'alice@test.local' };
+  (req as Record<string, unknown>).currentUser = {
+    id: 'user-1',
+    name: 'Alice',
+    email: 'alice@test.local',
+  };
   (req as Record<string, unknown>).workspaceId = 'ws-1';
 }
 
@@ -58,14 +62,14 @@ beforeEach(() => {
 describe('handleStartCardChatSession', () => {
   it('returns 401 when authentication fails', async () => {
     mockAuthenticate.mockResolvedValueOnce(
-      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 }),
+      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 })
     );
 
     const { handleStartCardChatSession } = await import('../session/start');
 
     const result = await handleStartCardChatSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat/session/start', { method: 'POST' }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(401);
   });
@@ -78,17 +82,29 @@ describe('handleStartCardChatSession', () => {
     mockRequireMembership.mockResolvedValueOnce(null);
     mockStartSession.mockResolvedValueOnce({
       status: 201,
-      data: { session: { id: 'sess-1', card_id: cardId, workspace_id: 'ws-1', created_by: 'user-1', status: 'ACTIVE_REFINEMENT', quality_score: null, last_actor_at: '2026-01-01T00:00:00.000Z', created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' } },
+      data: {
+        session: {
+          id: 'sess-1',
+          card_id: cardId,
+          workspace_id: 'ws-1',
+          created_by: 'user-1',
+          status: 'ACTIVE_REFINEMENT',
+          quality_score: null,
+          last_actor_at: '2026-01-01T00:00:00.000Z',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        },
+      },
     });
 
     const { handleStartCardChatSession } = await import('../session/start');
 
     const result = await handleStartCardChatSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat/session/start', { method: 'POST' }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(201);
-    const body = await result.json() as { data: { id: string; status: string } };
+    const body = (await result.json()) as { data: { id: string; status: string } };
     expect(body.data.id).toBe('sess-1');
     expect(body.data.status).toBe('ACTIVE_REFINEMENT');
   });
@@ -99,15 +115,22 @@ describe('handleStartCardChatSession', () => {
       return null;
     });
     mockRequireMembership.mockResolvedValueOnce(null);
-    mockStartSession.mockResolvedValueOnce({ status: 201, data: { session: { id: 'sess-1', status: 'ACTIVE_REFINEMENT' } } });
+    mockStartSession.mockResolvedValueOnce({
+      status: 201,
+      data: { session: { id: 'sess-1', status: 'ACTIVE_REFINEMENT' } },
+    });
 
     const { handleStartCardChatSession } = await import('../session/start');
 
     await handleStartCardChatSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat/session/start', { method: 'POST' }),
-      cardId,
+      cardId
     );
-    expect(mockStartSession).toHaveBeenCalledWith({ cardId, workspaceId: 'ws-1', userId: 'user-1' });
+    expect(mockStartSession).toHaveBeenCalledWith({
+      cardId,
+      workspaceId: 'ws-1',
+      userId: 'user-1',
+    });
   });
 });
 
@@ -119,11 +142,14 @@ describe('handlePauseCardChatSession', () => {
     const { handlePauseCardChatSession } = await import('../session/pause');
 
     const result = await handlePauseCardChatSession(
-      new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', { method: 'POST', body: 'not json' }),
-      cardId,
+      new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', {
+        method: 'POST',
+        body: 'not json',
+      }),
+      cardId
     );
     expect(result.status).toBe(400);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('invalid-request-body');
   });
 
@@ -134,11 +160,14 @@ describe('handlePauseCardChatSession', () => {
     const { handlePauseCardChatSession } = await import('../session/pause');
 
     const result = await handlePauseCardChatSession(
-      new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', { method: 'POST', body: JSON.stringify({}) }),
-      cardId,
+      new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
+      cardId
     );
     expect(result.status).toBe(400);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('missing-session-id');
   });
 
@@ -150,7 +179,19 @@ describe('handlePauseCardChatSession', () => {
     mockRequireMembership.mockResolvedValueOnce(null);
     mockPauseSession.mockResolvedValueOnce({
       status: 200,
-      data: { session: { id: 'sess-1', card_id: cardId, workspace_id: 'ws-1', created_by: 'user-1', status: 'PAUSED', quality_score: 50, last_actor_at: '2026-01-01T00:00:00.000Z', created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' } },
+      data: {
+        session: {
+          id: 'sess-1',
+          card_id: cardId,
+          workspace_id: 'ws-1',
+          created_by: 'user-1',
+          status: 'PAUSED',
+          quality_score: 50,
+          last_actor_at: '2026-01-01T00:00:00.000Z',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        },
+      },
     });
     mockEmitActivity.mockResolvedValueOnce(undefined);
 
@@ -158,14 +199,17 @@ describe('handlePauseCardChatSession', () => {
 
     const result = await handlePauseCardChatSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-1' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-1' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(200);
-    const body = await result.json() as { data: { status: string } };
+    const body = (await result.json()) as { data: { status: string } };
     expect(body.data.status).toBe('PAUSED');
-    expect(mockEmitActivity).toHaveBeenCalledWith(expect.objectContaining({ type: 'card_ai_assist_paused' }));
+    expect(mockEmitActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'card_ai_assist_paused' })
+    );
   });
 
   it('returns 404 when session not found', async () => {
@@ -174,18 +218,23 @@ describe('handlePauseCardChatSession', () => {
       return null;
     });
     mockRequireMembership.mockResolvedValueOnce(null);
-    mockPauseSession.mockResolvedValueOnce({ status: 404, name: 'session-not-found', data: { message: 'Session not found' } });
+    mockPauseSession.mockResolvedValueOnce({
+      status: 404,
+      name: 'session-not-found',
+      data: { message: 'Session not found' },
+    });
 
     const { handlePauseCardChatSession } = await import('../session/pause');
 
     const result = await handlePauseCardChatSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-404' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-404' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(404);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('session-not-found');
   });
 
@@ -195,18 +244,23 @@ describe('handlePauseCardChatSession', () => {
       return null;
     });
     mockRequireMembership.mockResolvedValueOnce(null);
-    mockPauseSession.mockResolvedValueOnce({ status: 409, name: 'session-already-paused', data: { message: 'Session is already paused' } });
+    mockPauseSession.mockResolvedValueOnce({
+      status: 409,
+      name: 'session-already-paused',
+      data: { message: 'Session is already paused' },
+    });
 
     const { handlePauseCardChatSession } = await import('../session/pause');
 
     const result = await handlePauseCardChatSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat/session/pause', {
-        method: 'POST', body: JSON.stringify({ sessionId: 'sess-1' }),
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'sess-1' }),
       }),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(409);
-    const body = await result.json() as { name: string };
+    const body = (await result.json()) as { name: string };
     expect(body.name).toBe('session-already-paused');
   });
 });
@@ -217,29 +271,34 @@ describe('handleGetCardChatSession', () => {
 
     const result = await mockGetSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat'),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(200);
-    const body = await result.json() as { data: unknown };
+    const body = (await result.json()) as { data: unknown };
     expect(body.data).toBe(null);
   });
 
   it('returns session with latest message when active session exists', async () => {
     mockGetSession.mockResolvedValueOnce(
-      Response.json({
-        data: {
-          session: { id: 'sess-1', card_id: cardId, status: 'ACTIVE_REFINEMENT' },
-          latestMessage: { id: 'msg-1', content: 'Hello' },
+      Response.json(
+        {
+          data: {
+            session: { id: 'sess-1', card_id: cardId, status: 'ACTIVE_REFINEMENT' },
+            latestMessage: { id: 'msg-1', content: 'Hello' },
+          },
         },
-      }, { status: 200 }),
+        { status: 200 }
+      )
     );
 
     const result = await mockGetSession(
       new Request('http://localhost/api/v1/cards/card-abc/chat'),
-      cardId,
+      cardId
     );
     expect(result.status).toBe(200);
-    const body = await result.json() as { data: { session: { id: string }; latestMessage: { id: string } | null } };
+    const body = (await result.json()) as {
+      data: { session: { id: string }; latestMessage: { id: string } | null };
+    };
     expect(body.data.session.id).toBe('sess-1');
     expect(body.data.latestMessage).not.toBe(null);
     expect(body.data.latestMessage!.id).toBe('msg-1');

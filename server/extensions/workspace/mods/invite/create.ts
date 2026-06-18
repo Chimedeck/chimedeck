@@ -39,7 +39,7 @@ export async function createInvite({
   memCache.set(
     `${inviteConfig.cacheKeyPrefix}${token}`,
     JSON.stringify({ id, workspaceId, invitedEmail, role, expiresAt: expiresAt.toISOString() }),
-    inviteConfig.ttlSeconds,
+    inviteConfig.ttlSeconds
   );
 
   return { id, token, expiresAt };

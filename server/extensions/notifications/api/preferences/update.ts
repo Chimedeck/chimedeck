@@ -22,7 +22,7 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -36,7 +36,7 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
           data: { message: `type must be one of: ${NOTIFICATION_TYPES.join(', ')}` },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -48,7 +48,7 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
           data: { message: 'Provide at least one of: in_app_enabled, email_enabled' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -60,7 +60,7 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
           data: { message: 'in_app_enabled must be a boolean' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -72,7 +72,7 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
           data: { message: 'email_enabled must be a boolean' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -99,10 +99,12 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
       updated_at: now,
     };
 
-    const [inserted] = await db('notification_preferences').insert(
-      insert,
-      ['type', 'in_app_enabled', 'email_enabled', 'updated_at'],
-    );
+    const [inserted] = await db('notification_preferences').insert(insert, [
+      'type',
+      'in_app_enabled',
+      'email_enabled',
+      'updated_at',
+    ]);
     row = inserted;
   }
 

@@ -80,7 +80,10 @@ const DATA_GET_CACHE_TTL = 1000; // 1 second
 const dataGetCache = new Map<string, { value: unknown; expiresAt: number }>();
 
 // Maps batch request IDs to sub-id → promise handlers
-const pendingBatch = new Map<string, Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; cacheKey: string }>>();
+const pendingBatch = new Map<
+  string,
+  Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; cacheKey: string }>
+>();
 
 function enqueueDataGet(item: DataGetQueueItem): void {
   dataGetQueue.push(item);
@@ -93,7 +96,10 @@ function flushDataGetQueue(): void {
   if (batch.length === 0) return;
 
   const batchId = nextId();
-  const subIdToEntry = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; cacheKey: string }>();
+  const subIdToEntry = new Map<
+    string,
+    { resolve: (v: unknown) => void; reject: (e: Error) => void; cacheKey: string }
+  >();
 
   const items = batch.map((item) => {
     const subId = nextId();
@@ -186,7 +192,7 @@ function sendToHost(type: string, payload?: unknown): Promise<unknown> {
 // Handle DATA_GET_BATCH responses — resolve individual sub-promises and cache results
 function handleBatchResponse(
   batchId: string,
-  results: Array<{ subId: string; result: unknown; error?: string }>,
+  results: Array<{ subId: string; result: unknown; error?: string }>
 ): void {
   const batchEntry = pendingBatch.get(batchId);
   if (!batchEntry) return;
@@ -320,7 +326,7 @@ class FrameContext {
 
   private resolveContextFromArgs(
     key: 'card' | 'list' | 'board' | 'member',
-    fields: string[],
+    fields: string[]
   ): Record<string, unknown> | null {
     const raw = this.args[key];
     if (!raw || typeof raw !== 'object') return null;
@@ -687,7 +693,9 @@ const trelloCompat = {
       }
 
       // Throw if no token is cached — indicates authorization is required
-      return Promise.reject(new Error('No token available. Call t.getRestApi().authorize() first.'));
+      return Promise.reject(
+        new Error('No token available. Call t.getRestApi().authorize() first.')
+      );
     },
   },
 };

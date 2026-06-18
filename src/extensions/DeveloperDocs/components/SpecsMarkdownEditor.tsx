@@ -50,11 +50,7 @@ const SpecsMarkdownEditor = ({ content, onChange, readOnly = false }: SpecsMarkd
   const isHydratedRef = useRef(false);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Markdown,
-      Link.configure({ openOnClick: false }),
-    ],
+    extensions: [StarterKit, Markdown, Link.configure({ openOnClick: false })],
     content: '',
     editable: !readOnly,
     onUpdate: ({ editor: ed }) => {
@@ -63,7 +59,9 @@ const SpecsMarkdownEditor = ({ content, onChange, readOnly = false }: SpecsMarkd
       }
 
       // [why] Use the Markdown extension's storage to get the canonical markdown string
-      const md = (ed.storage as { markdown?: { getMarkdown?: () => string } }).markdown?.getMarkdown?.() ?? ed.getHTML();
+      const md =
+        (ed.storage as { markdown?: { getMarkdown?: () => string } }).markdown?.getMarkdown?.() ??
+        ed.getHTML();
       onChange(md);
     },
   });
@@ -72,7 +70,8 @@ const SpecsMarkdownEditor = ({ content, onChange, readOnly = false }: SpecsMarkd
   useEffect(() => {
     if (!editor) return;
     const currentMd =
-      (editor.storage as { markdown?: { getMarkdown?: () => string } }).markdown?.getMarkdown?.() ?? '';
+      (editor.storage as { markdown?: { getMarkdown?: () => string } }).markdown?.getMarkdown?.() ??
+      '';
     // Only reset if content genuinely changed to avoid clobbering cursor position
     if (currentMd !== content) {
       isHydratedRef.current = false;

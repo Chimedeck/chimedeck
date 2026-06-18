@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/chat/messages
 // Sprint 171 — persist card-chat messages and auto-generate AI response.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { writeCardChatMessage } from '../../mods/messages/write';
 import { requestCardChatCompletion } from '../../mods/provider';
 import { buildBAPersonaSystemPrompt } from '../../mods/baPersona';
@@ -38,19 +41,21 @@ interface ParsedMessageBody {
 async function generateAssistantReply(
   sessionId: string,
   cardId: string,
-  authorId: string,
+  authorId: string
 ): Promise<CardChatMessage | null> {
-  const cardRow = await cardChatCreateApiDeps.db('cards')
+  const cardRow = (await cardChatCreateApiDeps
+    .db('cards')
     .where({ id: cardId })
     .select('id', 'title', 'description')
-    .first() as { id: string; title: string; description: string | null } | undefined;
+    .first()) as { id: string; title: string; description: string | null } | undefined;
   const card: CardMeta = {
     id: (cardRow as { id: string } | undefined)?.id ?? cardId,
     title: (cardRow as { title: string } | undefined)?.title ?? 'Untitled',
     description: (cardRow as { description: string | null } | undefined)?.description ?? null,
   };
 
-  const recentMessages = (await cardChatCreateApiDeps.db('card_chat_messages')
+  const recentMessages = (await cardChatCreateApiDeps
+    .db('card_chat_messages')
     .where({ session_id: sessionId })
     .orderBy('created_at', 'asc')
     .select('*')) as CardChatMessage[];
@@ -79,7 +84,7 @@ async function generateAssistantReply(
 
   const instructionPrompt = isProposeRequest
     ? 'Based on the conversation above, write a clear, structured card description using Markdown with these sections: ## Summary, ## Requirements, ## Acceptance Criteria, ## Constraints & Assumptions. Be specific and actionable. Use only information from the conversation.'
-    : 'Respond to the user\'s latest message. Ask one focused follow-up question to help refine the requirement. Be conversational and encouraging. Keep your response under 200 words.';
+    : "Respond to the user's latest message. Ask one focused follow-up question to help refine the requirement. Be conversational and encouraging. Keep your response under 200 words.";
 
   const providerMessages: CardChatProviderMessage[] = [
     { role: 'system', content: systemPrompt },
@@ -116,33 +121,41 @@ async function generateAssistantReply(
  */
 function parseMessageBody(raw: unknown): ParsedMessageBody | { error: Response } {
   if (typeof raw !== 'object' || raw === null) {
-    return { error: Response.json(
-      { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
-    )};
+    return {
+      error: Response.json(
+        { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
+        { status: 400 }
+      ),
+    };
   }
   const body = raw as Record<string, unknown>;
 
   if (typeof body.sessionId !== 'string' || body.sessionId === '') {
-    return { error: Response.json(
-      { name: 'missing-session-id', data: { message: 'sessionId is required' } },
-      { status: 400 },
-    )};
+    return {
+      error: Response.json(
+        { name: 'missing-session-id', data: { message: 'sessionId is required' } },
+        { status: 400 }
+      ),
+    };
   }
 
   if (typeof body.content !== 'string') {
-    return { error: Response.json(
-      { name: 'invalid-content', data: { message: 'content must be a string' } },
-      { status: 400 },
-    )};
+    return {
+      error: Response.json(
+        { name: 'invalid-content', data: { message: 'content must be a string' } },
+        { status: 400 }
+      ),
+    };
   }
 
   const trimmedContent = body.content.trim();
   if (trimmedContent === '') {
-    return { error: Response.json(
-      { name: 'missing-content', data: { message: 'content is required' } },
-      { status: 400 },
-    )};
+    return {
+      error: Response.json(
+        { name: 'missing-content', data: { message: 'content is required' } },
+        { status: 400 }
+      ),
+    };
   }
 
   const role: CardChatMessageRole =
@@ -162,13 +175,16 @@ function mapWriteError(error: unknown): Response | null {
   if (message === 'card-chat-session-not-found') {
     return Response.json(
       { name: 'session-not-found', data: { message: 'Chat session not found for this card' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   if (message === 'card-chat-session-not-active') {
     return Response.json(
-      { name: 'session-is-paused', data: { message: 'Cannot write messages while the session is paused' } },
-      { status: 409 },
+      {
+        name: 'session-is-paused',
+        data: { message: 'Cannot write messages while the session is paused' },
+      },
+      { status: 409 }
     );
   }
   return null;
@@ -183,15 +199,17 @@ export async function handleCreateCardChatMessage(req: Request, cardId: string):
 
   const membershipError = await cardChatCreateApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
   let rawBody: unknown;
-  try { rawBody = await req.json(); } catch {
+  try {
+    rawBody = await req.json();
+  } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -202,7 +220,7 @@ export async function handleCreateCardChatMessage(req: Request, cardId: string):
   if (!userId) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -221,7 +239,10 @@ export async function handleCreateCardChatMessage(req: Request, cardId: string):
     try {
       assistantMessage = await generateAssistantReply(parsed.sessionId, cardId, userId);
     } catch (aiError) {
-      console.error('[cardChat/create] AI auto-reply failed:', aiError instanceof Error ? aiError.message : String(aiError));
+      console.error(
+        '[cardChat/create] AI auto-reply failed:',
+        aiError instanceof Error ? aiError.message : String(aiError)
+      );
     }
 
     return Response.json(
@@ -231,7 +252,7 @@ export async function handleCreateCardChatMessage(req: Request, cardId: string):
           ...(assistantMessage ? { assistantMessage } : {}),
         },
       },
-      { status: result.status },
+      { status: result.status }
     );
   } catch (error) {
     const mapped = mapWriteError(error);

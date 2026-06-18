@@ -20,19 +20,19 @@ const SignupPage = lazy(() =>
   }))
 );
 const WorkspacesPage = lazy(() =>
-  import(
-    '~/extensions/Workspace/containers/WorkspaceListPage/WorkspaceListPage'
-  ).then((m) => ({ default: m.default }))
+  import('~/extensions/Workspace/containers/WorkspaceListPage/WorkspaceListPage').then((m) => ({
+    default: m.default,
+  }))
 );
 const WorkspacePage = lazy(() =>
-  import(
-    '~/extensions/Workspace/containers/WorkspacePage/WorkspacePage'
-  ).then((m) => ({ default: m.default }))
+  import('~/extensions/Workspace/containers/WorkspacePage/WorkspacePage').then((m) => ({
+    default: m.default,
+  }))
 );
 const BoardsPage = lazy(() =>
-  import(
-    '~/extensions/Board/containers/BoardListPage/BoardListPage'
-  ).then((m) => ({ default: m.default }))
+  import('~/extensions/Board/containers/BoardListPage/BoardListPage').then((m) => ({
+    default: m.default,
+  }))
 );
 const BoardPage = lazy(() =>
   import('~/extensions/Board/containers/BoardPage/BoardPage').then((m) => ({
@@ -68,9 +68,11 @@ const VerifyEmailPage = lazy(() =>
   }))
 );
 const ConfirmEmailChangePage = lazy(() =>
-  import('~/extensions/Auth/containers/ConfirmEmailChangePage/ConfirmEmailChangePage').then((m) => ({
-    default: m.default,
-  }))
+  import('~/extensions/Auth/containers/ConfirmEmailChangePage/ConfirmEmailChangePage').then(
+    (m) => ({
+      default: m.default,
+    })
+  )
 );
 const ForgotPasswordPage = lazy(() =>
   import('~/extensions/Auth/containers/ForgotPasswordPage/ForgotPasswordPage').then((m) => ({
@@ -114,7 +116,7 @@ const ApiTokenPage = lazy(() =>
 );
 const WebhooksRegisterPage = lazy(() =>
   import('~/extensions/Webhooks/containers/WebhooksRegisterPage/WebhooksRegisterPage').then(
-    (m) => ({ default: m.default }),
+    (m) => ({ default: m.default })
   )
 );
 const BillingPage = lazy(() =>
@@ -124,7 +126,7 @@ const BillingPage = lazy(() =>
 );
 const SubscriptionCheckoutPage = lazy(() =>
   import('~/extensions/Subscription/containers/SubscriptionCheckoutPage/SubscriptionCheckoutPage').then(
-    (m) => ({ default: m.default }),
+    (m) => ({ default: m.default })
   )
 );
 // Lazy-loaded only when the flag is enabled — avoids bundling in production builds.
@@ -167,16 +169,10 @@ export default function AppRouter() {
           <Route element={<PrivateRoute />}>
             <Route element={<AppShell />}>
               <Route path="/workspaces" element={<WorkspacesPage />} />
-              <Route
-                path="/workspaces/:workspaceId/boards"
-                element={<BoardsPage />}
-              />
+              <Route path="/workspaces/:workspaceId/boards" element={<BoardsPage />} />
               {/* Workspace members/settings page — redirect GUEST users to their boards */}
               <Route element={<GuestBlockedRoute />}>
-                <Route
-                  path="/workspace/:workspaceId"
-                  element={<WorkspacePage />}
-                />
+                <Route path="/workspace/:workspaceId" element={<WorkspacePage />} />
               </Route>
               <Route path="/b/:boardId/:slug?" element={<BoardPage />} />
               <Route path="/b/:boardId/e/state" element={<StateTransitionsEditorPage />} />
@@ -188,7 +184,10 @@ export default function AppRouter() {
               <Route path="/settings/api-tokens" element={<ApiTokenPage />} />
               <Route path="/settings/webhooks" element={<WebhooksRegisterPage />} />
               <Route path="/workspace/:workspaceId/billing" element={<BillingPage />} />
-              <Route path="/workspace/:workspaceId/checkout" element={<SubscriptionCheckoutPage />} />
+              <Route
+                path="/workspace/:workspaceId/checkout"
+                element={<SubscriptionCheckoutPage />}
+              />
               <Route path="/workspaces/:workspaceId/settings/billing" element={<BillingPage />} />
               <Route
                 path="/workspaces/:workspaceId/settings/billing/checkout"

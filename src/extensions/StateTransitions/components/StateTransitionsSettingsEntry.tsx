@@ -11,11 +11,7 @@ interface Props {
   canOpenEditor?: boolean;
 }
 
-const StateTransitionsSettingsEntry = ({
-  boardId,
-  boardTitle,
-  canOpenEditor = true,
-}: Props) => {
+const StateTransitionsSettingsEntry = ({ boardId, boardTitle, canOpenEditor = true }: Props) => {
   const navigate = useNavigate();
   const stateTransitionsEnabled = useAppSelector(selectStateTransitionsEnabled);
 

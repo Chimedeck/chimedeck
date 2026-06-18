@@ -2,10 +2,7 @@
 import { useState } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import Button from '../../../common/components/Button';
-import {
-  addMemberThunk,
-  fetchWorkspace,
-} from '../containers/WorkspacePage/WorkspacePage.duck';
+import { addMemberThunk, fetchWorkspace } from '../containers/WorkspacePage/WorkspacePage.duck';
 import type { Role } from '../api';
 
 // All assignable roles ordered from most to least privileged.
@@ -26,7 +23,9 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
 
   const [email, setEmail] = useState('');
   // Default to MEMBER if assignable, otherwise the highest assignable role.
-  const defaultRole: Role = assignableRoles.includes('MEMBER') ? 'MEMBER' : (assignableRoles[0] ?? 'VIEWER');
+  const defaultRole: Role = assignableRoles.includes('MEMBER')
+    ? 'MEMBER'
+    : (assignableRoles[0] ?? 'VIEWER');
   const [role, setRole] = useState<Role>(defaultRole);
   const [inProgress, setInProgress] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -76,21 +75,14 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
             <p className="text-success">
               ✓ <strong>{addedEmail}</strong> has been added to the workspace.
             </p>
-            <Button
-              variant="primary"
-              onClick={onClose}
-              className="w-full"
-            >
+            <Button variant="primary" onClick={onClose} className="w-full">
               Close
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                htmlFor="invite-email"
-                className="mb-1 block text-sm font-medium text-base"
-              >
+              <label htmlFor="invite-email" className="mb-1 block text-sm font-medium text-base">
                 Email address
               </label>
               <input
@@ -98,26 +90,25 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
                 type="email"
                 required
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
                 placeholder="member@example.com"
                 className="w-full rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <p className="mt-1 text-xs text-muted">
-                The user must already have an account.
-              </p>
+              <p className="mt-1 text-xs text-muted">The user must already have an account.</p>
             </div>
 
             <div>
-              <label
-                htmlFor="invite-role"
-                className="mb-1 block text-sm font-medium text-base"
-              >
+              <label htmlFor="invite-role" className="mb-1 block text-sm font-medium text-base">
                 Role
               </label>
               <select
                 id="invite-role"
                 value={role}
-                onChange={(e) => { setRole(e.target.value as Role); }}
+                onChange={(e) => {
+                  setRole(e.target.value as Role);
+                }}
                 className="w-full rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {assignableRoles.map((r) => (
@@ -135,18 +126,10 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
             )}
 
             <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={onClose}
-              >
+              <Button type="button" variant="secondary" onClick={onClose}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={inProgress}
-              >
+              <Button type="submit" variant="primary" disabled={inProgress}>
                 {inProgress ? 'Adding…' : 'Add Member'}
               </Button>
             </div>
@@ -158,4 +141,3 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
 };
 
 export default InviteMemberModal;
-

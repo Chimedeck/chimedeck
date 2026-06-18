@@ -23,10 +23,7 @@ export function generateIdempotencyKey({
  * Relies on the DB UNIQUE constraint on (card_id, list_id, phase, move_event_id)
  * added by the iteration 6 migration.
  */
-export async function isDuplicateRun(
-  db: any,
-  idempotencyKey: string,
-): Promise<boolean> {
+export async function isDuplicateRun(db: any, idempotencyKey: string): Promise<boolean> {
   const existing = await db('card_phase_trigger_runs')
     .where({ idempotency_key: idempotencyKey })
     .first();

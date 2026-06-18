@@ -37,7 +37,7 @@ interface UpdateAutomationBody {
 export async function handleUpdateAutomation(
   req: Request,
   boardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -72,14 +72,24 @@ export async function handleUpdateAutomation(
   try {
     body = (await req.json()) as UpdateAutomationBody;
   } catch {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
+      { status: 400 }
+    );
   }
 
-  if (body.automationType !== undefined && !VALID_AUTOMATION_TYPES.includes(body.automationType as AutomationType)) {
+  if (
+    body.automationType !== undefined &&
+    !VALID_AUTOMATION_TYPES.includes(body.automationType as AutomationType)
+  ) {
     return Response.json({ error: { name: 'automation-type-invalid' } }, { status: 422 });
   }
 
-  if (body.trigger !== undefined && body.trigger !== null && typeof body.trigger.triggerType !== 'string') {
+  if (
+    body.trigger !== undefined &&
+    body.trigger !== null &&
+    typeof body.trigger.triggerType !== 'string'
+  ) {
     return Response.json({ error: { name: 'trigger-type-unknown' } }, { status: 422 });
   }
 
@@ -89,13 +99,16 @@ export async function handleUpdateAutomation(
     if (!triggerValidation.valid) {
       return Response.json(
         { error: { name: triggerValidation.errorName, data: triggerValidation.errorData } },
-        { status: 422 },
+        { status: 422 }
       );
     }
   }
 
   if (body.actions !== undefined && !Array.isArray(body.actions)) {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'actions must be an array' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'actions must be an array' } } },
+      { status: 400 }
+    );
   }
 
   if (body.actions) {
@@ -108,7 +121,8 @@ export async function handleUpdateAutomation(
 
   await db.transaction(async (trx) => {
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (body.name !== undefined && typeof body.name === 'string') updates['name'] = body.name.trim();
+    if (body.name !== undefined && typeof body.name === 'string')
+      updates['name'] = body.name.trim();
     if (body.automationType !== undefined) updates['automation_type'] = body.automationType;
     if (body.isEnabled !== undefined) updates['is_enabled'] = body.isEnabled;
     if (body.icon !== undefined) updates['icon'] = body.icon || null;
@@ -149,7 +163,10 @@ export async function handleUpdateAutomation(
   const [updated, trigger, actions] = await Promise.all([
     db('automations').where({ id: automationId }).first(),
     db('automation_triggers').where({ automation_id: automationId }).first(),
-    db('automation_actions').where({ automation_id: automationId }).orderBy('position', 'asc').select('*'),
+    db('automation_actions')
+      .where({ automation_id: automationId })
+      .orderBy('position', 'asc')
+      .select('*'),
   ]);
 
   return Response.json({ data: formatAutomation(updated, trigger ?? null, actions) });

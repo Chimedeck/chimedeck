@@ -17,9 +17,7 @@ export const resumeDeps = {
  */
 export function findLastSuccessfulStep(steps: EditStep[]): string | null {
   // [why] Steps are ordered by created_at ascending
-  const succeeded = steps
-    .filter(s => s.status === 'SUCCEEDED')
-    .slice(-1);
+  const succeeded = steps.filter((s) => s.status === 'SUCCEEDED').slice(-1);
   return succeeded.length > 0 ? succeeded[0].step_name : null;
 }
 
@@ -27,10 +25,7 @@ export function findLastSuccessfulStep(steps: EditStep[]): string | null {
  * Determine which pipeline steps still need to be executed.
  * Returns the list of step names that come after the last successful step.
  */
-export function getRemainingSteps(
-  steps: EditStep[],
-  lastSuccessfulStep: string | null,
-): string[] {
+export function getRemainingSteps(steps: EditStep[], lastSuccessfulStep: string | null): string[] {
   const pipelineOrder = [
     'context_gather',
     'file_scope_plan',
@@ -58,9 +53,9 @@ export function getRemainingSteps(
 export function canRetryStep(
   steps: EditStep[],
   stepName: string,
-  maxRetries: number = MAX_RETRY_ATTEMPTS,
+  maxRetries: number = MAX_RETRY_ATTEMPTS
 ): { canRetry: boolean; step?: EditStep } {
-  const step = steps.find(s => s.step_name === stepName);
+  const step = steps.find((s) => s.step_name === stepName);
   if (!step) return { canRetry: true }; // Step hasn't been created yet
 
   if (step.status === 'SUCCEEDED') return { canRetry: false, step }; // Already done

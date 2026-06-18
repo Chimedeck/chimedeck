@@ -68,13 +68,7 @@ describe('validateFrontMatter', () => {
 
   it('returns valid for architecture docs with all required fields', () => {
     const result = validateFrontMatter({
-      content: [
-        '---',
-        'title: Architecture Doc',
-        'last_updated: 2026-06-10',
-        '---',
-        '',
-      ].join('\n'),
+      content: ['---', 'title: Architecture Doc', 'last_updated: 2026-06-10', '---', ''].join('\n'),
       filePath: 'specs/architecture/test.md',
     });
     expect(result.valid).toBe(true);
@@ -82,13 +76,7 @@ describe('validateFrontMatter', () => {
 
   it('returns valid for security docs with all required fields', () => {
     const result = validateFrontMatter({
-      content: [
-        '---',
-        'title: Security Doc',
-        'last_updated: 2026-06-10',
-        '---',
-        '',
-      ].join('\n'),
+      content: ['---', 'title: Security Doc', 'last_updated: 2026-06-10', '---', ''].join('\n'),
       filePath: 'specs/security/test.md',
     });
     expect(result.valid).toBe(true);
@@ -98,13 +86,7 @@ describe('validateFrontMatter', () => {
     // [why] Content that starts with --- but is immediately unparseable
     // because the YAML content itself is broken.
     const result = validateFrontMatter({
-      content: [
-        '---',
-        'this is : : not valid yaml : : :',
-        '---',
-        '',
-        '# Body',
-      ].join('\n'),
+      content: ['---', 'this is : : not valid yaml : : :', '---', '', '# Body'].join('\n'),
       filePath: 'specs/request_changelog/malformed.md',
     });
     // [why] The simple YAML parser can't handle duplicate colons per line,
@@ -119,7 +101,7 @@ describe('validateFrontMatter', () => {
       content: [
         '---',
         'title: "Quoted Title"',
-        'status: \'single quoted\'',
+        "status: 'single quoted'",
         'date: 2026-06-10',
         '---',
       ].join('\n'),
@@ -134,11 +116,7 @@ describe('validateFrontMatter', () => {
 
   it('returns valid for unknown doc type paths (no schema check)', () => {
     const result = validateFrontMatter({
-      content: [
-        '---',
-        'description: Just a description',
-        '---',
-      ].join('\n'),
+      content: ['---', 'description: Just a description', '---'].join('\n'),
       filePath: 'some/unknown/path.md',
     });
     expect(result.valid).toBe(true);

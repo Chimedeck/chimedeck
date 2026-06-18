@@ -19,7 +19,7 @@ export async function handleUpdateGlobalNotificationSetting(req: Request): Promi
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -33,7 +33,7 @@ export async function handleUpdateGlobalNotificationSetting(req: Request): Promi
           data: { message: 'global_notifications_enabled must be a boolean' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -53,7 +53,7 @@ export async function handleUpdateGlobalNotificationSetting(req: Request): Promi
   } else {
     const [inserted] = await db('user_notification_settings').insert(
       { user_id: userId, global_notifications_enabled, updated_at: now },
-      ['global_notifications_enabled', 'updated_at'],
+      ['global_notifications_enabled', 'updated_at']
     );
     row = inserted;
   }

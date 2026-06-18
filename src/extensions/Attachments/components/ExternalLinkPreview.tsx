@@ -17,7 +17,13 @@ interface Props {
   readonly onUpdateUrl: (id: string, url: string) => void;
 }
 
-export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, onUpdateUrl }: Props): React.ReactElement {
+export function ExternalLinkPreview({
+  attachment,
+  canWrite,
+  onDelete,
+  onRename,
+  onUpdateUrl,
+}: Props): React.ReactElement {
   const url = attachment.view_url ?? attachment.external_url ?? '';
   const displayName = attachment.alias ?? attachment.name;
 
@@ -56,7 +62,9 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('mousedown', handler); };
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
   }, [menuOpen]);
 
   useEffect(() => {
@@ -141,7 +149,9 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
         <input
           type="text"
           value={renameValue}
-          onChange={(e) => { setRenameValue(e.target.value); }}
+          onChange={(e) => {
+            setRenameValue(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -187,7 +197,9 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
         <input
           type="url"
           value={urlValue}
-          onChange={(e) => { setUrlValue(e.target.value); }}
+          onChange={(e) => {
+            setUrlValue(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -253,7 +265,9 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
             src={faviconUrl}
             alt=""
             className="h-5 w-5 object-contain rounded-sm"
-            onError={() => { setFaviconError(true); }}
+            onError={() => {
+              setFaviconError(true);
+            }}
           />
         ) : (
           <LinkIcon className="h-4 w-4 text-muted" aria-hidden="true" />
@@ -270,7 +284,10 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
+            onClick={() => {
+              setMenuOpen((v) => !v);
+              setConfirmDelete(false);
+            }}
             className="h-6 w-6 p-0.5 text-muted hover:text-subtle hover:bg-bg-overlay"
             aria-label={translations['attachments.externalLink.optionsAria']}
           >
@@ -287,7 +304,11 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
                       type="button"
                       variant="link"
                       size="sm"
-                      onClick={() => { setMenuOpen(false); setConfirmDelete(false); onDelete(attachment.id); }}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setConfirmDelete(false);
+                        onDelete(attachment.id);
+                      }}
                       className="p-0 text-[11px] text-danger hover:text-danger"
                     >
                       {translations['attachments.item.delete.yes']}
@@ -296,7 +317,9 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
                       type="button"
                       variant="link"
                       size="sm"
-                      onClick={() => { setConfirmDelete(false); }}
+                      onClick={() => {
+                        setConfirmDelete(false);
+                      }}
                       className="p-0 text-[11px] text-muted hover:text-subtle"
                     >
                       {translations['attachments.item.delete.no']}
@@ -327,7 +350,9 @@ export function ExternalLinkPreview({ attachment, canWrite, onDelete, onRename, 
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => { setConfirmDelete(true); }}
+                    onClick={() => {
+                      setConfirmDelete(true);
+                    }}
                     className="w-full justify-start rounded-none px-3 py-1.5 text-left text-[11px] text-danger hover:bg-bg-overlay hover:text-danger"
                   >
                     {translations['attachments.item.action.delete.ariaLabel']}

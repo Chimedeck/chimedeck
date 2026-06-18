@@ -34,4 +34,5 @@ export const AsBuiltSyncRunStatus = {
 export type AsBuiltSyncRunStatus = (typeof AsBuiltSyncRunStatus)[keyof typeof AsBuiltSyncRunStatus];
 
 /** Commit message template for as-built sync commits. */
-export const COMMIT_MESSAGE_TEMPLATE = 'docs(as-built): sync implementation evidence for card {cardId} [AS-BUILT]';
+export const COMMIT_MESSAGE_TEMPLATE =
+  'docs(as-built): sync implementation evidence for card {cardId} [AS-BUILT]';

@@ -14,13 +14,7 @@ export const quotaEnforcerDeps = {
  * Apply tier quota to a list of sprint artifacts.
  * Returns only the artifacts within tier limits and a list of skipped sprint numbers.
  */
-export function enforceQuota({
-  artifacts,
-  tier,
-}: {
-  artifacts: SprintArtifact[];
-  tier: string;
-}): {
+export function enforceQuota({ artifacts, tier }: { artifacts: SprintArtifact[]; tier: string }): {
   allowedArtifacts: SprintArtifact[];
   skippedSprints: Array<{ sprintNumber: number; reason: string }>;
 } {
@@ -30,7 +24,8 @@ export function enforceQuota({
   });
 
   const maxSprints = policy.maxSprints;
-  const effectiveCount = maxSprints === 'unlimited' ? artifacts.length : Math.min(artifacts.length, maxSprints);
+  const effectiveCount =
+    maxSprints === 'unlimited' ? artifacts.length : Math.min(artifacts.length, maxSprints);
 
   // Sort artifacts by sprint number to ensure consistent truncation order
   const sorted = [...artifacts].sort((a, b) => a.sprintNumber - b.sprintNumber);
@@ -84,7 +79,7 @@ export async function enforceQuotaWithActivity({
           tier,
           totalSprints: artifacts.length,
           allowedSprints: result.allowedArtifacts.length,
-          skippedSprints: result.skippedSprints.map(s => ({
+          skippedSprints: result.skippedSprints.map((s) => ({
             sprintNumber: s.sprintNumber,
             reason: s.reason,
           })),

@@ -4,8 +4,13 @@ import { s3Client, s3Config } from './config/s3';
 function toReadableStream(body: unknown): ReadableStream<Uint8Array> | null {
   if (!body) return null;
 
-  if (typeof (body as { transformToWebStream?: () => ReadableStream<Uint8Array> }).transformToWebStream === 'function') {
-    return (body as { transformToWebStream: () => ReadableStream<Uint8Array> }).transformToWebStream();
+  if (
+    typeof (body as { transformToWebStream?: () => ReadableStream<Uint8Array> })
+      .transformToWebStream === 'function'
+  ) {
+    return (
+      body as { transformToWebStream: () => ReadableStream<Uint8Array> }
+    ).transformToWebStream();
   }
 
   if (body instanceof ReadableStream) return body as ReadableStream<Uint8Array>;
@@ -46,16 +51,25 @@ export async function proxyS3Object({
     new GetObjectCommand({
       Bucket: s3Config.bucket,
       Key: s3Key,
-    }),
+    })
   );
 
   const stream = toReadableStream(result.Body);
   if (!stream) {
-    return Response.json({ name: 'attachment-read-failed', data: { message: 'Failed to read attachment from storage' } }, { status: 502 });
+    return Response.json(
+      {
+        name: 'attachment-read-failed',
+        data: { message: 'Failed to read attachment from storage' },
+      },
+      { status: 502 }
+    );
   }
 
   const headers = new Headers();
-  headers.set('Content-Type', result.ContentType ?? fallbackContentType ?? 'application/octet-stream');
+  headers.set(
+    'Content-Type',
+    result.ContentType ?? fallbackContentType ?? 'application/octet-stream'
+  );
   if (result.ContentLength != null) headers.set('Content-Length', String(result.ContentLength));
   if (result.ETag) headers.set('ETag', result.ETag);
   if (result.LastModified) headers.set('Last-Modified', result.LastModified.toUTCString());

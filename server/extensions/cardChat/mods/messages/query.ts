@@ -12,7 +12,7 @@ export async function getCardChatMessages({
 }: GetCardChatMessagesInput): Promise<GetCardChatMessagesResult> {
   const effectiveLimit = Math.min(
     Number.isNaN(limit) || !limit || limit < 1 ? DEFAULT_LIMIT : limit,
-    MAX_LIMIT,
+    MAX_LIMIT
   );
 
   // Find the session for this card
@@ -44,7 +44,7 @@ export async function getCardChatMessages({
       'm.created_at',
       'm.updated_at',
       db.raw('COALESCE(u.name, u.email) as author_name'),
-      'u.avatar_url as author_avatar_url',
+      'u.avatar_url as author_avatar_url'
     );
 
   if (cursor) {

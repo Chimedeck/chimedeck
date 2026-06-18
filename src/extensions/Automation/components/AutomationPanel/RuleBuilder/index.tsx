@@ -26,7 +26,9 @@ function fallbackActionLabel(actionType: string): string {
 }
 
 function resolveActionLabel(actionType: string, actionTypes: ActionType[]): string {
-  return actionTypes.find((type) => type.type === actionType)?.label ?? fallbackActionLabel(actionType);
+  return (
+    actionTypes.find((type) => type.type === actionType)?.label ?? fallbackActionLabel(actionType)
+  );
 }
 
 const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) => {
@@ -39,11 +41,15 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
 
   useEffect(() => {
     getTriggerTypes()
-      .then((res) => { setAllTriggerTypes(res.data); })
+      .then((res) => {
+        setAllTriggerTypes(res.data);
+      })
       .catch(() => {});
 
     getActionTypes()
-      .then((res) => { setAllActionTypes(res.data); })
+      .then((res) => {
+        setAllActionTypes(res.data);
+      })
       .catch(() => {});
   }, []);
   const [actions, setActions] = useState<ActionItemData[]>(
@@ -81,8 +87,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
       ? (allTriggerTypes.find((t) => t.type === initialTriggerTypeStr) ?? null)
       : null);
 
-  const canSave =
-    !!activeTriggerTypeStr && actions.length > 0 && ruleName.trim().length > 0;
+  const canSave = !!activeTriggerTypeStr && actions.length > 0 && ruleName.trim().length > 0;
 
   const handleSave = async () => {
     if (!canSave || saving) return;
@@ -144,7 +149,9 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
           <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
         </button>
         <h3 className="text-sm font-semibold text-foreground">
-          {initialAutomation ? translations['automation.ruleBuilder.editTitle'] : translations['automation.ruleBuilder.newTitle']}
+          {initialAutomation
+            ? translations['automation.ruleBuilder.editTitle']
+            : translations['automation.ruleBuilder.newTitle']}
         </h3>
       </div>
 

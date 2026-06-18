@@ -11,7 +11,7 @@ describe('selectChannels (pure cascade logic)', () => {
   test('T1: board row present — returns board values (in-app off)', () => {
     const result = selectChannels(
       { in_app_enabled: false, email_enabled: true }, // board override
-      { in_app_enabled: true, email_enabled: true },  // user row (ignored)
+      { in_app_enabled: true, email_enabled: true } // user row (ignored)
     );
     expect(result).toEqual({ inApp: false, email: true });
   });
@@ -19,7 +19,7 @@ describe('selectChannels (pure cascade logic)', () => {
   test('T1b: board row present — returns board values (email off)', () => {
     const result = selectChannels(
       { in_app_enabled: true, email_enabled: false },
-      { in_app_enabled: true, email_enabled: true },
+      { in_app_enabled: true, email_enabled: true }
     );
     expect(result).toEqual({ inApp: true, email: false });
   });
@@ -27,7 +27,7 @@ describe('selectChannels (pure cascade logic)', () => {
   test('T1c: board row with both channels off overrides user both-on', () => {
     const result = selectChannels(
       { in_app_enabled: false, email_enabled: false },
-      { in_app_enabled: true, email_enabled: true },
+      { in_app_enabled: true, email_enabled: true }
     );
     expect(result).toEqual({ inApp: false, email: false });
   });
@@ -63,10 +63,7 @@ describe('selectChannels (pure cascade logic)', () => {
   // selectChannels only computes the per-type channel resolution.
   // When board row is present, it always wins regardless of user row.
   test('T6/T7: board-type row always wins — caller applies global guard before invoking', () => {
-    const result = selectChannels(
-      { in_app_enabled: true, email_enabled: true },
-      null,
-    );
+    const result = selectChannels({ in_app_enabled: true, email_enabled: true }, null);
     expect(result).toEqual({ inApp: true, email: true });
   });
 });

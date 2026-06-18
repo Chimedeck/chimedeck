@@ -11,14 +11,14 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.token || !body.password) {
     return Response.json(
       { error: { code: 'bad-request', message: 'token and password are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -27,15 +27,18 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   if (!user) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const now = new Date();
-  if (!user.password_reset_token_expires_at || new Date(user.password_reset_token_expires_at) < now) {
+  if (
+    !user.password_reset_token_expires_at ||
+    new Date(user.password_reset_token_expires_at) < now
+  ) {
     return Response.json(
       { error: { code: 'invalid-or-expired-token', message: 'Token is invalid or has expired' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -43,8 +46,13 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   const { password } = body;
   if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
     return Response.json(
-      { error: { code: 'password-too-weak', message: 'Password must be at least 8 characters and contain a letter and a number' } },
-      { status: 422 },
+      {
+        error: {
+          code: 'password-too-weak',
+          message: 'Password must be at least 8 characters and contain a letter and a number',
+        },
+      },
+      { status: 422 }
     );
   }
 
@@ -61,10 +69,7 @@ export async function handleResetPassword(req: Request): Promise<Response> {
   await db('refresh_tokens').where({ user_id: user.id }).delete();
 
   // Notify any open WebSocket connections for this user to close (code 4001).
-  await pubsub.publish(
-    `session:${user.id}`,
-    JSON.stringify({ type: 'session_revoked' }),
-  );
+  await pubsub.publish(`session:${user.id}`, JSON.stringify({ type: 'session_revoked' }));
 
   return Response.json({ data: { reset: true } }, { status: 200 });
 }

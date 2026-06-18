@@ -26,15 +26,18 @@ export interface WrittenEvent {
 
 export async function writeEvent(input: WriteEventInput): Promise<WrittenEvent> {
   const id = randomUUID();
-  const [event] = await db('events').insert({
-    id,
-    type: input.type,
-    board_id: input.boardId ?? null,
-    entity_id: input.entityId,
-    actor_id: input.actorId,
-    payload: JSON.stringify(input.payload),
-    created_at: new Date().toISOString(),
-  }, ['*']);
+  const [event] = await db('events').insert(
+    {
+      id,
+      type: input.type,
+      board_id: input.boardId ?? null,
+      entity_id: input.entityId,
+      actor_id: input.actorId,
+      payload: JSON.stringify(input.payload),
+      created_at: new Date().toISOString(),
+    },
+    ['*']
+  );
 
   if (input.boardId) {
     checkAndWriteSnapshot({ boardId: input.boardId, sequence: event.sequence }).catch(() => {});

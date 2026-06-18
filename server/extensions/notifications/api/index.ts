@@ -27,7 +27,10 @@ async function resolvePreferenceRouters(req: Request, pathname: string): Promise
   return preferencesRouter(req, pathname);
 }
 
-export async function notificationsRouter(req: Request, pathname: string): Promise<Response | null> {
+export async function notificationsRouter(
+  req: Request,
+  pathname: string
+): Promise<Response | null> {
   const preferencesResponse = await resolvePreferenceRouters(req, pathname);
   if (preferencesResponse !== null) return preferencesResponse;
 

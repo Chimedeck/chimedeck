@@ -20,7 +20,4 @@ const WORKFLOW_PHASE_LABELS: Record<WorkflowPhase, string> = {
   UPDATE_AS_BUILT: 'Update As-Built',
 };
 
-export {
-  VALID_WORKFLOW_PHASES,
-  WORKFLOW_PHASE_LABELS,
-};
+export { VALID_WORKFLOW_PHASES, WORKFLOW_PHASE_LABELS };

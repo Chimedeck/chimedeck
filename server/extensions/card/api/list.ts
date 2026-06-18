@@ -16,7 +16,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -24,7 +24,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -81,7 +81,7 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
           FILTER (WHERE u.id IS NOT NULL),
           '[]'::json
         ) as members
-      `),
+      `)
     )
     .leftJoin('card_labels as cl', 'cl.card_id', 'c.id')
     .leftJoin('labels as l', 'l.id', 'cl.label_id')
@@ -99,15 +99,15 @@ export async function handleListCards(req: Request, listId: string): Promise<Res
     rows.map(async (row) => ({
       ...row,
       members: buildAvatarProxyUrlsInCollection(
-          Array.isArray(row.members)
-            ? (row.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
-            : [],
-        ),
-    })),
+        Array.isArray(row.members)
+          ? (row.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+          : []
+      ),
+    }))
   );
 
   const cardsWithCovers = await resolveCoverImageUrls(
-    data as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
+    data as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>
   );
 
   if (!hasPagination || limit === null) {

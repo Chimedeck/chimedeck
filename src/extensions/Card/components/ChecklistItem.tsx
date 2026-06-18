@@ -85,7 +85,11 @@ function processAttachmentLinks(html: string, attachments: Attachment[]): string
     /<a\b([^>]*?)\bhref="attachment:([^"]*?)"([^>]*)>([\s\S]*?)<\/a>/gi,
     (_full: string, _before: string, encoded: string, _after: string, inner: string): string => {
       let name: string;
-      try { name = decodeURIComponent(encoded); } catch { name = encoded; }
+      try {
+        name = decodeURIComponent(encoded);
+      } catch {
+        name = encoded;
+      }
       const att = byName.get(name);
       if (att?.status !== 'READY') {
         // [why] Attachment deleted or not yet scanned — render as struck-through text so the
@@ -99,7 +103,7 @@ function processAttachmentLinks(html: string, attachments: Attachment[]): string
         return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="underline decoration-dotted underline-offset-2">${inner}</a>`;
       }
       return `<a data-attachment-id="${att.id}" data-attachment-type="${mediaType}" href="#" class="underline decoration-dotted underline-offset-2 cursor-pointer">${inner}</a>`;
-    },
+    }
   );
 }
 
@@ -110,7 +114,7 @@ function processAttachmentLinks(html: string, attachments: Attachment[]): string
 function addLinkTargetBlank(html: string): string {
   return html.replaceAll(
     /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
-    '<a target="_blank" rel="noopener noreferrer"',
+    '<a target="_blank" rel="noopener noreferrer"'
   );
 }
 
@@ -163,7 +167,12 @@ function htmlFragmentToMarkdown(html: string): string {
 
 interface Props {
   item: ChecklistItemType;
-  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  boardMembers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    avatar_url?: string | null;
+  }>;
   onToggle: (itemId: string, checked: boolean) => Promise<void>;
   onRename: (itemId: string, title: string) => Promise<void>;
   onAssign: (itemId: string, memberId: string | null) => Promise<void>;
@@ -244,11 +253,18 @@ export const ChecklistItem = ({
   const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
 
   const currentDueDate = item.due_date ? new Date(item.due_date) : null;
-  const [dueDateInput, setDueDateInput] = useState(currentDueDate ? toDateInputValue(currentDueDate) : '');
-  const [dueTimeInput, setDueTimeInput] = useState(currentDueDate ? toTimeInputValue(currentDueDate) : '12:00');
+  const [dueDateInput, setDueDateInput] = useState(
+    currentDueDate ? toDateInputValue(currentDueDate) : ''
+  );
+  const [dueTimeInput, setDueTimeInput] = useState(
+    currentDueDate ? toTimeInputValue(currentDueDate) : '12:00'
+  );
 
   const rootRef = useRef<HTMLDivElement>(null);
-  const renderedTitle = useMemo(() => renderChecklistTitle(item.title, attachments), [item.title, attachments]);
+  const renderedTitle = useMemo(
+    () => renderChecklistTitle(item.title, attachments),
+    [item.title, attachments]
+  );
 
   useEffect(() => {
     if (!dueOpen) return;
@@ -286,7 +302,7 @@ export const ChecklistItem = ({
 
   const assignedMember = useMemo(
     () => boardMembers.find((member) => member.id === item.assigned_member_id) ?? null,
-    [boardMembers, item.assigned_member_id],
+    [boardMembers, item.assigned_member_id]
   );
 
   const isAvatarFailed = (memberId: string): boolean => failedAvatarIds.has(memberId);
@@ -370,351 +386,375 @@ export const ChecklistItem = ({
 
   return (
     <>
-    <div ref={rootRef} className="group relative flex min-w-0 items-start gap-2 py-1">
-      {showDragHandle && !disabled && (
-        // [why] Cosmetic grip icon — drag activates from the entire SortableChecklistItemRow
-        // wrapper div. The icon tells users the row is draggable without being the sole
-        // drag target, so drag works from anywhere on the row.
-        <span
-          className="mt-0.5 shrink-0 cursor-grab text-muted opacity-0 group-hover:opacity-100"
-          aria-hidden="true"
-        >
-          <Bars2Icon className="h-3.5 w-3.5" />
-        </span>
-      )}
-      <input
-        type="checkbox"
-        checked={item.checked}
-        onChange={(e) => onToggle(item.id, e.target.checked)}
-        disabled={disabled}
-        className="mt-0.5 h-4 w-4 rounded border-border-strong text-blue-500 bg-bg-surface"
-        aria-label={`Toggle: ${item.title}`}
-      />
-      {editing ? (
-        <textarea
-          className="min-w-0 flex-1 resize-none overflow-hidden rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
-          value={title}
-          rows={1}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            // [why] Auto-resize the textarea to fit all content so long items are fully visible while editing.
-            e.target.style.height = 'auto';
-            e.target.style.height = `${e.target.scrollHeight}px`;
-          }}
-          onBlur={submitRename}
-          onPaste={handleEditPaste}
-          // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
-          // capture the pointer-down and turn text selection into an item drag.
-          onPointerDown={(e) => { e.stopPropagation(); }}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              submitRename();
-            }
-            if (e.key === 'Escape') {
-              setTitle(item.title);
-              setEditing(false);
-            }
-          }}
-          ref={(el) => {
-            if (el) {
-              el.style.height = 'auto';
-              el.style.height = `${el.scrollHeight}px`;
-            }
-          }}
-          autoFocus
+      <div ref={rootRef} className="group relative flex min-w-0 items-start gap-2 py-1">
+        {showDragHandle && !disabled && (
+          // [why] Cosmetic grip icon — drag activates from the entire SortableChecklistItemRow
+          // wrapper div. The icon tells users the row is draggable without being the sole
+          // drag target, so drag works from anywhere on the row.
+          <span
+            className="mt-0.5 shrink-0 cursor-grab text-muted opacity-0 group-hover:opacity-100"
+            aria-hidden="true"
+          >
+            <Bars2Icon className="h-3.5 w-3.5" />
+          </span>
+        )}
+        <input
+          type="checkbox"
+          checked={item.checked}
+          onChange={(e) => onToggle(item.id, e.target.checked)}
+          disabled={disabled}
+          className="mt-0.5 h-4 w-4 rounded border-border-strong text-blue-500 bg-bg-surface"
+          aria-label={`Toggle: ${item.title}`}
         />
-      ) : (
-        <div className="min-w-0 flex-1">
-          <button
-            type="button"
-            className={`min-w-0 w-full cursor-text whitespace-normal break-words bg-transparent p-0 text-left text-sm [&_a]:underline [&_a]:decoration-dotted [&_a]:underline-offset-2 ${item.checked ? 'text-muted line-through' : 'text-base'}`}
-            disabled={disabled}
-            aria-label={`Edit: ${item.title}`}
-            // [why] Render markdown + emoji shortcodes in checklist text for parity with comments.
-            // The div intercepts link clicks: attachment links open the preview lightbox;
-            // external links open in a new tab via window.open (reliable inside a button);
-            // unhandled clicks activate edit mode.
-            dangerouslySetInnerHTML={{ __html: renderedTitle }}
-            onClick={(e) => {
-              if (disabled) return;
-              const link = (e.target as HTMLElement).closest('a');
-              if (link instanceof HTMLAnchorElement) {
-                const attachmentId = link.dataset.attachmentId;
-                if (attachmentId) {
-                  e.preventDefault();
-                  const att = attachments.find((a) => a.id === attachmentId);
-                  if (att) setPreviewAttachment(att);
-                } else {
-                  // Regular external link — open in new tab; prevent default to avoid issues
-                  // with <a> inside <button> behaviour across browsers.
-                  const href = link.getAttribute('href');
-                  if (href && href !== '#') {
-                    e.preventDefault();
-                    window.open(href, '_blank', 'noopener,noreferrer');
-                  }
-                }
-                return; // Don't activate edit mode when any link is clicked
+        {editing ? (
+          <textarea
+            className="min-w-0 flex-1 resize-none overflow-hidden rounded border border-border bg-bg-overlay px-1 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
+            value={title}
+            rows={1}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              // [why] Auto-resize the textarea to fit all content so long items are fully visible while editing.
+              e.target.style.height = 'auto';
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
+            onBlur={submitRename}
+            onPaste={handleEditPaste}
+            // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
+            // capture the pointer-down and turn text selection into an item drag.
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitRename();
               }
-              setEditing(true);
+              if (e.key === 'Escape') {
+                setTitle(item.title);
+                setEditing(false);
+              }
             }}
+            ref={(el) => {
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = `${el.scrollHeight}px`;
+              }
+            }}
+            autoFocus
           />
-          {(item.due_date || assignedMember) && (
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              {item.due_date && (
-                <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] text-subtle">
-                  <ClockIcon className="h-3 w-3" aria-hidden="true" />
-                  {formatDueDateLabel(item.due_date)}
-                </span>
-              )}
-              {assignedMember && (
-                <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] text-subtle">
-                  {assignedMember.avatar_url && !isAvatarFailed(assignedMember.id) ? (
-                    <img
-                      src={assignedMember.avatar_url}
-                      alt={assignedMember.name ?? assignedMember.email}
-                      className="h-4 w-4 rounded-full object-cover"
-                      onError={() => {
-                        markAvatarFailed(assignedMember.id);
-                      }}
-                    />
-                  ) : (
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-bg-overlay text-[10px] font-semibold text-base">
-                      {getMemberInitials(assignedMember.name, assignedMember.email)}
-                    </span>
-                  )}
-                  {assignedMember.name ?? assignedMember.email}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-      {!disabled && (
-        <div className="relative flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
-          <button
-            type="button"
-            className={`rounded p-1.5 text-muted hover:bg-bg-overlay hover:text-base ${dueOpen ? 'bg-bg-overlay text-base' : ''}`}
-            onClick={() => {
-              setDueOpen((open) => !open);
-              setAssignOpen(false);
-              setMenuOpen(false);
-            }}
-            aria-label={`Set due date for ${item.title}`}
-          >
-            <ClockIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            className={`rounded p-1.5 text-muted hover:bg-bg-overlay hover:text-base ${assignOpen ? 'bg-bg-overlay text-base' : ''}`}
-            onClick={() => {
-              setAssignOpen((open) => !open);
-              setDueOpen(false);
-              setMenuOpen(false);
-              setMemberQuery('');
-            }}
-            aria-label={`Assign member to ${item.title}`}
-          >
-            <UserPlusIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            className={`rounded p-1.5 text-muted hover:bg-bg-overlay hover:text-base ${menuOpen ? 'bg-bg-overlay text-base' : ''}`}
-            onClick={() => {
-              setMenuOpen((open) => !open);
-              setAssignOpen(false);
-              setDueOpen(false);
-            }}
-            aria-label={`Item actions for ${item.title}`}
-          >
-            <EllipsisHorizontalIcon className="h-4 w-4" aria-hidden="true" />
-          </button>
-
-          {menuOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-bg-surface py-1 shadow-2xl">
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => void handleConvertToCard()}
-                disabled={converting || Boolean(item.linked_card_id)}
-              >
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
-                {convertActionLabel}
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-danger hover:bg-bg-overlay"
-                onClick={() => {
-                  void onDelete(item.id);
-                  setMenuOpen(false);
-                }}
-              >
-                <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-                Delete
-              </button>
-            </div>
-          )}
-
-          {assignOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-72 rounded-xl border border-border bg-bg-surface p-2.5 shadow-2xl">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-base">Assign</p>
-                <button
-                  type="button"
-                  className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
-                  onClick={() => { setAssignOpen(false); }}
-                  aria-label="Close assign popover"
-                >
-                  <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
-              <input
-                type="text"
-                className="mb-2 w-full rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Search members"
-                value={memberQuery}
-                onChange={(event) => { setMemberQuery(event.target.value); }}
-              />
-              <div className="max-h-56 space-y-1 overflow-y-auto">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm text-base hover:bg-bg-overlay"
-                  onClick={() => {
-                    void onAssign(item.id, null);
-                    setAssignOpen(false);
-                  }}
-                >
-                  <span>Unassign</span>
-                  {!item.assigned_member_id && <CheckIcon className="h-4 w-4 text-emerald-500" aria-hidden="true" />}
-                </button>
-                {filteredMembers.map((member) => {
-                  const isSelected = member.id === item.assigned_member_id;
-                  return (
-                    <button
-                      key={member.id}
-                      type="button"
-                      className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm text-base hover:bg-bg-overlay"
-                      onClick={() => {
-                        void onAssign(item.id, isSelected ? null : member.id);
-                        setAssignOpen(false);
-                      }}
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        {member.avatar_url && !isAvatarFailed(member.id) ? (
-                          <img
-                            src={member.avatar_url}
-                            alt={member.name ?? member.email}
-                            className="h-6 w-6 rounded-full object-cover"
-                            onError={() => {
-                              markAvatarFailed(member.id);
-                            }}
-                          />
-                        ) : (
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg-overlay text-xs font-semibold text-base">
-                            {getMemberInitials(member.name, member.email)}
-                          </span>
-                        )}
-                        <span className="truncate">{member.name ?? member.email}</span>
-                      </span>
-                      {isSelected && <CheckIcon className="h-4 w-4 text-emerald-500" aria-hidden="true" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {dueOpen && (
-            <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-xl border border-border bg-bg-surface p-3 shadow-2xl">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-base">Change due date</p>
-                <button
-                  type="button"
-                  className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
-                  onClick={() => { setDueOpen(false); }}
-                  aria-label="Close due date popover"
-                >
-                  <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <div>
-                  <label htmlFor={`checklist-item-due-date-${item.id}`} className="mb-1 block text-xs font-medium text-muted">Due date</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      id={`checklist-item-due-date-${item.id}`}
-                      type="date"
-                      value={dueDateInput}
-                      onChange={(event) => { setDueDateInput(event.target.value); }}
-                      onFocus={(event) => {
-                        openNativePicker(event.currentTarget);
-                      }}
-                      onClick={(event) => {
-                        openNativePicker(event.currentTarget);
-                      }}
-                      style={{ color: 'var(--text-base)' }}
-                      className="rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base [color-scheme:light] focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                    <input
-                      type="time"
-                      value={dueTimeInput}
-                      onChange={(event) => { setDueTimeInput(event.target.value); }}
-                      onFocus={(event) => {
-                        openNativePicker(event.currentTarget);
-                      }}
-                      onClick={(event) => {
-                        openNativePicker(event.currentTarget);
-                      }}
-                      style={{ color: 'var(--text-base)' }}
-                      className="rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base [color-scheme:light] focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="primary"
-                  className="w-full"
-                  onClick={() => void handleDueSave()}
-                  disabled={!dueDateInput}
-                >
-                  Save
-                </Button>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              className={`min-w-0 w-full cursor-text whitespace-normal break-words bg-transparent p-0 text-left text-sm [&_a]:underline [&_a]:decoration-dotted [&_a]:underline-offset-2 ${item.checked ? 'text-muted line-through' : 'text-base'}`}
+              disabled={disabled}
+              aria-label={`Edit: ${item.title}`}
+              // [why] Render markdown + emoji shortcodes in checklist text for parity with comments.
+              // The div intercepts link clicks: attachment links open the preview lightbox;
+              // external links open in a new tab via window.open (reliable inside a button);
+              // unhandled clicks activate edit mode.
+              dangerouslySetInnerHTML={{ __html: renderedTitle }}
+              onClick={(e) => {
+                if (disabled) return;
+                const link = (e.target as HTMLElement).closest('a');
+                if (link instanceof HTMLAnchorElement) {
+                  const attachmentId = link.dataset.attachmentId;
+                  if (attachmentId) {
+                    e.preventDefault();
+                    const att = attachments.find((a) => a.id === attachmentId);
+                    if (att) setPreviewAttachment(att);
+                  } else {
+                    // Regular external link — open in new tab; prevent default to avoid issues
+                    // with <a> inside <button> behaviour across browsers.
+                    const href = link.getAttribute('href');
+                    if (href && href !== '#') {
+                      e.preventDefault();
+                      window.open(href, '_blank', 'noopener,noreferrer');
+                    }
+                  }
+                  return; // Don't activate edit mode when any link is clicked
+                }
+                setEditing(true);
+              }}
+            />
+            {(item.due_date || assignedMember) && (
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {item.due_date && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => {
-                      void onDueDateChange(item.id, null);
-                      setDueOpen(false);
-                    }}
-                  >
-                    Remove
-                  </Button>
+                  <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] text-subtle">
+                    <ClockIcon className="h-3 w-3" aria-hidden="true" />
+                    {formatDueDateLabel(item.due_date)}
+                  </span>
+                )}
+                {assignedMember && (
+                  <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] text-subtle">
+                    {assignedMember.avatar_url && !isAvatarFailed(assignedMember.id) ? (
+                      <img
+                        src={assignedMember.avatar_url}
+                        alt={assignedMember.name ?? assignedMember.email}
+                        className="h-4 w-4 rounded-full object-cover"
+                        onError={() => {
+                          markAvatarFailed(assignedMember.id);
+                        }}
+                      />
+                    ) : (
+                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-bg-overlay text-[10px] font-semibold text-base">
+                        {getMemberInitials(assignedMember.name, assignedMember.email)}
+                      </span>
+                    )}
+                    {assignedMember.name ?? assignedMember.email}
+                  </span>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-    {/* Attachment preview lightbox — rendered outside the row div so it overlays the full screen */}
-    {previewAttachment?.status === 'READY' && (() => {
-      const mediaType = getAttachmentMediaType(previewAttachment.content_type);
-      const src = previewAttachment.view_url ?? '';
-      const name = previewAttachment.alias ?? previewAttachment.name;
-      const close = () => { setPreviewAttachment(null); };
-      if (!src) return null;
-      if (mediaType === 'image') return <ImageLightbox src={src} name={name} onClose={close} />;
-      if (mediaType === 'video') return <VideoLightbox src={src} name={name} onClose={close} />;
-      if (mediaType === 'pdf') return <PdfLightbox src={src} name={name} onClose={close} />;
-      return null;
-    })()}
-  </>
+            )}
+          </div>
+        )}
+        {!disabled && (
+          <div className="relative flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100">
+            <button
+              type="button"
+              className={`rounded p-1.5 text-muted hover:bg-bg-overlay hover:text-base ${dueOpen ? 'bg-bg-overlay text-base' : ''}`}
+              onClick={() => {
+                setDueOpen((open) => !open);
+                setAssignOpen(false);
+                setMenuOpen(false);
+              }}
+              aria-label={`Set due date for ${item.title}`}
+            >
+              <ClockIcon className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              className={`rounded p-1.5 text-muted hover:bg-bg-overlay hover:text-base ${assignOpen ? 'bg-bg-overlay text-base' : ''}`}
+              onClick={() => {
+                setAssignOpen((open) => !open);
+                setDueOpen(false);
+                setMenuOpen(false);
+                setMemberQuery('');
+              }}
+              aria-label={`Assign member to ${item.title}`}
+            >
+              <UserPlusIcon className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              className={`rounded p-1.5 text-muted hover:bg-bg-overlay hover:text-base ${menuOpen ? 'bg-bg-overlay text-base' : ''}`}
+              onClick={() => {
+                setMenuOpen((open) => !open);
+                setAssignOpen(false);
+                setDueOpen(false);
+              }}
+              aria-label={`Item actions for ${item.title}`}
+            >
+              <EllipsisHorizontalIcon className="h-4 w-4" aria-hidden="true" />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-border bg-bg-surface py-1 shadow-2xl">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => void handleConvertToCard()}
+                  disabled={converting || Boolean(item.linked_card_id)}
+                >
+                  <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
+                  {convertActionLabel}
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-danger hover:bg-bg-overlay"
+                  onClick={() => {
+                    void onDelete(item.id);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <XMarkIcon className="h-4 w-4" aria-hidden="true" />
+                  Delete
+                </button>
+              </div>
+            )}
+
+            {assignOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-72 rounded-xl border border-border bg-bg-surface p-2.5 shadow-2xl">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-base">Assign</p>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
+                    onClick={() => {
+                      setAssignOpen(false);
+                    }}
+                    aria-label="Close assign popover"
+                  >
+                    <XMarkIcon className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  className="mb-2 w-full rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Search members"
+                  value={memberQuery}
+                  onChange={(event) => {
+                    setMemberQuery(event.target.value);
+                  }}
+                />
+                <div className="max-h-56 space-y-1 overflow-y-auto">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm text-base hover:bg-bg-overlay"
+                    onClick={() => {
+                      void onAssign(item.id, null);
+                      setAssignOpen(false);
+                    }}
+                  >
+                    <span>Unassign</span>
+                    {!item.assigned_member_id && (
+                      <CheckIcon className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+                    )}
+                  </button>
+                  {filteredMembers.map((member) => {
+                    const isSelected = member.id === item.assigned_member_id;
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm text-base hover:bg-bg-overlay"
+                        onClick={() => {
+                          void onAssign(item.id, isSelected ? null : member.id);
+                          setAssignOpen(false);
+                        }}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          {member.avatar_url && !isAvatarFailed(member.id) ? (
+                            <img
+                              src={member.avatar_url}
+                              alt={member.name ?? member.email}
+                              className="h-6 w-6 rounded-full object-cover"
+                              onError={() => {
+                                markAvatarFailed(member.id);
+                              }}
+                            />
+                          ) : (
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bg-overlay text-xs font-semibold text-base">
+                              {getMemberInitials(member.name, member.email)}
+                            </span>
+                          )}
+                          <span className="truncate">{member.name ?? member.email}</span>
+                        </span>
+                        {isSelected && (
+                          <CheckIcon className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {dueOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-xl border border-border bg-bg-surface p-3 shadow-2xl">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-base">Change due date</p>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base"
+                    onClick={() => {
+                      setDueOpen(false);
+                    }}
+                    aria-label="Close due date popover"
+                  >
+                    <XMarkIcon className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <div>
+                    <label
+                      htmlFor={`checklist-item-due-date-${item.id}`}
+                      className="mb-1 block text-xs font-medium text-muted"
+                    >
+                      Due date
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        id={`checklist-item-due-date-${item.id}`}
+                        type="date"
+                        value={dueDateInput}
+                        onChange={(event) => {
+                          setDueDateInput(event.target.value);
+                        }}
+                        onFocus={(event) => {
+                          openNativePicker(event.currentTarget);
+                        }}
+                        onClick={(event) => {
+                          openNativePicker(event.currentTarget);
+                        }}
+                        style={{ color: 'var(--text-base)' }}
+                        className="rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base [color-scheme:light] focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <input
+                        type="time"
+                        value={dueTimeInput}
+                        onChange={(event) => {
+                          setDueTimeInput(event.target.value);
+                        }}
+                        onFocus={(event) => {
+                          openNativePicker(event.currentTarget);
+                        }}
+                        onClick={(event) => {
+                          openNativePicker(event.currentTarget);
+                        }}
+                        style={{ color: 'var(--text-base)' }}
+                        className="rounded border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base [color-scheme:light] focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => void handleDueSave()}
+                    disabled={!dueDateInput}
+                  >
+                    Save
+                  </Button>
+                  {item.due_date && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => {
+                        void onDueDateChange(item.id, null);
+                        setDueOpen(false);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {/* Attachment preview lightbox — rendered outside the row div so it overlays the full screen */}
+      {previewAttachment?.status === 'READY' &&
+        (() => {
+          const mediaType = getAttachmentMediaType(previewAttachment.content_type);
+          const src = previewAttachment.view_url ?? '';
+          const name = previewAttachment.alias ?? previewAttachment.name;
+          const close = () => {
+            setPreviewAttachment(null);
+          };
+          if (!src) return null;
+          if (mediaType === 'image') return <ImageLightbox src={src} name={name} onClose={close} />;
+          if (mediaType === 'video') return <VideoLightbox src={src} name={name} onClose={close} />;
+          if (mediaType === 'pdf') return <PdfLightbox src={src} name={name} onClose={close} />;
+          return null;
+        })()}
+    </>
   );
 };

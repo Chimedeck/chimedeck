@@ -43,8 +43,11 @@ describe('writeCardChatMessage', () => {
     q('update').mockResolvedValueOnce(1);
 
     const result = await writeCardChatMessage({
-      sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-      role: 'user', content: 'The system should allow users to log in.',
+      sessionId: 'session-1',
+      cardId: 'card-1',
+      authorId: 'user-1',
+      role: 'user',
+      content: 'The system should allow users to log in.',
     });
 
     expect(result.status).toBe(201);
@@ -63,8 +66,11 @@ describe('writeCardChatMessage', () => {
     q('update').mockResolvedValueOnce(1);
 
     const result = await writeCardChatMessage({
-      sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-      role: 'assistant', content: 'Thank you for that information.',
+      sessionId: 'session-1',
+      cardId: 'card-1',
+      authorId: 'user-1',
+      role: 'assistant',
+      content: 'Thank you for that information.',
     });
 
     expect(result.status).toBe(201);
@@ -76,9 +82,12 @@ describe('writeCardChatMessage', () => {
 
     await expect(
       writeCardChatMessage({
-        sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-        role: 'user', content: '',
-      }),
+        sessionId: 'session-1',
+        cardId: 'card-1',
+        authorId: 'user-1',
+        role: 'user',
+        content: '',
+      })
     ).rejects.toThrow('missing-card-chat-content');
   });
 
@@ -90,8 +99,11 @@ describe('writeCardChatMessage', () => {
     q('update').mockResolvedValueOnce(1);
 
     const result = await writeCardChatMessage({
-      sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-      role: 'user', content: '  Hello world  ',
+      sessionId: 'session-1',
+      cardId: 'card-1',
+      authorId: 'user-1',
+      role: 'user',
+      content: '  Hello world  ',
     });
 
     expect(result.data.message.content).toBe('Hello world');
@@ -103,9 +115,12 @@ describe('writeCardChatMessage', () => {
 
     await expect(
       writeCardChatMessage({
-        sessionId: 'nonexistent', cardId: 'card-1', authorId: 'user-1',
-        role: 'user', content: 'Hello',
-      }),
+        sessionId: 'nonexistent',
+        cardId: 'card-1',
+        authorId: 'user-1',
+        role: 'user',
+        content: 'Hello',
+      })
     ).rejects.toThrow('card-chat-session-not-found');
   });
 
@@ -115,9 +130,12 @@ describe('writeCardChatMessage', () => {
 
     await expect(
       writeCardChatMessage({
-        sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-        role: 'user', content: 'Hello',
-      }),
+        sessionId: 'session-1',
+        cardId: 'card-1',
+        authorId: 'user-1',
+        role: 'user',
+        content: 'Hello',
+      })
     ).rejects.toThrow('card-chat-session-not-active');
   });
 
@@ -127,9 +145,12 @@ describe('writeCardChatMessage', () => {
 
     await expect(
       writeCardChatMessage({
-        sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-        role: 'user', content: 'Hello',
-      }),
+        sessionId: 'session-1',
+        cardId: 'card-1',
+        authorId: 'user-1',
+        role: 'user',
+        content: 'Hello',
+      })
     ).rejects.toThrow('card-chat-session-not-active');
   });
 
@@ -141,8 +162,11 @@ describe('writeCardChatMessage', () => {
     q('update').mockResolvedValueOnce(1);
 
     await writeCardChatMessage({
-      sessionId: 'session-1', cardId: 'card-1', authorId: 'user-1',
-      role: 'user', content: 'Hello',
+      sessionId: 'session-1',
+      cardId: 'card-1',
+      authorId: 'user-1',
+      role: 'user',
+      content: 'Hello',
     });
 
     const updateCall = q('update').mock.calls[0]?.[0] as

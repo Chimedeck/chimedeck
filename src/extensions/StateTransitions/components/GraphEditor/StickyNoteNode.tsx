@@ -21,11 +21,15 @@ const StickyNoteNode = ({ id, data, selected }: NodeProps<GraphEditorNode>) => {
   }, [isEditing, noteContent]);
 
   return (
-    <div className={`min-h-[120px] min-w-[220px] max-w-[260px] rounded-lg border border-amber-300 bg-amber-100 p-3 shadow-md dark:border-amber-700 dark:bg-amber-900/60 ${selected ? 'ring-2 ring-primary' : ''}`}>
+    <div
+      className={`min-h-[120px] min-w-[220px] max-w-[260px] rounded-lg border border-amber-300 bg-amber-100 p-3 shadow-md dark:border-amber-700 dark:bg-amber-900/60 ${selected ? 'ring-2 ring-primary' : ''}`}
+    >
       <div className="mb-2 flex items-center justify-between gap-2 text-amber-900 dark:text-amber-100">
         <div className="flex items-center gap-1.5">
           <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          <span className="text-[11px] font-semibold uppercase tracking-wide">{translations['StateTransitions.stickyNoteTitle']}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide">
+            {translations['StateTransitions.stickyNoteTitle']}
+          </span>
         </div>
         <button
           type="button"
@@ -73,7 +77,9 @@ const StickyNoteNode = ({ id, data, selected }: NodeProps<GraphEditorNode>) => {
           }}
           title={translations['StateTransitions.stickyNoteDoubleClickHint']}
         >
-          {noteContent.trim().length > 0 ? noteContent : translations['StateTransitions.stickyNotePlaceholder']}
+          {noteContent.trim().length > 0
+            ? noteContent
+            : translations['StateTransitions.stickyNotePlaceholder']}
         </button>
       )}
     </div>

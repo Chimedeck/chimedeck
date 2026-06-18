@@ -10,7 +10,7 @@ import { checkRateLimit, retryAfterMs } from '../mods/rateLimiter';
 export async function handleProbeHealthCheck(
   req: Request,
   boardId: string,
-  healthCheckId: string,
+  healthCheckId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -26,7 +26,7 @@ export async function handleProbeHealthCheck(
   if (!check) {
     return Response.json(
       { name: 'health-check-not-found', data: { message: 'Health check not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -37,16 +37,23 @@ export async function handleProbeHealthCheck(
     return Response.json(
       {
         name: 'rate-limit-exceeded',
-        data: { message: 'Too many probe requests. Please wait before probing again.', retryAfterSeconds: retryAfter },
+        data: {
+          message: 'Too many probe requests. Please wait before probing again.',
+          retryAfterSeconds: retryAfter,
+        },
       },
       {
         status: 429,
         headers: { 'Retry-After': String(retryAfter) },
-      },
+      }
     );
   }
 
-  const result = await probe({ healthCheckId: check.id, url: check.url, expectedStatus: check.expected_status ?? null });
+  const result = await probe({
+    healthCheckId: check.id,
+    url: check.url,
+    expectedStatus: check.expected_status ?? null,
+  });
 
   return Response.json({
     data: {

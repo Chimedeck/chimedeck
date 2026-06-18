@@ -40,14 +40,40 @@ export const Badge = ({ color, children }: { color: string; children: React.Reac
 
 // Callout boxes — use these instead of inline div literals so both pages render identically.
 
-export const InfoCallout = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={['rounded-lg border border-indigo-300 dark:border-indigo-700/40 bg-indigo-50 dark:bg-indigo-900/20 px-5 py-4', className].filter(Boolean).join(' ')}>
+export const InfoCallout = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div
+    className={[
+      'rounded-lg border border-indigo-300 dark:border-indigo-700/40 bg-indigo-50 dark:bg-indigo-900/20 px-5 py-4',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ')}
+  >
     <p className="text-sm text-indigo-700 dark:text-indigo-200">{children}</p>
   </div>
 );
 
-export const WarnCallout = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <div className={['rounded-lg border border-amber-300 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200', className].filter(Boolean).join(' ')}>
+export const WarnCallout = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div
+    className={[
+      'rounded-lg border border-amber-300 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ')}
+  >
     {children}
   </div>
 );
@@ -68,7 +94,10 @@ export const Table = ({ headers, rows }: { headers: string[]; rows: TableRow[] }
       <thead className="bg-bg-surface">
         <tr>
           {headers.map((h) => (
-            <th key={h} className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted">
+            <th
+              key={h}
+              className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+            >
               {h}
             </th>
           ))}

@@ -45,10 +45,7 @@ const listSlice = createSlice({
 
     // ── Optimistic mutations ─────────────────────────────────────────────
     /** Apply an optimistic update; stores a snapshot for potential rollback */
-    applyOptimistic(
-      state,
-      action: PayloadAction<{ mutationId: string; list: List }>,
-    ) {
+    applyOptimistic(state, action: PayloadAction<{ mutationId: string; list: List }>) {
       const { mutationId, list } = action.payload;
       // Store snapshot before mutation
       state.snapshots[mutationId] = { ...state.byId };
@@ -56,20 +53,14 @@ const listSlice = createSlice({
     },
 
     /** Reconcile with the authoritative server response */
-    confirmOptimistic(
-      state,
-      action: PayloadAction<{ mutationId: string; list: List }>,
-    ) {
+    confirmOptimistic(state, action: PayloadAction<{ mutationId: string; list: List }>) {
       const { mutationId, list } = action.payload;
       delete state.snapshots[mutationId];
       upsert(state, list);
     },
 
     /** Restore pre-mutation snapshot on failure */
-    rollbackOptimistic(
-      state,
-      action: PayloadAction<{ mutationId: string }>,
-    ) {
+    rollbackOptimistic(state, action: PayloadAction<{ mutationId: string }>) {
       const { mutationId } = action.payload;
       const snapshot = state.snapshots[mutationId];
       if (snapshot) {
@@ -81,7 +72,7 @@ const listSlice = createSlice({
     /** Optimistic reorder: update local order immediately */
     applyOptimisticReorder(
       state,
-      action: PayloadAction<{ mutationId: string; boardId: string; orderedIds: string[] }>,
+      action: PayloadAction<{ mutationId: string; boardId: string; orderedIds: string[] }>
     ) {
       const { mutationId, boardId, orderedIds } = action.payload;
       state.snapshots[mutationId] = { ...state.byId };
@@ -90,7 +81,7 @@ const listSlice = createSlice({
 
     rollbackOptimisticReorder(
       state,
-      action: PayloadAction<{ mutationId: string; boardId: string; previousOrder: string[] }>,
+      action: PayloadAction<{ mutationId: string; boardId: string; previousOrder: string[] }>
     ) {
       const { mutationId, boardId, previousOrder } = action.payload;
       delete state.snapshots[mutationId];

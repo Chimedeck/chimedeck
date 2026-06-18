@@ -27,14 +27,14 @@ export async function handleForgotPassword(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.email) {
     return Response.json(
       { error: { code: 'bad-request', message: 'email is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

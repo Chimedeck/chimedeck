@@ -110,7 +110,10 @@ const GraphCanvas = ({
   editable,
 }: Props) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [instance, setInstance] = useState<ReactFlowInstance<GraphEditorNode, GraphEditorEdge> | null>(null);
+  const [instance, setInstance] = useState<ReactFlowInstance<
+    GraphEditorNode,
+    GraphEditorEdge
+  > | null>(null);
 
   const getViewportCenter = useCallback(() => {
     if (!instance || !rootRef.current) {
@@ -136,7 +139,10 @@ const GraphCanvas = ({
   });
 
   return (
-    <div ref={rootRef} className="relative h-full w-full rounded-lg border border-border bg-bg-base">
+    <div
+      ref={rootRef}
+      className="relative h-full w-full rounded-lg border border-border bg-bg-base"
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges.map((edge) => ({
@@ -272,17 +278,30 @@ const GraphCanvas = ({
                 onEscape();
               }}
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
           <ColumnPhaseEditor
-            selectedPhases={(selectedColumnNode.data.workflowPhases as WorkflowPhase[] | undefined) ?? []}
+            selectedPhases={
+              (selectedColumnNode.data.workflowPhases as WorkflowPhase[] | undefined) ?? []
+            }
             phaseConfig={{
-              serviceTierOverride: (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.serviceTierOverride ?? null,
-              autoRun: (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.autoRun ?? false,
-              requiresHumanApproval: (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.requiresHumanApproval ?? true,
+              serviceTierOverride:
+                (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)
+                  ?.serviceTierOverride ?? null,
+              autoRun:
+                (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)?.autoRun ?? false,
+              requiresHumanApproval:
+                (selectedColumnNode.data.phaseConfig as PhaseConfig | undefined)
+                  ?.requiresHumanApproval ?? true,
             }}
             onChange={(phases, config) => {
               onColumnPhaseChange(selectedColumnNode.id, phases, config);

@@ -12,10 +12,14 @@ const mockEmitActivity = mock(async () => undefined);
 
 // Wire mocks into the handler's deps
 import { cardChatSessionResumeApiDeps } from '../../api/session/resume';
-cardChatSessionResumeApiDeps.authenticate = mockAuthenticate as unknown as typeof cardChatSessionResumeApiDeps.authenticate;
-cardChatSessionResumeApiDeps.requireWorkspaceMembership = mockRequireWorkspaceMembership as unknown as typeof cardChatSessionResumeApiDeps.requireWorkspaceMembership;
-cardChatSessionResumeApiDeps.resumeSession = mockResumeSession as unknown as typeof cardChatSessionResumeApiDeps.resumeSession;
-cardChatSessionResumeApiDeps.emitCardChatActivity = mockEmitActivity as unknown as typeof cardChatSessionResumeApiDeps.emitCardChatActivity;
+cardChatSessionResumeApiDeps.authenticate =
+  mockAuthenticate as unknown as typeof cardChatSessionResumeApiDeps.authenticate;
+cardChatSessionResumeApiDeps.requireWorkspaceMembership =
+  mockRequireWorkspaceMembership as unknown as typeof cardChatSessionResumeApiDeps.requireWorkspaceMembership;
+cardChatSessionResumeApiDeps.resumeSession =
+  mockResumeSession as unknown as typeof cardChatSessionResumeApiDeps.resumeSession;
+cardChatSessionResumeApiDeps.emitCardChatActivity =
+  mockEmitActivity as unknown as typeof cardChatSessionResumeApiDeps.emitCardChatActivity;
 
 // Helper: build a minimal Request-like object
 function makeReq(method: string, body?: unknown): Request {
@@ -42,7 +46,12 @@ beforeEach(() => {
 
 describe('handleResumeCardChatSession', () => {
   it('returns 200 with session data on successful resume', async () => {
-    const session = { id: 's1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT', quality_score: null };
+    const session = {
+      id: 's1',
+      card_id: 'card-1',
+      status: 'ACTIVE_REFINEMENT',
+      quality_score: null,
+    };
     mockResumeSession.mockResolvedValueOnce({ status: 200, data: { session } });
 
     const req = makeReq('POST', { sessionId: 's1' });
@@ -112,7 +121,10 @@ describe('handleResumeCardChatSession', () => {
 
   it('returns 401 when auth fails', async () => {
     mockAuthenticate.mockResolvedValueOnce(
-      Response.json({ name: 'unauthorized', data: { message: 'Not authenticated' } }, { status: 401 }),
+      Response.json(
+        { name: 'unauthorized', data: { message: 'Not authenticated' } },
+        { status: 401 }
+      )
     );
 
     const req = makeReq('POST', { sessionId: 's1' });

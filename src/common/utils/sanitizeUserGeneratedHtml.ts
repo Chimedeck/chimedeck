@@ -25,7 +25,12 @@ function isSafeUrl(value: string, attrName: string): boolean {
   const trimmed = value.trim();
   if (!trimmed) return false;
 
-  if (trimmed.startsWith('#') || trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+  if (
+    trimmed.startsWith('#') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./') ||
+    trimmed.startsWith('../')
+  ) {
     return true;
   }
 
@@ -47,14 +52,21 @@ function isSafeUrl(value: string, attrName: string): boolean {
   }
 
   if (attrName === 'href' || attrName === 'xlink:href' || attrName === 'formaction') {
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:' || parsed.protocol === 'mailto:' || parsed.protocol === 'tel:';
+    return (
+      parsed.protocol === 'http:' ||
+      parsed.protocol === 'https:' ||
+      parsed.protocol === 'mailto:' ||
+      parsed.protocol === 'tel:'
+    );
   }
 
   if (attrName === 'src' || attrName === 'poster') {
-    return parsed.protocol === 'http:'
-      || parsed.protocol === 'https:'
-      || parsed.protocol === 'blob:'
-      || (parsed.protocol === 'data:' && isSafeDataImageUri(trimmed));
+    return (
+      parsed.protocol === 'http:' ||
+      parsed.protocol === 'https:' ||
+      parsed.protocol === 'blob:' ||
+      (parsed.protocol === 'data:' && isSafeDataImageUri(trimmed))
+    );
   }
 
   return true;

@@ -9,7 +9,10 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { generatePositions } from '../mods/fractional';
 
 export async function handleReorderLists(req: Request, boardId: string): Promise<Response> {
@@ -36,14 +39,14 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!Array.isArray(body.order)) {
     return Response.json(
       { error: { code: 'bad-request', message: 'order must be an array of list IDs' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -59,7 +62,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
           message: `order has ${body.order.length} items but board has ${activeLists.length} active lists`,
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -68,8 +71,13 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
   for (const id of body.order) {
     if (!activeIds.has(id)) {
       return Response.json(
-        { error: { code: 'list-board-mismatch', message: `List ${id} does not belong to this board` } },
-        { status: 400 },
+        {
+          error: {
+            code: 'list-board-mismatch',
+            message: `List ${id} does not belong to this board`,
+          },
+        },
+        { status: 400 }
       );
     }
   }
@@ -79,9 +87,7 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
 
   await db.transaction(async (trx) => {
     for (let i = 0; i < body.order!.length; i++) {
-      await trx('lists')
-        .where({ id: body.order![i] })
-        .update({ position: positions[i] });
+      await trx('lists').where({ id: body.order![i] }).update({ position: positions[i] });
     }
   });
 
@@ -90,7 +96,13 @@ export async function handleReorderLists(req: Request, boardId: string): Promise
     .orderBy('position', 'asc');
 
   // Send full lists array so client can reorder from authoritative positions
-  await writeEvent({ type: 'list_reordered', boardId: canonicalBoardId, entityId: canonicalBoardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { boardId: canonicalBoardId, lists: updatedLists } });
+  await writeEvent({
+    type: 'list_reordered',
+    boardId: canonicalBoardId,
+    entityId: canonicalBoardId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { boardId: canonicalBoardId, lists: updatedLists },
+  });
 
   return Response.json({ data: updatedLists });
 }

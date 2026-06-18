@@ -122,7 +122,10 @@ export const cardCopyToBoardAction: ActionHandler = {
         boardId: config.targetBoardId,
         entityId: newCardId,
         actorId,
-        payload: { copiedFromCardId: cardId, copiedFromBoardId: action.config.sourceBoardId ?? null },
+        payload: {
+          copiedFromCardId: cardId,
+          copiedFromBoardId: action.config.sourceBoardId ?? null,
+        },
       });
 
       broadcast({

@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/ai/context/gather
 // Sprint 174 — gather multi-source context for a card.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { runGatherPipeline } from '../../mods/gather';
 import type { ContextGatherInput } from '../../types';
 
@@ -21,7 +24,7 @@ export async function handleGatherContext(req: Request, cardId: string): Promise
   // 2. Require workspace membership
   const membershipError = await gatherApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -32,14 +35,17 @@ export async function handleGatherContext(req: Request, cardId: string): Promise
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.intent !== 'string' || body.intent.trim() === '') {
     return Response.json(
-      { name: 'missing-intent', data: { message: 'intent is required and must be a non-empty string' } },
-      { status: 400 },
+      {
+        name: 'missing-intent',
+        data: { message: 'intent is required and must be a non-empty string' },
+      },
+      { status: 400 }
     );
   }
 
@@ -55,20 +61,23 @@ export async function handleGatherContext(req: Request, cardId: string): Promise
 
     if (result.status !== 200) {
       return Response.json(
-        { name: result.name ?? 'gather-failed', data: { message: result.message ?? 'Context gathering failed' } },
-        { status: result.status },
+        {
+          name: result.name ?? 'gather-failed',
+          data: { message: result.message ?? 'Context gathering failed' },
+        },
+        { status: result.status }
       );
     }
 
-    return Response.json(
-      { data: result.data },
-      { status: 200 },
-    );
+    return Response.json({ data: result.data }, { status: 200 });
   } catch (error) {
-    console.error('[aiContext/gather] Unexpected error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[aiContext/gather] Unexpected error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return Response.json(
       { name: 'internal-error', data: { message: 'Context gathering failed unexpectedly' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

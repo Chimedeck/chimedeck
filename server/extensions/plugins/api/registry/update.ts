@@ -16,7 +16,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
   if (!plugin) {
     return Response.json(
       { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -26,7 +26,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -40,7 +40,8 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
   if (body.author !== undefined) updates.author = body.author;
   if (body.authorEmail !== undefined) updates.author_email = body.authorEmail;
   if (body.supportEmail !== undefined) updates.support_email = body.supportEmail;
-  if (body.categories !== undefined) updates.categories = Array.isArray(body.categories) ? body.categories : [];
+  if (body.categories !== undefined)
+    updates.categories = Array.isArray(body.categories) ? body.categories : [];
   if (body.isPublic !== undefined) updates.is_public = body.isPublic;
   if (body.capabilities !== undefined) updates.capabilities = JSON.stringify(body.capabilities);
 
@@ -48,21 +49,36 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
     const rawDomains = body.whitelistedDomains;
     if (!Array.isArray(rawDomains)) {
       return Response.json(
-        { error: { code: 'invalid-whitelisted-domains', message: 'whitelistedDomains must be an array' } },
-        { status: 422 },
+        {
+          error: {
+            code: 'invalid-whitelisted-domains',
+            message: 'whitelistedDomains must be an array',
+          },
+        },
+        { status: 422 }
       );
     }
     if (rawDomains.length > MAX_WHITELISTED_DOMAINS) {
       return Response.json(
-        { error: { code: 'too-many-whitelisted-domains', message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
-        { status: 422 },
+        {
+          error: {
+            code: 'too-many-whitelisted-domains',
+            message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries`,
+          },
+        },
+        { status: 422 }
       );
     }
     for (const domain of rawDomains) {
       if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
         return Response.json(
-          { error: { code: 'invalid-whitelisted-domain', message: `'${domain}' is not a valid HTTPS origin` } },
-          { status: 422 },
+          {
+            error: {
+              code: 'invalid-whitelisted-domain',
+              message: `'${domain}' is not a valid HTTPS origin`,
+            },
+          },
+          { status: 422 }
         );
       }
     }
@@ -92,7 +108,7 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
       'is_public',
       'is_active',
       'created_at',
-      'updated_at',
+      'updated_at'
     )
     .first();
 

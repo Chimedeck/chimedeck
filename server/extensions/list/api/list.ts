@@ -17,7 +17,7 @@ export async function handleListLists(req: Request, boardId: string): Promise<Re
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

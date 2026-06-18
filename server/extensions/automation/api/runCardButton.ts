@@ -8,12 +8,17 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { automationConfig } from '../config';
 import { executeAutomation } from '../engine/executor';
 import { writeRunLog } from '../engine/logger';
-import type { AutomationRow, AutomationActionRow, AutomationEvent, EvaluationContext } from '../common/types';
+import type {
+  AutomationRow,
+  AutomationActionRow,
+  AutomationEvent,
+  EvaluationContext,
+} from '../common/types';
 
 export async function handleRunCardButton(
   req: Request,
   cardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -49,7 +54,12 @@ export async function handleRunCardButton(
 
   // Load the CARD_BUTTON automation — must belong to the same board.
   const automation = await db('automations')
-    .where({ id: automationId, board_id: list.board_id, automation_type: 'CARD_BUTTON', is_enabled: true })
+    .where({
+      id: automationId,
+      board_id: list.board_id,
+      automation_type: 'CARD_BUTTON',
+      is_enabled: true,
+    })
     .first<AutomationRow>();
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });

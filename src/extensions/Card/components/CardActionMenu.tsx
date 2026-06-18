@@ -1,5 +1,11 @@
 // CardActionMenu — archive, delete, copy link, copy card actions for the modal sidebar.
-import { ArchiveBoxIcon, ArchiveBoxXMarkIcon, DocumentDuplicateIcon, LinkIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  ArchiveBoxIcon,
+  ArchiveBoxXMarkIcon,
+  DocumentDuplicateIcon,
+  LinkIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 
 interface Props {
   archived: boolean;
@@ -10,7 +16,14 @@ interface Props {
   disabled?: boolean;
 }
 
-const CardActionMenu = ({ archived, onArchive, onDelete, onCopyLink, onCopyCard, disabled }: Props) => {
+const CardActionMenu = ({
+  archived,
+  onArchive,
+  onDelete,
+  onCopyLink,
+  onCopyCard,
+  disabled,
+}: Props) => {
   return (
     <div className="space-y-1">
       <button
@@ -19,9 +32,15 @@ const CardActionMenu = ({ archived, onArchive, onDelete, onCopyLink, onCopyCard,
         onClick={onArchive}
         disabled={disabled}
       >
-        {archived
-          ? <><ArchiveBoxXMarkIcon className="w-4 h-4 shrink-0" /> Unarchive card</>
-          : <><ArchiveBoxIcon className="w-4 h-4 shrink-0" /> Archive card</>}
+        {archived ? (
+          <>
+            <ArchiveBoxXMarkIcon className="w-4 h-4 shrink-0" /> Unarchive card
+          </>
+        ) : (
+          <>
+            <ArchiveBoxIcon className="w-4 h-4 shrink-0" /> Archive card
+          </>
+        )}
       </button>
       <button
         type="button"

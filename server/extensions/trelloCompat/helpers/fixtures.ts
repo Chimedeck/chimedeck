@@ -128,7 +128,7 @@ export function createMemberFixture(overrides: Partial<MemberFixture> = {}): Mem
 }
 
 export function createCommentActionFixture(
-  overrides: Partial<CommentActionFixture> = {},
+  overrides: Partial<CommentActionFixture> = {}
 ): CommentActionFixture {
   const memberCreator = createMemberFixture(overrides.memberCreator);
   return {
@@ -148,7 +148,7 @@ export function createCommentActionFixture(
 }
 
 export function createCommentActionFixtureWithoutList(
-  overrides: Partial<CommentActionFixture> = {},
+  overrides: Partial<CommentActionFixture> = {}
 ): CommentActionFixture {
   return createCommentActionFixture({
     list_id: null,
@@ -158,7 +158,7 @@ export function createCommentActionFixtureWithoutList(
 }
 
 export function createActivityActionFixture(
-  overrides: Partial<ActivityActionFixture> = {},
+  overrides: Partial<ActivityActionFixture> = {}
 ): ActivityActionFixture {
   const memberCreator = createMemberFixture(overrides.memberCreator);
   return {
@@ -235,7 +235,9 @@ export function createListFixture(overrides: Partial<ListFixture> = {}): ListFix
   };
 }
 
-export function createCheckItemFixture(overrides: Partial<CheckItemFixture> = {}): CheckItemFixture {
+export function createCheckItemFixture(
+  overrides: Partial<CheckItemFixture> = {}
+): CheckItemFixture {
   return {
     id: 'checkitem-1',
     checklist_id: 'checklist-1',
@@ -250,7 +252,9 @@ export function createCheckItemFixture(overrides: Partial<CheckItemFixture> = {}
   };
 }
 
-export function createChecklistFixture(overrides: Partial<ChecklistFixture> = {}): ChecklistFixture {
+export function createChecklistFixture(
+  overrides: Partial<ChecklistFixture> = {}
+): ChecklistFixture {
   return {
     id: 'checklist-1',
     board_id: 'board-1',
@@ -273,7 +277,7 @@ export function createReactionFixture(overrides: Partial<ReactionFixture> = {}):
 }
 
 export function createOrganizationFixture(
-  overrides: Partial<OrganizationFixture> = {},
+  overrides: Partial<OrganizationFixture> = {}
 ): OrganizationFixture {
   return {
     id: 'workspace-1',

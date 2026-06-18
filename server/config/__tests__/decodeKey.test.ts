@@ -38,8 +38,9 @@ describe('decodeKey', () => {
     // [why] The original bug: a non-base64 string used to silently round-trip
     // through Buffer.from(str, 'base64') and produce garbage that later
     // crashed at first login. The new decoder must fail at boot instead.
-    expect(() => decodeKey('this is not base64 nor PEM!!!', 'JWT_PRIVATE_KEY'))
-      .toThrow(/JWT_PRIVATE_KEY contains invalid base64 characters/);
+    expect(() => decodeKey('this is not base64 nor PEM!!!', 'JWT_PRIVATE_KEY')).toThrow(
+      /JWT_PRIVATE_KEY contains invalid base64 characters/
+    );
   });
 
   it('throws a named error when the decoded value is not a PEM block', () => {
@@ -47,17 +48,14 @@ describe('decodeKey', () => {
     // decoder catches this so a typo (e.g. wrong file base64-encoded) is
     // surfaced at boot rather than at first login.
     const notPem = Buffer.from('hello world', 'utf-8').toString('base64');
-    expect(() => decodeKey(notPem, 'JWT_PRIVATE_KEY'))
-      .toThrow(/does not look like a PEM block/);
+    expect(() => decodeKey(notPem, 'JWT_PRIVATE_KEY')).toThrow(/does not look like a PEM block/);
   });
 
   it('names the offending env var in every error message', () => {
     // [why] Operators grep server logs for the env var name when triaging;
     // burying the name in a generic "bad key" message defeats that.
-    expect(() => decodeKey('garbage', 'GITHUB_APP_PRIVATE_KEY'))
-      .toThrow(/GITHUB_APP_PRIVATE_KEY/);
+    expect(() => decodeKey('garbage', 'GITHUB_APP_PRIVATE_KEY')).toThrow(/GITHUB_APP_PRIVATE_KEY/);
     const notPem = Buffer.from('hello world', 'utf-8').toString('base64');
-    expect(() => decodeKey(notPem, 'STRIPE_SECRET_KEY'))
-      .toThrow(/STRIPE_SECRET_KEY/);
+    expect(() => decodeKey(notPem, 'STRIPE_SECRET_KEY')).toThrow(/STRIPE_SECRET_KEY/);
   });
 });

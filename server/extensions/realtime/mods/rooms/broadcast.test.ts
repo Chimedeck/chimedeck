@@ -4,7 +4,9 @@ import { broadcast } from './broadcast';
 
 describe('broadcast', () => {
   it('does nothing when room does not exist', () => {
-    expect(() => { broadcast({ boardId: 'nonexistent-board', message: 'test' }); }).not.toThrow();
+    expect(() => {
+      broadcast({ boardId: 'nonexistent-board', message: 'test' });
+    }).not.toThrow();
   });
 
   it('sends message to sockets in room', () => {

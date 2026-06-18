@@ -28,7 +28,7 @@ export function useViewPreference({ boardId }: { boardId: string }) {
       dispatch(setActiveView(viewType));
       dispatch(saveViewPreference({ boardId, viewType }));
     },
-    [dispatch, boardId],
+    [dispatch, boardId]
   );
 
   return { activeView, status, switchView };

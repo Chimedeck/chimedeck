@@ -33,14 +33,14 @@ export async function handleUpdateBoard(req: Request, boardId: string): Promise<
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -50,7 +50,13 @@ export async function handleUpdateBoard(req: Request, boardId: string): Promise<
     .update({ title: sanitizedTitle }, ['*']);
 
   // Stub event emission.
-  await writeEvent({ type: 'board_renamed', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: sanitizedTitle } });
+  await writeEvent({
+    type: 'board_renamed',
+    boardId,
+    entityId: boardId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { title: sanitizedTitle },
+  });
 
   return Response.json({ data: updated[0] });
 }

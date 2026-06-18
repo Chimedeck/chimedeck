@@ -29,8 +29,13 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   const count = memCache.incr(rlKey, RATE_LIMIT_WINDOW_SECONDS);
   if (count > RATE_LIMIT_MAX) {
     return Response.json(
-      { error: { code: 'rate-limit-exceeded', message: 'Too many email change requests. Try again in an hour.' } },
-      { status: 429 },
+      {
+        error: {
+          code: 'rate-limit-exceeded',
+          message: 'Too many email change requests. Try again in an hour.',
+        },
+      },
+      { status: 429 }
     );
   }
 
@@ -40,14 +45,14 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.email || !body.currentPassword) {
     return Response.json(
       { error: { code: 'bad-request', message: 'email and currentPassword are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -57,7 +62,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   if (!user) {
     return Response.json(
       { error: { code: 'user-not-found', message: 'User not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -66,14 +71,19 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   if (!valid) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Current password is incorrect' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
   if (newEmail === user.email.toLowerCase().trim()) {
     return Response.json(
-      { error: { code: 'email-unchanged', message: 'New email must be different from current email' } },
-      { status: 422 },
+      {
+        error: {
+          code: 'email-unchanged',
+          message: 'New email must be different from current email',
+        },
+      },
+      { status: 422 }
     );
   }
 
@@ -86,7 +96,7 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   if (existing) {
     return Response.json(
       { error: { code: 'email-already-in-use', message: 'That email address is already in use' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -116,11 +126,15 @@ export async function handleChangeEmail(req: Request): Promise<Response> {
   });
 
   const confirmUrl = `${env.APP_URL}/confirm-email-change?token=${token}`;
-  const emailContent = await buildEmailChangeConfirmation({ newEmail, confirmUrl, expiresIn: '24 hours' });
+  const emailContent = await buildEmailChangeConfirmation({
+    newEmail,
+    confirmUrl,
+    expiresIn: '24 hours',
+  });
   await send({ to: newEmail, ...emailContent });
 
   return Response.json(
     { data: { requiresConfirmation: true, pendingEmail: newEmail } },
-    { status: 200 },
+    { status: 200 }
   );
 }

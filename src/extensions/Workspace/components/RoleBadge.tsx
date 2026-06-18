@@ -4,9 +4,9 @@ import type { Role } from '../api';
 // [theme-exception] Role badge colours are intentional product semantics; do not replace with design tokens.
 const ROLE_STYLES: Record<Role, string> = {
   OWNER: 'bg-purple-100 text-purple-800', // [theme-exception]
-  ADMIN: 'bg-blue-100 text-blue-800',     // [theme-exception]
-  MEMBER: 'bg-green-100 text-green-800',  // [theme-exception]
-  VIEWER: 'bg-bg-overlay text-base',    // [theme-exception]
+  ADMIN: 'bg-blue-100 text-blue-800', // [theme-exception]
+  MEMBER: 'bg-green-100 text-green-800', // [theme-exception]
+  VIEWER: 'bg-bg-overlay text-base', // [theme-exception]
 };
 
 const ROLE_LABELS: Record<Role, string> = {

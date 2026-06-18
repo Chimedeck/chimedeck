@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  workspaceReducer,
-  initialState as baseInitialState,
-} from '../SpecsWorkspacePage';
+import { workspaceReducer, initialState as baseInitialState } from '../SpecsWorkspacePage';
 
 type WorkspaceState = Parameters<typeof workspaceReducer>[0];
 type WorkspaceAction = Parameters<typeof workspaceReducer>[1];
@@ -52,16 +49,19 @@ describe('SpecsWorkspacePage reducer', () => {
   });
 
   it('removes a file from pending commit while local edits are unsaved', () => {
-    const state = reduce(cloneInitialState({
-      savedContent: { 'specs/architecture.md': '# Saved' },
-      editorContent: { 'specs/architecture.md': '# Saved' },
-      pendingCommitPaths: new Set(['specs/architecture.md']),
-      lastSaveAttemptContent: { 'specs/architecture.md': '# Saved' },
-    }), {
-      type: 'editor/change',
-      path: 'specs/architecture.md',
-      content: '# Unsaved draft',
-    });
+    const state = reduce(
+      cloneInitialState({
+        savedContent: { 'specs/architecture.md': '# Saved' },
+        editorContent: { 'specs/architecture.md': '# Saved' },
+        pendingCommitPaths: new Set(['specs/architecture.md']),
+        lastSaveAttemptContent: { 'specs/architecture.md': '# Saved' },
+      }),
+      {
+        type: 'editor/change',
+        path: 'specs/architecture.md',
+        content: '# Unsaved draft',
+      }
+    );
 
     expect(state.dirtyPaths.has('specs/architecture.md')).toBe(true);
     expect(state.pendingCommitPaths.has('specs/architecture.md')).toBe(false);
@@ -87,22 +87,25 @@ describe('SpecsWorkspacePage reducer', () => {
   });
 
   it('clears only committed files from pendingCommitPaths on commit/success', () => {
-    const state = reduce(cloneInitialState({
-      commitStatus: 'committing',
-      commitMessage: 'Update specs',
-      pendingCommitPaths: new Set(['specs/architecture.md', 'specs/changelog.md']),
-      savedContent: {
-        'specs/architecture.md': '# Architecture',
-        'specs/changelog.md': '# Changelog',
-      },
-      lastSaveAttemptContent: {
-        'specs/architecture.md': '# Architecture',
-        'specs/changelog.md': '# Changelog',
-      },
-    }), {
-      type: 'commit/success',
-      changedFiles: ['specs/architecture.md'],
-    });
+    const state = reduce(
+      cloneInitialState({
+        commitStatus: 'committing',
+        commitMessage: 'Update specs',
+        pendingCommitPaths: new Set(['specs/architecture.md', 'specs/changelog.md']),
+        savedContent: {
+          'specs/architecture.md': '# Architecture',
+          'specs/changelog.md': '# Changelog',
+        },
+        lastSaveAttemptContent: {
+          'specs/architecture.md': '# Architecture',
+          'specs/changelog.md': '# Changelog',
+        },
+      }),
+      {
+        type: 'commit/success',
+        changedFiles: ['specs/architecture.md'],
+      }
+    );
 
     expect(state.commitStatus).toBe('success');
     expect(state.commitMessage).toBe('');

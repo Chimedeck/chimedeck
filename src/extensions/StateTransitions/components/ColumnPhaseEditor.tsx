@@ -30,9 +30,7 @@ const PHASE_LABELS: Record<WorkflowPhase, string> = {
 };
 
 const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => {
-  const [localPhases, setLocalPhases] = useState<Set<WorkflowPhase>>(
-    new Set(selectedPhases),
-  );
+  const [localPhases, setLocalPhases] = useState<Set<WorkflowPhase>>(new Set(selectedPhases));
   const [localConfig, setLocalConfig] = useState<PhaseConfig>({
     serviceTierOverride: phaseConfig.serviceTierOverride ?? null,
     autoRun: phaseConfig.autoRun ?? false,
@@ -55,7 +53,7 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
         return next;
       });
     },
-    [localConfig, onChange],
+    [localConfig, onChange]
   );
 
   const handleConfigChange = useCallback(
@@ -66,15 +64,13 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
         return next;
       });
     },
-    [localPhases, onChange],
+    [localPhases, onChange]
   );
 
   return (
     <div className="space-y-3">
       <fieldset>
-        <legend className="mb-2 text-xs font-semibold text-secondary">
-          Workflow Phases
-        </legend>
+        <legend className="mb-2 text-xs font-semibold text-secondary">Workflow Phases</legend>
         <div className="flex flex-wrap gap-1.5">
           {ALL_PHASES.map((phase) => {
             const isSelected = localPhases.has(phase);
@@ -91,7 +87,9 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
                   type="checkbox"
                   className="sr-only"
                   checked={isSelected}
-                  onChange={() => { handlePhaseToggle(phase); }}
+                  onChange={() => {
+                    handlePhaseToggle(phase);
+                  }}
                 />
                 {PHASE_LABELS[phase]}
               </label>
@@ -109,7 +107,9 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
             type="button"
             role="switch"
             aria-checked={localConfig.autoRun}
-            onClick={() => { handleConfigChange('autoRun', !localConfig.autoRun); }}
+            onClick={() => {
+              handleConfigChange('autoRun', !localConfig.autoRun);
+            }}
             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
               localConfig.autoRun ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
             }`}
@@ -128,11 +128,11 @@ const ColumnPhaseEditor = ({ selectedPhases, phaseConfig, onChange }: Props) => 
             type="button"
             role="switch"
             aria-checked={localConfig.requiresHumanApproval}
-            onClick={() => { handleConfigChange('requiresHumanApproval', !localConfig.requiresHumanApproval); }}
+            onClick={() => {
+              handleConfigChange('requiresHumanApproval', !localConfig.requiresHumanApproval);
+            }}
             className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-              localConfig.requiresHumanApproval
-                ? 'bg-primary'
-                : 'bg-slate-300 dark:bg-slate-600'
+              localConfig.requiresHumanApproval ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
             }`}
           >
             <span

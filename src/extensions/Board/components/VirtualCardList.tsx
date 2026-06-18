@@ -3,7 +3,6 @@
 // Install: bun add @tanstack/react-virtual
 import { useRef } from 'react';
 
- 
 type VirtualizerRow = { key: string; index: number; start: number; size: number };
 
 interface Card {
@@ -52,11 +51,7 @@ const VirtualCardList = ({ cards, renderCard, estimatedCardHeight = 80 }: Props)
   const items: VirtualizerRow[] = virtualizer.getVirtualItems();
 
   return (
-    <div
-      ref={parentRef}
-      className="overflow-y-auto"
-      style={{ maxHeight: '75vh' }}
-    >
+    <div ref={parentRef} className="overflow-y-auto" style={{ maxHeight: '75vh' }}>
       <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
         {items.map((row) => (
           <div

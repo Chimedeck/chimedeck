@@ -7,7 +7,10 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 
 function normalizeColor(value: unknown): string | null | undefined {
   if (value === null) return null;
@@ -26,7 +29,7 @@ export async function handleUpdateListColor(req: Request, listId: string): Promi
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -49,7 +52,7 @@ export async function handleUpdateListColor(req: Request, listId: string): Promi
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -57,7 +60,7 @@ export async function handleUpdateListColor(req: Request, listId: string): Promi
   if (normalizedColor === undefined) {
     return Response.json(
       { error: { code: 'bad-request', message: 'color must be null or a hex color like #FF0000' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

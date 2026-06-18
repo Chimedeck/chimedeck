@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 
 const module = await import('../downloadRepositoryFromProjectUrl');
-const {
-  downloadRepositoryFromProjectUrl,
-  downloadRepositoryFromProjectUrlDeps,
-} = module;
+const { downloadRepositoryFromProjectUrl, downloadRepositoryFromProjectUrlDeps } = module;
 
 let nowMs = Date.parse('2026-06-03T12:00:00.000Z');
 let mkdirCalls: Array<{ path: string; recursive: boolean }>;
@@ -89,11 +86,13 @@ describe('downloadRepositoryFromProjectUrl', () => {
   });
 
   it('rejects invalid URLs before any network/git work', async () => {
-    await expect(downloadRepositoryFromProjectUrl({
-      // Three-segment path is ambiguous — neither a project nor a bare repo.
-      projectUrl: 'https://github.com/octo-org/not-a-project/extra',
-      boardId: 'board-invalid',
-    })).rejects.toThrow('invalid-github-project-url');
+    await expect(
+      downloadRepositoryFromProjectUrl({
+        // Three-segment path is ambiguous — neither a project nor a bare repo.
+        projectUrl: 'https://github.com/octo-org/not-a-project/extra',
+        boardId: 'board-invalid',
+      })
+    ).rejects.toThrow('invalid-github-project-url');
 
     expect(tokenCalls).toBe(0);
     expect(branchCalls).toBe(0);
@@ -101,10 +100,12 @@ describe('downloadRepositoryFromProjectUrl', () => {
   });
 
   it('rejects non-repository project URLs because repository target is ambiguous', async () => {
-    await expect(downloadRepositoryFromProjectUrl({
-      projectUrl: 'https://github.com/orgs/octo-org/projects/42',
-      boardId: 'board-org-project',
-    })).rejects.toThrow('github-project-url-repository-scope-required');
+    await expect(
+      downloadRepositoryFromProjectUrl({
+        projectUrl: 'https://github.com/orgs/octo-org/projects/42',
+        boardId: 'board-org-project',
+      })
+    ).rejects.toThrow('github-project-url-repository-scope-required');
 
     expect(tokenCalls).toBe(0);
     expect(branchCalls).toBe(0);
@@ -138,10 +139,12 @@ describe('downloadRepositoryFromProjectUrl', () => {
       throw new Error('git failed with token ghs_test_installation_token');
     };
 
-    await expect(downloadRepositoryFromProjectUrl({
-      projectUrl: 'https://github.com/octo-org/octo-repo/projects/10',
-      boardId: 'board-token-safety',
-    })).rejects.toThrow('github-repository-download-failed');
+    await expect(
+      downloadRepositoryFromProjectUrl({
+        projectUrl: 'https://github.com/octo-org/octo-repo/projects/10',
+        boardId: 'board-token-safety',
+      })
+    ).rejects.toThrow('github-repository-download-failed');
 
     try {
       await downloadRepositoryFromProjectUrl({

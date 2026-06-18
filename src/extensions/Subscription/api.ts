@@ -61,28 +61,28 @@ export interface EntitlementsResponse {
   };
 }
 
-export function getWorkspaceSubscription(workspaceId: string): Promise<{ data: WorkspaceSubscription }> {
-  return (apiClient as { get: <T>(url: string) => Promise<T> }).get<{ data: WorkspaceSubscription }>(
-    `../subscription?workspaceId=${encodeURIComponent(workspaceId)}`,
-  );
+export function getWorkspaceSubscription(
+  workspaceId: string
+): Promise<{ data: WorkspaceSubscription }> {
+  return (apiClient as { get: <T>(url: string) => Promise<T> }).get<{
+    data: WorkspaceSubscription;
+  }>(`../subscription?workspaceId=${encodeURIComponent(workspaceId)}`);
 }
 
 export function getWorkspaceEntitlements(workspaceId: string): Promise<EntitlementsResponse> {
   return (apiClient as { get: <T>(url: string) => Promise<T> }).get<EntitlementsResponse>(
-    `/workspaces/${encodeURIComponent(workspaceId)}/entitlements`,
+    `/workspaces/${encodeURIComponent(workspaceId)}/entitlements`
   );
 }
 
 export function createSubscriptionCheckout(input: CheckoutRequest): Promise<CheckoutResponse> {
-  return (apiClient as { post: <T>(url: string, data: unknown) => Promise<T> }).post<CheckoutResponse>(
-    '../subscription/checkout',
-    input,
-  );
+  return (
+    apiClient as { post: <T>(url: string, data: unknown) => Promise<T> }
+  ).post<CheckoutResponse>('../subscription/checkout', input);
 }
 
 export function createSubscriptionPortal(workspaceId: string): Promise<PortalResponse> {
-  return (apiClient as { post: <T>(url: string, data: unknown) => Promise<T> }).post<PortalResponse>(
-    '../subscription/portal',
-    { workspaceId },
-  );
+  return (
+    apiClient as { post: <T>(url: string, data: unknown) => Promise<T> }
+  ).post<PortalResponse>('../subscription/portal', { workspaceId });
 }

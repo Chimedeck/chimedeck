@@ -11,7 +11,10 @@ interface Props {
   label?: string;
 }
 
-export function UploadProgressBar({ progress, label = translations['attachments.progressBar.label'] }: Props): React.ReactElement {
+export function UploadProgressBar({
+  progress,
+  label = translations['attachments.progressBar.label'],
+}: Props): React.ReactElement {
   const isIndeterminate = progress == null;
 
   return (

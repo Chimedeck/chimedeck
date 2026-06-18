@@ -12,16 +12,14 @@ export interface TrelloCompatTokenPayload {
 // Issues a short-lived JWT for Trello-compatible API access (default 1 hour).
 export async function issueTrelloCompatToken(
   { sub, email, scope = 'read' }: TrelloCompatTokenPayload,
-  ttlSeconds: number = 3600,
+  ttlSeconds: number = 3600
 ): Promise<string> {
   let privateKey: CryptoKey;
   try {
     privateKey = await importPKCS8(jwtConfig.privateKey, 'RS256');
   } catch (cause) {
     const reason = cause instanceof Error ? cause.message : String(cause);
-    throw new Error(
-      `Failed to issue Trello token: JWT_PRIVATE_KEY is malformed (${reason})`,
-    );
+    throw new Error(`Failed to issue Trello token: JWT_PRIVATE_KEY is malformed (${reason})`);
   }
 
   return new SignJWT({ email, scope })

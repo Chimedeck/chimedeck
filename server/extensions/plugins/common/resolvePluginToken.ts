@@ -5,21 +5,26 @@ import { jwtVerify } from 'jose';
 import { db } from '../../../common/db';
 
 export interface PluginTokenClaims {
-  sub: string;          // userId
+  sub: string; // userId
   pluginId: string;
-  boardId: string;           // short_id when available (matches client URL params); long UUID for old tokens
+  boardId: string; // short_id when available (matches client URL params); long UUID for old tokens
   boardCanonicalId?: string | undefined; // always long UUID — used for DB queries; absent on old tokens
 }
 
 export async function resolvePluginToken(
-  req: Request,
+  req: Request
 ): Promise<{ plugin: Record<string, unknown>; claims: PluginTokenClaims } | Response> {
   const authHeader = req.headers.get('Authorization') ?? '';
   const match = /^Bearer\s+(.+)$/i.exec(authHeader);
   if (!match) {
     return Response.json(
-      { error: { code: 'unauthorized', message: 'Authorization: Bearer <plugin-token> header required' } },
-      { status: 401 },
+      {
+        error: {
+          code: 'unauthorized',
+          message: 'Authorization: Bearer <plugin-token> header required',
+        },
+      },
+      { status: 401 }
     );
   }
   const token = (match[1] ?? '').trim();
@@ -34,7 +39,7 @@ export async function resolvePluginToken(
   } catch {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Malformed plugin token' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -42,7 +47,7 @@ export async function resolvePluginToken(
   if (!pluginId || typeof pluginId !== 'string') {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Plugin token missing pluginId claim' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -50,7 +55,7 @@ export async function resolvePluginToken(
   if (!plugin?.api_key) {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Invalid or inactive plugin' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -70,7 +75,7 @@ export async function resolvePluginToken(
   } catch {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Invalid or expired plugin token' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 }

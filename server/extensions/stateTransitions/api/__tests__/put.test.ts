@@ -14,10 +14,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -41,7 +46,7 @@ class QueryBuilder {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => ({ ...row }));
     for (const row of inserted) {
-      (this.store[this.tableName]).push(row);
+      this.store[this.tableName].push(row);
     }
     return {
       returning: async () => inserted.map((row) => ({ ...row })),
@@ -59,14 +64,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    let rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -121,7 +126,8 @@ mock.module('../../../../config/featureFlags', () => ({
 }));
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -134,7 +140,7 @@ mock.module('../../../auth/middlewares/authentication', () => ({
 mock.module('../../../board/middlewares/requireBoardWritable', () => ({
   requireBoardWritable: async (
     req: Request & { board?: { id: string; workspace_id: string } },
-    boardId: string,
+    boardId: string
   ) => {
     const board = dataStore.boards.find((candidate) => candidate.id === boardId) as
       | { id: string; workspace_id: string }
@@ -142,7 +148,7 @@ mock.module('../../../board/middlewares/requireBoardWritable', () => ({
     if (!board) {
       return Response.json(
         { error: { code: 'board-not-found', message: 'Board not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     req.board = { id: board.id, workspace_id: board.workspace_id };
@@ -185,7 +191,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(501);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('not-implemented');
   });
 
@@ -218,7 +224,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
 
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         boardId: string;
         enabled: boolean;
@@ -272,7 +278,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         graph: { nodes: Array<{ id: string; label: string }> };
       };
@@ -289,7 +295,13 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
       graph_data: {
         nodes: [
           { id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 10, positionY: 20 },
-          { id: 'list-deleted', listId: 'list-deleted', label: 'Deleted', positionX: 30, positionY: 20 },
+          {
+            id: 'list-deleted',
+            listId: 'list-deleted',
+            label: 'Deleted',
+            positionX: 30,
+            positionY: 20,
+          },
         ],
         edges: [
           {
@@ -314,7 +326,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         graph: {
           nodes: Array<{ id: string }>;
@@ -354,11 +366,13 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const putRes = await handlePutStateTransitions(putReq, 'board-1');
     expect(putRes.status).toBe(200);
 
-    const getReq = new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' });
+    const getReq = new Request('http://localhost/api/v1/boards/board-1/state-transitions', {
+      method: 'GET',
+    });
     const getRes = await handleGetStateTransitions(getReq, 'board-1');
     expect(getRes.status).toBe(200);
 
-    const body = await getRes.json() as {
+    const body = (await getRes.json()) as {
       data: { enabled: boolean; graph: typeof graphPayload };
     };
     expect(body.data.enabled).toBe(true);
@@ -373,7 +387,13 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
         graph: {
           nodes: [
             { id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 10, positionY: 20 },
-            { id: 'list-unknown', listId: 'list-unknown', label: 'Unknown', positionX: 30, positionY: 20 },
+            {
+              id: 'list-unknown',
+              listId: 'list-unknown',
+              label: 'Unknown',
+              positionX: 30,
+              positionY: 20,
+            },
           ],
           edges: [],
           notes: [],
@@ -384,7 +404,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(422);
 
-    const body = await res.json() as { name: string; data?: { nodeId?: string } };
+    const body = (await res.json()) as { name: string; data?: { nodeId?: string } };
     expect(body.name).toBe('state-transition-node-unknown-list');
     expect(body.data?.nodeId).toBe('list-unknown');
   });
@@ -399,7 +419,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(400);
 
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('bad-request');
   });
 
@@ -413,7 +433,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const res = await handlePutStateTransitions(req, 'board-missing');
     expect(res.status).toBe(404);
 
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('board-not-found');
   });
 
@@ -428,7 +448,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(200);
 
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: { enabled: boolean; graph: { nodes: unknown[]; edges: unknown[]; notes: unknown[] } };
     };
     expect(body.data.enabled).toBe(true);
@@ -456,7 +476,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(422);
 
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       name: string;
       data?: {
         nodeId?: string;
@@ -473,7 +493,13 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
   });
 
   it('rejects graph payloads that do not include nodes for all active board lists', async () => {
-    dataStore.lists.push({ id: 'list-3', board_id: 'board-1', title: 'Done', position: 'c', archived: false });
+    dataStore.lists.push({
+      id: 'list-3',
+      board_id: 'board-1',
+      title: 'Done',
+      position: 'c',
+      archived: false,
+    });
 
     const req = new Request('http://localhost/api/v1/boards/board-1/state-transitions', {
       method: 'PUT',
@@ -492,7 +518,7 @@ describe('PUT /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handlePutStateTransitions(req, 'board-1');
     expect(res.status).toBe(422);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       name: string;
       data?: { listId?: string };
     };

@@ -68,9 +68,16 @@ export const goalLoopDeps = {
   detectCoveredCategories,
   buildBAPersonaSystemPrompt,
   fetchCard: async (cardId: string): Promise<CardMeta | null> => {
-    const row = await db('cards').where({ id: cardId }).select('id', 'title', 'description').first();
+    const row = await db('cards')
+      .where({ id: cardId })
+      .select('id', 'title', 'description')
+      .first();
     if (!row) return null;
-    return { id: row.id as string, title: row.title as string, description: row.description as string | null };
+    return {
+      id: row.id as string,
+      title: row.title as string,
+      description: row.description as string | null,
+    };
   },
   fetchRecentUserMessages: async (sessionId: string): Promise<CardChatMessage[]> => {
     const rows = await db('card_chat_messages')
@@ -82,14 +89,12 @@ export const goalLoopDeps = {
     return (rows as CardChatMessage[]).reverse();
   },
   fetchSession: async (sessionId: string, cardId: string): Promise<CardChatSession | null> => {
-    const row = await db('card_chat_sessions')
-      .where({ id: sessionId, card_id: cardId })
-      .first();
+    const row = await db('card_chat_sessions').where({ id: sessionId, card_id: cardId }).first();
     return (row as CardChatSession | undefined) ?? null;
   },
   updateSession: async (
     sessionId: string,
-    updates: { status?: CardChatSessionStatus; quality_score?: number | null },
+    updates: { status?: CardChatSessionStatus; quality_score?: number | null }
   ): Promise<void> => {
     const now = new Date().toISOString();
     await db('card_chat_sessions')
@@ -110,18 +115,15 @@ export const goalLoopDeps = {
     // [why] Replace any existing AI-Refined Requirements block so repeated
     // refine calls don't keep appending duplicate content.
     const aiBlockStart = existing.indexOf('## AI-Refined Requirements');
-    const cleanExisting = aiBlockStart >= 0 ? existing.substring(0, aiBlockStart).trimEnd() : existing;
+    const cleanExisting =
+      aiBlockStart >= 0 ? existing.substring(0, aiBlockStart).trimEnd() : existing;
 
-    const newDescription = cleanExisting
-      ? `${cleanExisting}\n\n${block}`
-      : block;
+    const newDescription = cleanExisting ? `${cleanExisting}\n\n${block}` : block;
 
-    await db('cards')
-      .where({ id: cardId })
-      .update({
-        description: newDescription,
-        updated_at: new Date().toISOString(),
-      });
+    await db('cards').where({ id: cardId }).update({
+      description: newDescription,
+      updated_at: new Date().toISOString(),
+    });
   },
 };
 
@@ -137,7 +139,7 @@ async function runGoalLoopTurn(
   ctx: GoalLoopContext,
   conversationHistory: CardChatProviderMessage[],
   userMessages: string[],
-  previousTurns: ConversationTurn[],
+  previousTurns: ConversationTurn[]
 ): Promise<ConversationTurn> {
   const coveredCategories = goalLoopDeps.detectCoveredCategories(userMessages);
   const category = goalLoopDeps.selectNextQuestionCategory(coveredCategories);
@@ -339,7 +341,7 @@ export async function runGoalLoop({
     } catch (error) {
       console.error(
         '[cardChat/goalLoop] Turn failed:',
-        error instanceof Error ? error.message : String(error),
+        error instanceof Error ? error.message : String(error)
       );
       // [why] If a single turn fails (e.g. provider timeout), return what we have
       // so far rather than losing all progress.
@@ -352,7 +354,11 @@ export async function runGoalLoop({
   if (lastTurn) {
     // [why] Even though we didn't hit the threshold, try to extract any
     // structured content gathered so far — partial extraction is better than none.
-    await tryUpdateCardDescription(cardId, lastTurn.assistantMessage!.content, lastTurn.score.total);
+    await tryUpdateCardDescription(
+      cardId,
+      lastTurn.assistantMessage!.content,
+      lastTurn.score.total
+    );
 
     const updatedSession = await goalLoopDeps.fetchSession(sessionId, cardId);
     return {
@@ -393,7 +399,7 @@ function findWeakestCategory(score: QualityScoreBreakdown): string {
 async function tryUpdateCardDescription(
   cardId: string,
   assistantContent: string,
-  score: number,
+  score: number
 ): Promise<void> {
   try {
     const fields = extractStructuredFields(assistantContent);
@@ -404,6 +410,9 @@ async function tryUpdateCardDescription(
   } catch (err) {
     // [why] Extraction is best-effort — don't fail the whole refinement
     // loop if the card update fails. Log and continue.
-    console.error('[cardChat/goalLoop] Card description update failed:', err instanceof Error ? err.message : String(err));
+    console.error(
+      '[cardChat/goalLoop] Card description update failed:',
+      err instanceof Error ? err.message : String(err)
+    );
   }
 }

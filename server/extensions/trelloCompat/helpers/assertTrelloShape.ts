@@ -48,11 +48,55 @@ const REQUIRED_BOARD_PREF_KEYS = [
 const REQUIRED_TOP_LEVEL_KEYS: Record<TrelloEntityType, readonly string[]> = {
   'action-comment': ['id', 'idMemberCreator', 'data', 'type', 'date', 'limits', 'memberCreator'],
   'action-activity': ['id', 'idMemberCreator', 'data', 'type', 'date', 'limits', 'memberCreator'],
-  board: ['id', 'name', 'desc', 'closed', 'idOrganization', 'prefs', 'shortLink', 'shortUrl', 'url'],
-  card: ['id', 'name', 'desc', 'closed', 'idBoard', 'idList', 'idMembers', 'idLabels', 'badges', 'shortLink', 'shortUrl', 'url'],
-  list: ['id', 'name', 'idBoard', 'closed', 'pos', 'nodeId', 'softLimit', 'status', 'subscribed', 'limits'],
+  board: [
+    'id',
+    'name',
+    'desc',
+    'closed',
+    'idOrganization',
+    'prefs',
+    'shortLink',
+    'shortUrl',
+    'url',
+  ],
+  card: [
+    'id',
+    'name',
+    'desc',
+    'closed',
+    'idBoard',
+    'idList',
+    'idMembers',
+    'idLabels',
+    'badges',
+    'shortLink',
+    'shortUrl',
+    'url',
+  ],
+  list: [
+    'id',
+    'name',
+    'idBoard',
+    'closed',
+    'pos',
+    'nodeId',
+    'softLimit',
+    'status',
+    'subscribed',
+    'limits',
+  ],
   checklist: ['id', 'name', 'idBoard', 'idCard', 'pos', 'checkItems'],
-  checkitem: ['id', 'idChecklist', 'idCard', 'name', 'pos', 'state', 'due', 'dueReminder', 'idMember'],
+  checkitem: [
+    'id',
+    'idChecklist',
+    'idCard',
+    'name',
+    'pos',
+    'state',
+    'due',
+    'dueReminder',
+    'idMember',
+  ],
   member: REQUIRED_MEMBER_KEYS,
 };
 
@@ -64,7 +108,11 @@ function missingKeys(payload: Record<string, unknown>, requiredKeys: readonly st
   return requiredKeys.filter((key) => !(key in payload));
 }
 
-function assertString(entity: TrelloEntityType, payload: Record<string, unknown>, key: string): void {
+function assertString(
+  entity: TrelloEntityType,
+  payload: Record<string, unknown>,
+  key: string
+): void {
   if (typeof payload[key] !== 'string') {
     throw new Error(`[${entity}] ${key} must be a string`);
   }

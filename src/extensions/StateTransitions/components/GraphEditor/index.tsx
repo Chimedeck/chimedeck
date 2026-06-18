@@ -12,10 +12,7 @@ import {
 import type { List } from '~/extensions/List/api';
 import { deleteList } from '~/extensions/List/api';
 import { apiClient } from '~/common/api/client';
-import {
-  useCopyStateTransitionsMutation,
-  useCreateBoardListMutation,
-} from '../../api';
+import { useCopyStateTransitionsMutation, useCreateBoardListMutation } from '../../api';
 import GraphEditorHeader from './GraphEditorHeader';
 import GraphCanvas from './GraphCanvas';
 import AddColumnModal from './AddColumnModal';
@@ -55,7 +52,9 @@ export function buildPendingColumnDeletionSelection({
     nodeIds: selectedNodes.map((node) => node.id),
     edgeIds: selectedEdges.map((edge) => edge.id),
     listNodeIds: listNodes.map((node) => node.id),
-    listTitles: listNodes.map((node) => (typeof node.data.label === 'string' ? node.data.label : node.id)),
+    listTitles: listNodes.map((node) =>
+      typeof node.data.label === 'string' ? node.data.label : node.id
+    ),
   };
 }
 
@@ -75,12 +74,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return maybeError.data?.data?.message ?? maybeError.message ?? fallback;
 }
 
-const GraphEditor = ({
-  boardId,
-  boardTitle,
-  open,
-  onClose,
-}: Props) => {
+const GraphEditor = ({ boardId, boardTitle, open, onClose }: Props) => {
   const dispatch = useAppDispatch();
   const featureFlagsStatus = useAppSelector(selectFeatureFlagsStatus);
   const board = useAppSelector(selectBoard);
@@ -91,8 +85,9 @@ const GraphEditor = ({
     return boardWithWorkspace?.workspaceId ?? boardWithWorkspace?.workspace_id ?? null;
   }, [board]);
   const lists = useMemo<List[]>(
-    () => listOrder.map((listId) => listsById[listId]).filter((list): list is List => Boolean(list)),
-    [listOrder, listsById],
+    () =>
+      listOrder.map((listId) => listsById[listId]).filter((list): list is List => Boolean(list)),
+    [listOrder, listsById]
   );
 
   const {
@@ -114,13 +109,20 @@ const GraphEditor = ({
   const [enabled, setEnabled] = useState(false);
   const [toggleSaving, setToggleSaving] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
-  const [activeModal, setActiveModal] = useState<'add-column' | 'delete-column' | 'copy-transitions' | null>(null);
+  const [activeModal, setActiveModal] = useState<
+    'add-column' | 'delete-column' | 'copy-transitions' | null
+  >(null);
   const [addColumnError, setAddColumnError] = useState<string | null>(null);
   const [deleteColumnError, setDeleteColumnError] = useState<string | null>(null);
   const [copyTransitionsError, setCopyTransitionsError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<EditorToast[]>([]);
-  const [pendingColumnPosition, setPendingColumnPosition] = useState<{ x: number; y: number } | null>(null);
-  const [pendingColumnDeletion, setPendingColumnDeletion] = useState<PendingColumnDeletion | null>(null);
+  const [pendingColumnPosition, setPendingColumnPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [pendingColumnDeletion, setPendingColumnDeletion] = useState<PendingColumnDeletion | null>(
+    null
+  );
   const [deleteColumnBusy, setDeleteColumnBusy] = useState(false);
 
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -130,9 +132,12 @@ const GraphEditor = ({
   const addToast = useCallback((toast: Omit<EditorToast, 'id'>) => {
     const id = globalThis.crypto.randomUUID();
     setToasts((current) => [...current, { ...toast, id }]);
-    globalThis.window.setTimeout(() => {
-      setToasts((current) => current.filter((entry) => entry.id !== id));
-    }, toast.variant === 'error' ? 6000 : 4000);
+    globalThis.window.setTimeout(
+      () => {
+        setToasts((current) => current.filter((entry) => entry.id !== id));
+      },
+      toast.variant === 'error' ? 6000 : 4000
+    );
   }, []);
 
   useEffect(() => {
@@ -225,8 +230,8 @@ const GraphEditor = ({
       if (event.key !== 'Tab' || !dialogRef.current) return;
       const focusableElements = Array.from(
         dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
-        ),
+          'button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )
       );
 
       if (focusableElements.length === 0) return;
@@ -249,31 +254,39 @@ const GraphEditor = ({
     };
   }, [activeModal, attemptClose, open]);
 
-  const handleToggle = useCallback((next: boolean) => {
-    setEnabled(next);
-    setToggleError(null);
-    setToggleSaving(true);
+  const handleToggle = useCallback(
+    (next: boolean) => {
+      setEnabled(next);
+      setToggleError(null);
+      setToggleSaving(true);
 
-    if (toggleTimeoutRef.current !== null) {
-      window.clearTimeout(toggleTimeoutRef.current);
-    }
+      if (toggleTimeoutRef.current !== null) {
+        window.clearTimeout(toggleTimeoutRef.current);
+      }
 
-    toggleTimeoutRef.current = window.setTimeout(() => {
-      void persistTransitions({ enabled: next, graph: currentGraph })
-        .catch((error: unknown) => {
-          setToggleError(getErrorMessage(error, translations['StateTransitions.toggleSaveFailed']));
-        })
-        .finally(() => {
-          setToggleSaving(false);
-        });
-    }, TOGGLE_PERSIST_DEBOUNCE_MS);
-  }, [currentGraph, persistTransitions]);
+      toggleTimeoutRef.current = window.setTimeout(() => {
+        void persistTransitions({ enabled: next, graph: currentGraph })
+          .catch((error: unknown) => {
+            setToggleError(
+              getErrorMessage(error, translations['StateTransitions.toggleSaveFailed'])
+            );
+          })
+          .finally(() => {
+            setToggleSaving(false);
+          });
+      }, TOGGLE_PERSIST_DEBOUNCE_MS);
+    },
+    [currentGraph, persistTransitions]
+  );
 
-  useEffect(() => () => {
-    if (toggleTimeoutRef.current !== null) {
-      window.clearTimeout(toggleTimeoutRef.current);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (toggleTimeoutRef.current !== null) {
+        window.clearTimeout(toggleTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   const openAddColumnModal = useCallback((x: number, y: number) => {
     setPendingColumnPosition({ x, y });
@@ -281,19 +294,26 @@ const GraphEditor = ({
     setActiveModal('add-column');
   }, []);
 
-  const handleCreateColumn = useCallback(async (title: string) => {
-    if (!pendingColumnPosition) return;
-    setAddColumnError(null);
-    try {
-      const created = await createBoardList({ boardId, title }).unwrap();
-      dispatch(boardSliceActions.addList({ list: created }));
-      addColumnNode({ id: created.id, title: created.title }, pendingColumnPosition.x, pendingColumnPosition.y);
-      setActiveModal(null);
-      setPendingColumnPosition(null);
-    } catch (error: unknown) {
-      setAddColumnError(getErrorMessage(error, translations['StateTransitions.addColumnFailed']));
-    }
-  }, [addColumnNode, boardId, createBoardList, dispatch, pendingColumnPosition]);
+  const handleCreateColumn = useCallback(
+    async (title: string) => {
+      if (!pendingColumnPosition) return;
+      setAddColumnError(null);
+      try {
+        const created = await createBoardList({ boardId, title }).unwrap();
+        dispatch(boardSliceActions.addList({ list: created }));
+        addColumnNode(
+          { id: created.id, title: created.title },
+          pendingColumnPosition.x,
+          pendingColumnPosition.y
+        );
+        setActiveModal(null);
+        setPendingColumnPosition(null);
+      } catch (error: unknown) {
+        setAddColumnError(getErrorMessage(error, translations['StateTransitions.addColumnFailed']));
+      }
+    },
+    [addColumnNode, boardId, createBoardList, dispatch, pendingColumnPosition]
+  );
 
   const requestDeleteSelection = useCallback(() => {
     const pendingDeletion = buildPendingColumnDeletionSelection({ selectedNodes, selectedEdges });
@@ -316,7 +336,7 @@ const GraphEditor = ({
       await Promise.all(
         pendingColumnDeletion.listNodeIds.map(async (listId) => {
           await deleteList({ api: apiClient, listId, confirm: true });
-        }),
+        })
       );
       deleteElementsByIds({
         nodeIds: pendingColumnDeletion.nodeIds,
@@ -325,7 +345,9 @@ const GraphEditor = ({
       setActiveModal(null);
       setPendingColumnDeletion(null);
     } catch (error: unknown) {
-      setDeleteColumnError(getErrorMessage(error, translations['StateTransitions.deleteColumnFailed']));
+      setDeleteColumnError(
+        getErrorMessage(error, translations['StateTransitions.deleteColumnFailed'])
+      );
     } finally {
       setDeleteColumnBusy(false);
     }
@@ -495,23 +517,29 @@ const GraphEditor = ({
             if (response.metadata.skippedNodes > 0) {
               addToast({
                 variant: 'info',
-                message: translations['StateTransitions.copyPartialToast']
-                  .replace('{count}', String(response.metadata.skippedNodes)),
+                message: translations['StateTransitions.copyPartialToast'].replace(
+                  '{count}',
+                  String(response.metadata.skippedNodes)
+                ),
                 href: targetPath,
                 linkLabel: translations['StateTransitions.copyToastOpenGraphEditor'],
               });
             } else {
               addToast({
                 variant: 'success',
-                message: translations['StateTransitions.copySuccessToast']
-                  .replace('{boardName}', targetBoard.title),
+                message: translations['StateTransitions.copySuccessToast'].replace(
+                  '{boardName}',
+                  targetBoard.title
+                ),
                 href: targetPath,
                 linkLabel: translations['StateTransitions.copyToastOpenGraphEditor'],
               });
             }
             setActiveModal(null);
           } catch (error: unknown) {
-            setCopyTransitionsError(getErrorMessage(error, translations['StateTransitions.copyModalCopyFailed']));
+            setCopyTransitionsError(
+              getErrorMessage(error, translations['StateTransitions.copyModalCopyFailed'])
+            );
           }
         }}
       />

@@ -27,9 +27,9 @@ async function resolveCard({
     .join('lists', 'cards.list_id', 'lists.id')
     .join('boards', 'lists.board_id', 'boards.id')
     .leftJoin('board_members', (join) => {
-      join.on('board_members.board_id', 'boards.id').andOn(
-        db.raw('board_members.user_id = ?', [userId]),
-      );
+      join
+        .on('board_members.board_id', 'boards.id')
+        .andOn(db.raw('board_members.user_id = ?', [userId]));
     })
     .where('cards.id', cardId)
     .where((qb) => {
@@ -47,7 +47,7 @@ async function resolveCard({
 
 export async function offlineDraftsRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
   // Match /api/v1/cards/:cardId/drafts
   const draftListMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/drafts$/);
@@ -101,7 +101,7 @@ async function handleListDrafts(req: Request, cardId: string): Promise<Response>
 async function handleUpsertDraft(
   req: Request,
   cardId: string,
-  draftType: string,
+  draftType: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -110,8 +110,11 @@ async function handleUpsertDraft(
 
   if (!VALID_DRAFT_TYPES.has(draftType as DraftType)) {
     return Response.json(
-      { name: 'invalid-draft-type', data: { message: `draft type must be one of: description, comment` } },
-      { status: 400 },
+      {
+        name: 'invalid-draft-type',
+        data: { message: `draft type must be one of: description, comment` },
+      },
+      { status: 400 }
     );
   }
 
@@ -126,7 +129,7 @@ async function handleUpsertDraft(
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be valid JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -136,15 +139,18 @@ async function handleUpsertDraft(
 
   if (!intent || !VALID_INTENTS.has(intent as 'editing' | 'save_pending' | 'submit_pending')) {
     return Response.json(
-      { name: 'invalid-intent', data: { message: `intent must be one of: editing, save_pending, submit_pending` } },
-      { status: 400 },
+      {
+        name: 'invalid-intent',
+        data: { message: `intent must be one of: editing, save_pending, submit_pending` },
+      },
+      { status: 400 }
     );
   }
 
   if (!clientUpdatedAt || typeof clientUpdatedAt !== 'string') {
     return Response.json(
       { name: 'missing-client-updated-at', data: { message: 'client_updated_at is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -177,7 +183,7 @@ async function handleUpsertDraft(
 async function handleDeleteDraft(
   req: Request,
   cardId: string,
-  draftType: string,
+  draftType: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -186,8 +192,11 @@ async function handleDeleteDraft(
 
   if (!VALID_DRAFT_TYPES.has(draftType as DraftType)) {
     return Response.json(
-      { name: 'invalid-draft-type', data: { message: `draft type must be one of: description, comment` } },
-      { status: 400 },
+      {
+        name: 'invalid-draft-type',
+        data: { message: `draft type must be one of: description, comment` },
+      },
+      { status: 400 }
     );
   }
 

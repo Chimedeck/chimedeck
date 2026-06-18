@@ -34,7 +34,9 @@ export const useBoardChatHistory = ({
   refreshKey?: number;
 }): UseBoardChatHistoryResult => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [state, setState] = useState<HistoryState>(enabled && boardId && sessionId ? 'loading' : 'empty');
+  const [state, setState] = useState<HistoryState>(
+    enabled && boardId && sessionId ? 'loading' : 'empty'
+  );
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {

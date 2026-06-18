@@ -15,7 +15,9 @@ const TIER_ID_MAP: Record<SubscriptionTier, keyof typeof SUBSCRIPTION_TIERS> = {
   unlimited: 'enterprise',
 };
 
-const FREE_TIER_QUOTAS = SUBSCRIPTION_TIERS.personal as NonNullable<(typeof SUBSCRIPTION_TIERS)[string]>;
+const FREE_TIER_QUOTAS = SUBSCRIPTION_TIERS.personal as NonNullable<
+  (typeof SUBSCRIPTION_TIERS)[string]
+>;
 
 export interface WorkspaceEntitlements {
   [FEATURE_KEYS.workspace.maxWorkspaces]: number | 'unlimited';
@@ -63,7 +65,7 @@ export interface WorkspaceFeatureEntitlements {
  * Returns { tier, features } where features is the boolean flag map for that tier.
  */
 export async function resolveWorkspaceEntitlements(
-  workspaceId: string,
+  workspaceId: string
 ): Promise<WorkspaceFeatureEntitlements> {
   const tier = await getCurrentTier(workspaceId);
   const tierName: keyof typeof SUBSCRIPTION_TIERS = TIER_ID_MAP[tier] ?? 'personal';

@@ -67,13 +67,16 @@ export interface RateLimitContext {
 }
 
 const rateLimiterClient = env.REDIS_URL
-  ? (new Redis(env.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 3 }) as unknown as RateLimiterClient)
+  ? (new Redis(env.REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 3,
+    }) as unknown as RateLimiterClient)
   : null;
 
 async function checkLimit(
   client: RateLimiterClient,
   key: string,
-  limit: number,
+  limit: number
 ): Promise<RateLimitResult> {
   const count = await client.eval(LUA_SCRIPT, 1, key, String(WINDOW_SECONDS));
   if (count > limit) {
@@ -88,7 +91,7 @@ async function checkLimit(
 export function buildLegacyRateLimiterKey(
   routeClass: LegacyRouteClass,
   userId: string | undefined,
-  ip: string,
+  ip: string
 ): string {
   const identifier = userId ?? ip;
   const epoch = windowEpoch();
@@ -97,7 +100,7 @@ export function buildLegacyRateLimiterKey(
 
 export function buildWorkspaceRateLimiterKey(
   workspaceId: string,
-  routeClass: WorkspaceRouteClass,
+  routeClass: WorkspaceRouteClass
 ): string {
   const epoch = windowEpoch();
   return `rl:ws:${workspaceId}:${routeClass}:${epoch}`;
@@ -105,7 +108,7 @@ export function buildWorkspaceRateLimiterKey(
 
 export async function workspaceLimitFor(
   workspaceId: string,
-  routeClass: WorkspaceRouteClass,
+  routeClass: WorkspaceRouteClass
 ): Promise<{ tier: SubscriptionTier; limit: QuotaValue }> {
   const tier = await getCurrentTier(workspaceId);
   const entitlements = resolveEntitlements(tier);
@@ -141,14 +144,14 @@ function rateLimitResponse(args: {
     {
       status: 429,
       headers: { 'Retry-After': String(args.retryAfterSeconds) },
-    },
+    }
   );
 }
 
 export async function applyRateLimit(
   req: Request,
   context: RateLimitContext = {},
-  client: RateLimiterClient | null = rateLimiterClient,
+  client: RateLimiterClient | null = rateLimiterClient
 ): Promise<Response | null> {
   if (!env.RATE_LIMIT_ENABLED || !client) return null;
 
@@ -158,7 +161,12 @@ export async function applyRateLimit(
   const identifier = context.userId ?? ip;
 
   try {
-    if (env.SUBSCRIPTIONS_ENABLED && context.workspaceId && legacyClass !== 'auth' && legacyClass !== 'upload') {
+    if (
+      env.SUBSCRIPTIONS_ENABLED &&
+      context.workspaceId &&
+      legacyClass !== 'auth' &&
+      legacyClass !== 'upload'
+    ) {
       const workspaceClass = classifyWorkspaceClass(req.method);
       const { tier, limit } = await workspaceLimitFor(context.workspaceId, workspaceClass);
 

@@ -48,7 +48,9 @@ describe('messageQueue', () => {
 
   it(`calls overflow handler and clears queue when enqueue exceeds ${MAX_QUEUE_SIZE}`, () => {
     let overflowBoardId: string | null = null;
-    messageQueue.setOverflowHandler((bid) => { overflowBoardId = bid; });
+    messageQueue.setOverflowHandler((bid) => {
+      overflowBoardId = bid;
+    });
 
     // Fill to max
     for (let i = 0; i < MAX_QUEUE_SIZE; i++) {

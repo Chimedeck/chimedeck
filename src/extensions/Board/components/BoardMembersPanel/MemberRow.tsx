@@ -26,9 +26,7 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
   const label = member.display_name ?? member.email;
   const [avatarFailed, setAvatarFailed] = useState(false);
   const avatarUrl = avatarFailed ? null : member.avatar_url;
-  const removeTitle = isLastAdmin
-    ? 'Cannot remove the last board admin'
-    : `Remove ${label}`;
+  const removeTitle = isLastAdmin ? 'Cannot remove the last board admin' : `Remove ${label}`;
 
   return (
     <li className="flex items-center gap-3 py-2">
@@ -42,7 +40,9 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
             src={avatarUrl}
             alt={label}
             className="h-full w-full object-cover"
-            onError={() => { setAvatarFailed(true); }}
+            onError={() => {
+              setAvatarFailed(true);
+            }}
           />
         ) : (
           initials(member)
@@ -52,16 +52,16 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
       {/* Name / email */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-base">{label}</p>
-        {member.display_name && (
-          <p className="truncate text-xs text-muted">{member.email}</p>
-        )}
+        {member.display_name && <p className="truncate text-xs text-muted">{member.email}</p>}
       </div>
 
       {/* Role selector — only editable by admins/owners */}
       {canEdit ? (
         <select
           value={member.role}
-          onChange={(e) => { onRoleChange(member.user_id, e.target.value as BoardMemberRole); }}
+          onChange={(e) => {
+            onRoleChange(member.user_id, e.target.value as BoardMemberRole);
+          }}
           className="rounded border border-border bg-bg-overlay px-2 py-1 text-xs text-base focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label={`Change role for ${label}`}
         >
@@ -72,7 +72,9 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
           ))}
         </select>
       ) : (
-        <span className="text-xs text-muted">{member.role.charAt(0) + member.role.slice(1).toLowerCase()}</span>
+        <span className="text-xs text-muted">
+          {member.role.charAt(0) + member.role.slice(1).toLowerCase()}
+        </span>
       )}
 
       {/* Remove button — disabled for last admin */}
@@ -83,9 +85,7 @@ const MemberRow = ({ member, isLastAdmin, canEdit, onRoleChange, onRemove }: Pro
           title={removeTitle}
           onClick={() => !isLastAdmin && onRemove(member.user_id)}
           className={`ml-1 rounded p-1 text-muted transition-colors ${
-            isLastAdmin
-              ? 'cursor-not-allowed opacity-40'
-              : 'hover:bg-bg-overlay hover:text-danger'
+            isLastAdmin ? 'cursor-not-allowed opacity-40' : 'hover:bg-bg-overlay hover:text-danger'
           }`}
           aria-label={removeTitle}
         >

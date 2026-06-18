@@ -42,9 +42,11 @@ export const fetchWorkspacesThunk = createAppAsyncThunk(
   }
 );
 
-function isApiError(
-  err: unknown,
-): err is { response: { data: { error?: { code?: string; message?: string; data?: CreateWorkspaceError['data'] } } } } {
+function isApiError(err: unknown): err is {
+  response: {
+    data: { error?: { code?: string; message?: string; data?: CreateWorkspaceError['data'] } };
+  };
+} {
   return (
     typeof err === 'object' &&
     err !== null &&
@@ -136,5 +138,8 @@ export const selectActiveWorkspace = createSelector(
   shellState,
   (s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId) ?? null
 );
-export const selectCreateWorkspaceInProgress = createSelector(shellState, (s) => s.createInProgress);
+export const selectCreateWorkspaceInProgress = createSelector(
+  shellState,
+  (s) => s.createInProgress
+);
 export const selectCreateWorkspaceError = createSelector(shellState, (s) => s.createError);

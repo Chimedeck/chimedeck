@@ -13,49 +13,49 @@
 import { env } from '../../../config/env';
 import { decryptSecret } from '../../../common/crypto';
 import { getInstallationWebhookSecret } from '../mods/installations';
-import {
-  GITHUB_SIGNATURE_HEADER,
-  verifyGitHubWebhookSignature,
-} from '../mods/verifySignature';
+import { GITHUB_SIGNATURE_HEADER, verifyGitHubWebhookSignature } from '../mods/verifySignature';
 import { dispatchGitHubEvent } from '../mods/dispatch';
 
 const EVENT_HEADER = 'x-github-event';
 
 function notImplemented(): Response {
   return new Response(
-    JSON.stringify({ name: 'not-implemented', data: { message: 'GitHub webhooks are not enabled' } }),
-    { status: 501, headers: { 'Content-Type': 'application/json' } },
+    JSON.stringify({
+      name: 'not-implemented',
+      data: { message: 'GitHub webhooks are not enabled' },
+    }),
+    { status: 501, headers: { 'Content-Type': 'application/json' } }
   );
 }
 
 function unauthorized(): Response {
   return new Response(
     JSON.stringify({ name: 'unauthorized', data: { message: 'Invalid signature' } }),
-    { status: 401, headers: { 'Content-Type': 'application/json' } },
+    { status: 401, headers: { 'Content-Type': 'application/json' } }
   );
 }
 
 function badRequest(message: string): Response {
-  return new Response(
-    JSON.stringify({ name: 'bad-request', data: { message } }),
-    { status: 400, headers: { 'Content-Type': 'application/json' } },
-  );
+  return new Response(JSON.stringify({ name: 'bad-request', data: { message } }), {
+    status: 400,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 function accepted(): Response {
-  return new Response(
-    JSON.stringify({ data: { ok: true } }),
-    { status: 202, headers: { 'Content-Type': 'application/json' } },
-  );
+  return new Response(JSON.stringify({ data: { ok: true } }), {
+    status: 202,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 export async function handleGitHubWebhook(req: Request): Promise<Response> {
   if (!env.GITHUB_WEBHOOKS_ENABLED) return notImplemented();
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ name: 'method-not-allowed' }),
-      { status: 405, headers: { 'Content-Type': 'application/json', Allow: 'POST' } },
-    );
+    return new Response(JSON.stringify({ name: 'method-not-allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', Allow: 'POST' },
+    });
   }
 
   // [why] req.text() reads the raw bytes — critical for HMAC verification.
@@ -83,10 +83,12 @@ export async function handleGitHubWebhook(req: Request): Promise<Response> {
     const encrypted = await getInstallationWebhookSecret({ installationId });
     if (encrypted) {
       try {
-        candidateSecrets.push(decryptSecret({
-          ciphertext: encrypted,
-          hexKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
-        }));
+        candidateSecrets.push(
+          decryptSecret({
+            ciphertext: encrypted,
+            hexKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+          })
+        );
       } catch {
         // Bad ciphertext — log and fall through to the env fallback.
       }

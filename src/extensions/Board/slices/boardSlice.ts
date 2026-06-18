@@ -43,11 +43,8 @@ const initialState: BoardState = {
 export const fetchBoardDataThunk = createAppAsyncThunk(
   'board/fetchData',
   async (
-    {
-      boardId,
-      initialCardsPerList,
-    }: { boardId: string; initialCardsPerList?: number },
-    { extra },
+    { boardId, initialCardsPerList }: { boardId: string; initialCardsPerList?: number },
+    { extra }
   ) => {
     return getBoard({
       api: (extra as { api: { get: <T>(url: string) => Promise<T> } }).api,
@@ -57,7 +54,7 @@ export const fetchBoardDataThunk = createAppAsyncThunk(
           ? initialCardsPerList
           : INITIAL_CARDS_PER_LIST,
     });
-  },
+  }
 );
 
 export const fetchListCardsBatchThunk = createAppAsyncThunk(
@@ -68,7 +65,7 @@ export const fetchListCardsBatchThunk = createAppAsyncThunk(
       limit = DEFAULT_HYDRATION_BATCH_SIZE,
       offset,
     }: { listId: string; limit?: number; offset: number },
-    { extra },
+    { extra }
   ) => {
     const response = await listCardsByListBatch({
       api: (extra as { api: { get: <T>(url: string) => Promise<T> } }).api,
@@ -82,7 +79,7 @@ export const fetchListCardsBatchThunk = createAppAsyncThunk(
       data: response.data as Card[],
       metadata: response.metadata,
     };
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -96,7 +93,7 @@ const boardSlice = createSlice({
       state.dragSnapshot = {
         listOrder: [...state.listOrder],
         cardsByList: Object.fromEntries(
-          Object.entries(state.cardsByList).map(([k, v]) => [k, [...v]]),
+          Object.entries(state.cardsByList).map(([k, v]) => [k, [...v]])
         ),
       };
     },
@@ -133,7 +130,7 @@ const boardSlice = createSlice({
         fromListId: string;
         toListId: string;
         newIndex: number;
-      }>,
+      }>
     ) {
       const { cardId, fromListId, toListId, newIndex } = action.payload;
 
@@ -154,10 +151,7 @@ const boardSlice = createSlice({
     },
 
     /** Reorder lists optimistically */
-    applyOptimisticListReorder(
-      state,
-      action: PayloadAction<{ newOrder: string[] }>,
-    ) {
+    applyOptimisticListReorder(state, action: PayloadAction<{ newOrder: string[] }>) {
       state.listOrder = action.payload.newOrder;
     },
 
@@ -167,10 +161,7 @@ const boardSlice = createSlice({
     },
 
     /** Add a newly created card to the local state */
-    addCard(
-      state,
-      action: PayloadAction<{ card: Card }>,
-    ) {
+    addCard(state, action: PayloadAction<{ card: Card }>) {
       const { card } = action.payload;
       state.cards[card.id] = card;
       const listCards = state.cardsByList[card.list_id] ?? [];
@@ -240,7 +231,7 @@ const boardSlice = createSlice({
     /** Optimistically update a single field on a card (e.g. due_date from CalendarView drag) */
     optimisticUpdateCardField(
       state,
-      action: PayloadAction<{ cardId: string; field: keyof Card; value: unknown }>,
+      action: PayloadAction<{ cardId: string; field: keyof Card; value: unknown }>
     ) {
       const { cardId, field, value } = action.payload;
       if (state.cards[cardId]) {
@@ -258,7 +249,10 @@ const boardSlice = createSlice({
     /** Move a card between lists without saving an undo snapshot (WS events) */
     remoteCardMove(
       state,
-      action: PayloadAction<{ card: { id: string; list_id: string; position: string }; fromListId: string }>,
+      action: PayloadAction<{
+        card: { id: string; list_id: string; position: string };
+        fromListId: string;
+      }>
     ) {
       const { card, fromListId } = action.payload;
 
@@ -287,10 +281,7 @@ const boardSlice = createSlice({
     },
 
     /** Sort cards in a single list by a selected user criterion. */
-    sortCardsInList(
-      state,
-      action: PayloadAction<{ listId: string; sortBy: ListSortBy }>,
-    ) {
+    sortCardsInList(state, action: PayloadAction<{ listId: string; sortBy: ListSortBy }>) {
       const { listId, sortBy } = action.payload;
       const listCardIds = state.cardsByList[listId];
       if (!listCardIds || listCardIds.length < 2) return;
@@ -344,7 +335,7 @@ const boardSlice = createSlice({
       action: PayloadAction<{
         listId: string;
         cards: Array<{ id: string; list_id: string; position: string }>;
-      }>,
+      }>
     ) {
       const { listId, cards } = action.payload;
       state.cardsByList[listId] = cards.map((card) => card.id);
@@ -473,8 +464,7 @@ type StateWithBoard = { board: BoardState };
 export const selectBoard = (state: unknown) => (state as StateWithBoard).board.board;
 export const selectListOrder = (state: unknown) => (state as StateWithBoard).board.listOrder;
 export const selectLists = (state: unknown) => (state as StateWithBoard).board.lists;
-export const selectCardsByList = (state: unknown) =>
-  (state as StateWithBoard).board.cardsByList;
+export const selectCardsByList = (state: unknown) => (state as StateWithBoard).board.cardsByList;
 export const selectCards = (state: unknown) => (state as StateWithBoard).board.cards;
 export const selectBoardStatus = (state: unknown) => (state as StateWithBoard).board.status;
 export const selectListHydration = (state: unknown) =>
@@ -485,7 +475,5 @@ export const makeSelectCardIdsByListId = (listId: string) =>
 
 export const makeSelectCardsForListId = (listId: string) =>
   createSelector([makeSelectCardIdsByListId(listId), selectCards], (cardIds, cardsById) =>
-    cardIds
-      .map((cardId) => cardsById[cardId])
-      .filter((card): card is Card => card !== undefined),
+    cardIds.map((cardId) => cardsById[cardId]).filter((card): card is Card => card !== undefined)
   );

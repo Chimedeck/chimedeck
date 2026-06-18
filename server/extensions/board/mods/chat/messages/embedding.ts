@@ -2,10 +2,7 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../../../common/db';
 import { getEmbeddingProviderConfig } from '../providerConfig';
-import type {
-  BoardChatEmbedding,
-  BoardChatMessageVector,
-} from '../../../types';
+import type { BoardChatEmbedding, BoardChatMessageVector } from '../../../types';
 
 interface EmbeddingApiResponse {
   data?: Array<{ embedding?: number[] }>;
@@ -63,18 +60,21 @@ export async function persistBoardChatMessageVector({
   embedding: BoardChatEmbedding;
 }): Promise<BoardChatMessageVector> {
   const now = new Date().toISOString();
-  const [vector] = await db('board_chat_message_vectors').insert({
-    id: randomUUID(),
-    message_id: messageId,
-    board_id: boardId,
-    provider: embedding.provider,
-    model: embedding.model,
-    dimensions: embedding.dimensions,
-    // Postgres jsonb needs a JSON value, not a bare JS array, when inserted through Knex.
-    embedding: JSON.stringify(embedding.values),
-    created_at: now,
-    updated_at: now,
-  }, ['*']);
+  const [vector] = await db('board_chat_message_vectors').insert(
+    {
+      id: randomUUID(),
+      message_id: messageId,
+      board_id: boardId,
+      provider: embedding.provider,
+      model: embedding.model,
+      dimensions: embedding.dimensions,
+      // Postgres jsonb needs a JSON value, not a bare JS array, when inserted through Knex.
+      embedding: JSON.stringify(embedding.values),
+      created_at: now,
+      updated_at: now,
+    },
+    ['*']
+  );
 
   return vector as BoardChatMessageVector;
 }

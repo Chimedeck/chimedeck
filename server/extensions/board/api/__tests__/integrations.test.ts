@@ -9,11 +9,14 @@ type DataStore = {
 class QueryBuilder {
   private filters: Array<(row: Row) => boolean> = [];
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
     this.filters.push((row) =>
-      Object.entries(criteria).every(([key, value]) => row[key] === value),
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
     );
     return this;
   }
@@ -30,14 +33,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return Promise.resolve(this.executeSync()).then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    const rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    const rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
     return clone ? rows.map((row) => ({ ...row })) : rows;
   }
@@ -50,20 +53,23 @@ let writeActivityCalls: Array<Record<string, unknown>> = [];
 
 function resetStore(): DataStore {
   return {
-    boards: [{
-      id: 'board-1',
-      workspace_id: 'ws-1',
-      title: 'Board',
-      state: 'ACTIVE',
-      github_project_url: null,
-      created_at: '2026-01-01T00:00:00.000Z',
-    }],
+    boards: [
+      {
+        id: 'board-1',
+        workspace_id: 'ws-1',
+        title: 'Board',
+        state: 'ACTIVE',
+        github_project_url: null,
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
     memberships: [{ user_id: 'user-1', workspace_id: 'ws-1', role: 'ADMIN' }],
   };
 }
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -88,7 +94,10 @@ mock.module('../../../board/middlewares/requireBoardAccess', () => ({
 }));
 
 mock.module('../../../../middlewares/permissionManager', () => ({
-  requireWorkspaceMembership: async (req: Request & { callerRole?: string; workspaceId?: string }, workspaceId: string) => {
+  requireWorkspaceMembership: async (
+    req: Request & { callerRole?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     if (!callerRole) {
       return Response.json({ name: 'insufficient-role' }, { status: 403 });
     }
@@ -134,11 +143,11 @@ describe('GET /api/v1/boards/:boardId/settings/integrations', () => {
 
     const res = await handleGetBoardIntegrations(
       new Request('http://localhost/api/v1/boards/board-1/settings/integrations'),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { github_project_url: string | null } };
+    const body = (await res.json()) as { data: { github_project_url: string | null } };
     expect(body.data.github_project_url).toBe('https://github.com/orgs/journeyh/projects/12');
   });
 
@@ -147,7 +156,7 @@ describe('GET /api/v1/boards/:boardId/settings/integrations', () => {
 
     const res = await handleGetBoardIntegrations(
       new Request('http://localhost/api/v1/boards/board-1/settings/integrations'),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
@@ -160,20 +169,32 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
       new Request('http://localhost/api/v1/boards/board-1/settings/integrations', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'User-Agent': 'bun-test' },
-        body: JSON.stringify({ github_project_url: 'https://github.com/orgs/JourneyHorizon/projects/42/' }),
+        body: JSON.stringify({
+          github_project_url: 'https://github.com/orgs/JourneyHorizon/projects/42/',
+        }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { github_project_url: string | null } };
+    const body = (await res.json()) as { data: { github_project_url: string | null } };
     expect(body.data.github_project_url).toBe('https://github.com/orgs/JourneyHorizon/projects/42');
-    expect(dataStore.boards[0]!.github_project_url).toBe('https://github.com/orgs/JourneyHorizon/projects/42');
+    expect(dataStore.boards[0]!.github_project_url).toBe(
+      'https://github.com/orgs/JourneyHorizon/projects/42'
+    );
 
     expect(writeActivityCalls).toHaveLength(1);
     const payload = writeActivityCalls[0]!.payload as {
       previous: { hash: string | null };
-      next: { hash: string; reference: { scope: string; owner: string; projectNumber: number; repository: string | null } };
+      next: {
+        hash: string;
+        reference: {
+          scope: string;
+          owner: string;
+          projectNumber: number;
+          repository: string | null;
+        };
+      };
     };
     expect(writeActivityCalls[0]!.action).toBe('board_github_project_url_updated');
     expect(payload.previous.hash).toBeNull();
@@ -190,9 +211,11 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
       new Request('http://localhost/api/v1/boards/board-1/settings/integrations', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ github_project_url: 'https://github.com/octo-org/octo-repo/projects/7' }),
+        body: JSON.stringify({
+          github_project_url: 'https://github.com/octo-org/octo-repo/projects/7',
+        }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
   });
@@ -203,9 +226,11 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         // Three-segment path is ambiguous — neither project nor bare repo.
-        body: JSON.stringify({ github_project_url: 'https://github.com/journeyh/not-a-project/extra' }),
+        body: JSON.stringify({
+          github_project_url: 'https://github.com/journeyh/not-a-project/extra',
+        }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(422);
@@ -221,7 +246,7 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ github_project_url: 'https://github.com/users/demo/projects/1' }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(memberRes.status).toBe(403);
 
@@ -232,7 +257,7 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ github_project_url: 'https://github.com/users/demo/projects/1' }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(guestRes.status).toBe(403);
   });
@@ -246,7 +271,7 @@ describe('PATCH /api/v1/boards/:boardId/settings/integrations', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ github_project_url: 'https://github.com/users/demo/projects/1/' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);

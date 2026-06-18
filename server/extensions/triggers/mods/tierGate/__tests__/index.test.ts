@@ -10,10 +10,7 @@ vi.mock('../../../../subscription/common/entitlements', () => ({
   resolveWorkspaceEntitlements: mockResolveWorkspaceEntitlements,
 }));
 
-const tierWithAgenticWorkflow = (
-  tier: SubscriptionTier,
-  agenticWorkflow: boolean,
-) => ({
+const tierWithAgenticWorkflow = (tier: SubscriptionTier, agenticWorkflow: boolean) => ({
   tier,
   features: {
     automations: true,
@@ -31,7 +28,7 @@ describe('evaluatePhaseTierEligibility', () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
     mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_1', false),
+      tierWithAgenticWorkflow('tier_1', false)
     );
 
     const result = await evaluatePhaseTierEligibility({
@@ -47,7 +44,7 @@ describe('evaluatePhaseTierEligibility', () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
     mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_2', false),
+      tierWithAgenticWorkflow('tier_2', false)
     );
 
     const result = await evaluatePhaseTierEligibility({
@@ -62,7 +59,7 @@ describe('evaluatePhaseTierEligibility', () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
     mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_3', false),
+      tierWithAgenticWorkflow('tier_3', false)
     );
 
     const result = await evaluatePhaseTierEligibility({
@@ -76,9 +73,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('allows phases with no minimum when agenticWorkflow is true', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_2', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_2', true));
 
     // NEW_DRAFT, REFINED_PENDING_REVIEW have no minimum in the config
     const result = await evaluatePhaseTierEligibility({
@@ -93,9 +88,7 @@ describe('evaluatePhaseTierEligibility', () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
     // tier_1 has agenticWorkflow: true for this test (artificial, but isolated)
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_1', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_1', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',
@@ -110,9 +103,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('allows SYNC_DOCUMENT at tier_2 (hobby)', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_2', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_2', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',
@@ -126,9 +117,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('denies GENERATE_SPRINT at tier_2 (hobby)', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_2', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_2', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',
@@ -142,9 +131,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('allows GENERATE_SPRINT at tier_3 (pro)', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_3', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_3', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',
@@ -158,9 +145,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('requires tier_4 for UPDATE_AS_BUILT', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_3', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_3', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',
@@ -174,9 +159,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('allows UPDATE_AS_BUILT at tier_4 (business)', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_4', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_4', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',
@@ -191,9 +174,7 @@ describe('evaluatePhaseTierEligibility', () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
     // [why] mockResolvedValue (not Once) — called 4 times in the loop below
-    mockResolveWorkspaceEntitlements.mockResolvedValue(
-      tierWithAgenticWorkflow('unlimited', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValue(tierWithAgenticWorkflow('unlimited', true));
 
     const phases: WorkflowPhase[] = [
       'NEW_DRAFT',
@@ -214,9 +195,7 @@ describe('evaluatePhaseTierEligibility', () => {
   it('includes upgrade hint in denial response', async () => {
     const { evaluatePhaseTierEligibility } = await import('../index');
 
-    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(
-      tierWithAgenticWorkflow('tier_1', true),
-    );
+    mockResolveWorkspaceEntitlements.mockResolvedValueOnce(tierWithAgenticWorkflow('tier_1', true));
 
     const result = await evaluatePhaseTierEligibility({
       workspaceId: 'ws-1',

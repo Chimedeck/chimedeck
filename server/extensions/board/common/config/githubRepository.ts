@@ -12,5 +12,6 @@ export const githubRepositoryConfig = {
     ? resolve(env.GITHUB_REPOSITORY_CACHE_DIR)
     : DEFAULT_REPOSITORY_CACHE_DIR,
   repositoryCacheTtlMs: Math.max(0, env.GITHUB_REPOSITORY_CACHE_TTL_SECONDS) * 1000,
-  installationTokenRefreshSkewMs: Math.max(0, env.GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS) * 1000,
+  installationTokenRefreshSkewMs:
+    Math.max(0, env.GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SECONDS) * 1000,
 } as const;

@@ -83,7 +83,7 @@ export async function requestCardChatCompletion({
   } catch (error) {
     console.error(
       '[cardChat/provider] Fetch failed:',
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
     return {
       status: 502,
@@ -94,7 +94,11 @@ export async function requestCardChatCompletion({
 
   if (!response.ok) {
     const providerMessage = await readFailureMessage(response);
-    console.error('[cardChat/provider] Non-OK status:', response.status, providerMessage ?? '(no body)');
+    console.error(
+      '[cardChat/provider] Non-OK status:',
+      response.status,
+      providerMessage ?? '(no body)'
+    );
 
     if (response.status === 429) {
       return {
@@ -115,7 +119,8 @@ export async function requestCardChatCompletion({
     return {
       status: 502,
       name: 'assist-provider-request-failed',
-      message: providerMessage ?? `AI provider request failed with status ${String(response.status)}`,
+      message:
+        providerMessage ?? `AI provider request failed with status ${String(response.status)}`,
     };
   }
 
@@ -146,27 +151,37 @@ export async function requestCardChatCompletion({
   // [why] Reasoning models (e.g. deepseek-v4-pro) put their response in
   // the `reasoning` field instead of `content`. Check both fields.
   const choiceMessage = payload.choices?.[0]?.message;
-  const message = typeof choiceMessage?.content === 'string' && choiceMessage.content.trim() !== ''
-    ? choiceMessage.content.trim()
-    : typeof choiceMessage?.reasoning === 'string' && choiceMessage.reasoning.trim() !== ''
-      ? choiceMessage.reasoning.trim()
-      : null;
+  const message =
+    typeof choiceMessage?.content === 'string' && choiceMessage.content.trim() !== ''
+      ? choiceMessage.content.trim()
+      : typeof choiceMessage?.reasoning === 'string' && choiceMessage.reasoning.trim() !== ''
+        ? choiceMessage.reasoning.trim()
+        : null;
 
   // [why] Extract tool calls from the response for the assist endpoint.
   const rawToolCalls = choiceMessage?.tool_calls;
-  const toolCalls: Array<{
-    id: string;
-    type: 'function';
-    function: { name: string; arguments: string };
-  }> | undefined = Array.isArray(rawToolCalls) && rawToolCalls.length > 0
-    ? rawToolCalls
-        .filter((tc): tc is { id: string; type: 'function'; function: { name: string; arguments: string } } =>
-          typeof tc.id === 'string' &&
-          tc.type === 'function' &&
-          typeof tc.function?.name === 'string' &&
-          typeof tc.function?.arguments === 'string',
+  const toolCalls:
+    | Array<{
+        id: string;
+        type: 'function';
+        function: { name: string; arguments: string };
+      }>
+    | undefined =
+    Array.isArray(rawToolCalls) && rawToolCalls.length > 0
+      ? rawToolCalls.filter(
+          (
+            tc
+          ): tc is {
+            id: string;
+            type: 'function';
+            function: { name: string; arguments: string };
+          } =>
+            typeof tc.id === 'string' &&
+            tc.type === 'function' &&
+            typeof tc.function?.name === 'string' &&
+            typeof tc.function?.arguments === 'string'
         )
-    : undefined;
+      : undefined;
 
   // [why] Tool calls without a text message are valid — the LLM is
   // responding with actions rather than text.
@@ -178,9 +193,8 @@ export async function requestCardChatCompletion({
     };
   }
 
-  const model = typeof payload.model === 'string' && payload.model.trim() !== ''
-    ? payload.model
-    : config.model;
+  const model =
+    typeof payload.model === 'string' && payload.model.trim() !== '' ? payload.model : config.model;
 
   return {
     status: 200,

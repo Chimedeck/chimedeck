@@ -24,7 +24,7 @@ quotaEnforcerDeps.resolveTierPolicy = (input: { tier: string; sprintCount: numbe
       ? input.sprintCount
       : Math.min(input.sprintCount, quota.maxSprints);
   const truncated: Array<{ sprintNumber: number; reason: string }> = [];
-  if (quota.maxSprints !== 'unlimited' && input.sprintCount > (quota.maxSprints)) {
+  if (quota.maxSprints !== 'unlimited' && input.sprintCount > quota.maxSprints) {
     for (let i = effectiveCount + 1; i <= input.sprintCount; i++) {
       truncated.push({
         sprintNumber: i,
@@ -112,9 +112,7 @@ describe('enforceQuotaWithActivity', () => {
   });
 
   it('handles activity emission failure gracefully', async () => {
-    mockEmitSprintGenQuotaExceeded.mockRejectedValueOnce(
-      new Error('DB connection lost'),
-    );
+    mockEmitSprintGenQuotaExceeded.mockRejectedValueOnce(new Error('DB connection lost'));
 
     const { enforceQuotaWithActivity } = await import('../quotaEnforcer');
 

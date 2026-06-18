@@ -7,10 +7,7 @@ import {
 } from '../../../../middlewares/permissionManager';
 import { writeActivity } from '../../../activity/mods/write';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
-import {
-  normalizeGithubProjectUrl,
-  toGithubProjectAuditValue,
-} from '../../mods/githubProjectUrl';
+import { normalizeGithubProjectUrl, toGithubProjectAuditValue } from '../../mods/githubProjectUrl';
 
 interface PatchBoardIntegrationsBody {
   github_project_url?: unknown;
@@ -23,7 +20,10 @@ function toForwardedIp(req: Request): string | null {
   return first && first.length > 0 ? first : null;
 }
 
-export async function handlePatchBoardIntegrations(req: Request, boardId: string): Promise<Response> {
+export async function handlePatchBoardIntegrations(
+  req: Request,
+  boardId: string
+): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -32,7 +32,10 @@ export async function handlePatchBoardIntegrations(req: Request, boardId: string
   if (accessError) return accessError;
 
   const workspaceReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(workspaceReq, boardReq.board!.workspace_id);
+  const membershipError = await requireWorkspaceMembership(
+    workspaceReq,
+    boardReq.board!.workspace_id
+  );
   if (membershipError) return membershipError;
 
   const roleError = requireRole(workspaceReq, 'ADMIN');
@@ -44,27 +47,36 @@ export async function handlePatchBoardIntegrations(req: Request, boardId: string
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!('github_project_url' in body)) {
     return Response.json(
-      { name: 'missing-github-project-url', data: { message: 'github_project_url field is required' } },
-      { status: 400 },
+      {
+        name: 'missing-github-project-url',
+        data: { message: 'github_project_url field is required' },
+      },
+      { status: 400 }
     );
   }
 
-  const currentUrl = ((boardReq.board as { github_project_url?: string | null }).github_project_url ?? null);
+  const currentUrl =
+    (boardReq.board as { github_project_url?: string | null }).github_project_url ?? null;
 
   let nextUrl: string | null = null;
-  let nextAuditValue = { hash: null, reference: null } as ReturnType<typeof toGithubProjectAuditValue>;
+  let nextAuditValue = { hash: null, reference: null } as ReturnType<
+    typeof toGithubProjectAuditValue
+  >;
 
   if (body.github_project_url !== null) {
     if (typeof body.github_project_url !== 'string') {
       return Response.json(
-        { name: 'invalid-github-project-url', data: { message: 'github_project_url must be a string or null' } },
-        { status: 422 },
+        {
+          name: 'invalid-github-project-url',
+          data: { message: 'github_project_url must be a string or null' },
+        },
+        { status: 422 }
       );
     }
 
@@ -72,7 +84,7 @@ export async function handlePatchBoardIntegrations(req: Request, boardId: string
     if (!normalized.ok) {
       return Response.json(
         { name: 'invalid-github-project-url', data: { message: normalized.message } },
-        { status: 422 },
+        { status: 422 }
       );
     }
 
@@ -87,9 +99,7 @@ export async function handlePatchBoardIntegrations(req: Request, boardId: string
     return Response.json({ data: { github_project_url: nextUrl } });
   }
 
-  await db('boards')
-    .where({ id: boardId })
-    .update({ github_project_url: nextUrl });
+  await db('boards').where({ id: boardId }).update({ github_project_url: nextUrl });
 
   const changedAt = new Date().toISOString();
   const actorId = (req as AuthenticatedRequest).currentUser!.id;

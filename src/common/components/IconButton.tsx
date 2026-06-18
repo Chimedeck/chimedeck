@@ -12,8 +12,7 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   ({ icon, variant = 'ghost', className = '', ...props }, ref) => {
-    const base =
-      'inline-flex items-center justify-center transition-colors focus:outline-none';
+    const base = 'inline-flex items-center justify-center transition-colors focus:outline-none';
     return (
       <button
         ref={ref}
@@ -24,7 +23,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {icon}
       </button>
     );
-  },
+  }
 );
 
 IconButton.displayName = 'IconButton';

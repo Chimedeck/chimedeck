@@ -6,10 +6,7 @@
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import { SprintGenRunStatus } from '../../common/config';
-import type {
-  SprintGenerationRun,
-  GeneratedSprintCard,
-} from '../../types';
+import type { SprintGenerationRun, GeneratedSprintCard } from '../../types';
 
 export const persistenceDeps = {
   db,
@@ -71,10 +68,7 @@ export async function createSprintGenRun({
  * Retrieve a sprint generation run by ID.
  */
 export async function getSprintGenRun(runId: string): Promise<SprintGenerationRun | null> {
-  const row = await persistenceDeps
-    .db('card_sprint_generation_runs')
-    .where({ id: runId })
-    .first();
+  const row = await persistenceDeps.db('card_sprint_generation_runs').where({ id: runId }).first();
   return (row as SprintGenerationRun | undefined) ?? null;
 }
 
@@ -116,7 +110,7 @@ export async function updateSprintGenRunStatus({
 
   if (!isValidTransition(currentRun.status, status)) {
     console.warn(
-      `[sprintGeneration/persistence] Invalid transition: ${currentRun.status} → ${status} for run ${runId}`,
+      `[sprintGeneration/persistence] Invalid transition: ${currentRun.status} → ${status} for run ${runId}`
     );
     return null;
   }
@@ -131,13 +125,12 @@ export async function updateSprintGenRunStatus({
     updates.completed_at = now;
   }
   if (errorMessage !== undefined) updates.error_message = errorMessage;
-  if (outputFiles !== undefined) updates.output_files = outputFiles ? JSON.stringify(outputFiles) : null;
-  if (requirementPacket !== undefined) updates.requirement_packet = requirementPacket ? JSON.stringify(requirementPacket) : null;
+  if (outputFiles !== undefined)
+    updates.output_files = outputFiles ? JSON.stringify(outputFiles) : null;
+  if (requirementPacket !== undefined)
+    updates.requirement_packet = requirementPacket ? JSON.stringify(requirementPacket) : null;
 
-  await persistenceDeps
-    .db('card_sprint_generation_runs')
-    .where({ id: runId })
-    .update(updates);
+  await persistenceDeps.db('card_sprint_generation_runs').where({ id: runId }).update(updates);
 
   return {
     ...currentRun,
@@ -178,9 +171,7 @@ export async function createGeneratedSprintCard({
     created_at: new Date().toISOString(),
   };
 
-  await persistenceDeps
-    .db('generated_sprint_cards')
-    .insert(row);
+  await persistenceDeps.db('generated_sprint_cards').insert(row);
 
   return row;
 }

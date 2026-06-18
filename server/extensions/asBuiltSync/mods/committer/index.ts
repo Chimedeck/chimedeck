@@ -66,9 +66,7 @@ export async function commitAsBuilt({
     message: result.message,
     data: {
       commitHash,
-      files: Array.isArray((result as any).data?.files)
-        ? (result as any).data.files
-        : touchedFiles,
+      files: Array.isArray((result as any).data?.files) ? (result as any).data.files : touchedFiles,
     },
   };
 }

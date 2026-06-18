@@ -16,7 +16,7 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -33,14 +33,14 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.boardId || typeof body.boardId !== 'string') {
     return Response.json(
       { error: { code: 'bad-request', message: 'boardId is required — labels are board-scoped' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -49,26 +49,31 @@ export async function handleCreateLabel(req: Request, workspaceId: string): Prom
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found in this workspace' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.color || typeof body.color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(body.color)) {
     return Response.json(
       { error: { code: 'bad-request', message: 'color must be a hex color (e.g. #FF5733)' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const id = randomUUID();
-  await db('labels').insert({ id, board_id: body.boardId, name: body.name.trim(), color: body.color });
+  await db('labels').insert({
+    id,
+    board_id: body.boardId,
+    name: body.name.trim(),
+    color: body.color,
+  });
 
   const label = await db('labels').where({ id }).first();
   return Response.json({ data: label }, { status: 201 });

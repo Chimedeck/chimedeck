@@ -51,9 +51,9 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   // intermittently missing cache state after hard refresh / route bootstrap races.
   useEffect(() => {
     if (
-      boardWorkspaceId
-      && !isMembersLoading
-      && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
+      boardWorkspaceId &&
+      !isMembersLoading &&
+      (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
     ) {
       dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
@@ -61,9 +61,9 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
 
   const handleAddMemberInputFocus = () => {
     if (
-      boardWorkspaceId
-      && !isMembersLoading
-      && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
+      boardWorkspaceId &&
+      !isMembersLoading &&
+      (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
     ) {
       dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
@@ -80,7 +80,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   // Whether the current user is already an explicit board member.
   const isSelfMember = useMemo(
     () => boardMembers.some((m) => m.user_id === currentUser?.id),
-    [boardMembers, currentUser],
+    [boardMembers, currentUser]
   );
 
   // Show join button when the caller is a workspace member but not yet in board_members.
@@ -90,7 +90,10 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
     (workspaceRole === 'ADMIN' || workspaceRole === 'OWNER'
       ? true
       : board?.visibility !== 'PRIVATE') &&
-    (workspaceRole === 'MEMBER' || workspaceRole === 'VIEWER' || workspaceRole === 'ADMIN' || workspaceRole === 'OWNER');
+    (workspaceRole === 'MEMBER' ||
+      workspaceRole === 'VIEWER' ||
+      workspaceRole === 'ADMIN' ||
+      workspaceRole === 'OWNER');
 
   // Determine if the current user can manage board members.
   // [why] Workspace OWNER/ADMIN have authority over all boards even if not explicitly
@@ -105,23 +108,20 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
   // Count admins to enforce last-admin guard.
   const adminCount = useMemo(
     () => boardMembers.filter((m) => m.role === 'ADMIN' || m.role === 'OWNER').length,
-    [boardMembers],
+    [boardMembers]
   );
 
   // Workspace members eligible to be added: non-GUEST workspace role, not already on the board.
-  const boardMemberIds = useMemo(
-    () => new Set(boardMembers.map((m) => m.user_id)),
-    [boardMembers],
-  );
+  const boardMemberIds = useMemo(() => new Set(boardMembers.map((m) => m.user_id)), [boardMembers]);
 
   const candidates = useMemo(
     () =>
       // [why] 'GUEST' is a runtime value returned by the server but not in the static Role union.
       // Cast to string for the comparison to avoid TypeScript false-positive overlap error.
       workspaceMembers.filter(
-        (wm) => (wm.role as string) !== 'GUEST' && !boardMemberIds.has(wm.userId),
+        (wm) => (wm.role as string) !== 'GUEST' && !boardMemberIds.has(wm.userId)
       ),
-    [workspaceMembers, boardMemberIds],
+    [workspaceMembers, boardMemberIds]
   );
 
   // [why] GUEST users have no member-management rights — suppress the panel entirely.
@@ -158,7 +158,9 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => { e.stopPropagation(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
         role="dialog"
         aria-label="Board Members"
       >
@@ -178,7 +180,9 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
         <div className="flex border-b border-border">
           <button
             type="button"
-            onClick={() => { setActiveTab('members'); }}
+            onClick={() => {
+              setActiveTab('members');
+            }}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'members'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'
@@ -192,7 +196,9 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
           {/* Guests tab — only admins can invite guests; all can view */}
           <button
             type="button"
-            onClick={() => { setActiveTab('guests'); }}
+            onClick={() => {
+              setActiveTab('guests');
+            }}
             className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
               activeTab === 'guests'
                 ? 'text-indigo-400 border-b-2 border-indigo-400 -mb-px'

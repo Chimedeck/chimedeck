@@ -7,14 +7,14 @@ function requireAuthenticatedChatCaller(req: WorkspaceScopedRequest): Response |
   if (!req.currentUser) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
   if (!req.callerRole) {
     return Response.json(
       { name: 'insufficient-permissions', data: { message: 'Missing workspace access context' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -23,7 +23,7 @@ function requireAuthenticatedChatCaller(req: WorkspaceScopedRequest): Response |
 
 export async function requireGuestCanViewBoardChat(
   req: WorkspaceScopedRequest,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   const authError = requireAuthenticatedChatCaller(req);
   if (authError) return authError;
@@ -31,14 +31,17 @@ export async function requireGuestCanViewBoardChat(
   if (req.callerRole !== 'GUEST') return null;
 
   const rowRaw = await db('board_chat_permissions').where({ board_id: boardId }).first();
-  const row = rowRaw as Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined;
+  const row = rowRaw as
+    | Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>>
+    | null
+    | undefined;
   if (!canGuestViewBoardChat(row)) {
     return Response.json(
       {
         name: 'guest-chat-view-denied',
         data: { message: 'Guest does not have permission to view board chat history' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -47,7 +50,7 @@ export async function requireGuestCanViewBoardChat(
 
 export async function requireGuestCanUseBoardChat(
   req: WorkspaceScopedRequest,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   const authError = requireAuthenticatedChatCaller(req);
   if (authError) return authError;
@@ -55,14 +58,17 @@ export async function requireGuestCanUseBoardChat(
   if (req.callerRole !== 'GUEST') return null;
 
   const rowRaw = await db('board_chat_permissions').where({ board_id: boardId }).first();
-  const row = rowRaw as Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>> | null | undefined;
+  const row = rowRaw as
+    | Partial<Pick<BoardChatPermissions, 'guest_can_view' | 'guest_can_use'>>
+    | null
+    | undefined;
   if (!canGuestUseBoardChat(row)) {
     return Response.json(
       {
         name: 'guest-chat-use-denied',
         data: { message: 'Guest does not have permission to send board chat messages' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

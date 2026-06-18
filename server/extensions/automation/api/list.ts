@@ -45,7 +45,7 @@ export async function handleListAutomations(req: Request, boardId: string): Prom
   }
 
   const data = automations.map((a: AutomationRow) =>
-    formatAutomation(a, triggersByAutomation.get(a.id) ?? null, actionsByAutomation.get(a.id) ?? []),
+    formatAutomation(a, triggersByAutomation.get(a.id) ?? null, actionsByAutomation.get(a.id) ?? [])
   );
 
   return Response.json({ data });

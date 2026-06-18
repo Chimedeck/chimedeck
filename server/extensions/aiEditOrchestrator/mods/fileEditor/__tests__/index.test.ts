@@ -22,7 +22,9 @@ globalThis.Bun = {
   file: (...args: unknown[]) => mockBunFile(...args),
   write: (...args: unknown[]) => mockBunWrite(...args),
   // minimal stub for spawnSync used in other modules
-  spawnSync: vi.fn().mockReturnValue({ exitCode: 0, stdout: new Uint8Array(), stderr: new Uint8Array() }),
+  spawnSync: vi
+    .fn()
+    .mockReturnValue({ exitCode: 0, stdout: new Uint8Array(), stderr: new Uint8Array() }),
 } as any;
 
 describe('editFile', () => {
@@ -104,8 +106,10 @@ describe('editFile', () => {
   });
 
   it('returns 200 on successful edit', async () => {
-    const original = '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---\n\n# Old Content\nSome text here.';
-    const edited = '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---\n\n# New Content\nUpdated text here.';
+    const original =
+      '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---\n\n# Old Content\nSome text here.';
+    const edited =
+      '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---\n\n# New Content\nUpdated text here.';
 
     mockValidatePath.mockReturnValue({
       allowed: true,
@@ -114,8 +118,16 @@ describe('editFile', () => {
     mockFileExists.mockResolvedValue(true);
     mockReadFile.mockResolvedValue(original);
     mockValidateFrontMatter
-      .mockReturnValueOnce({ valid: true, parsed: { title: 'Test', date: '2026-06-10', status: 'draft' }, original: '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---' })
-      .mockReturnValueOnce({ valid: true, parsed: { title: 'Test', date: '2026-06-10', status: 'draft' }, original: '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---' });
+      .mockReturnValueOnce({
+        valid: true,
+        parsed: { title: 'Test', date: '2026-06-10', status: 'draft' },
+        original: '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---',
+      })
+      .mockReturnValueOnce({
+        valid: true,
+        parsed: { title: 'Test', date: '2026-06-10', status: 'draft' },
+        original: '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---',
+      });
 
     const { editFile } = await import('../../fileEditor');
     const result = await editFile({
@@ -127,10 +139,7 @@ describe('editFile', () => {
     expect(result.status).toBe(200);
     expect(result.data?.applied).toBe(true);
     // [why] The module uses Bun.write via fileEditorDeps, so mockBunWrite captures it
-    expect(mockBunWrite).toHaveBeenCalledWith(
-      'specs/request_changelog/editable.md',
-      edited,
-    );
+    expect(mockBunWrite).toHaveBeenCalledWith('specs/request_changelog/editable.md', edited);
   });
 
   it('returns 422 if edit would corrupt front-matter', async () => {
@@ -145,8 +154,15 @@ describe('editFile', () => {
     // [why] First call validates original front-matter (passes), second
     // validates the post-edit content which now has broken front-matter.
     mockValidateFrontMatter
-      .mockReturnValueOnce({ valid: true, parsed: { title: 'Test', date: '2026-06-10', status: 'draft' }, original: '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---' })
-      .mockReturnValueOnce({ valid: false, reason: 'Missing required fields for request_changelog' });
+      .mockReturnValueOnce({
+        valid: true,
+        parsed: { title: 'Test', date: '2026-06-10', status: 'draft' },
+        original: '---\ntitle: Test\ndate: 2026-06-10\nstatus: draft\n---',
+      })
+      .mockReturnValueOnce({
+        valid: false,
+        reason: 'Missing required fields for request_changelog',
+      });
     mockWriteFile.mockResolvedValue(undefined);
 
     const { editFile } = await import('../../fileEditor');

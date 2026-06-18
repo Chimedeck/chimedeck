@@ -38,16 +38,20 @@ interface ResizablePanelsProps {
 export default function ResizablePanels({ left, right, className = '' }: ResizablePanelsProps) {
   const [ratio, setRatio] = useState<number>(loadRatio);
   const [isMobile, setIsMobile] = useState<boolean>(
-    typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false,
+    typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
   // Update mobile breakpoint on resize
   useEffect(() => {
-    const onResize = () => { setIsMobile(window.innerWidth < MOBILE_BREAKPOINT); };
+    const onResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
     window.addEventListener('resize', onResize);
-    return () => { window.removeEventListener('resize', onResize); };
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
   }, []);
 
   const clampRatio = useCallback((rawRatio: number, containerWidth: number): number => {
@@ -64,7 +68,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
       const newRatio = clampRatio((clientX - containerLeft) / width, width);
       setRatio(newRatio);
     },
-    [clampRatio],
+    [clampRatio]
   );
 
   // Mouse events
@@ -92,7 +96,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
-    [handleMove, clampRatio],
+    [handleMove, clampRatio]
   );
 
   // Touch events
@@ -122,7 +126,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
       window.addEventListener('touchmove', onTouchMove, { passive: true });
       window.addEventListener('touchend', onTouchEnd);
     },
-    [handleMove, clampRatio],
+    [handleMove, clampRatio]
   );
 
   if (isMobile) {
@@ -140,7 +144,10 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
   return (
     <div ref={containerRef} className={`flex overflow-hidden ${className}`}>
       {/* Left panel */}
-      <div style={{ width: leftPercent, minWidth: MIN_WIDTH_PX }} className="overflow-y-auto scrollbar-contrast">
+      <div
+        style={{ width: leftPercent, minWidth: MIN_WIDTH_PX }}
+        className="overflow-y-auto scrollbar-contrast"
+      >
         {left}
       </div>
 
@@ -172,7 +179,10 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
       </div>
 
       {/* Right panel */}
-      <div style={{ width: rightPercent, minWidth: MIN_WIDTH_PX }} className="overflow-y-auto scrollbar-contrast">
+      <div
+        style={{ width: rightPercent, minWidth: MIN_WIDTH_PX }}
+        className="overflow-y-auto scrollbar-contrast"
+      >
         {right}
       </div>
     </div>

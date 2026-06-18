@@ -6,7 +6,11 @@ import { resolveBoardId, resolveCardId, resolveListId } from '../../../common/id
 type Scope = 'card' | 'list' | 'board' | 'member';
 
 export class ResourceBoardMismatchError extends Error {
-  constructor(public readonly scope: Scope, public readonly resourceId: string, public readonly boardId: string) {
+  constructor(
+    public readonly scope: Scope,
+    public readonly resourceId: string,
+    public readonly boardId: string
+  ) {
     super(`${scope} '${resourceId}' does not belong to board '${boardId}'`);
     this.name = 'resource-board-mismatch';
   }
@@ -15,7 +19,7 @@ export class ResourceBoardMismatchError extends Error {
 export async function validateResourceBelongsToBoard(
   scope: Scope,
   resourceId: string,
-  boardId: string,
+  boardId: string
 ): Promise<string> {
   if (scope === 'board') {
     const resolvedBoardId = await resolveBoardId(resourceId);

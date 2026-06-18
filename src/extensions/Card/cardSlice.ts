@@ -55,19 +55,13 @@ const cardSlice = createSlice({
     },
 
     // ── Optimistic mutations ─────────────────────────────────────────────
-    applyOptimistic(
-      state,
-      action: PayloadAction<{ mutationId: string; card: Card }>,
-    ) {
+    applyOptimistic(state, action: PayloadAction<{ mutationId: string; card: Card }>) {
       const { mutationId, card } = action.payload;
       state.snapshots[mutationId] = { ...state.byId };
       upsert(state, card);
     },
 
-    confirmOptimistic(
-      state,
-      action: PayloadAction<{ mutationId: string; card: Card }>,
-    ) {
+    confirmOptimistic(state, action: PayloadAction<{ mutationId: string; card: Card }>) {
       const { mutationId, card } = action.payload;
       delete state.snapshots[mutationId];
       // Clear conflict marker on confirm
@@ -75,10 +69,7 @@ const cardSlice = createSlice({
       upsert(state, card);
     },
 
-    rollbackOptimistic(
-      state,
-      action: PayloadAction<{ mutationId: string }>,
-    ) {
+    rollbackOptimistic(state, action: PayloadAction<{ mutationId: string }>) {
       const { mutationId } = action.payload;
       const snapshot = state.snapshots[mutationId];
       if (snapshot) {
@@ -96,7 +87,7 @@ const cardSlice = createSlice({
         fromListId: string;
         toListId: string;
         afterCardId?: string | null;
-      }>,
+      }>
     ) {
       const { mutationId, cardId, fromListId, toListId, afterCardId } = action.payload;
       state.snapshots[mutationId] = { ...state.byId };
@@ -117,10 +108,7 @@ const cardSlice = createSlice({
       state.byId[cardId] = { ...card, list_id: toListId };
     },
 
-    rollbackOptimisticMove(
-      state,
-      action: PayloadAction<{ mutationId: string }>,
-    ) {
+    rollbackOptimisticMove(state, action: PayloadAction<{ mutationId: string }>) {
       const { mutationId } = action.payload;
       const snapshot = state.snapshots[mutationId];
       if (snapshot) {

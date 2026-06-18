@@ -19,9 +19,9 @@ export async function updateScanResult({
 
   // Fire-and-forget thumbnail generation when an image passes the virus scan
   if (status === 'READY') {
-    generateThumbnail({ attachmentId }).catch((err) =>
-      { console.error(`[thumbnail] failed for ${attachmentId}:`, err); },
-    );
+    generateThumbnail({ attachmentId }).catch((err) => {
+      console.error(`[thumbnail] failed for ${attachmentId}:`, err);
+    });
   }
 
   const card = await db('cards').where({ id: attachment.card_id }).first();
@@ -40,7 +40,11 @@ export async function updateScanResult({
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_updated', entity_id: attachment.card_id, payload: { attachmentId, status } }),
+      JSON.stringify({
+        type: 'attachment_updated',
+        entity_id: attachment.card_id,
+        payload: { attachmentId, status },
+      })
     )
     .catch(() => {});
 }

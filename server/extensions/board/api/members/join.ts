@@ -21,20 +21,28 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
 
   if (!membership) {
     return Response.json(
-      { name: 'not-a-workspace-member', data: { message: 'You must be a workspace member to join this board.' } },
-      { status: 403 },
+      {
+        name: 'not-a-workspace-member',
+        data: { message: 'You must be a workspace member to join this board.' },
+      },
+      { status: 403 }
     );
   }
 
   // [why] Workspace ADMIN/OWNER have authority over all boards regardless of visibility.
   // Regular members (MEMBER/VIEWER) can only self-join open (WORKSPACE/PUBLIC) boards.
-  const isWorkspaceAdminOrOwner =
-    membership.role === 'OWNER' || membership.role === 'ADMIN';
+  const isWorkspaceAdminOrOwner = membership.role === 'OWNER' || membership.role === 'ADMIN';
 
   if (board.visibility === 'PRIVATE' && !isWorkspaceAdminOrOwner) {
     return Response.json(
-      { name: 'board-is-private', data: { message: 'You can only self-join WORKSPACE or PUBLIC boards. Ask a board admin to add you to this board.' } },
-      { status: 403 },
+      {
+        name: 'board-is-private',
+        data: {
+          message:
+            'You can only self-join WORKSPACE or PUBLIC boards. Ask a board admin to add you to this board.',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -50,10 +58,10 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
       .select(
         db.raw('u.id as id'),
         'u.email',
-        db.raw("COALESCE(u.name, u.email) as name"),
+        db.raw('COALESCE(u.name, u.email) as name'),
         'u.nickname',
         'bm.role',
-        'bm.created_at',
+        'bm.created_at'
       )
       .first();
     return Response.json({ data: member });
@@ -73,10 +81,10 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
     .select(
       db.raw('u.id as id'),
       'u.email',
-      db.raw("COALESCE(u.name, u.email) as name"),
+      db.raw('COALESCE(u.name, u.email) as name'),
       'u.nickname',
       'bm.role',
-      'bm.created_at',
+      'bm.created_at'
     )
     .first();
 

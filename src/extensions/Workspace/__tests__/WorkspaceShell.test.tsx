@@ -23,7 +23,7 @@ import type { Workspace } from '../api';
 
 const MOCK_WORKSPACES: Workspace[] = [
   { id: 'ws-1', name: 'Acme Corp', ownerId: 'u1', createdAt: '2024-01-01T00:00:00Z' },
-  { id: 'ws-2', name: 'Beta Inc',  ownerId: 'u1', createdAt: '2024-02-01T00:00:00Z' },
+  { id: 'ws-2', name: 'Beta Inc', ownerId: 'u1', createdAt: '2024-02-01T00:00:00Z' },
 ];
 
 function makeStore() {
@@ -68,9 +68,7 @@ describe('workspaceShell slice', () => {
 
   it('fetchWorkspacesThunk.fulfilled populates workspaces and auto-selects first', () => {
     const store = makeStore();
-    store.dispatch(
-      fetchWorkspacesThunk.fulfilled(MOCK_WORKSPACES, 'req-1', undefined)
-    );
+    store.dispatch(fetchWorkspacesThunk.fulfilled(MOCK_WORKSPACES, 'req-1', undefined));
     const state = store.getState();
     expect(selectWorkspaces(state)).toHaveLength(2);
     expect(selectWorkspacesStatus(state)).toBe('idle');
@@ -81,18 +79,14 @@ describe('workspaceShell slice', () => {
   it('fetchWorkspacesThunk.fulfilled does not override existing active workspace', () => {
     const store = makeStore();
     store.dispatch(setActiveWorkspace('ws-2'));
-    store.dispatch(
-      fetchWorkspacesThunk.fulfilled(MOCK_WORKSPACES, 'req-1', undefined)
-    );
+    store.dispatch(fetchWorkspacesThunk.fulfilled(MOCK_WORKSPACES, 'req-1', undefined));
     // Should keep ws-2 as active since it was already set
     expect(selectActiveWorkspaceId(store.getState())).toBe('ws-2');
   });
 
   it('selectActiveWorkspace returns the active workspace object', () => {
     const store = makeStore();
-    store.dispatch(
-      fetchWorkspacesThunk.fulfilled(MOCK_WORKSPACES, 'req-1', undefined)
-    );
+    store.dispatch(fetchWorkspacesThunk.fulfilled(MOCK_WORKSPACES, 'req-1', undefined));
     store.dispatch(setActiveWorkspace('ws-2'));
     const active = selectActiveWorkspace(store.getState());
     expect(active?.name).toBe('Beta Inc');
@@ -100,9 +94,7 @@ describe('workspaceShell slice', () => {
 
   it('fetchWorkspacesThunk.rejected sets status to error', () => {
     const store = makeStore();
-    store.dispatch(
-      fetchWorkspacesThunk.rejected(new Error('Network error'), 'req-1', undefined)
-    );
+    store.dispatch(fetchWorkspacesThunk.rejected(new Error('Network error'), 'req-1', undefined));
     expect(selectWorkspacesStatus(store.getState())).toBe('error');
   });
 });

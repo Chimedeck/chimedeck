@@ -1,7 +1,15 @@
 // AttachmentItem — single attachment row: type icon, name, size, status chip, progress bar,
 // and delete/edit action buttons with inline confirmation and inline rename input.
 import React, { useRef, useState } from 'react';
-import { TrashIcon, LinkIcon, ArrowDownTrayIcon, PlayIcon, PencilIcon, ChatBubbleLeftIcon, EyeIcon } from '@heroicons/react/24/outline';
+import {
+  TrashIcon,
+  LinkIcon,
+  ArrowDownTrayIcon,
+  PlayIcon,
+  PencilIcon,
+  ChatBubbleLeftIcon,
+  EyeIcon,
+} from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import IconButton from '../../../common/components/IconButton';
 import type { Attachment } from '../types';
@@ -29,8 +37,8 @@ interface Props {
 const STATUS_CLASSES: Record<Attachment['status'], string> = {
   PENDING: 'bg-bg-sunken text-subtle',
   SCANNING: 'bg-yellow-900/50 text-yellow-300',
-  READY: 'bg-green-900/50 text-green-300',  // [theme-exception]
-  REJECTED: 'bg-red-900/50 text-red-300',  // [theme-exception]
+  READY: 'bg-green-900/50 text-green-300', // [theme-exception]
+  REJECTED: 'bg-red-900/50 text-red-300', // [theme-exception]
 };
 
 const STATUS_LABELS: Record<Attachment['status'], string> = {
@@ -213,7 +221,10 @@ function renderAttachmentIdentity({
         ref={renameInputRef}
         type="text"
         value={renameValue}
-        onChange={(e) => { setRenameValue(e.target.value); setRenameError(false); }}
+        onChange={(e) => {
+          setRenameValue(e.target.value);
+          setRenameError(false);
+        }}
         onKeyDown={handleRenameKeyDown}
         onBlur={commitRename}
         placeholder={translations['attachment.rename.placeholder']}
@@ -265,7 +276,13 @@ function renderAttachmentIdentity({
   );
 }
 
-export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename, onInsertComment }: Readonly<Props>): React.ReactElement {
+export function AttachmentItem({
+  attachment,
+  uploadProgress,
+  onDelete,
+  onRename,
+  onInsertComment,
+}: Readonly<Props>): React.ReactElement {
   const [confirming, setConfirming] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -285,9 +302,11 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
   const isUploading = attachment.status === 'PENDING' && uploadProgress != null;
   const isVideo = attachment.type !== 'URL' && attachment.content_type?.startsWith('video/');
   const isPdf = attachment.type !== 'URL' && attachment.content_type === 'application/pdf';
-  const isImage = attachment.type !== 'URL' && Boolean(attachment.content_type?.startsWith('image/'));
+  const isImage =
+    attachment.type !== 'URL' && Boolean(attachment.content_type?.startsWith('image/'));
   const openHref = attachment.type === 'URL' ? attachment.external_url : attachment.view_url;
-  const canOpenWithLink = attachment.status === 'READY' && !isImage && !isVideo && !isPdf && Boolean(openHref);
+  const canOpenWithLink =
+    attachment.status === 'READY' && !isImage && !isVideo && !isPdf && Boolean(openHref);
   const imagePreviewSrc = attachment.thumbnail_url ?? attachment.view_url;
 
   const handleOpen = (): void => {
@@ -302,12 +321,16 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
     });
   };
 
-  const handleDeleteClick = (): void => { setConfirming(true); };
+  const handleDeleteClick = (): void => {
+    setConfirming(true);
+  };
   const handleDeleteConfirm = (): void => {
     setConfirming(false);
     onDelete(attachment.id);
   };
-  const handleDeleteCancel = (): void => { setConfirming(false); };
+  const handleDeleteCancel = (): void => {
+    setConfirming(false);
+  };
 
   // Begin inline rename: pre-fill with current display name and show input
   const handleEditClick = (): void => {
@@ -351,20 +374,21 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
     if (ev.key === 'Escape') cancelRename();
   };
 
-  const leadingVisual = isImage && imagePreviewSrc ? (
-    <span className="flex h-11 w-11 flex-shrink-0 overflow-hidden rounded-md border border-border bg-bg-overlay">
-      <img
-        src={imagePreviewSrc}
-        alt={attachment.name}
-        className="h-full w-full object-cover"
-        loading="lazy"
-      />
-    </span>
-  ) : (
-    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-border bg-bg-overlay text-muted">
-      <Icon className="h-6 w-6" aria-hidden="true" />
-    </span>
-  );
+  const leadingVisual =
+    isImage && imagePreviewSrc ? (
+      <span className="flex h-11 w-11 flex-shrink-0 overflow-hidden rounded-md border border-border bg-bg-overlay">
+        <img
+          src={imagePreviewSrc}
+          alt={attachment.name}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </span>
+    ) : (
+      <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md border border-border bg-bg-overlay text-muted">
+        <Icon className="h-6 w-6" aria-hidden="true" />
+      </span>
+    );
 
   const attachmentIdentity = renderAttachmentIdentity({
     editing,
@@ -400,7 +424,9 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
 
         {/* Size */}
         {attachment.size_bytes != null && (
-          <span className="flex-shrink-0 text-xs text-muted">{formatBytes(attachment.size_bytes)}</span>
+          <span className="flex-shrink-0 text-xs text-muted">
+            {formatBytes(attachment.size_bytes)}
+          </span>
         )}
 
         {/* Status chip */}
@@ -428,18 +454,22 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         )}
 
         {/* Comment button — inserts [alias ?? name](view_url) into the active comment editor */}
-        {onInsertComment && attachment.status === 'READY' && attachment.view_url && !confirming && !editing && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleCommentClick}
-            className="flex-shrink-0"
-            aria-label={translations['attachment.item.action.comment.ariaLabel']}
-            data-testid="attachment-comment-button"
-          >
-            <ChatBubbleLeftIcon className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        )}
+        {onInsertComment &&
+          attachment.status === 'READY' &&
+          attachment.view_url &&
+          !confirming &&
+          !editing && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCommentClick}
+              className="flex-shrink-0"
+              aria-label={translations['attachment.item.action.comment.ariaLabel']}
+              data-testid="attachment-comment-button"
+            >
+              <ChatBubbleLeftIcon className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          )}
 
         {/* Save / Cancel buttons while editing */}
         {editing && (
@@ -452,7 +482,9 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
               aria-label={translations['attachment.rename.save']}
               data-testid="attachment-rename-save"
               // Prevent onBlur from firing before click registers
-              onMouseDown={(e) => { e.preventDefault(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
             >
               {translations['attachment.rename.save']}
             </Button>
@@ -464,7 +496,9 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
               aria-label={translations['attachment.rename.cancel']}
               data-testid="attachment-rename-cancel"
               // Prevent onBlur from firing commit before cancel registers
-              onMouseDown={(e) => { e.preventDefault(); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
             >
               {translations['attachment.rename.cancel']}
             </Button>
@@ -472,35 +506,36 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
         )}
 
         {/* Delete button / inline confirmation */}
-        {!editing && (confirming ? (
-          <span className="flex items-center gap-1 text-xs">
-            <span className="text-subtle">{translations['attachments.item.delete.confirm']}</span>
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 text-xs font-medium text-danger hover:text-danger"
-              onClick={handleDeleteConfirm}
-            >
-              {translations['attachments.item.delete.yes']}
-            </Button>
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 text-xs text-muted hover:text-subtle"
-              onClick={handleDeleteCancel}
-            >
-              {translations['attachments.item.delete.no']}
-            </Button>
-          </span>
-        ) : (
-          <IconButton
-            onClick={handleDeleteClick}
-            className="flex-shrink-0 text-muted hover:text-danger transition-colors"
-            aria-label={translations['attachments.item.action.delete.ariaLabel']}
-            icon={<TrashIcon className="h-4 w-4" aria-hidden="true" />}
-            variant="ghost"
-          />
-        ))}
+        {!editing &&
+          (confirming ? (
+            <span className="flex items-center gap-1 text-xs">
+              <span className="text-subtle">{translations['attachments.item.delete.confirm']}</span>
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-xs font-medium text-danger hover:text-danger"
+                onClick={handleDeleteConfirm}
+              >
+                {translations['attachments.item.delete.yes']}
+              </Button>
+              <Button
+                variant="link"
+                size="sm"
+                className="p-0 text-xs text-muted hover:text-subtle"
+                onClick={handleDeleteCancel}
+              >
+                {translations['attachments.item.delete.no']}
+              </Button>
+            </span>
+          ) : (
+            <IconButton
+              onClick={handleDeleteClick}
+              className="flex-shrink-0 text-muted hover:text-danger transition-colors"
+              aria-label={translations['attachments.item.action.delete.ariaLabel']}
+              icon={<TrashIcon className="h-4 w-4" aria-hidden="true" />}
+              variant="ghost"
+            />
+          ))}
       </div>
 
       {/* Progress bar — only while uploading */}
@@ -508,17 +543,35 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
 
       {/* Video player overlay — use proxy view_url */}
       {videoOpen && isVideo && attachment.view_url && (
-        <VideoLightbox src={attachment.view_url} name={attachment.name} onClose={() => { setVideoOpen(false); }} />
+        <VideoLightbox
+          src={attachment.view_url}
+          name={attachment.name}
+          onClose={() => {
+            setVideoOpen(false);
+          }}
+        />
       )}
 
       {/* PDF preview overlay — use proxy view_url */}
       {pdfOpen && isPdf && attachment.view_url && (
-        <PdfLightbox src={attachment.view_url} name={attachment.name} onClose={() => { setPdfOpen(false); }} />
+        <PdfLightbox
+          src={attachment.view_url}
+          name={attachment.name}
+          onClose={() => {
+            setPdfOpen(false);
+          }}
+        />
       )}
 
       {/* Image preview overlay — use thumbnail/view proxy url */}
       {imageOpen && isImage && imagePreviewSrc && (
-        <ImageLightbox src={imagePreviewSrc} name={attachment.name} onClose={() => { setImageOpen(false); }} />
+        <ImageLightbox
+          src={imagePreviewSrc}
+          name={attachment.name}
+          onClose={() => {
+            setImageOpen(false);
+          }}
+        />
       )}
     </div>
   );

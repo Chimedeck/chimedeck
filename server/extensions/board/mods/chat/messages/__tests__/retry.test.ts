@@ -10,10 +10,15 @@ class QueryBuilder {
   private filters: Array<(row: Row) => boolean> = [];
   private _insert: Row | Row[] | null = null;
 
-  constructor(private readonly store: Store, private readonly tableName: keyof Store) {}
+  constructor(
+    private readonly store: Store,
+    private readonly tableName: keyof Store
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -28,12 +33,12 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     if (this._insert !== null) {
       const rows = Array.isArray(this._insert) ? this._insert : [this._insert];
       for (const row of rows) {
-        (this.store[this.tableName]).push({ ...row });
+        this.store[this.tableName].push({ ...row });
       }
       this._insert = null;
     }
@@ -41,8 +46,8 @@ class QueryBuilder {
   }
 
   private rows(): Row[] {
-    return (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    return this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
   }
 }
@@ -66,7 +71,8 @@ let persistVectorImpl: (args: {
   };
 }) => Promise<Row>;
 
-const { enqueueBoardChatEmbeddingRetry, retryBoardChatEmbedding, boardChatRetryDeps } = await import('../retry');
+const { enqueueBoardChatEmbeddingRetry, retryBoardChatEmbedding, boardChatRetryDeps } =
+  await import('../retry');
 
 beforeEach(() => {
   store = {
@@ -106,7 +112,8 @@ beforeEach(() => {
     return vector;
   };
 
-  boardChatRetryDeps.db = ((tableName: keyof Store) => new QueryBuilder(store, tableName)) as unknown as typeof boardChatRetryDeps.db;
+  boardChatRetryDeps.db = ((tableName: keyof Store) =>
+    new QueryBuilder(store, tableName)) as unknown as typeof boardChatRetryDeps.db;
   boardChatRetryDeps.pubsub = {
     publish: async (channel: string, message: string) => {
       published.push({ channel, message });

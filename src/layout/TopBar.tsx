@@ -16,7 +16,11 @@ interface TopBarProps {
   showDrawerToggle?: boolean;
 }
 
-export default function TopBar({ onOpenDrawer, drawerOpen, showDrawerToggle = true }: Readonly<TopBarProps>) {
+export default function TopBar({
+  onOpenDrawer,
+  drawerOpen,
+  showDrawerToggle = true,
+}: Readonly<TopBarProps>) {
   return (
     <>
       {/* Mobile topbar — hamburger + brand + actions */}

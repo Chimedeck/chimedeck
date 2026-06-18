@@ -26,7 +26,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
   const initialSelected = useMemo<string[]>(
     () => (savedAllowedDomains === null ? [...whitelistedDomains] : savedAllowedDomains),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [boardPlugin.id],
+    [boardPlugin.id]
   );
 
   const [selected, setSelected] = useState<string[]>(initialSelected);
@@ -42,7 +42,7 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
 
   const toggleDomain = useCallback((domain: string) => {
     setSelected((prev) =>
-      prev.includes(domain) ? prev.filter((d) => d !== domain) : [...prev, domain],
+      prev.includes(domain) ? prev.filter((d) => d !== domain) : [...prev, domain]
     );
     setSaveSuccess(false);
     setSaveError(null);
@@ -55,11 +55,13 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
     try {
       await apiClient.patch(
         `${pluginsConfig.boardPluginsPath(boardId)}/${boardPlugin.plugin.id}/allowed-domains`,
-        { allowedDomains: selected },
+        { allowedDomains: selected }
       );
       setSaveSuccess(true);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : translations['plugins.allowedDomains.saveError']);
+      setSaveError(
+        err instanceof Error ? err.message : translations['plugins.allowedDomains.saveError']
+      );
     } finally {
       setSaving(false);
     }
@@ -83,7 +85,9 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
               type="checkbox"
               id={`allowed-domain-${domain}`}
               checked={selected.includes(domain)}
-              onChange={() => { toggleDomain(domain); }}
+              onChange={() => {
+                toggleDomain(domain);
+              }}
               className="w-3.5 h-3.5 accent-blue-500 cursor-pointer"
             />
             <label
@@ -112,7 +116,9 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
         disabled={isPristine || saving}
         className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded px-3 py-1.5 transition-colors" // [theme-exception] text-white on bg-blue-600 save button
       >
-        {saving ? translations['plugins.allowedDomains.saving'] : translations['plugins.allowedDomains.save']}
+        {saving
+          ? translations['plugins.allowedDomains.saving']
+          : translations['plugins.allowedDomains.save']}
       </button>
     </div>
   );

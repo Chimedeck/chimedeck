@@ -39,7 +39,11 @@ const betweenPositions = (left: string, right: string): string => {
   const leftDigits = left === LOW_SENTINEL ? [] : toDigits(left);
   const rightDigits = right === HIGH_SENTINEL ? [] : toDigits(right);
 
-  if (left !== LOW_SENTINEL && right !== HIGH_SENTINEL && compareDigits(leftDigits, rightDigits) >= 0) {
+  if (
+    left !== LOW_SENTINEL &&
+    right !== HIGH_SENTINEL &&
+    compareDigits(leftDigits, rightDigits) >= 0
+  ) {
     return `${left}O`;
   }
 
@@ -48,7 +52,7 @@ const betweenPositions = (left: string, right: string): string => {
 
   for (;;) {
     const leftDigit = leftDigits[index] ?? 0;
-    const rightDigit = rightDigits[index] ?? (BASE - 1);
+    const rightDigit = rightDigits[index] ?? BASE - 1;
 
     if (rightDigit - leftDigit > 1) {
       output.push(Math.floor((leftDigit + rightDigit) / 2));
@@ -74,7 +78,12 @@ const compareChecklistItemPosition = (left: string, right: string): number => {
 interface SortableChecklistItemRowProps {
   checklistId: string;
   item: ChecklistItemType;
-  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  boardMembers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    avatar_url?: string | null;
+  }>;
   onItemToggle: (itemId: string, checked: boolean) => Promise<void>;
   onItemRename: (itemId: string, title: string) => Promise<void>;
   onItemDelete: (itemId: string) => Promise<void>;
@@ -138,7 +147,12 @@ const SortableChecklistItemRow = ({
 
 interface Props {
   checklist: Checklist;
-  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  boardMembers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    avatar_url?: string | null;
+  }>;
   onRename: (title: string) => Promise<void>;
   onDelete: () => Promise<void>;
   onItemAdd: (title: string) => Promise<void>;
@@ -169,8 +183,11 @@ export const ChecklistSection = ({
   attachments,
 }: Props) => {
   const sortedItems = useMemo(
-    () => [...checklist.items].sort((left, right) => compareChecklistItemPosition(left.position, right.position)),
-    [checklist.items],
+    () =>
+      [...checklist.items].sort((left, right) =>
+        compareChecklistItemPosition(left.position, right.position)
+      ),
+    [checklist.items]
   );
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -189,7 +206,9 @@ export const ChecklistSection = ({
   });
 
   // Keep titleDraft in sync when the prop changes (e.g. after server confirmation)
-  useEffect(() => { setTitleDraft(checklist.title); }, [checklist.title]);
+  useEffect(() => {
+    setTitleDraft(checklist.title);
+  }, [checklist.title]);
 
   useEffect(() => {
     if (editingTitle) titleInputRef.current?.select();
@@ -228,7 +247,9 @@ export const ChecklistSection = ({
           type="button"
           className="flex-shrink-0 text-muted hover:text-subtle focus:outline-none transition-transform duration-150"
           style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
-          onClick={() => { setCollapsed((v) => !v); }}
+          onClick={() => {
+            setCollapsed((v) => !v);
+          }}
           aria-label={collapsed ? 'Expand checklist' : 'Collapse checklist'}
           aria-expanded={!collapsed}
         >
@@ -239,19 +260,28 @@ export const ChecklistSection = ({
             ref={titleInputRef}
             className="flex-1 rounded border border-border bg-bg-overlay px-2 py-0.5 text-sm font-semibold text-base focus:outline-none focus:ring-1 focus:ring-primary"
             value={titleDraft}
-            onChange={(e) => { setTitleDraft(e.target.value); }}
-            onBlur={() => { void handleTitleCommit(); }}
+            onChange={(e) => {
+              setTitleDraft(e.target.value);
+            }}
+            onBlur={() => {
+              void handleTitleCommit();
+            }}
             onKeyDown={(e) => {
               e.stopPropagation();
               if (e.key === 'Enter') void handleTitleCommit();
-              if (e.key === 'Escape') { setEditingTitle(false); setTitleDraft(checklist.title); }
+              if (e.key === 'Escape') {
+                setEditingTitle(false);
+                setTitleDraft(checklist.title);
+              }
             }}
           />
         ) : (
           <button
             type="button"
             className="min-w-0 flex-1 whitespace-normal break-words text-left text-sm font-semibold text-base hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-            onClick={() => { if (!disabled) setEditingTitle(true); }}
+            onClick={() => {
+              if (!disabled) setEditingTitle(true);
+            }}
             title="Click to rename"
             disabled={disabled}
           >
@@ -265,7 +295,10 @@ export const ChecklistSection = ({
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() => { setAdding((v) => !v); }}>
+                onClick={() => {
+                  setAdding((v) => !v);
+                }}
+              >
                 + Item
               </Button>
               <Button
@@ -273,7 +306,9 @@ export const ChecklistSection = ({
                 variant="ghost"
                 size="icon"
                 className="text-muted hover:text-danger"
-                onClick={() => { void onDelete(); }}
+                onClick={() => {
+                  void onDelete();
+                }}
                 title={translations['card.checklist.deleteTitle']}
                 aria-label={translations['card.checklist.deleteAria']}
               >
@@ -321,7 +356,9 @@ export const ChecklistSection = ({
                 className="flex-1 rounded border border-border bg-bg-overlay px-2 py-1 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Add an item…"
                 value={newTitle}
-                onChange={(e) => { setNewTitle(e.target.value); }}
+                onChange={(e) => {
+                  setNewTitle(e.target.value);
+                }}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                   if (e.key === 'Enter') void handleItemAdd();
@@ -334,7 +371,9 @@ export const ChecklistSection = ({
                 type="button"
                 variant="primary"
                 className="px-3 py-1 text-sm"
-                onClick={() => { void handleItemAdd(); }}
+                onClick={() => {
+                  void handleItemAdd();
+                }}
                 disabled={!newTitle.trim() || addingItem}
               >
                 Add
@@ -343,7 +382,9 @@ export const ChecklistSection = ({
                 type="button"
                 variant="ghost"
                 className="text-sm text-muted hover:text-base"
-                onClick={() => { setAdding(false); }}
+                onClick={() => {
+                  setAdding(false);
+                }}
               >
                 Cancel
               </Button>

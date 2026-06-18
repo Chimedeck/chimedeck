@@ -14,7 +14,10 @@ export const MANIFEST_CACHE_TTL_MS = 5 * 60 * 1000;
 export const FILE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export const specsManifestCache = new Map<string, SpecsManifestCacheEntry>();
-export const specsManifestInflight = new Map<string, Promise<{ manifest: SpecsManifest; repoPath: string }>>();
+export const specsManifestInflight = new Map<
+  string,
+  Promise<{ manifest: SpecsManifest; repoPath: string }>
+>();
 export const specsFileCache = new Map<string, FileCacheEntry>();
 export const specsFileInflight = new Map<string, Promise<{ content: string; etag: string }>>();
 

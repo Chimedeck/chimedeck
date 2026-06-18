@@ -9,9 +9,7 @@ import {
   type GithubProjectReference,
 } from '../githubProjectUrl';
 
-const expectOk = (
-  result: ReturnType<typeof parseGithubProjectUrl>
-): GithubProjectReference => {
+const expectOk = (result: ReturnType<typeof parseGithubProjectUrl>): GithubProjectReference => {
   expect(result).not.toBeNull();
   return result as GithubProjectReference;
 };
@@ -19,7 +17,7 @@ const expectOk = (
 describe('parseGithubProjectUrl — project URLs', () => {
   it('accepts an org-scoped project URL and strips the trailing slash', () => {
     const ref = expectOk(
-      parseGithubProjectUrl('https://github.com/orgs/JourneyHorizon/projects/42/'),
+      parseGithubProjectUrl('https://github.com/orgs/JourneyHorizon/projects/42/')
     );
     expect(ref.scope).toBe('org');
     expect(ref.owner).toBe('JourneyHorizon');
@@ -35,9 +33,7 @@ describe('parseGithubProjectUrl — project URLs', () => {
   });
 
   it('accepts a repo-scoped project URL and exposes the owner/repo pair', () => {
-    const ref = expectOk(
-      parseGithubProjectUrl('https://github.com/octo-org/octo-repo/projects/9'),
-    );
+    const ref = expectOk(parseGithubProjectUrl('https://github.com/octo-org/octo-repo/projects/9'));
     expect(ref.scope).toBe('repo');
     expect(ref.owner).toBe('octo-org');
     expect(ref.repository).toBe('octo-repo');
@@ -48,9 +44,7 @@ describe('parseGithubProjectUrl — project URLs', () => {
 describe('parseGithubProjectUrl — HTTPS repository URLs', () => {
   it('accepts a plain HTTPS repo URL with the .git suffix and exposes owner/repo', () => {
     const ref = expectOk(
-      parseGithubProjectUrl(
-        'https://github.com/journeyhorizon/sample-agentic-project.git',
-      ),
+      parseGithubProjectUrl('https://github.com/journeyhorizon/sample-agentic-project.git')
     );
     expect(ref.scope).toBe('repo-https');
     expect(ref.owner).toBe('journeyhorizon');
@@ -60,14 +54,14 @@ describe('parseGithubProjectUrl — HTTPS repository URLs', () => {
 
   it('accepts a repo URL without the .git suffix', () => {
     const ref = expectOk(
-      parseGithubProjectUrl('https://github.com/journeyhorizon/sample-agentic-project'),
+      parseGithubProjectUrl('https://github.com/journeyhorizon/sample-agentic-project')
     );
     expect(ref.repository).toBe('sample-agentic-project');
   });
 
   it('accepts a repo URL with a trailing slash', () => {
     const ref = expectOk(
-      parseGithubProjectUrl('https://github.com/journeyhorizon/sample-agentic-project/'),
+      parseGithubProjectUrl('https://github.com/journeyhorizon/sample-agentic-project/')
     );
     expect(ref.repository).toBe('sample-agentic-project');
   });
@@ -88,7 +82,7 @@ describe('parseGithubProjectUrl — HTTPS repository URLs', () => {
 describe('parseGithubProjectUrl — SSH clone URLs', () => {
   it('accepts a git@ SSH URL with the .git suffix and exposes owner/repo', () => {
     const ref = expectOk(
-      parseGithubProjectUrl('git@github.com:journeyhorizon/sample-agentic-project.git'),
+      parseGithubProjectUrl('git@github.com:journeyhorizon/sample-agentic-project.git')
     );
     expect(ref.scope).toBe('repo-ssh');
     expect(ref.owner).toBe('journeyhorizon');
@@ -97,7 +91,7 @@ describe('parseGithubProjectUrl — SSH clone URLs', () => {
 
   it('accepts a git@ SSH URL without the .git suffix', () => {
     const ref = expectOk(
-      parseGithubProjectUrl('git@github.com:journeyhorizon/sample-agentic-project'),
+      parseGithubProjectUrl('git@github.com:journeyhorizon/sample-agentic-project')
     );
     expect(ref.scope).toBe('repo-ssh');
   });
@@ -146,7 +140,7 @@ describe('normalizeGithubProjectUrl', () => {
 
   it('keeps the project number for project URLs', () => {
     expect(normalizeGithubProjectUrl('https://github.com/orgs/owner/projects/3')).toBe(
-      'https://github.com/orgs/owner/projects/3',
+      'https://github.com/orgs/owner/projects/3'
     );
   });
 });

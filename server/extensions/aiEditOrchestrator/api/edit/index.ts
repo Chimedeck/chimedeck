@@ -3,7 +3,10 @@
 // [why] After creating the run in REQUESTED status, triggers the full
 // execution pipeline asynchronously (context gather → file scope → create → edit → commit).
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { createEditRun } from '../../mods/persistence';
 import { runPipeline } from '../../mods/orchestrator';
 import type { EditRequestInput } from '../../types';
@@ -33,7 +36,7 @@ export async function handleCreateEditRun(req: Request, cardId: string): Promise
   // 2. Require workspace membership
   const membershipError = await editApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -44,14 +47,17 @@ export async function handleCreateEditRun(req: Request, cardId: string): Promise
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.intent !== 'string' || body.intent.trim() === '') {
     return Response.json(
-      { name: 'missing-intent', data: { message: 'intent is required and must be a non-empty string' } },
-      { status: 400 },
+      {
+        name: 'missing-intent',
+        data: { message: 'intent is required and must be a non-empty string' },
+      },
+      { status: 400 }
     );
   }
 
@@ -59,7 +65,7 @@ export async function handleCreateEditRun(req: Request, cardId: string): Promise
   if (!userId) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'User identity not found' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -82,27 +88,24 @@ export async function handleCreateEditRun(req: Request, cardId: string): Promise
     // updates the run status as it progresses. The caller can poll
     // GET /api/v1/cards/:cardId/ai/edit/:runId for progress.
     if (typeof editApiDeps.runPipeline === 'function') {
-      editApiDeps.runPipeline({ run, intent }).catch(err => {
+      editApiDeps.runPipeline({ run, intent }).catch((err) => {
         console.error(
           '[aiEditOrchestrator/edit] Pipeline error for run %s:',
           run.id,
-          err instanceof Error ? err.message : String(err),
+          err instanceof Error ? err.message : String(err)
         );
       });
     }
 
-    return Response.json(
-      { data: { run } },
-      { status: 201 },
-    );
+    return Response.json({ data: { run } }, { status: 201 });
   } catch (error) {
     console.error(
       '[aiEditOrchestrator/edit] Unexpected error:',
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
     return Response.json(
       { name: 'internal-error', data: { message: 'Failed to create edit run' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

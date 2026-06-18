@@ -9,7 +9,13 @@ import Button from '../../../common/components/Button';
 import ToastRegion from '../../../common/components/ToastRegion';
 import type { ToastItem } from '../../../common/components/ToastRegion';
 import { useAttachmentUpload } from '../hooks/useAttachmentUpload';
-import { listAttachments, deleteAttachment, createUrlAttachment, patchAttachment, fetchCardPreview } from '../api';
+import {
+  listAttachments,
+  deleteAttachment,
+  createUrlAttachment,
+  patchAttachment,
+  fetchCardPreview,
+} from '../api';
 import { AttachmentDropZone } from './AttachmentDropZone';
 import { AttachmentItem } from './AttachmentItem';
 import { CardAttachmentPreview } from './CardAttachmentPreview';
@@ -37,7 +43,14 @@ interface Props {
   refreshSignal?: number;
 }
 
-export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, onCountChange, onAttachmentsChange, refreshSignal }: Readonly<Props>): React.ReactElement {
+export function AttachmentPanel({
+  cardId,
+  canWrite = true,
+  insertMarkdownRef,
+  onCountChange,
+  onAttachmentsChange,
+  refreshSignal,
+}: Readonly<Props>): React.ReactElement {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Server-persisted attachments
@@ -77,7 +90,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
       const res = await listAttachments({ cardId });
       // Sort newest-first
       const sorted = [...res.data].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setAttachments(sorted);
       const fileCount = sorted.filter((a) => a.referenced_card_id == null).length;
@@ -131,7 +144,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
         void loadAttachments();
       }
     },
-    [cardId, loadAttachments, onCountChange],
+    [cardId, loadAttachments, onCountChange]
   );
 
   // Handle a URL pasted anywhere in the card modal while no text input is focused.
@@ -157,35 +170,31 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
         // silently ignore — user can still use the manual link form
       }
     },
-    [cardId, canWrite, loadAttachments],
+    [cardId, canWrite, loadAttachments]
   );
 
   // Rename attachment — optimistic alias update, rolls back on server error
   const handleRename = useCallback(
     async (id: string, alias: string) => {
       // Optimistic update
-      setAttachments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, alias } : a)),
-      );
+      setAttachments((prev) => prev.map((a) => (a.id === id ? { ...a, alias } : a)));
       try {
         const res = await patchAttachment({ attachmentId: id, alias });
         // Sync with confirmed server value
-        setAttachments((prev) =>
-          prev.map((a) => (a.id === id ? res.data : a)),
-        );
+        setAttachments((prev) => prev.map((a) => (a.id === id ? res.data : a)));
       } catch {
         // Roll back optimistic update on failure
         void loadAttachments();
       }
     },
-    [loadAttachments],
+    [loadAttachments]
   );
 
   // Edit external-link URL — optimistic URL update, then refresh to sync referenced-card metadata.
   const handleUpdateUrl = useCallback(
     async (id: string, url: string) => {
       setAttachments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, view_url: url, external_url: url } : a)),
+        prev.map((a) => (a.id === id ? { ...a, view_url: url, external_url: url } : a))
       );
       try {
         await patchAttachment({ attachmentId: id, url });
@@ -194,7 +203,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
         void loadAttachments();
       }
     },
-    [loadAttachments],
+    [loadAttachments]
   );
 
   // Insert markdown link into the active comment editor — no network call
@@ -202,7 +211,7 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
     (markdown: string) => {
       insertMarkdownRef?.current?.(markdown);
     },
-    [insertMarkdownRef],
+    [insertMarkdownRef]
   );
 
   // Open native file picker
@@ -240,8 +249,8 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
       const parsedHost = new URL(parsed.origin).hostname;
       const appHost = new URL(configuredAppOrigin).hostname;
       const isLocalMatch =
-        (parsedHost === 'localhost' || parsedHost === '127.0.0.1')
-        && (appHost === 'localhost' || appHost === '127.0.0.1');
+        (parsedHost === 'localhost' || parsedHost === '127.0.0.1') &&
+        (appHost === 'localhost' || appHost === '127.0.0.1');
       if (parsed.origin !== configuredAppOrigin && !isLocalMatch) return null;
 
       const pathname = parsed.pathname.replace(/\/+$/, '');
@@ -331,12 +340,10 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   // Separate image attachments (READY + image/* content_type) for thumbnail grid
   // Partition server attachments by kind.
   // Card links: URL attachments that reference an internal card.
-  const cardLinkAttachments = attachments.filter(
-    (a) => a.type === 'URL' && a.referenced_card_id,
-  );
+  const cardLinkAttachments = attachments.filter((a) => a.type === 'URL' && a.referenced_card_id);
   // External links: URL attachments that are pure external URLs.
   const externalLinkAttachments = attachments.filter(
-    (a) => a.type === 'URL' && !a.referenced_card_id,
+    (a) => a.type === 'URL' && !a.referenced_card_id
   );
   // Files: all FILE-type attachments.
   const fileAttachments = attachments.filter((a) => a.type === 'FILE');
@@ -358,248 +365,265 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
           "[data-attachment-dropzone-root='true']",
         ]}
       >
-      {/* Invisible paste listener — only active when the user can write */}
-      <PasteListener enabled={canWrite} onFiles={upload} onLink={handlePasteLink} />
+        {/* Invisible paste listener — only active when the user can write */}
+        <PasteListener enabled={canWrite} onFiles={upload} onLink={handlePasteLink} />
 
-      {/* Hidden file input — accept covers all server-allowed types; server re-validates */}
-      {canWrite && (
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,text/markdown,application/zip,application/x-tar,application/gzip,audio/*"
-          className="hidden"
-          onChange={handleFileInputChange}
-          data-testid="attachment-file-input"
-        />
-      )}
-
-      {/* Section header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-subtle flex items-center gap-1.5">
-          <PaperClipIcon className="h-4 w-4 text-muted" aria-hidden="true" />
-          {translations['attachments.panel.title']}
-        </h3>
+        {/* Hidden file input — accept covers all server-allowed types; server re-validates */}
         {canWrite && (
-          <Button
-            variant="secondary"
-            size="sm"
-            type="button"
-            onClick={handlePickerClick}
-            data-testid="attach-file-button"
-          >
-            {translations['attachments.panel.attachFile']}
-          </Button>
-        )}
-      </div>
-
-      {/* In-flight uploads (before server record exists) */}
-      {uploads
-        .filter((u) => u.phase !== 'done')
-        .map((entry) => {
-          // Render a temporary row using the file details
-          const tempAttachment: Attachment = {
-            id: entry.clientId,
-            card_id: cardId,
-            name: entry.file.name,
-            alias: null,
-            type: 'FILE',
-            status: 'PENDING',
-            key: null,
-            thumbnail_key: null,
-            content_type: entry.file.type || null,
-            size_bytes: entry.file.size,
-            width: null,
-            height: null,
-            view_url: null,
-            thumbnail_url: null,
-            external_url: null,
-            referenced_card_id: null,
-            referenced_card: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          return (
-            <AttachmentItem
-              key={entry.clientId}
-              attachment={tempAttachment}
-              uploadProgress={entry.phase === 'uploading' ? entry.progress : null}
-              onDelete={() => { removeEntry(entry.clientId); }}
-            />
-          );
-        })}
-
-      {/* Server-persisted attachment list */}
-      {loadError && (
-        <p className="text-xs text-danger mt-1">{loadError}</p>
-      )}
-
-      {attachments.length === 0 && uploads.filter((u) => u.phase !== 'done').length === 0 && (
-        <p className="text-xs text-muted italic mt-1">{translations['attachments.panel.empty']}</p>
-      )}
-
-      {/* FILE attachments */}
-      <div className="space-y-0" data-testid="attachment-list">
-        {fileAttachments.map((attachment) => (
-          <AttachmentItem
-            key={attachment.id}
-            attachment={attachment}
-            uploadProgress={progressForAttachment(attachment.id)}
-            onDelete={handleDelete}
-            onRename={handleRename}
-            {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,text/markdown,application/zip,application/x-tar,application/gzip,audio/*"
+            className="hidden"
+            onChange={handleFileInputChange}
+            data-testid="attachment-file-input"
           />
-        ))}
-      </div>
+        )}
 
-      {/* Cards section — internal card-link attachments */}
-      {cardLinkAttachments.length > 0 && (
-        <div className="mt-4" data-testid="card-attachments-section">
-          <p className="text-xs font-semibold text-muted mb-2">
-            {translations['attachments.panel.cardsSection']}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {cardLinkAttachments.map((attachment) =>
-              attachment.referenced_card ? (
-                <CardAttachmentPreview
-                  key={attachment.id}
-                  attachmentId={attachment.id}
-                  card={attachment.referenced_card}
-                  cardUrl={attachment.view_url ?? attachment.external_url ?? ''}
-                  canWrite={canWrite}
-                  onDelete={handleDelete}
-                />
-              ) : null,
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Links section — external URL attachments */}
-      {externalLinkAttachments.length > 0 && (
-        <div className="mt-4" data-testid="link-attachments-section">
-          <p className="text-xs font-semibold text-muted mb-2">
-            {translations['attachments.panel.linksSection']}
-          </p>
-          <div className="space-y-2">
-            {externalLinkAttachments.map((attachment) => (
-              <ExternalLinkPreview
-                key={attachment.id}
-                attachment={attachment}
-                canWrite={canWrite}
-                onDelete={handleDelete}
-                onRename={(id: string, alias: string) => { void handleRename(id, alias); }}
-                onUpdateUrl={(id: string, url: string) => { void handleUpdateUrl(id, url); }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Video attachments do not show previews — they are listed in the attachment list above. */}
-
-      {/* External URL / card link form — hidden for VIEWER guests */}
-      {canWrite && (
-        <div className="mt-3 pb-4">
-          {showLinkForm ? (
-            <form
-              onSubmit={handleLinkSubmit}
-              className="space-y-2"
-              data-testid="link-form"
-            >
-              <input
-                type="url"
-                placeholder={translations['attachments.panel.link.urlPlaceholder']}
-                value={linkUrl}
-                onChange={(e) => { handleLinkUrlChange(e.target.value); }}
-                required
-                className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
-                data-testid="link-url-input"
-                autoFocus
-              />
-
-              {/* Internal card preview — shown when URL resolves to a card in this workspace */}
-              {detectingCard && (
-                <p className="text-xs text-muted italic">{translations['attachments.panel.link.loadingCard']}</p>
-              )}
-              {detectError && !detectingCard && (
-                <p className="text-xs text-amber-400">{translations['attachments.panel.link.cardNotFound']}</p>
-              )}
-              {detectedCard && !detectingCard && (
-                <div className="rounded-lg border border-border bg-bg-surface/60 px-3 py-2" data-testid="link-card-preview">
-                  <p className="text-[11px] text-muted truncate mb-0.5">
-                    {detectedCard.board_name ?? ''}
-                    {detectedCard.list_name ? <span className="ml-1 text-muted">· {detectedCard.list_name}</span> : null}
-                  </p>
-                  {detectedCard.labels.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-1">
-                      {detectedCard.labels.map((label) => (
-                        <span
-                          key={label.id}
-                          className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white/90 truncate max-w-[120px]" // [theme-exception] text-white on colored attachment thumbnail
-                          style={{ backgroundColor: label.color }}
-                          title={label.name}
-                        >
-                          {label.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <p className="text-sm font-medium text-base truncate">{detectedCard.title}</p>
-                </div>
-              )}
-
-              {/* Name field — hidden when a card was detected (card title is used automatically) */}
-              {!detectedCard && (
-                <input
-                  type="text"
-                  placeholder={translations['attachments.panel.link.namePlaceholder']}
-                  value={linkName}
-                  onChange={(e) => { setLinkName(e.target.value); }}
-                  className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
-                  data-testid="link-name-input"
-                />
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  type="submit"
-                  disabled={linkSubmitting || detectingCard}
-                  data-testid="link-submit-button"
-                >
-                  {translations['attachments.panel.link.attach']}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  type="button"
-                  onClick={() => {
-                    setShowLinkForm(false);
-                    setLinkUrl('');
-                    setLinkName('');
-                    setDetectedCard(null);
-                    setDetectError(false);
-                  }}
-                >
-                  {translations['attachments.panel.link.cancel']}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <button
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-subtle flex items-center gap-1.5">
+            <PaperClipIcon className="h-4 w-4 text-muted" aria-hidden="true" />
+            {translations['attachments.panel.title']}
+          </h3>
+          {canWrite && (
+            <Button
+              variant="secondary"
+              size="sm"
               type="button"
-              onClick={() => { setShowLinkForm(true); }}
-              className="flex items-center gap-1 text-xs text-muted hover:text-subtle transition-colors"
-              data-testid="attach-link-button"
+              onClick={handlePickerClick}
+              data-testid="attach-file-button"
             >
-              <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
-              {translations['attachments.panel.link.attachLink']}
-            </button>
+              {translations['attachments.panel.attachFile']}
+            </Button>
           )}
         </div>
-      )}
+
+        {/* In-flight uploads (before server record exists) */}
+        {uploads
+          .filter((u) => u.phase !== 'done')
+          .map((entry) => {
+            // Render a temporary row using the file details
+            const tempAttachment: Attachment = {
+              id: entry.clientId,
+              card_id: cardId,
+              name: entry.file.name,
+              alias: null,
+              type: 'FILE',
+              status: 'PENDING',
+              key: null,
+              thumbnail_key: null,
+              content_type: entry.file.type || null,
+              size_bytes: entry.file.size,
+              width: null,
+              height: null,
+              view_url: null,
+              thumbnail_url: null,
+              external_url: null,
+              referenced_card_id: null,
+              referenced_card: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            return (
+              <AttachmentItem
+                key={entry.clientId}
+                attachment={tempAttachment}
+                uploadProgress={entry.phase === 'uploading' ? entry.progress : null}
+                onDelete={() => {
+                  removeEntry(entry.clientId);
+                }}
+              />
+            );
+          })}
+
+        {/* Server-persisted attachment list */}
+        {loadError && <p className="text-xs text-danger mt-1">{loadError}</p>}
+
+        {attachments.length === 0 && uploads.filter((u) => u.phase !== 'done').length === 0 && (
+          <p className="text-xs text-muted italic mt-1">
+            {translations['attachments.panel.empty']}
+          </p>
+        )}
+
+        {/* FILE attachments */}
+        <div className="space-y-0" data-testid="attachment-list">
+          {fileAttachments.map((attachment) => (
+            <AttachmentItem
+              key={attachment.id}
+              attachment={attachment}
+              uploadProgress={progressForAttachment(attachment.id)}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              {...(insertMarkdownRef ? { onInsertComment: handleInsertComment } : {})}
+            />
+          ))}
+        </div>
+
+        {/* Cards section — internal card-link attachments */}
+        {cardLinkAttachments.length > 0 && (
+          <div className="mt-4" data-testid="card-attachments-section">
+            <p className="text-xs font-semibold text-muted mb-2">
+              {translations['attachments.panel.cardsSection']}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {cardLinkAttachments.map((attachment) =>
+                attachment.referenced_card ? (
+                  <CardAttachmentPreview
+                    key={attachment.id}
+                    attachmentId={attachment.id}
+                    card={attachment.referenced_card}
+                    cardUrl={attachment.view_url ?? attachment.external_url ?? ''}
+                    canWrite={canWrite}
+                    onDelete={handleDelete}
+                  />
+                ) : null
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Links section — external URL attachments */}
+        {externalLinkAttachments.length > 0 && (
+          <div className="mt-4" data-testid="link-attachments-section">
+            <p className="text-xs font-semibold text-muted mb-2">
+              {translations['attachments.panel.linksSection']}
+            </p>
+            <div className="space-y-2">
+              {externalLinkAttachments.map((attachment) => (
+                <ExternalLinkPreview
+                  key={attachment.id}
+                  attachment={attachment}
+                  canWrite={canWrite}
+                  onDelete={handleDelete}
+                  onRename={(id: string, alias: string) => {
+                    void handleRename(id, alias);
+                  }}
+                  onUpdateUrl={(id: string, url: string) => {
+                    void handleUpdateUrl(id, url);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Video attachments do not show previews — they are listed in the attachment list above. */}
+
+        {/* External URL / card link form — hidden for VIEWER guests */}
+        {canWrite && (
+          <div className="mt-3 pb-4">
+            {showLinkForm ? (
+              <form onSubmit={handleLinkSubmit} className="space-y-2" data-testid="link-form">
+                <input
+                  type="url"
+                  placeholder={translations['attachments.panel.link.urlPlaceholder']}
+                  value={linkUrl}
+                  onChange={(e) => {
+                    handleLinkUrlChange(e.target.value);
+                  }}
+                  required
+                  className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
+                  data-testid="link-url-input"
+                  autoFocus
+                />
+
+                {/* Internal card preview — shown when URL resolves to a card in this workspace */}
+                {detectingCard && (
+                  <p className="text-xs text-muted italic">
+                    {translations['attachments.panel.link.loadingCard']}
+                  </p>
+                )}
+                {detectError && !detectingCard && (
+                  <p className="text-xs text-amber-400">
+                    {translations['attachments.panel.link.cardNotFound']}
+                  </p>
+                )}
+                {detectedCard && !detectingCard && (
+                  <div
+                    className="rounded-lg border border-border bg-bg-surface/60 px-3 py-2"
+                    data-testid="link-card-preview"
+                  >
+                    <p className="text-[11px] text-muted truncate mb-0.5">
+                      {detectedCard.board_name ?? ''}
+                      {detectedCard.list_name ? (
+                        <span className="ml-1 text-muted">· {detectedCard.list_name}</span>
+                      ) : null}
+                    </p>
+                    {detectedCard.labels.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {detectedCard.labels.map((label) => (
+                          <span
+                            key={label.id}
+                            className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold text-white/90 truncate max-w-[120px]" // [theme-exception] text-white on colored attachment thumbnail
+                            style={{ backgroundColor: label.color }}
+                            title={label.name}
+                          >
+                            {label.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-sm font-medium text-base truncate">{detectedCard.title}</p>
+                  </div>
+                )}
+
+                {/* Name field — hidden when a card was detected (card title is used automatically) */}
+                {!detectedCard && (
+                  <input
+                    type="text"
+                    placeholder={translations['attachments.panel.link.namePlaceholder']}
+                    value={linkName}
+                    onChange={(e) => {
+                      setLinkName(e.target.value);
+                    }}
+                    className="w-full text-sm bg-bg-overlay text-base placeholder:text-subtle border border-border rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
+                    data-testid="link-name-input"
+                  />
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    type="submit"
+                    disabled={linkSubmitting || detectingCard}
+                    data-testid="link-submit-button"
+                  >
+                    {translations['attachments.panel.link.attach']}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setShowLinkForm(false);
+                      setLinkUrl('');
+                      setLinkName('');
+                      setDetectedCard(null);
+                      setDetectError(false);
+                    }}
+                  >
+                    {translations['attachments.panel.link.cancel']}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLinkForm(true);
+                }}
+                className="flex items-center gap-1 text-xs text-muted hover:text-subtle transition-colors"
+                data-testid="attach-link-button"
+              >
+                <LinkIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                {translations['attachments.panel.link.attachLink']}
+              </button>
+            )}
+          </div>
+        )}
       </AttachmentDropZone>
 
       <ToastRegion toasts={toasts} onDismiss={dismissToast} />

@@ -15,23 +15,14 @@ export function isTransitionsBannerDismissed({
   return storage.getItem(getTransitionsBannerSessionKey(boardId)) === '1';
 }
 
-export function useTransitionsBanner({
-  boardId,
-  enabled,
-}: {
-  boardId: string;
-  enabled: boolean;
-}) {
-  const storage = useMemo(
-    () => {
-      try {
-        return globalThis.sessionStorage;
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
+export function useTransitionsBanner({ boardId, enabled }: { boardId: string; enabled: boolean }) {
+  const storage = useMemo(() => {
+    try {
+      return globalThis.sessionStorage;
+    } catch {
+      return null;
+    }
+  }, []);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {

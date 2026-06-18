@@ -14,7 +14,12 @@ import { validatePathAllowlist } from '../security/pathAllowlist';
 import { applyBudget } from '../budget';
 import { persistSnapshot } from '../snapshots';
 import { CONNECTOR_TIMEOUT_MS } from '../../common/config';
-import type { ContextGatherInput, GatherPipelineResult, SearchConnectorResult, ContextSource } from '../../types';
+import type {
+  ContextGatherInput,
+  GatherPipelineResult,
+  SearchConnectorResult,
+  ContextSource,
+} from '../../types';
 
 /**
  * Run a connector with a timeout budget. Returns empty array on timeout.
@@ -23,7 +28,7 @@ import type { ContextGatherInput, GatherPipelineResult, SearchConnectorResult, C
 async function withTimeout<T>(
   label: string,
   fn: () => Promise<T[]>,
-  timeoutMs: number,
+  timeoutMs: number
 ): Promise<{ results: T[]; timedOut: boolean }> {
   const timer = setTimeout(() => {
     // Timer fires — Promise.race below will resolve with the timeout result
@@ -40,7 +45,10 @@ async function withTimeout<T>(
     const results = await Promise.race([fn(), timeout]);
     return { results, timedOut: false };
   } catch (error) {
-    console.warn(`[aiContext/gather] ${label} failed:`, error instanceof Error ? error.message : String(error));
+    console.warn(
+      `[aiContext/gather] ${label} failed:`,
+      error instanceof Error ? error.message : String(error)
+    );
     return { results: [], timedOut: false };
   } finally {
     clearTimeout(timer);
@@ -85,7 +93,7 @@ const defaultDeps: GatherPipelineDeps = {
  */
 export async function runGatherPipeline(
   input: ContextGatherInput,
-  deps: GatherPipelineDeps = defaultDeps,
+  deps: GatherPipelineDeps = defaultDeps
 ): Promise<GatherPipelineResult> {
   const { cardId, intent, focusPaths } = input;
 
@@ -107,7 +115,11 @@ export async function runGatherPipeline(
     withTimeout('docsSearch', () => deps.searchDocs({ repoRoot, intent }), CONNECTOR_TIMEOUT_MS),
     withTimeout('codeSearch', () => deps.searchCode({ repoRoot, intent }), CONNECTOR_TIMEOUT_MS),
     withTimeout('cardsSearch', () => deps.searchCards({ cardId, intent }), CONNECTOR_TIMEOUT_MS),
-    withTimeout('gitSearch', () => deps.searchGit({ repoRoot, intent, focusPaths }), CONNECTOR_TIMEOUT_MS),
+    withTimeout(
+      'gitSearch',
+      () => deps.searchGit({ repoRoot, intent, focusPaths }),
+      CONNECTOR_TIMEOUT_MS
+    ),
   ]);
 
   const connectorResults: Record<ContextSource, SearchConnectorResult[]> = {
@@ -149,7 +161,10 @@ export async function runGatherPipeline(
   } catch (error) {
     // [why] Snapshot persistence is best-effort — don't fail the gather
     // call if the snapshot write fails (e.g. migration hasn't run yet).
-    console.warn('[aiContext/gather] Snapshot persistence failed:', error instanceof Error ? error.message : String(error));
+    console.warn(
+      '[aiContext/gather] Snapshot persistence failed:',
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   return {

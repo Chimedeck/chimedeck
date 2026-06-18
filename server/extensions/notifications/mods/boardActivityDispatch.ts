@@ -6,7 +6,10 @@
 // Failures are logged and never propagate — this must not block mutations.
 import { db } from '../../../common/db';
 import { dispatchNotificationEmail } from './emailDispatch';
-import { resolveBoardNotificationPreference, resolveNotificationChannels } from './boardPreferenceGuard';
+import {
+  resolveBoardNotificationPreference,
+  resolveNotificationChannels,
+} from './boardPreferenceGuard';
 import { globalPreferenceGuard } from './globalPreferenceGuard';
 import { publishToUser } from '../../realtime/userChannel';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
@@ -45,7 +48,10 @@ export async function handleBoardActivityNotification({
   if (!SUPPORTED_EVENTS.has(event.type)) return;
 
   try {
-    const board = await db('boards').where({ id: boardId }).select('id', 'title', 'workspace_id').first();
+    const board = await db('boards')
+      .where({ id: boardId })
+      .select('id', 'title', 'workspace_id')
+      .first();
     if (!board) return;
 
     // Fetch all board participants (joined members + explicit board guests), excluding actor.
@@ -64,7 +70,7 @@ export async function handleBoardActivityNotification({
       new Set([
         ...members.map((m: { user_id: string }) => m.user_id),
         ...guests.map((g: { user_id: string }) => g.user_id),
-      ]),
+      ])
     );
 
     if (recipientIds.length === 0) return;
@@ -82,7 +88,7 @@ export async function handleBoardActivityNotification({
     // Fetch actor details once for the WS payload
     const actor = await db('users')
       .where({ id: actorId })
-      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+      .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
       ? buildAvatarProxyUrl({ userId: actorId, avatarUrl: actor.avatar_url })
@@ -98,11 +104,10 @@ export async function handleBoardActivityNotification({
 
     // Derive card_id and board_id for the notification row from event payload
     const payload = event.payload;
-    const cardId = (
+    const cardId =
       (payload.card as { id?: string } | undefined)?.id ??
       (payload.cardId as string | undefined) ??
-      null
-    );
+      null;
     const relatedUserIds = await getCardRelatedUserIds({ cardId });
 
     // For card_moved, include the destination list name in the WS payload
@@ -121,8 +126,8 @@ export async function handleBoardActivityNotification({
         if (!globalEnabled || !boardPreference.notificationsEnabled) continue;
 
         if (
-          boardPreference.onlyRelatedToMe
-          && !isRecipientRelatedCardNotification({
+          boardPreference.onlyRelatedToMe &&
+          !isRecipientRelatedCardNotification({
             type: notificationType,
             recipientId,
             relatedUserIds,
@@ -153,21 +158,24 @@ export async function handleBoardActivityNotification({
 
       if (inAppEnabled) {
         db('notifications')
-          .insert({
-            user_id: recipientId,
-            type: notificationType,
-            source_type: 'board_activity',
-            source_id: event.id,
-            card_id: cardId,
-            board_id: boardId,
-            actor_id: actorId,
-            // [why] Persist at insert time so the list name is frozen to the destination
-            // at the moment of the move. Resolving via cards.list_id at query time would
-            // show the card's current list for all historical card_moved notifications.
-            list_title: listTitle,
-            read: false,
-            created_at: now,
-          }, ['*'])
+          .insert(
+            {
+              user_id: recipientId,
+              type: notificationType,
+              source_type: 'board_activity',
+              source_id: event.id,
+              card_id: cardId,
+              board_id: boardId,
+              actor_id: actorId,
+              // [why] Persist at insert time so the list name is frozen to the destination
+              // at the moment of the move. Resolving via cards.list_id at query time would
+              // show the card's current list for all historical card_moved notifications.
+              list_title: listTitle,
+              read: false,
+              created_at: now,
+            },
+            ['*']
+          )
           .then(([inserted]) => {
             if (inserted) {
               return publishToUser(recipientId, {
@@ -206,8 +214,10 @@ export async function handleBoardActivityNotification({
 
 function eventTypeToNotificationType(eventType: SupportedEventType) {
   switch (eventType) {
-    case 'card.created': return 'card_created' as const;
-    case 'card.moved': return 'card_moved' as const;
+    case 'card.created':
+      return 'card_created' as const;
+    case 'card.moved':
+      return 'card_moved' as const;
   }
 }
 
@@ -243,7 +253,9 @@ async function buildTemplateData({
     const fromListId = payload.fromListId as string | undefined;
     const [toList, fromList] = await Promise.all([
       db('lists').where({ id: card.list_id }).select('title').first(),
-      fromListId ? db('lists').where({ id: fromListId }).select('title').first() : Promise.resolve(null),
+      fromListId
+        ? db('lists').where({ id: fromListId }).select('title').first()
+        : Promise.resolve(null),
     ]);
     const cardUrl = `/boards/${event.board_id}/cards/${card.id}`;
     return {
@@ -288,22 +300,20 @@ export async function dispatchDirectCardNotification({
         .select('user_id'),
     ]);
 
-    const excludedRecipientIds = new Set(
-      excludedUserIds.filter((id) => id !== actorId),
-    );
+    const excludedRecipientIds = new Set(excludedUserIds.filter((id) => id !== actorId));
 
     const recipients = Array.from(
       new Set([
         ...members.map((m: { user_id: string }) => m.user_id),
         ...guests.map((g: { user_id: string }) => g.user_id),
-      ]),
+      ])
     ).filter((recipientId) => !excludedRecipientIds.has(recipientId));
 
     if (recipients.length === 0) return;
 
     const actor = await db('users')
       .where({ id: actorId })
-      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+      .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
       ? buildAvatarProxyUrl({ userId: actorId, avatarUrl: actor.avatar_url })
@@ -319,7 +329,8 @@ export async function dispatchDirectCardNotification({
     const now = new Date().toISOString();
     const cardTitle = payload.cardTitle;
     const relatedUserIds = await getCardRelatedUserIds({ cardId });
-    const replyToUserId = payload.type === 'card_commented' ? (payload.replyToUserId ?? null) : null;
+    const replyToUserId =
+      payload.type === 'card_commented' ? (payload.replyToUserId ?? null) : null;
     let sourceParentId: string | null = null;
 
     // For direct card events, source_id must always be non-null (notifications schema).
@@ -383,8 +394,8 @@ export async function dispatchDirectCardNotification({
         if (!globalEnabled || !boardPreference.notificationsEnabled) continue;
 
         if (
-          boardPreference.onlyRelatedToMe
-          && !isRecipientRelatedCardNotification({
+          boardPreference.onlyRelatedToMe &&
+          !isRecipientRelatedCardNotification({
             type: notificationType,
             recipientId,
             relatedUserIds,
@@ -415,17 +426,20 @@ export async function dispatchDirectCardNotification({
 
       if (inAppEnabled) {
         db('notifications')
-          .insert({
-            user_id: recipientId,
-            type: notificationType,
-            source_type: 'board_activity',
-            source_id: sourceId,
-            card_id: cardId,
-            board_id: boardId,
-            actor_id: actorId,
-            read: false,
-            created_at: now,
-          }, ['*'])
+          .insert(
+            {
+              user_id: recipientId,
+              type: notificationType,
+              source_type: 'board_activity',
+              source_id: sourceId,
+              card_id: cardId,
+              board_id: boardId,
+              actor_id: actorId,
+              read: false,
+              created_at: now,
+            },
+            ['*']
+          )
           .then(([inserted]) => {
             if (inserted) {
               return publishToUser(recipientId, {
@@ -436,7 +450,8 @@ export async function dispatchDirectCardNotification({
                     card_title: cardTitle,
                     board_title: emailTemplateData?.boardName ?? null,
                     list_title: null,
-                    comment_content: payload.type === 'card_commented' ? payload.commentPreview : null,
+                    comment_content:
+                      payload.type === 'card_commented' ? payload.commentPreview : null,
                     source_parent_id: payload.type === 'card_commented' ? sourceParentId : null,
                     actor: actorPayloadData,
                   },

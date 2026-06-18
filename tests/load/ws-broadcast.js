@@ -9,8 +9,8 @@ export const options = {
   vus: 100,
   duration: '30s',
   thresholds: {
-    'ws_fan_out_ms': ['p(95)<500'],
-    'checks': ['rate>0.95'],
+    ws_fan_out_ms: ['p(95)<500'],
+    checks: ['rate>0.95'],
   },
 };
 

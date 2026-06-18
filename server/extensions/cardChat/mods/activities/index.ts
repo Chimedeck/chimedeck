@@ -33,6 +33,10 @@ export async function emitCardChatActivity({
     });
   } catch (error) {
     // [why] Activity emission must never fail the refinement loop.
-    console.error('[cardChat/activities] Failed to emit event:', type, error instanceof Error ? error.message : String(error));
+    console.error(
+      '[cardChat/activities] Failed to emit event:',
+      type,
+      error instanceof Error ? error.message : String(error)
+    );
   }
 }

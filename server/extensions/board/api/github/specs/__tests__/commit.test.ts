@@ -36,7 +36,10 @@ function makeBoardAccessMock() {
 }
 
 function makeMembershipMock() {
-  return async (req: Request & { callerRole?: string; guestType?: string; workspaceId?: string }, workspaceId: string) => {
+  return async (
+    req: Request & { callerRole?: string; guestType?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
     if (guestType !== undefined) req.guestType = guestType;
@@ -56,7 +59,7 @@ function makeRoleMock() {
 
 function makeCommitRequest(
   changedFiles: string[] = ['specs/overview.md'],
-  message = 'Update specs',
+  message = 'Update specs'
 ) {
   return new Request('http://localhost/api/v1/boards/board-1/github/specs/commit', {
     method: 'POST',
@@ -106,7 +109,9 @@ function resetDeps() {
   };
 }
 
-beforeEach(() => { resetDeps(); });
+beforeEach(() => {
+  resetDeps();
+});
 
 // ── Authorization ─────────────────────────────────────────────────────────────
 
@@ -128,7 +133,7 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit — authorization', (
     guestType = 'VIEWER';
     const res = await handleCommitSpecs(makeCommitRequest(), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toContain('guest');
   });
 
@@ -136,7 +141,7 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit — authorization', (
     board.github_project_url = null;
     const res = await handleCommitSpecs(makeCommitRequest(), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
     expect(body.data.message).toContain('configure your Github documentation');
   });
@@ -161,7 +166,7 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit — commit metadata',
 
     const res = await handleCommitSpecs(
       makeCommitRequest(['specs/overview.md'], 'Add overview doc'),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(201);
@@ -186,7 +191,7 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit — commit metadata',
 
     const res = await handleCommitSpecs(makeCommitRequest(), 'board-1');
     expect(res.status).toBe(201);
-    const body = await res.json() as { data: { footer: string } };
+    const body = (await res.json()) as { data: { footer: string } };
     expect(body.data.footer).toBe(expectedFooter);
   });
 
@@ -219,12 +224,9 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit — validation', () =
       throw new Error('specs-file-must-be-markdown');
     };
 
-    const res = await handleCommitSpecs(
-      makeCommitRequest(['specs/guide.js']),
-      'board-1',
-    );
+    const res = await handleCommitSpecs(makeCommitRequest(['specs/guide.js']), 'board-1');
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('specs-file-must-be-markdown');
   });
 

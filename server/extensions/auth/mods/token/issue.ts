@@ -31,7 +31,7 @@ export async function issueAccessToken({ sub, email }: AccessTokenPayload): Prom
     throw new AccessTokenKeyError(
       `Failed to load JWT_PRIVATE_KEY. The env var is set but the PEM block ` +
         `is malformed (${reason}). Re-run the openssl keygen step from the ` +
-        `README and re-paste the base64-encoded value into .env.`,
+        `README and re-paste the base64-encoded value into .env.`
     );
   }
 

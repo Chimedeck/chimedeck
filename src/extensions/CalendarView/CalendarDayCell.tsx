@@ -46,7 +46,9 @@ const CalendarDayCell = ({
     setIsDragOver(true);
   };
 
-  const handleDragLeave = () => { setIsDragOver(false); };
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -90,7 +92,9 @@ const CalendarDayCell = ({
         {!expanded && overflow > 0 && (
           // [theme-exception]: CalendarView dark theme
           <button
-            onClick={() => { setExpanded(true); }}
+            onClick={() => {
+              setExpanded(true);
+            }}
             className="w-full rounded bg-bg-overlay px-1.5 py-0.5 text-left text-xs text-subtle hover:bg-bg-sunken hover:text-base focus:outline-none"
             data-testid={`calendar-day-overflow-${toIsoDate(date)}`}
           >
@@ -100,7 +104,9 @@ const CalendarDayCell = ({
         {expanded && overflow > 0 && (
           // [theme-exception]: CalendarView dark theme
           <button
-            onClick={() => { setExpanded(false); }}
+            onClick={() => {
+              setExpanded(false);
+            }}
             className="w-full rounded bg-bg-overlay px-1.5 py-0.5 text-left text-xs text-subtle hover:bg-bg-sunken hover:text-base focus:outline-none"
           >
             {translations['CalendarView.showLess']}

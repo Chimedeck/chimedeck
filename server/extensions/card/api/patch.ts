@@ -46,14 +46,14 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.description === undefined) {
     return Response.json(
       { error: { code: 'bad-request', message: 'description is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -68,15 +68,20 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
     if (typeof body.idempotency_key !== 'string' || body.idempotency_key.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'idempotency_key must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const clientTs = new Date(body.client_updated_at);
     if (isNaN(clientTs.getTime())) {
       return Response.json(
-        { error: { code: 'bad-request', message: 'client_updated_at must be a valid ISO 8601 timestamp' } },
-        { status: 400 },
+        {
+          error: {
+            code: 'bad-request',
+            message: 'client_updated_at must be a valid ISO 8601 timestamp',
+          },
+        },
+        { status: 400 }
       );
     }
 
@@ -92,9 +97,7 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
     }
   }
 
-  const sanitizedDescription = body.description
-    ? sanitizeRichText(body.description.trim())
-    : null;
+  const sanitizedDescription = body.description ? sanitizeRichText(body.description.trim()) : null;
 
   const updatedRows = await db.transaction(async (trx) => {
     const rows = await trx('cards')

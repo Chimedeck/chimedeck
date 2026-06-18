@@ -46,10 +46,7 @@ export async function dispatchNotificationEmail({
     }
 
     // Fetch recipient email address
-    const recipient = await db('users')
-      .where({ id: recipientId })
-      .select('email')
-      .first();
+    const recipient = await db('users').where({ id: recipientId }).select('email').first();
     if (!recipient?.email) return;
 
     // Render template
@@ -126,7 +123,11 @@ function renderTemplate(type: NotificationType, data: Record<string, string>) {
     case 'card_updated': {
       // changedFields is serialised as a JSON array string by the dispatch layer
       let changedFields: string[] = [];
-      try { changedFields = JSON.parse(data.changedFields ?? '[]'); } catch { /* ignore */ }
+      try {
+        changedFields = JSON.parse(data.changedFields ?? '[]');
+      } catch {
+        /* ignore */
+      }
       return renderCardUpdatedEmail({
         actorName: data.actorName ?? '',
         cardTitle: data.cardTitle ?? '',

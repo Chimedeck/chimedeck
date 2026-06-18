@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/ai/file-scope
 // Sprint 174 Part 2 — generate file create/edit/no-change plan.
 import { authenticate } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { runGatherPipeline } from '../../mods/gather';
 import { detectDuplicates } from '../../mods/duplicateDetection';
 import { analyseImpact } from '../../mods/impactAnalysis';
@@ -31,7 +34,7 @@ export async function handleFileScope(req: Request, cardId: string): Promise<Res
   // 2. Require workspace membership
   const membershipError = await fileScopeApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -42,14 +45,17 @@ export async function handleFileScope(req: Request, cardId: string): Promise<Res
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.intent !== 'string' || body.intent.trim() === '') {
     return Response.json(
-      { name: 'missing-intent', data: { message: 'intent is required and must be a non-empty string' } },
-      { status: 400 },
+      {
+        name: 'missing-intent',
+        data: { message: 'intent is required and must be a non-empty string' },
+      },
+      { status: 400 }
     );
   }
 
@@ -65,8 +71,11 @@ export async function handleFileScope(req: Request, cardId: string): Promise<Res
 
     if (gatherResult.status !== 200 || !gatherResult.data) {
       return Response.json(
-        { name: gatherResult.name ?? 'gather-failed', data: { message: gatherResult.message ?? 'Context gathering failed' } },
-        { status: gatherResult.status },
+        {
+          name: gatherResult.name ?? 'gather-failed',
+          data: { message: gatherResult.message ?? 'Context gathering failed' },
+        },
+        { status: gatherResult.status }
       );
     }
 
@@ -108,15 +117,15 @@ export async function handleFileScope(req: Request, cardId: string): Promise<Res
 
     const response: FileScopeResponse = plan;
 
-    return Response.json(
-      { data: response },
-      { status: 200 },
-    );
+    return Response.json({ data: response }, { status: 200 });
   } catch (error) {
-    console.error('[aiContext/fileScope] Unexpected error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[aiContext/fileScope] Unexpected error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return Response.json(
       { name: 'internal-error', data: { message: 'File scope planning failed unexpectedly' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

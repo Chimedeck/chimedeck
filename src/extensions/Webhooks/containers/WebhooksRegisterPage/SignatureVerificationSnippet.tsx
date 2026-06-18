@@ -1,7 +1,12 @@
 // SignatureVerificationSnippet — collapsible panel explaining how to verify webhook signatures.
 // Collapsed by default; expands to show prose and a JS code example.
 import { useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClipboardDocumentIcon,
+  CheckIcon,
+} from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
 import translations from '../../translations/en.json';
 
@@ -81,7 +86,9 @@ export default function SignatureVerificationSnippet() {
   function handleCopy() {
     navigator.clipboard.writeText(VERIFICATION_SNIPPET).then(() => {
       setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     });
   }
 
@@ -96,7 +103,9 @@ export default function SignatureVerificationSnippet() {
         className="flex w-full items-center gap-2 px-5 py-4 text-left text-sm font-medium text-text-primary hover:bg-bg-surface/60 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
         aria-expanded={expanded}
         aria-controls="signature-snippet-body"
-        onClick={() => { setExpanded((prev) => !prev); }}
+        onClick={() => {
+          setExpanded((prev) => !prev);
+        }}
         data-testid="signature-snippet-toggle"
       >
         {expanded ? (
@@ -152,7 +161,11 @@ export default function SignatureVerificationSnippet() {
               size="sm"
               onClick={handleCopy}
               className="absolute right-2 top-2 gap-1 bg-bg-surface/80 hover:text-text-primary"
-              aria-label={copied ? translations['SignatureSnippet.copied'] : translations['SignatureSnippet.copy']}
+              aria-label={
+                copied
+                  ? translations['SignatureSnippet.copied']
+                  : translations['SignatureSnippet.copy']
+              }
               data-testid="signature-snippet-copy"
             >
               {copied ? (

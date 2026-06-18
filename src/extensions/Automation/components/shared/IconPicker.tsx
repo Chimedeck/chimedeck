@@ -31,16 +31,33 @@ import type { FC, SVGProps, ComponentType } from 'react';
 type HeroIcon = ComponentType<SVGProps<SVGSVGElement> & { title?: string; titleId?: string }>;
 
 export const BUTTON_ICONS = [
-  'BoltIcon', 'PlayIcon', 'ArrowRightIcon', 'CheckIcon', 'StarIcon',
-  'FlagIcon', 'TagIcon', 'UserPlusIcon', 'ClockIcon', 'CalendarIcon',
-  'ArchiveBoxIcon', 'ArrowUturnRightIcon', 'ChatBubbleLeftIcon',
-  'PaperClipIcon', 'PencilSquareIcon', 'DocumentDuplicateIcon',
-  'CheckCircleIcon', 'ExclamationTriangleIcon', 'FireIcon',
-  'HandThumbUpIcon', 'RocketLaunchIcon', 'ShieldCheckIcon',
-  'SparklesIcon', 'LightBulbIcon',
+  'BoltIcon',
+  'PlayIcon',
+  'ArrowRightIcon',
+  'CheckIcon',
+  'StarIcon',
+  'FlagIcon',
+  'TagIcon',
+  'UserPlusIcon',
+  'ClockIcon',
+  'CalendarIcon',
+  'ArchiveBoxIcon',
+  'ArrowUturnRightIcon',
+  'ChatBubbleLeftIcon',
+  'PaperClipIcon',
+  'PencilSquareIcon',
+  'DocumentDuplicateIcon',
+  'CheckCircleIcon',
+  'ExclamationTriangleIcon',
+  'FireIcon',
+  'HandThumbUpIcon',
+  'RocketLaunchIcon',
+  'ShieldCheckIcon',
+  'SparklesIcon',
+  'LightBulbIcon',
 ] as const;
 
-export type ButtonIconName = typeof BUTTON_ICONS[number];
+export type ButtonIconName = (typeof BUTTON_ICONS)[number];
 
 const ICON_MAP: Record<ButtonIconName, HeroIcon> = {
   BoltIcon,
@@ -70,7 +87,10 @@ const ICON_MAP: Record<ButtonIconName, HeroIcon> = {
 };
 
 /** Renders a Heroicon by its registered name, falling back to PlayIcon. */
-export const ButtonIcon: FC<{ name: string | null; className?: string }> = ({ name, className = 'h-4 w-4' }) => {
+export const ButtonIcon: FC<{ name: string | null; className?: string }> = ({
+  name,
+  className = 'h-4 w-4',
+}) => {
   const resolved = (name && name in ICON_MAP ? name : 'PlayIcon') as ButtonIconName;
   const Icon = ICON_MAP[resolved] as FC<{ className?: string }>;
   return <Icon className={className} aria-hidden="true" />;
@@ -94,7 +114,9 @@ const IconPicker: FC<Props> = ({ value, onChange }) => {
             type="button"
             title={name.replace('Icon', '')}
             aria-pressed={selected}
-            onClick={() => { onChange(name); }}
+            onClick={() => {
+              onChange(name);
+            }}
             className={[
               'flex items-center justify-center rounded-md p-1.5 transition-colors',
               selected

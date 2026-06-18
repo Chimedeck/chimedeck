@@ -47,9 +47,7 @@ export default function SprintArtifactLinks({
       <ul style={styles.list}>
         {artifacts.map((artifact, i) => (
           <li key={`${artifact.type}-${i}`} style={styles.item}>
-            <span style={styles.icon}>
-              {TYPE_ICONS[artifact.type] || '📄'}
-            </span>
+            <span style={styles.icon}>{TYPE_ICONS[artifact.type] || '📄'}</span>
             <a
               href={artifact.url}
               target="_blank"

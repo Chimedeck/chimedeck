@@ -120,7 +120,7 @@ async function notifyMentionedUser({
       read: false,
       created_at: now,
     },
-    ['*'],
+    ['*']
   );
 
   await publishToUser(userId, {
@@ -173,7 +173,7 @@ export async function createNotificationsForMentions({
   // Fetch actor details once for the WS payload (read-only, outside transaction is fine)
   const actor = await db('users')
     .where({ id: actorId })
-    .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+    .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
     .first();
 
   const actorPayload = actor
@@ -205,8 +205,10 @@ export async function createNotificationsForMentions({
   // Fire-and-forget mention webhook — dispatched once per mention event (not per recipient).
   // [why] webhook subscribers receive the full mention context rather than a per-user notification.
   if (env.WEBHOOKS_ENABLED) {
-    fireMentionWebhooks({ boardId, cardId, sourceType, sourceId, actorId, recipients }).catch(() => {
-      // Webhook errors must never propagate to the caller.
-    });
+    fireMentionWebhooks({ boardId, cardId, sourceType, sourceId, actorId, recipients }).catch(
+      () => {
+        // Webhook errors must never propagate to the caller.
+      }
+    );
   }
 }

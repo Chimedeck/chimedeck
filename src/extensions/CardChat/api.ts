@@ -252,5 +252,8 @@ export async function commitCardChatProposal({
   cardId: string;
   proposal: CardChatAssistCommitProposal;
 }): Promise<{ data: { success: boolean } }> {
-  return api.post<{ data: { success: boolean } }>(`/cards/${cardId}/chat/assist/commit-description`, proposal);
+  return api.post<{ data: { success: boolean } }>(
+    `/cards/${cardId}/chat/assist/commit-description`,
+    proposal
+  );
 }

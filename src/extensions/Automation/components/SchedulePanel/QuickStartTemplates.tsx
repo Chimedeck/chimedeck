@@ -1,6 +1,10 @@
 // QuickStartTemplates — 3 template cards shown above the schedule list for first-time users.
 // Each card opens the appropriate builder pre-populated with its config.
-import { CalendarDaysIcon, ExclamationCircleIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
+import {
+  CalendarDaysIcon,
+  ExclamationCircleIcon,
+  ArchiveBoxIcon,
+} from '@heroicons/react/24/outline';
 import type { FC } from 'react';
 import type { CreateAutomationPayload } from '../../types';
 
@@ -28,14 +32,18 @@ export const QUICK_START_TEMPLATES: QuickStartTemplate[] = [
         triggerType: 'schedule',
         config: {
           scheduleType: 'weekly',
-          dayOfWeek: 1,   // Monday
+          dayOfWeek: 1, // Monday
           hour: 9,
           minute: 0,
         },
       },
       actions: [
         { actionType: 'list.archive_all_cards', position: 0, config: { listName: 'Done' } },
-        { actionType: 'list.move_all_cards', position: 1, config: { sourceListName: 'Next Sprint', targetListName: 'To Do' } },
+        {
+          actionType: 'list.move_all_cards',
+          position: 1,
+          config: { sourceListName: 'Next Sprint', targetListName: 'To Do' },
+        },
       ],
     },
   },
@@ -53,7 +61,11 @@ export const QUICK_START_TEMPLATES: QuickStartTemplate[] = [
       },
       actions: [
         { actionType: 'card.add_label', position: 0, config: { color: 'red' } },
-        { actionType: 'card.add_comment', position: 1, config: { text: '@card What\'s the status?' } },
+        {
+          actionType: 'card.add_comment',
+          position: 1,
+          config: { text: "@card What's the status?" },
+        },
       ],
     },
   },
@@ -102,10 +114,15 @@ const QuickStartTemplates: FC<Props> = ({ onUseTemplate }) => (
         return (
           <button
             key={tpl.id}
-            onClick={() => { onUseTemplate(tpl); }}
+            onClick={() => {
+              onUseTemplate(tpl);
+            }}
             className="flex items-start gap-3 rounded-md border border-border bg-bg-surface px-3 py-3 text-left hover:border-blue-500 hover:bg-bg-overlay transition-colors group"
           >
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted group-hover:text-blue-400" aria-hidden="true" />
+            <Icon
+              className="mt-0.5 h-4 w-4 shrink-0 text-muted group-hover:text-blue-400"
+              aria-hidden="true"
+            />
             <div className="min-w-0">
               <p className="text-xs font-medium text-subtle group-hover:text-base">{tpl.title}</p>
               <p className="mt-0.5 text-xs text-muted">{tpl.description}</p>

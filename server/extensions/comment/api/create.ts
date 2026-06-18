@@ -19,7 +19,10 @@ import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 function hasNonPersistableMediaUrl(content: string): boolean {
-  return /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) || /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content);
+  return (
+    /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) ||
+    /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content)
+  );
 }
 
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
@@ -164,7 +167,8 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
     if (existing) {
       const authorAvatarUrl = buildAvatarProxyUrl({
         userId: actorId,
-        avatarUrl: ((existing as Record<string, unknown>).author_avatar_url as string | null) ?? null,
+        avatarUrl:
+          ((existing as Record<string, unknown>).author_avatar_url as string | null) ?? null,
       });
       return Response.json(
         { data: { ...existing, author_avatar_url: authorAvatarUrl } },
@@ -181,10 +185,11 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       {
         error: {
           code: 'bad-request',
-          message: 'Comment contains a temporary local media URL. Please re-upload the image before saving.',
+          message:
+            'Comment contains a temporary local media URL. Please re-upload the image before saving.',
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
   const idempotencyKey = body.idempotency_key?.trim() ?? null;
@@ -284,12 +289,15 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
         JSON.stringify({
           type: 'comment_reply_added',
           payload: { card_id: resolvedCardId, parent_comment_id: parentId, reply: commentData },
-        }),
+        })
       )
       .catch(() => {});
   } else {
     publisher
-      .publish(board.id, JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }))
+      .publish(
+        board.id,
+        JSON.stringify({ type: 'comment_added', payload: { comment: commentData } })
+      )
       .catch(() => {});
   }
 

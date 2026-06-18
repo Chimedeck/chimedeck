@@ -17,7 +17,12 @@ interface UploadState {
   error: string | null;
 }
 
-export function useAttachmentUpload({ cardId, onComplete, authToken = '', apiBase = '' }: Options): UploadState {
+export function useAttachmentUpload({
+  cardId,
+  onComplete,
+  authToken = '',
+  apiBase = '',
+}: Options): UploadState {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +30,10 @@ export function useAttachmentUpload({ cardId, onComplete, authToken = '', apiBas
     setError(null);
     setProgress(0);
 
-    const authHeaders = { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' };
+    const authHeaders = {
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    };
 
     // Step 1: request pre-signed PUT URL
     fetch(`${apiBase}/api/v1/cards/${cardId}/attachments/upload-url`, {
@@ -40,30 +48,33 @@ export function useAttachmentUpload({ cardId, onComplete, authToken = '', apiBas
         }
         return resp.json() as Promise<{ data: { attachmentId: string; uploadUrl: string } }>;
       })
-      .then(({ data: { attachmentId, uploadUrl } }) =>
-        // Step 2: upload directly to S3 via XHR to track progress
-        new Promise<string>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('PUT', uploadUrl);
-          xhr.setRequestHeader('Content-Type', file.type);
+      .then(
+        ({ data: { attachmentId, uploadUrl } }) =>
+          // Step 2: upload directly to S3 via XHR to track progress
+          new Promise<string>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', uploadUrl);
+            xhr.setRequestHeader('Content-Type', file.type);
 
-          xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
-              setProgress(Math.round((e.loaded / e.total) * 100));
-            }
-          });
+            xhr.upload.addEventListener('progress', (e) => {
+              if (e.lengthComputable) {
+                setProgress(Math.round((e.loaded / e.total) * 100));
+              }
+            });
 
-          xhr.addEventListener('load', () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(attachmentId);
-            } else {
-              reject(new Error(`S3 upload failed with status ${xhr.status}`));
-            }
-          });
+            xhr.addEventListener('load', () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(attachmentId);
+              } else {
+                reject(new Error(`S3 upload failed with status ${xhr.status}`));
+              }
+            });
 
-          xhr.addEventListener('error', () => { reject(new Error('Network error during upload')); });
-          xhr.send(file);
-        }),
+            xhr.addEventListener('error', () => {
+              reject(new Error('Network error during upload'));
+            });
+            xhr.send(file);
+          })
       )
       .then(async (attachmentId) => {
         // Step 3: confirm upload

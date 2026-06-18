@@ -75,10 +75,7 @@ describe('extractStructuredFields', () => {
   });
 
   it('returns null for fields not present in the response', () => {
-    const text = [
-      '**Business Value**',
-      'This feature will save time.',
-    ].join('\n');
+    const text = ['**Business Value**', 'This feature will save time.'].join('\n');
 
     const fields = extractStructuredFields(text);
 
@@ -106,7 +103,8 @@ describe('extractStructuredFields', () => {
   });
 
   it('ignores irrelevant content without labeled sections', () => {
-    const text = 'Sure, let me think about what questions to ask next. What problem are you trying to solve?';
+    const text =
+      'Sure, let me think about what questions to ask next. What problem are you trying to solve?';
     const fields = extractStructuredFields(text);
 
     expect(fields.business_value).toBeNull();
@@ -116,13 +114,7 @@ describe('extractStructuredFields', () => {
   });
 
   it('skips headings with trivial content (length <= 3)', () => {
-    const text = [
-      '**Business Value**',
-      'OK',
-      '',
-      '**Acceptance Criteria**',
-      '.',
-    ].join('\n');
+    const text = ['**Business Value**', 'OK', '', '**Acceptance Criteria**', '.'].join('\n');
 
     const fields = extractStructuredFields(text);
     // [why] "OK" has only 2 chars, "." has 1 char — both below the 3-char

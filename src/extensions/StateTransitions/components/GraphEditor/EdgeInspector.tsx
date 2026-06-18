@@ -1,6 +1,10 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { ActionTypeConfig } from '../../config/actionTypes';
-import type { StateTransitionAction, StateTransitionDirection, StateTransitionStyle } from '../../api';
+import type {
+  StateTransitionAction,
+  StateTransitionDirection,
+  StateTransitionStyle,
+} from '../../api';
 import translations from '../../translations/en.json';
 
 interface Props {
@@ -17,7 +21,8 @@ interface Props {
 
 const optionBaseClass = 'rounded border px-2 py-1 text-xs transition';
 const optionActiveClass = 'border-primary bg-primary/10 text-base';
-const optionInactiveClass = 'border-border bg-bg-base text-muted hover:bg-bg-overlay hover:text-base';
+const optionInactiveClass =
+  'border-border bg-bg-base text-muted hover:bg-bg-overlay hover:text-base';
 
 const EdgeInspector = ({
   actionTypes,
@@ -35,7 +40,9 @@ const EdgeInspector = ({
     className="nodrag nopan pointer-events-auto absolute right-4 top-4 z-20 w-72 rounded-lg border border-border bg-bg-surface p-3 shadow-xl"
   >
     <div className="mb-2 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-base">{translations['StateTransitions.edgeInspectorTitle']}</h3>
+      <h3 className="text-sm font-semibold text-base">
+        {translations['StateTransitions.edgeInspectorTitle']}
+      </h3>
       <button
         type="button"
         aria-label={translations['StateTransitions.edgeInspectorClose']}
@@ -64,7 +71,9 @@ const EdgeInspector = ({
     </label>
 
     <div className="mb-3">
-      <p className="mb-1 text-xs text-muted">{translations['StateTransitions.edgeInspectorDirection']}</p>
+      <p className="mb-1 text-xs text-muted">
+        {translations['StateTransitions.edgeInspectorDirection']}
+      </p>
       <div className="flex gap-1">
         <button
           type="button"
@@ -88,7 +97,9 @@ const EdgeInspector = ({
     </div>
 
     <div className="mb-3">
-      <p className="mb-1 text-xs text-muted">{translations['StateTransitions.edgeInspectorStyle']}</p>
+      <p className="mb-1 text-xs text-muted">
+        {translations['StateTransitions.edgeInspectorStyle']}
+      </p>
       <div className="flex gap-1">
         <button
           type="button"

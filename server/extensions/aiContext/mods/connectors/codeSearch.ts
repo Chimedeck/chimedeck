@@ -27,9 +27,10 @@ export const liveCodeFS: CodeFileSystem = {
     try {
       const file = Bun.file(absPath);
       const size = file.size;
-      const text = size > MAX_FILE_SIZE_BYTES
-        ? await file.slice(0, MAX_FILE_SIZE_BYTES).text()
-        : await file.text();
+      const text =
+        size > MAX_FILE_SIZE_BYTES
+          ? await file.slice(0, MAX_FILE_SIZE_BYTES).text()
+          : await file.text();
       return { text, size };
     } catch {
       return null;
@@ -48,14 +49,17 @@ interface FileMatch {
  * Check whether a file path should be excluded from search.
  */
 function isExcluded(path: string): boolean {
-  return EXCLUDE_PATTERNS.some(p => p.test(path));
+  return EXCLUDE_PATTERNS.some((p) => p.test(path));
 }
 
 /**
  * Simple keyword-based relevance scoring for code search.
  */
 function scoreCodeLines(lines: string[], intent: string): number {
-  const intentWords = intent.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const intentWords = intent
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
   if (intentWords.length === 0) return 0;
 
   let hits = 0;

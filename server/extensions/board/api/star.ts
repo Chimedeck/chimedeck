@@ -13,7 +13,7 @@ export async function handleStarBoard(req: Request, boardId: string): Promise<Re
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -36,7 +36,7 @@ export async function handleUnstarBoard(req: Request, boardId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

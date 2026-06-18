@@ -5,9 +5,7 @@
 function contrastText(bgHex: string): string {
   const hex = bgHex.trim().replace('#', '');
   const normalized =
-    hex.length === 3
-      ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
-      : hex;
+    hex.length === 3 ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}` : hex;
   if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return 'var(--text-inverse)';
   const r = Number.parseInt(normalized.slice(0, 2), 16) / 255;
   const g = Number.parseInt(normalized.slice(2, 4), 16) / 255;
@@ -65,7 +63,7 @@ const CardLabelChips = ({ labels, expanded, onToggle }: Props) => {
             style={{ backgroundColor: label.color }}
             title={label.name}
           />
-        ),
+        )
       )}
     </div>
   );

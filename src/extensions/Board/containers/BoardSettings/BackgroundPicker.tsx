@@ -28,7 +28,9 @@ const BackgroundPicker = ({ boardId }: Props) => {
     setUploading(true);
     try {
       const res = await uploadBoardBackground({ boardId, file, token });
-      dispatch(boardSliceActions.updateBoardBackground({ background: res.data.background ?? null }));
+      dispatch(
+        boardSliceActions.updateBoardBackground({ background: res.data.background ?? null })
+      );
     } catch (err: unknown) {
       const e = err as { name?: string };
       setError(e?.name ?? 'upload-failed');
@@ -57,9 +59,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        Background
-      </p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Background</p>
 
       {/* Current background preview */}
       {currentBackground ? (
@@ -112,13 +112,9 @@ const BackgroundPicker = ({ boardId }: Props) => {
         )}
       </div>
 
-      {error && (
-        <p className="text-xs text-danger">{error}</p>
-      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
-      <p className="text-xs text-muted">
-        JPEG or PNG, max 10 MB
-      </p>
+      <p className="text-xs text-muted">JPEG or PNG, max 10 MB</p>
     </div>
   );
 };

@@ -11,10 +11,15 @@ class QueryBuilder {
   private filters: Array<(row: Row) => boolean> = [];
   private _insert: Row | Row[] | null = null;
 
-  constructor(private readonly store: Store, private readonly tableName: keyof Store) {}
+  constructor(
+    private readonly store: Store,
+    private readonly tableName: keyof Store
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -35,12 +40,12 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     if (this._insert !== null) {
       const rows = Array.isArray(this._insert) ? this._insert : [this._insert];
       for (const row of rows) {
-        (this.store[this.tableName]).push({ ...row });
+        this.store[this.tableName].push({ ...row });
       }
       this._insert = null;
     }
@@ -48,8 +53,8 @@ class QueryBuilder {
   }
 
   private rows(clone = true): Row[] {
-    const filtered = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    const filtered = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
     return clone ? filtered.map((row) => ({ ...row })) : filtered;
   }
@@ -72,7 +77,11 @@ let persistVectorImpl: (args: {
     values: number[];
   };
 }) => Promise<Row>;
-let enqueueRetryImpl: (args: { messageId: string; boardId: string; reason?: string }) => Promise<void>;
+let enqueueRetryImpl: (args: {
+  messageId: string;
+  boardId: string;
+  reason?: string;
+}) => Promise<void>;
 
 const writeModule = await import('../write');
 const { writeBoardChatMessage } = writeModule;
@@ -116,7 +125,8 @@ beforeEach(() => {
   };
   enqueueRetryImpl = async () => undefined;
 
-  writeModule.boardChatWriteDeps.db = ((tableName: keyof Store) => new QueryBuilder(store, tableName)) as unknown as typeof writeModule.boardChatWriteDeps.db;
+  writeModule.boardChatWriteDeps.db = ((tableName: keyof Store) =>
+    new QueryBuilder(store, tableName)) as unknown as typeof writeModule.boardChatWriteDeps.db;
   writeModule.boardChatWriteDeps.generateBoardChatEmbedding = (args) => generateEmbeddingImpl(args);
   writeModule.boardChatWriteDeps.persistBoardChatMessageVector = (args) => persistVectorImpl(args);
   writeModule.boardChatWriteDeps.enqueueBoardChatEmbeddingRetry = (args) => enqueueRetryImpl(args);

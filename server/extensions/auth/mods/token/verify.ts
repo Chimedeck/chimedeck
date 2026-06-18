@@ -10,7 +10,11 @@ export interface DecodedToken {
 }
 
 // Returns decoded payload or null if the token is invalid/expired.
-export async function verifyAccessToken({ token }: { token: string }): Promise<DecodedToken | null> {
+export async function verifyAccessToken({
+  token,
+}: {
+  token: string;
+}): Promise<DecodedToken | null> {
   // [why] See issue.ts — the PEM could be malformed in the same way at boot,
   // and importSPKI is a no-op for verification of expired tokens, so we still
   // need a graceful fallback here.

@@ -36,9 +36,7 @@ const WorkspaceSwitcher = ({ onSwitch }: WorkspaceSwitcherProps) => {
   }
 
   if (workspaces.length === 0) {
-    return (
-      <span className="text-sm text-muted">No workspaces</span>
-    );
+    return <span className="text-sm text-muted">No workspaces</span>;
   }
 
   return (

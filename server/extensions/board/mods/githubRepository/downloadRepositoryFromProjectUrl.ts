@@ -3,10 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { githubRepositoryConfig } from '../../common/config/githubRepository';
 import { normalizeGithubProjectUrl } from '../githubProjectUrl';
-import {
-  getGithubInstallationAccessToken,
-  getGithubRepositoryDefaultBranch,
-} from './githubApp';
+import { getGithubInstallationAccessToken, getGithubRepositoryDefaultBranch } from './githubApp';
 import { ensureGithubRepositoryCheckout } from './git';
 
 export interface DownloadRepositoryFromProjectUrlInput {
@@ -32,13 +29,7 @@ function toKeyHash(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function toCacheKey({
-  boardId,
-  projectHash,
-}: {
-  boardId: string;
-  projectHash: string;
-}): string {
+function toCacheKey({ boardId, projectHash }: { boardId: string; projectHash: string }): string {
   return toKeyHash(`${boardId}:${projectHash}`);
 }
 
@@ -50,7 +41,10 @@ function getCachedRepository({
   const cached = repositoryCache.get(cacheKey);
   if (!cached) return null;
   const nowMs = downloadRepositoryFromProjectUrlDeps.now().getTime();
-  if (nowMs - cached.cachedAtMs > downloadRepositoryFromProjectUrlDeps.config.repositoryCacheTtlMs) {
+  if (
+    nowMs - cached.cachedAtMs >
+    downloadRepositoryFromProjectUrlDeps.config.repositoryCacheTtlMs
+  ) {
     repositoryCache.delete(cacheKey);
     return null;
   }
@@ -100,7 +94,9 @@ async function downloadRepositoryForKey({
     if (cached) return cached;
   }
 
-  const normalized = downloadRepositoryFromProjectUrlDeps.normalizeGithubProjectUrl({ value: projectUrl });
+  const normalized = downloadRepositoryFromProjectUrlDeps.normalizeGithubProjectUrl({
+    value: projectUrl,
+  });
   if (!normalized.ok) {
     throw new Error('invalid-github-project-url');
   }
@@ -117,9 +113,10 @@ async function downloadRepositoryForKey({
     throw new Error('github-project-url-repository-scope-required');
   }
 
-  const installationToken = await downloadRepositoryFromProjectUrlDeps.getGithubInstallationAccessToken({
-    reference,
-  });
+  const installationToken =
+    await downloadRepositoryFromProjectUrlDeps.getGithubInstallationAccessToken({
+      reference,
+    });
   const ref = await downloadRepositoryFromProjectUrlDeps.getGithubRepositoryDefaultBranch({
     owner: reference.owner,
     repository: reference.repository,
@@ -129,12 +126,12 @@ async function downloadRepositoryForKey({
     downloadRepositoryFromProjectUrlDeps.config.repositoryCacheDir,
     boardId,
     cacheKey,
-    'repository',
+    'repository'
   );
   const repoParentPath = join(
     downloadRepositoryFromProjectUrlDeps.config.repositoryCacheDir,
     boardId,
-    cacheKey,
+    cacheKey
   );
   await downloadRepositoryFromProjectUrlDeps.mkdir(repoParentPath, { recursive: true });
 
@@ -163,7 +160,9 @@ export async function downloadRepositoryFromProjectUrl({
   boardId = 'global',
   refresh = false,
 }: DownloadRepositoryFromProjectUrlInput): Promise<DownloadRepositoryFromProjectUrlResult> {
-  const normalized = downloadRepositoryFromProjectUrlDeps.normalizeGithubProjectUrl({ value: projectUrl });
+  const normalized = downloadRepositoryFromProjectUrlDeps.normalizeGithubProjectUrl({
+    value: projectUrl,
+  });
   if (!normalized.ok) {
     throw new Error('invalid-github-project-url');
   }

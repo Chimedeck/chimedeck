@@ -7,11 +7,7 @@ import { generateArtifacts } from './generateArtifacts';
 import { createSprintCards } from './createSprintCards';
 import { enforceQuotaWithActivity } from '../tierPolicy/quotaEnforcer';
 import { resolveTierPolicy } from '../tierPolicy';
-import {
-  createSprintGenRun,
-  updateSprintGenRunStatus,
-  getSprintGenRun,
-} from '../persistence';
+import { createSprintGenRun, updateSprintGenRunStatus, getSprintGenRun } from '../persistence';
 import {
   emitSprintGenStarted,
   emitSprintGenArtifactCreated,
@@ -20,10 +16,7 @@ import {
   emitSprintGenFailed,
 } from '../activities';
 import { commit } from '../../../aiEditOrchestrator/mods/committer';
-import type {
-  SprintGenerationRun,
-  SprintArtifact,
-} from '../../types';
+import type { SprintGenerationRun, SprintArtifact } from '../../types';
 
 export interface PipelineDeps {
   readRequirements: typeof readRequirements;
@@ -173,8 +166,8 @@ export async function runSprintGenerationPipeline({
         .catch(() => null);
 
       // Try reading from card_phase_trigger_runs
-      const trRow = await (deps as any).db
-        ?.('card_phase_trigger_runs')
+      const trRow = await (deps as any)
+        .db?.('card_phase_trigger_runs')
         .where({ id: triggerRunId })
         .select('tier')
         .first()
@@ -244,7 +237,7 @@ export async function runSprintGenerationPipeline({
   });
 
   // 7. Create sprint cards
-  const createdFiles = genResult.data.artifacts.map(a => a.filePath);
+  const createdFiles = genResult.data.artifacts.map((a) => a.filePath);
   const cardResult = await deps.createSprintCards({
     cardId,
     workspaceId,
@@ -258,7 +251,7 @@ export async function runSprintGenerationPipeline({
     // Non-fatal — continue with commit even if card creation fails
     console.warn(
       `[sprintGeneration/pipeline] Card creation incomplete for run ${run.id}:`,
-      cardResult.message,
+      cardResult.message
     );
   }
 
@@ -296,14 +289,14 @@ export async function runSprintGenerationPipeline({
       if (commitResult.status >= 400) {
         console.warn(
           `[sprintGeneration/pipeline] Commit warning for run ${run.id}:`,
-          commitResult.message,
+          commitResult.message
         );
         // Non-fatal — still mark as succeeded
       }
     } catch (error) {
       console.warn(
         `[sprintGeneration/pipeline] Commit failed for run ${run.id}:`,
-        error instanceof Error ? error.message : String(error),
+        error instanceof Error ? error.message : String(error)
       );
       // Non-fatal
     }
@@ -326,7 +319,10 @@ export async function runSprintGenerationPipeline({
       createdCards: cardResult.data?.createdCards.length ?? 0,
       skippedSprints: quotaResult.skippedSprints.length,
       filesCreated: createdFiles.length,
-      requiresHumanApproval: resolveTierPolicy({ tier, sprintCount: genResult.data.artifacts.length }).requiresHumanApproval,
+      requiresHumanApproval: resolveTierPolicy({
+        tier,
+        sprintCount: genResult.data.artifacts.length,
+      }).requiresHumanApproval,
     },
   });
 

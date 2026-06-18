@@ -24,7 +24,12 @@ interface CardRow {
 
 interface CardsDB {
   querySourceCard: (cardId: string) => Promise<CardRow | undefined>;
-  querySimilarCards: (boardId: string, excludeCardId: string, words: string[], limit: number) => Promise<CardRow[]>;
+  querySimilarCards: (
+    boardId: string,
+    excludeCardId: string,
+    words: string[],
+    limit: number
+  ) => Promise<CardRow[]>;
 }
 
 describe('searchCards', () => {
@@ -85,8 +90,8 @@ describe('searchCards', () => {
     });
 
     expect(results.length).toBeGreaterThan(0);
-    const titles = results.map(r => (r.metadata as { cardTitle?: string })?.cardTitle);
-    const authMatches = titles.filter(t => t?.toLowerCase().includes('authentication'));
+    const titles = results.map((r) => (r.metadata as { cardTitle?: string })?.cardTitle);
+    const authMatches = titles.filter((t) => t?.toLowerCase().includes('authentication'));
     expect(authMatches.length).toBeGreaterThan(0);
   });
 

@@ -62,8 +62,8 @@ function extractWords(text: string): Set<string> {
     text
       .toLowerCase()
       .split(/\s+/)
-      .filter(w => w.length > 3)
-      .slice(0, 30),
+      .filter((w) => w.length > 3)
+      .slice(0, 30)
   );
 }
 
@@ -100,7 +100,7 @@ export async function detectDuplicates({
     const similarity = jaccardSimilarity(sourceWords, cardWords);
 
     if (similarity >= DUPLICATE_THRESHOLD) {
-      const overlapWords = [...sourceWords].filter(w => cardWords.has(w));
+      const overlapWords = [...sourceWords].filter((w) => cardWords.has(w));
       duplicates.push({
         cardId: card.id,
         cardTitle: card.title,

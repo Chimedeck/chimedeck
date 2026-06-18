@@ -2,7 +2,10 @@
 // [why] Human-in-the-loop rejection: a reviewer can reject an AI edit run,
 // transitioning it to FAILED state with the rejection reason.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { getEditRun, updateEditRunStatus } from '../../mods/persistence';
 import { EditRunStatus } from '../../common/config';
 import type { EditRun } from '../../types';
@@ -21,7 +24,7 @@ export const rejectApiDeps = {
 export async function handleRejectEditRun(
   req: Request,
   cardId: string,
-  runId: string,
+  runId: string
 ): Promise<Response> {
   // 1. Authenticate
   const authError = await rejectApiDeps.authenticate(req as AuthenticatedRequest);
@@ -30,7 +33,7 @@ export async function handleRejectEditRun(
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await rejectApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -41,14 +44,17 @@ export async function handleRejectEditRun(
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.reason !== 'string' || body.reason.trim() === '') {
     return Response.json(
-      { name: 'missing-reason', data: { message: 'reason is required and must be a non-empty string' } },
-      { status: 400 },
+      {
+        name: 'missing-reason',
+        data: { message: 'reason is required and must be a non-empty string' },
+      },
+      { status: 400 }
     );
   }
 
@@ -57,35 +63,43 @@ export async function handleRejectEditRun(
   if (!run) {
     return Response.json(
       { name: 'run-not-found', data: { message: `Edit run "${runId}" not found` } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   // 4. Validate run is in an approvable state (FILE_SCOPE_PLANNED or COMMITTED)
   // [why] The human-in-the-loop checkpoint is at FILE_SCOPE_PLANNED.
   // COMMITTED runs can also be rejected before final merge.
-  const APPROVABLE_STATUSES = [EditRunStatus.FILE_SCOPE_PLANNED, EditRunStatus.COMMITTED] as string[];
+  const APPROVABLE_STATUSES = [
+    EditRunStatus.FILE_SCOPE_PLANNED,
+    EditRunStatus.COMMITTED,
+  ] as string[];
   if (!APPROVABLE_STATUSES.includes(run.status)) {
     return Response.json(
       {
         name: 'invalid-run-status',
-        data: { message: `Run is in status "${run.status}" — only FILE_SCOPE_PLANNED or COMMITTED runs can be rejected` },
+        data: {
+          message: `Run is in status "${run.status}" — only FILE_SCOPE_PLANNED or COMMITTED runs can be rejected`,
+        },
       },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
   // 5. Check if already approved or rejected
   if (run.approval_status === 'APPROVED') {
     return Response.json(
-      { name: 'already-approved', data: { message: 'Run has already been approved — cannot reject' } },
-      { status: 409 },
+      {
+        name: 'already-approved',
+        data: { message: 'Run has already been approved — cannot reject' },
+      },
+      { status: 409 }
     );
   }
   if (run.approval_status === 'REJECTED') {
     return Response.json(
       { name: 'already-rejected', data: { message: 'Run has already been rejected' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -105,7 +119,7 @@ export async function handleRejectEditRun(
     if (result.status !== 200) {
       return Response.json(
         { name: result.name ?? 'transition-failed', data: result.data },
-        { status: result.status },
+        { status: result.status }
       );
     }
 
@@ -129,13 +143,16 @@ export async function handleRejectEditRun(
           message: `Edit run rejected: ${body.reason}`,
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
-    console.error('[aiEditOrchestrator/reject] Error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[aiEditOrchestrator/reject] Error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return Response.json(
       { name: 'internal-error', data: { message: 'Rejection processing failed' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -18,11 +18,9 @@ import type { WorkspaceScopedRequest } from '../../../middlewares/permissionMana
  */
 export async function sprintGenerationRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
-  const generateMatch = pathname.match(
-    /^\/api\/v1\/cards\/([^/]+)\/sprint\/generate$/,
-  );
+  const generateMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/sprint\/generate$/);
   if (!generateMatch) return null;
 
   const cardIdentifier = generateMatch[1] as string;
@@ -31,7 +29,7 @@ export async function sprintGenerationRouter(
   if (!cardId) {
     return Response.json(
       { name: 'card-not-found', data: { message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -43,7 +41,7 @@ export async function sprintGenerationRouter(
         name: 'sprint-generation-disabled',
         data: { message: 'Sprint Generation feature is disabled' },
       },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

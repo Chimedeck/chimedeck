@@ -16,7 +16,8 @@ export const SEARCH_CARDS_TOOL: BoardChatAssistToolDefinition = {
       properties: {
         query: {
           type: 'string',
-          description: 'Search keywords (minimum 2 characters). Matches against card titles and descriptions.',
+          description:
+            'Search keywords (minimum 2 characters). Matches against card titles and descriptions.',
         },
       },
       required: ['query'],
@@ -40,7 +41,9 @@ interface SearchCardsInput {
   };
 }
 
-function normalizeSearchArguments(rawArguments: string): SearchCardsArguments | BoardChatAssistOutput {
+function normalizeSearchArguments(
+  rawArguments: string
+): SearchCardsArguments | BoardChatAssistOutput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawArguments);
@@ -97,11 +100,12 @@ export async function searchCards(input: SearchCardsInput): Promise<BoardChatAss
   }
 
   const cards = searchResult.data.filter((hit) => hit.type === 'card');
-  const resultsText = cards.length > 0
-    ? cards
-      .map((c) => `- "${c.title}" (card ID: ${c.id}, list ID: ${c.listId ?? 'unknown'})`)
-      .join('\n')
-    : 'No matching cards found on this board.';
+  const resultsText =
+    cards.length > 0
+      ? cards
+          .map((c) => `- "${c.title}" (card ID: ${c.id}, list ID: ${c.listId ?? 'unknown'})`)
+          .join('\n')
+      : 'No matching cards found on this board.';
 
   return {
     status: 200,

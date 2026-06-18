@@ -6,16 +6,30 @@ import { env } from '../../config/env';
  * Covers auth tokens, session cookies, and API key headers.
  */
 const SENSITIVE_HEADERS = new Set([
-  'authorization', 'cookie', 'set-cookie', 'x-auth-token', 'x-api-key',
-  'x-csrf-token', 'proxy-authorization',
+  'authorization',
+  'cookie',
+  'set-cookie',
+  'x-auth-token',
+  'x-api-key',
+  'x-csrf-token',
+  'proxy-authorization',
 ]);
 
 /**
  * URL query-param names that must never be forwarded to Sentry.
  */
 const SENSITIVE_QUERY_PARAMS = new Set([
-  'token', 'access_token', 'auth', 'api_key', 'key', 'secret',
-  'password', 'passwd', 'pwd', 'code', 'state',
+  'token',
+  'access_token',
+  'auth',
+  'api_key',
+  'key',
+  'secret',
+  'password',
+  'passwd',
+  'pwd',
+  'code',
+  'state',
 ]);
 
 /**
@@ -23,9 +37,18 @@ const SENSITIVE_QUERY_PARAMS = new Set([
  * Only shallow keys are scrubbed; nested structures should not store raw credentials.
  */
 const SENSITIVE_BODY_FIELDS = new Set([
-  'password', 'passwd', 'pwd', 'new_password', 'old_password',
-  'token', 'secret', 'authorization',
-  'credit_card', 'card_number', 'cvv', 'ssn',
+  'password',
+  'passwd',
+  'pwd',
+  'new_password',
+  'old_password',
+  'token',
+  'secret',
+  'authorization',
+  'credit_card',
+  'card_number',
+  'cvv',
+  'ssn',
 ]);
 
 /**
@@ -73,7 +96,11 @@ function redactRequest(event: Sentry.ErrorEvent): void {
   }
 
   // Scrub top-level body fields (only when the body is a plain object).
-  if (event.request.data && typeof event.request.data === 'object' && !Array.isArray(event.request.data)) {
+  if (
+    event.request.data &&
+    typeof event.request.data === 'object' &&
+    !Array.isArray(event.request.data)
+  ) {
     const body = event.request.data as Record<string, unknown>;
     for (const key of Object.keys(body)) {
       if (SENSITIVE_BODY_FIELDS.has(key.toLowerCase())) {
@@ -102,7 +129,9 @@ export function initSentry(): void {
   if (!env.SENTRY_SERVER_ENABLED) return;
 
   if (!env.SENTRY_SERVER_DSN) {
-    console.warn('[sentry] SENTRY_SERVER_ENABLED=true but SENTRY_SERVER_DSN is not set — skipping init');
+    console.warn(
+      '[sentry] SENTRY_SERVER_ENABLED=true but SENTRY_SERVER_DSN is not set — skipping init'
+    );
     return;
   }
 
@@ -132,9 +161,6 @@ export function captureError(error: unknown): void {
  * Capture a custom message at the given severity level.
  * Silently no-ops when Sentry is not initialised.
  */
-export function captureMessage(
-  message: string,
-  level: Sentry.SeverityLevel = 'info'
-): void {
+export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
   Sentry.captureMessage(message, level);
 }

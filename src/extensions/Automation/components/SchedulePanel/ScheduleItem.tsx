@@ -108,7 +108,10 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-subtle">{automation.name}</p>
         <p className="mt-0.5 truncate text-xs text-muted">
-          {summary} · {automation.actions.length} {automation.actions.length !== 1 ? translations['automation.scheduleItem.actions'] : translations['automation.scheduleItem.action']}
+          {summary} · {automation.actions.length}{' '}
+          {automation.actions.length !== 1
+            ? translations['automation.scheduleItem.actions']
+            : translations['automation.scheduleItem.action']}
         </p>
       </div>
 
@@ -122,8 +125,16 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           onClick={handleToggle}
           disabled={toggling}
           className="rounded p-1 text-muted hover:text-subtle hover:bg-bg-overlay transition-colors disabled:opacity-50"
-          aria-label={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
-          title={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
+          aria-label={
+            automation.isEnabled
+              ? translations['automation.scheduleItem.disableAriaLabel']
+              : translations['automation.scheduleItem.enableAriaLabel']
+          }
+          title={
+            automation.isEnabled
+              ? translations['automation.scheduleItem.disableAriaLabel']
+              : translations['automation.scheduleItem.enableAriaLabel']
+          }
         >
           {automation.isEnabled ? (
             <CheckCircleIcon className="h-4 w-4 text-success" aria-hidden="true" />
@@ -148,11 +159,19 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
           disabled={deleting}
           className={`rounded p-1 transition-colors disabled:opacity-50 ${
             confirmDelete
-              ? 'bg-red-700 text-white hover:bg-red-600'  // [theme-exception]
+              ? 'bg-red-700 text-white hover:bg-red-600' // [theme-exception]
               : 'text-muted hover:text-danger hover:bg-bg-overlay'
           }`}
-          aria-label={confirmDelete ? translations['automation.scheduleItem.confirmDeleteAriaLabel'] : translations['automation.scheduleItem.deleteAriaLabel']}
-          title={confirmDelete ? translations['automation.scheduleItem.confirmDeleteTitle'] : translations['automation.scheduleItem.deleteTitle']}
+          aria-label={
+            confirmDelete
+              ? translations['automation.scheduleItem.confirmDeleteAriaLabel']
+              : translations['automation.scheduleItem.deleteAriaLabel']
+          }
+          title={
+            confirmDelete
+              ? translations['automation.scheduleItem.confirmDeleteTitle']
+              : translations['automation.scheduleItem.deleteTitle']
+          }
         >
           <TrashIcon className="h-4 w-4" aria-hidden="true" />
         </button>

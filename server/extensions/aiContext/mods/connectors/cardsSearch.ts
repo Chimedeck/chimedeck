@@ -10,7 +10,12 @@ import { MAX_CHUNKS_PER_CONNECTOR, CARD_SIMILARITY_THRESHOLD } from '../../commo
 /** DB operations — injected for testability. */
 export interface CardsDB {
   querySourceCard: (cardId: string) => Promise<CardRow | undefined>;
-  querySimilarCards: (boardId: string, excludeCardId: string, words: string[], limit: number) => Promise<CardRow[]>;
+  querySimilarCards: (
+    boardId: string,
+    excludeCardId: string,
+    words: string[],
+    limit: number
+  ) => Promise<CardRow[]>;
 }
 
 /** Production implementation using Knex. */
@@ -21,7 +26,12 @@ export const liveCardsDB: CardsDB = {
       .where({ id: cardId })
       .first<CardRow>();
   },
-  querySimilarCards: async (boardId: string, excludeCardId: string, words: string[], limit: number) => {
+  querySimilarCards: async (
+    boardId: string,
+    excludeCardId: string,
+    words: string[],
+    limit: number
+  ) => {
     const query = db('cards')
       .select('id', 'title', 'description', 'board_id', 'list_id')
       .where('board_id', boardId)
@@ -53,8 +63,18 @@ interface CardRow {
  * Returns 0-1 score.
  */
 function wordSimilarity(a: string, b: string): number {
-  const wordsA = new Set(a.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-  const wordsB = new Set(b.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+  const wordsA = new Set(
+    a
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2)
+  );
+  const wordsB = new Set(
+    b
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2)
+  );
   if (wordsA.size === 0 || wordsB.size === 0) return 0;
 
   let intersection = 0;
@@ -92,7 +112,7 @@ export async function searchCards({
   const significantWords = sourceText
     .toLowerCase()
     .split(/\s+/)
-    .filter(w => w.length > 3)
+    .filter((w) => w.length > 3)
     .slice(0, 10);
 
   if (significantWords.length === 0) return [];
@@ -102,7 +122,7 @@ export async function searchCards({
     sourceCard.board_id,
     cardId,
     significantWords,
-    MAX_CHUNKS_PER_CONNECTOR * 2,
+    MAX_CHUNKS_PER_CONNECTOR * 2
   );
 
   const results: SearchConnectorResult[] = [];
@@ -114,9 +134,7 @@ export async function searchCards({
     // [why] Only include cards above the similarity threshold.
     if (similarity < CARD_SIMILARITY_THRESHOLD) continue;
 
-    const snippet = row.description
-      ? row.description.slice(0, 300)
-      : row.title;
+    const snippet = row.description ? row.description.slice(0, 300) : row.title;
 
     results.push({
       source: 'cards',

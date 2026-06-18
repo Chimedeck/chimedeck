@@ -14,28 +14,13 @@ import type { EditRun, AdvanceStateInput } from '../../types';
  * COMMITTED and FAILED are terminal.
  */
 const ALLOWED_TRANSITIONS: Record<EditRunStatusType, EditRunStatusType[]> = {
-  [EditRunStatus.REQUESTED]: [
-    EditRunStatus.CONTEXT_GATHERED,
-    EditRunStatus.FAILED,
-  ],
-  [EditRunStatus.CONTEXT_GATHERED]: [
-    EditRunStatus.FILE_SCOPE_PLANNED,
-    EditRunStatus.FAILED,
-  ],
-  [EditRunStatus.FILE_SCOPE_PLANNED]: [
-    EditRunStatus.FILES_CREATED,
-    EditRunStatus.FAILED,
-  ],
-  [EditRunStatus.FILES_CREATED]: [
-    EditRunStatus.FILES_EDITED,
-    EditRunStatus.FAILED,
-  ],
-  [EditRunStatus.FILES_EDITED]: [
-    EditRunStatus.COMMITTED,
-    EditRunStatus.FAILED,
-  ],
+  [EditRunStatus.REQUESTED]: [EditRunStatus.CONTEXT_GATHERED, EditRunStatus.FAILED],
+  [EditRunStatus.CONTEXT_GATHERED]: [EditRunStatus.FILE_SCOPE_PLANNED, EditRunStatus.FAILED],
+  [EditRunStatus.FILE_SCOPE_PLANNED]: [EditRunStatus.FILES_CREATED, EditRunStatus.FAILED],
+  [EditRunStatus.FILES_CREATED]: [EditRunStatus.FILES_EDITED, EditRunStatus.FAILED],
+  [EditRunStatus.FILES_EDITED]: [EditRunStatus.COMMITTED, EditRunStatus.FAILED],
   [EditRunStatus.COMMITTED]: [EditRunStatus.FAILED], // terminal
-  [EditRunStatus.FAILED]: [],    // terminal
+  [EditRunStatus.FAILED]: [], // terminal
 };
 
 /**
@@ -82,9 +67,8 @@ export function advanceState(input: AdvanceStateInput): EditRun {
     status: nextStatus,
     updated_at: now,
     completed_at: isTerminal ? now : run.completed_at,
-    error_message: nextStatus === EditRunStatus.FAILED
-      ? errorMessage ?? run.error_message
-      : run.error_message,
+    error_message:
+      nextStatus === EditRunStatus.FAILED ? (errorMessage ?? run.error_message) : run.error_message,
   };
 }
 

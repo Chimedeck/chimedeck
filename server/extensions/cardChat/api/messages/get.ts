@@ -1,7 +1,10 @@
 // GET /api/v1/cards/:cardId/chat/messages
 // Sprint 171 — cursor-paginated retrieval of card-scoped chat messages.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { getCardChatMessages } from '../../mods/messages/query';
 import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
 

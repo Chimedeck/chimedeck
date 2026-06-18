@@ -14,7 +14,7 @@ export async function cleanupOrphanAttachments(): Promise<void> {
 
   for (const attachment of orphans) {
     const keysToDelete = [attachment.s3_key, attachment.thumbnail_key].filter(
-      (key): key is string => typeof key === 'string' && key.length > 0,
+      (key): key is string => typeof key === 'string' && key.length > 0
     );
 
     for (const s3Key of keysToDelete) {

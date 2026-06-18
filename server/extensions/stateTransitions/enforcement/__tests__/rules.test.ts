@@ -12,10 +12,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -37,14 +42,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private async execute(): Promise<Row[]> {
-    let rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    let rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -80,15 +85,15 @@ function makeGraph(withEdge: boolean) {
     ],
     edges: withEdge
       ? [
-        {
-          id: 'edge-1',
-          fromNodeId: 'list-1',
-          toNodeId: 'list-2',
-          action: 'allowed_move_to',
-          direction: 'one_way',
-          style: 'curved',
-        },
-      ]
+          {
+            id: 'edge-1',
+            fromNodeId: 'list-1',
+            toNodeId: 'list-2',
+            action: 'allowed_move_to',
+            direction: 'one_way',
+            style: 'curved',
+          },
+        ]
       : [],
     notes: [],
   };
@@ -112,10 +117,12 @@ function resetStore(): DataStore {
 }
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-const { clearRulesCache, getRulesForBoard, invalidateRulesCacheFromStateTransitionEvent } = await import('../rules');
+const { clearRulesCache, getRulesForBoard, invalidateRulesCacheFromStateTransitionEvent } =
+  await import('../rules');
 
 beforeEach(() => {
   dataStore = resetStore();
@@ -125,7 +132,9 @@ beforeEach(() => {
 describe('state transition rules cache', () => {
   it('returns stale cached rules until state_transition_updated invalidation', async () => {
     const initial = await getRulesForBoard('board-1');
-    expect(initial.allowedNextStatesByListId.get('list-1')).toEqual([{ id: 'list-2', name: 'Doing' }]);
+    expect(initial.allowedNextStatesByListId.get('list-1')).toEqual([
+      { id: 'list-2', name: 'Doing' },
+    ]);
 
     dataStore.board_state_transitions[0] = {
       ...(dataStore.board_state_transitions[0] as Row),
@@ -133,7 +142,9 @@ describe('state transition rules cache', () => {
     };
 
     const cached = await getRulesForBoard('board-1');
-    expect(cached.allowedNextStatesByListId.get('list-1')).toEqual([{ id: 'list-2', name: 'Doing' }]);
+    expect(cached.allowedNextStatesByListId.get('list-1')).toEqual([
+      { id: 'list-2', name: 'Doing' },
+    ]);
 
     invalidateRulesCacheFromStateTransitionEvent({
       type: 'state_transition_updated',

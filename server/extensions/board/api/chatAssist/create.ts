@@ -1,5 +1,8 @@
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { requireGuestCanUseBoardChat } from '../../middlewares/chatPermissions';
 import { assistBoardChat } from '../../mods/chat/assist';
@@ -32,8 +35,13 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
   const board = boardReq.board;
   if (!board) {
     return Response.json(
-      { error: { code: 'board-context-missing', message: 'Board context is missing after access check' } },
-      { status: 500 },
+      {
+        error: {
+          code: 'board-context-missing',
+          message: 'Board context is missing after access check',
+        },
+      },
+      { status: 500 }
     );
   }
 
@@ -45,15 +53,21 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
           message: 'This board is archived and cannot accept chat assist requests.',
         },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await boardChatAssistApiDeps.requireWorkspaceMembership(scopedReq, board.workspace_id);
+  const membershipError = await boardChatAssistApiDeps.requireWorkspaceMembership(
+    scopedReq,
+    board.workspace_id
+  );
   if (membershipError) return membershipError;
 
-  const guestAccessError = await boardChatAssistApiDeps.requireGuestCanUseBoardChat(scopedReq, boardId);
+  const guestAccessError = await boardChatAssistApiDeps.requireGuestCanUseBoardChat(
+    scopedReq,
+    boardId
+  );
   if (guestAccessError) return guestAccessError;
 
   let body: CreateChatAssistBody;
@@ -62,14 +76,14 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
   } catch {
     return Response.json(
       { error: { code: 'invalid-request-body', message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.prompt !== 'string') {
     return Response.json(
       { error: { code: 'invalid-field-type', message: 'prompt must be a string' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -77,14 +91,19 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
   if (prompt === '') {
     return Response.json(
       { error: { code: 'missing-prompt', message: 'prompt is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.sessionId !== 'string' || body.sessionId.trim() === '') {
     return Response.json(
-      { error: { code: 'missing-session-id', message: 'sessionId is required — create a session via POST /chat/sessions first' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'missing-session-id',
+          message: 'sessionId is required — create a session via POST /chat/sessions first',
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -94,7 +113,7 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
   } catch {
     return Response.json(
       { error: { code: 'session-not-found', message: 'Session not found for this board' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -103,7 +122,7 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
     if (typeof body.contextLimit !== 'number' || !Number.isFinite(body.contextLimit)) {
       return Response.json(
         { error: { code: 'invalid-field-type', message: 'contextLimit must be a number' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     const normalized = Math.floor(body.contextLimit);
@@ -115,7 +134,7 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
             message: `contextLimit must be between 1 and ${String(MAX_CONTEXT_LIMIT)}`,
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
     contextLimit = normalized;
@@ -134,7 +153,9 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
 
   if (result.status !== 200) {
     if (result.status >= 500) {
-      console.error(`[chat/assist] 5xx from assist handler: status=${String(result.status)} name=${result.name ?? ''} message=${result.message ?? ''}`);
+      console.error(
+        `[chat/assist] 5xx from assist handler: status=${String(result.status)} name=${result.name ?? ''} message=${result.message ?? ''}`
+      );
     }
     return Response.json(
       {
@@ -143,7 +164,7 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
           message: result.message ?? 'Board chat assist request failed',
         },
       },
-      { status: result.status },
+      { status: result.status }
     );
   }
 

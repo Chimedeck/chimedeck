@@ -20,18 +20,27 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
 
   const resolvedCardId = await resolveCardId(cardId);
   if (!resolvedCardId) {
-    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 }
+    );
   }
 
   const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
-    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 }
+    );
   }
 
   const list = await db('lists').where({ id: card.list_id }).first();
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -44,11 +53,17 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   if (!body.attachmentId) {
-    return Response.json({ error: { code: 'bad-request', message: 'attachmentId is required' } }, { status: 400 });
+    return Response.json(
+      { error: { code: 'bad-request', message: 'attachmentId is required' } },
+      { status: 400 }
+    );
   }
 
   const attachment = await db('attachments')
@@ -58,7 +73,7 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   if (!attachment) {
     return Response.json(
       { error: { code: 'attachment-not-found', message: 'Attachment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -66,15 +81,20 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
   if (!attachment.s3_key) {
     return Response.json(
       { error: { code: 'upload-url-expired', message: 'Upload was not completed' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const exists = await headObject({ s3Key: attachment.s3_key }).catch(() => false);
   if (!exists) {
     return Response.json(
-      { error: { code: 'upload-url-expired', message: 'S3 object not found — upload may not have completed' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'upload-url-expired',
+          message: 'S3 object not found — upload may not have completed',
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -97,13 +117,22 @@ export async function handleConfirmUpload(req: Request, cardId: string): Promise
     boardId: board.id,
     action: 'attachment_added',
     actorId,
-    payload: { attachmentId: attachment.id, cardId: resolvedCardId, name: attachment.name, cardTitle: card.title },
+    payload: {
+      attachmentId: attachment.id,
+      cardId: resolvedCardId,
+      name: attachment.name,
+      cardTitle: card.title,
+    },
   });
 
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_added', entity_id: resolvedCardId, payload: { attachmentId: attachment.id } }),
+      JSON.stringify({
+        type: 'attachment_added',
+        entity_id: resolvedCardId,
+        payload: { attachmentId: attachment.id },
+      })
     )
     .catch(() => {});
 

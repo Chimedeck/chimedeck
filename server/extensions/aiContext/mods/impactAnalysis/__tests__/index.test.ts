@@ -47,7 +47,9 @@ describe('analyseImpact', () => {
       fs,
     });
     expect(result.likelyImpactedFiles.length).toBeGreaterThan(0);
-    const authFile = result.likelyImpactedFiles.find(f => f.filePath === 'specs/architecture/auth.md');
+    const authFile = result.likelyImpactedFiles.find(
+      (f) => f.filePath === 'specs/architecture/auth.md'
+    );
     expect(authFile).toBeDefined();
     expect(authFile!.impactScore).toBeGreaterThan(0);
   });
@@ -69,8 +71,12 @@ describe('analyseImpact', () => {
       repoRoot: '/repo',
       fs,
     });
-    const recentFile = result.likelyImpactedFiles.find(f => f.filePath === 'specs/architecture/recent.md');
-    const oldFile = result.likelyImpactedFiles.find(f => f.filePath === 'specs/architecture/old.md');
+    const recentFile = result.likelyImpactedFiles.find(
+      (f) => f.filePath === 'specs/architecture/recent.md'
+    );
+    const oldFile = result.likelyImpactedFiles.find(
+      (f) => f.filePath === 'specs/architecture/old.md'
+    );
     expect(recentFile).toBeDefined();
     expect(oldFile).toBeDefined();
     // Recent file should have higher (boosted) score
@@ -94,7 +100,9 @@ describe('analyseImpact', () => {
 
   it('handles file read errors gracefully', () => {
     const throwFs: ImpactFS = {
-      readFile: () => { throw new Error('Permission denied'); },
+      readFile: () => {
+        throw new Error('Permission denied');
+      },
       statFile: () => null,
       globFiles: () => ['/repo/specs/broken.md'],
     };

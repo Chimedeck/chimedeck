@@ -18,7 +18,7 @@ import translations from '../translations/en.json';
 function addLinkTargetBlank(html: string): string {
   return html.replace(
     /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
-    '<a target="_blank" rel="noopener noreferrer"',
+    '<a target="_blank" rel="noopener noreferrer"'
   );
 }
 
@@ -36,7 +36,9 @@ function normalizePreviewLinkHref(rawHref: string): string {
   const hrefCandidate = (markdownHrefMatch?.[1] ?? decoded).trim();
   const unwrapped = hrefCandidate.replace(/^<([^>]+)>$/, '$1').trim();
 
-  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map((match) => match[0]);
+  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map(
+    (match) => match[0]
+  );
   const bestEmbeddedUrl = (() => {
     if (embeddedUrls.length === 0) return null;
 
@@ -105,7 +107,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
         handleCancel();
       }
     },
-    [handleSave, handleCancel],
+    [handleSave, handleCancel]
   );
 
   const handleDescriptionClick = useCallback(
@@ -123,10 +125,12 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
       }
       handleEnterEdit();
     },
-    [handleEnterEdit],
+    [handleEnterEdit]
   );
 
-  const previewHtml = sanitizeUserGeneratedHtml(addLinkTargetBlank(marked.parse(draft || '') as string));
+  const previewHtml = sanitizeUserGeneratedHtml(
+    addLinkTargetBlank(marked.parse(draft || '') as string)
+  );
   const isEmpty = !draft.trim();
   const isLong = draft.length > SHOW_MORE_THRESHOLD;
 
@@ -149,12 +153,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             autoFocus
           />
           <div className="flex gap-2 mt-2">
-            <Button
-              variant="primary"
-              size="sm"
-              type="button"
-              onClick={handleSave}
-            >
+            <Button variant="primary" size="sm" type="button" onClick={handleSave}>
               Save
             </Button>
             <button
@@ -173,12 +172,12 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             <div
               role="button"
               tabIndex={disabled ? -1 : 0}
-              aria-label={isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'}
+              aria-label={
+                isEmpty ? 'Add a description (click to edit)' : 'Description (click to edit)'
+              }
               className={[
                 'rounded-lg p-3 min-h-[80px] transition-colors',
-                disabled
-                  ? 'cursor-default'
-                  : 'cursor-text hover:bg-bg-overlay',
+                disabled ? 'cursor-default' : 'cursor-text hover:bg-bg-overlay',
                 isEmpty
                   ? 'text-muted text-sm italic bg-bg-overlay'
                   : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
@@ -220,4 +219,3 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
 };
 
 export default CardDescription;
-

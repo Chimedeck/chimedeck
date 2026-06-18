@@ -49,7 +49,9 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       }
     } else {
       setSaved(true);
-      setTimeout(() => { setSaved(false); }, 3000);
+      setTimeout(() => {
+        setSaved(false);
+      }, 3000);
     }
   }
 
@@ -64,7 +66,9 @@ export default function ProfileForm({ user }: ProfileFormProps) {
           id="display-name"
           type="text"
           value={name}
-          onChange={(e) => { setName(e.target.value); }}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
           maxLength={100}
           required
           className="rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base outline-none placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
@@ -75,12 +79,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
       <NicknameField value={nickname} onChange={setNickname} error={nicknameError} />
 
       <div className="flex items-center gap-4">
-        <Button
-          type="submit"
-          variant="primary"
-          size="md"
-          disabled={saving}
-        >
+        <Button type="submit" variant="primary" size="md" disabled={saving}>
           {saving ? 'Saving…' : translations['ProfilePage.saveChanges']}
         </Button>
 

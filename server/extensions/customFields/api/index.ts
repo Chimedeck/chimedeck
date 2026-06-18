@@ -19,14 +19,16 @@ import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
 export async function customFieldsRouter(req: Request, pathname: string): Promise<Response | null> {
   // /api/v1/boards/:boardId/custom-fields[/:fieldId]
-  const boardFieldsMatch = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/custom-fields(\/([^/]+))?$/);
+  const boardFieldsMatch = pathname.match(
+    /^\/api\/v1\/boards\/([^/]+)\/custom-fields(\/([^/]+))?$/
+  );
   if (boardFieldsMatch) {
     const boardIdentifier = boardFieldsMatch[1] as string;
     const boardId = await resolveBoardId(boardIdentifier);
     if (!boardId) {
       return Response.json(
         { error: { code: 'board-not-found', message: 'Board not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     const fieldId = boardFieldsMatch[3];
@@ -54,7 +56,7 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
     if (!boardId) {
       return Response.json(
         { error: { code: 'board-not-found', message: 'Board not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     return handleBatchCardFieldValues(req, boardId);
@@ -68,7 +70,9 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
   }
 
   // /api/v1/cards/:cardId/custom-field-values/:fieldId
-  const cardValuesMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/custom-field-values\/([^/]+)$/);
+  const cardValuesMatch = pathname.match(
+    /^\/api\/v1\/cards\/([^/]+)\/custom-field-values\/([^/]+)$/
+  );
   if (cardValuesMatch) {
     const cardId = cardValuesMatch[1] as string;
     const fieldId = cardValuesMatch[2] as string;

@@ -17,11 +17,7 @@ mock.module('../extensions/subscription/common/subscriptionRepo', () => ({
   getCurrentTier: getCurrentTierMock,
 }));
 
-const {
-  resolveQuota,
-  buildLimitResponse,
-  applyLimitGuard,
-} = await import('./limitGuard');
+const { resolveQuota, buildLimitResponse, applyLimitGuard } = await import('./limitGuard');
 
 import { SUBSCRIPTION_TIERS } from '../config/subscription-tiers';
 
@@ -81,7 +77,9 @@ describe('buildLimitResponse', () => {
       test(`enterprise tier ${key} — never returns 402`, () => {
         expect(buildLimitResponse('unlimited', key, 999_999, 'workspace-1')).toBeNull();
         expect(buildLimitResponse('unlimited', key, 0, 'workspace-1')).toBeNull();
-        expect(buildLimitResponse('unlimited', key, Number.MAX_SAFE_INTEGER, 'workspace-1')).toBeNull();
+        expect(
+          buildLimitResponse('unlimited', key, Number.MAX_SAFE_INTEGER, 'workspace-1')
+        ).toBeNull();
       });
     }
 
@@ -106,7 +104,7 @@ describe('buildLimitResponse', () => {
       expect(res).not.toBeNull();
       expect(res!.status).toBe(402);
 
-      const body = (await res!.json());
+      const body = await res!.json();
       expect(body.error.code).toBe('limit-reached');
       expect(body.error.data.limit).toBe('maxBoardsPerWorkspace');
       expect(body.error.data.currentUsage).toBe(2);
@@ -119,13 +117,13 @@ describe('buildLimitResponse', () => {
 
     test('response body has error.code = limit-reached', async () => {
       const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 1, 'workspace-1');
-      const body = (await res!.json());
+      const body = await res!.json();
       expect(body.error.code).toBe('limit-reached');
     });
 
     test('personal quota is reported as a number', async () => {
       const res = buildLimitResponse('tier_1', 'maxBoardsPerWorkspace', 1, 'workspace-1');
-      const body = (await res!.json());
+      const body = await res!.json();
       expect(typeof body.error.data.quota).toBe('number');
     });
   });

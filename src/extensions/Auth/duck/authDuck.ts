@@ -36,15 +36,14 @@ const initialState: AuthDuckState = {
 
 export const loginThunk = createAppAsyncThunk(
   'auth/login',
-  async (
-    { email, password }: { email: string; password: string },
-    { rejectWithValue }
-  ) => {
+  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const response = await authApi.login({ email, password });
       return response.data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'login-failed';
+      const msg = isApiError(err)
+        ? (err.response.data.error?.code ?? 'unknown-error')
+        : 'login-failed';
       return rejectWithValue(msg);
     }
   }
@@ -59,14 +58,16 @@ export const signupThunk = createAppAsyncThunk(
     try {
       const response = await authApi.signup({ name, email, password });
       // When email verification is enabled, server returns { requiresVerification: true }
-       
+
       const body = response as unknown as { data: { requiresVerification?: boolean } };
       if (body.data?.requiresVerification) {
         return { requiresVerification: true, email };
       }
       return response.data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'signup-failed';
+      const msg = isApiError(err)
+        ? (err.response.data.error?.code ?? 'unknown-error')
+        : 'signup-failed';
       return rejectWithValue(msg);
     }
   }
@@ -85,19 +86,16 @@ export const refreshTokenThunk = createAppAsyncThunk(
   }
 );
 
-export const logoutThunk = createAppAsyncThunk(
-  'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await authApi.logout();
-    } catch (err: unknown) {
-      // Best-effort logout — clear local state regardless
-      if (isApiError(err) && err.response.status !== 401) {
-        return rejectWithValue('logout-failed');
-      }
+export const logoutThunk = createAppAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+  try {
+    await authApi.logout();
+  } catch (err: unknown) {
+    // Best-effort logout — clear local state regardless
+    if (isApiError(err) && err.response.status !== 401) {
+      return rejectWithValue('logout-failed');
     }
   }
-);
+});
 
 // ---------- Slice ----------
 
@@ -105,10 +103,7 @@ const authDuck = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials(
-      state,
-      action: PayloadAction<{ user: AuthUser; accessToken: string }>
-    ) {
+    setCredentials(state, action: PayloadAction<{ user: AuthUser; accessToken: string }>) {
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
       state.status = 'authenticated';
@@ -183,8 +178,7 @@ export const authDuckReducer = authDuck.reducer;
 
 export const selectAuthUser = (state: RootState) => state.auth.user;
 export const selectAuthToken = (state: RootState) => state.auth.accessToken;
-export const selectIsAuthenticated = (state: RootState) =>
-  state.auth.status === 'authenticated';
+export const selectIsAuthenticated = (state: RootState) => state.auth.status === 'authenticated';
 export const selectAuthStatus = (state: RootState) => state.auth.status;
 export const selectAuthError = (state: RootState) => state.auth.error;
 export const selectPendingEmail = (state: RootState) => state.auth.pendingEmail;

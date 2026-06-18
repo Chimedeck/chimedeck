@@ -12,7 +12,7 @@ async function resolveCommentIdOrNotFound(identifier: string): Promise<string | 
   if (!commentId) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   return commentId;

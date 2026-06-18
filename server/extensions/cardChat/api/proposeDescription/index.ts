@@ -24,10 +24,13 @@ const PROPOSE_FORMAT_PROMPT = [
   'Numbered sections for each screen (e.g., "1/ Listing page:") detailing exact UI/UX changes, button states, specific copy updates, and mock-up references.',
   '"IMPORTANT NOTE:" for edge cases, data persistence rules, out-of-scope items, and testing parameters.',
   'And "BREAKDOWN:" for a bulleted technical task list including function/variable suggestions, ending with Desktop and Mobile testing.',
-  'Be specific and actionable. Use only information from the conversation, and format using Markdown (bolding, bullet points, and sparse emojis for highlights).'
+  'Be specific and actionable. Use only information from the conversation, and format using Markdown (bolding, bullet points, and sparse emojis for highlights).',
 ].join(' ');
 
-export async function handleProposeCardDescription(req: Request, cardId: string): Promise<Response> {
+export async function handleProposeCardDescription(
+  req: Request,
+  cardId: string
+): Promise<Response> {
   // [why] Auth and board visibility are already enforced by the cardChat
   // router via applyBoardVisibilityFromCard. We only need to validate
   // the request body and call the AI provider.
@@ -36,7 +39,7 @@ export async function handleProposeCardDescription(req: Request, cardId: string)
   if (!userId) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -46,31 +49,33 @@ export async function handleProposeCardDescription(req: Request, cardId: string)
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.sessionId !== 'string' || body.sessionId === '') {
     return Response.json(
       { name: 'missing-session-id', data: { message: 'sessionId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   // Fetch card metadata for context
-  const card = await proposeDescriptionDeps.db('cards')
+  const card = await proposeDescriptionDeps
+    .db('cards')
     .where({ id: cardId })
     .select('id', 'title', 'description')
     .first();
   if (!card) {
     return Response.json(
       { name: 'card-not-found', data: { message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   // Fetch conversation messages for the session
-  const messages: CardChatMessage[] = await proposeDescriptionDeps.db('card_chat_messages')
+  const messages: CardChatMessage[] = await proposeDescriptionDeps
+    .db('card_chat_messages')
     .where({ session_id: body.sessionId })
     .orderBy('created_at', 'asc')
     .select('*');
@@ -78,7 +83,7 @@ export async function handleProposeCardDescription(req: Request, cardId: string)
   if (messages.length === 0) {
     return Response.json(
       { name: 'no-messages', data: { message: 'No conversation messages found for this session' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -113,8 +118,11 @@ export async function handleProposeCardDescription(req: Request, cardId: string)
 
     if (completion.status !== 200 || !completion.data) {
       return Response.json(
-        { name: completion.name ?? 'ai-provider-error', data: { message: completion.message ?? 'AI provider failed' } },
-        { status: completion.status },
+        {
+          name: completion.name ?? 'ai-provider-error',
+          data: { message: completion.message ?? 'AI provider failed' },
+        },
+        { status: completion.status }
       );
     }
 
@@ -125,13 +133,16 @@ export async function handleProposeCardDescription(req: Request, cardId: string)
           sessionId: body.sessionId,
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
-    console.error('[cardChat/propose-description] Unexpected error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[cardChat/propose-description] Unexpected error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return Response.json(
       { name: 'internal-error', data: { message: 'Failed to generate description proposal' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

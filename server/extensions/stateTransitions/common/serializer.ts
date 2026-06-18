@@ -1,8 +1,4 @@
-import type {
-  StateTransitionGraph,
-  StateTransitionNode,
-  StateTransitionRule,
-} from './types';
+import type { StateTransitionGraph, StateTransitionNode, StateTransitionRule } from './types';
 import { validateGraphShape } from './validator';
 
 type ListLike = {
@@ -103,12 +99,9 @@ export function deserializeGraphData(value: unknown): StateTransitionGraph | nul
   return graphValidation.ok ? serializeGraph(graphValidation.graph) : null;
 }
 
-export function toGraphResponse({
-  boardId,
-  enabled,
-  graph,
-  updatedAt,
-}: GraphResponseInput): { data: { boardId: string; enabled: boolean; graph: StateTransitionGraph; updatedAt: string } } {
+export function toGraphResponse({ boardId, enabled, graph, updatedAt }: GraphResponseInput): {
+  data: { boardId: string; enabled: boolean; graph: StateTransitionGraph; updatedAt: string };
+} {
   const normalizedUpdatedAt = updatedAt
     ? new Date(updatedAt).toISOString()
     : new Date().toISOString();
@@ -131,7 +124,11 @@ export function deriveRulesFromGraph(graph: StateTransitionGraph): StateTransiti
   for (const node of graph.nodes) {
     const allowedListIds = new Set<string>();
     for (const edge of graph.edges) {
-      if (edge.direction === 'one_way' && edge.fromNodeId === node.id && nodeById.has(edge.toNodeId)) {
+      if (
+        edge.direction === 'one_way' &&
+        edge.fromNodeId === node.id &&
+        nodeById.has(edge.toNodeId)
+      ) {
         const toNode = nodeById.get(edge.toNodeId);
         if (toNode) allowedListIds.add(toNode.listId);
         continue;
@@ -156,7 +153,7 @@ export function deriveRulesFromGraph(graph: StateTransitionGraph): StateTransiti
       .filter((label): label is string => typeof label === 'string');
 
     const forbiddenNodes = graph.nodes.filter(
-      (candidate) => candidate.listId !== node.listId && !allowedListIds.has(candidate.listId),
+      (candidate) => candidate.listId !== node.listId && !allowedListIds.has(candidate.listId)
     );
 
     rules.push({
@@ -172,11 +169,9 @@ export function deriveRulesFromGraph(graph: StateTransitionGraph): StateTransiti
   return rules;
 }
 
-export function toRulesResponse({
-  boardId,
-  enabled,
-  graph,
-}: RulesResponseInput): { data: { boardId: string; enabled: boolean; rules: StateTransitionRuleResponse[] } } {
+export function toRulesResponse({ boardId, enabled, graph }: RulesResponseInput): {
+  data: { boardId: string; enabled: boolean; rules: StateTransitionRuleResponse[] };
+} {
   const rules = deriveRulesFromGraph(serializeGraph(graph)).map((rule) => ({
     currentState: rule.current_state,
     currentStateId: rule.current_state_id,

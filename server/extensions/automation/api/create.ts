@@ -59,14 +59,23 @@ export async function handleCreateAutomation(req: Request, boardId: string): Pro
   try {
     body = (await req.json()) as CreateAutomationBody;
   } catch {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
+      { status: 400 }
+    );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'name is required' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'name is required' } } },
+      { status: 400 }
+    );
   }
 
-  if (!body.automationType || !VALID_AUTOMATION_TYPES.includes(body.automationType as AutomationType)) {
+  if (
+    !body.automationType ||
+    !VALID_AUTOMATION_TYPES.includes(body.automationType as AutomationType)
+  ) {
     return Response.json({ error: { name: 'automation-type-invalid' } }, { status: 422 });
   }
 
@@ -75,8 +84,13 @@ export async function handleCreateAutomation(req: Request, boardId: string): Pro
   // Validate trigger (required for RULE and DUE_DATE types)
   if ((automationType === 'RULE' || automationType === 'DUE_DATE') && !body.trigger) {
     return Response.json(
-      { error: { name: 'bad-request', data: { message: 'trigger is required for RULE and DUE_DATE automations' } } },
-      { status: 400 },
+      {
+        error: {
+          name: 'bad-request',
+          data: { message: 'trigger is required for RULE and DUE_DATE automations' },
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -91,14 +105,17 @@ export async function handleCreateAutomation(req: Request, boardId: string): Pro
       const status = triggerValidation.errorName === 'trigger-type-unknown' ? 422 : 422;
       return Response.json(
         { error: { name: triggerValidation.errorName, data: triggerValidation.errorData } },
-        { status },
+        { status }
       );
     }
   }
 
   // Validate actions array
   if (body.actions !== undefined && !Array.isArray(body.actions)) {
-    return Response.json({ error: { name: 'bad-request', data: { message: 'actions must be an array' } } }, { status: 400 });
+    return Response.json(
+      { error: { name: 'bad-request', data: { message: 'actions must be an array' } } },
+      { status: 400 }
+    );
   }
 
   if (body.actions) {
@@ -146,8 +163,14 @@ export async function handleCreateAutomation(req: Request, boardId: string): Pro
   const [automation, trigger, actions] = await Promise.all([
     db('automations').where({ id: automationId }).first(),
     db('automation_triggers').where({ automation_id: automationId }).first(),
-    db('automation_actions').where({ automation_id: automationId }).orderBy('position', 'asc').select('*'),
+    db('automation_actions')
+      .where({ automation_id: automationId })
+      .orderBy('position', 'asc')
+      .select('*'),
   ]);
 
-  return Response.json({ data: formatAutomation(automation, trigger ?? null, actions) }, { status: 201 });
+  return Response.json(
+    { data: formatAutomation(automation, trigger ?? null, actions) },
+    { status: 201 }
+  );
 }

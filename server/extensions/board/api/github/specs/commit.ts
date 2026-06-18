@@ -1,12 +1,18 @@
 // POST /api/v1/boards/:boardId/github/specs/commit
 // Commit staged markdown file changes from the specs worktree.
-import { authenticate, type AuthenticatedRequest } from '../../../../auth/middlewares/authentication';
+import {
+  authenticate,
+  type AuthenticatedRequest,
+} from '../../../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../../middlewares/permissionManager';
-import { requireBoardAccess, type BoardScopedRequest } from '../../../middlewares/requireBoardAccess';
+import {
+  requireBoardAccess,
+  type BoardScopedRequest,
+} from '../../../middlewares/requireBoardAccess';
 import { guestDeniedError } from '../../../mods/guestPermissions';
 import { downloadRepositoryFromProjectUrl } from '../../../mods/githubRepository/downloadRepositoryFromProjectUrl';
 import { getGithubInstallationAccessToken } from '../../../mods/githubRepository/githubApp';
@@ -33,12 +39,10 @@ function requireSpecsWriteAccess(req: WorkspaceScopedRequest): Response | null {
     }
     return Response.json(
       {
-        name: req.guestType === 'VIEWER'
-          ? guestDeniedError('VIEWER')
-          : 'guest-role-no-org-access',
+        name: req.guestType === 'VIEWER' ? guestDeniedError('VIEWER') : 'guest-role-no-org-access',
         data: { message: 'Guest does not have permission to edit board specs' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -50,28 +54,21 @@ function mapCommitError(err: unknown): Response {
   if (message === 'missing-changed-files') {
     return Response.json(
       { name: message, data: { message: 'At least one changed file is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (message === 'specs-file-must-be-markdown') {
     return Response.json(
       { name: message, data: { message: 'Only specs markdown files can be committed' } },
-      { status: 422 },
+      { status: 422 }
     );
   }
 
-  return Response.json(
-    { name: 'specs-commit-failed', data: { message } },
-    { status: 502 },
-  );
+  return Response.json({ name: 'specs-commit-failed', data: { message } }, { status: 502 });
 }
 
-async function resolvePushToken({
-  projectUrl,
-}: {
-  projectUrl: string;
-}): Promise<string | null> {
+async function resolvePushToken({ projectUrl }: { projectUrl: string }): Promise<string | null> {
   const normalized = specsCommitDeps.normalizeGithubProjectUrl({ value: projectUrl });
   if (!normalized.ok) {
     throw new Error(normalized.message);
@@ -97,7 +94,7 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await specsCommitDeps.requireWorkspaceMembership(
     workspaceReq,
-    boardReq.board!.workspace_id,
+    boardReq.board!.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -111,7 +108,7 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
         name: 'specs-not-configured',
         data: { message: 'You must configure your Github documentation respository first' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -121,22 +118,24 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.message !== 'string' || !Array.isArray(body.changedFiles)) {
     return Response.json(
       { name: 'invalid-field-type', data: { message: 'message and changedFiles are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const changedFiles = body.changedFiles.filter((value): value is string => typeof value === 'string');
+  const changedFiles = body.changedFiles.filter(
+    (value): value is string => typeof value === 'string'
+  );
   if (changedFiles.length !== body.changedFiles.length) {
     return Response.json(
       { name: 'invalid-field-type', data: { message: 'changedFiles must contain only strings' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -152,7 +151,7 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
         name: 'specs-load-failed',
         data: { message: 'Our app do not have access to this respository' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -162,10 +161,7 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
     pushToken = await resolvePushToken({ projectUrl: board.github_project_url });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown-error';
-    return Response.json(
-      { name: 'specs-commit-failed', data: { message } },
-      { status: 502 },
-    );
+    return Response.json({ name: 'specs-commit-failed', data: { message } }, { status: 502 });
   }
 
   try {
@@ -190,7 +186,7 @@ export async function handleCommitSpecs(req: Request, boardId: string): Promise<
           footer: result.footer,
         },
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (err) {
     return mapCommitError(err);

@@ -9,7 +9,11 @@ export interface SnapshotWithDelta {
   deltaEvents: WrittenEvent[];
 }
 
-export async function readSnapshotWithDelta({ boardId }: { boardId: string }): Promise<SnapshotWithDelta> {
+export async function readSnapshotWithDelta({
+  boardId,
+}: {
+  boardId: string;
+}): Promise<SnapshotWithDelta> {
   const snapshot = await db('board_snapshots').where({ board_id: boardId }).first();
 
   if (!snapshot) {

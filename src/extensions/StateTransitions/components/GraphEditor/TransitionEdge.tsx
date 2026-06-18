@@ -1,10 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  useViewport,
-  type EdgeProps,
-} from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, useViewport, type EdgeProps } from '@xyflow/react';
 import translations from '../../translations/en.json';
 import { DEFAULT_ACTION_TYPE_ID, getActionTypeConfig } from '../../config/actionTypes';
 import type {
@@ -70,16 +65,13 @@ const buildOrthogonalPoints = ({
   connectorOffsetY: number;
 }): Point[] => {
   const depthY = (p0.y + p2.y) / 2 + connectorOffsetY;
-  return [
-    p0,
-    { x: p0.x, y: depthY },
-    { x: p2.x, y: depthY },
-    p2,
-  ];
+  return [p0, { x: p0.x, y: depthY }, { x: p2.x, y: depthY }, p2];
 };
 
 const buildPolylinePath = (points: Point[]): string =>
-  points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${String(point.x)} ${String(point.y)}`).join(' ');
+  points
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${String(point.x)} ${String(point.y)}`)
+    .join(' ');
 
 const polylinePointAtT = (points: Point[], t: number): Point => {
   if (points.length === 0) return { x: 0, y: 0 };
@@ -138,7 +130,8 @@ const TransitionEdge = ({
 
   const connectorOffsetX = edgeData?.connectorOffsetX ?? 0;
   const connectorOffsetY = edgeData?.connectorOffsetY ?? 0;
-  const effectiveStyle: StateTransitionStyle = edgeData?.style === 'curved' ? 'smooth' : (edgeData?.style ?? 'straight');
+  const effectiveStyle: StateTransitionStyle =
+    edgeData?.style === 'curved' ? 'smooth' : (edgeData?.style ?? 'straight');
 
   const p0 = useMemo(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
   const p2 = useMemo(() => ({ x: targetX, y: targetY }), [targetX, targetY]);
@@ -147,12 +140,12 @@ const TransitionEdge = ({
       x: (sourceX + targetX) / 2 + connectorOffsetX,
       y: (sourceY + targetY) / 2 + connectorOffsetY,
     }),
-    [connectorOffsetX, connectorOffsetY, sourceX, targetX, sourceY, targetY],
+    [connectorOffsetX, connectorOffsetY, sourceX, targetX, sourceY, targetY]
   );
 
   const orthogonalPoints = useMemo(
     () => buildOrthogonalPoints({ p0, p2, connectorOffsetY }),
-    [connectorOffsetY, p0, p2],
+    [connectorOffsetY, p0, p2]
   );
 
   const edgePath = useMemo(() => {
@@ -222,11 +215,14 @@ const TransitionEdge = ({
               }}
               onPointerMove={(event) => {
                 if (dragStateRef.current?.pointerId !== event.pointerId) return;
-                const dx = (event.clientX - dragStateRef.current.startClientX) / Math.max(zoom, 0.01);
-                const dy = (event.clientY - dragStateRef.current.startClientY) / Math.max(zoom, 0.01);
-                const nextOffsetX = effectiveStyle === 'orthogonal'
-                  ? dragStateRef.current.startOffsetX
-                  : dragStateRef.current.startOffsetX + dx;
+                const dx =
+                  (event.clientX - dragStateRef.current.startClientX) / Math.max(zoom, 0.01);
+                const dy =
+                  (event.clientY - dragStateRef.current.startClientY) / Math.max(zoom, 0.01);
+                const nextOffsetX =
+                  effectiveStyle === 'orthogonal'
+                    ? dragStateRef.current.startOffsetX
+                    : dragStateRef.current.startOffsetX + dx;
                 const nextOffsetY = dragStateRef.current.startOffsetY + dy;
                 dragStateRef.current.lastOffsetX = nextOffsetX;
                 dragStateRef.current.lastOffsetY = nextOffsetY;
@@ -240,7 +236,7 @@ const TransitionEdge = ({
                 edgeData?.onCommitOffset?.(
                   id,
                   dragStateRef.current.lastOffsetX,
-                  dragStateRef.current.lastOffsetY,
+                  dragStateRef.current.lastOffsetY
                 );
                 dragStateRef.current = null;
               }}
@@ -259,9 +255,10 @@ const TransitionEdge = ({
             }}
           />
           {(hovered || isSelected) && edgeData && (
-            <EdgeDeleteButton onClick={() => {
-              edgeData.onDelete(id);
-            }}
+            <EdgeDeleteButton
+              onClick={() => {
+                edgeData.onDelete(id);
+              }}
             />
           )}
         </div>

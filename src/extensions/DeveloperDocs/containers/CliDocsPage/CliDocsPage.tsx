@@ -42,7 +42,9 @@ const CliDocsPage = () => {
           <Button
             variant="link"
             size="sm"
-            onClick={() => { navigate(-1); }}
+            onClick={() => {
+              navigate(-1);
+            }}
             className="mb-2"
           >
             ← Back
@@ -61,10 +63,12 @@ const CliDocsPage = () => {
         <div className="mx-auto max-w-3xl px-8 py-10 space-y-2">
           <Section id="overview">
             <InfoCallout className="mb-6">
-              The CLI is a thin wrapper around ChimeDeck REST endpoints. It supports human-friendly output by default and raw JSON via <Code>--json</Code> for scripting.
+              The CLI is a thin wrapper around ChimeDeck REST endpoints. It supports human-friendly
+              output by default and raw JSON via <Code>--json</Code> for scripting.
             </InfoCallout>
             <P>
-              Run commands as <Code>chimedeck [global options] &lt;command&gt; [command options]</Code>.
+              Run commands as{' '}
+              <Code>chimedeck [global options] &lt;command&gt; [command options]</Code>.
             </P>
           </Section>
 
@@ -73,7 +77,8 @@ const CliDocsPage = () => {
           <Section id="authentication">
             <H2>Authentication</H2>
             <P>
-              All CLI commands require an API token. The CLI reads it from <Code>CHIMEDECK_TOKEN</Code> or from a per-command <Code>--token</Code> flag.
+              All CLI commands require an API token. The CLI reads it from{' '}
+              <Code>CHIMEDECK_TOKEN</Code> or from a per-command <Code>--token</Code> flag.
             </P>
             <Pre>{`export CHIMEDECK_TOKEN=hf_your_token_here
 export CHIMEDECK_API_URL=http://localhost:3000`}</Pre>
@@ -86,11 +91,41 @@ export CHIMEDECK_API_URL=http://localhost:3000`}</Pre>
             <Table
               headers={['Flag', 'Description']}
               rows={[
-                { rowId: 'go-token', cells: [{ key: 'flag', content: <Code>--token &lt;value&gt;</Code> }, { key: 'desc', content: 'API token (overrides CHIMEDECK_TOKEN)' }] },
-                { rowId: 'go-api', cells: [{ key: 'flag', content: <Code>--api-url &lt;value&gt;</Code> }, { key: 'desc', content: 'API base URL (overrides CHIMEDECK_API_URL)' }] },
-                { rowId: 'go-json', cells: [{ key: 'flag', content: <Code>--json</Code> }, { key: 'desc', content: 'Output raw JSON' }] },
-                { rowId: 'go-help', cells: [{ key: 'flag', content: <Code>--help</Code> }, { key: 'desc', content: 'Show usage' }] },
-                { rowId: 'go-version', cells: [{ key: 'flag', content: <Code>--version</Code> }, { key: 'desc', content: 'Print CLI version' }] },
+                {
+                  rowId: 'go-token',
+                  cells: [
+                    { key: 'flag', content: <Code>--token &lt;value&gt;</Code> },
+                    { key: 'desc', content: 'API token (overrides CHIMEDECK_TOKEN)' },
+                  ],
+                },
+                {
+                  rowId: 'go-api',
+                  cells: [
+                    { key: 'flag', content: <Code>--api-url &lt;value&gt;</Code> },
+                    { key: 'desc', content: 'API base URL (overrides CHIMEDECK_API_URL)' },
+                  ],
+                },
+                {
+                  rowId: 'go-json',
+                  cells: [
+                    { key: 'flag', content: <Code>--json</Code> },
+                    { key: 'desc', content: 'Output raw JSON' },
+                  ],
+                },
+                {
+                  rowId: 'go-help',
+                  cells: [
+                    { key: 'flag', content: <Code>--help</Code> },
+                    { key: 'desc', content: 'Show usage' },
+                  ],
+                },
+                {
+                  rowId: 'go-version',
+                  cells: [
+                    { key: 'flag', content: <Code>--version</Code> },
+                    { key: 'desc', content: 'Print CLI version' },
+                  ],
+                },
               ]}
             />
           </Section>
@@ -102,19 +137,97 @@ export CHIMEDECK_API_URL=http://localhost:3000`}</Pre>
             <Table
               headers={['Command', 'Purpose']}
               rows={[
-                { rowId: 'cmd-move', cells: [{ key: 'name', content: <Code>move-card</Code> }, { key: 'purpose', content: 'Move a card to another list' }] },
-                { rowId: 'cmd-comment', cells: [{ key: 'name', content: <Code>comment</Code> }, { key: 'purpose', content: 'Add a comment to a card' }] },
-                { rowId: 'cmd-create', cells: [{ key: 'name', content: <Code>create-card</Code> }, { key: 'purpose', content: 'Create a card in a list' }] },
-                { rowId: 'cmd-edit', cells: [{ key: 'name', content: <Code>edit-description</Code> }, { key: 'purpose', content: 'Update card description' }] },
-                { rowId: 'cmd-price', cells: [{ key: 'name', content: <Code>set-price</Code> }, { key: 'purpose', content: 'Set/clear card price' }] },
-                { rowId: 'cmd-invite', cells: [{ key: 'name', content: <Code>invite</Code> }, { key: 'purpose', content: 'Invite a member to a board' }] },
-                { rowId: 'cmd-search-cards', cells: [{ key: 'name', content: <Code>search-cards</Code> }, { key: 'purpose', content: 'Search workspace cards' }] },
-                { rowId: 'cmd-search-board', cells: [{ key: 'name', content: <Code>search-board</Code> }, { key: 'purpose', content: 'Search within a board' }] },
-                { rowId: 'cmd-get-card', cells: [{ key: 'name', content: <Code>get-card</Code> }, { key: 'purpose', content: 'Get full card details' }] },
-                { rowId: 'cmd-get-state', cells: [{ key: 'name', content: <Code>get-state-transitions</Code> }, { key: 'purpose', content: 'Get state transition graph and enabled status' }] },
-                { rowId: 'cmd-set-state', cells: [{ key: 'name', content: <Code>set-state-transitions</Code> }, { key: 'purpose', content: 'Set state transition graph and/or enabled flag' }] },
-                { rowId: 'cmd-rules', cells: [{ key: 'name', content: <Code>get-state-transition-rules</Code> }, { key: 'purpose', content: 'Get enforceable transition rules' }] },
-                { rowId: 'cmd-copy-state', cells: [{ key: 'name', content: <Code>copy-state-transitions</Code> }, { key: 'purpose', content: 'Copy transitions from one board to another' }] },
+                {
+                  rowId: 'cmd-move',
+                  cells: [
+                    { key: 'name', content: <Code>move-card</Code> },
+                    { key: 'purpose', content: 'Move a card to another list' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-comment',
+                  cells: [
+                    { key: 'name', content: <Code>comment</Code> },
+                    { key: 'purpose', content: 'Add a comment to a card' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-create',
+                  cells: [
+                    { key: 'name', content: <Code>create-card</Code> },
+                    { key: 'purpose', content: 'Create a card in a list' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-edit',
+                  cells: [
+                    { key: 'name', content: <Code>edit-description</Code> },
+                    { key: 'purpose', content: 'Update card description' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-price',
+                  cells: [
+                    { key: 'name', content: <Code>set-price</Code> },
+                    { key: 'purpose', content: 'Set/clear card price' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-invite',
+                  cells: [
+                    { key: 'name', content: <Code>invite</Code> },
+                    { key: 'purpose', content: 'Invite a member to a board' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-search-cards',
+                  cells: [
+                    { key: 'name', content: <Code>search-cards</Code> },
+                    { key: 'purpose', content: 'Search workspace cards' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-search-board',
+                  cells: [
+                    { key: 'name', content: <Code>search-board</Code> },
+                    { key: 'purpose', content: 'Search within a board' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-get-card',
+                  cells: [
+                    { key: 'name', content: <Code>get-card</Code> },
+                    { key: 'purpose', content: 'Get full card details' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-get-state',
+                  cells: [
+                    { key: 'name', content: <Code>get-state-transitions</Code> },
+                    { key: 'purpose', content: 'Get state transition graph and enabled status' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-set-state',
+                  cells: [
+                    { key: 'name', content: <Code>set-state-transitions</Code> },
+                    { key: 'purpose', content: 'Set state transition graph and/or enabled flag' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-rules',
+                  cells: [
+                    { key: 'name', content: <Code>get-state-transition-rules</Code> },
+                    { key: 'purpose', content: 'Get enforceable transition rules' },
+                  ],
+                },
+                {
+                  rowId: 'cmd-copy-state',
+                  cells: [
+                    { key: 'name', content: <Code>copy-state-transitions</Code> },
+                    { key: 'purpose', content: 'Copy transitions from one board to another' },
+                  ],
+                },
               ]}
             />
           </Section>
@@ -132,7 +245,8 @@ export CHIMEDECK_API_URL=http://localhost:3000`}</Pre>
 chimedeck set-state-transitions --board <boardId> --graph-file ./state-graph.json
 chimedeck set-state-transitions --board <boardId> --graph-json '{"nodes":[],"edges":[],"notes":[]}'`}</Pre>
             <P>
-              For <Code>set-state-transitions</Code>, provide at least one of <Code>--enabled</Code>, <Code>--graph-json</Code>, or <Code>--graph-file</Code>.
+              For <Code>set-state-transitions</Code>, provide at least one of <Code>--enabled</Code>
+              , <Code>--graph-json</Code>, or <Code>--graph-file</Code>.
             </P>
 
             <H3>get-state-transition-rules</H3>

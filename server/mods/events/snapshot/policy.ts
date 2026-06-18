@@ -26,7 +26,9 @@ export async function checkAndWriteSnapshot({
 
   if (eventsSince >= SNAPSHOT_INTERVAL) {
     const state = snapshot?.state
-      ? (typeof snapshot.state === 'string' ? JSON.parse(snapshot.state) : snapshot.state)
+      ? typeof snapshot.state === 'string'
+        ? JSON.parse(snapshot.state)
+        : snapshot.state
       : {};
 
     await writeSnapshot({

@@ -44,16 +44,32 @@ describe('commit', () => {
     mockBunSpawnSync.mockImplementation(({ cmd }: { cmd: string[] }) => {
       const cmdStr = cmd.join(' ');
       if (cmdStr.startsWith('git add')) {
-        return { exitCode: mocks.addExitCode ?? 0, stdout: new Uint8Array(), stderr: Buffer.from(mocks.addStderr ?? '') };
+        return {
+          exitCode: mocks.addExitCode ?? 0,
+          stdout: new Uint8Array(),
+          stderr: Buffer.from(mocks.addStderr ?? ''),
+        };
       }
       if (cmdStr.startsWith('git commit')) {
-        return { exitCode: mocks.commitExitCode ?? 0, stdout: new Uint8Array(), stderr: Buffer.from(mocks.commitStderr ?? '') };
+        return {
+          exitCode: mocks.commitExitCode ?? 0,
+          stdout: new Uint8Array(),
+          stderr: Buffer.from(mocks.commitStderr ?? ''),
+        };
       }
       if (cmdStr.startsWith('git push')) {
-        return { exitCode: mocks.pushExitCode ?? 0, stdout: new Uint8Array(), stderr: Buffer.from(mocks.pushStderr ?? '') };
+        return {
+          exitCode: mocks.pushExitCode ?? 0,
+          stdout: new Uint8Array(),
+          stderr: Buffer.from(mocks.pushStderr ?? ''),
+        };
       }
       if (cmdStr.includes('rev-parse') && cmdStr.includes('HEAD')) {
-        return { exitCode: 0, stdout: Buffer.from(mocks.hashStdout ?? 'abc123\n'), stderr: new Uint8Array() };
+        return {
+          exitCode: 0,
+          stdout: Buffer.from(mocks.hashStdout ?? 'abc123\n'),
+          stderr: new Uint8Array(),
+        };
       }
       if (cmdStr.includes('rev-parse') && cmdStr.includes('show-toplevel')) {
         return { exitCode: 0, stdout: Buffer.from('/repo\n'), stderr: new Uint8Array() };

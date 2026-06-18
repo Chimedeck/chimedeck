@@ -11,24 +11,14 @@ describe('AIAssistButton', () => {
 
   it('renders nothing when feature flag is disabled', () => {
     const { container } = render(
-      <AIAssistButton
-        cardId="card-1"
-        enabled={false}
-        onStartChat={mockOnStartChat}
-      />,
+      <AIAssistButton cardId="card-1" enabled={false} onStartChat={mockOnStartChat} />
     );
 
     expect(container.firstChild).toBeNull();
   });
 
   it('renders the AI Assist button when feature flag is enabled', () => {
-    render(
-      <AIAssistButton
-        cardId="card-1"
-        enabled={true}
-        onStartChat={mockOnStartChat}
-      />,
-    );
+    render(<AIAssistButton cardId="card-1" enabled={true} onStartChat={mockOnStartChat} />);
 
     expect(screen.getByText('AI Assist')).toBeInTheDocument();
     expect(screen.getByText('AI Assist').closest('button')).not.toBeDisabled();
@@ -41,20 +31,14 @@ describe('AIAssistButton', () => {
         enabled={true}
         disabled={true}
         onStartChat={mockOnStartChat}
-      />,
+      />
     );
 
     expect(screen.getByText('AI Assist').closest('button')).toBeDisabled();
   });
 
   it('calls onStartChat with cardId when clicked', () => {
-    render(
-      <AIAssistButton
-        cardId="card-42"
-        enabled={true}
-        onStartChat={mockOnStartChat}
-      />,
-    );
+    render(<AIAssistButton cardId="card-42" enabled={true} onStartChat={mockOnStartChat} />);
 
     fireEvent.click(screen.getByText('AI Assist'));
     expect(mockOnStartChat).toHaveBeenCalledWith('card-42');
@@ -68,7 +52,7 @@ describe('AIAssistButton', () => {
         enabled={true}
         disabled={true}
         onStartChat={mockOnStartChat}
-      />,
+      />
     );
 
     fireEvent.click(screen.getByText('AI Assist'));

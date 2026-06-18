@@ -78,7 +78,7 @@ export async function handleListPlugins(req: Request): Promise<Response> {
       'is_public',
       'is_active',
       'created_at',
-      'updated_at',
+      'updated_at'
       // api_key is never returned in list responses
     );
 

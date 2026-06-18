@@ -37,9 +37,7 @@ describe('stateTransitions validator', () => {
 
   it('findMissingNodeForBoardList reports lists that are not represented in graph nodes', () => {
     const graph: StateTransitionGraph = {
-      nodes: [
-        { id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 1, positionY: 2 },
-      ],
+      nodes: [{ id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 1, positionY: 2 }],
       edges: [],
       notes: [],
     };
@@ -151,7 +149,7 @@ describe('stateTransitions validator', () => {
       new Map([
         ['list-1', { id: 'list-1', title: 'Todo' }],
         ['list-2', { id: 'list-2', title: 'Doing' }],
-      ]),
+      ])
     );
 
     expect(mismatch).toEqual({

@@ -65,7 +65,10 @@ function getInput(url: URL, body: Record<string, unknown>, ...keys: string[]): u
   return undefined;
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
   const memberships = await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .select('role');
@@ -79,15 +82,22 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first() as { role?: string } | undefined;
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as
+    | { role?: string }
+    | undefined;
   const role = row?.role;
   if (role === 'ADMIN' || role === 'MEMBER' || role === 'VIEWER') return role;
   return null;
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first() as { id: string } | undefined;
+  const row = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as { id: string } | undefined;
   return !!row;
 }
 
@@ -116,10 +126,12 @@ async function canMutateBoard(userId: string, board: BoardRow): Promise<boolean>
   return boardRole === 'ADMIN' || boardRole === 'MEMBER';
 }
 
-async function resolveLabelContext(labelId: string): Promise<{ label: LabelRow; board: BoardRow } | null> {
-  const label = await db('labels').where({ id: labelId }).first() as LabelRow | undefined;
+async function resolveLabelContext(
+  labelId: string
+): Promise<{ label: LabelRow; board: BoardRow } | null> {
+  const label = (await db('labels').where({ id: labelId }).first()) as LabelRow | undefined;
   if (!label) return null;
-  const board = await db('boards').where({ id: label.board_id }).first() as BoardRow | undefined;
+  const board = (await db('boards').where({ id: label.board_id }).first()) as BoardRow | undefined;
   if (!board) return null;
   return { label, board };
 }
@@ -128,7 +140,7 @@ async function updateLabel(
   userId: string,
   label: LabelRow,
   board: BoardRow,
-  inputs: { name: unknown; color: unknown },
+  inputs: { name: unknown; color: unknown }
 ): Promise<Response> {
   if (!(await canMutateBoard(userId, board))) return TRELLO_PERMISSION_DENIED();
 
@@ -149,12 +161,15 @@ async function updateLabel(
     await db('labels').where({ id: label.id }).update(updates);
   }
 
-  const updated = await db('labels').where({ id: label.id }).first() as LabelRow | undefined;
+  const updated = (await db('labels').where({ id: label.id }).first()) as LabelRow | undefined;
   if (!updated) return TRELLO_LABEL_NOT_FOUND();
   return Response.json(serializeLabel(updated));
 }
 
-export async function labelsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function labelsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -167,7 +182,8 @@ export async function labelsRouter(req: AuthenticatedRequest, path: string): Pro
     const name = getInput(url, body, 'name');
     const colorInput = getInput(url, body, 'color');
 
-    if (typeof idBoardInput !== 'string' || !idBoardInput.trim()) return trelloError('invalid value for idBoard', 400);
+    if (typeof idBoardInput !== 'string' || !idBoardInput.trim())
+      return trelloError('invalid value for idBoard', 400);
     if (typeof name !== 'string' || !name.trim()) return trelloError('invalid value for name', 400);
 
     const color = parseColor(colorInput);
@@ -175,7 +191,7 @@ export async function labelsRouter(req: AuthenticatedRequest, path: string): Pro
 
     const boardId = await resolveBoardId(idBoardInput);
     if (!boardId) return TRELLO_NOT_FOUND();
-    const board = await db('boards').where({ id: boardId }).first() as BoardRow | undefined;
+    const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
     if (!board) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
@@ -187,7 +203,7 @@ export async function labelsRouter(req: AuthenticatedRequest, path: string): Pro
       color,
     });
 
-    const created = await db('labels').where({ id: labelId }).first() as LabelRow | undefined;
+    const created = (await db('labels').where({ id: labelId }).first()) as LabelRow | undefined;
     if (!created) return TRELLO_LABEL_NOT_FOUND();
     return Response.json(serializeLabel(created));
   }

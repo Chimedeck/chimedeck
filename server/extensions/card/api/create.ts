@@ -6,7 +6,10 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { emitCardCreated } from '../../activity/mods/createActivityEvent';
 import { createCard } from '../mods/create';
 
@@ -18,7 +21,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -41,21 +44,21 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.title.trim().length > 512) {
     return Response.json(
       { error: { code: 'card-title-too-long', message: 'title must be ≤ 512 characters' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -63,8 +66,13 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     const parsed = new Date(body.start_date);
     if (Number.isNaN(parsed.getTime())) {
       return Response.json(
-        { error: { code: 'bad-request', message: 'start_date must be a valid ISO 8601 date string or null' } },
-        { status: 400 },
+        {
+          error: {
+            code: 'bad-request',
+            message: 'start_date must be a valid ISO 8601 date string or null',
+          },
+        },
+        { status: 400 }
       );
     }
   }

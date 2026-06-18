@@ -3,7 +3,10 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../../middlewares/boardVisibility';
 
 interface PatchBody {
   notifications_enabled?: unknown;
@@ -24,7 +27,7 @@ function invalidPreferencePatchResponse({
         data: { message },
       },
     },
-    { status: 400 },
+    { status: 400 }
   );
 }
 
@@ -65,7 +68,7 @@ function validatePatchBody({
 
 export async function handleUpdateBoardNotificationPreference(
   req: Request,
-  boardId: string,
+  boardId: string
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
@@ -79,7 +82,7 @@ export async function handleUpdateBoardNotificationPreference(
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -109,12 +112,8 @@ export async function handleUpdateBoardNotificationPreference(
     nextNotificationsEnabled = existing.notifications_enabled;
   } else {
     const [boardMember, boardGuest] = await Promise.all([
-      db('board_members')
-        .where({ board_id: resolvedBoardId, user_id: userId })
-        .first(),
-      db('board_guest_access')
-        .where({ board_id: resolvedBoardId, user_id: userId })
-        .first(),
+      db('board_members').where({ board_id: resolvedBoardId, user_id: userId }).first(),
+      db('board_guest_access').where({ board_id: resolvedBoardId, user_id: userId }).first(),
     ]);
     nextNotificationsEnabled = !!boardMember || !!boardGuest;
   }
@@ -137,7 +136,7 @@ export async function handleUpdateBoardNotificationPreference(
           only_related_to_me: nextOnlyRelatedToMe,
           updated_at: now,
         },
-        ['notifications_enabled', 'only_related_to_me', 'updated_at'],
+        ['notifications_enabled', 'only_related_to_me', 'updated_at']
       );
     row = updated;
   } else {
@@ -150,7 +149,7 @@ export async function handleUpdateBoardNotificationPreference(
         only_related_to_me: nextOnlyRelatedToMe,
         updated_at: now,
       },
-      ['notifications_enabled', 'only_related_to_me', 'updated_at'],
+      ['notifications_enabled', 'only_related_to_me', 'updated_at']
     );
     row = inserted;
   }

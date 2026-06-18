@@ -39,7 +39,10 @@ function makeBoardAccessMock() {
 }
 
 function makeMembershipMock() {
-  return async (req: Request & { callerRole?: string; guestType?: string; workspaceId?: string }, workspaceId: string) => {
+  return async (
+    req: Request & { callerRole?: string; guestType?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
     if (guestType !== undefined) req.guestType = guestType;
@@ -64,11 +67,7 @@ async function createTempRepo(fileName = 'specs/guide.md', content = '# Hello Wo
   return repoPath;
 }
 
-function makeSaveRequest(
-  path: string,
-  content: string,
-  ifMatch: string | null = '"etag-v1"',
-) {
+function makeSaveRequest(path: string, content: string, ifMatch: string | null = '"etag-v1"') {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (ifMatch !== null) headers['If-Match'] = ifMatch;
   return new Request('http://localhost/api/v1/boards/board-1/github/specs/file', {
@@ -100,7 +99,9 @@ function resetDeps() {
   specsFileWriteDeps.invalidateSpecsCachesForBoard = () => {};
 }
 
-beforeEach(() => { resetDeps(); });
+beforeEach(() => {
+  resetDeps();
+});
 
 // ── Authorization ─────────────────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — authorization', () =
     guestType = 'VIEWER';
     const res = await handlePutSpecsFile(makeSaveRequest('specs/guide.md', '# Edited'), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toContain('guest');
   });
 
@@ -135,11 +136,15 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — authorization', () =
       ref: 'main',
       fetchedAt: new Date().toISOString(),
     });
-    specsFileWriteDeps.writeSpecsFile = async () => ({ sha: 'sha-abc', etag: '"etag-v2"', created: false });
+    specsFileWriteDeps.writeSpecsFile = async () => ({
+      sha: 'sha-abc',
+      etag: '"etag-v2"',
+      created: false,
+    });
 
     const res = await handlePutSpecsFile(
       makeSaveRequest('specs/guide.md', '# Edited', null),
-      'board-1',
+      'board-1'
     );
     // null If-Match is fine for a new create (file doesn't have an etag yet)
     expect([200, 201]).toContain(res.status);
@@ -149,7 +154,7 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — authorization', () =
     board.github_project_url = null;
     const res = await handlePutSpecsFile(makeSaveRequest('specs/guide.md', '# Edited'), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
     expect(body.data.message).toContain('configure your Github documentation');
   });
@@ -171,10 +176,10 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — validation', () => {
 
     const res = await handlePutSpecsFile(
       makeSaveRequest('specs/guide.js', 'const x = 1;'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('specs-file-must-be-markdown');
   });
 
@@ -189,12 +194,9 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — validation', () => {
       throw new Error('path-traversal-detected');
     };
 
-    const res = await handlePutSpecsFile(
-      makeSaveRequest('../etc/passwd', '# Hacked'),
-      'board-1',
-    );
+    const res = await handlePutSpecsFile(makeSaveRequest('../etc/passwd', '# Hacked'), 'board-1');
     expect(res.status).toBe(400);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('path-traversal-detected');
   });
 });
@@ -216,10 +218,10 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — stale precondition',
 
     const res = await handlePutSpecsFile(
       makeSaveRequest('specs/guide.md', '# Edited', '"stale-etag"'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(412);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('stale-specs-file-precondition');
   });
 
@@ -236,10 +238,10 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file — stale precondition',
 
     const res = await handlePutSpecsFile(
       makeSaveRequest('specs/guide.md', '# Edited', null),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(412);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('missing-specs-file-precondition');
   });
 });

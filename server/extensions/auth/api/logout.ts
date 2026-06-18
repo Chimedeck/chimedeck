@@ -29,7 +29,7 @@ export async function handleLogout(req: Request): Promise<Response> {
     if (tokenRow?.user_id) {
       await pubsub.publish(
         `session:${tokenRow.user_id}`,
-        JSON.stringify({ type: 'session_revoked' }),
+        JSON.stringify({ type: 'session_revoked' })
       );
     }
   }
@@ -38,11 +38,11 @@ export async function handleLogout(req: Request): Promise<Response> {
   // Clear both auth cookies.
   responseHeaders.append(
     'Set-Cookie',
-    'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=0',
+    'refresh_token=; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=0'
   );
   responseHeaders.append(
     'Set-Cookie',
-    'access_token=; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=0',
+    'access_token=; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=0'
   );
 
   return new Response(JSON.stringify({ data: {} }), { status: 200, headers: responseHeaders });

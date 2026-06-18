@@ -26,9 +26,9 @@ type CacheEntry = {
 const boardGraphCache = new Map<string, CacheEntry>();
 
 async function loadBoardGraph(boardId: string): Promise<StateTransitionGraph | null> {
-  const row = await db('board_state_transitions')
-    .where({ board_id: boardId })
-    .first() as TransitionRow | undefined;
+  const row = (await db('board_state_transitions').where({ board_id: boardId }).first()) as
+    | TransitionRow
+    | undefined;
 
   if (!row) return null;
 
@@ -65,7 +65,7 @@ export async function resolveColumnWorkflowPhases({
   if (!graph) return [];
 
   const node = graph.nodes.find((n) => n.listId === listId);
-  return (node?.workflowPhases) ?? [];
+  return node?.workflowPhases ?? [];
 }
 
 /**
@@ -110,7 +110,7 @@ export function invalidatePhaseCacheForBoard(boardId: string): void {
  * Listener for WS events — invalidates cache when state transitions are updated.
  */
 export function invalidatePhaseCacheFromStateTransitionEvent(
-  event: Pick<StateTransitionUpdatedEvent, 'type' | 'board_id'>,
+  event: Pick<StateTransitionUpdatedEvent, 'type' | 'board_id'>
 ): void {
   if (event.type !== 'state_transition_updated') return;
   invalidatePhaseCacheForBoard(event.board_id);

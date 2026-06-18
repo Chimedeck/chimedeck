@@ -30,24 +30,33 @@ export async function handleMultipartStart(req: Request, cardId: string): Promis
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   if (!body.filename || !body.mimeType || typeof body.sizeBytes !== 'number') {
     return Response.json(
       { name: 'bad-request', data: { message: 'filename, mimeType, and sizeBytes are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!ALLOWED_MIME_TYPES.includes(body.mimeType)) {
-    return Response.json({ name: 'mime-type-not-allowed', data: { mimeType: body.mimeType } }, { status: 400 });
+    return Response.json(
+      { name: 'mime-type-not-allowed', data: { mimeType: body.mimeType } },
+      { status: 400 }
+    );
   }
 
   if (body.sizeBytes > MAX_FILE_SIZE_BYTES) {
     return Response.json(
-      { name: 'file-too-large', data: { sizeBytes: body.sizeBytes, maxBytes: MAX_FILE_SIZE_BYTES } },
-      { status: 413 },
+      {
+        name: 'file-too-large',
+        data: { sizeBytes: body.sizeBytes, maxBytes: MAX_FILE_SIZE_BYTES },
+      },
+      { status: 413 }
     );
   }
 
@@ -94,7 +103,10 @@ export async function handleMultipartStart(req: Request, cardId: string): Promis
     uploadId = result.UploadId;
   } catch (err: unknown) {
     console.error('[multipart/start] S3 error:', err);
-    return Response.json({ name: 's3-error', data: { message: 'Failed to initiate multipart upload' } }, { status: 502 });
+    return Response.json(
+      { name: 's3-error', data: { message: 'Failed to initiate multipart upload' } },
+      { status: 502 }
+    );
   }
 
   await db('attachments').insert({

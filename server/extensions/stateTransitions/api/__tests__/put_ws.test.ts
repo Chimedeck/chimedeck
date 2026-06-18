@@ -13,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -37,8 +42,8 @@ class QueryBuilder {
   }
 
   async update(patch: Row, returning?: string[]): Promise<Row[] | number> {
-    const rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    const rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
     for (const row of rows) Object.assign(row, patch);
     if (returning && returning.length > 0) {
@@ -49,14 +54,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private async execute(): Promise<Row[]> {
-    let rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    let rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -117,7 +122,8 @@ mock.module('../../../../config/featureFlags', () => ({
 }));
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -133,7 +139,10 @@ mock.module('../../../../middlewares/permissionManager', () => ({
 }));
 
 mock.module('../../../board/middlewares/requireBoardWritable', () => ({
-  requireBoardWritable: async (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
+  requireBoardWritable: async (
+    req: Request & { board?: { id: string; workspace_id: string } },
+    boardId: string
+  ) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
     return null;
   },
@@ -211,7 +220,7 @@ describe('PUT state transitions websocket broadcast', () => {
     };
 
     await expect(
-      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }),
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
     ).resolves.toBeUndefined();
 
     const req = new Request('http://localhost/api/v1/boards/board-1/state-transitions', {
@@ -233,7 +242,7 @@ describe('PUT state transitions websocket broadcast', () => {
     expect(putRes.status).toBe(200);
 
     await expect(
-      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' }),
+      validateCardMove({ boardId: 'board-1', fromListId: 'list-1', toListId: 'list-2' })
     ).rejects.toBeInstanceOf(StateTransitionForbiddenError);
   });
 });

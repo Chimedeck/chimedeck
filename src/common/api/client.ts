@@ -32,7 +32,11 @@ export const apiClient = axios.create({
 // make them behave like protected routes.
 apiClient.interceptors.request.use((config) => {
   const token = tokenGetter?.() ?? null;
-  if (token && !config.headers.Authorization && shouldAttachAccessToken({ url: config.url, method: config.method })) {
+  if (
+    token &&
+    !config.headers.Authorization &&
+    shouldAttachAccessToken({ url: config.url, method: config.method })
+  ) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -69,14 +73,16 @@ apiClient.interceptors.response.use(
       throw toError(error);
     }
 
-    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
     const shouldRecover = isExpiredAccessTokenError(error);
 
     if (
-      !shouldRecover
-      || !originalRequest
-      || originalRequest._retry
-      || !shouldAttemptAuthRecovery({ url: originalRequest.url, method: originalRequest.method })
+      !shouldRecover ||
+      !originalRequest ||
+      originalRequest._retry ||
+      !shouldAttemptAuthRecovery({ url: originalRequest.url, method: originalRequest.method })
     ) {
       throw toError(error);
     }
@@ -84,9 +90,7 @@ apiClient.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      refreshRequestPromise ??= apiClient
-        .post('/auth/refresh')
-        .finally(clearRefreshRequestPromise);
+      refreshRequestPromise ??= apiClient.post('/auth/refresh').finally(clearRefreshRequestPromise);
 
       await refreshRequestPromise;
       return await apiClient(originalRequest);
@@ -99,7 +103,7 @@ apiClient.interceptors.response.use(
 
       throw toError(error);
     }
-  },
+  }
 );
 
 function isAxiosErrorLike(
@@ -116,9 +120,7 @@ function clearRefreshRequestPromise() {
   refreshRequestPromise = null;
 }
 
-function isExpiredAccessTokenError(err: {
-  response?: { data?: unknown };
-}): boolean {
+function isExpiredAccessTokenError(err: { response?: { data?: unknown } }): boolean {
   const message = getApiErrorMessage(err.response?.data);
   return message === 'Invalid or expired access token';
 }
@@ -141,9 +143,10 @@ function extractSubscriptionError(data: unknown): { message: string; upgradeUrl:
 
   const message = (maybeError as { message?: unknown }).message;
   const maybeData = (maybeError as { data?: unknown }).data;
-  const upgradeUrl = typeof maybeData === 'object' && maybeData !== null
-    ? (maybeData as { upgradeUrl?: unknown }).upgradeUrl
-    : null;
+  const upgradeUrl =
+    typeof maybeData === 'object' && maybeData !== null
+      ? (maybeData as { upgradeUrl?: unknown }).upgradeUrl
+      : null;
 
   if (typeof message !== 'string' || typeof upgradeUrl !== 'string' || upgradeUrl.length === 0) {
     return null;

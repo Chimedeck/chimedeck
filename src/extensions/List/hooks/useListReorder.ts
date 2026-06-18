@@ -50,7 +50,7 @@ export function useListReorder({ api, boardId }: Options) {
         setError('Failed to save list order. Please try again.');
       }
     },
-    [lists, api, boardId],
+    [lists, api, boardId]
   );
 
   return { lists, setInitialLists, move, error };

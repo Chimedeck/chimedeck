@@ -12,7 +12,10 @@ export async function handleGetBoardEvents(req: Request, boardId: string): Promi
   const resolvedBoardId = await resolveBoardId(boardId);
   const board = resolvedBoardId ? await db('boards').where({ id: resolvedBoardId }).first() : null;
   if (!board) {
-    return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'board-not-found', message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const url = new URL(req.url);
@@ -21,7 +24,8 @@ export async function handleGetBoardEvents(req: Request, boardId: string): Promi
 
   const events = await readEventsSince({ boardId: resolvedBoardId, since, limit: 100 });
   const hasMore = events.length === 100;
-  const latestSequence = events.length > 0 ? events[events.length - 1]!.sequence.toString() : sinceParam;
+  const latestSequence =
+    events.length > 0 ? events[events.length - 1]!.sequence.toString() : sinceParam;
 
   const serialized = events.map((e) => ({
     ...e,

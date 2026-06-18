@@ -12,14 +12,14 @@ export async function handleMarkUnread(req: Request, notificationId: string): Pr
   if (!notification) {
     return Response.json(
       { error: { code: 'notification-not-found', message: 'Notification not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (notification.user_id !== userId) {
     return Response.json(
       { error: { code: 'forbidden', message: 'Not your notification' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

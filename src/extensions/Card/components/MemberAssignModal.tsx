@@ -33,9 +33,16 @@ export const MemberAssignModal = ({
       role="dialog"
       aria-modal="true"
       aria-label="Assign members"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="w-80 rounded-lg bg-bg-surface shadow-xl" onClick={(e) => { e.stopPropagation(); }}>
+      <div
+        className="w-80 rounded-lg bg-bg-surface shadow-xl"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="font-semibold">Assign Members</h2>
           <IconButton
@@ -55,7 +62,7 @@ export const MemberAssignModal = ({
                   type="button"
                   variant={assigned ? 'danger' : 'primary'}
                   size="sm"
-                  onClick={() => assigned ? onRemove(member.id) : onAssign(member.id)}
+                  onClick={() => (assigned ? onRemove(member.id) : onAssign(member.id))}
                 >
                   {assigned ? 'Remove' : 'Assign'}
                 </Button>

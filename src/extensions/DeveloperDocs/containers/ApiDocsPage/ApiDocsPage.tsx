@@ -2,11 +2,7 @@
 // Route: /developer/api-docs (private, within AppShell)
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  DocumentTextIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import Button from '~/common/components/Button';
 
 declare global {
@@ -143,12 +139,20 @@ function ensureSwaggerAssets(): Promise<void> {
 
     const existingScript = document.getElementById(SWAGGER_JS_ID) as HTMLScriptElement | null;
     if (existingScript) {
-      existingScript.addEventListener('load', () => {
-        resolve();
-      }, { once: true });
-      existingScript.addEventListener('error', () => {
-        reject(new Error('Failed to load Swagger UI script.'));
-      }, { once: true });
+      existingScript.addEventListener(
+        'load',
+        () => {
+          resolve();
+        },
+        { once: true }
+      );
+      existingScript.addEventListener(
+        'error',
+        () => {
+          reject(new Error('Failed to load Swagger UI script.'));
+        },
+        { once: true }
+      );
       return;
     }
 
@@ -176,11 +180,11 @@ const ApiDocsPage = () => {
 
   const nativeSpecUrl = useMemo(
     () => `/api-docs/native-openapi.yaml?v=${specCacheBuster}`,
-    [specCacheBuster],
+    [specCacheBuster]
   );
   const trelloSpecUrl = useMemo(
     () => `/api-docs/trello-openapi.yaml?v=${specCacheBuster}`,
-    [specCacheBuster],
+    [specCacheBuster]
   );
 
   const activeSpecUrl = activeTab === 'native' ? nativeSpecUrl : trelloSpecUrl;
@@ -350,9 +354,7 @@ const ApiDocsPage = () => {
             <DocumentTextIcon className="h-7 w-7 text-indigo-400" />
             <div>
               <h1 className="text-2xl font-bold text-base">API Docs</h1>
-              <p className="text-sm text-muted">
-                In-app Swagger UI with Authorize + Try it out.
-              </p>
+              <p className="text-sm text-muted">In-app Swagger UI with Authorize + Try it out.</p>
             </div>
           </div>
 

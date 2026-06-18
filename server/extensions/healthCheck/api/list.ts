@@ -5,10 +5,7 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 
-export async function handleListHealthChecks(
-  req: Request,
-  boardId: string,
-): Promise<Response> {
+export async function handleListHealthChecks(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -33,8 +30,8 @@ export async function handleListHealthChecks(
     // Use raw to emulate DISTINCT ON per health_check_id (works with PostgreSQL).
     .select(
       db.raw(
-        'DISTINCT ON (health_check_id) health_check_id, status, http_status, response_time_ms, error_message, checked_at',
-      ),
+        'DISTINCT ON (health_check_id) health_check_id, status, http_status, response_time_ms, error_message, checked_at'
+      )
     );
 
   // Index latest results by health_check_id for O(1) lookup.

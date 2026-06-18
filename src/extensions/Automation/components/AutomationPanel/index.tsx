@@ -67,7 +67,9 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKey);
-    return () => { document.removeEventListener('keydown', handleKey); };
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -77,11 +79,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-30 bg-black/50"
-        aria-hidden="true"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-30 bg-black/50" aria-hidden="true" onClick={onClose} />
 
       {/* Panel */}
       <div
@@ -94,7 +92,9 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
             <BoltIcon className="h-5 w-5 text-subtle" aria-hidden="true" />
-            <h2 className="text-base font-semibold text-sm">{translations['automation.panel.title']}</h2>
+            <h2 className="text-base font-semibold text-sm">
+              {translations['automation.panel.title']}
+            </h2>
           </div>
           <Button
             variant="ghost"
@@ -111,7 +111,9 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => { onTabChange(tab.id); }}
+              onClick={() => {
+                onTabChange(tab.id);
+              }}
               className={`rounded-t px-3 py-2 text-xs font-medium transition-colors ${
                 activeTab === tab.id
                   ? 'border-b-2 border-blue-500 text-blue-400'
@@ -154,7 +156,9 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                     setEditingRule(null);
                     loadAutomations();
                   }}
-                  onCancel={() => { setEditingRule(null); }}
+                  onCancel={() => {
+                    setEditingRule(null);
+                  }}
                 />
               )}
               {!loading && !error && editingRule === undefined && (
@@ -165,29 +169,35 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                     setEditingRule(null);
                     loadAutomations();
                   }}
-                  onCancel={() => { setEditingRule(null); }}
+                  onCancel={() => {
+                    setEditingRule(null);
+                  }}
                 />
               )}
               {!loading && !error && editingRule === null && rules.length === 0 && (
-                <AutomationEmptyState onCreateRule={() => { setEditingRule(undefined); }} />
+                <AutomationEmptyState
+                  onCreateRule={() => {
+                    setEditingRule(undefined);
+                  }}
+                />
               )}
               {!loading && !error && editingRule === null && rules.length > 0 && (
                 <AutomationList
                   boardId={boardId}
                   automations={automations}
-                  onCreateRule={() => { setEditingRule(undefined); }}
-                  onEditRule={(a) => { setEditingRule(a); }}
+                  onCreateRule={() => {
+                    setEditingRule(undefined);
+                  }}
+                  onEditRule={(a) => {
+                    setEditingRule(a);
+                  }}
                   onChanged={loadAutomations}
                 />
               )}
             </>
           )}
           {activeTab === 'buttons' && (
-            <ButtonsTab
-              boardId={boardId}
-              automations={automations}
-              onChanged={loadAutomations}
-            />
+            <ButtonsTab boardId={boardId} automations={automations} onChanged={loadAutomations} />
           )}
           {activeTab === 'schedule' && (
             <SchedulePanel

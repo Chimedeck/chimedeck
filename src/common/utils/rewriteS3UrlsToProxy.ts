@@ -7,8 +7,7 @@ import type { Attachment } from '~/extensions/Attachments/types';
 // We allow a broad range of trailing characters so the same regex works inside
 // both plain-text markdown (terminated by ) or whitespace) and HTML attributes
 // (terminated by " or ').
-const S3_URL_RE =
-  /https?:\/\/[^\s"'<>()[\]]*\.amazonaws\.com\/[^\s"'<>()[\]]*/g;
+const S3_URL_RE = /https?:\/\/[^\s"'<>()[\]]*\.amazonaws\.com\/[^\s"'<>()[\]]*/g;
 
 /**
  * Tries to extract the S3 object key from a stored S3 URL.

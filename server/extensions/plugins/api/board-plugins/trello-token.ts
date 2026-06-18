@@ -21,7 +21,7 @@ interface ActivePluginRow {
 export async function handleGetTrelloCompatToken(
   req: Request,
   boardId: string,
-  pluginId: string,
+  pluginId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -31,7 +31,7 @@ export async function handleGetTrelloCompatToken(
   if (!currentUser) {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Must be authenticated' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -39,13 +39,13 @@ export async function handleGetTrelloCompatToken(
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -61,8 +61,13 @@ export async function handleGetTrelloCompatToken(
 
   if (!boardPlugin) {
     return Response.json(
-      { error: { code: 'plugin-not-active-on-board', message: 'Plugin is not active on this board' } },
-      { status: 404 },
+      {
+        error: {
+          code: 'plugin-not-active-on-board',
+          message: 'Plugin is not active on this board',
+        },
+      },
+      { status: 404 }
     );
   }
 
@@ -93,7 +98,7 @@ export async function handleGetTrelloCompatToken(
         email: currentUser.email,
         scope,
       },
-      expirationSeconds,
+      expirationSeconds
     );
 
     return Response.json(
@@ -103,13 +108,10 @@ export async function handleGetTrelloCompatToken(
           expiresIn: expirationSeconds,
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to issue token';
-    return Response.json(
-      { error: { code: 'token-error', message } },
-      { status: 500 },
-    );
+    return Response.json({ error: { code: 'token-error', message } }, { status: 500 });
   }
 }

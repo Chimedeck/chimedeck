@@ -7,7 +7,10 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 
 export async function handleArchiveList(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -17,7 +20,7 @@ export async function handleArchiveList(req: Request, listId: string): Promise<R
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -36,12 +39,16 @@ export async function handleArchiveList(req: Request, listId: string): Promise<R
 
   // Toggle archived state
   const newArchived = !list.archived;
-  const updated = await db('lists')
-    .where({ id: listId })
-    .update({ archived: newArchived }, ['*']);
+  const updated = await db('lists').where({ id: listId }).update({ archived: newArchived }, ['*']);
 
   // Client expects { listId } to remove list from state
-  await writeEvent({ type: 'list_archived', boardId: board.id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { listId } });
+  await writeEvent({
+    type: 'list_archived',
+    boardId: board.id,
+    entityId: listId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { listId },
+  });
 
   return Response.json({ data: updated[0] });
 }

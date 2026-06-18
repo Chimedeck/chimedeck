@@ -31,11 +31,8 @@ ILGSHKmmvSwNhBR0l5c6Mgw=
 -----END PRIVATE KEY-----`;
 
 const module = await import('../githubApp');
-const {
-  getGithubInstallationAccessToken,
-  getGithubRepositoryDefaultBranch,
-  boardGithubAppDeps,
-} = module;
+const { getGithubInstallationAccessToken, getGithubRepositoryDefaultBranch, boardGithubAppDeps } =
+  module;
 
 let nowMs = Date.parse('2026-06-03T12:00:00.000Z');
 let tokenCounter = 0;
@@ -61,30 +58,38 @@ beforeEach(() => {
   tokenCounter = 0;
   requests = [];
 
-  (boardGithubAppDeps.config as {
-    appId: string;
-    appPrivateKey: string;
-    githubApiBaseUrl: string;
-    installationTokenRefreshSkewMs: number;
-  }).appId = '12345';
-  (boardGithubAppDeps.config as {
-    appId: string;
-    appPrivateKey: string;
-    githubApiBaseUrl: string;
-    installationTokenRefreshSkewMs: number;
-  }).appPrivateKey = TEST_PRIVATE_KEY;
-  (boardGithubAppDeps.config as {
-    appId: string;
-    appPrivateKey: string;
-    githubApiBaseUrl: string;
-    installationTokenRefreshSkewMs: number;
-  }).githubApiBaseUrl = 'https://api.github.test';
-  (boardGithubAppDeps.config as {
-    appId: string;
-    appPrivateKey: string;
-    githubApiBaseUrl: string;
-    installationTokenRefreshSkewMs: number;
-  }).installationTokenRefreshSkewMs = 60_000;
+  (
+    boardGithubAppDeps.config as {
+      appId: string;
+      appPrivateKey: string;
+      githubApiBaseUrl: string;
+      installationTokenRefreshSkewMs: number;
+    }
+  ).appId = '12345';
+  (
+    boardGithubAppDeps.config as {
+      appId: string;
+      appPrivateKey: string;
+      githubApiBaseUrl: string;
+      installationTokenRefreshSkewMs: number;
+    }
+  ).appPrivateKey = TEST_PRIVATE_KEY;
+  (
+    boardGithubAppDeps.config as {
+      appId: string;
+      appPrivateKey: string;
+      githubApiBaseUrl: string;
+      installationTokenRefreshSkewMs: number;
+    }
+  ).githubApiBaseUrl = 'https://api.github.test';
+  (
+    boardGithubAppDeps.config as {
+      appId: string;
+      appPrivateKey: string;
+      githubApiBaseUrl: string;
+      installationTokenRefreshSkewMs: number;
+    }
+  ).installationTokenRefreshSkewMs = 60_000;
 
   boardGithubAppDeps.now = () => new Date(nowMs);
   boardGithubAppDeps.fetch = async (input, init) => {
@@ -154,18 +159,22 @@ describe('githubApp', () => {
     });
 
     expect(branch).toBe('main');
-    const repoRequest = requests.find((request) => request.url.endsWith('/repos/octo-org/octo-repo'));
+    const repoRequest = requests.find((request) =>
+      request.url.endsWith('/repos/octo-org/octo-repo')
+    );
     expect(repoRequest?.auth).toBe('Bearer ghs_inline_token');
   });
 
   it('fails fast when GitHub App credentials are not configured', async () => {
     (boardGithubAppDeps.config as { appPrivateKey: string }).appPrivateKey = '';
 
-    await expect(getGithubInstallationAccessToken({
-      reference: makeReference({
-        owner: 'octo-install-3',
-        repository: 'repo-install-3',
-      }),
-    })).rejects.toThrow('github-app-not-configured');
+    await expect(
+      getGithubInstallationAccessToken({
+        reference: makeReference({
+          owner: 'octo-install-3',
+          repository: 'repo-install-3',
+        }),
+      })
+    ).rejects.toThrow('github-app-not-configured');
   });
 });

@@ -32,7 +32,9 @@ export const verifyEmailThunk = createAppAsyncThunk(
       dispatch(setCredentials({ user: data.user as any, accessToken: data.accessToken }));
       return data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'verification-failed';
+      const msg = isApiError(err)
+        ? (err.response.data.error?.code ?? 'unknown-error')
+        : 'verification-failed';
       return rejectWithValue(msg);
     }
   }
@@ -44,7 +46,9 @@ export const resendVerificationThunk = createAppAsyncThunk(
     try {
       await authApi.resendVerification();
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'resend-failed';
+      const msg = isApiError(err)
+        ? (err.response.data.error?.code ?? 'unknown-error')
+        : 'resend-failed';
       return rejectWithValue(msg);
     }
   }

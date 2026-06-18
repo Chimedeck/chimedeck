@@ -132,7 +132,8 @@ const EditorHelpModal = ({ onClose }: Props) => (
       <div className="border-t border-border px-6 py-3">
         {/* [theme-exception] dark-modal footer text: intentional on bg-slate-800 */}
         <p className="text-center text-xs text-subtle">
-          Press <Kbd>⌘</Kbd> <span className="mx-1 text-subtle">+</span> <Kbd>/</Kbd> to quickly open this dialog at any time
+          Press <Kbd>⌘</Kbd> <span className="mx-1 text-subtle">+</span> <Kbd>/</Kbd> to quickly
+          open this dialog at any time
         </p>
       </div>
     </div>

@@ -27,10 +27,15 @@ class QueryBuilder {
   private orderByDirection: 'asc' | 'desc' = 'asc';
   private pickedColumns: string[] | null = null;
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -52,7 +57,7 @@ class QueryBuilder {
 
   async insert(payload: Row | Row[]): Promise<void> {
     const rows = Array.isArray(payload) ? payload : [payload];
-    for (const row of rows) (this.store[this.tableName]).push({ ...row });
+    for (const row of rows) this.store[this.tableName].push({ ...row });
   }
 
   async update(patch: Row): Promise<number> {
@@ -70,7 +75,7 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
@@ -115,19 +120,64 @@ function createStore(): DataStore {
       { id: 'user-member', email: 'member@example.com', name: 'Member User', avatar_url: null },
     ],
     memberships: [{ user_id: 'user-admin', workspace_id: 'ws-1', role: 'OWNER' }],
-    boards: [{ id: 'board-1', workspace_id: 'ws-1', title: 'Board One', state: 'ACTIVE', visibility: 'PRIVATE' }],
+    boards: [
+      {
+        id: 'board-1',
+        workspace_id: 'ws-1',
+        title: 'Board One',
+        state: 'ACTIVE',
+        visibility: 'PRIVATE',
+      },
+    ],
     board_members: [{ id: 'bm-1', board_id: 'board-1', user_id: 'user-admin', role: 'ADMIN' }],
     board_guest_access: [],
-    lists: [{ id: 'list-1', board_id: 'board-1', title: 'Todo', archived: false, color: null, position: 'a' }],
-    cards: [{ id: 'card-1', short_id: 'card0001', list_id: 'list-1', title: 'Card One', archived: false, due_complete: false, position: 'a' }],
+    lists: [
+      {
+        id: 'list-1',
+        board_id: 'board-1',
+        title: 'Todo',
+        archived: false,
+        color: null,
+        position: 'a',
+      },
+    ],
+    cards: [
+      {
+        id: 'card-1',
+        short_id: 'card0001',
+        list_id: 'list-1',
+        title: 'Card One',
+        archived: false,
+        due_complete: false,
+        position: 'a',
+      },
+    ],
     labels: [],
     card_labels: [],
     card_members: [],
     checklists: [],
     checklist_items: [],
-    comments: [{ id: 'comment-existing', card_id: 'card-1', user_id: 'user-admin', content: 'Existing comment', deleted: false, created_at: new Date('2026-01-01T00:00:00.000Z').toISOString() }],
+    comments: [
+      {
+        id: 'comment-existing',
+        card_id: 'card-1',
+        user_id: 'user-admin',
+        content: 'Existing comment',
+        deleted: false,
+        created_at: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      },
+    ],
     attachments: [],
-    activities: [{ id: 'act-1', entity_id: 'card-1', actor_id: 'user-admin', action: 'card_updated', payload: {}, created_at: new Date('2026-01-01T01:00:00.000Z').toISOString() }],
+    activities: [
+      {
+        id: 'act-1',
+        entity_id: 'card-1',
+        actor_id: 'user-admin',
+        action: 'card_updated',
+        payload: {},
+        created_at: new Date('2026-01-01T01:00:00.000Z').toISOString(),
+      },
+    ],
     custom_fields: [],
     card_custom_field_values: [],
   };
@@ -143,12 +193,21 @@ const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) =
     req.currentUser = { id: 'user-admin', email: 'admin@example.com', name: 'Admin User' };
     return null;
   }
-  return Response.json({ error: { code: 'unauthorized', message: 'Invalid API token' } }, { status: 401 });
+  return Response.json(
+    { error: { code: 'unauthorized', message: 'Invalid API token' } },
+    { status: 401 }
+  );
 });
 
-mock.module('../../../../auth/middlewares/authentication', () => ({ authenticate: authenticateMock }));
+mock.module('../../../../auth/middlewares/authentication', () => ({
+  authenticate: authenticateMock,
+}));
 mock.module('../../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(
+      dataStore,
+      tableName
+    )) as unknown as typeof import('../../../../../common/db').db,
 }));
 mock.module('../../../../../common/ids/shortId', () => ({
   generateUniqueShortId: async () => {
@@ -158,15 +217,21 @@ mock.module('../../../../../common/ids/shortId', () => ({
 }));
 mock.module('../../../../../common/ids/resolveEntityId', () => ({
   resolveCardId: async (identifier: string) => {
-    const found = dataStore.cards.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.cards.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
   resolveListId: async (identifier: string) => {
-    const found = dataStore.lists.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.lists.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
   resolveBoardId: async (identifier: string) => {
-    const found = dataStore.boards.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.boards.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
 }));
@@ -189,7 +254,7 @@ describe('trelloCompat card actions', () => {
     });
     const res = await trelloCompatRouter(req, '/trello/1/cards/card-1/actions/comments');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { type: string; data: { text: string } };
+    const body = (await res!.json()) as { type: string; data: { text: string } };
     expect(body.type).toBe('commentCard');
     expect(body.data.text).toBe('hello world');
   });
@@ -201,7 +266,7 @@ describe('trelloCompat card actions', () => {
     });
     const res = await trelloCompatRouter(req, '/trello/1/cards/card-1/actions');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as Array<{ type: string }>;
+    const body = (await res!.json()) as Array<{ type: string }>;
     expect(body.some((item) => item.type === 'commentCard')).toBe(true);
     expect(body.some((item) => item.type === 'updateCard')).toBe(true);
   });

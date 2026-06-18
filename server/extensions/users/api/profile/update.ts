@@ -17,7 +17,7 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -27,7 +27,7 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
     if (body.name.length < 1 || body.name.length > 100) {
       return Response.json(
         { error: { code: 'bad-request', message: 'Name must be between 1 and 100 characters' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.name = body.name;
@@ -38,9 +38,11 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
       return Response.json(
         {
           name: 'bad-request',
-          data: { message: 'Nickname must be 1–50 alphanumeric characters, underscores, or hyphens' },
+          data: {
+            message: 'Nickname must be 1–50 alphanumeric characters, underscores, or hyphens',
+          },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -53,7 +55,7 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
     if (existing) {
       return Response.json(
         { error: { code: 'nickname-taken', message: 'This nickname is already taken' } },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
@@ -63,19 +65,16 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
   if (Object.keys(updates).length === 0) {
     return Response.json(
       { error: { code: 'bad-request', message: 'Nothing to update' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const [user] = await db('users')
-    .where({ id: currentUser!.id })
-    .update(updates)
-    .returning('*');
+  const [user] = await db('users').where({ id: currentUser!.id }).update(updates).returning('*');
 
   if (!user) {
     return Response.json(
       { error: { code: 'user-not-found', message: 'User not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

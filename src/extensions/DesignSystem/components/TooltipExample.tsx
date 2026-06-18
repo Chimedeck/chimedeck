@@ -71,7 +71,8 @@ export default function TooltipExample() {
       </div>
 
       <p className="text-xs text-text-secondary">
-        This demo uses a pure CSS group-hover pattern. A Floating UI / Radix tooltip with proper focus handling will be wired in Iteration 12.
+        This demo uses a pure CSS group-hover pattern. A Floating UI / Radix tooltip with proper
+        focus handling will be wired in Iteration 12.
       </p>
     </div>
   );

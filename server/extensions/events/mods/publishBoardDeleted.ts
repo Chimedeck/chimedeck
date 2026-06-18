@@ -52,9 +52,7 @@ export async function publishBoardDeleted({
 
   // Fan out directly to connected workspace member sockets so the event is
   // received immediately regardless of whether the client is watching a board.
-  const members = await db('memberships')
-    .where({ workspace_id: workspaceId })
-    .select('user_id');
+  const members = await db('memberships').where({ workspace_id: workspaceId }).select('user_id');
 
   for (const member of members) {
     await publishToUser(member.user_id, message);

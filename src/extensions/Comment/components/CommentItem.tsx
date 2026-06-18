@@ -55,7 +55,7 @@ function getModeFromTitle(value: string | null | undefined): LinkDisplayMode | n
 function addLinkTargetBlank(html: string): string {
   return html.replace(
     /<a(?=[^>]*\bhref="(?!#))(?![^>]*\btarget=)/gi,
-    '<a target="_blank" rel="noopener noreferrer"',
+    '<a target="_blank" rel="noopener noreferrer"'
   );
 }
 
@@ -73,7 +73,9 @@ function normalizePreviewLinkHref(rawHref: string): string {
   const hrefCandidate = (markdownHrefMatch?.[1] ?? decoded).trim();
   const unwrapped = hrefCandidate.replace(/^<([^>]+)>$/, '$1').trim();
 
-  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map((match) => match[0]);
+  const embeddedUrls = Array.from(unwrapped.matchAll(/https?:\/\/[^\s<>)\]]+/gi)).map(
+    (match) => match[0]
+  );
   const bestEmbeddedUrl = (() => {
     if (embeddedUrls.length === 0) return null;
 
@@ -110,7 +112,11 @@ function normalizeComparableUrl(value: string): string {
 
 function isNonPersistableUrl(value: string): boolean {
   const normalized = value.trim().toLowerCase();
-  return normalized.startsWith('blob:') || normalized.startsWith('data:') || normalized.startsWith('file:');
+  return (
+    normalized.startsWith('blob:') ||
+    normalized.startsWith('data:') ||
+    normalized.startsWith('file:')
+  );
 }
 
 function classifyPreviewLinkMode(anchor: HTMLAnchorElement): LinkDisplayMode {
@@ -309,8 +315,13 @@ function getInitials(name: string | null | undefined, email: string | null | und
 /** Consistent avatar colour based on user id. */
 // Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
-  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
+  'bg-blue-600',
+  'bg-green-700',
+  'bg-purple-600',
+  'bg-pink-600',
+  'bg-amber-700',
+  'bg-orange-700',
+  'bg-teal-700',
 ];
 function avatarColor(userId: string) {
   let hash = 0;
@@ -330,17 +341,20 @@ function relativeTime(iso: string): string {
   const diff = (Date.now() - date.getTime()) / 1000;
   const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return translations['comment.relativeTime.justNow'];
-  if (diff < 3600) return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']} · ${time}`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
+  if (diff < 3600)
+    return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']} · ${time}`;
+  if (diff < 86400)
+    return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
   const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${day}, ${time}`;
 }
 
 /** Parse markdown and highlight @mention chips inside comment text. Returns safe HTML string. */
 function renderContent(text: string, attachments: Attachment[]): string {
-  const hydrated = attachments.length > 0
-    ? hydrateCommentAttachmentMarkdown(text, attachments)
-    : stripCommentAttachmentPlaceholders(text);
+  const hydrated =
+    attachments.length > 0
+      ? hydrateCommentAttachmentMarkdown(text, attachments)
+      : stripCommentAttachmentPlaceholders(text);
   const withNativeEmoji = replaceEmojiShortcodes(hydrated);
   // [why] Legacy/server-sanitized comments may store blockquote markers as
   // "&gt;". Convert marker positions back to markdown so rendering matches editor.
@@ -356,14 +370,31 @@ function renderContent(text: string, attachments: Attachment[]): string {
   // Wrap @mentions in a styled chip
   const withMentions = html.replaceAll(
     /(@\w[\w.+-]*)/g,
-    '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>',
+    '<span class="rounded bg-blue-100 px-1 py-0.5 text-xs font-medium text-blue-700">$1</span>'
   );
   // [why] Ensure all links open in a new tab so the user is never navigated away
   // from the board view.
   return sanitizeUserGeneratedHtml(addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions)));
 }
 
-const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
+const CommentItem = ({
+  comment,
+  boardId,
+  attachments = [],
+  currentUserId,
+  isAdmin = false,
+  isNotificationTarget = false,
+  autoExpandReplies = false,
+  onEdit,
+  onDelete,
+  onAddReaction,
+  onRemoveReaction,
+  onReply,
+  onAddReply,
+  onEditReply,
+  onDeleteReply,
+  cardId,
+}: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [replyExpanded, setReplyExpanded] = useState(autoExpandReplies);
@@ -388,12 +419,15 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     rootRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [isNotificationTarget, autoExpandReplies]);
 
-  const handleAddReply = useCallback(async (parentId: string, content: string) => {
-    if (!onAddReply) return;
-    await onAddReply(parentId, content);
-    setHasLocalReplies(true);
-    setReplyExpanded(true);
-  }, [onAddReply]);
+  const handleAddReply = useCallback(
+    async (parentId: string, content: string) => {
+      if (!onAddReply) return;
+      await onAddReply(parentId, content);
+      setHasLocalReplies(true);
+      setReplyExpanded(true);
+    },
+    [onAddReply]
+  );
 
   useEffect(() => {
     if (editing) return;
@@ -403,9 +437,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     const hydrateImage = (img: HTMLImageElement): void => {
       const currentSrc = img.getAttribute('src')?.trim() ?? '';
       const persistedSrc = img.getAttribute(COMMENT_ATTACHMENT_SOURCE_ATTR)?.trim() ?? '';
-      const rawSrc = currentSrc && isNonPersistableUrl(currentSrc) && persistedSrc
-        ? persistedSrc
-        : currentSrc;
+      const rawSrc =
+        currentSrc && isNonPersistableUrl(currentSrc) && persistedSrc ? persistedSrc : currentSrc;
       if (!rawSrc) return;
 
       const placeholderName = readAttachmentPlaceholderName(rawSrc);
@@ -440,7 +473,8 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
   const canEdit = isOwner;
   const canDelete = isOwner || isAdmin;
 
-  const displayName = comment.author_name || comment.author_email || translations['comment.author.unknown'];
+  const displayName =
+    comment.author_name || comment.author_email || translations['comment.author.unknown'];
   const initials = getInitials(comment.author_name, comment.author_email);
   const color = avatarColor(comment.user_id);
   const avatarUrl = comment.author_avatar_url ?? null;
@@ -467,10 +501,15 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on colored avatar
         title={displayName}
       >
-        {avatarUrl
-          ? <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
-          : initials
-        }
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={displayName}
+            className="h-full w-full object-cover rounded-full"
+          />
+        ) : (
+          initials
+        )}
       </div>
 
       {/* Body */}
@@ -492,7 +531,9 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             availableAttachments={attachments}
             initialValue={comment.content}
             onSubmit={handleEdit}
-            onCancel={() => { setEditing(false); }}
+            onCancel={() => {
+              setEditing(false);
+            }}
             submitLabel={translations['comment.editor.update']}
           />
         ) : (
@@ -551,13 +592,16 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               />
             )}
 
-            {(onAddReaction || onRemoveReaction) && (canEdit || canDelete || (onAddReply && !comment.parent_id)) && <span>·</span>}
+            {(onAddReaction || onRemoveReaction) &&
+              (canEdit || canDelete || (onAddReply && !comment.parent_id)) && <span>·</span>}
 
             {canEdit && (
               <Button
                 variant="link"
                 className="p-0 text-xs text-muted hover:text-subtle"
-                onClick={() => { setEditing(true); }}
+                onClick={() => {
+                  setEditing(true);
+                }}
               >
                 {translations['comment.action.edit']}
               </Button>
@@ -570,7 +614,9 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 onClick={handleDelete}
                 disabled={deleting}
               >
-                {deleting ? translations['comment.action.deleting'] : translations['comment.action.delete']}
+                {deleting
+                  ? translations['comment.action.deleting']
+                  : translations['comment.action.delete']}
               </Button>
             )}
             {/* Reply button — only on top-level comments (no parent_id) */}
@@ -580,7 +626,9 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 <Button
                   variant="link"
                   className="p-0 text-xs text-muted hover:text-subtle"
-                  onClick={() => { setShowReplyEditor((prev) => !prev); }}
+                  onClick={() => {
+                    setShowReplyEditor((prev) => !prev);
+                  }}
                 >
                   {translations['comment.action.reply']}
                 </Button>
@@ -590,30 +638,37 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         )}
 
         {/* Reply thread — only on top-level comments */}
-        {!comment.parent_id && ((comment.reply_count ?? 0) > 0 || hasLocalReplies || showReplyEditor) && onAddReply && cardId && (
-          <CommentReplyThread
-            parentComment={comment}
-            cardId={cardId}
-            {...(boardId !== undefined ? { boardId } : {})}
-            currentUserId={currentUserId}
-            isAdmin={isAdmin}
-            expanded={replyExpanded}
-            showReplyEditor={showReplyEditor}
-            onExpandToggle={setReplyExpanded}
-            onHideReplyEditor={() => { setShowReplyEditor(false); }}
-            onAddReply={handleAddReply}
-            onEditReply={onEditReply ?? (() => Promise.resolve())}
-            onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
-            {...(onAddReaction ? { onAddReaction } : {})}
-            {...(onRemoveReaction ? { onRemoveReaction } : {})}
-          />
-        )}
+        {!comment.parent_id &&
+          ((comment.reply_count ?? 0) > 0 || hasLocalReplies || showReplyEditor) &&
+          onAddReply &&
+          cardId && (
+            <CommentReplyThread
+              parentComment={comment}
+              cardId={cardId}
+              {...(boardId !== undefined ? { boardId } : {})}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+              expanded={replyExpanded}
+              showReplyEditor={showReplyEditor}
+              onExpandToggle={setReplyExpanded}
+              onHideReplyEditor={() => {
+                setShowReplyEditor(false);
+              }}
+              onAddReply={handleAddReply}
+              onEditReply={onEditReply ?? (() => Promise.resolve())}
+              onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
+              {...(onAddReaction ? { onAddReaction } : {})}
+              {...(onRemoveReaction ? { onRemoveReaction } : {})}
+            />
+          )}
       </div>
       {previewImage && (
         <ImageLightbox
           src={previewImage.src}
           name={previewImage.alt}
-          onClose={() => { setPreviewImage(null); }}
+          onClose={() => {
+            setPreviewImage(null);
+          }}
         />
       )}
     </div>
@@ -621,4 +676,3 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
 };
 
 export default CommentItem;
-

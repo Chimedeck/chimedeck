@@ -14,15 +14,9 @@ const AutomationEmptyState = ({ onCreateRule }: Props) => (
     </div>
     <div>
       <p className="text-subtle font-medium">{translations['automation.emptyState.title']}</p>
-      <p className="mt-1 text-sm text-muted">
-        {translations['automation.emptyState.description']}
-      </p>
+      <p className="mt-1 text-sm text-muted">{translations['automation.emptyState.description']}</p>
     </div>
-    <Button
-      variant="primary"
-      onClick={onCreateRule}
-      className="flex items-center gap-2"
-    >
+    <Button variant="primary" onClick={onCreateRule} className="flex items-center gap-2">
       <PlusIcon className="h-4 w-4" aria-hidden="true" />
       {translations['automation.emptyState.createRule']}
     </Button>

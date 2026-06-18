@@ -32,7 +32,7 @@ export async function aiContextRouter(req: Request, pathname: string): Promise<R
   if (!cardId) {
     return Response.json(
       { name: 'card-not-found', data: { message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -44,7 +44,7 @@ export async function aiContextRouter(req: Request, pathname: string): Promise<R
         name: 'ai-context-disabled',
         data: { message: 'AI Context feature is disabled' },
       },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

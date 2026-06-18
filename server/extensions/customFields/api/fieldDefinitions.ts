@@ -8,7 +8,10 @@ import {
   applyBoardVisibility,
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
-import { requireBoardAccess, type BoardScopedRequest } from '../../board/middlewares/requireBoardAccess';
+import {
+  requireBoardAccess,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardAccess';
 import { requireWorkspaceMembership } from '../../../middlewares/permissionManager';
 
 export type FieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'CHECKBOX' | 'DROPDOWN';
@@ -24,7 +27,7 @@ export async function handleListCustomFields(req: Request, boardId: string): Pro
 
   if (board.visibility !== 'PUBLIC') {
     const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
-  if (membershipError) return membershipError;
+    if (membershipError) return membershipError;
   }
 
   const fields = await db('custom_fields')
@@ -53,34 +56,54 @@ export async function handleCreateCustomField(req: Request, boardId: string): Pr
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  let body: { name?: string; field_type?: FieldType; options?: unknown; show_on_card?: boolean; position?: number };
+  let body: {
+    name?: string;
+    field_type?: FieldType;
+    options?: unknown;
+    show_on_card?: boolean;
+    position?: number;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'name is required' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.field_type || !VALID_FIELD_TYPES.includes(body.field_type)) {
     return Response.json(
-      { error: { name: 'bad-request', data: { message: `field_type must be one of: ${VALID_FIELD_TYPES.join(', ')}` } } },
-      { status: 400 },
+      {
+        error: {
+          name: 'bad-request',
+          data: { message: `field_type must be one of: ${VALID_FIELD_TYPES.join(', ')}` },
+        },
+      },
+      { status: 400 }
     );
   }
 
-  if (body.field_type === 'DROPDOWN' && body.options !== undefined && !Array.isArray(body.options)) {
+  if (
+    body.field_type === 'DROPDOWN' &&
+    body.options !== undefined &&
+    !Array.isArray(body.options)
+  ) {
     return Response.json(
-      { error: { name: 'bad-request', data: { message: 'options must be an array for DROPDOWN fields' } } },
-      { status: 400 },
+      {
+        error: {
+          name: 'bad-request',
+          data: { message: 'options must be an array for DROPDOWN fields' },
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -105,7 +128,7 @@ export async function handleCreateCustomField(req: Request, boardId: string): Pr
 export async function handleUpdateCustomField(
   req: Request,
   boardId: string,
-  fieldId: string,
+  fieldId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -126,7 +149,7 @@ export async function handleUpdateCustomField(
   if (!existing) {
     return Response.json(
       { error: { name: 'custom-field-not-found', data: { message: 'Custom field not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -136,7 +159,7 @@ export async function handleUpdateCustomField(
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -146,7 +169,7 @@ export async function handleUpdateCustomField(
     if (typeof body.name !== 'string' || body.name.trim() === '') {
       return Response.json(
         { error: { name: 'bad-request', data: { message: 'name must be a non-empty string' } } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.name = body.name.trim();
@@ -155,14 +178,19 @@ export async function handleUpdateCustomField(
   if (body.options !== undefined) {
     if (existing.field_type !== 'DROPDOWN') {
       return Response.json(
-        { error: { name: 'bad-request', data: { message: 'options can only be set on DROPDOWN fields' } } },
-        { status: 400 },
+        {
+          error: {
+            name: 'bad-request',
+            data: { message: 'options can only be set on DROPDOWN fields' },
+          },
+        },
+        { status: 400 }
       );
     }
     if (!Array.isArray(body.options)) {
       return Response.json(
         { error: { name: 'bad-request', data: { message: 'options must be an array' } } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.options = JSON.stringify(body.options);
@@ -179,7 +207,7 @@ export async function handleUpdateCustomField(
   if (Object.keys(updates).length === 0) {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'No updatable fields provided' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -193,7 +221,7 @@ export async function handleUpdateCustomField(
 export async function handleDeleteCustomField(
   req: Request,
   boardId: string,
-  fieldId: string,
+  fieldId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -214,7 +242,7 @@ export async function handleDeleteCustomField(
   if (!existing) {
     return Response.json(
       { error: { name: 'custom-field-not-found', data: { message: 'Custom field not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

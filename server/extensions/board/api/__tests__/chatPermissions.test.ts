@@ -16,11 +16,14 @@ class QueryBuilder {
   private _limit: number | null = null;
   private _onConflictIgnore = false;
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
     this.filters.push((row) =>
-      Object.entries(criteria).every(([key, value]) => row[key] === value),
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
     );
     return this;
   }
@@ -59,20 +62,20 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     // Handle insert with no chained method
     if (this._insert !== null && !this._onConflictIgnore) {
       const rows = Array.isArray(this._insert) ? this._insert : [this._insert];
-      for (const row of rows) (this.store[this.tableName]).push({ ...row });
+      for (const row of rows) this.store[this.tableName].push({ ...row });
       this._insert = null;
     }
     return Promise.resolve(this.executeSync()).then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    const rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    const rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
     return clone ? rows.map((row) => ({ ...row })) : rows;
   }
@@ -85,7 +88,15 @@ let authenticated: boolean = true;
 
 function resetStore(): DataStore {
   return {
-    boards: [{ id: 'board-1', workspace_id: 'ws-1', title: 'Test', state: 'ACTIVE', created_at: '2026-01-01' }],
+    boards: [
+      {
+        id: 'board-1',
+        workspace_id: 'ws-1',
+        title: 'Test',
+        state: 'ACTIVE',
+        created_at: '2026-01-01',
+      },
+    ],
     memberships: [{ user_id: 'user-1', workspace_id: 'ws-1', role: 'ADMIN' }],
     board_chat_permissions: [],
   };
@@ -93,7 +104,8 @@ function resetStore(): DataStore {
 
 // ─── Mocks ─────────────────────────────────────────────────────────────────
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -118,7 +130,10 @@ mock.module('../../../board/middlewares/requireBoardAccess', () => ({
 }));
 
 mock.module('../../../../middlewares/permissionManager', () => ({
-  requireWorkspaceMembership: async (req: Request & { callerRole?: string; workspaceId?: string }, workspaceId: string) => {
+  requireWorkspaceMembership: async (
+    req: Request & { callerRole?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     if (!callerRole) {
       return Response.json({ name: 'insufficient-role' }, { status: 403 });
     }
@@ -151,10 +166,12 @@ describe('GET /api/v1/boards/:boardId/chat-permissions', () => {
   it('returns safe defaults when no permission row exists', async () => {
     const res = await handleGetChatPermissions(
       new Request('http://localhost/api/v1/boards/board-1/chat-permissions'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { guest_can_view: boolean; guest_can_use: boolean } };
+    const body = (await res.json()) as {
+      data: { guest_can_view: boolean; guest_can_use: boolean };
+    };
     expect(body.data.guest_can_view).toBe(false);
     expect(body.data.guest_can_use).toBe(false);
   });
@@ -170,10 +187,12 @@ describe('GET /api/v1/boards/:boardId/chat-permissions', () => {
 
     const res = await handleGetChatPermissions(
       new Request('http://localhost/api/v1/boards/board-1/chat-permissions'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { guest_can_view: boolean; guest_can_use: boolean } };
+    const body = (await res.json()) as {
+      data: { guest_can_view: boolean; guest_can_use: boolean };
+    };
     expect(body.data.guest_can_view).toBe(true);
     expect(body.data.guest_can_use).toBe(false);
   });
@@ -181,7 +200,7 @@ describe('GET /api/v1/boards/:boardId/chat-permissions', () => {
   it('returns 404 when board does not exist', async () => {
     const res = await handleGetChatPermissions(
       new Request('http://localhost/api/v1/boards/missing/chat-permissions'),
-      'missing',
+      'missing'
     );
     expect(res.status).toBe(404);
   });
@@ -190,7 +209,7 @@ describe('GET /api/v1/boards/:boardId/chat-permissions', () => {
     authenticated = false;
     const res = await handleGetChatPermissions(
       new Request('http://localhost/api/v1/boards/board-1/chat-permissions'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(401);
   });
@@ -205,10 +224,12 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: true }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { guest_can_view: boolean; guest_can_use: boolean } };
+    const body = (await res.json()) as {
+      data: { guest_can_view: boolean; guest_can_use: boolean };
+    };
     expect(body.data.guest_can_view).toBe(true);
     expect(body.data.guest_can_use).toBe(false);
   });
@@ -221,10 +242,12 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: true, guest_can_use: true }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { guest_can_view: boolean; guest_can_use: boolean } };
+    const body = (await res.json()) as {
+      data: { guest_can_view: boolean; guest_can_use: boolean };
+    };
     expect(body.data.guest_can_view).toBe(true);
     expect(body.data.guest_can_use).toBe(true);
   });
@@ -237,7 +260,7 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: true }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
   });
@@ -250,7 +273,7 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: true }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
   });
@@ -263,7 +286,7 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: 'yes' }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(400);
   });
@@ -276,7 +299,7 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: 'not-json',
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(400);
   });
@@ -289,10 +312,12 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_use: true }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { guest_can_view: boolean; guest_can_use: boolean } };
+    const body = (await res.json()) as {
+      data: { guest_can_view: boolean; guest_can_use: boolean };
+    };
     expect(body.data.guest_can_view).toBe(true);
     expect(body.data.guest_can_use).toBe(true);
   });
@@ -314,10 +339,12 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: false }),
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { guest_can_view: boolean; guest_can_use: boolean } };
+    const body = (await res.json()) as {
+      data: { guest_can_view: boolean; guest_can_use: boolean };
+    };
     expect(body.data.guest_can_view).toBe(false);
     expect(body.data.guest_can_use).toBe(false);
   });
@@ -330,7 +357,7 @@ describe('PATCH /api/v1/boards/:boardId/chat-permissions', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ guest_can_view: true }),
       }),
-      'board-1',
+      'board-1'
     );
 
     const row = dataStore.board_chat_permissions.find((r) => r.board_id === 'board-1');

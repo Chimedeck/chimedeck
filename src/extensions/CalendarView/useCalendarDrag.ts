@@ -17,7 +17,10 @@ interface UseCalendarDragResult {
   handleCardDrop: (cardId: string, newDate: string) => Promise<void>;
 }
 
-export function useCalendarDrag({ cards, addToast }: UseCalendarDragOptions): UseCalendarDragResult {
+export function useCalendarDrag({
+  cards,
+  addToast,
+}: UseCalendarDragOptions): UseCalendarDragResult {
   const dispatch = useAppDispatch();
   const api = apiClient;
 
@@ -29,17 +32,25 @@ export function useCalendarDrag({ cards, addToast }: UseCalendarDragOptions): Us
       const prevDate = card.due_date;
 
       // Optimistic: move the card immediately in Redux
-      dispatch(boardSliceActions.optimisticUpdateCardField({ cardId, field: 'due_date', value: newDate }));
+      dispatch(
+        boardSliceActions.optimisticUpdateCardField({ cardId, field: 'due_date', value: newDate })
+      );
 
       try {
         await api.patch(`/cards/${cardId}`, { due_date: newDate });
       } catch {
         // Revert on API error
-        dispatch(boardSliceActions.optimisticUpdateCardField({ cardId, field: 'due_date', value: prevDate }));
+        dispatch(
+          boardSliceActions.optimisticUpdateCardField({
+            cardId,
+            field: 'due_date',
+            value: prevDate,
+          })
+        );
         addToast?.('Failed to update due date. Changes reverted.', 'error');
       }
     },
-    [api, cards, dispatch, addToast],
+    [api, cards, dispatch, addToast]
   );
 
   return { handleCardDrop };

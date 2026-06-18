@@ -30,7 +30,7 @@ export function parseBearerToken(headerValue: string | null): string | null {
 // Rejects revoked and expired tokens (deny-first).
 async function authenticateApiToken(
   req: AuthenticatedRequest,
-  token: string,
+  token: string
 ): Promise<Response | null> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
   const hash = Array.from(new Uint8Array(hashBuffer))
@@ -40,15 +40,25 @@ async function authenticateApiToken(
   const row = await db('api_tokens')
     .join('users', 'api_tokens.user_id', 'users.id')
     .where('api_tokens.token_hash', hash)
-    .select('api_tokens.id', 'api_tokens.user_id', 'api_tokens.revoked_at', 'api_tokens.expires_at', 'users.email')
+    .select(
+      'api_tokens.id',
+      'api_tokens.user_id',
+      'api_tokens.revoked_at',
+      'api_tokens.expires_at',
+      'users.email'
+    )
     .first();
 
   if (!row) return unauthorized('Invalid API token');
   if (row.revoked_at) return unauthorized('API token has been revoked');
-  if (row.expires_at && new Date(row.expires_at) < new Date()) return unauthorized('API token has expired');
+  if (row.expires_at && new Date(row.expires_at) < new Date())
+    return unauthorized('API token has expired');
 
   // [why] Update last_used_at asynchronously — we don't block the request on this write.
-  db('api_tokens').where('id', row.id).update({ last_used_at: new Date() }).catch(() => {});
+  db('api_tokens')
+    .where('id', row.id)
+    .update({ last_used_at: new Date() })
+    .catch(() => {});
 
   req.currentUser = { id: row.user_id, email: row.email };
   return null;

@@ -28,7 +28,8 @@ const PHASE_LABELS: Record<WorkflowPhase, string> = {
 };
 
 const PhaseChip = ({ phase }: Props) => {
-  const colorClass = PHASE_COLORS[phase] ?? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
+  const colorClass =
+    PHASE_COLORS[phase] ?? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
   const label = PHASE_LABELS[phase] ?? phase;
 
   return (

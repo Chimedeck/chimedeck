@@ -27,7 +27,7 @@ describe('StateTransitionErrorPopup', () => {
     });
 
     expect(bodyText).toBe(
-      'Cards in "In Progress" cannot be moved anywhere — this column has no allowed transitions.',
+      'Cards in "In Progress" cannot be moved anywhere — this column has no allowed transitions.'
     );
   });
 });

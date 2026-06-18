@@ -53,7 +53,7 @@ async function parseBody(req: Request): Promise<Record<string, unknown>> {
 
   try {
     const parsed = JSON.parse(text) as unknown;
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
   } catch {
     return Object.fromEntries(new URLSearchParams(text).entries());
   }
@@ -89,7 +89,10 @@ function fieldTypeToDb(value: string): CustomFieldRow['field_type'] {
   return 'DROPDOWN';
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
   const memberships = await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .select('role');
@@ -103,15 +106,22 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first() as { role?: string } | undefined;
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as
+    | { role?: string }
+    | undefined;
   const role = row?.role;
   if (role === 'ADMIN' || role === 'MEMBER' || role === 'VIEWER') return role;
   return null;
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first() as { id: string } | undefined;
+  const row = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as { id: string } | undefined;
   return !!row;
 }
 
@@ -139,15 +149,20 @@ async function canMutateBoard(userId: string, board: BoardRow): Promise<boolean>
   return boardRole === 'ADMIN' || boardRole === 'MEMBER';
 }
 
-async function resolveCustomField(id: string): Promise<{ field: CustomFieldRow; board: BoardRow } | null> {
-  const field = await db('custom_fields').where({ id }).first() as CustomFieldRow | undefined;
+async function resolveCustomField(
+  id: string
+): Promise<{ field: CustomFieldRow; board: BoardRow } | null> {
+  const field = (await db('custom_fields').where({ id }).first()) as CustomFieldRow | undefined;
   if (!field) return null;
-  const board = await db('boards').where({ id: field.board_id }).first() as BoardRow | undefined;
+  const board = (await db('boards').where({ id: field.board_id }).first()) as BoardRow | undefined;
   if (!board) return null;
   return { field, board };
 }
 
-export async function customFieldsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function customFieldsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -167,22 +182,27 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
     if (typeof typeInput !== 'string' || !CUSTOM_FIELD_TYPES.has(typeInput.trim().toLowerCase())) {
       return trelloError('invalid value for type', 400);
     }
-    if (typeof idModelInput !== 'string' || !idModelInput.trim()) return trelloError('invalid value for idModel', 400);
-    if (modelTypeInput !== undefined && (typeof modelTypeInput !== 'string' || modelTypeInput.toLowerCase() !== 'board')) {
+    if (typeof idModelInput !== 'string' || !idModelInput.trim())
+      return trelloError('invalid value for idModel', 400);
+    if (
+      modelTypeInput !== undefined &&
+      (typeof modelTypeInput !== 'string' || modelTypeInput.toLowerCase() !== 'board')
+    ) {
       return trelloError('invalid value for modelType', 400);
     }
 
     const boardId = await resolveBoardId(idModelInput);
     if (!boardId) return TRELLO_NOT_FOUND();
-    const board = await db('boards').where({ id: boardId }).first() as BoardRow | undefined;
+    const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
     if (!board) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
     const id = randomUUID();
     const position = Number(posInput);
-    const showOnCard = typeof cardFrontInput === 'boolean'
-      ? cardFrontInput
-      : typeof cardFrontInput === 'string' && cardFrontInput.toLowerCase() === 'true';
+    const showOnCard =
+      typeof cardFrontInput === 'boolean'
+        ? cardFrontInput
+        : typeof cardFrontInput === 'string' && cardFrontInput.toLowerCase() === 'true';
     const fieldType = fieldTypeToDb(typeInput.trim().toLowerCase());
 
     await db('custom_fields').insert({
@@ -196,7 +216,7 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
       created_at: new Date().toISOString(),
     });
 
-    const created = await db('custom_fields').where({ id }).first() as CustomFieldRow | undefined;
+    const created = (await db('custom_fields').where({ id }).first()) as CustomFieldRow | undefined;
     if (!created) return TRELLO_CUSTOM_FIELD_NOT_FOUND();
     return Response.json(serializeCustomField(created));
   }
@@ -226,11 +246,15 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
 
     const updates: Record<string, unknown> = {};
     if (name !== undefined) {
-      if (typeof name !== 'string' || !name.trim()) return trelloError('invalid value for name', 400);
+      if (typeof name !== 'string' || !name.trim())
+        return trelloError('invalid value for name', 400);
       updates['name'] = name.trim();
     }
     if (typeInput !== undefined) {
-      if (typeof typeInput !== 'string' || !CUSTOM_FIELD_TYPES.has(typeInput.trim().toLowerCase())) {
+      if (
+        typeof typeInput !== 'string' ||
+        !CUSTOM_FIELD_TYPES.has(typeInput.trim().toLowerCase())
+      ) {
         return trelloError('invalid value for type', 400);
       }
       updates['field_type'] = fieldTypeToDb(typeInput.trim().toLowerCase());
@@ -242,20 +266,24 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
     }
     if (cardFrontInput !== undefined) {
       if (
-        typeof cardFrontInput !== 'boolean'
-        && (typeof cardFrontInput !== 'string' || (cardFrontInput.toLowerCase() !== 'true' && cardFrontInput.toLowerCase() !== 'false'))
+        typeof cardFrontInput !== 'boolean' &&
+        (typeof cardFrontInput !== 'string' ||
+          (cardFrontInput.toLowerCase() !== 'true' && cardFrontInput.toLowerCase() !== 'false'))
       ) {
         return trelloError('invalid value for display.cardFront', 400);
       }
-      updates['show_on_card'] = typeof cardFrontInput === 'boolean'
-        ? cardFrontInput
-        : typeof cardFrontInput === 'string' && cardFrontInput.toLowerCase() === 'true';
+      updates['show_on_card'] =
+        typeof cardFrontInput === 'boolean'
+          ? cardFrontInput
+          : typeof cardFrontInput === 'string' && cardFrontInput.toLowerCase() === 'true';
     }
 
     if (Object.keys(updates).length > 0) {
       await db('custom_fields').where({ id: context.field.id }).update(updates);
     }
-    const updated = await db('custom_fields').where({ id: context.field.id }).first() as CustomFieldRow | undefined;
+    const updated = (await db('custom_fields').where({ id: context.field.id }).first()) as
+      | CustomFieldRow
+      | undefined;
     if (!updated) return TRELLO_CUSTOM_FIELD_NOT_FOUND();
     return Response.json(serializeCustomField(updated));
   }
@@ -282,8 +310,12 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
 
     let textValue: string | null = null;
     if (typeof rawValue === 'string') textValue = rawValue.trim();
-    if (rawValue && typeof rawValue === 'object' && typeof (rawValue as { text?: unknown }).text === 'string') {
-      textValue = ((rawValue as { text: string }).text).trim();
+    if (
+      rawValue &&
+      typeof rawValue === 'object' &&
+      typeof (rawValue as { text?: unknown }).text === 'string'
+    ) {
+      textValue = (rawValue as { text: string }).text.trim();
     }
     if (!textValue) return trelloError('invalid value for value', 400);
 
@@ -295,8 +327,12 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
       color: typeof colorInput === 'string' && colorInput.trim() ? colorInput.trim() : null,
     });
 
-    await db('custom_fields').where({ id: context.field.id }).update({ options: JSON.stringify(current) });
-    const updated = await db('custom_fields').where({ id: context.field.id }).first() as CustomFieldRow | undefined;
+    await db('custom_fields')
+      .where({ id: context.field.id })
+      .update({ options: JSON.stringify(current) });
+    const updated = (await db('custom_fields').where({ id: context.field.id }).first()) as
+      | CustomFieldRow
+      | undefined;
     if (!updated) return TRELLO_CUSTOM_FIELD_NOT_FOUND();
     const serialized = serializeCustomField(updated);
     const option = serialized.options.find((item) => item.id === optionId);
@@ -314,7 +350,9 @@ export async function customFieldsRouter(req: AuthenticatedRequest, path: string
     const next = options.filter((option) => option.id !== optionId);
     if (next.length === options.length) return TRELLO_CUSTOM_FIELD_OPTION_NOT_FOUND();
 
-    await db('custom_fields').where({ id: context.field.id }).update({ options: JSON.stringify(next) });
+    await db('custom_fields')
+      .where({ id: context.field.id })
+      .update({ options: JSON.stringify(next) });
     await db('card_custom_field_values')
       .where({ custom_field_id: context.field.id, value_option_id: optionId })
       .update({ value_option_id: null });

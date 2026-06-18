@@ -19,13 +19,11 @@ type CardRow = {
   [key: string]: unknown;
 };
 
-function computePosition(
-  targetCards: Array<{ position: string }>,
-  positionIdx: number,
-): string {
+function computePosition(targetCards: Array<{ position: string }>, positionIdx: number): string {
   if (targetCards.length === 0) return between(LOW_SENTINEL, HIGH_SENTINEL);
   if (positionIdx <= 0) return between(LOW_SENTINEL, targetCards[0]!.position);
-  if (positionIdx >= targetCards.length) return between(targetCards.at(-1)!.position, HIGH_SENTINEL);
+  if (positionIdx >= targetCards.length)
+    return between(targetCards.at(-1)!.position, HIGH_SENTINEL);
   return between(targetCards[positionIdx - 1]!.position, targetCards[positionIdx]!.position);
 }
 
@@ -46,17 +44,24 @@ async function copyChecklists(sourceCardId: string, newCardId: string): Promise<
       .orderBy('position', 'asc');
     if (items.length > 0) {
       await db('checklist_items').insert(
-        items.map((item: { title: string; position: string; assigned_member_id?: string | null; due_date?: string | null }) => ({
-          id: randomUUID(),
-          card_id: newCardId,
-          checklist_id: newChecklistId,
-          title: item.title,
-          checked: false,
-          position: item.position,
-          assigned_member_id: item.assigned_member_id ?? null,
-          due_date: item.due_date ?? null,
-          linked_card_id: null,
-        })),
+        items.map(
+          (item: {
+            title: string;
+            position: string;
+            assigned_member_id?: string | null;
+            due_date?: string | null;
+          }) => ({
+            id: randomUUID(),
+            card_id: newCardId,
+            checklist_id: newChecklistId,
+            title: item.title,
+            checked: false,
+            position: item.position,
+            assigned_member_id: item.assigned_member_id ?? null,
+            due_date: item.due_date ?? null,
+            linked_card_id: null,
+          })
+        )
       );
     }
   }
@@ -92,14 +97,14 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.targetListId) {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'targetListId is required' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -107,7 +112,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
   if (!targetList) {
     return Response.json(
       { error: { name: 'target-list-not-found', data: { message: 'Target list not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -149,7 +154,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
     const cardMembers = await db('card_members').where({ card_id: cardId });
     if (cardMembers.length > 0) {
       await db('card_members').insert(
-        cardMembers.map((m: { user_id: string }) => ({ card_id: newId, user_id: m.user_id })),
+        cardMembers.map((m: { user_id: string }) => ({ card_id: newId, user_id: m.user_id }))
       );
     }
   }
@@ -160,7 +165,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
 
   const copy = await db('cards').where({ id: newId }).first();
   const copyWithCover = await resolveCoverImageUrl(
-    copy as { id: string; cover_attachment_id?: string | null },
+    copy as { id: string; cover_attachment_id?: string | null }
   );
 
   await dispatchEvent({
@@ -173,4 +178,3 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
 
   return Response.json({ data: copyWithCover }, { status: 201 });
 }
-

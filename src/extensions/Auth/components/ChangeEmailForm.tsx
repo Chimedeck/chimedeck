@@ -16,7 +16,11 @@ async function submitChangeEmail({
   currentPassword: string;
 }): Promise<{ requiresConfirmation?: boolean; pendingEmail?: string; email?: string }> {
   const response = await authApi.changeEmail({ email, currentPassword });
-  return (response as unknown as { data: { requiresConfirmation?: boolean; pendingEmail?: string; email?: string } }).data;
+  return (
+    response as unknown as {
+      data: { requiresConfirmation?: boolean; pendingEmail?: string; email?: string };
+    }
+  ).data;
 }
 
 // ---------- Component ----------
@@ -27,7 +31,11 @@ interface ChangeEmailFormProps {
   readonly onPending?: (pendingEmail: string) => void;
 }
 
-export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: ChangeEmailFormProps) {
+export default function ChangeEmailForm({
+  currentEmail,
+  onSuccess,
+  onPending,
+}: ChangeEmailFormProps) {
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +43,14 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   if (pendingEmail) {
-    return <EmailChangePending pendingEmail={pendingEmail} onDismiss={() => { setPendingEmail(null); }} />;
+    return (
+      <EmailChangePending
+        pendingEmail={pendingEmail}
+        onDismiss={() => {
+          setPendingEmail(null);
+        }}
+      />
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +72,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         setPassword('');
       }
     } catch (err: unknown) {
-      const apiError = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : null;
+      const apiError = isApiError(err) ? (err.response.data.error?.code ?? 'unknown-error') : null;
       if (apiError === 'email-already-in-use') {
         setError(translations.changeEmail.emailInUse);
       } else if (apiError === 'email-unchanged') {
@@ -84,7 +99,9 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         type="email"
         required
         value={newEmail}
-        onChange={(e) => { setNewEmail(e.target.value); }}
+        onChange={(e) => {
+          setNewEmail(e.target.value);
+        }}
         placeholder={currentEmail}
         className="w-full"
       />
@@ -95,7 +112,9 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
         type="password"
         required
         value={password}
-        onChange={(e) => { setPassword(e.target.value); }}
+        onChange={(e) => {
+          setPassword(e.target.value);
+        }}
         className="w-full"
       />
 

@@ -10,11 +10,13 @@ class QueryBuilder {
 
   constructor(
     private readonly store: DataStore,
-    private readonly tableName: keyof DataStore,
+    private readonly tableName: keyof DataStore
   ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -23,8 +25,8 @@ class QueryBuilder {
   }
 
   private executeSync(): Row[] {
-    return (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    return this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
   }
 }
@@ -32,13 +34,12 @@ class QueryBuilder {
 let dataStore: DataStore;
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-const {
-  requireGuestCanViewBoardChat,
-  requireGuestCanUseBoardChat,
-} = await import('../chatPermissions');
+const { requireGuestCanViewBoardChat, requireGuestCanUseBoardChat } =
+  await import('../chatPermissions');
 
 beforeEach(() => {
   dataStore = {
@@ -69,7 +70,7 @@ describe('chat permissions middleware', () => {
     const result = await requireGuestCanViewBoardChat(req as any, 'board-1');
 
     expect(result?.status).toBe(403);
-    const body = await result!.json() as { name: string };
+    const body = (await result!.json()) as { name: string };
     expect(body.name).toBe('guest-chat-view-denied');
   });
 
@@ -82,7 +83,7 @@ describe('chat permissions middleware', () => {
     const result = await requireGuestCanUseBoardChat(req as any, 'board-1');
 
     expect(result?.status).toBe(403);
-    const body = await result!.json() as { name: string };
+    const body = (await result!.json()) as { name: string };
     expect(body.name).toBe('guest-chat-use-denied');
   });
 
@@ -115,7 +116,7 @@ describe('chat permissions middleware', () => {
     const result = await requireGuestCanUseBoardChat(req as any, 'board-1');
 
     expect(result?.status).toBe(403);
-    const body = await result!.json() as { name: string };
+    const body = (await result!.json()) as { name: string };
     expect(body.name).toBe('guest-chat-use-denied');
   });
 

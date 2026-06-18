@@ -13,10 +13,15 @@ class QueryBuilder {
   private orderedBy: string | null = null;
   private orderDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -40,7 +45,7 @@ class QueryBuilder {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => ({ ...row }));
     for (const row of inserted) {
-      (this.store[this.tableName]).push(row);
+      this.store[this.tableName].push(row);
     }
     return {
       returning: async () => inserted.map((row) => ({ ...row })),
@@ -58,14 +63,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+    let rows = this.store[this.tableName].filter((row) =>
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -118,7 +123,8 @@ mock.module('../../../../config/featureFlags', () => ({
 }));
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -149,26 +155,30 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(501);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('not-implemented');
   });
 
   it('returns default graph when no state transition row exists', async () => {
     const res = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         boardId: string;
         enabled: boolean;
-        graph: { nodes: Array<{ id: string; listId: string; label: string }>; edges: unknown[]; notes: unknown[] };
+        graph: {
+          nodes: Array<{ id: string; listId: string; label: string }>;
+          edges: unknown[];
+          notes: unknown[];
+        };
       };
     };
 
@@ -210,14 +220,18 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         enabled: boolean;
-        graph: { nodes: unknown[]; edges: Array<{ fromNodeId: string; toNodeId: string }>; notes: unknown[] };
+        graph: {
+          nodes: unknown[];
+          edges: Array<{ fromNodeId: string; toNodeId: string }>;
+          notes: unknown[];
+        };
       };
     };
 
@@ -241,7 +255,13 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
       graph_data: {
         nodes: [
           { id: 'list-1', listId: 'list-1', label: 'Todo old', positionX: 10, positionY: 20 },
-          { id: 'list-deleted', listId: 'list-deleted', label: 'Deleted', positionX: 20, positionY: 20 },
+          {
+            id: 'list-deleted',
+            listId: 'list-deleted',
+            label: 'Deleted',
+            positionX: 20,
+            positionY: 20,
+          },
         ],
         edges: [
           {
@@ -260,11 +280,11 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         graph: {
           nodes: Array<{ id: string; label: string }>;
@@ -277,24 +297,30 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
       expect.objectContaining({ id: 'list-1', label: 'Todo renamed' }),
     ]);
     expect(body.data.graph.edges).toEqual([]);
-    expect((dataStore.board_state_transitions[0] as {
-      graph_data: { nodes: Array<{ id: string; label: string }>; edges: unknown[] };
-    }).graph_data).toEqual(
+    expect(
+      (
+        dataStore.board_state_transitions[0] as {
+          graph_data: { nodes: Array<{ id: string; label: string }>; edges: unknown[] };
+        }
+      ).graph_data
+    ).toEqual(
       expect.objectContaining({
         nodes: [expect.objectContaining({ id: 'list-1', label: 'Todo renamed' })],
         edges: [],
-      }),
+      })
     );
   });
 
   it('returns 404 when board does not exist', async () => {
     const res = await handleGetStateTransitions(
-      new Request('http://localhost/api/v1/boards/board-missing/state-transitions', { method: 'GET' }),
-      'board-missing',
+      new Request('http://localhost/api/v1/boards/board-missing/state-transitions', {
+        method: 'GET',
+      }),
+      'board-missing'
     );
 
     expect(res.status).toBe(404);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('board-not-found');
   });
 
@@ -303,11 +329,11 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
 
     const res = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: { graph: { nodes: unknown[]; edges: unknown[]; notes: unknown[] } };
     };
     expect(body.data.graph.nodes).toEqual([]);
@@ -319,14 +345,14 @@ describe('GET /api/v1/boards/:boardId/state-transitions', () => {
     stateTransitionsEnabled = true;
     const enabledResponse = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
     expect(enabledResponse.status).toBe(200);
 
     stateTransitionsEnabled = false;
     const disabledResponse = await handleGetStateTransitions(
       new Request('http://localhost/api/v1/boards/board-1/state-transitions', { method: 'GET' }),
-      'board-1',
+      'board-1'
     );
     expect(disabledResponse.status).toBe(501);
   });

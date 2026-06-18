@@ -24,7 +24,7 @@ export const ROLLBACK_SUFFIX = '/rolled_back';
 interface OptimisticMeta {
   optimistic: true;
   mutationId: string;
-  snapshot: unknown;       // pre-action state snapshot
+  snapshot: unknown; // pre-action state snapshot
   method: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   url: string;
   body?: unknown;
@@ -55,7 +55,11 @@ export const wsMiddleware: Middleware = (storeAPI) => (next) => (action: unknown
     action !== null &&
     (action as AnyAction).type === 'realtime/wsConfirmed'
   ) {
-    const { sequence } = (action as AnyAction).payload as { sequence?: number; type: string; boardId: string };
+    const { sequence } = (action as AnyAction).payload as {
+      sequence?: number;
+      type: string;
+      boardId: string;
+    };
     // Mark any pending mutations that match this sequence as WS-confirmed
     // (We use mutationId as sequence proxy when sequence is missing)
     for (const [id, entry] of pending.entries()) {
@@ -85,7 +89,7 @@ type NextDispatch = Parameters<ReturnType<Middleware>>[0];
 async function handleOptimisticAction(
   storeAPI: MiddlewareAPI,
   next: NextDispatch,
-  action: AnyAction & { meta: OptimisticMeta },
+  action: AnyAction & { meta: OptimisticMeta }
 ): Promise<unknown> {
   const { meta } = action;
 
@@ -126,7 +130,11 @@ async function handleOptimisticAction(
 
     if (response.ok) {
       let serverData: unknown;
-      try { serverData = await response.json(); } catch { serverData = null; }
+      try {
+        serverData = await response.json();
+      } catch {
+        serverData = null;
+      }
 
       // If WS already confirmed this, skip duplicate store update
       if (!entry?.wsConfirmed) {

@@ -102,12 +102,12 @@ export type GoalQuestionCategory =
   | 'constraints';
 
 export interface QualityScoreBreakdown {
-  earsCoverage: number;       // 0-25
+  earsCoverage: number; // 0-25
   acceptanceCriteria: number; // 0-25
-  constraintClarity: number;  // 0-25
-  testability: number;        // 0-25
-  ambiguityPenalty: number;   // 0-10
-  total: number;              // 0-100
+  constraintClarity: number; // 0-25
+  testability: number; // 0-25
+  ambiguityPenalty: number; // 0-10
+  total: number; // 0-100
 }
 
 export interface RefineCardChatInput {

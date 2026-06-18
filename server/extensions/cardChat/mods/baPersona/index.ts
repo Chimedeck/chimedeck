@@ -85,7 +85,9 @@ export function buildBAPersonaSystemPrompt({
  * [why] Simple round-robin with skip-if-sufficient logic. We don't need
  * an LLM to pick the category — determinism keeps the loop predictable.
  */
-export function selectNextQuestionCategory(coveredCategories: Set<GoalQuestionCategory>): GoalQuestionCategory {
+export function selectNextQuestionCategory(
+  coveredCategories: Set<GoalQuestionCategory>
+): GoalQuestionCategory {
   const order: GoalQuestionCategory[] = [
     'business_value',
     'ears_requirements',
@@ -120,9 +122,11 @@ export function buildCategoryQuestion(category: GoalQuestionCategory): string {
  */
 const CATEGORY_SIGNALS: Record<GoalQuestionCategory, RegExp> = {
   business_value: /\b(business\s+value|outcome|stakeholder|success|roi|benefit|problem)\b/i,
-  ears_requirements: /\b(system\s+shall|while|when|event.driven|state.driven|ubiquitous|optional)\b/i,
+  ears_requirements:
+    /\b(system\s+shall|while|when|event.driven|state.driven|ubiquitous|optional)\b/i,
   acceptance_criteria: /\b(given\b|\bthen\b|\bwhen\b.*\bthen\b|scenario|test\s+case|acceptance)\b/i,
-  constraints: /\b(constraint|assumption|non.goal|out\s+of\s+scope|limitation|dependency|depends\s+on)\b/i,
+  constraints:
+    /\b(constraint|assumption|non.goal|out\s+of\s+scope|limitation|dependency|depends\s+on)\b/i,
 };
 
 export function detectCoveredCategories(userMessages: string[]): Set<GoalQuestionCategory> {

@@ -159,9 +159,7 @@ function addReactionOptimistic({
     ...existing,
     count: existing.count + 1,
     reactedByMe: true,
-    reactors: hasReactor
-      ? existing.reactors
-      : [...existing.reactors, { userId, name: userName }],
+    reactors: hasReactor ? existing.reactors : [...existing.reactors, { userId, name: userName }],
   };
 
   const next = [...reactions];
@@ -208,7 +206,10 @@ function formatNotificationTime(notification: Notification): string | null {
     timestamp?: string;
   };
   // Some realtime payloads may use camelCase/time aliases.
-  const rawCreatedAt = notificationPayload.created_at ?? notificationPayload.createdAt ?? notificationPayload.timestamp;
+  const rawCreatedAt =
+    notificationPayload.created_at ??
+    notificationPayload.createdAt ??
+    notificationPayload.timestamp;
 
   if (!rawCreatedAt) return null;
 
@@ -260,18 +261,21 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
     }
   };
 
-  const canReactToComment = (entry: Notification) => Boolean(entry.source_id)
-    && entry.type !== 'comment_reaction'
-    && (
-      entry.type === 'card_commented'
-      || entry.source_type === 'comment'
-    );
+  const canReactToComment = (entry: Notification) =>
+    Boolean(entry.source_id) &&
+    entry.type !== 'comment_reaction' &&
+    (entry.type === 'card_commented' || entry.source_type === 'comment');
 
-  const setCommentReactionsInStore = (entryId: string, reactions: NotificationCommentReaction[]) => {
-    dispatch(notificationSliceActions.setNotificationCommentReactions({
-      id: entryId,
-      reactions,
-    }));
+  const setCommentReactionsInStore = (
+    entryId: string,
+    reactions: NotificationCommentReaction[]
+  ) => {
+    dispatch(
+      notificationSliceActions.setNotificationCommentReactions({
+        id: entryId,
+        reactions,
+      })
+    );
   };
 
   const handleAddReaction = async (entry: Notification, emoji: string) => {
@@ -325,9 +329,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
     .join(': ');
 
   return (
-    <div
-      className="mx-2 my-2 rounded-xl border border-border bg-bg-surface cursor-pointer transition-all"
-    >
+    <div className="mx-2 my-2 rounded-xl border border-border bg-bg-surface cursor-pointer transition-all">
       <div className="px-3 py-3">
         <div className="space-y-2">
           <div className="min-w-0 flex items-start justify-between gap-2">
@@ -361,13 +363,13 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
               type="button"
               className="shrink-0 rounded-md border border-border bg-bg-overlay px-2 py-1 text-xs text-subtle hover:bg-bg-sunken hover:text-base transition-colors"
               onClick={handleToggleGroupReadState}
-              aria-label={hasUnreadInStack
-                ? 'Mark this notification group as read'
-                : 'Mark this notification group as unread'}
+              aria-label={
+                hasUnreadInStack
+                  ? 'Mark this notification group as read'
+                  : 'Mark this notification group as unread'
+              }
             >
-              {hasUnreadInStack
-                ? 'Mark read'
-                : 'Mark unread'}
+              {hasUnreadInStack ? 'Mark read' : 'Mark unread'}
             </button>
           </div>
 
@@ -397,9 +399,15 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                 >
                   <div className="flex items-start gap-2.5">
                     <div className="flex-shrink-0 h-7 w-7 rounded-full bg-bg-surface border border-border overflow-hidden flex items-center justify-center text-[10px] font-semibold text-subtle">
-                      {entry.actor.avatar_url
-                        ? <img src={entry.actor.avatar_url} alt={actorName} className="h-full w-full object-cover" />
-                        : actorInitials(actorName)}
+                      {entry.actor.avatar_url ? (
+                        <img
+                          src={entry.actor.avatar_url}
+                          alt={actorName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        actorInitials(actorName)
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">

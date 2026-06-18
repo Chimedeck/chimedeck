@@ -1,7 +1,10 @@
 // Board chat session API handlers — create and list sessions.
 // Sprint 199 — session-scoped board chat.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { requireGuestCanUseBoardChat } from '../../middlewares/chatPermissions';
 import {
@@ -64,7 +67,11 @@ export async function handleListSessions(req: Request, boardId: string): Promise
 }
 
 // GET /api/v1/boards/:boardId/chat/sessions/:sessionId
-export async function handleGetSession(req: Request, boardId: string, sessionId: string): Promise<Response> {
+export async function handleGetSession(
+  req: Request,
+  boardId: string,
+  sessionId: string
+): Promise<Response> {
   const boardReq = req as BoardScopedRequest;
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
@@ -83,13 +90,17 @@ export async function handleGetSession(req: Request, boardId: string, sessionId:
     const status = (err as { status?: number }).status ?? 404;
     return Response.json(
       { error: { code: 'session-not-found', message: (err as Error).message } },
-      { status },
+      { status }
     );
   }
 }
 
 // PATCH /api/v1/boards/:boardId/chat/sessions/:sessionId
-export async function handleUpdateSession(req: Request, boardId: string, sessionId: string): Promise<Response> {
+export async function handleUpdateSession(
+  req: Request,
+  boardId: string,
+  sessionId: string
+): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -110,7 +121,7 @@ export async function handleUpdateSession(req: Request, boardId: string, session
   } catch {
     return Response.json(
       { error: { code: 'invalid-request-body', message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -127,7 +138,7 @@ export async function handleUpdateSession(req: Request, boardId: string, session
     const status = (err as { status?: number }).status ?? 404;
     return Response.json(
       { error: { code: 'session-not-found', message: (err as Error).message } },
-      { status },
+      { status }
     );
   }
 }

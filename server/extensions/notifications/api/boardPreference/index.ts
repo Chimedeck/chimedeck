@@ -4,7 +4,7 @@ import { handleUpdateBoardNotificationPreference } from './update';
 
 export async function boardPreferenceRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
   const match = pathname.match(/^\/api\/v1\/boards\/([^/]+)\/notification-preference$/);
   if (!match) return null;

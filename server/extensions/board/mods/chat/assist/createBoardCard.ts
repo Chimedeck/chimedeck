@@ -8,7 +8,10 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../../../board/middlewares/requireBoardWritable';
 import type {
   BoardChatAssistActionCard,
   BoardChatAssistOutput,
@@ -20,7 +23,8 @@ export const CREATE_BOARD_CARD_TOOL: BoardChatAssistToolDefinition = {
   type: 'function',
   function: {
     name: 'create_board_card',
-    description: 'Create a new card on the current board. If listId is omitted, the card is created in the Backlog list (first list whose name contains "backlog", case-insensitive).',
+    description:
+      'Create a new card on the current board. If listId is omitted, the card is created in the Backlog list (first list whose name contains "backlog", case-insensitive).',
     parameters: {
       type: 'object',
       properties: {
@@ -76,7 +80,9 @@ interface CreateBoardCardInput {
 
 const idempotencyCache = new Map<string, Promise<BoardChatAssistOutput>>();
 
-function normalizeToolArguments(rawArguments: string): CreateBoardCardArguments | BoardChatAssistOutput {
+function normalizeToolArguments(
+  rawArguments: string
+): CreateBoardCardArguments | BoardChatAssistOutput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawArguments);
@@ -134,7 +140,11 @@ function normalizeToolArguments(rawArguments: string): CreateBoardCardArguments 
     }
   }
 
-  if (typeof candidate.description !== 'undefined' && candidate.description !== null && typeof candidate.description !== 'string') {
+  if (
+    typeof candidate.description !== 'undefined' &&
+    candidate.description !== null &&
+    typeof candidate.description !== 'string'
+  ) {
     return {
       status: 422,
       name: 'invalid-tool-payload',
@@ -142,7 +152,11 @@ function normalizeToolArguments(rawArguments: string): CreateBoardCardArguments 
     };
   }
 
-  if (typeof candidate.startDate !== 'undefined' && candidate.startDate !== null && typeof candidate.startDate !== 'string') {
+  if (
+    typeof candidate.startDate !== 'undefined' &&
+    candidate.startDate !== null &&
+    typeof candidate.startDate !== 'string'
+  ) {
     return {
       status: 422,
       name: 'invalid-tool-payload',
@@ -181,15 +195,17 @@ function buildIdempotencyKey({
   input: CreateBoardCardArguments;
 }): string {
   return createHash('sha256')
-    .update(JSON.stringify({
-      boardId,
-      actorId,
-      toolCallId,
-      title: input.title,
-      listId: input.listId,
-      description: input.description ?? null,
-      startDate: input.startDate ?? null,
-    }))
+    .update(
+      JSON.stringify({
+        boardId,
+        actorId,
+        toolCallId,
+        title: input.title,
+        listId: input.listId,
+        description: input.description ?? null,
+        startDate: input.startDate ?? null,
+      })
+    )
     .digest('hex');
 }
 
@@ -310,7 +326,8 @@ async function runCreateBoardCard({
           toolCallId: toolCall.id,
           idempotencyKey,
         },
-        ipAddress: request.headers.get('x-forwarded-for') ?? request.headers.get('cf-connecting-ip') ?? null,
+        ipAddress:
+          request.headers.get('x-forwarded-for') ?? request.headers.get('cf-connecting-ip') ?? null,
         userAgent: request.headers.get('user-agent') ?? null,
       }),
     ]);

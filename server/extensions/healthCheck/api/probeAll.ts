@@ -9,10 +9,7 @@ import { applyBoardVisibility } from '../../../middlewares/boardVisibility';
 import { probe } from '../mods/probe';
 import { checkRateLimit, retryAfterMs } from '../mods/rateLimiter';
 
-export async function handleProbeAllHealthChecks(
-  req: Request,
-  boardId: string,
-): Promise<Response> {
+export async function handleProbeAllHealthChecks(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -34,7 +31,7 @@ export async function handleProbeAllHealthChecks(
       {
         status: 429,
         headers: { 'Retry-After': String(retryAfter) },
-      },
+      }
     );
   }
 
@@ -55,7 +52,11 @@ export async function handleProbeAllHealthChecks(
         return null;
       }
       try {
-        const result = await probe({ healthCheckId: check.id, url: check.url, expectedStatus: check.expected_status ?? null });
+        const result = await probe({
+          healthCheckId: check.id,
+          url: check.url,
+          expectedStatus: check.expected_status ?? null,
+        });
         return {
           id: result.id,
           healthCheckId: result.healthCheckId,
@@ -70,7 +71,7 @@ export async function handleProbeAllHealthChecks(
         // than failing the entire batch.
         return null;
       }
-    }),
+    })
   );
 
   // Filter out skipped/errored entries.

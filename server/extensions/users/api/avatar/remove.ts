@@ -15,7 +15,7 @@ export async function handleRemoveAvatar(req: Request): Promise<Response> {
   if (!user) {
     return Response.json(
       { error: { code: 'user-not-found', message: 'User not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

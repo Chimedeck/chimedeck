@@ -6,13 +6,13 @@ import type {
 
 export function stripDeletedNodes(
   graphData: StateTransitionGraph,
-  activeLists: StateTransitionListLike[],
+  activeLists: StateTransitionListLike[]
 ): StateTransitionGraph {
   const activeListIds = new Set(activeLists.map((list) => list.id));
   const nodes = graphData.nodes.filter((node) => activeListIds.has(node.listId));
   const activeNodeIds = new Set(nodes.map((node) => node.id));
   const edges = graphData.edges.filter(
-    (edge) => activeNodeIds.has(edge.fromNodeId) && activeNodeIds.has(edge.toNodeId),
+    (edge) => activeNodeIds.has(edge.fromNodeId) && activeNodeIds.has(edge.toNodeId)
   );
 
   return {
@@ -24,7 +24,7 @@ export function stripDeletedNodes(
 
 export function renameNodeLabel(
   graphData: StateTransitionGraph,
-  activeLists: StateTransitionListLike[],
+  activeLists: StateTransitionListLike[]
 ): StateTransitionGraph {
   const titleByListId = new Map(activeLists.map((list) => [list.id, list.title]));
 
@@ -49,7 +49,7 @@ export const syncNodeLabels = renameNodeLabel;
 
 export function syncGraphWithLists(
   graphData: StateTransitionGraph,
-  activeLists: StateTransitionListLike[],
+  activeLists: StateTransitionListLike[]
 ): StateTransitionGraphSyncResult {
   const stripped = stripDeletedNodes(graphData, activeLists);
   const synced = renameNodeLabel(stripped, activeLists);

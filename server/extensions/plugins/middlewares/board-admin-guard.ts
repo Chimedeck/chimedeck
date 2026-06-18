@@ -15,7 +15,7 @@ export interface BoardAdminRequest extends AuthenticatedRequest {
 // Expects boardId to be extracted and passed in by the route handler.
 export async function boardAdminGuard(
   req: BoardAdminRequest,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -24,7 +24,7 @@ export async function boardAdminGuard(
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -35,7 +35,7 @@ export async function boardAdminGuard(
   if (!membership || !ADMIN_ROLES.has(membership.role as Role)) {
     return Response.json(
       { error: { code: 'not-board-admin', message: 'Board admin access required' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -47,7 +47,7 @@ export async function boardAdminGuard(
 // Allows OWNER, ADMIN, and MEMBER roles — use for actions members are permitted to perform.
 export async function boardMemberGuard(
   req: BoardAdminRequest,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -56,7 +56,7 @@ export async function boardMemberGuard(
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -67,7 +67,7 @@ export async function boardMemberGuard(
   if (!membership || !MEMBER_ROLES.has(membership.role as Role)) {
     return Response.json(
       { error: { code: 'not-board-member', message: 'Board member access required' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

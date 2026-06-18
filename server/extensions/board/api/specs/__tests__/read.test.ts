@@ -38,7 +38,10 @@ function makeBoardAccessMock() {
 }
 
 function makeMembershipMock() {
-  return async (req: Request & { callerRole?: string; workspaceId?: string }, workspaceId: string) => {
+  return async (
+    req: Request & { callerRole?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
     return null;
@@ -56,7 +59,9 @@ function makeRoleMock() {
 }
 
 function makeReadRequest(path: string) {
-  return new Request(`http://localhost/api/v1/boards/board-1/specs/files?path=${encodeURIComponent(path)}`);
+  return new Request(
+    `http://localhost/api/v1/boards/board-1/specs/files?path=${encodeURIComponent(path)}`
+  );
 }
 
 async function createTempRepo(fileName = 'specs/overview.md', content = '# Hello') {
@@ -83,7 +88,9 @@ function resetDeps() {
   specsReadDeps.now = () => new Date('2025-01-01T00:00:00Z');
 }
 
-beforeEach(() => { resetDeps(); });
+beforeEach(() => {
+  resetDeps();
+});
 
 // ── 403 "not configured" ──────────────────────────────────────────────────────
 
@@ -92,7 +99,7 @@ describe('GET /api/v1/boards/:boardId/specs/files — 403 not configured', () =>
     board.github_project_url = null;
     const res = await handleReadSpecsFile(makeReadRequest('specs/overview.md'), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
     expect(body.data.message).toContain('configure your Github documentation');
   });
@@ -107,7 +114,7 @@ describe('GET /api/v1/boards/:boardId/specs/files — 403 load failed', () => {
     };
     const res = await handleReadSpecsFile(makeReadRequest('specs/overview.md'), 'board-1');
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-load-failed');
     expect(body.data.message).toContain('do not have access to this respository');
   });
@@ -120,7 +127,7 @@ describe('GET /api/v1/boards/:boardId/specs/files — validation', () => {
     const req = new Request('http://localhost/api/v1/boards/board-1/specs/files');
     const res = await handleReadSpecsFile(req, 'board-1');
     expect(res.status).toBe(400);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('missing-path');
   });
 });
@@ -141,7 +148,13 @@ describe('GET /api/v1/boards/:boardId/specs/files — success', () => {
       files: [{ path: 'specs/overview.md', sizeBytes: 13 }],
       etag: 'etag-file',
     });
-    specsReadDeps.resolveSpecsFilePath = ({ repoPath: rp, filePath }: { repoPath: string; filePath: string }) => ({
+    specsReadDeps.resolveSpecsFilePath = ({
+      repoPath: rp,
+      filePath,
+    }: {
+      repoPath: string;
+      filePath: string;
+    }) => ({
       ok: true as const,
       absolutePath: join(rp, filePath),
     });
@@ -152,7 +165,7 @@ describe('GET /api/v1/boards/:boardId/specs/files — success', () => {
 
     const res = await handleReadSpecsFile(makeReadRequest('specs/overview.md'), 'board-1');
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { path: string; content: string } };
+    const body = (await res.json()) as { data: { path: string; content: string } };
     expect(body.data.path).toBe('specs/overview.md');
     expect(body.data.content).toBe('# Hello World');
   });

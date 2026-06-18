@@ -15,7 +15,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
   if (!label) {
     return Response.json(
       { error: { code: 'label-not-found', message: 'Label not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -25,7 +25,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -40,7 +40,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -50,7 +50,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
     if (typeof body.name !== 'string' || body.name.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'name must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.name = body.name.trim();
@@ -60,7 +60,7 @@ export async function handleUpdateLabel(req: Request, labelId: string): Promise<
     if (typeof body.color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(body.color)) {
       return Response.json(
         { error: { code: 'bad-request', message: 'color must be a hex color (e.g. #FF5733)' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.color = body.color;

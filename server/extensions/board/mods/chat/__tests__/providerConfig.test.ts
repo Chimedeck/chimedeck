@@ -43,18 +43,42 @@ mock.module('../../../../../config/env', () => ({
       // Production default is true; only 'false' (exact) flips it off.
       return (envState.CHAT_EMBEDDING_ENABLED ?? 'true') !== 'false';
     },
-    get CHAT_EMBEDDING_API_URL() { return envState.CHAT_EMBEDDING_API_URL ?? ''; },
-    get CHAT_EMBEDDING_API_KEY() { return envState.CHAT_EMBEDDING_API_KEY ?? ''; },
-    get CHAT_EMBEDDING_MODEL() { return envState.CHAT_EMBEDDING_MODEL ?? 'text-embedding-3-small'; },
-    get CHAT_EMBEDDING_DIMENSIONS() { return Number.parseInt(envState.CHAT_EMBEDDING_DIMENSIONS ?? '1536', 10); },
-    get CHAT_ASSIST_API_KEY() { return envState.CHAT_ASSIST_API_KEY ?? ''; },
-    get CHAT_ASSIST_BASE_URL() { return envState.CHAT_ASSIST_BASE_URL ?? ''; },
-    get CHAT_ASSIST_MODEL() { return envState.CHAT_ASSIST_MODEL ?? ''; },
-    get OLLAMA_API_KEY() { return envState.OLLAMA_API_KEY ?? ''; },
-    get OLLAMA_BASE_URL() { return envState.OLLAMA_BASE_URL ?? 'https://ollama.com/v1'; },
-    get OLLAMA_EMBEDDING_MODEL() { return envState.OLLAMA_EMBEDDING_MODEL ?? ''; },
-    get OLLAMA_EMBEDDING_DIMENSIONS() { return Number.parseInt(envState.OLLAMA_EMBEDDING_DIMENSIONS ?? '1024', 10); },
-    get OLLAMA_ASSIST_MODEL() { return envState.OLLAMA_ASSIST_MODEL ?? ''; },
+    get CHAT_EMBEDDING_API_URL() {
+      return envState.CHAT_EMBEDDING_API_URL ?? '';
+    },
+    get CHAT_EMBEDDING_API_KEY() {
+      return envState.CHAT_EMBEDDING_API_KEY ?? '';
+    },
+    get CHAT_EMBEDDING_MODEL() {
+      return envState.CHAT_EMBEDDING_MODEL ?? 'text-embedding-3-small';
+    },
+    get CHAT_EMBEDDING_DIMENSIONS() {
+      return Number.parseInt(envState.CHAT_EMBEDDING_DIMENSIONS ?? '1536', 10);
+    },
+    get CHAT_ASSIST_API_KEY() {
+      return envState.CHAT_ASSIST_API_KEY ?? '';
+    },
+    get CHAT_ASSIST_BASE_URL() {
+      return envState.CHAT_ASSIST_BASE_URL ?? '';
+    },
+    get CHAT_ASSIST_MODEL() {
+      return envState.CHAT_ASSIST_MODEL ?? '';
+    },
+    get OLLAMA_API_KEY() {
+      return envState.OLLAMA_API_KEY ?? '';
+    },
+    get OLLAMA_BASE_URL() {
+      return envState.OLLAMA_BASE_URL ?? 'https://ollama.com/v1';
+    },
+    get OLLAMA_EMBEDDING_MODEL() {
+      return envState.OLLAMA_EMBEDDING_MODEL ?? '';
+    },
+    get OLLAMA_EMBEDDING_DIMENSIONS() {
+      return Number.parseInt(envState.OLLAMA_EMBEDDING_DIMENSIONS ?? '1024', 10);
+    },
+    get OLLAMA_ASSIST_MODEL() {
+      return envState.OLLAMA_ASSIST_MODEL ?? '';
+    },
   },
 }));
 

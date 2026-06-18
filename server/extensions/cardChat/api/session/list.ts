@@ -2,7 +2,10 @@
 // Sprint 208 — list all chat sessions for a card so the user can
 // switch between past conversations instead of always starting fresh.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { db } from '../../../../common/db';
 import type { CardChatSession } from '../../types';
 
@@ -19,7 +22,7 @@ export async function handleListCardChatSessions(req: Request, cardId: string): 
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await cardChatSessionsListDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 

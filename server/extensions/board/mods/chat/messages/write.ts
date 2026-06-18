@@ -35,10 +35,10 @@ async function resolveBoardChatThread({
     .first()) as BoardChatThread | undefined;
 
   if (!thread) {
-    throw Object.assign(
-      new Error('board-chat-session-not-found'),
-      { code: 'board-chat-session-not-found', status: 404 },
-    );
+    throw Object.assign(new Error('board-chat-session-not-found'), {
+      code: 'board-chat-session-not-found',
+      status: 404,
+    });
   }
 
   return thread;
@@ -95,7 +95,9 @@ export async function writeBoardChatMessage({
   let queuedForEmbeddingRetry = false;
 
   try {
-    const embedding = await boardChatWriteDeps.generateBoardChatEmbedding({ text: normalizedContent });
+    const embedding = await boardChatWriteDeps.generateBoardChatEmbedding({
+      text: normalizedContent,
+    });
     vector = await boardChatWriteDeps.persistBoardChatMessageVector({
       messageId,
       boardId,
@@ -103,13 +105,15 @@ export async function writeBoardChatMessage({
     });
   } catch (error) {
     queuedForEmbeddingRetry = true;
-    void boardChatWriteDeps.enqueueBoardChatEmbeddingRetry({
-      messageId,
-      boardId,
-      reason: error instanceof Error ? error.message : 'board-chat-embedding-failed',
-    }).catch(() => {
-      // TODO: surface retry-queue delivery failures through the chat ops logger.
-    });
+    void boardChatWriteDeps
+      .enqueueBoardChatEmbeddingRetry({
+        messageId,
+        boardId,
+        reason: error instanceof Error ? error.message : 'board-chat-embedding-failed',
+      })
+      .catch(() => {
+        // TODO: surface retry-queue delivery failures through the chat ops logger.
+      });
   }
 
   return {

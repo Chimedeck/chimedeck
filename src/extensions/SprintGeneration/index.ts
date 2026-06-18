@@ -4,12 +4,7 @@
 export { default as GeneratedDiffSummary } from './components/GeneratedDiffSummary';
 export { default as ApproveRerunControls } from './components/ApproveRerunControls';
 export { default as SprintArtifactLinks } from './components/SprintArtifactLinks';
-export {
-  generateSprint,
-  syncAsBuilt,
-  getSprintGenRun,
-  getAsBuiltRun,
-} from './api';
+export { generateSprint, syncAsBuilt, getSprintGenRun, getAsBuiltRun } from './api';
 export type {
   SprintGenerationRun,
   AsBuiltSyncRun,
@@ -20,12 +15,8 @@ export type {
   GetSprintGenRunResponse,
   GetAsBuiltRunResponse,
 } from './api';
-export type {
-  GeneratedDiffSummaryProps,
-} from './components/GeneratedDiffSummary';
-export type {
-  ApproveRerunControlsProps,
-} from './components/ApproveRerunControls';
+export type { GeneratedDiffSummaryProps } from './components/GeneratedDiffSummary';
+export type { ApproveRerunControlsProps } from './components/ApproveRerunControls';
 export type {
   SprintArtifactLink,
   SprintArtifactLinksProps,

@@ -5,9 +5,7 @@ export const routes: RouteConfig[] = [
   {
     path: '/settings/webhooks',
     component: () =>
-      import('./containers/WebhooksRegisterPage/WebhooksRegisterPage').then(
-        (m) => m.default,
-      ),
+      import('./containers/WebhooksRegisterPage/WebhooksRegisterPage').then((m) => m.default),
     name: 'WebhooksRegisterPage',
     auth: true,
   },

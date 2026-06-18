@@ -12,7 +12,7 @@ import { env } from '../../../../config/env';
 
 export async function handleOAuthCallback(
   req: Request,
-  provider: OAuthProvider,
+  provider: OAuthProvider
 ): Promise<Response> {
   const url = new URL(req.url);
   const code = url.searchParams.get('code');
@@ -22,14 +22,14 @@ export async function handleOAuthCallback(
   if (error) {
     return Response.json(
       { error: { code: 'oauth-provider-error', message: error } },
-      { status: 502 },
+      { status: 502 }
     );
   }
 
   if (!code || !state) {
     return Response.json(
       { error: { code: 'oauth-state-mismatch', message: 'Missing code or state' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -38,13 +38,17 @@ export async function handleOAuthCallback(
   if (storedProvider !== provider) {
     return Response.json(
       { error: { code: 'oauth-state-mismatch', message: 'Invalid OAuth state' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   memCache.del(`oauth_state:${state}`);
 
   // Exchange code for profile.
-  let profileResult: { status: number; profile?: { id: string; email: string; name: string; picture?: string }; name?: string };
+  let profileResult: {
+    status: number;
+    profile?: { id: string; email: string; name: string; picture?: string };
+    name?: string;
+  };
   if (provider === 'google') {
     profileResult = await exchangeGoogleCode({ code });
   } else {
@@ -53,8 +57,13 @@ export async function handleOAuthCallback(
 
   if (profileResult.status !== 200 || !profileResult.profile) {
     return Response.json(
-      { error: { code: 'oauth-provider-error', message: 'Failed to get user profile from provider' } },
-      { status: 502 },
+      {
+        error: {
+          code: 'oauth-provider-error',
+          message: 'Failed to get user profile from provider',
+        },
+      },
+      { status: 502 }
     );
   }
 
@@ -91,13 +100,13 @@ export async function handleOAuthCallback(
   const responseHeaders = new Headers();
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`
   );
   // [why] access_token cookie lets <img> tags and other browser resource
   // requests authenticate without an Authorization header.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`
   );
   // Redirect to frontend with access token in fragment (never in query string).
   responseHeaders.set('Location', `${env.APP_URL}/#access_token=${accessToken}`);

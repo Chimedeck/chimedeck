@@ -4,7 +4,12 @@ import { resolveBoardId, resolveListId } from '../../../../common/ids/resolveEnt
 import { generateUniqueShortId } from '../../../../common/ids/shortId';
 import { between, HIGH_SENTINEL } from '../../../list/mods/fractional';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { TRELLO_LIST_NOT_FOUND, TRELLO_NOT_FOUND, TRELLO_PERMISSION_DENIED, trelloError } from '../../common/errors';
+import {
+  TRELLO_LIST_NOT_FOUND,
+  TRELLO_NOT_FOUND,
+  TRELLO_PERMISSION_DENIED,
+  trelloError,
+} from '../../common/errors';
 import { listTrelloCardsForList } from '../cards';
 import { serializeBoard } from '../../serializers/board';
 import { serializeList } from '../../serializers/list';
@@ -79,7 +84,10 @@ function getInput(url: URL, body: Record<string, unknown>, ...keys: string[]): u
   return undefined;
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
   const memberships = await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .select('role');
@@ -93,15 +101,22 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first() as { role?: string } | undefined;
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as
+    | { role?: string }
+    | undefined;
   const role = row?.role;
   if (role === 'ADMIN' || role === 'MEMBER' || role === 'VIEWER') return role;
   return null;
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first() as { id: string } | undefined;
+  const row = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as { id: string } | undefined;
   return !!row;
 }
 
@@ -131,12 +146,23 @@ async function canMutateBoard(userId: string, board: BoardRow): Promise<boolean>
 }
 
 async function resolveListRank(boardId: string, listId: string): Promise<number> {
-  const boardLists = await db('lists').where({ board_id: boardId }).orderBy('position', 'asc') as ListRow[];
-  return Math.max(0, boardLists.findIndex((row) => row.id === listId));
+  const boardLists = (await db('lists')
+    .where({ board_id: boardId })
+    .orderBy('position', 'asc')) as ListRow[];
+  return Math.max(
+    0,
+    boardLists.findIndex((row) => row.id === listId)
+  );
 }
 
-async function resolvePositionForBoard(boardId: string, posValue: unknown, excludeListId?: string): Promise<string> {
-  const boardLists = await db('lists').where({ board_id: boardId }).orderBy('position', 'asc') as ListRow[];
+async function resolvePositionForBoard(
+  boardId: string,
+  posValue: unknown,
+  excludeListId?: string
+): Promise<string> {
+  const boardLists = (await db('lists')
+    .where({ board_id: boardId })
+    .orderBy('position', 'asc')) as ListRow[];
   const lists = excludeListId ? boardLists.filter((row) => row.id !== excludeListId) : boardLists;
   const first = lists[0];
   const last = lists.at(-1);
@@ -144,21 +170,26 @@ async function resolvePositionForBoard(boardId: string, posValue: unknown, exclu
   if (typeof posValue === 'string') {
     const normalized = posValue.trim().toLowerCase();
     if (normalized === 'top') return between('', first?.position ?? HIGH_SENTINEL);
-    if (normalized === 'bottom' || normalized === '') return between(last?.position ?? '', HIGH_SENTINEL);
+    if (normalized === 'bottom' || normalized === '')
+      return between(last?.position ?? '', HIGH_SENTINEL);
 
     const asNumber = Number(normalized);
     if (!Number.isNaN(asNumber)) {
       const insertIndex = Math.max(0, Math.min(lists.length, Math.floor(asNumber / 65535)));
-      const left = insertIndex > 0 ? lists[insertIndex - 1]?.position ?? '' : '';
-      const right = insertIndex < lists.length ? lists[insertIndex]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+      const left = insertIndex > 0 ? (lists[insertIndex - 1]?.position ?? '') : '';
+      const right =
+        insertIndex < lists.length
+          ? (lists[insertIndex]?.position ?? HIGH_SENTINEL)
+          : HIGH_SENTINEL;
       return between(left, right);
     }
   }
 
   if (typeof posValue === 'number' && !Number.isNaN(posValue)) {
     const insertIndex = Math.max(0, Math.min(lists.length, Math.floor(posValue / 65535)));
-    const left = insertIndex > 0 ? lists[insertIndex - 1]?.position ?? '' : '';
-    const right = insertIndex < lists.length ? lists[insertIndex]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+    const left = insertIndex > 0 ? (lists[insertIndex - 1]?.position ?? '') : '';
+    const right =
+      insertIndex < lists.length ? (lists[insertIndex]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
     return between(left, right);
   }
 
@@ -174,7 +205,7 @@ async function updateList(
     closed: unknown;
     pos: unknown;
     idBoard: unknown;
-  },
+  }
 ): Promise<Response> {
   if (!(await canMutateBoard(userId, board))) return TRELLO_PERMISSION_DENIED();
 
@@ -198,7 +229,9 @@ async function updateList(
     }
     const targetBoardId = await resolveBoardId(inputs.idBoard);
     if (!targetBoardId) return TRELLO_NOT_FOUND();
-    const resolved = await db('boards').where({ id: targetBoardId }).first() as BoardRow | undefined;
+    const resolved = (await db('boards').where({ id: targetBoardId }).first()) as
+      | BoardRow
+      | undefined;
     if (!resolved) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(userId, resolved))) return TRELLO_PERMISSION_DENIED();
     targetBoard = resolved;
@@ -213,13 +246,16 @@ async function updateList(
     await db('lists').where({ id: list.id }).update(updates);
   }
 
-  const updated = await db('lists').where({ id: list.id }).first() as ListRow | undefined;
+  const updated = (await db('lists').where({ id: list.id }).first()) as ListRow | undefined;
   if (!updated) return TRELLO_LIST_NOT_FOUND();
   const rank = await resolveListRank(updated.board_id, updated.id);
   return Response.json(serializeList({ ...updated, _rank: rank }));
 }
 
-export async function listsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function listsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -232,12 +268,14 @@ export async function listsRouter(req: AuthenticatedRequest, path: string): Prom
     const idBoardInput = getInput(url, body, 'idBoard');
     const pos = getInput(url, body, 'pos');
 
-    if (typeof name !== 'string' || name.trim() === '') return trelloError('invalid value for name', 400);
-    if (typeof idBoardInput !== 'string' || idBoardInput.trim() === '') return trelloError('invalid value for idBoard', 400);
+    if (typeof name !== 'string' || name.trim() === '')
+      return trelloError('invalid value for name', 400);
+    if (typeof idBoardInput !== 'string' || idBoardInput.trim() === '')
+      return trelloError('invalid value for idBoard', 400);
 
     const boardId = await resolveBoardId(idBoardInput);
     if (!boardId) return TRELLO_NOT_FOUND();
-    const board = await db('boards').where({ id: boardId }).first() as BoardRow | undefined;
+    const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
     if (!board) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
@@ -254,7 +292,7 @@ export async function listsRouter(req: AuthenticatedRequest, path: string): Prom
       color: null,
     });
 
-    const created = await db('lists').where({ id: listId }).first() as ListRow | undefined;
+    const created = (await db('lists').where({ id: listId }).first()) as ListRow | undefined;
     if (!created) return TRELLO_LIST_NOT_FOUND();
     const rank = await resolveListRank(board.id, listId);
     return Response.json(serializeList({ ...created, _rank: rank }));
@@ -268,21 +306,29 @@ export async function listsRouter(req: AuthenticatedRequest, path: string): Prom
   const listId = await resolveListId(listIdentifier);
   if (!listId) return TRELLO_LIST_NOT_FOUND();
 
-  const list = await db('lists').where({ id: listId }).first() as ListRow | undefined;
+  const list = (await db('lists').where({ id: listId }).first()) as ListRow | undefined;
   if (!list) return TRELLO_LIST_NOT_FOUND();
-  const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+  const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
   if (!board) return TRELLO_NOT_FOUND();
   if (!(await canReadBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
   if (subPath === '' && req.method === 'GET') {
-    const boardLists = await db('lists').where({ board_id: board.id }).orderBy('position', 'asc') as ListRow[];
-    const rank = Math.max(0, boardLists.findIndex((row) => row.id === list.id));
+    const boardLists = (await db('lists')
+      .where({ board_id: board.id })
+      .orderBy('position', 'asc')) as ListRow[];
+    const rank = Math.max(
+      0,
+      boardLists.findIndex((row) => row.id === list.id)
+    );
     return Response.json(serializeList({ ...list, _rank: rank }));
   }
 
   const cardsMatch = subPath.match(/^cards(?:\/(open|closed|all))?$/);
   if (cardsMatch && req.method === 'GET') {
-    const filter = (url.searchParams.get('filter') ?? cardsMatch[1] ?? 'open') as 'open' | 'closed' | 'all';
+    const filter = (url.searchParams.get('filter') ?? cardsMatch[1] ?? 'open') as
+      | 'open'
+      | 'closed'
+      | 'all';
     const cards = await listTrelloCardsForList(list.id, filter);
     return Response.json(cards);
   }
@@ -337,9 +383,13 @@ export async function listsRouter(req: AuthenticatedRequest, path: string): Prom
 
     const targetListId = await resolveListId(idListInput);
     if (!targetListId) return TRELLO_LIST_NOT_FOUND();
-    const targetList = await db('lists').where({ id: targetListId }).first() as ListRow | undefined;
+    const targetList = (await db('lists').where({ id: targetListId }).first()) as
+      | ListRow
+      | undefined;
     if (!targetList) return TRELLO_LIST_NOT_FOUND();
-    const targetBoard = await db('boards').where({ id: targetList.board_id }).first() as BoardRow | undefined;
+    const targetBoard = (await db('boards').where({ id: targetList.board_id }).first()) as
+      | BoardRow
+      | undefined;
     if (!targetBoard) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(user.id, targetBoard))) return TRELLO_PERMISSION_DENIED();
 
@@ -355,24 +405,22 @@ export async function listsRouter(req: AuthenticatedRequest, path: string): Prom
 
     if (targetList.id === list.id) return Response.json({});
 
-    const sourceCards = await db('cards')
+    const sourceCards = (await db('cards')
       .where({ list_id: list.id, archived: false })
-      .orderBy('position', 'asc') as CardRow[];
-    const targetCards = await db('cards')
+      .orderBy('position', 'asc')) as CardRow[];
+    const targetCards = (await db('cards')
       .where({ list_id: targetList.id, archived: false })
-      .orderBy('position', 'asc') as CardRow[];
+      .orderBy('position', 'asc')) as CardRow[];
 
     let previousPosition = targetCards.at(-1)?.position ?? '';
     for (const card of sourceCards) {
       const position = between(previousPosition, HIGH_SENTINEL);
       previousPosition = position;
-      await db('cards')
-        .where({ id: card.id })
-        .update({
-          list_id: targetList.id,
-          position,
-          updated_at: new Date().toISOString(),
-        });
+      await db('cards').where({ id: card.id }).update({
+        list_id: targetList.id,
+        position,
+        updated_at: new Date().toISOString(),
+      });
     }
 
     return Response.json({});
@@ -405,16 +453,36 @@ export async function listsRouter(req: AuthenticatedRequest, path: string): Prom
     const body = await parseBody(req);
     const value = getInput(url, body, 'value');
     if (field === 'name') {
-      return updateList(user.id, list, board, { name: value, closed: undefined, pos: undefined, idBoard: undefined });
+      return updateList(user.id, list, board, {
+        name: value,
+        closed: undefined,
+        pos: undefined,
+        idBoard: undefined,
+      });
     }
     if (field === 'closed') {
-      return updateList(user.id, list, board, { name: undefined, closed: value, pos: undefined, idBoard: undefined });
+      return updateList(user.id, list, board, {
+        name: undefined,
+        closed: value,
+        pos: undefined,
+        idBoard: undefined,
+      });
     }
     if (field === 'idBoard') {
-      return updateList(user.id, list, board, { name: undefined, closed: undefined, pos: undefined, idBoard: value });
+      return updateList(user.id, list, board, {
+        name: undefined,
+        closed: undefined,
+        pos: undefined,
+        idBoard: value,
+      });
     }
     if (field === 'pos') {
-      return updateList(user.id, list, board, { name: undefined, closed: undefined, pos: value, idBoard: undefined });
+      return updateList(user.id, list, board, {
+        name: undefined,
+        closed: undefined,
+        pos: value,
+        idBoard: undefined,
+      });
     }
     return TRELLO_NOT_FOUND();
   }

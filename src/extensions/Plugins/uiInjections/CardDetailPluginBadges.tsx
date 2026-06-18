@@ -29,7 +29,14 @@ const COLOR_MAP: Record<string, string> = {
   purple: 'bg-purple-600/20 text-purple-400 border-purple-700/40',
 };
 
-const CardDetailPluginBadges = ({ cardId, listId, boardId, cardTitle, listTitle, boardTitle }: Props) => {
+const CardDetailPluginBadges = ({
+  cardId,
+  listId,
+  boardId,
+  cardTitle,
+  listTitle,
+  boardTitle,
+}: Props) => {
   const bridge = usePluginBridgeContext();
   const [badges, setBadges] = useState<PluginBadge[]>([]);
 
@@ -48,8 +55,7 @@ const CardDetailPluginBadges = ({ cardId, listId, boardId, cardTitle, listTitle,
         const all: PluginBadge[] = [];
         for (const result of results) {
           if (Array.isArray(result)) all.push(...(result as PluginBadge[]));
-          else if (result && typeof result === 'object')
-            all.push(result as PluginBadge);
+          else if (result && typeof result === 'object') all.push(result as PluginBadge);
         }
         setBadges(all);
       })
@@ -78,11 +84,7 @@ const CardDetailPluginBadges = ({ cardId, listId, boardId, cardTitle, listTitle,
             title={badge.title}
           >
             {badge.icon && (
-              <img
-                src={badge.icon}
-                alt=""
-                className="mr-0.5 h-3.5 w-3.5 shrink-0 object-contain"
-              />
+              <img src={badge.icon} alt="" className="mr-0.5 h-3.5 w-3.5 shrink-0 object-contain" />
             )}
             {badge.text}
           </span>

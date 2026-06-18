@@ -16,7 +16,7 @@ interface Props {
 function formatResponseTime(
   status: string | null | undefined,
   responseTimeMs: number | null | undefined,
-  errorMessage: string | null | undefined,
+  errorMessage: string | null | undefined
 ): string {
   if (!status || status === 'unknown') return '—';
   if (status === 'red') {
@@ -45,7 +45,7 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
   const responseTime = formatResponseTime(
     result?.status,
     result?.responseTimeMs,
-    result?.errorMessage,
+    result?.errorMessage
   );
 
   return (
@@ -100,7 +100,9 @@ export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
       <IconButton
         type="button"
         variant="ghost"
-        onClick={() => { onRemove(entry.id); }}
+        onClick={() => {
+          onRemove(entry.id);
+        }}
         disabled={isProbing}
         aria-label={`Remove ${entry.name}`}
         title={`Remove ${entry.name}`}

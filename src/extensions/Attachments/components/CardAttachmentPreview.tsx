@@ -15,14 +15,29 @@ interface Props {
 
 /** Deterministic muted background colour derived from the board name. */
 function boardColor(name: string | null): string {
-  const palette: string[] = ['#3b5998','#1da1f2','#0077b5','#e4405f','#ff6600','#6f42c1','#20c997','#fd7e14'];
+  const palette: string[] = [
+    '#3b5998',
+    '#1da1f2',
+    '#0077b5',
+    '#e4405f',
+    '#ff6600',
+    '#6f42c1',
+    '#20c997',
+    '#fd7e14',
+  ];
   if (!name) return palette[0] ?? '#3b5998';
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (name.codePointAt(i) ?? 0) + ((hash << 5) - hash);
   return palette[Math.abs(hash) % palette.length] ?? '#3b5998';
 }
 
-export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, onDelete }: Props): React.ReactElement {
+export function CardAttachmentPreview({
+  attachmentId,
+  card,
+  cardUrl,
+  canWrite,
+  onDelete,
+}: Props): React.ReactElement {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -37,7 +52,9 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('mousedown', handler); };
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
   }, [menuOpen]);
 
   const initials = (card.board_name ?? '?').slice(0, 2).toUpperCase();
@@ -52,7 +69,9 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
       {/* Clickable body */}
       <button
         type="button"
-        onClick={() => { window.open(cardUrl, '_blank', 'noopener,noreferrer'); }}
+        onClick={() => {
+          window.open(cardUrl, '_blank', 'noopener,noreferrer');
+        }}
         className="flex-1 text-left p-2.5 min-w-0"
       >
         {/* Board avatar + board name + list name */}
@@ -64,7 +83,9 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
             {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold text-subtle truncate leading-tight">{card.board_name ?? ''}</p>
+            <p className="text-[10px] font-semibold text-subtle truncate leading-tight">
+              {card.board_name ?? ''}
+            </p>
             {card.list_name && (
               <p className="text-[10px] text-muted truncate leading-tight">{card.list_name}</p>
             )}
@@ -97,7 +118,10 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
           <div ref={menuRef} className="relative">
             <button
               type="button"
-              onClick={() => { setMenuOpen((v) => !v); setConfirmDelete(false); }}
+              onClick={() => {
+                setMenuOpen((v) => !v);
+                setConfirmDelete(false);
+              }}
               className="flex items-center gap-0.5 text-muted hover:text-subtle rounded px-1 py-0.5 hover:bg-bg-overlay transition-colors"
               aria-label={translations['attachments.cardAttachment.optionsAria']}
             >
@@ -112,14 +136,20 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => { setMenuOpen(false); setConfirmDelete(false); onDelete(attachmentId); }}
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setConfirmDelete(false);
+                          onDelete(attachmentId);
+                        }}
                         className="text-[11px] text-danger hover:text-danger"
                       >
                         {translations['attachments.item.delete.yes']}
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setConfirmDelete(false); }}
+                        onClick={() => {
+                          setConfirmDelete(false);
+                        }}
                         className="text-[11px] text-muted hover:text-subtle"
                       >
                         {translations['attachments.item.delete.no']}
@@ -129,7 +159,9 @@ export function CardAttachmentPreview({ attachmentId, card, cardUrl, canWrite, o
                 ) : (
                   <button
                     type="button"
-                    onClick={() => { setConfirmDelete(true); }}
+                    onClick={() => {
+                      setConfirmDelete(true);
+                    }}
                     className="w-full text-left px-3 py-1.5 text-xs text-danger hover:bg-bg-overlay hover:text-danger"
                   >
                     Remove

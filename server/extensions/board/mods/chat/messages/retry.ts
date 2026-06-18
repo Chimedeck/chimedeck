@@ -20,7 +20,7 @@ export interface BoardChatEmbeddingRetryPayload {
 }
 
 export async function enqueueBoardChatEmbeddingRetry(
-  payload: BoardChatEmbeddingRetryPayload,
+  payload: BoardChatEmbeddingRetryPayload
 ): Promise<void> {
   await boardChatRetryDeps.pubsub.publish(RETRY_QUEUE_KEY, JSON.stringify(payload));
 }
@@ -32,7 +32,8 @@ export async function retryBoardChatEmbedding({
   messageId: string;
   boardId: string;
 }): Promise<void> {
-  const message = (await boardChatRetryDeps.db('board_chat_messages')
+  const message = (await boardChatRetryDeps
+    .db('board_chat_messages')
     .where({ id: messageId, board_id: boardId })
     .first()) as BoardChatMessage | undefined;
 
@@ -40,7 +41,8 @@ export async function retryBoardChatEmbedding({
     throw new Error('board-chat-message-not-found');
   }
 
-  const existingVector = await boardChatRetryDeps.db('board_chat_message_vectors')
+  const existingVector = await boardChatRetryDeps
+    .db('board_chat_message_vectors')
     .where({ message_id: messageId, board_id: boardId })
     .first();
 

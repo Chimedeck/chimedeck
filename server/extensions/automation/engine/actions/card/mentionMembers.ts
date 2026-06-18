@@ -23,11 +23,16 @@ export const cardMentionMembersAction: ActionHandler = {
     if (!card) throw new Error('card-not-found');
 
     // Resolve display names for all requested members.
-    const users = await trx('users').whereIn('id', config.memberIds).select('id', 'display_name', 'full_name');
+    const users = await trx('users')
+      .whereIn('id', config.memberIds)
+      .select('id', 'display_name', 'full_name');
     if (users.length === 0) throw new Error('mention-members-not-found');
 
     const mentions = users
-      .map((u: { display_name?: string; full_name?: string }) => `@${u.display_name ?? u.full_name ?? 'unknown'}`)
+      .map(
+        (u: { display_name?: string; full_name?: string }) =>
+          `@${u.display_name ?? u.full_name ?? 'unknown'}`
+      )
       .join(' ');
 
     const content = config.text ? `${mentions} ${config.text}` : mentions;

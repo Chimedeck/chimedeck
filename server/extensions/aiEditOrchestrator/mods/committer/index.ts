@@ -9,7 +9,10 @@ export const committerDeps = {
    * Run a shell command and return stdout.
    * [why] Injected for testability — tests can mock git commands.
    */
-  exec: async (cmd: string[], cwd?: string): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
+  exec: async (
+    cmd: string[],
+    cwd?: string
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
     const proc = Bun.spawnSync({
       cmd,
       cwd,
@@ -99,18 +102,12 @@ export async function commit({
   // 3. Create commit
   // [why] Append runId to commit message for traceability
   const fullMessage = `${message}\n\n[ai-edit-run: ${runId}]`;
-  const commitResult = await committerDeps.exec(
-    ['git', 'commit', '-m', fullMessage],
-    repoRoot,
-  );
+  const commitResult = await committerDeps.exec(['git', 'commit', '-m', fullMessage], repoRoot);
   if (commitResult.exitCode !== 0) {
     // [why] Nothing to commit means all files were already committed
     if (commitResult.stderr.includes('nothing to commit')) {
       // Get the current HEAD hash
-      const headResult = await committerDeps.exec(
-        ['git', 'rev-parse', 'HEAD'],
-        repoRoot,
-      );
+      const headResult = await committerDeps.exec(['git', 'rev-parse', 'HEAD'], repoRoot);
       return {
         status: 200,
         data: {
@@ -129,18 +126,12 @@ export async function commit({
   }
 
   // 4. Get the commit hash
-  const hashResult = await committerDeps.exec(
-    ['git', 'rev-parse', 'HEAD'],
-    repoRoot,
-  );
+  const hashResult = await committerDeps.exec(['git', 'rev-parse', 'HEAD'], repoRoot);
   const commitHash = hashResult.stdout.trim();
 
   // 5. Push if requested
   if (push) {
-    const pushResult = await committerDeps.exec(
-      ['git', 'push', 'origin', 'HEAD'],
-      repoRoot,
-    );
+    const pushResult = await committerDeps.exec(['git', 'push', 'origin', 'HEAD'], repoRoot);
     if (pushResult.exitCode !== 0) {
       // [why] Push failure is not fatal — the commit exists locally
       // and can be pushed manually or on retry.

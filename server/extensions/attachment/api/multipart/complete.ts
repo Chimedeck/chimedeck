@@ -34,13 +34,16 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   if (!body.uploadId || !body.key || !Array.isArray(body.parts) || body.parts.length === 0) {
     return Response.json(
       { name: 'bad-request', data: { message: 'uploadId, key, and parts[] are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -67,8 +70,11 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
     .first();
   if (!attachment) {
     return Response.json(
-      { name: 'attachment-not-found', data: { message: 'No pending attachment matches the provided key' } },
-      { status: 404 },
+      {
+        name: 'attachment-not-found',
+        data: { message: 'No pending attachment matches the provided key' },
+      },
+      { status: 404 }
     );
   }
 
@@ -89,7 +95,7 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
         name: 'invalid-multipart-parts',
         data: { message: 'Each multipart part must include a non-empty ETag' },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -100,13 +106,16 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
         Key: body.key,
         UploadId: body.uploadId,
         MultipartUpload: { Parts: completeParts },
-      }),
+      })
     );
   } catch (err: unknown) {
     console.error('[multipart/complete] S3 error:', err);
     return Response.json(
-      { name: 'multipart-complete-failed', data: { message: 'Failed to complete multipart upload' } },
-      { status: 502 },
+      {
+        name: 'multipart-complete-failed',
+        data: { message: 'Failed to complete multipart upload' },
+      },
+      { status: 502 }
     );
   }
 
@@ -126,7 +135,11 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_added', entity_id: resolvedCardId, payload: { attachmentId: attachment.id } }),
+      JSON.stringify({
+        type: 'attachment_added',
+        entity_id: resolvedCardId,
+        payload: { attachmentId: attachment.id },
+      })
     )
     .catch(() => {});
 

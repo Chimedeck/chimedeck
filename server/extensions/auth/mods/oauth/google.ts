@@ -14,11 +14,7 @@ interface ExchangeResult {
   name?: string;
 }
 
-export async function exchangeGoogleCode({
-  code,
-}: {
-  code: string;
-}): Promise<ExchangeResult> {
+export async function exchangeGoogleCode({ code }: { code: string }): Promise<ExchangeResult> {
   // Exchange code for tokens.
   const tokenRes = await fetch(oauthConfig.google.tokenUrl, {
     method: 'POST',

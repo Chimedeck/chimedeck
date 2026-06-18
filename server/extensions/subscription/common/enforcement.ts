@@ -1,4 +1,8 @@
-import { getByWorkspaceId, getOrCreateByWorkspaceId, upsertWorkspaceSubscription } from './subscriptionRepo';
+import {
+  getByWorkspaceId,
+  getOrCreateByWorkspaceId,
+  upsertWorkspaceSubscription,
+} from './subscriptionRepo';
 import type { WorkspaceSubscription } from './types';
 
 const PAST_DUE_GRACE_MS = 10 * 24 * 60 * 60 * 1000;
@@ -27,7 +31,9 @@ function isPastDueBeyondGrace(subscription: WorkspaceSubscription): boolean {
   return Date.now() - periodEnd.valueOf() > PAST_DUE_GRACE_MS;
 }
 
-async function downgradePastDueWorkspaceIfNeeded(workspaceId: string): Promise<WorkspaceSubscription> {
+async function downgradePastDueWorkspaceIfNeeded(
+  workspaceId: string
+): Promise<WorkspaceSubscription> {
   const current = await getOrCreateByWorkspaceId(workspaceId);
 
   if (!isPastDueBeyondGrace(current)) return current;
@@ -44,9 +50,10 @@ async function downgradePastDueWorkspaceIfNeeded(workspaceId: string): Promise<W
 }
 
 export async function getWorkspaceBillingEnforcement(
-  workspaceId: string,
+  workspaceId: string
 ): Promise<WorkspaceBillingEnforcement> {
-  const subscription = (await getByWorkspaceId(workspaceId)) ?? (await getOrCreateByWorkspaceId(workspaceId));
+  const subscription =
+    (await getByWorkspaceId(workspaceId)) ?? (await getOrCreateByWorkspaceId(workspaceId));
   const effectiveSubscription = isPastDueBeyondGrace(subscription)
     ? await downgradePastDueWorkspaceIfNeeded(workspaceId)
     : subscription;

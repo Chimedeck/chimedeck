@@ -3,11 +3,14 @@
 // Missing row defaults to notifications_enabled: true (opt-out model).
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../../middlewares/boardVisibility';
 
 export async function handleGetBoardNotificationPreference(
   req: Request,
-  boardId: string,
+  boardId: string
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
@@ -19,12 +22,8 @@ export async function handleGetBoardNotificationPreference(
   // Non-participants (e.g. admins who can view a board via workspace visibility)
   // still default to OFF unless they explicitly opt in.
   const [boardMember, boardGuest] = await Promise.all([
-    db('board_members')
-      .where({ board_id: resolvedBoardId, user_id: userId })
-      .first(),
-    db('board_guest_access')
-      .where({ board_id: resolvedBoardId, user_id: userId })
-      .first(),
+    db('board_members').where({ board_id: resolvedBoardId, user_id: userId }).first(),
+    db('board_guest_access').where({ board_id: resolvedBoardId, user_id: userId }).first(),
   ]);
 
   const row = await db('board_notification_preferences')

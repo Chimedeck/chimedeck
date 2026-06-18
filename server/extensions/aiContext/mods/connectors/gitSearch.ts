@@ -7,18 +7,28 @@ import { GIT_LOG_DEPTH, MAX_CHUNKS_PER_CONNECTOR } from '../../common/config';
 
 /** Git operations — injected for testability. */
 export interface GitOps {
-  log: (repoRoot: string, depth: number, focusPaths?: string[]) => Promise<{ stdout: string; exitCode: number }>;
+  log: (
+    repoRoot: string,
+    depth: number,
+    focusPaths?: string[]
+  ) => Promise<{ stdout: string; exitCode: number }>;
 }
 
 /** Production implementation using Bun.spawn. */
 export const liveGitOps: GitOps = {
   log: async (repoRoot: string, depth: number, focusPaths?: string[]) => {
-    const pathArgs = focusPaths && focusPaths.length > 0
-      ? ['--', ...focusPaths]
-      : [];
+    const pathArgs = focusPaths && focusPaths.length > 0 ? ['--', ...focusPaths] : [];
 
     const formatStr = '%H%n%s%n';
-    const cmd = ['git', 'log', `-${depth}`, '--name-only', `--format=${formatStr}`, '---', ...pathArgs];
+    const cmd = [
+      'git',
+      'log',
+      `-${depth}`,
+      '--name-only',
+      `--format=${formatStr}`,
+      '---',
+      ...pathArgs,
+    ];
 
     const proc = Bun.spawn(cmd, {
       cwd: repoRoot,
@@ -51,7 +61,10 @@ function parseGitLog(raw: string): GitCommit[] {
 
     const hash = lines[0].trim();
     const message = lines[1].trim();
-    const files = lines.slice(2).map(l => l.trim()).filter(Boolean);
+    const files = lines
+      .slice(2)
+      .map((l) => l.trim())
+      .filter(Boolean);
 
     commits.push({ hash, message, files });
   }
@@ -63,7 +76,10 @@ function parseGitLog(raw: string): GitCommit[] {
  * Compute relevance of a commit to the intent.
  */
 function commitRelevance(commit: GitCommit, intent: string): number {
-  const intentWords = intent.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const intentWords = intent
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
   if (intentWords.length === 0) return 0;
 
   const searchText = `${commit.message} ${commit.files.join(' ')}`.toLowerCase();
@@ -131,7 +147,10 @@ export async function searchGit({
     return results;
   } catch (error) {
     // [why] Catch-all ensures gitSearch never crashes the pipeline.
-    console.warn('[aiContext/gitSearch] Unexpected error:', error instanceof Error ? error.message : String(error));
+    console.warn(
+      '[aiContext/gitSearch] Unexpected error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return [];
   }
 }

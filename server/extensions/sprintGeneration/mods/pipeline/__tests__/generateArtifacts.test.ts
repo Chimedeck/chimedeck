@@ -113,7 +113,7 @@ describe('generateArtifacts', () => {
     }
 
     // All 4 original requirements should be covered at least once
-    const allReqs = result.data!.artifacts.flatMap(a => a.requirements);
+    const allReqs = result.data!.artifacts.flatMap((a) => a.requirements);
     expect(allReqs.length).toBeGreaterThanOrEqual(4);
   });
 

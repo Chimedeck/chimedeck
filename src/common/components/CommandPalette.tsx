@@ -144,14 +144,16 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     },
-    [onClose],
+    [onClose]
   );
 
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleGlobalKeyDown);
     }
-    return () => { document.removeEventListener('keydown', handleGlobalKeyDown); };
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
   }, [isOpen, handleGlobalKeyDown]);
 
   // Re-focus input when palette opens and reset query
@@ -241,7 +243,9 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
       {/* Panel */}
       <div
         className="w-full max-w-xl overflow-hidden rounded-xl bg-bg-surface shadow-2xl"
-        onClick={(e) => { e.stopPropagation(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
       >
         {/* Search input */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -250,7 +254,9 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+            }}
             onKeyDown={handleInputKeyDown}
             placeholder={scopeMeta.placeholder}
             className="flex-1 bg-transparent text-sm text-base placeholder:text-subtle outline-none"
@@ -267,15 +273,19 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
           {SCOPES.map((s, idx) => (
             <button
               key={s.value}
-              ref={(el) => { scopeTabRefs.current[idx] = el; }}
+              ref={(el) => {
+                scopeTabRefs.current[idx] = el;
+              }}
               role="tab"
               aria-selected={scope === s.value}
-              onClick={() => { changeScope(s.value); }}
-              onKeyDown={(e) => { handleTabKeyDown(e, idx); }}
+              onClick={() => {
+                changeScope(s.value);
+              }}
+              onKeyDown={(e) => {
+                handleTabKeyDown(e, idx);
+              }}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                scope === s.value
-                  ? 'bg-primary text-inverse'
-                  : 'text-muted hover:bg-bg-overlay'
+                scope === s.value ? 'bg-primary text-inverse' : 'text-muted hover:bg-bg-overlay'
               }`}
             >
               {s.label}
@@ -298,21 +308,19 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           {/* Loading */}
           {!tooShort && query.length >= 2 && loading && (
-            <p className="px-3 py-2 text-sm text-muted">{translations['CommandPalette.searching']}</p>
+            <p className="px-3 py-2 text-sm text-muted">
+              {translations['CommandPalette.searching']}
+            </p>
           )}
 
           {/* Error */}
           {!loading && error && (
-            <p className="px-3 py-2 text-sm text-danger">
-              {translations['CommandPalette.error']}
-            </p>
+            <p className="px-3 py-2 text-sm text-danger">{translations['CommandPalette.error']}</p>
           )}
 
           {/* Empty state (scope-aware) */}
           {!loading && !error && query.length >= 2 && !hasResults && (
-            <p className="px-3 py-2 text-sm text-muted">
-              {scopeMeta.emptyText}
-            </p>
+            <p className="px-3 py-2 text-sm text-muted">{scopeMeta.emptyText}</p>
           )}
 
           {/* Results — All scope shows grouped sections */}
@@ -330,8 +338,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                         key={r.id}
                         result={r}
                         onSelect={handleSelect}
-                        buttonRef={(el) => { resultRefs.current[flatIdx] = el; }}
-                        onKeyDown={(e) => { handleResultKeyDown(e, flatIdx); }}
+                        buttonRef={(el) => {
+                          resultRefs.current[flatIdx] = el;
+                        }}
+                        onKeyDown={(e) => {
+                          handleResultKeyDown(e, flatIdx);
+                        }}
                       />
                     );
                   })}
@@ -349,8 +361,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                         key={r.id}
                         result={r}
                         onSelect={handleSelect}
-                        buttonRef={(el) => { resultRefs.current[flatIdx] = el; }}
-                        onKeyDown={(e) => { handleResultKeyDown(e, flatIdx); }}
+                        buttonRef={(el) => {
+                          resultRefs.current[flatIdx] = el;
+                        }}
+                        onKeyDown={(e) => {
+                          handleResultKeyDown(e, flatIdx);
+                        }}
                       />
                     );
                   })}
@@ -367,8 +383,12 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
                   key={r.id}
                   result={r}
                   onSelect={handleSelect}
-                  buttonRef={(el) => { resultRefs.current[idx] = el; }}
-                  onKeyDown={(e) => { handleResultKeyDown(e, idx); }}
+                  buttonRef={(el) => {
+                    resultRefs.current[idx] = el;
+                  }}
+                  onKeyDown={(e) => {
+                    handleResultKeyDown(e, idx);
+                  }}
                 />
               ))}
             </section>
@@ -378,14 +398,16 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Footer hint */}
         <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-subtle">
           <span>
-            <kbd className="rounded bg-bg-overlay px-1 text-muted">↑↓</kbd>
-            {' '}{translations['CommandPalette.footerNavigate']}
+            <kbd className="rounded bg-bg-overlay px-1 text-muted">↑↓</kbd>{' '}
+            {translations['CommandPalette.footerNavigate']}
             {' · '}
-            <kbd className="rounded bg-bg-overlay px-1 text-muted">↵</kbd>
-            {' '}{translations['CommandPalette.footerOpen']}
+            <kbd className="rounded bg-bg-overlay px-1 text-muted">↵</kbd>{' '}
+            {translations['CommandPalette.footerOpen']}
           </span>
           <span>
-            {translations['CommandPalette.footerEscPrefix']} <kbd className="rounded bg-bg-overlay px-1 text-muted">Esc</kbd> {translations['CommandPalette.footerEscClose']}
+            {translations['CommandPalette.footerEscPrefix']}{' '}
+            <kbd className="rounded bg-bg-overlay px-1 text-muted">Esc</kbd>{' '}
+            {translations['CommandPalette.footerEscClose']}
           </span>
         </div>
       </div>

@@ -102,7 +102,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
         setCheckingId(null);
       }
     },
-    [dispatch, navigate, onSelect, token, workspaceId],
+    [dispatch, navigate, onSelect, token, workspaceId]
   );
 
   const tooShort = query.length > 0 && query.length < 2;
@@ -125,9 +125,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       )}
 
       {tooShort && (
-        <p className="px-3 py-2 text-sm text-muted">
-          Type at least 2 characters to search.
-        </p>
+        <p className="px-3 py-2 text-sm text-muted">Type at least 2 characters to search.</p>
       )}
 
       {!tooShort && query.length >= 2 && loading && (
@@ -149,10 +147,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
           </p>
           {boards.map((r) => (
             <div key={r.id} className="relative">
-              <SearchResultItem
-                result={r}
-                onSelect={handleSelect}
-              />
+              <SearchResultItem result={r} onSelect={handleSelect} />
               {/* Subtle spinner while access check is in flight */}
               {checkingId === r.id && (
                 <span aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2">

@@ -5,8 +5,21 @@ import { describe, it, expect, mock, beforeEach } from 'bun:test';
 
 // [why] Shared mock DB — ALL test files mock common/db identically to avoid
 // cross-file mock.module contamination in Bun.
-import { sharedMockDb, sharedMockChain, sharedMockFirst, resetMockDb } from '../../../__tests__/mockDb';
-import { mockCreateSprintGenRun, mockHasSucceededRun, mockCreateGeneratedSprintCard, mockGetGeneratedSprintCards, mockGetSprintGenRun, mockUpdateSprintGenRunStatus, persistenceMockModule } from '../../../__tests__/mockPersistence';
+import {
+  sharedMockDb,
+  sharedMockChain,
+  sharedMockFirst,
+  resetMockDb,
+} from '../../../__tests__/mockDb';
+import {
+  mockCreateSprintGenRun,
+  mockHasSucceededRun,
+  mockCreateGeneratedSprintCard,
+  mockGetGeneratedSprintCards,
+  mockGetSprintGenRun,
+  mockUpdateSprintGenRunStatus,
+  persistenceMockModule,
+} from '../../../__tests__/mockPersistence';
 
 const mockEmitStarted = mock(async () => {});
 
@@ -93,7 +106,9 @@ describe('handleGenerateSprint', () => {
     const req = makeRequest({
       currentUser: { id: 'user-1' },
       workspaceId: 'ws-1',
-      json: async () => { throw new Error('Invalid JSON'); },
+      json: async () => {
+        throw new Error('Invalid JSON');
+      },
     });
     const response = await handleGenerateSprint(req, 'card-1');
     expect(response.status).toBe(400);
@@ -145,7 +160,9 @@ describe('handleGenerateSprint', () => {
 
   it('handles unexpected errors with 500', async () => {
     sharedMockFirst.mockReset();
-    sharedMockFirst.mockImplementation(async () => { throw new Error('DB connection lost'); });
+    sharedMockFirst.mockImplementation(async () => {
+      throw new Error('DB connection lost');
+    });
     const { handleGenerateSprint } = await import('../index');
     const response = await handleGenerateSprint(makeAuthRequest(), 'card-1');
     expect(response.status).toBe(500);

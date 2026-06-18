@@ -18,7 +18,7 @@ export async function handleDuplicateBoard(req: Request, boardId: string): Promi
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -41,12 +41,19 @@ export async function handleDuplicateBoard(req: Request, boardId: string): Promi
   if (result.status !== 201) {
     return Response.json(
       { error: { code: result.name ?? 'board-duplicate-failed', message: 'Duplication failed' } },
-      { status: result.status },
+      { status: result.status }
     );
   }
 
   // Stub event emission.
-  const newBoardId = result.data?.id as string; await dispatchEvent({ type: 'board_created', boardId: newBoardId, entityId: newBoardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { originalBoardId: boardId } });
+  const newBoardId = result.data?.id as string;
+  await dispatchEvent({
+    type: 'board_created',
+    boardId: newBoardId,
+    entityId: newBoardId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { originalBoardId: boardId },
+  });
 
   return Response.json({ data: result.data }, { status: 201 });
 }

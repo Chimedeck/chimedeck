@@ -50,51 +50,76 @@ interface ValidatedItem {
 function boardIdMatchesClaims(
   incoming: string,
   claimsBoardId: string,
-  claimsCanonicalId: string | undefined,
+  claimsCanonicalId: string | undefined
 ): boolean {
-  return incoming === claimsBoardId || (claimsCanonicalId !== undefined && incoming === claimsCanonicalId);
+  return (
+    incoming === claimsBoardId ||
+    (claimsCanonicalId !== undefined && incoming === claimsCanonicalId)
+  );
 }
 
 function validateBatchItems(
   items: BatchItem[],
   boardId: string,
-  boardCanonicalId: string | undefined,
+  boardCanonicalId: string | undefined
 ): Response | null {
   for (const item of items) {
     if (item.boardId && !boardIdMatchesClaims(item.boardId, boardId, boardCanonicalId)) {
       return Response.json(
-        { error: { code: 'forbidden', message: `boardId in item ${item.subId} does not match token scope` } },
-        { status: 403 },
+        {
+          error: {
+            code: 'forbidden',
+            message: `boardId in item ${item.subId} does not match token scope`,
+          },
+        },
+        { status: 403 }
       );
     }
     if (!VALID_SCOPES.includes(item.scope)) {
       return Response.json(
-        { error: { code: 'invalid-param', message: `scope in item ${item.subId} must be one of: card, list, board, member` } },
-        { status: 400 },
+        {
+          error: {
+            code: 'invalid-param',
+            message: `scope in item ${item.subId} must be one of: card, list, board, member`,
+          },
+        },
+        { status: 400 }
       );
     }
     if (!item.resourceId) {
       return Response.json(
-        { error: { code: 'missing-param', message: `resourceId is required in item ${item.subId}` } },
-        { status: 400 },
+        {
+          error: { code: 'missing-param', message: `resourceId is required in item ${item.subId}` },
+        },
+        { status: 400 }
       );
     }
     if (!item.key) {
       return Response.json(
         { error: { code: 'missing-param', message: `key is required in item ${item.subId}` } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (!VALID_VISIBILITY.includes(item.visibility)) {
       return Response.json(
-        { error: { code: 'invalid-param', message: `visibility in item ${item.subId} must be private or shared` } },
-        { status: 400 },
+        {
+          error: {
+            code: 'invalid-param',
+            message: `visibility in item ${item.subId} must be private or shared`,
+          },
+        },
+        { status: 400 }
       );
     }
     if (item.visibility === 'private' && !item.userId) {
       return Response.json(
-        { error: { code: 'missing-param', message: `userId is required for private visibility in item ${item.subId}` } },
-        { status: 400 },
+        {
+          error: {
+            code: 'missing-param',
+            message: `userId is required for private visibility in item ${item.subId}`,
+          },
+        },
+        { status: 400 }
       );
     }
   }
@@ -105,7 +130,7 @@ function validateBatchItems(
 
 async function resolveCanonicalIds(
   items: BatchItem[],
-  boardId: string,
+  boardId: string
 ): Promise<Array<{ subId: string; canonicalResourceId: string; error?: string }>> {
   return Promise.all(
     items.map(async (item) => {
@@ -113,7 +138,7 @@ async function resolveCanonicalIds(
         const canonicalResourceId = await validateResourceBelongsToBoard(
           item.scope,
           item.resourceId,
-          boardId,
+          boardId
         );
         return { subId: item.subId, canonicalResourceId };
       } catch (err) {
@@ -126,7 +151,7 @@ async function resolveCanonicalIds(
         }
         throw err;
       }
-    }),
+    })
   );
 }
 
@@ -135,7 +160,7 @@ async function resolveCanonicalIds(
 function buildBatchQuery(
   pluginId: string,
   boardId: string,
-  validItems: ValidatedItem[],
+  validItems: ValidatedItem[]
 ): { clauses: string[]; params: unknown[] } {
   const clauses: string[] = [];
   const params: unknown[] = [];
@@ -143,12 +168,19 @@ function buildBatchQuery(
   for (const { item, canonicalResourceId } of validItems) {
     if (item.visibility === 'private') {
       clauses.push(
-        '(plugin_id = ? AND scope = ? AND resource_id = ? AND board_id = ? AND key = ? AND user_id = ?)',
+        '(plugin_id = ? AND scope = ? AND resource_id = ? AND board_id = ? AND key = ? AND user_id = ?)'
       );
-      params.push(pluginId, item.scope, canonicalResourceId, boardId, item.key, item.userId ?? null);
+      params.push(
+        pluginId,
+        item.scope,
+        canonicalResourceId,
+        boardId,
+        item.key,
+        item.userId ?? null
+      );
     } else {
       clauses.push(
-        '(plugin_id = ? AND scope = ? AND resource_id = ? AND board_id = ? AND key = ? AND user_id IS NULL)',
+        '(plugin_id = ? AND scope = ? AND resource_id = ? AND board_id = ? AND key = ? AND user_id IS NULL)'
       );
       params.push(pluginId, item.scope, canonicalResourceId, boardId, item.key);
     }
@@ -167,7 +199,7 @@ function mapRowsToResults(
     user_id: string | null;
     value: unknown;
   }>,
-  validItems: ValidatedItem[],
+  validItems: ValidatedItem[]
 ): BatchResult[] {
   const subIdByCompositeKey = new Map<string, string>();
   for (const { item, canonicalResourceId } of validItems) {
@@ -208,15 +240,17 @@ export async function handleBatchGetPluginData(req: Request): Promise<Response> 
   } catch {
     return Response.json(
       { error: { code: 'invalid-json', message: 'Request body must be valid JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const items = body.items;
   if (!items || !Array.isArray(items) || items.length === 0) {
     return Response.json(
-      { error: { code: 'missing-param', message: 'items array is required and must not be empty' } },
-      { status: 400 },
+      {
+        error: { code: 'missing-param', message: 'items array is required and must not be empty' },
+      },
+      { status: 400 }
     );
   }
 

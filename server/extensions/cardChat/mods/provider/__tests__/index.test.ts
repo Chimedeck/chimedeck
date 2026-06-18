@@ -17,11 +17,13 @@ beforeEach(() => {
   fetchCalls = [];
   fetchImpl = (input, init) => {
     fetchCalls.push({ input, init });
-    return Promise.resolve(Response.json({
-      model: 'gpt-4.1-mini',
-      choices: [{ message: { content: 'Here is your refined requirement.' } }],
-      usage: { prompt_tokens: 150, completion_tokens: 80, total_tokens: 230 },
-    }));
+    return Promise.resolve(
+      Response.json({
+        model: 'gpt-4.1-mini',
+        choices: [{ message: { content: 'Here is your refined requirement.' } }],
+        usage: { prompt_tokens: 150, completion_tokens: 80, total_tokens: 230 },
+      })
+    );
   };
 
   cardChatProviderDeps.getConfig = () => {
@@ -91,10 +93,9 @@ describe('requestCardChatCompletion', () => {
   it('maps rate limit responses (429)', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { error: { message: 'Rate limit hit. Try again in 30s.' } },
-        { status: 429 },
-      ));
+      return Promise.resolve(
+        Response.json({ error: { message: 'Rate limit hit. Try again in 30s.' } }, { status: 429 })
+      );
     };
 
     const result = await requestCardChatCompletion({
@@ -109,10 +110,9 @@ describe('requestCardChatCompletion', () => {
   it('maps provider authentication failures (401)', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { error: { message: 'Invalid API key' } },
-        { status: 401 },
-      ));
+      return Promise.resolve(
+        Response.json({ error: { message: 'Invalid API key' } }, { status: 401 })
+      );
     };
 
     const result = await requestCardChatCompletion({
@@ -126,10 +126,7 @@ describe('requestCardChatCompletion', () => {
   it('maps provider authentication failures (403)', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { error: { message: 'Forbidden' } },
-        { status: 403 },
-      ));
+      return Promise.resolve(Response.json({ error: { message: 'Forbidden' } }, { status: 403 }));
     };
 
     const result = await requestCardChatCompletion({
@@ -168,10 +165,12 @@ describe('requestCardChatCompletion', () => {
   it('rejects responses with empty message content', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json({
-        model: 'gpt-4.1-mini',
-        choices: [{ message: { content: '' } }],
-      }));
+      return Promise.resolve(
+        Response.json({
+          model: 'gpt-4.1-mini',
+          choices: [{ message: { content: '' } }],
+        })
+      );
     };
 
     const result = await requestCardChatCompletion({
@@ -185,10 +184,9 @@ describe('requestCardChatCompletion', () => {
   it('maps generic server error (500) from provider', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { error: { message: 'Internal server error' } },
-        { status: 500 },
-      ));
+      return Promise.resolve(
+        Response.json({ error: { message: 'Internal server error' } }, { status: 500 })
+      );
     };
 
     const result = await requestCardChatCompletion({
@@ -203,10 +201,7 @@ describe('requestCardChatCompletion', () => {
   it('uses provider message field as fallback error text', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { message: 'Something went wrong' },
-        { status: 400 },
-      ));
+      return Promise.resolve(Response.json({ message: 'Something went wrong' }, { status: 400 }));
     };
 
     const result = await requestCardChatCompletion({
@@ -236,9 +231,11 @@ describe('requestCardChatCompletion', () => {
   it('falls back to config model when response model is missing', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json({
-        choices: [{ message: { content: 'No model field.' } }],
-      }));
+      return Promise.resolve(
+        Response.json({
+          choices: [{ message: { content: 'No model field.' } }],
+        })
+      );
     };
 
     const result = await requestCardChatCompletion({

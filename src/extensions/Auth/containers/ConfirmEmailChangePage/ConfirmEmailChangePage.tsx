@@ -27,11 +27,12 @@ export default function ConfirmEmailChangePage() {
 
   useEffect(() => {
     if (status === 'success') {
-      const timer = setTimeout(
-        () => { navigate('/login', { replace: true, state: { toast: translations.changeEmail.confirmed } }); },
-        1500,
-      );
-      return () => { clearTimeout(timer); };
+      const timer = setTimeout(() => {
+        navigate('/login', { replace: true, state: { toast: translations.changeEmail.confirmed } });
+      }, 1500);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [status, navigate]);
 
@@ -47,13 +48,9 @@ export default function ConfirmEmailChangePage() {
           <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-base mb-4">
-          {translations.changeEmail.title}
-        </h1>
+        <h1 className="text-2xl font-bold text-base mb-4">{translations.changeEmail.title}</h1>
 
-        {status === 'loading' && (
-          <p className="text-subtle">Confirming your email change…</p>
-        )}
+        {status === 'loading' && <p className="text-subtle">Confirming your email change…</p>}
 
         {status === 'success' && (
           <p className="text-success font-medium">{translations.changeEmail.confirmed}</p>

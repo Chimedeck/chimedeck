@@ -49,7 +49,10 @@ function buildToastMessage(notification: Notification): string {
 }
 
 function buildPopupCardNavigationUrl(notification: Notification): string | null {
-  const n = notification as Notification & { board_short_id?: string | null; card_short_id?: string | null };
+  const n = notification as Notification & {
+    board_short_id?: string | null;
+    card_short_id?: string | null;
+  };
   if (!notification.board_id || !notification.card_id) return null;
 
   const params = new URLSearchParams();
@@ -96,7 +99,10 @@ export default function NotificationContainer() {
         return;
       }
 
-      const n = notification as Notification & { board_short_id?: string | null; card_short_id?: string | null };
+      const n = notification as Notification & {
+        board_short_id?: string | null;
+        card_short_id?: string | null;
+      };
       if (notification.board_id) {
         navigate(boardPath({ id: notification.board_id, short_id: n.board_short_id ?? null }));
         return;
@@ -106,7 +112,7 @@ export default function NotificationContainer() {
         navigate(cardPath({ id: notification.card_id, short_id: n.card_short_id ?? null }));
       }
     },
-    [dispatch, navigate],
+    [dispatch, navigate]
   );
 
   const buildNotificationToast = useCallback(
@@ -121,7 +127,7 @@ export default function NotificationContainer() {
         },
       };
     },
-    [handlePopupNotificationClick],
+    [handlePopupNotificationClick]
   );
 
   // Fetch initial notifications on mount
@@ -211,7 +217,10 @@ export default function NotificationContainer() {
 
   const handleNavigate = useCallback(
     (notification: Notification) => {
-      const n = notification as Notification & { board_short_id?: string | null; card_short_id?: string | null };
+      const n = notification as Notification & {
+        board_short_id?: string | null;
+        card_short_id?: string | null;
+      };
       if (notification.board_id && notification.card_id) {
         const params = new URLSearchParams();
 
@@ -233,19 +242,24 @@ export default function NotificationContainer() {
         navigate(boardPath({ id: notification.board_id, short_id: n.board_short_id ?? null }));
       }
     },
-    [navigate],
+    [navigate]
   );
 
   return (
     <>
       <div ref={containerRef} className="relative">
-        <NotificationBell onClick={() => {
-          setPanelOpen((prev) => !prev);
-        }} />
+        <NotificationBell
+          onClick={() => {
+            setPanelOpen((prev) => !prev);
+          }}
+        />
         {panelOpen && (
-          <NotificationPanel onClose={() => {
-            setPanelOpen(false);
-          }} onNavigate={handleNavigate} />
+          <NotificationPanel
+            onClose={() => {
+              setPanelOpen(false);
+            }}
+            onNavigate={handleNavigate}
+          />
         )}
       </div>
 

@@ -56,7 +56,7 @@ describe('emitCardChatActivity', () => {
         sessionId: 'session-3',
         actorId: 'user-3',
         payload: { score: 85 },
-      }),
+      })
     ).resolves.toBeUndefined();
 
     expect(mockDispatchEvent).toHaveBeenCalledTimes(1);
@@ -75,16 +75,18 @@ describe('emitCardChatActivity', () => {
       payload: { question: 'What is the expected concurrency?', category: 'constraints' },
     });
 
-    expect(mockDispatchEvent).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'card_ai_question_asked',
-      entityId: 'card-4',
-      actorId: 'user-4',
-      payload: expect.objectContaining({
-        sessionId: 'session-4',
-        question: 'What is the expected concurrency?',
-        category: 'constraints',
-      }),
-    }));
+    expect(mockDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'card_ai_question_asked',
+        entityId: 'card-4',
+        actorId: 'user-4',
+        payload: expect.objectContaining({
+          sessionId: 'session-4',
+          question: 'What is the expected concurrency?',
+          category: 'constraints',
+        }),
+      })
+    );
   });
 
   it('dispatches card_ai_assist_ready_for_review with quality score', async () => {
@@ -100,14 +102,16 @@ describe('emitCardChatActivity', () => {
       payload: { qualityScore: 95, breakdown: { total: 95 } },
     });
 
-    expect(mockDispatchEvent).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'card_ai_assist_ready_for_review',
-      entityId: 'card-5',
-      actorId: 'user-5',
-      payload: expect.objectContaining({
-        sessionId: 'session-5',
-        qualityScore: 95,
-      }),
-    }));
+    expect(mockDispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'card_ai_assist_ready_for_review',
+        entityId: 'card-5',
+        actorId: 'user-5',
+        payload: expect.objectContaining({
+          sessionId: 'session-5',
+          qualityScore: 95,
+        }),
+      })
+    );
   });
 });

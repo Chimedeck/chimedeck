@@ -4,7 +4,13 @@
 // Sprint 208: Session-scoped history persistence, real-time AI progress
 // streaming via WebSocket, and write-to-card action cards with confirm/dismiss.
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { XMarkIcon, SparklesIcon, ArrowPathIcon, DocumentTextIcon, PlusIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  SparklesIcon,
+  ArrowPathIcon,
+  DocumentTextIcon,
+  PlusIcon,
+} from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
 import { socket } from '~/extensions/Realtime/client/socket';
 import type { RealtimeEvent } from '~/extensions/Realtime/client/socket';
@@ -36,7 +42,8 @@ interface Props {
 }
 
 const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }: Props) => {
-  const REFINE_SUGGESTION_PROMPT = 'Refine the card details and propose an updated card description based on the latest conversation.';
+  const REFINE_SUGGESTION_PROMPT =
+    'Refine the card details and propose an updated card description based on the latest conversation.';
 
   // ── Session state ──────────────────────────────────────────────────────
   const [currentSession, setCurrentSession] = useState<CardChatSession>(session);
@@ -132,7 +139,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
       if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => { document.removeEventListener('keydown', handleKeyDown); };
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // ── Sprint 208 — realtime AI progress subscription ────────────────────
@@ -169,9 +178,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
         const incomingCards = payload.actionCards;
         setActionCards((prev) => {
           const existingKeys = new Set(prev.map((c) => c.idempotencyKey));
-          const newCards = incomingCards.filter(
-            (c) => !existingKeys.has(c.idempotencyKey),
-          );
+          const newCards = incomingCards.filter((c) => !existingKeys.has(c.idempotencyKey));
           return newCards.length > 0 ? [...prev, ...newCards] : prev;
         });
       }
@@ -315,7 +322,8 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
 
   // ── Resume ─────────────────────────────────────────────────────────────
   const handleResume = useCallback(async (): Promise<void> => {
-    if (resuming || (currentSession.status !== 'PAUSED' && currentSession.status !== 'IDLE')) return;
+    if (resuming || (currentSession.status !== 'PAUSED' && currentSession.status !== 'IDLE'))
+      return;
 
     setResumeError(null);
     setResuming(true);
@@ -403,10 +411,8 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
       // [why] Mark as confirmed so the UI shows success state.
       setActionCards((prev) =>
         prev.map((c) =>
-          c.idempotencyKey === card.idempotencyKey
-            ? { ...c, state: 'confirmed' as const }
-            : c,
-        ),
+          c.idempotencyKey === card.idempotencyKey ? { ...c, state: 'confirmed' as const } : c
+        )
       );
 
       // [why] Also notify parent so the card description updates in the modal.
@@ -414,7 +420,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
         onDescriptionSave(card.descriptionContent);
       }
     } catch (err) {
-      setCommitError(err instanceof Error ? err.message : translations['CardChat.drawer.commitErrorFallback']);
+      setCommitError(
+        err instanceof Error ? err.message : translations['CardChat.drawer.commitErrorFallback']
+      );
     } finally {
       setCommittingCards((prev) => {
         const next = new Set(prev);
@@ -436,7 +444,11 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
     }
   };
 
-  const canSend = currentSession.status === 'ACTIVE_REFINEMENT' && !sendingMessage && !refining && composerText.trim().length > 0;
+  const canSend =
+    currentSession.status === 'ACTIVE_REFINEMENT' &&
+    !sendingMessage &&
+    !refining &&
+    composerText.trim().length > 0;
 
   return (
     // Backdrop — click to close
@@ -449,7 +461,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
       {/* Drawer panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-96 bg-bg-base border-l border-border flex flex-col shadow-2xl z-[51]"
-        onClick={(e) => { e.stopPropagation(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
         role="dialog"
         aria-label={translations['CardChat.drawer.dialogAria']}
       >
@@ -484,13 +498,22 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
           >
             {sessions.length === 0 && !sessionsLoading && (
               <option value={currentSession.id}>
-                {translations['CardChat.drawer.sessionLabel'].replace('{id}', currentSession.id.slice(0, 8))}
+                {translations['CardChat.drawer.sessionLabel'].replace(
+                  '{id}',
+                  currentSession.id.slice(0, 8)
+                )}
               </option>
             )}
             {sessions.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.id === currentSession.id ? '✓ ' : ''}
-                {translations['CardChat.drawer.sessionLabel'].replace('{id}', s.id.slice(0, 8))} — {s.last_actor_at ? new Date(s.last_actor_at).toLocaleDateString() : translations['CardChat.drawer.sessionDateNew']}
+                {translations['CardChat.drawer.sessionLabel'].replace(
+                  '{id}',
+                  s.id.slice(0, 8)
+                )} —{' '}
+                {s.last_actor_at
+                  ? new Date(s.last_actor_at).toLocaleDateString()
+                  : translations['CardChat.drawer.sessionDateNew']}
               </option>
             ))}
             <option value="__new__">{translations['CardChat.drawer.newSessionOption']}</option>
@@ -500,7 +523,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
             variant="primary"
             size="sm"
             disabled={creatingSession}
-            onClick={() => { void handleCreateSession(); }}
+            onClick={() => {
+              void handleCreateSession();
+            }}
             title={translations['CardChat.drawer.newSessionTitle']}
             className="gap-1 flex-shrink-0"
           >
@@ -512,7 +537,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
         {/* Quality score */}
         <div className="px-4 py-2 border-b border-border">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted">{translations['CardChat.drawer.qualityLabel']}</span>
+            <span className="text-xs font-medium text-muted">
+              {translations['CardChat.drawer.qualityLabel']}
+            </span>
             <div className="flex-1">
               <QualityScoreMeter score={currentSession.quality_score} />
             </div>
@@ -523,30 +550,34 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {state === 'loading' && (
             <div className="flex items-center justify-center h-24">
-              <p className="text-muted text-sm">{translations['CardChat.drawer.loadingMessages']}</p>
+              <p className="text-muted text-sm">
+                {translations['CardChat.drawer.loadingMessages']}
+              </p>
             </div>
           )}
 
           {state === 'error' && (
             <div className="flex items-center justify-center h-24">
-              <p className="text-danger text-sm">{error ?? translations['CardChat.drawer.loadErrorFallback']}</p>
+              <p className="text-danger text-sm">
+                {error ?? translations['CardChat.drawer.loadErrorFallback']}
+              </p>
             </div>
           )}
 
           {state === 'empty' && (
             <div className="flex items-center justify-center h-24">
-              <p className="text-muted text-sm">
-                {translations['CardChat.drawer.emptyState']}
-              </p>
+              <p className="text-muted text-sm">{translations['CardChat.drawer.emptyState']}</p>
             </div>
           )}
 
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex flex-col ${message.role === 'assistant' || message.role === 'system'
-                ? 'items-start'
-                : 'items-end'}`}
+              className={`flex flex-col ${
+                message.role === 'assistant' || message.role === 'system'
+                  ? 'items-start'
+                  : 'items-end'
+              }`}
             >
               <div
                 className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
@@ -559,7 +590,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
               </div>
               {(message.authorName || message.role) && (
                 <span className="mt-1 text-[10px] text-muted px-1">
-                  {message.role === 'assistant' ? translations['CardChat.drawer.aiBadge'] : message.authorName ?? message.role}
+                  {message.role === 'assistant'
+                    ? translations['CardChat.drawer.aiBadge']
+                    : (message.authorName ?? message.role)}
                 </span>
               )}
             </div>
@@ -576,12 +609,15 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                   {aiProgress ? (
                     <div className="space-y-1">
                       <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-                        {aiProgress.phase === 'thinking' && translations['CardChat.drawer.thinking']}
-                        {aiProgress.phase === 'executing_tools' && (
-                          aiProgress.toolNames && aiProgress.toolNames.length > 0
-                            ? translations['CardChat.drawer.runningTools'].replace('{tools}', aiProgress.toolNames.map((n) => n.replaceAll('_', ' ')).join(', '))
-                            : translations['CardChat.drawer.executingTools']
-                        )}
+                        {aiProgress.phase === 'thinking' &&
+                          translations['CardChat.drawer.thinking']}
+                        {aiProgress.phase === 'executing_tools' &&
+                          (aiProgress.toolNames && aiProgress.toolNames.length > 0
+                            ? translations['CardChat.drawer.runningTools'].replace(
+                                '{tools}',
+                                aiProgress.toolNames.map((n) => n.replaceAll('_', ' ')).join(', ')
+                              )
+                            : translations['CardChat.drawer.executingTools'])}
                       </p>
                       {aiProgress.message && (
                         <p className="text-xs text-muted">{aiProgress.message}</p>
@@ -612,7 +648,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                   <span className="text-[10px] font-bold text-white">!</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-red-700 dark:text-red-300">{translations['CardChat.drawer.commitErrorTitle']}</p>
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                    {translations['CardChat.drawer.commitErrorTitle']}
+                  </p>
                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">{commitError}</p>
                 </div>
               </div>
@@ -637,57 +675,79 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                       }`}
                     >
                       <div className="flex gap-2">
-                        <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
-                        }`}>
+                        <div
+                          className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            isConfirmed ? 'bg-green-600' : 'bg-indigo-600'
+                          }`}
+                        >
                           <span className="text-[10px] font-bold text-white">
                             {isConfirmed ? '✓' : translations['CardChat.drawer.aiBadge']}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-semibold ${
-                            isConfirmed ? 'text-green-700 dark:text-green-300' : 'text-indigo-700 dark:text-indigo-300'
-                          }`}>{translations['CardChat.drawer.cardAiLabel']}</p>
-                          {card.toolName === 'write_card_description' && card.descriptionContent && (
-                            <div className="mt-1">
-                              <p className={`text-xs ${
-                                isConfirmed ? 'text-green-600 dark:text-green-400' : 'text-indigo-600 dark:text-indigo-400'
-                              }`}>
-                                {isConfirmed ? translations['CardChat.drawer.appliedPrefix'] : translations['CardChat.drawer.proposedPrefix']}
-                                {card.descriptionPreview ?? translations['CardChat.drawer.descriptionUpdateFallback']}
-                              </p>
-                              {!isConfirmed && (
-                                <details className="mt-1">
-                                  <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
-                                    {translations['CardChat.drawer.viewProposedDescription']}
-                                  </summary>
-                                  <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
-                                    {card.descriptionContent}
-                                  </pre>
-                                </details>
-                              )}
-                              {!isConfirmed && (
-                                <div className="flex gap-2 mt-2">
-                                  <Button
-                                    variant="success"
-                                    size="sm"
-                                    disabled={isCommitting}
-                                    onClick={() => { void handleCommitActionCard(card); }}
-                                  >
-                                    {isCommitting ? translations['CardChat.drawer.committing'] : translations['CardChat.drawer.confirmAndCommit']}
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    disabled={isCommitting}
-                                    onClick={() => { handleDismissActionCard(card); }}
-                                  >
-                                    {translations['CardChat.drawer.dismiss']}
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <p
+                            className={`text-xs font-semibold ${
+                              isConfirmed
+                                ? 'text-green-700 dark:text-green-300'
+                                : 'text-indigo-700 dark:text-indigo-300'
+                            }`}
+                          >
+                            {translations['CardChat.drawer.cardAiLabel']}
+                          </p>
+                          {card.toolName === 'write_card_description' &&
+                            card.descriptionContent && (
+                              <div className="mt-1">
+                                <p
+                                  className={`text-xs ${
+                                    isConfirmed
+                                      ? 'text-green-600 dark:text-green-400'
+                                      : 'text-indigo-600 dark:text-indigo-400'
+                                  }`}
+                                >
+                                  {isConfirmed
+                                    ? translations['CardChat.drawer.appliedPrefix']
+                                    : translations['CardChat.drawer.proposedPrefix']}
+                                  {card.descriptionPreview ??
+                                    translations['CardChat.drawer.descriptionUpdateFallback']}
+                                </p>
+                                {!isConfirmed && (
+                                  <details className="mt-1">
+                                    <summary className="text-xs text-indigo-500 cursor-pointer hover:text-indigo-700">
+                                      {translations['CardChat.drawer.viewProposedDescription']}
+                                    </summary>
+                                    <pre className="mt-1 text-xs text-base bg-bg-base rounded p-2 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap">
+                                      {card.descriptionContent}
+                                    </pre>
+                                  </details>
+                                )}
+                                {!isConfirmed && (
+                                  <div className="flex gap-2 mt-2">
+                                    <Button
+                                      variant="success"
+                                      size="sm"
+                                      disabled={isCommitting}
+                                      onClick={() => {
+                                        void handleCommitActionCard(card);
+                                      }}
+                                    >
+                                      {isCommitting
+                                        ? translations['CardChat.drawer.committing']
+                                        : translations['CardChat.drawer.confirmAndCommit']}
+                                    </Button>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled={isCommitting}
+                                      onClick={() => {
+                                        handleDismissActionCard(card);
+                                      }}
+                                    >
+                                      {translations['CardChat.drawer.dismiss']}
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -717,9 +777,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                       {proposedDescription}
                     </pre>
                   </details>
-                  {applyError && (
-                    <p className="mt-1 text-xs text-danger">{applyError}</p>
-                  )}
+                  {applyError && <p className="mt-1 text-xs text-danger">{applyError}</p>}
                   <div className="flex gap-2 mt-2">
                     <Button
                       variant="success"
@@ -727,7 +785,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                       disabled={applyingDescription}
                       onClick={handleApplyDescription}
                     >
-                      {applyingDescription ? translations['CardChat.drawer.applying'] : translations['CardChat.drawer.confirmAndApply']}
+                      {applyingDescription
+                        ? translations['CardChat.drawer.applying']
+                        : translations['CardChat.drawer.confirmAndApply']}
                     </Button>
                     <Button
                       variant="secondary"
@@ -753,9 +813,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                   ? translations['CardChat.drawer.sessionIdle']
                   : translations['CardChat.drawer.sessionPaused']}
               </p>
-              {resumeError && (
-                <p className="text-xs text-danger">{resumeError}</p>
-              )}
+              {resumeError && <p className="text-xs text-danger">{resumeError}</p>}
               <Button
                 variant="primary"
                 size="sm"
@@ -763,7 +821,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                 onClick={() => void handleResume()}
                 disabled={resuming}
               >
-                {resuming ? translations['CardChat.drawer.resuming'] : translations['CardChat.drawer.resume']}
+                {resuming
+                  ? translations['CardChat.drawer.resuming']
+                  : translations['CardChat.drawer.resume']}
               </Button>
             </div>
           )}
@@ -772,15 +832,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
               {translations['CardChat.drawer.readyForReview']}
             </p>
           )}
-          {sendError && (
-            <p className="mb-2 text-xs text-danger">{sendError}</p>
-          )}
-          {refineError && (
-            <p className="mb-2 text-xs text-danger">{refineError}</p>
-          )}
-          {proposeError && (
-            <p className="mb-2 text-xs text-danger">{proposeError}</p>
-          )}
+          {sendError && <p className="mb-2 text-xs text-danger">{sendError}</p>}
+          {refineError && <p className="mb-2 text-xs text-danger">{refineError}</p>}
+          {proposeError && <p className="mb-2 text-xs text-danger">{proposeError}</p>}
           <div className="space-y-2">
             {currentSession.status === 'ACTIVE_REFINEMENT' && (
               <div className="flex items-center gap-2">
@@ -831,9 +885,13 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                     : translations['CardChat.drawer.composerPlaceholderInactive']
                 }
                 value={composerText}
-                onChange={(e) => { setComposerText(e.target.value); }}
+                onChange={(e) => {
+                  setComposerText(e.target.value);
+                }}
                 onKeyDown={handleKeyDown}
-                disabled={currentSession.status !== 'ACTIVE_REFINEMENT' || sendingMessage || refining}
+                disabled={
+                  currentSession.status !== 'ACTIVE_REFINEMENT' || sendingMessage || refining
+                }
               />
               <Button
                 variant="primary"
@@ -842,7 +900,9 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                 onClick={() => void handleSendMessage()}
                 disabled={!canSend || refining}
               >
-                {sendingMessage ? translations['CardChat.drawer.sending'] : translations['CardChat.drawer.send']}
+                {sendingMessage
+                  ? translations['CardChat.drawer.sending']
+                  : translations['CardChat.drawer.send']}
               </Button>
             </div>
           </div>

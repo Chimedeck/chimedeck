@@ -103,11 +103,17 @@ export async function deleteCardFieldValue({
 
 const BATCH_CF_TTL_MS = 30_000;
 
-const _batchCfCache = new Map<string, { data: Record<string, CustomFieldValue[]>; expiresAt: number }>();
+const _batchCfCache = new Map<
+  string,
+  { data: Record<string, CustomFieldValue[]>; expiresAt: number }
+>();
 const _batchCfInflight = new Map<string, Promise<Record<string, CustomFieldValue[]>>>();
 const _batchCfInvalidationListeners = new Map<string, Set<() => void>>();
 
-function _subscribeBoardCardFieldValuesInvalidation(boardId: string, listener: () => void): () => void {
+function _subscribeBoardCardFieldValuesInvalidation(
+  boardId: string,
+  listener: () => void
+): () => void {
   const listeners = _batchCfInvalidationListeners.get(boardId) ?? new Set<() => void>();
   listeners.add(listener);
   _batchCfInvalidationListeners.set(boardId, listeners);
@@ -128,9 +134,9 @@ function _notifyBoardCardFieldValuesInvalidated(boardId: string): void {
 
 export function invalidateBoardCardFieldValuesCache(boardId: string): void {
   const hasExactKey =
-    _batchCfCache.has(boardId)
-    || _batchCfInflight.has(boardId)
-    || _batchCfInvalidationListeners.has(boardId);
+    _batchCfCache.has(boardId) ||
+    _batchCfInflight.has(boardId) ||
+    _batchCfInvalidationListeners.has(boardId);
 
   if (hasExactKey) {
     _batchCfCache.delete(boardId);
@@ -151,7 +157,7 @@ export function invalidateBoardCardFieldValuesCache(boardId: string): void {
 
 function _fetchBoardCardFieldValues(
   boardId: string,
-  cardIds: string[],
+  cardIds: string[]
 ): Promise<Record<string, CustomFieldValue[]>> {
   const cached = _batchCfCache.get(boardId);
   if (cached && Date.now() < cached.expiresAt) return Promise.resolve(cached.data);
@@ -168,7 +174,9 @@ function _fetchBoardCardFieldValues(
       const qs = cardIds.join(',');
       const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 404 || status === 405) {
-        return apiClient.get<{ data: CustomFieldValue[] }>(`/boards/${boardId}/custom-field-values?cardIds=${qs}`);
+        return apiClient.get<{ data: CustomFieldValue[] }>(
+          `/boards/${boardId}/custom-field-values?cardIds=${qs}`
+        );
       }
       throw err;
     })
@@ -200,7 +208,7 @@ function _fetchBoardCardFieldValues(
  */
 export function useBoardCardFieldValues(
   boardId: string | undefined,
-  cardIds: string[],
+  cardIds: string[]
 ): Record<string, CustomFieldValue[]> | null {
   // [why] null = not yet fetched; {} = fetched but no values. This distinction
   //       lets consumers skip the per-card fallback hook while loading.
@@ -208,7 +216,10 @@ export function useBoardCardFieldValues(
   const [tick, setTick] = useState(0);
   // [why] Serialize cardIds to a string so useEffect can detect actual set changes
   //       without needing a stable array reference.
-  const cardIdsKey = cardIds.slice().sort((a, b) => a.localeCompare(b)).join(',');
+  const cardIdsKey = cardIds
+    .slice()
+    .sort((a, b) => a.localeCompare(b))
+    .join(',');
 
   useEffect(() => {
     if (!boardId) return;
@@ -221,9 +232,15 @@ export function useBoardCardFieldValues(
     if (!boardId || cardIds.length === 0) return;
     let cancelled = false;
     _fetchBoardCardFieldValues(boardId, cardIds)
-      .then((map) => { if (!cancelled) setValuesMap(map); })
-      .catch(() => { /* silently degrade — card badges just won't show */ });
-    return () => { cancelled = true; };
+      .then((map) => {
+        if (!cancelled) setValuesMap(map);
+      })
+      .catch(() => {
+        /* silently degrade — card badges just won't show */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [boardId, cardIdsKey, tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return valuesMap;
@@ -336,7 +353,9 @@ export function useCustomFields(boardId: string | undefined): UseCustomFieldsRes
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [boardId, tick]);
 
   return { fields, loading, error, refetch };
@@ -357,12 +376,16 @@ interface UseCardCustomFieldValuesResult {
  * The setValues helper lets callers update local state after upsert without
  * triggering a full refetch.
  */
-export function useCardCustomFieldValues(cardId: string | undefined): UseCardCustomFieldValuesResult {
+export function useCardCustomFieldValues(
+  cardId: string | undefined
+): UseCardCustomFieldValuesResult {
   const [values, setValues] = useState<CustomFieldValue[]>([]);
   const [loading, setLoading] = useState(false);
   const [tick, setTick] = useState(0);
 
-  const refetch = useCallback(() => { setTick((t) => t + 1); }, []);
+  const refetch = useCallback(() => {
+    setTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     if (!cardId) return;
@@ -379,7 +402,9 @@ export function useCardCustomFieldValues(cardId: string | undefined): UseCardCus
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [cardId, tick]);
 
   return { values, loading, refetch, setValues };

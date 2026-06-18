@@ -10,15 +10,31 @@ import type { ContextChunk } from '../../types';
 // patterns (long alphanumeric strings) to avoid incorrect matches.
 const SECRET_PATTERNS: { pattern: RegExp; replacement: string; label: string }[] = [
   // JWT tokens (header.payload.signature) — test BEFORE generic key pattern
-  { pattern: /\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, replacement: '[REDACTED_JWT]', label: 'jwt' },
+  {
+    pattern: /\beyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,
+    replacement: '[REDACTED_JWT]',
+    label: 'jwt',
+  },
   // Bearer tokens — test before generic key pattern
-  { pattern: /\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b/gi, replacement: 'Bearer [REDACTED_TOKEN]', label: 'bearer-token' },
+  {
+    pattern: /\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b/gi,
+    replacement: 'Bearer [REDACTED_TOKEN]',
+    label: 'bearer-token',
+  },
   // API keys (various formats) — must run AFTER JWT to avoid false matches
   { pattern: /\b[A-Za-z0-9_]{20,60}\b/g, replacement: '[REDACTED_API_KEY]', label: 'api-key' },
   // Password assignments
-  { pattern: /(password|passwd|pwd|secret|api[_-]?key)\s*[:=]\s*[\S]+\s*/gi, replacement: '$1: [REDACTED] ', label: 'password-assignment' },
+  {
+    pattern: /(password|passwd|pwd|secret|api[_-]?key)\s*[:=]\s*[\S]+\s*/gi,
+    replacement: '$1: [REDACTED] ',
+    label: 'password-assignment',
+  },
   // Connection strings
-  { pattern: /\b(mongodb|postgres|mysql|redis|sqlite):\/\/[^\s]+/gi, replacement: '[REDACTED_CONNECTION_STRING]', label: 'connection-string' },
+  {
+    pattern: /\b(mongodb|postgres|mysql|redis|sqlite):\/\/[^\s]+/gi,
+    replacement: '[REDACTED_CONNECTION_STRING]',
+    label: 'connection-string',
+  },
 ];
 
 /**

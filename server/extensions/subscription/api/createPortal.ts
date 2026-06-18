@@ -66,7 +66,10 @@ export async function handleCreatePortal(req: Request): Promise<Response> {
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   const workspaceResolution = await resolveWorkspaceContext(req, {
@@ -79,7 +82,7 @@ export async function handleCreatePortal(req: Request): Promise<Response> {
   if (!subscription?.stripeCustomerId) {
     return Response.json(
       { name: 'stripe-customer-not-found', data: { userId: context.ownerUserId } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -93,8 +96,11 @@ export async function handleCreatePortal(req: Request): Promise<Response> {
     return Response.json({ data: { url } });
   } catch (error) {
     return Response.json(
-      { name: 'stripe-error', data: { message: error instanceof Error ? error.message : 'Stripe request failed' } },
-      { status: 502 },
+      {
+        name: 'stripe-error',
+        data: { message: error instanceof Error ? error.message : 'Stripe request failed' },
+      },
+      { status: 502 }
     );
   }
 }

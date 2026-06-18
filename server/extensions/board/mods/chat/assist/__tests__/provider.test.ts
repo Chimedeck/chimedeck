@@ -17,12 +17,14 @@ beforeEach(() => {
   fetchCalls = [];
   fetchImpl = (input, init) => {
     fetchCalls.push({ input, init });
-    return Promise.resolve(Response.json({
-      id: 'resp-1',
-      model: 'gpt-4.1-mini',
-      choices: [{ message: { content: 'Use the payment checklist first.' } }],
-      usage: { prompt_tokens: 20, completion_tokens: 7, total_tokens: 27 },
-    }));
+    return Promise.resolve(
+      Response.json({
+        id: 'resp-1',
+        model: 'gpt-4.1-mini',
+        choices: [{ message: { content: 'Use the payment checklist first.' } }],
+        usage: { prompt_tokens: 20, completion_tokens: 7, total_tokens: 27 },
+      })
+    );
   };
 
   boardChatAssistProviderDeps.getConfig = () => {
@@ -86,24 +88,30 @@ describe('requestBoardChatAssistCompletion', () => {
   it('normalizes tool-call responses', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json({
-        id: 'resp-1',
-        model: 'gpt-4.1-mini',
-        choices: [{
-          message: {
-            content: null,
-            tool_calls: [{
-              id: 'call-1',
-              type: 'function',
-              function: {
-                name: 'create_board_card',
-                arguments: '{"title":"Plan launch","listId":"list-1"}',
+      return Promise.resolve(
+        Response.json({
+          id: 'resp-1',
+          model: 'gpt-4.1-mini',
+          choices: [
+            {
+              message: {
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call-1',
+                    type: 'function',
+                    function: {
+                      name: 'create_board_card',
+                      arguments: '{"title":"Plan launch","listId":"list-1"}',
+                    },
+                  },
+                ],
               },
-            }],
-          },
-        }],
-        usage: { prompt_tokens: 20, completion_tokens: 7, total_tokens: 27 },
-      }));
+            },
+          ],
+          usage: { prompt_tokens: 20, completion_tokens: 7, total_tokens: 27 },
+        })
+      );
     };
 
     const result = await requestBoardChatAssistCompletion({
@@ -153,10 +161,9 @@ describe('requestBoardChatAssistCompletion', () => {
   it('maps rate limit responses', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { error: { message: 'Rate limit hit' } },
-        { status: 429 },
-      ));
+      return Promise.resolve(
+        Response.json({ error: { message: 'Rate limit hit' } }, { status: 429 })
+      );
     };
 
     const result = await requestBoardChatAssistCompletion({
@@ -170,10 +177,9 @@ describe('requestBoardChatAssistCompletion', () => {
   it('maps provider authentication failures', async () => {
     fetchImpl = (input, init) => {
       fetchCalls.push({ input, init });
-      return Promise.resolve(Response.json(
-        { error: { message: 'Invalid API key' } },
-        { status: 401 },
-      ));
+      return Promise.resolve(
+        Response.json({ error: { message: 'Invalid API key' } }, { status: 401 })
+      );
     };
 
     const result = await requestBoardChatAssistCompletion({

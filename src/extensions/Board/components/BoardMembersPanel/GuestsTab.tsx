@@ -28,7 +28,10 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   // Track which guest row is showing a type-change error
-  const [typeChangeError, setTypeChangeError] = useState<{ userId: string; message: string } | null>(null);
+  const [typeChangeError, setTypeChangeError] = useState<{
+    userId: string;
+    message: string;
+  } | null>(null);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +76,10 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
     try {
       await updateGuest({ boardId, userId: guest.id, guestType: newType }).unwrap();
     } catch {
-      setTypeChangeError({ userId: guest.id, message: `Failed to change type for ${guest.name ?? guest.email}.` });
+      setTypeChangeError({
+        userId: guest.id,
+        message: `Failed to change type for ${guest.name ?? guest.email}.`,
+      });
     }
   };
 
@@ -89,7 +95,11 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
             <input
               type="email"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(null); setSuccess(null); }}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError(null);
+                setSuccess(null);
+              }}
               placeholder="guest@example.com"
               disabled={inviting}
               className="flex-1 rounded border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
@@ -109,7 +119,9 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
             <span className="mr-1 text-xs text-muted">Role:</span>
             <button
               type="button"
-              onClick={() => { setGuestType('VIEWER'); }}
+              onClick={() => {
+                setGuestType('VIEWER');
+              }}
               aria-pressed={guestType === 'VIEWER'}
               className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                 guestType === 'VIEWER'
@@ -121,7 +133,9 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
             </button>
             <button
               type="button"
-              onClick={() => { setGuestType('MEMBER'); }}
+              onClick={() => {
+                setGuestType('MEMBER');
+              }}
               aria-pressed={guestType === 'MEMBER'}
               className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
                 guestType === 'MEMBER'
@@ -148,9 +162,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
 
       {/* Guest list */}
       <div>
-        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
-          Guests
-        </p>
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Guests</p>
         {isLoading ? (
           <p className="text-sm text-muted">Loading…</p>
         ) : guests.length === 0 ? (
@@ -169,10 +181,17 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                   <div className="ml-2 flex items-center gap-1 shrink-0">
                     {/* Guest type badge — interactive for admins */}
                     {isAdmin ? (
-                      <div role="group" aria-label={`Guest type for ${guest.name ?? guest.email}`} className="flex items-center gap-0.5">
+                      <div
+                        role="group"
+                        aria-label={`Guest type for ${guest.name ?? guest.email}`}
+                        className="flex items-center gap-0.5"
+                      >
                         <button
                           type="button"
-                          onClick={() => { if (guest.guestType !== 'VIEWER') void handleTypeChange(guest, 'VIEWER'); }}
+                          onClick={() => {
+                            if (guest.guestType !== 'VIEWER')
+                              void handleTypeChange(guest, 'VIEWER');
+                          }}
                           aria-pressed={guest.guestType === 'VIEWER'}
                           className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
                             guest.guestType === 'VIEWER'
@@ -184,7 +203,10 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => { if (guest.guestType !== 'MEMBER') void handleTypeChange(guest, 'MEMBER'); }}
+                          onClick={() => {
+                            if (guest.guestType !== 'MEMBER')
+                              void handleTypeChange(guest, 'MEMBER');
+                          }}
                           aria-pressed={guest.guestType === 'MEMBER'}
                           className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
                             guest.guestType === 'MEMBER'
@@ -197,11 +219,13 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                       </div>
                     ) : (
                       /* Read-only badge for non-admins */
-                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${
-                        guest.guestType === 'MEMBER'
-                          ? 'bg-indigo-900/60 text-indigo-300'
-                          : 'bg-bg-overlay text-muted'
-                      }`}>
+                      <span
+                        className={`rounded px-2 py-0.5 text-xs font-medium ${
+                          guest.guestType === 'MEMBER'
+                            ? 'bg-indigo-900/60 text-indigo-300'
+                            : 'bg-bg-overlay text-muted'
+                        }`}
+                      >
                         {guest.guestType === 'MEMBER' ? 'Member' : 'Viewer'}
                       </span>
                     )}
@@ -219,7 +243,9 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                 </div>
                 {/* Per-row error for type change failure */}
                 {typeChangeError?.userId === guest.id && (
-                  <p role="alert" className="text-xs text-danger">{typeChangeError.message}</p>
+                  <p role="alert" className="text-xs text-danger">
+                    {typeChangeError.message}
+                  </p>
                 )}
               </li>
             ))}

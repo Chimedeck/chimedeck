@@ -17,21 +17,25 @@ export async function handleCreateToken(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  if (body.expiresAt !== undefined && body.expiresAt !== null && isNaN(Date.parse(body.expiresAt))) {
+  if (
+    body.expiresAt !== undefined &&
+    body.expiresAt !== null &&
+    isNaN(Date.parse(body.expiresAt))
+  ) {
     return Response.json(
       { name: 'bad-request', data: { message: 'expiresAt must be a valid ISO timestamp or null' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -60,6 +64,6 @@ export async function handleCreateToken(req: Request): Promise<Response> {
         createdAt: now,
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

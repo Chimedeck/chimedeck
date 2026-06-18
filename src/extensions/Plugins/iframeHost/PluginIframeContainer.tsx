@@ -68,7 +68,7 @@ const PluginIframeContainerInner = ({ boardId, children }: Props) => {
     (update: Partial<Pick<PluginModalState, 'title' | 'fullscreen' | 'accentColor'>>) => {
       setModal((m) => ({ ...m, ...update }));
     },
-    [],
+    []
   );
 
   const handleOpenPopup = useCallback((state: Omit<PluginPopupState, 'open'>) => {

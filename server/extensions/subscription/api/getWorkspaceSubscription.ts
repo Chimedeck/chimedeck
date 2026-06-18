@@ -30,7 +30,7 @@ async function trySyncWorkspaceSubscriptionFromStripe({
       headers: {
         Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
       },
-    },
+    }
   );
 
   const payload = (await response.json()) as {
@@ -48,23 +48,22 @@ async function trySyncWorkspaceSubscriptionFromStripe({
 
   const stripePriceId = latest.items.data[0].price.id;
   const nextTier = mapStripePriceIdToTier(stripePriceId);
-  const nextStatus = (
-    latest.status === 'active'
-      || latest.status === 'trialing'
-      || latest.status === 'past_due'
-      || latest.status === 'canceled'
-      || latest.status === 'incomplete'
-      || latest.status === 'incomplete_expired'
-      || latest.status === 'unpaid'
-  )
-    ? latest.status
-    : 'active';
+  const nextStatus =
+    latest.status === 'active' ||
+    latest.status === 'trialing' ||
+    latest.status === 'past_due' ||
+    latest.status === 'canceled' ||
+    latest.status === 'incomplete' ||
+    latest.status === 'incomplete_expired' ||
+    latest.status === 'unpaid'
+      ? latest.status
+      : 'active';
 
   if (
-    subscription.stripeSubscriptionId === latest.id
-    && subscription.stripePriceId === stripePriceId
-    && subscription.tier === nextTier
-    && subscription.status === nextStatus
+    subscription.stripeSubscriptionId === latest.id &&
+    subscription.stripePriceId === stripePriceId &&
+    subscription.tier === nextTier &&
+    subscription.status === nextStatus
   ) {
     return;
   }

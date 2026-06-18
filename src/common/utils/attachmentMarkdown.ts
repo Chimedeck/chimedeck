@@ -13,7 +13,7 @@ interface MarkdownTargetParts {
 
 function replaceMarkdownTargets(
   markdown: string,
-  replacer: (parts: MarkdownTargetParts) => string | null,
+  replacer: (parts: MarkdownTargetParts) => string | null
 ): string {
   return markdown.replaceAll(MARKDOWN_TARGET_PATTERN, (full, bang, label, href, title) => {
     const nextHref = replacer({
@@ -43,15 +43,18 @@ function normalizeAttachmentPlaceholderHrefEncoding(content: string): string {
 
   // [why] Legacy placeholder urls may contain raw parentheses because encodeURIComponent
   // does not escape them. Markdown parsers can misread these and drop surrounding text.
-  return content.replaceAll(ATTACHMENT_PLACEHOLDER_URL_RE, (href) => (
+  return content.replaceAll(ATTACHMENT_PLACEHOLDER_URL_RE, (href) =>
     href.replaceAll('(', '%28').replaceAll(')', '%29')
-  ));
+  );
 }
 
 // [why] Some editor paths can persist HTML with src="attachment:..." rather than
 // markdown image/link syntax. This pass resolves raw placeholder URLs anywhere in
 // content so previews do not render broken image placeholders.
-export function hydrateAttachmentPlaceholderUrls(content: string, attachments: Attachment[]): string {
+export function hydrateAttachmentPlaceholderUrls(
+  content: string,
+  attachments: Attachment[]
+): string {
   if (!content || attachments.length === 0 || !hasAttachmentPlaceholder(content)) {
     return content;
   }
@@ -86,9 +89,7 @@ function buildAttachmentUrlMap(attachments: Attachment[]): Map<string, string> {
 }
 
 export function buildAttachmentPlaceholderUrl(name: string): string {
-  const encodedName = encodeURIComponent(name)
-    .replaceAll('(', '%28')
-    .replaceAll(')', '%29');
+  const encodedName = encodeURIComponent(name).replaceAll('(', '%28').replaceAll(')', '%29');
   return `${ATTACHMENT_URL_PREFIX}${encodedName}`;
 }
 
@@ -120,7 +121,10 @@ export function stripCommentAttachmentPlaceholders(markdown: string): string {
   });
 }
 
-export function resolveAttachmentMarkdownUrl(attachment: Attachment, isImage: boolean): string | null {
+export function resolveAttachmentMarkdownUrl(
+  attachment: Attachment,
+  isImage: boolean
+): string | null {
   if (attachment.type === 'URL') {
     return attachment.external_url ?? null;
   }
@@ -134,7 +138,10 @@ export function resolveAttachmentMarkdownUrl(attachment: Attachment, isImage: bo
   return attachment.view_url ?? attachment.thumbnail_url ?? null;
 }
 
-export function hydrateCommentAttachmentMarkdown(markdown: string, attachments: Attachment[]): string {
+export function hydrateCommentAttachmentMarkdown(
+  markdown: string,
+  attachments: Attachment[]
+): string {
   if (!markdown || attachments.length === 0 || !hasAttachmentPlaceholder(markdown)) {
     return markdown;
   }
@@ -153,14 +160,17 @@ export function hydrateCommentAttachmentMarkdown(markdown: string, attachments: 
   return hydrateAttachmentPlaceholderUrls(replacedMarkdownTargets, attachments);
 }
 
-export function dehydrateCommentAttachmentMarkdown(markdown: string, attachments: Attachment[]): string {
+export function dehydrateCommentAttachmentMarkdown(
+  markdown: string,
+  attachments: Attachment[]
+): string {
   if (!markdown || attachments.length === 0) return markdown;
 
   const attachmentMap = buildAttachmentUrlMap(attachments);
   const attachmentNameMap = new Map(
     attachments
       .filter((attachment) => attachment.type === 'FILE')
-      .map((attachment) => [attachment.name, attachment.name]),
+      .map((attachment) => [attachment.name, attachment.name])
   );
 
   return replaceMarkdownTargets(markdown, ({ label, href }) => {

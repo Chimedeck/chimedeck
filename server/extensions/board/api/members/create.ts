@@ -24,7 +24,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   if (!currentUserId) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -45,7 +45,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be valid JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -53,7 +53,7 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
   if (!userId || typeof userId !== 'string') {
     return Response.json(
       { name: 'missing-user-id', data: { message: 'userId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -77,8 +77,11 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
 
   if (!workspaceMembership) {
     return Response.json(
-      { name: 'user-not-workspace-member', data: { message: 'User must be a workspace member before being added to a board' } },
-      { status: 422 },
+      {
+        name: 'user-not-workspace-member',
+        data: { message: 'User must be a workspace member before being added to a board' },
+      },
+      { status: 422 }
     );
   }
 
@@ -103,10 +106,10 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     .select(
       db.raw('u.id as id'),
       'u.email',
-      db.raw("COALESCE(u.name, u.email) as name"),
+      db.raw('COALESCE(u.name, u.email) as name'),
       'u.nickname',
       'bm.role',
-      'bm.created_at',
+      'bm.created_at'
     )
     .first();
 

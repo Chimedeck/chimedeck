@@ -30,10 +30,7 @@ export interface CardChatAssistActionCard {
  * We broadcast to the board room so all viewers of the board (including
  * the card modal) receive the progress events.
  */
-export function broadcastCardChatProgress(
-  boardId: string,
-  progress: CardChatProgress,
-): void {
+export function broadcastCardChatProgress(boardId: string, progress: CardChatProgress): void {
   broadcast({
     boardId,
     message: JSON.stringify({

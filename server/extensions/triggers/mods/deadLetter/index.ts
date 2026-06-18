@@ -55,7 +55,7 @@ export function logDeadLetter({
   }
 
   console.error(
-    `[triggers/deadLetter] Run ${runId} exhausted ${attempts} attempts for phase "${phase}" on card ${cardId}: ${lastError ?? 'unknown error'}`,
+    `[triggers/deadLetter] Run ${runId} exhausted ${attempts} attempts for phase "${phase}" on card ${cardId}: ${lastError ?? 'unknown error'}`
   );
 }
 

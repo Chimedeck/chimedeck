@@ -20,10 +20,7 @@ interface EntitlementsResponse {
 /**
  * Handle GET /api/v1/workspaces/:workspaceId/entitlements
  */
-export async function handleGetEntitlements(
-  req: Request,
-  pathname: string,
-): Promise<Response> {
+export async function handleGetEntitlements(req: Request, pathname: string): Promise<Response> {
   try {
     // Extract workspaceId from pathname: /api/v1/workspaces/:workspaceId/entitlements
     const match = /^\/api\/v1\/workspaces\/([^/]+)\/entitlements$/.exec(pathname);
@@ -34,7 +31,7 @@ export async function handleGetEntitlements(
           name: 'invalid-path',
           data: { message: 'Invalid workspace ID in path' },
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -66,7 +63,7 @@ export async function handleGetEntitlements(
       {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
-      },
+      }
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -76,7 +73,7 @@ export async function handleGetEntitlements(
         name: 'entitlements-resolution-failed',
         data: { message },
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

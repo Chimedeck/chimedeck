@@ -4,7 +4,10 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
 import { type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../../middlewares/boardVisibility';
 import { NOTIFICATION_TYPES } from '../../mods/preferenceGuard';
 import { handleGetBoardTypePreferences } from './get';
 
@@ -16,7 +19,7 @@ interface PatchBody {
 
 export async function handleUpdateBoardTypePreference(
   req: Request,
-  boardId: string,
+  boardId: string
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
@@ -30,7 +33,7 @@ export async function handleUpdateBoardTypePreference(
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -44,7 +47,7 @@ export async function handleUpdateBoardTypePreference(
           data: { message: `type must be one of: ${NOTIFICATION_TYPES.join(', ')}` },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -56,7 +59,7 @@ export async function handleUpdateBoardTypePreference(
           data: { message: 'Provide at least one of: in_app_enabled, email_enabled' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -68,7 +71,7 @@ export async function handleUpdateBoardTypePreference(
           data: { message: 'in_app_enabled must be a boolean' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -80,7 +83,7 @@ export async function handleUpdateBoardTypePreference(
           data: { message: 'email_enabled must be a boolean' },
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

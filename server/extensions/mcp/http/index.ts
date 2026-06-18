@@ -1,7 +1,11 @@
 import { randomUUID } from 'crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { authenticate, parseBearerToken, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
+import {
+  authenticate,
+  parseBearerToken,
+  type AuthenticatedRequest,
+} from '../../auth/middlewares/authentication';
 import { registerMcpTools } from '../registerTools';
 import { initSession, getSession, deleteSession, startEvictionLoop } from './sessions';
 
@@ -19,13 +23,19 @@ export async function mcpHttpHandler(req: Request): Promise<Response | null> {
 
   const currentUser = (req as AuthenticatedRequest).currentUser;
   if (!currentUser) {
-    return Response.json({ error: { code: 'unauthorized', message: 'Not authenticated' } }, { status: 401 });
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Not authenticated' } },
+      { status: 401 }
+    );
   }
   const userId = currentUser.id;
   // Extract the raw token so tools can make API calls as this user.
   const token = parseBearerToken(req.headers.get('Authorization'));
   if (!token) {
-    return Response.json({ error: { code: 'unauthorized', message: 'Missing Bearer token' } }, { status: 401 });
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Missing Bearer token' } },
+      { status: 401 }
+    );
   }
   const method = req.method.toUpperCase();
 
@@ -58,15 +68,18 @@ export async function mcpHttpHandler(req: Request): Promise<Response | null> {
   if (!sessionId) {
     return Response.json(
       { name: 'bad-request', data: { message: 'mcp-session-id header required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const session = await getSession(sessionId);
   if (!session) {
     return Response.json(
-      { name: 'session-not-found', data: { message: 'Session expired or unknown. Re-initialize.' } },
-      { status: 404 },
+      {
+        name: 'session-not-found',
+        data: { message: 'Session expired or unknown. Re-initialize.' },
+      },
+      { status: 404 }
     );
   }
 
@@ -80,8 +93,11 @@ export async function mcpHttpHandler(req: Request): Promise<Response | null> {
   // for horizontal scaling without sticky sessions.
   if (!session.transport) {
     return Response.json(
-      { name: 'session-not-found', data: { message: 'Session on another instance. Re-initialize.' } },
-      { status: 404 },
+      {
+        name: 'session-not-found',
+        data: { message: 'Session on another instance. Re-initialize.' },
+      },
+      { status: 404 }
     );
   }
 

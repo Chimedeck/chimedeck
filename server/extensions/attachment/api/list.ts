@@ -16,18 +16,27 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
 
   const resolvedCardId = await resolveCardId(cardId);
   if (!resolvedCardId) {
-    return Response.json({ name: 'card-not-found', data: { message: 'Card not found' } }, { status: 404 });
+    return Response.json(
+      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { status: 404 }
+    );
   }
 
   const card = await db('cards').where({ id: resolvedCardId }).first();
   if (!card) {
-    return Response.json({ name: 'card-not-found', data: { message: 'Card not found' } }, { status: 404 });
+    return Response.json(
+      { name: 'card-not-found', data: { message: 'Card not found' } },
+      { status: 404 }
+    );
   }
 
   const list = await db('lists').where({ id: card.list_id }).first();
   const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
-    return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
+    return Response.json(
+      { name: 'board-not-found', data: { message: 'Board not found' } },
+      { status: 404 }
+    );
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -58,8 +67,14 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
 
   if (referencedCardIds.length > 0) {
     const refCards = await db('cards').whereIn('id', referencedCardIds);
-    const refLists = await db('lists').whereIn('id', refCards.map((c) => c.list_id));
-    const refBoards = await db('boards').whereIn('id', refLists.map((l) => l.board_id));
+    const refLists = await db('lists').whereIn(
+      'id',
+      refCards.map((c) => c.list_id)
+    );
+    const refBoards = await db('boards').whereIn(
+      'id',
+      refLists.map((l) => l.board_id)
+    );
 
     const cardLabelRows = await db('card_labels')
       .join('labels', 'card_labels.label_id', 'labels.id')
@@ -81,7 +96,11 @@ export async function handleListAttachments(req: Request, cardId: string): Promi
         list_name: refList?.title ?? null,
         labels: cardLabelRows
           .filter((cl) => cl.card_id === rc.id)
-          .map((cl) => ({ id: cl.label_id as string, name: cl.name as string, color: cl.color as string })),
+          .map((cl) => ({
+            id: cl.label_id as string,
+            name: cl.name as string,
+            color: cl.color as string,
+          })),
       };
     }
   }

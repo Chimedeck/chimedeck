@@ -2,11 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import {
-  fetchProfileThunk,
-  selectProfile,
-  selectProfileStatus,
-} from './ProfilePage.duck';
+import { fetchProfileThunk, selectProfile, selectProfileStatus } from './ProfilePage.duck';
 import AvatarUploader from '../../components/AvatarUploader';
 import ProfileForm from '../../components/ProfileForm';
 import translations from '../../translations/en.json';
@@ -75,7 +71,9 @@ export default function ProfilePage() {
               addToast('Email address updated successfully.');
             }}
             onPending={(pendingEmail) => {
-              addToast(`Confirmation email sent to ${pendingEmail}. Click the link to complete the change.`);
+              addToast(
+                `Confirmation email sent to ${pendingEmail}. Click the link to complete the change.`
+              );
             }}
           />
         </section>

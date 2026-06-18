@@ -14,7 +14,10 @@ import { createNotificationsForMentions } from '../../notifications/mods/createN
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
 function hasNonPersistableMediaUrl(content: string): boolean {
-  return /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) || /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content);
+  return (
+    /\]\((?:<)?(?:blob:|data:|file:)/i.test(content) ||
+    /<img[^>]+src\s*=\s*["'](?:blob:|data:|file:)/i.test(content)
+  );
 }
 
 async function loadCommentWithAuthor(commentId: string): Promise<Record<string, unknown> | null> {
@@ -33,7 +36,7 @@ async function loadCommentWithAuthor(commentId: string): Promise<Record<string, 
       'comments.updated_at',
       db.raw('COALESCE(users.name, users.email) as author_name'),
       'users.email as author_email',
-      'users.avatar_url as author_avatar_url',
+      'users.avatar_url as author_avatar_url'
     )
     .first();
 
@@ -55,14 +58,14 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (comment.deleted) {
     return Response.json(
       { error: { code: 'comment-deleted', message: 'Cannot edit a deleted comment' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -71,7 +74,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   if (comment.user_id !== actorId) {
     return Response.json(
       { error: { code: 'comment-not-owner', message: 'You can only edit your own comments' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -81,14 +84,19 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -102,14 +110,14 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.content || typeof body.content !== 'string' || body.content.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'content is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -119,10 +127,11 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       {
         error: {
           code: 'bad-request',
-          message: 'Comment contains a temporary local media URL. Please re-upload the image before saving.',
+          message:
+            'Comment contains a temporary local media URL. Please re-upload the image before saving.',
         },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -173,7 +182,12 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       boardId: board.id,
       entityId: comment.card_id,
       actorId,
-      payload: { commentId, version: newVersion, cardId: comment.card_id, cardTitle: card?.title ?? null },
+      payload: {
+        commentId,
+        version: newVersion,
+        cardId: comment.card_id,
+        cardTitle: card?.title ?? null,
+      },
     }),
     writeActivity({
       entityType: 'card',
@@ -193,10 +207,9 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   ]);
 
   // Broadcast so open card modals in other browser sessions reflect the edit in real time
-  publisher.publish(
-    board.id,
-    JSON.stringify({ type: 'comment_updated', payload: { comment: updated } }),
-  ).catch(() => {});
+  publisher
+    .publish(board.id, JSON.stringify({ type: 'comment_updated', payload: { comment: updated } }))
+    .catch(() => {});
 
   return Response.json({ data: updated });
 }

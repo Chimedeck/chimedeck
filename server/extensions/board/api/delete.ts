@@ -18,7 +18,7 @@ export async function handleDeleteBoard(req: Request, boardId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -34,10 +34,10 @@ export async function handleDeleteBoard(req: Request, boardId: string): Promise<
 
   // Count nested content to determine if confirmation is required.
   const listRows = await db('lists').where({ board_id: boardId }).count('id as count').first();
-  const cardRows = await db('cards').whereIn(
-    'list_id',
-    db('lists').where({ board_id: boardId }).select('id'),
-  ).count('id as count').first();
+  const cardRows = await db('cards')
+    .whereIn('list_id', db('lists').where({ board_id: boardId }).select('id'))
+    .count('id as count')
+    .first();
 
   const listCount = Number(listRows?.count ?? 0);
   const cardCount = Number(cardRows?.count ?? 0);
@@ -55,7 +55,7 @@ export async function handleDeleteBoard(req: Request, boardId: string): Promise<
     if (!body.confirm) {
       return Response.json(
         { name: 'delete-requires-confirmation', data: { listCount, cardCount } },
-        { status: 409 },
+        { status: 409 }
       );
     }
   }

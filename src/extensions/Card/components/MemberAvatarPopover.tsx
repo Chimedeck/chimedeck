@@ -70,7 +70,9 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); };
+    return () => {
+      document.removeEventListener('keydown', onKey);
+    };
   }, [onClose]);
 
   // Close on click outside
@@ -86,7 +88,9 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       }
     };
     document.addEventListener('mousedown', onMousedown);
-    return () => { document.removeEventListener('mousedown', onMousedown); };
+    return () => {
+      document.removeEventListener('mousedown', onMousedown);
+    };
   }, [onClose, anchorRef]);
 
   const handleRemove = async () => {
@@ -136,14 +140,14 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
             className="h-10 w-10 rounded-full object-cover"
           />
         ) : (
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 text-sm font-bold text-white"> // [theme-exception] text-white on indigo-500 avatar background
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500 text-sm font-bold text-white">
+            {' '}
+            // [theme-exception] text-white on indigo-500 avatar background
             {initials}
           </span>
         )}
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-base truncate">
-            {member.name ?? member.email}
-          </p>
+          <p className="text-sm font-semibold text-base truncate">{member.name ?? member.email}</p>
           <p className="text-xs text-subtle truncate">{handle}</p>
         </div>
       </div>
@@ -162,9 +166,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
           onClick={handleRemove}
           disabled={removing}
         >
-          {removing ? (
-            <Spinner className="h-3 w-3 text-red-400" />
-          ) : null}
+          {removing ? <Spinner className="h-3 w-3 text-red-400" /> : null}
           Remove from card
         </button>
       )}

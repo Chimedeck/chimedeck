@@ -7,7 +7,10 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { sanitizeText } from '../../../common/sanitize';
 import { featureFlags } from '../../../config/featureFlags';
 import { syncStateTransitionsOnListRename } from '../../stateTransitions/hooks/listSync';
@@ -20,7 +23,7 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -43,14 +46,14 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -63,7 +66,13 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
   }
 
   // Use 'list_updated' to match client useBoardSync handler; send the full list object
-  await writeEvent({ type: 'list_updated', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list: updated[0] } });
+  await writeEvent({
+    type: 'list_updated',
+    boardId: list.board_id,
+    entityId: listId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { list: updated[0] },
+  });
 
   return Response.json({ data: updated[0] });
 }

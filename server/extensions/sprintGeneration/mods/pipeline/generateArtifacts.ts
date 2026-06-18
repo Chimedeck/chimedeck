@@ -48,7 +48,7 @@ export const generateArtifactsDeps = {
  */
 function decomposeIntoSprints(
   packet: RequirementPacket,
-  sprintCount: number,
+  sprintCount: number
 ): Array<{
   sprintNumber: number;
   title: string;
@@ -90,9 +90,8 @@ function decomposeIntoSprints(
 
     sprints.push({
       sprintNumber: i + 1,
-      title: sprintCount === 1
-        ? packet.cardTitle
-        : `${packet.cardTitle} — Part ${i + 1}/${sprintCount}`,
+      title:
+        sprintCount === 1 ? packet.cardTitle : `${packet.cardTitle} — Part ${i + 1}/${sprintCount}`,
       requirements: sprintReqs.length > 0 ? sprintReqs : packet.earsRequirements,
       acceptanceCriteria: sprintAc.length > 0 ? sprintAc : packet.acceptanceCriteria,
       testScenarios,
@@ -111,7 +110,14 @@ function buildSprintSpec({
   packet,
   sprintPlanUpdated,
 }: {
-  sprint: { sprintNumber: number; title: string; requirements: string[]; acceptanceCriteria: string[]; testScenarios: string[]; dependencies: number[] };
+  sprint: {
+    sprintNumber: number;
+    title: string;
+    requirements: string[];
+    acceptanceCriteria: string[];
+    testScenarios: string[];
+    dependencies: number[];
+  };
   packet: RequirementPacket;
   sprintPlanUpdated: boolean;
 }): string {
@@ -138,37 +144,19 @@ function buildSprintSpec({
     lines.push(`- ${req.startsWith('- ') || req.startsWith('* ') ? req : `- ${req}`}`);
   }
 
-  lines.push(
-    '',
-    '---',
-    '',
-    '## Acceptance Criteria',
-    '',
-  );
+  lines.push('', '---', '', '## Acceptance Criteria', '');
 
   for (const ac of sprint.acceptanceCriteria) {
     lines.push(`- ${ac.startsWith('- ') || ac.startsWith('* ') ? ac : `- ${ac}`}`);
   }
 
-  lines.push(
-    '',
-    '---',
-    '',
-    '## Test Scenarios',
-    '',
-  );
+  lines.push('', '---', '', '## Test Scenarios', '');
 
   for (const test of sprint.testScenarios) {
     lines.push(test);
   }
 
-  lines.push(
-    '',
-    '---',
-    '',
-    '## Dependencies',
-    '',
-  );
+  lines.push('', '---', '', '## Dependencies', '');
 
   if (sprint.dependencies.length > 0) {
     for (const dep of sprint.dependencies) {
@@ -178,16 +166,12 @@ function buildSprintSpec({
     lines.push('- None (this is the first sprint)');
   }
 
-  lines.push(
-    '',
-    '---',
-    '',
-    '## Constraints',
-    '',
-  );
+  lines.push('', '---', '', '## Constraints', '');
 
   for (const constraint of packet.constraints) {
-    lines.push(`- ${constraint.startsWith('- ') || constraint.startsWith('* ') ? constraint : `- ${constraint}`}`);
+    lines.push(
+      `- ${constraint.startsWith('- ') || constraint.startsWith('* ') ? constraint : `- ${constraint}`}`
+    );
   }
 
   lines.push(
@@ -198,7 +182,9 @@ function buildSprintSpec({
     '',
     `- Feature card: \`${packet.cardTitle}\``,
     `- Session: \`${packet.sessionId}\``,
-    sprintPlanUpdated ? '- Sprint plan has been updated with this sprint entry' : '- Sprint plan was not updated (already exists for this sprint number)',
+    sprintPlanUpdated
+      ? '- Sprint plan has been updated with this sprint entry'
+      : '- Sprint plan was not updated (already exists for this sprint number)'
   );
 
   return lines.join('\n');
@@ -243,10 +229,14 @@ export async function generateArtifacts({
   const estimatedSprintCount = Math.max(1, Math.min(10, Math.ceil((totalReqs + totalAc) / 3)));
 
   // 2. Apply tier policy for sprint count cap
-  const policy = generateArtifactsDeps.resolveTierPolicy({ tier, sprintCount: estimatedSprintCount });
-  const effectiveSprintCount = policy.maxSprints === 'unlimited'
-    ? estimatedSprintCount
-    : Math.min(estimatedSprintCount, policy.maxSprints);
+  const policy = generateArtifactsDeps.resolveTierPolicy({
+    tier,
+    sprintCount: estimatedSprintCount,
+  });
+  const effectiveSprintCount =
+    policy.maxSprints === 'unlimited'
+      ? estimatedSprintCount
+      : Math.min(estimatedSprintCount, policy.maxSprints);
 
   // 3. Decompose requirements into sprints
   const decomposed = decomposeIntoSprints(requirementPacket, effectiveSprintCount);
@@ -278,7 +268,7 @@ export async function generateArtifacts({
       requirements: sprint.requirements,
       acceptanceCriteria: sprint.acceptanceCriteria,
       testScenarios: sprint.testScenarios,
-      dependencies: sprint.dependencies.map(d => maxSprintNumber + d),
+      dependencies: sprint.dependencies.map((d) => maxSprintNumber + d),
     });
   }
 
@@ -299,7 +289,7 @@ export async function generateArtifacts({
     } catch (error) {
       console.error(
         `[sprintGeneration/generateArtifacts] Failed to create ${artifact.filePath}:`,
-        error instanceof Error ? error.message : String(error),
+        error instanceof Error ? error.message : String(error)
       );
     }
   }
@@ -313,10 +303,17 @@ export async function generateArtifacts({
       // Append sprint entries to existing plan
       let planContent = await planFile.text();
       for (const artifact of artifacts) {
-        const sprint = decomposed.find(d => d.sprintNumber + maxSprintNumber === artifact.sprintNumber);
+        const sprint = decomposed.find(
+          (d) => d.sprintNumber + maxSprintNumber === artifact.sprintNumber
+        );
         if (sprint) {
           const entry = buildSprintPlanEntry({
-            sprint: { sprintNumber: artifact.sprintNumber, title: artifact.title, requirements: artifact.requirements, acceptanceCriteria: artifact.acceptanceCriteria } as any,
+            sprint: {
+              sprintNumber: artifact.sprintNumber,
+              title: artifact.title,
+              requirements: artifact.requirements,
+              acceptanceCriteria: artifact.acceptanceCriteria,
+            } as any,
           });
           planContent += entry;
         }
@@ -338,9 +335,16 @@ export async function generateArtifacts({
       ];
 
       for (const artifact of artifacts) {
-        planLines.push(buildSprintPlanEntry({
-          sprint: { sprintNumber: artifact.sprintNumber, title: artifact.title, requirements: artifact.requirements, acceptanceCriteria: artifact.acceptanceCriteria } as any,
-        }));
+        planLines.push(
+          buildSprintPlanEntry({
+            sprint: {
+              sprintNumber: artifact.sprintNumber,
+              title: artifact.title,
+              requirements: artifact.requirements,
+              acceptanceCriteria: artifact.acceptanceCriteria,
+            } as any,
+          })
+        );
       }
 
       await Bun.write(planPath, planLines.join('\n'));
@@ -350,7 +354,7 @@ export async function generateArtifacts({
   } catch (error) {
     console.error(
       '[sprintGeneration/generateArtifacts] Failed to update sprint plan:',
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
   }
 
@@ -380,7 +384,10 @@ export async function generateArtifacts({
       '',
       '## Generated Artifacts',
       '',
-      ...artifacts.map(a => `- [${a.filePath}](${a.filePath}) (${a.requirements.length} reqs, ${a.acceptanceCriteria.length} ACs)`),
+      ...artifacts.map(
+        (a) =>
+          `- [${a.filePath}](${a.filePath}) (${a.requirements.length} reqs, ${a.acceptanceCriteria.length} ACs)`
+      ),
       '',
       '## Tier Info',
       '',
@@ -390,7 +397,7 @@ export async function generateArtifacts({
       `- Test matrix: ${policy.testMatrix ? 'enabled' : 'disabled'}`,
       `- Risk register: ${policy.riskRegister ? 'enabled' : 'disabled'}`,
       policy.truncatedSprints.length > 0
-        ? `\n## Quota Truncation\n\n${policy.truncatedSprints.map(s => `- Sprint ${s.sprintNumber}: ${s.reason}`).join('\n')}`
+        ? `\n## Quota Truncation\n\n${policy.truncatedSprints.map((s) => `- Sprint ${s.sprintNumber}: ${s.reason}`).join('\n')}`
         : '',
       '',
     ].join('\n');
@@ -407,7 +414,7 @@ export async function generateArtifacts({
   } catch (error) {
     console.error(
       '[sprintGeneration/generateArtifacts] Failed to create changelog:',
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
   }
 
@@ -448,9 +455,11 @@ function buildDependencyGraph(artifacts: SprintArtifact[]): string {
   const lines = ['```mermaid', 'graph TD'];
   for (const a of artifacts) {
     for (const dep of a.dependencies) {
-      const depArtifact = artifacts.find(x => x.sprintNumber === dep);
+      const depArtifact = artifacts.find((x) => x.sprintNumber === dep);
       if (depArtifact) {
-        lines.push(`    Sprint${dep}["Sprint ${dep}: ${depArtifact.title.slice(0, 40)}"] --> Sprint${a.sprintNumber}["Sprint ${a.sprintNumber}: ${a.title.slice(0, 40)}"]`);
+        lines.push(
+          `    Sprint${dep}["Sprint ${dep}: ${depArtifact.title.slice(0, 40)}"] --> Sprint${a.sprintNumber}["Sprint ${a.sprintNumber}: ${a.title.slice(0, 40)}"]`
+        );
       }
     }
   }
@@ -465,7 +474,9 @@ function buildTestMatrix(artifacts: SprintArtifact[], packet: RequirementPacket)
     '|--------|-------------|-----|----------------|',
   ];
   for (const a of artifacts) {
-    lines.push(`| ${a.sprintNumber} | ${a.requirements.length} | ${a.acceptanceCriteria.length} | ${a.testScenarios.length} |`);
+    lines.push(
+      `| ${a.sprintNumber} | ${a.requirements.length} | ${a.acceptanceCriteria.length} | ${a.testScenarios.length} |`
+    );
   }
   return lines.join('\n');
 }
@@ -473,16 +484,25 @@ function buildTestMatrix(artifacts: SprintArtifact[], packet: RequirementPacket)
 /** Build a risk register for tier_4. */
 function buildRiskRegister(packet: RequirementPacket): string {
   const risks = [
-    { risk: 'Incomplete requirements', severity: 'Medium', mitigation: 'Review with BA persona refinement loop' },
+    {
+      risk: 'Incomplete requirements',
+      severity: 'Medium',
+      mitigation: 'Review with BA persona refinement loop',
+    },
     { risk: 'Scope creep', severity: 'High', mitigation: 'Enforce sprint boundary constraints' },
-    { risk: 'Integration complexity', severity: 'Medium', mitigation: 'Verify against existing architecture specs' },
-    { risk: 'Test coverage gaps', severity: 'Low', mitigation: 'Acceptance criteria drive test scenarios' },
+    {
+      risk: 'Integration complexity',
+      severity: 'Medium',
+      mitigation: 'Verify against existing architecture specs',
+    },
+    {
+      risk: 'Test coverage gaps',
+      severity: 'Low',
+      mitigation: 'Acceptance criteria drive test scenarios',
+    },
   ];
 
-  const lines = [
-    '| Risk | Severity | Mitigation |',
-    '|------|----------|------------|',
-  ];
+  const lines = ['| Risk | Severity | Mitigation |', '|------|----------|------------|'];
 
   for (const r of risks) {
     lines.push(`| ${r.risk} | ${r.severity} | ${r.mitigation} |`);

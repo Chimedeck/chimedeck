@@ -29,12 +29,30 @@ export const MAX_GENERATION_TURNS = 5;
  * [why] Lower tiers get limited sprints; higher tiers unlock more complex
  * decomposition and additional artifact sections.
  */
-export const TIER_SPRINT_QUOTAS: Record<string, { maxSprints: number | 'unlimited'; dependencyGraph: boolean; testMatrix: boolean; riskRegister: boolean }> = {
+export const TIER_SPRINT_QUOTAS: Record<
+  string,
+  {
+    maxSprints: number | 'unlimited';
+    dependencyGraph: boolean;
+    testMatrix: boolean;
+    riskRegister: boolean;
+  }
+> = {
   tier_1: { maxSprints: 1, dependencyGraph: false, testMatrix: false, riskRegister: false },
   tier_2: { maxSprints: 3, dependencyGraph: false, testMatrix: false, riskRegister: false },
   tier_3: { maxSprints: 6, dependencyGraph: true, testMatrix: false, riskRegister: false },
-  tier_4: { maxSprints: 'unlimited' as const, dependencyGraph: true, testMatrix: true, riskRegister: true },
-  unlimited: { maxSprints: 'unlimited' as const, dependencyGraph: true, testMatrix: true, riskRegister: true },
+  tier_4: {
+    maxSprints: 'unlimited' as const,
+    dependencyGraph: true,
+    testMatrix: true,
+    riskRegister: true,
+  },
+  unlimited: {
+    maxSprints: 'unlimited' as const,
+    dependencyGraph: true,
+    testMatrix: true,
+    riskRegister: true,
+  },
 };
 
 /**

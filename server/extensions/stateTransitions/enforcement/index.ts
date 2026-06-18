@@ -30,8 +30,8 @@ export async function validateCardMove({
   if (!boardRules.listNameById.has(fromListId)) return;
 
   const rawAllowedNextStates = boardRules.allowedNextStatesByListId.get(fromListId) ?? [];
-  const allowedNextStates = rawAllowedNextStates.filter((state, index, arr) =>
-    arr.findIndex((candidate) => candidate.id === state.id) === index,
+  const allowedNextStates = rawAllowedNextStates.filter(
+    (state, index, arr) => arr.findIndex((candidate) => candidate.id === state.id) === index
   );
   const isAllowed = allowedNextStates.some((nextState) => nextState.id === toListId);
   if (isAllowed) return;

@@ -42,7 +42,7 @@ export default function ApproveRerunControls({
 
   const handleAction = async (
     action: 'approve' | 'rerun' | 'edit',
-    handler?: (runId: string) => void | Promise<void>,
+    handler?: (runId: string) => void | Promise<void>
   ) => {
     if (!handler || loading) return;
     setLoading(action);
@@ -53,8 +53,7 @@ export default function ApproveRerunControls({
     }
   };
 
-  const runTypeLabel =
-    runType === 'sprint-generation' ? 'Sprint Generation' : 'As-Built Sync';
+  const runTypeLabel = runType === 'sprint-generation' ? 'Sprint Generation' : 'As-Built Sync';
 
   return (
     <div className="approve-rerun-controls" data-testid="approve-rerun-controls">
@@ -88,11 +87,7 @@ export default function ApproveRerunControls({
               disabled={isRunning || loading !== null}
               data-testid="rerun-button"
             >
-              {loading === 'rerun'
-                ? 'Re-running…'
-                : isRunning
-                  ? '⟳ Running…'
-                  : '⟳ Re-run'}
+              {loading === 'rerun' ? 'Re-running…' : isRunning ? '⟳ Running…' : '⟳ Re-run'}
             </button>
           )}
         </div>

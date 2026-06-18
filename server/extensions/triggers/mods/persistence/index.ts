@@ -24,10 +24,7 @@ const ALLOWED_TRANSITIONS: Record<TriggerRunStatus, TriggerRunStatus[]> = {
 };
 
 /** Validate a status transition. Returns true if the transition is allowed. */
-function isValidTransition(
-  from: TriggerRunStatus,
-  to: TriggerRunStatus,
-): boolean {
+function isValidTransition(from: TriggerRunStatus, to: TriggerRunStatus): boolean {
   const allowed = ALLOWED_TRANSITIONS[from];
   if (!allowed) return false;
   return allowed.includes(to);
@@ -162,7 +159,7 @@ export async function updateTriggerRunStatus({
 
   if (!isValidTransition(currentRun.status, status)) {
     console.warn(
-      `[triggers/persistence] Invalid transition: ${currentRun.status} → ${status} for run ${runId}`,
+      `[triggers/persistence] Invalid transition: ${currentRun.status} → ${status} for run ${runId}`
     );
     return null;
   }
@@ -173,11 +170,7 @@ export async function updateTriggerRunStatus({
     updated_at: now,
   };
 
-  if (
-    status === 'SUCCEEDED' ||
-    status === 'FAILED' ||
-    status === 'SKIPPED'
-  ) {
+  if (status === 'SUCCEEDED' || status === 'FAILED' || status === 'SKIPPED') {
     updateFields.completed_at = now;
   }
 
@@ -196,12 +189,9 @@ export async function updateTriggerRunStatus({
   return {
     ...currentRun,
     ...updateFields,
-    completed_at:
-      updateFields.completed_at ?? currentRun.completed_at,
-    failure_reason:
-      updateFields.failure_reason ?? currentRun.failure_reason,
-    failure_upgrade_hint:
-      updateFields.failure_upgrade_hint ?? currentRun.failure_upgrade_hint,
+    completed_at: updateFields.completed_at ?? currentRun.completed_at,
+    failure_reason: updateFields.failure_reason ?? currentRun.failure_reason,
+    failure_upgrade_hint: updateFields.failure_upgrade_hint ?? currentRun.failure_upgrade_hint,
   };
 }
 
@@ -229,9 +219,7 @@ export async function createTriggerAttempt({
     completed_at: null,
   };
 
-  await triggerPersistenceDeps
-    .db('card_phase_trigger_attempts')
-    .insert(attempt);
+  await triggerPersistenceDeps.db('card_phase_trigger_attempts').insert(attempt);
 
   return attempt;
 }

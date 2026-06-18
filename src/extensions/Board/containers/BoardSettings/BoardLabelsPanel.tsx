@@ -5,8 +5,16 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { TagIcon } from '@heroicons/react/24/outline';
 import type { Label } from '~/extensions/Card/api';
 import { contrastText } from '~/extensions/Card/components/LabelChip';
-import { DEFAULT_LABEL_COLOR, LABEL_PRESET_COLORS } from '~/extensions/Card/constants/labelPresetColors';
-import { getBoardLabels, createBoardLabel, updateBoardLabel, deleteBoardLabel } from '~/extensions/Card/api/cardDetail';
+import {
+  DEFAULT_LABEL_COLOR,
+  LABEL_PRESET_COLORS,
+} from '~/extensions/Card/constants/labelPresetColors';
+import {
+  getBoardLabels,
+  createBoardLabel,
+  updateBoardLabel,
+  deleteBoardLabel,
+} from '~/extensions/Card/api/cardDetail';
 import { apiClient } from '~/common/api/client';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { boardSliceActions } from '~/extensions/Board/slices/boardSlice';
@@ -32,7 +40,9 @@ const ColorGrid = ({
           selected === c.hex ? 'ring-2 ring-primary ring-offset-1' : ''
         }`}
         style={{ backgroundColor: c.hex }}
-        onClick={() => { onChange(c.hex); }}
+        onClick={() => {
+          onChange(c.hex);
+        }}
         aria-label={c.name}
       >
         {selected === c.hex && (
@@ -84,8 +94,12 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
     if (!modalOpen) return;
     setLoading(true);
     getBoardLabels({ api: apiClient, boardId })
-      .then((fetched) => { setLabels(fetched); })
-      .finally(() => { setLoading(false); });
+      .then((fetched) => {
+        setLabels(fetched);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [modalOpen, boardId]);
 
   // Focus the right input when view changes
@@ -101,9 +115,13 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
   // Close on Escape
   useEffect(() => {
     if (!modalOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
     document.addEventListener('keydown', handler);
-    return () => { document.removeEventListener('keydown', handler); };
+    return () => {
+      document.removeEventListener('keydown', handler);
+    };
   }, [modalOpen]);
 
   const closeModal = () => {
@@ -148,7 +166,12 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
     if (!name) return;
     setSaving(true);
     try {
-      const updated = await updateBoardLabel({ api: apiClient, labelId: view.editId, name, color: formColor });
+      const updated = await updateBoardLabel({
+        api: apiClient,
+        labelId: view.editId,
+        name,
+        color: formColor,
+      });
       setLabels((prev) => prev.map((l) => (l.id === view.editId ? updated : l)));
       // [why] Propagate the updated label to all cards on the board in local Redux state
       // so the board view reflects the change immediately without a full refresh.
@@ -174,10 +197,12 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
   };
 
   const isEditView = typeof view === 'object';
-  const editingLabel = isEditView ? labels.find((l) => l.id === (view as { editId: string }).editId) : null;
+  const editingLabel = isEditView
+    ? labels.find((l) => l.id === (view as { editId: string }).editId)
+    : null;
 
   const filteredLabels = labels.filter((l) =>
-    l.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    l.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   let headerTitle: string;
@@ -196,234 +221,284 @@ const BoardLabelsPanel = ({ boardId }: Props) => {
       {/* Entry row — matches the style of the Plugins row */}
       <button
         type="button"
-        onClick={() => { setModalOpen(true); }}
+        onClick={() => {
+          setModalOpen(true);
+        }}
         className="w-full text-left px-3 py-2 rounded text-sm text-subtle hover:bg-bg-surface flex items-center gap-2 transition-colors"
       >
         <TagIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span>Labels</span>
       </button>
 
-      <Dialog.Root open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
+      <Dialog.Root
+        open={modalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeModal();
+        }}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60" />
           <Dialog.Content
             className="fixed inset-0 z-50 flex items-start justify-center pt-24 pointer-events-none"
-            onInteractOutside={() => { closeModal(); }}
-            onEscapeKeyDown={() => { closeModal(); }}
+            onInteractOutside={() => {
+              closeModal();
+            }}
+            onEscapeKeyDown={() => {
+              closeModal();
+            }}
             aria-label="Labels"
           >
             <Dialog.Title className="sr-only">Labels</Dialog.Title>
-            <div
-              className="relative w-80 rounded-xl bg-bg-surface border border-border shadow-2xl flex flex-col max-h-[min(36rem,80vh)] overflow-hidden pointer-events-auto"
-            >
-            {/* Header */}
-            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
-              {canGoBack ? (
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-sm text-muted hover:text-base transition-colors"
-                  onClick={() => { setView('list'); }}
-                >
-                  {/* left chevron */}
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                  </svg>
-                  {headerTitle}
-                </button>
-              ) : (
-                <span className="text-sm font-semibold text-base">{headerTitle}</span>
-              )}
-              <button
-                type="button"
-                className="rounded p-0.5 text-subtle hover:text-base transition-colors"
-                onClick={closeModal}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* ── List view ── */}
-            {view === 'list' && (
-              <div className="p-3 space-y-2 overflow-y-auto flex-1 min-h-0">
-                <input
-                  ref={searchInputRef}
-                  className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Search labels..."
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); }}
-                />
-
-                {loading && (
-                  <p className="text-xs text-subtle px-1 py-2">Loading…</p>
-                )}
-
-                {!loading && filteredLabels.length === 0 && (
-                  <p className="text-xs text-subtle px-1 py-2">
-                    {searchQuery ? 'No labels found.' : 'No labels yet. Create one below.'}
-                  </p>
-                )}
-
-                {!loading && filteredLabels.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted px-1 pb-1">Labels</p>
-                    <div className="space-y-1">
-                      {filteredLabels.map((label) => (
-                        <div key={label.id} className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            className="flex-1 flex items-center justify-center rounded-md px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90 min-w-0 truncate"
-                            style={{ backgroundColor: label.color, color: contrastText(label.color) }}
-                            title={label.name}
-                            onClick={() => { openEdit(label); }}
-                          >
-                            {label.name}
-                          </button>
-                          <button
-                            type="button"
-                            className="flex-shrink-0 rounded p-1.5 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
-                            onClick={() => { openEdit(label); }}
-                            aria-label={`Edit ${label.name}`}
-                          >
-                            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  className="w-full rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-2 transition-colors"
-                  onClick={openCreate}
-                >
-                  Create a new label
-                </button>
-              </div>
-            )}
-
-            {/* ── Create / Edit form ── */}
-            {(view === 'create' || isEditView) && (
-              <div className="p-3 space-y-3 overflow-y-auto flex-1 min-h-0">
-                {/* Label preview */}
-                {formName.trim() && (
-                  <div
-                    className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center truncate"
-                    style={{
-                      backgroundColor: formColor || '#cbd5e1',
-                      color: formColor ? contrastText(formColor) : 'var(--text-base)',
-                    }}
-                  >
-                    {formName}
-                  </div>
-                )}
-                {!formName.trim() && isEditView && editingLabel && (
-                  <div
-                    className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center truncate opacity-60"
-                    style={{
-                      backgroundColor: formColor || '#cbd5e1',
-                      color: formColor ? contrastText(formColor) : 'var(--text-base)',
-                    }}
-                  >
-                    {editingLabel.name}
-                  </div>
-                )}
-                {!formName.trim() && view === 'create' && (
-                  <div className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center bg-bg-overlay text-subtle">
-                    Label preview
-                  </div>
-                )}
-
-                {/* Title input */}
-                <div>
-                  <p className="text-xs font-medium text-muted mb-1">Title</p>
-                  <input
-                    ref={nameInputRef}
-                    className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Label name"
-                    value={formName}
-                    onChange={(e) => { setFormName(e.target.value); }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        void (view === 'create' ? handleCreate() : handleSaveEdit());
-                      }
-                    }}
-                  />
-                </div>
-
-                {/* Color grid */}
-                <div>
-                  <p className="text-xs font-medium text-muted mb-1.5">Select a color</p>
-                  <ColorGrid selected={formColor} onChange={setFormColor} />
-                  {formColor && (
-                    <button
-                      type="button"
-                      className="mt-2 flex items-center gap-1.5 text-xs text-subtle hover:text-base transition-colors"
-                      onClick={() => { setFormColor(''); }}
-                    >
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                      </svg>
-                      Remove color
-                    </button>
-                  )}
-                </div>
-
-                {/* Action button */}
-                <button
-                  type="button"
-                  className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 transition-colors disabled:opacity-50"
-                  onClick={() => void (view === 'create' ? handleCreate() : handleSaveEdit())}
-                  disabled={saving || !formName.trim()}
-                >
-                  {saving ? 'Saving…' : null}
-                  {!saving && view === 'create' ? 'Create' : null}
-                  {!saving && view !== 'create' ? 'Save' : null}
-                </button>
-
-                {/* Delete — only on edit view */}
-                {isEditView && !confirmDelete && (
+            <div className="relative w-80 rounded-xl bg-bg-surface border border-border shadow-2xl flex flex-col max-h-[min(36rem,80vh)] overflow-hidden pointer-events-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
+                {canGoBack ? (
                   <button
                     type="button"
-                    className="w-full rounded-lg border border-danger/40 text-danger hover:bg-danger/10 text-sm py-2 transition-colors"
-                    onClick={() => { setConfirmDelete(true); }}
+                    className="flex items-center gap-1 text-sm text-muted hover:text-base transition-colors"
+                    onClick={() => {
+                      setView('list');
+                    }}
                   >
-                    Delete label
+                    {/* left chevron */}
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {headerTitle}
                   </button>
+                ) : (
+                  <span className="text-sm font-semibold text-base">{headerTitle}</span>
                 )}
-
-                {/* Confirmation prompt */}
-                {isEditView && confirmDelete && (
-                  <div className="rounded-lg border border-danger/40 bg-danger/5 p-3 space-y-2">
-                    <p className="text-xs text-danger font-medium">Delete this label?</p>
-                    <p className="text-xs text-muted">
-                      This will permanently remove the label from all cards. This action cannot be undone.
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 rounded-lg bg-danger hover:bg-red-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50"
-                        onClick={() => void handleDeleteLabel()}
-                        disabled={deleting}
-                      >
-                        {deleting ? 'Deleting…' : 'Yes, delete'}
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
-                        onClick={() => { setConfirmDelete(false); }}
-                        disabled={deleting}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className="rounded p-0.5 text-subtle hover:text-base transition-colors"
+                  onClick={closeModal}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
               </div>
-            )}
+
+              {/* ── List view ── */}
+              {view === 'list' && (
+                <div className="p-3 space-y-2 overflow-y-auto flex-1 min-h-0">
+                  <input
+                    ref={searchInputRef}
+                    className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Search labels..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                    }}
+                  />
+
+                  {loading && <p className="text-xs text-subtle px-1 py-2">Loading…</p>}
+
+                  {!loading && filteredLabels.length === 0 && (
+                    <p className="text-xs text-subtle px-1 py-2">
+                      {searchQuery ? 'No labels found.' : 'No labels yet. Create one below.'}
+                    </p>
+                  )}
+
+                  {!loading && filteredLabels.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted px-1 pb-1">Labels</p>
+                      <div className="space-y-1">
+                        {filteredLabels.map((label) => (
+                          <div key={label.id} className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              className="flex-1 flex items-center justify-center rounded-md px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90 min-w-0 truncate"
+                              style={{
+                                backgroundColor: label.color,
+                                color: contrastText(label.color),
+                              }}
+                              title={label.name}
+                              onClick={() => {
+                                openEdit(label);
+                              }}
+                            >
+                              {label.name}
+                            </button>
+                            <button
+                              type="button"
+                              className="flex-shrink-0 rounded p-1.5 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
+                              onClick={() => {
+                                openEdit(label);
+                              }}
+                              aria-label={`Edit ${label.name}`}
+                            >
+                              <svg
+                                className="h-3.5 w-3.5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                aria-hidden="true"
+                              >
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="w-full rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-2 transition-colors"
+                    onClick={openCreate}
+                  >
+                    Create a new label
+                  </button>
+                </div>
+              )}
+
+              {/* ── Create / Edit form ── */}
+              {(view === 'create' || isEditView) && (
+                <div className="p-3 space-y-3 overflow-y-auto flex-1 min-h-0">
+                  {/* Label preview */}
+                  {formName.trim() && (
+                    <div
+                      className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center truncate"
+                      style={{
+                        backgroundColor: formColor || '#cbd5e1',
+                        color: formColor ? contrastText(formColor) : 'var(--text-base)',
+                      }}
+                    >
+                      {formName}
+                    </div>
+                  )}
+                  {!formName.trim() && isEditView && editingLabel && (
+                    <div
+                      className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center truncate opacity-60"
+                      style={{
+                        backgroundColor: formColor || '#cbd5e1',
+                        color: formColor ? contrastText(formColor) : 'var(--text-base)',
+                      }}
+                    >
+                      {editingLabel.name}
+                    </div>
+                  )}
+                  {!formName.trim() && view === 'create' && (
+                    <div className="w-full rounded-md px-3 py-2 text-sm font-semibold text-center bg-bg-overlay text-subtle">
+                      Label preview
+                    </div>
+                  )}
+
+                  {/* Title input */}
+                  <div>
+                    <p className="text-xs font-medium text-muted mb-1">Title</p>
+                    <input
+                      ref={nameInputRef}
+                      className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Label name"
+                      value={formName}
+                      onChange={(e) => {
+                        setFormName(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          void (view === 'create' ? handleCreate() : handleSaveEdit());
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Color grid */}
+                  <div>
+                    <p className="text-xs font-medium text-muted mb-1.5">Select a color</p>
+                    <ColorGrid selected={formColor} onChange={setFormColor} />
+                    {formColor && (
+                      <button
+                        type="button"
+                        className="mt-2 flex items-center gap-1.5 text-xs text-subtle hover:text-base transition-colors"
+                        onClick={() => {
+                          setFormColor('');
+                        }}
+                      >
+                        <svg
+                          className="h-3.5 w-3.5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Remove color
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Action button */}
+                  <button
+                    type="button"
+                    className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 transition-colors disabled:opacity-50"
+                    onClick={() => void (view === 'create' ? handleCreate() : handleSaveEdit())}
+                    disabled={saving || !formName.trim()}
+                  >
+                    {saving ? 'Saving…' : null}
+                    {!saving && view === 'create' ? 'Create' : null}
+                    {!saving && view !== 'create' ? 'Save' : null}
+                  </button>
+
+                  {/* Delete — only on edit view */}
+                  {isEditView && !confirmDelete && (
+                    <button
+                      type="button"
+                      className="w-full rounded-lg border border-danger/40 text-danger hover:bg-danger/10 text-sm py-2 transition-colors"
+                      onClick={() => {
+                        setConfirmDelete(true);
+                      }}
+                    >
+                      Delete label
+                    </button>
+                  )}
+
+                  {/* Confirmation prompt */}
+                  {isEditView && confirmDelete && (
+                    <div className="rounded-lg border border-danger/40 bg-danger/5 p-3 space-y-2">
+                      <p className="text-xs text-danger font-medium">Delete this label?</p>
+                      <p className="text-xs text-muted">
+                        This will permanently remove the label from all cards. This action cannot be
+                        undone.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="flex-1 rounded-lg bg-danger hover:bg-red-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50"
+                          onClick={() => void handleDeleteLabel()}
+                          disabled={deleting}
+                        >
+                          {deleting ? 'Deleting…' : 'Yes, delete'}
+                        </button>
+                        <button
+                          type="button"
+                          className="flex-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
+                          onClick={() => {
+                            setConfirmDelete(false);
+                          }}
+                          disabled={deleting}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </Dialog.Content>
         </Dialog.Portal>

@@ -52,27 +52,29 @@ export async function enrichExternalLinkChips(root: HTMLElement): Promise<void> 
   const anchors = Array.from(root.querySelectorAll('a[href]'));
   if (anchors.length === 0) return;
 
-  await Promise.all(anchors.map(async (anchor) => {
-    if (anchor.dataset.metaChipReady === '1') return;
-    if (anchor.querySelector('img')) return;
-    // [why] Card-mode links are represented as multi-line anchors (hard break
-    // between title and host). Keep their card presentation intact in view mode
-    // instead of collapsing them into compact metadata chips.
-    if (anchor.querySelector('br')) return;
+  await Promise.all(
+    anchors.map(async (anchor) => {
+      if (anchor.dataset.metaChipReady === '1') return;
+      if (anchor.querySelector('img')) return;
+      // [why] Card-mode links are represented as multi-line anchors (hard break
+      // between title and host). Keep their card presentation intact in view mode
+      // instead of collapsing them into compact metadata chips.
+      if (anchor.querySelector('br')) return;
 
-    const rawHref = anchor.getAttribute('href')?.trim() ?? '';
-    const absolute = toAbsoluteHttpUrl(rawHref);
-    if (!absolute) return;
-    if (absolute.origin === globalThis.location.origin) return;
+      const rawHref = anchor.getAttribute('href')?.trim() ?? '';
+      const absolute = toAbsoluteHttpUrl(rawHref);
+      if (!absolute) return;
+      if (absolute.origin === globalThis.location.origin) return;
 
-    anchor.dataset.metaChipReady = '1';
+      anchor.dataset.metaChipReady = '1';
 
-    const fallbackTitle = anchor.textContent?.trim() || absolute.hostname;
-    const fallbackFavicon = `${absolute.origin}/favicon.ico`;
-    const preview = await getPreview(absolute.toString());
-    const title = preview?.title || fallbackTitle;
-    const faviconUrl = preview?.faviconUrl || fallbackFavicon;
+      const fallbackTitle = anchor.textContent?.trim() || absolute.hostname;
+      const fallbackFavicon = `${absolute.origin}/favicon.ico`;
+      const preview = await getPreview(absolute.toString());
+      const title = preview?.title || fallbackTitle;
+      const faviconUrl = preview?.faviconUrl || fallbackFavicon;
 
-    updateAnchorContent(anchor, title, faviconUrl);
-  }));
+      updateAnchorContent(anchor, title, faviconUrl);
+    })
+  );
 }

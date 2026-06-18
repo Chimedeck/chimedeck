@@ -6,12 +6,14 @@ import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { evidenceCollectorDeps } from '../index';
 
 // Import the main function but override deps for testing
-const {
-  collectEvidence,
-} = await import('../index');
+const { collectEvidence } = await import('../index');
 
 describe('evidenceCollector', () => {
-  let mockExec: ReturnType<typeof mock<(cmd: string[], cwd?: string) => { stdout: string; stderr: string; exitCode: number }>>;
+  let mockExec: ReturnType<
+    typeof mock<
+      (cmd: string[], cwd?: string) => { stdout: string; stderr: string; exitCode: number }
+    >
+  >;
   let mockGetRepoRoot: ReturnType<typeof mock<() => string>>;
   let mockDbTable: ReturnType<typeof mock<() => any>>;
   let originalExec: typeof evidenceCollectorDeps.exec;
@@ -41,7 +43,7 @@ describe('evidenceCollector', () => {
           list_id: 'list-1',
           list_name: 'In Progress',
           board_id: 'board-1',
-        }),
+        })
       ),
     };
     mockDbTable = mock(() => mockChain);
@@ -92,7 +94,8 @@ describe('evidenceCollector', () => {
   });
 
   it('should collect changed files from git diff', async () => {
-    const mockDiffOutput = 'A\tspecs/sprints/sprint-177.md\nM\tspecs/architecture/architecture.md\nD\tsrc/old-component.tsx\n';
+    const mockDiffOutput =
+      'A\tspecs/sprints/sprint-177.md\nM\tspecs/architecture/architecture.md\nD\tsrc/old-component.tsx\n';
 
     const callResults: any[] = [
       // git log call — empty

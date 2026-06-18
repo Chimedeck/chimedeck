@@ -15,7 +15,10 @@ import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { writeActivity } from '../../activity/mods/write';
 import { publishCardActivityEvent } from '../../activity/events/publishCardActivityEvent';
 
-interface CardContext { boardId: string; workspaceId: string; }
+interface CardContext {
+  boardId: string;
+  workspaceId: string;
+}
 
 async function resolveContextFromCard(cardId: string): Promise<CardContext | null> {
   const card = await db('cards').where({ id: cardId }).first();
@@ -28,7 +31,7 @@ async function resolveContextFromCard(cardId: string): Promise<CardContext | nul
 }
 
 async function resolveContextFromChecklist(
-  checklistId: string,
+  checklistId: string
 ): Promise<{ context: CardContext | null; cardId: string | null }> {
   const checklist = await db('checklists').where({ id: checklistId }).first();
   if (!checklist) return { context: null, cardId: null };
@@ -54,7 +57,7 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
   if (!card) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -62,7 +65,7 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
   if (!context) {
     return Response.json(
       { error: { name: 'card-not-found', data: { message: 'Card context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -80,7 +83,7 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
     // title is optional; default provided below
   }
 
-  const title = (body.title)?.trim() || 'Checklist';
+  const title = body.title?.trim() || 'Checklist';
 
   const lastChecklist = await db('checklists')
     .where({ card_id: cardId })
@@ -108,9 +111,11 @@ export async function handleCreateChecklist(req: Request, cardId: string): Promi
     action: 'checklist_created',
     actorId,
     payload: { checklistTitle: title, cardTitle: card?.title ?? '' },
-  }).then((activity) => {
-    publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
-  }).catch(() => {});
+  })
+    .then((activity) => {
+      publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
+    })
+    .catch(() => {});
 
   return Response.json({ data: result }, { status: 201 });
 }
@@ -124,7 +129,7 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   if (!checklist) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -132,7 +137,7 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   if (!context) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -149,17 +154,19 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const updates: { title?: string; position?: string; updated_at: Date } = { updated_at: new Date() };
+  const updates: { title?: string; position?: string; updated_at: Date } = {
+    updated_at: new Date(),
+  };
 
   if (body.title !== undefined) {
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
         { error: { name: 'bad-request', data: { message: 'title must be a non-empty string' } } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.title = body.title.trim();
@@ -168,8 +175,10 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
   if (body.position !== undefined) {
     if (typeof body.position !== 'string' || body.position.trim() === '') {
       return Response.json(
-        { error: { name: 'bad-request', data: { message: 'position must be a non-empty string' } } },
-        { status: 400 },
+        {
+          error: { name: 'bad-request', data: { message: 'position must be a non-empty string' } },
+        },
+        { status: 400 }
       );
     }
     updates.position = body.position;
@@ -177,8 +186,13 @@ export async function handleUpdateChecklist(req: Request, checklistId: string): 
 
   if (!updates.title && !updates.position) {
     return Response.json(
-      { error: { name: 'bad-request', data: { message: 'at least one of title or position is required' } } },
-      { status: 400 },
+      {
+        error: {
+          name: 'bad-request',
+          data: { message: 'at least one of title or position is required' },
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -197,7 +211,7 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
   if (!checklist) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -205,7 +219,7 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
   if (!context) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -228,9 +242,11 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
     action: 'checklist_deleted',
     actorId,
     payload: { checklistTitle: checklist.title, cardTitle: card?.title ?? '' },
-  }).then((activity) => {
-    publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
-  }).catch(() => {});
+  })
+    .then((activity) => {
+      publishCardActivityEvent({ activity, boardId: context.boardId }).catch(() => {});
+    })
+    .catch(() => {});
 
   return new Response(null, { status: 204 });
 }
@@ -238,7 +254,7 @@ export async function handleDeleteChecklist(req: Request, checklistId: string): 
 // POST /api/v1/checklists/:checklistId/items
 export async function handleCreateChecklistItemInGroup(
   req: Request,
-  checklistId: string,
+  checklistId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -247,7 +263,7 @@ export async function handleCreateChecklistItemInGroup(
   if (!checklist) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -255,7 +271,7 @@ export async function handleCreateChecklistItemInGroup(
   if (!context) {
     return Response.json(
       { error: { name: 'checklist-not-found', data: { message: 'Checklist context not found' } } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -272,14 +288,14 @@ export async function handleCreateChecklistItemInGroup(
   } catch {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'Invalid JSON body' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { name: 'bad-request', data: { message: 'title is required' } } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

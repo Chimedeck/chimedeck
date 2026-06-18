@@ -60,7 +60,7 @@ const BoardNotificationToggle = ({ boardId, onMasterEnabledChange }: Props) => {
     setError(null);
     (apiClient as { get: <T>(url: string) => Promise<T> })
       .get<{ data: { notifications_enabled: boolean; only_related_to_me: boolean } }>(
-        `/boards/${boardId}/notification-preference`,
+        `/boards/${boardId}/notification-preference`
       )
       .then((res) => {
         setEnabled(res.data.notifications_enabled);
@@ -81,7 +81,7 @@ const BoardNotificationToggle = ({ boardId, onMasterEnabledChange }: Props) => {
 
   const patchPreference = async (
     body: { notifications_enabled?: boolean; only_related_to_me?: boolean },
-    rollback: () => void,
+    rollback: () => void
   ) => {
     setError(null);
     try {
@@ -98,24 +98,18 @@ const BoardNotificationToggle = ({ boardId, onMasterEnabledChange }: Props) => {
     const prev = enabled;
     setEnabled(next); // optimistic update
     onMasterEnabledChange?.(next);
-    void patchPreference(
-      { notifications_enabled: next },
-      () => {
-        setEnabled(prev);
-        onMasterEnabledChange?.(prev);
-      },
-    );
+    void patchPreference({ notifications_enabled: next }, () => {
+      setEnabled(prev);
+      onMasterEnabledChange?.(prev);
+    });
   };
 
   const handleToggleOnlyRelatedToMe = (next: boolean) => {
     const prev = onlyRelatedToMe;
     setOnlyRelatedToMe(next); // optimistic update
-    void patchPreference(
-      { only_related_to_me: next },
-      () => {
-        setOnlyRelatedToMe(prev);
-      },
-    );
+    void patchPreference({ only_related_to_me: next }, () => {
+      setOnlyRelatedToMe(prev);
+    });
   };
 
   return (

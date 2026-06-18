@@ -15,22 +15,24 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.pluginId || typeof body.pluginId !== 'string') {
     return Response.json(
       { error: { code: 'bad-request', message: 'pluginId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const plugin = await db('plugins').where({ id: body.pluginId }).first();
   if (!plugin || !plugin.is_active) {
     return Response.json(
-      { error: { code: 'plugin-not-active', message: 'Plugin not found or not active in registry' } },
-      { status: 404 },
+      {
+        error: { code: 'plugin-not-active', message: 'Plugin not found or not active in registry' },
+      },
+      { status: 404 }
     );
   }
 
@@ -40,8 +42,13 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
 
   if (existing && !existing.disabled_at) {
     return Response.json(
-      { error: { code: 'plugin-already-enabled', message: 'Plugin is already enabled on this board' } },
-      { status: 409 },
+      {
+        error: {
+          code: 'plugin-already-enabled',
+          message: 'Plugin is already enabled on this board',
+        },
+      },
+      { status: 409 }
     );
   }
 
@@ -73,24 +80,27 @@ export async function handleEnableBoardPlugin(req: Request, boardId: string): Pr
   // [why] apiKey must be included here so Redux state has it available immediately
   // after enable — without it the plugin bridge throws missing-plugin-api-key on
   // any DATA_GET / DATA_SET call made in the same session before a page reload.
-  return Response.json({
-    data: {
-      id: boardPluginId,
-      boardId: boardId,
-      plugin: {
-        id: plugin.id,
-        apiKey: plugin.api_key ?? null,
-        name: plugin.name,
-        slug: plugin.slug,
-        description: plugin.description,
-        iconUrl: plugin.icon_url,
-        connectorUrl: plugin.connector_url,
-        author: plugin.author,
-        categories: plugin.categories ?? [],
-        capabilities: Array.isArray(plugin.capabilities) ? plugin.capabilities : [],
+  return Response.json(
+    {
+      data: {
+        id: boardPluginId,
+        boardId: boardId,
+        plugin: {
+          id: plugin.id,
+          apiKey: plugin.api_key ?? null,
+          name: plugin.name,
+          slug: plugin.slug,
+          description: plugin.description,
+          iconUrl: plugin.icon_url,
+          connectorUrl: plugin.connector_url,
+          author: plugin.author,
+          categories: plugin.categories ?? [],
+          capabilities: Array.isArray(plugin.capabilities) ? plugin.capabilities : [],
+        },
+        enabledAt: bp.enabled_at,
+        disabledAt: null,
       },
-      enabledAt: bp.enabled_at,
-      disabledAt: null,
     },
-  }, { status: 201 });
+    { status: 201 }
+  );
 }

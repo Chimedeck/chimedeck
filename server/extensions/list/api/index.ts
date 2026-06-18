@@ -1,5 +1,8 @@
 // List API router — mounts all list routes.
-import { applyBoardVisibility, applyBoardVisibilityFromList } from '../../../middlewares/boardVisibility';
+import {
+  applyBoardVisibility,
+  applyBoardVisibilityFromList,
+} from '../../../middlewares/boardVisibility';
 import { handleCreateList } from './create';
 import { handleListLists } from './list';
 import { handleUpdateList } from './update';
@@ -20,7 +23,7 @@ export async function listRouter(req: Request, pathname: string): Promise<Respon
     if (!boardId) {
       return Response.json(
         { error: { code: 'board-not-found', message: 'Board not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     const sub = boardListsMatch[2] ?? '';
@@ -47,7 +50,7 @@ export async function listRouter(req: Request, pathname: string): Promise<Respon
     if (!listId) {
       return Response.json(
         { error: { code: 'list-not-found', message: 'List not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     const sub = listMatch[2] ?? '';

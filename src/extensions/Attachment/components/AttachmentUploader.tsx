@@ -22,9 +22,18 @@ export function AttachmentUploader({ cardId, onUploadComplete }: Props): React.R
 
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => { setDragging(false); }}
-      onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => {
+        setDragging(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragging(false);
+        handleFiles(e.dataTransfer.files);
+      }}
       onClick={() => inputRef.current?.click()}
       style={{
         border: `2px dashed ${dragging ? '#6366f1' : '#d1d5db'}`,
@@ -40,11 +49,15 @@ export function AttachmentUploader({ cardId, onUploadComplete }: Props): React.R
         ref={inputRef}
         type="file"
         style={{ display: 'none' }}
-        onChange={(e) => { handleFiles(e.target.files); }}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+        }}
       />
       {progress !== null ? (
         <div>
-          <div style={{ marginBottom: 8 }}>{translations['attachment.uploader.uploading'].replace('{progress}', String(progress))}</div>
+          <div style={{ marginBottom: 8 }}>
+            {translations['attachment.uploader.uploading'].replace('{progress}', String(progress))}
+          </div>
           <progress value={progress} max={100} style={{ width: '100%' }} />
         </div>
       ) : (

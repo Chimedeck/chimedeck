@@ -7,14 +7,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { LinkIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/common/api/client';
-import {
-  getBoardIntegrations,
-  patchBoardIntegrations,
-} from '../../api';
-import {
-  parseGithubProjectUrl,
-  normalizeGithubProjectUrl,
-} from '../../mods/githubProjectUrl';
+import { getBoardIntegrations, patchBoardIntegrations } from '../../api';
+import { parseGithubProjectUrl, normalizeGithubProjectUrl } from '../../mods/githubProjectUrl';
 import translations from '../../translations/en.json';
 
 interface Props {
@@ -140,11 +134,7 @@ const GithubProjectUrlSetting = ({ boardId, disabled = false }: Props) => {
   // after blur, which made repo clone URLs impossible to save.
   // [why] The `loading` branch returns above, so by the time we render the
   // input `loading` is always `false` — it is intentionally not included here.
-  const isSaveDisabled =
-    saving
-    || url.trim().length === 0
-    || !isValid
-    || isValidationError;
+  const isSaveDisabled = saving || url.trim().length === 0 || !isValid || isValidationError;
 
   return (
     <div className="space-y-2">
@@ -158,7 +148,9 @@ const GithubProjectUrlSetting = ({ boardId, disabled = false }: Props) => {
 
       {/* Disabled notice for non-admins */}
       {disabled && (
-        <p className="text-xs text-muted italic">{translations['BoardSettings.githubProjectUrlUnauthorized']}</p>
+        <p className="text-xs text-muted italic">
+          {translations['BoardSettings.githubProjectUrlUnauthorized']}
+        </p>
       )}
 
       {/* Helper text */}
@@ -203,7 +195,9 @@ const GithubProjectUrlSetting = ({ boardId, disabled = false }: Props) => {
           // against future refactors that render the input during load.
           disabled={disabled || saving || loading}
           className={`w-full px-3 py-2 rounded border text-sm transition-colors ${
-            disabled || saving ? 'bg-bg-overlay cursor-not-allowed opacity-50 border-border' : 'bg-bg-base border-border hover:border-subtle focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 focus:border-indigo-500'
+            disabled || saving
+              ? 'bg-bg-overlay cursor-not-allowed opacity-50 border-border'
+              : 'bg-bg-base border-border hover:border-subtle focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-0 focus:border-indigo-500'
           } ${isValidationError ? 'border-danger text-danger' : 'text-base'}`}
           aria-label={translations['BoardSettings.githubProjectUrlLabel']}
           aria-invalid={isValidationError}
@@ -221,34 +215,39 @@ const GithubProjectUrlSetting = ({ boardId, disabled = false }: Props) => {
       </div>
 
       {/* Parsed-owner/repo chip — only when the URL is valid AND non-empty. */}
-      {parsed && url.trim() && !isValidationError && (() => {
-        const isProjectScope =
-          parsed.scope === 'org' || parsed.scope === 'user' || parsed.scope === 'repo';
-        const ownerRepo = parsed.repository
-          ? `${parsed.owner}/${parsed.repository}`
-          : parsed.owner;
-        const label = isProjectScope
-          ? `${ownerRepo} · project #${String(parsed.projectNumber)}`
-          : ownerRepo;
-        return (
-          <p className="text-xs text-subtle" data-testid="github-project-url-parsed">
-            <span className="text-muted">{translations['BoardSettings.githubProjectUrlDetectedLabel']}</span>{' '}
-            <span className="font-mono" data-testid="github-project-url-parsed-value">
-              {label}
-            </span>
-          </p>
-        );
-      })()}
+      {parsed &&
+        url.trim() &&
+        !isValidationError &&
+        (() => {
+          const isProjectScope =
+            parsed.scope === 'org' || parsed.scope === 'user' || parsed.scope === 'repo';
+          const ownerRepo = parsed.repository
+            ? `${parsed.owner}/${parsed.repository}`
+            : parsed.owner;
+          const label = isProjectScope
+            ? `${ownerRepo} · project #${String(parsed.projectNumber)}`
+            : ownerRepo;
+          return (
+            <p className="text-xs text-subtle" data-testid="github-project-url-parsed">
+              <span className="text-muted">
+                {translations['BoardSettings.githubProjectUrlDetectedLabel']}
+              </span>{' '}
+              <span className="font-mono" data-testid="github-project-url-parsed-value">
+                {label}
+              </span>
+            </p>
+          );
+        })()}
 
       {/* Validation error */}
       {isValidationError && (
-        <p className="text-xs text-danger">{translations['BoardSettings.githubProjectUrlInvalid']}</p>
+        <p className="text-xs text-danger">
+          {translations['BoardSettings.githubProjectUrlInvalid']}
+        </p>
       )}
 
       {/* Save error */}
-      {error && (
-        <p className="text-xs text-danger">{error}</p>
-      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {/* Save button */}
       {!disabled && (

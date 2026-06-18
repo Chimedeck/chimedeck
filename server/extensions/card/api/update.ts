@@ -55,7 +55,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -67,13 +67,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (body.title.trim().length > 512) {
       return Response.json(
         { error: { code: 'card-title-too-long', message: 'title must be ≤ 512 characters' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.title = sanitizeText(body.title.trim());
@@ -93,7 +93,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     if (typeof body.due_complete !== 'boolean') {
       return Response.json(
         { error: { code: 'bad-request', message: 'due_complete must be a boolean' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.due_complete = body.due_complete;
@@ -104,8 +104,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       const parsed = new Date(body.start_date);
       if (Number.isNaN(parsed.getTime())) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'start_date must be a valid ISO 8601 date string or null' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'start_date must be a valid ISO 8601 date string or null',
+            },
+          },
+          { status: 400 }
         );
       }
     }
@@ -120,13 +125,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       if (typeof body.amount !== 'number' || Number.isNaN(body.amount)) {
         return Response.json(
           { error: { code: 'bad-request', message: 'amount must be a number or null' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
       if (body.amount < 0) {
         return Response.json(
           { error: { code: 'bad-request', message: 'amount must be non-negative' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
       updates.amount = body.amount;
@@ -139,8 +144,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     } else {
       if (typeof body.currency !== 'string' || !CURRENCY_RE.test(body.currency)) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)',
+            },
+          },
+          { status: 400 }
         );
       }
       updates.currency = body.currency;
@@ -153,8 +163,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     } else {
       if (typeof body.cover_attachment_id !== 'string' || body.cover_attachment_id.trim() === '') {
         return Response.json(
-          { error: { code: 'bad-request', message: 'cover_attachment_id must be a non-empty string or null' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'cover_attachment_id must be a non-empty string or null',
+            },
+          },
+          { status: 400 }
         );
       }
 
@@ -162,10 +177,19 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         .where({ id: body.cover_attachment_id, card_id: cardId, type: 'FILE' })
         .first();
 
-      if (!attachment || typeof attachment.mime_type !== 'string' || !attachment.mime_type.startsWith('image/')) {
+      if (
+        !attachment ||
+        typeof attachment.mime_type !== 'string' ||
+        !attachment.mime_type.startsWith('image/')
+      ) {
         return Response.json(
-          { error: { code: 'invalid-cover-attachment', message: 'cover_attachment_id must reference an image attachment on this card' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'invalid-cover-attachment',
+              message: 'cover_attachment_id must reference an image attachment on this card',
+            },
+          },
+          { status: 400 }
         );
       }
 
@@ -179,8 +203,13 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     } else {
       if (typeof body.cover_color !== 'string' || !HEX_COLOR_RE.test(body.cover_color)) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'cover_color must be a hex color string like #1D4ED8 or null' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'cover_color must be a hex color string like #1D4ED8 or null',
+            },
+          },
+          { status: 400 }
         );
       }
       updates.cover_color = body.cover_color;
@@ -191,7 +220,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     if (!CARD_COVER_SIZES.has(body.cover_size)) {
       return Response.json(
         { error: { code: 'bad-request', message: 'cover_size must be SMALL or FULL' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.cover_size = body.cover_size;
@@ -205,10 +234,12 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
-  const previousDueDate = ((existingCard as { due_date?: string | null } | undefined)?.due_date ?? null);
+  const previousDueDate =
+    (existingCard as { due_date?: string | null } | undefined)?.due_date ?? null;
   const descriptionChanged =
     body.description !== undefined &&
-    ((updates.description ?? null) !== ((existingCard as { description?: string | null } | undefined)?.description ?? null));
+    (updates.description ?? null) !==
+      ((existingCard as { description?: string | null } | undefined)?.description ?? null);
 
   // Wrap card update + mention sync in a single transaction
   const updated = await db.transaction(async (trx) => {
@@ -243,12 +274,20 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   });
 
   const cardRow = updated[0] as Record<string, unknown>;
-  const cardWithCover = await resolveCoverImageUrl(updated[0] as { id: string; cover_attachment_id?: string | null });
+  const cardWithCover = await resolveCoverImageUrl(
+    updated[0] as { id: string; cover_attachment_id?: string | null }
+  );
   const nextDueDate = (cardRow.due_date ?? null) as string | null;
   const dueDateChanged = body.due_date !== undefined && previousDueDate !== nextDueDate;
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
-  await dispatchEvent({ type: 'card.updated', boardId: board.id, entityId: cardId, actorId, payload: { card: cardWithCover } });
+  await dispatchEvent({
+    type: 'card.updated',
+    boardId: board.id,
+    entityId: cardId,
+    actorId,
+    payload: { card: cardWithCover },
+  });
 
   // Fire-and-forget board activity notification for card_updated
   const changedFields = Object.keys(updates).filter((k) => k !== 'updated_at');
@@ -287,7 +326,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   // Emit activity event when due date changes (set vs changed vs cleared)
   if (dueDateChanged) {
-    let dueDateAction: 'card.due_date.cleared' | 'card.due_date.set' | 'card.due_date.changed' = 'card.due_date.changed';
+    let dueDateAction: 'card.due_date.cleared' | 'card.due_date.set' | 'card.due_date.changed' =
+      'card.due_date.changed';
     if (nextDueDate === null) {
       dueDateAction = 'card.due_date.cleared';
     } else if (previousDueDate === null) {

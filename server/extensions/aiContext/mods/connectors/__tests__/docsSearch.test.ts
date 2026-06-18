@@ -45,7 +45,7 @@ describe('searchDocs', () => {
     expect(results[0].source).toBe('docs');
     expect(results[0].sourcePath).toBe('specs/architecture/requirements.md');
     // [why] At least one chunk should match "authentication"
-    const hasAuthMatch = results.some(r => r.content.toLowerCase().includes('authentication'));
+    const hasAuthMatch = results.some((r) => r.content.toLowerCase().includes('authentication'));
     expect(hasAuthMatch).toBe(true);
   });
 

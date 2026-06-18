@@ -13,9 +13,9 @@ describe('handleFileScope', () => {
   });
 
   it('returns 401 when authentication fails', async () => {
-    fileScopeApiDeps.authenticate = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 }),
-    );
+    fileScopeApiDeps.authenticate = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 }));
     fileScopeApiDeps.requireWorkspaceMembership = vi.fn();
 
     const result = await handleFileScope(
@@ -23,7 +23,7 @@ describe('handleFileScope', () => {
         method: 'POST',
         body: JSON.stringify({ intent: 'build auth' }),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(401);
@@ -38,7 +38,7 @@ describe('handleFileScope', () => {
         method: 'POST',
         body: JSON.stringify({}),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(400);
@@ -60,7 +60,7 @@ describe('handleFileScope', () => {
         method: 'POST',
         body: JSON.stringify({ intent: 'build auth', focusPaths: ['.env'] }),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(403);
@@ -79,25 +79,44 @@ describe('handleFileScope', () => {
       },
     });
     fileScopeApiDeps.applyBudget = vi.fn().mockImplementation(({ chunks }) => ({
-      chunks, budget: { totalTokens: 10, maxTokens: 8000, totalSizeBytes: 100, maxSizeBytes: 100000, exceeded: false, droppedChunks: 0 },
+      chunks,
+      budget: {
+        totalTokens: 10,
+        maxTokens: 8000,
+        totalSizeBytes: 100,
+        maxSizeBytes: 100000,
+        exceeded: false,
+        droppedChunks: 0,
+      },
     }));
     fileScopeApiDeps.detectDuplicates = vi.fn().mockResolvedValue([]);
-    fileScopeApiDeps.analyseImpact = vi.fn().mockReturnValue({ likelyImpactedFiles: [], overallOverlapScore: 0 });
+    fileScopeApiDeps.analyseImpact = vi
+      .fn()
+      .mockReturnValue({ likelyImpactedFiles: [], overallOverlapScore: 0 });
     fileScopeApiDeps.planFileScope = vi.fn().mockReturnValue({
-      files: [{ filePath: 'specs/architecture/new.md', decision: 'create', rationale: 'New file needed', confidence: 0.8 }],
+      files: [
+        {
+          filePath: 'specs/architecture/new.md',
+          decision: 'create',
+          rationale: 'New file needed',
+          confidence: 0.8,
+        },
+      ],
       possibleDuplicateCards: [],
       likelyImpactedFiles: [],
       confidence: 0.8,
       snapshotId: '',
     });
-    fileScopeApiDeps.persistSnapshot = vi.fn().mockResolvedValue({ snapshotId: 'snap-123', snapshotHash: 'abc' });
+    fileScopeApiDeps.persistSnapshot = vi
+      .fn()
+      .mockResolvedValue({ snapshotId: 'snap-123', snapshotHash: 'abc' });
 
     const result = await handleFileScope(
       new Request('http://localhost/api/v1/cards/card-abc/ai/file-scope', {
         method: 'POST',
         body: JSON.stringify({ intent: 'build authentication system' }),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(200);
@@ -116,7 +135,7 @@ describe('handleFileScope', () => {
         method: 'POST',
         body: 'not json',
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(400);

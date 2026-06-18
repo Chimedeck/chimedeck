@@ -30,7 +30,9 @@ async function dbInsertSession(id: string, userId: string): Promise<void> {
   });
 }
 
-async function dbGetSession(id: string): Promise<{ userId: string; lastActiveAt: Date } | undefined> {
+async function dbGetSession(
+  id: string
+): Promise<{ userId: string; lastActiveAt: Date } | undefined> {
   const row = await db('mcp_sessions')
     .where({ id })
     .select<{ user_id: string; last_active_at: Date }>('user_id', 'last_active_at')
@@ -59,7 +61,7 @@ export async function initSession(
   id: string,
   userId: string,
   server: McpSession['server'],
-  transport: McpSession['transport'],
+  transport: McpSession['transport']
 ): Promise<void> {
   await dbInsertSession(id, userId);
   transportCache.set(id, { server, transport, userId, lastActiveAt: new Date() });
@@ -67,7 +69,7 @@ export async function initSession(
 
 /** Look up session: local transport cache first, DB metadata as fallback. */
 export async function getSession(
-  id: string,
+  id: string
 ): Promise<{ userId: string; transport?: WebStandardStreamableHTTPServerTransport } | null> {
   const local = transportCache.get(id);
   if (local) {

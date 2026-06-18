@@ -49,14 +49,20 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
   // Month navigation
   const handleMonthPrev = useCallback(() => {
     setMonth((m) => {
-      if (m === 0) { setYear((y) => y - 1); return 11; }
+      if (m === 0) {
+        setYear((y) => y - 1);
+        return 11;
+      }
       return m - 1;
     });
   }, []);
 
   const handleMonthNext = useCallback(() => {
     setMonth((m) => {
-      if (m === 11) { setYear((y) => y + 1); return 0; }
+      if (m === 11) {
+        setYear((y) => y + 1);
+        return 0;
+      }
       return m + 1;
     });
   }, []);
@@ -89,9 +95,15 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
       {/* Toolbar */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-2 text-sm text-subtle">
         {/* Mode toggle */}
-        <div className="flex rounded border border-border" role="group" aria-label={translations['CalendarView.ariaMode']}>
+        <div
+          className="flex rounded border border-border"
+          role="group"
+          aria-label={translations['CalendarView.ariaMode']}
+        >
           <button
-            onClick={() => { setMode('month'); }}
+            onClick={() => {
+              setMode('month');
+            }}
             className={`px-3 py-1 text-xs rounded-l ${mode === 'month' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'month'}
             data-testid="calendar-mode-month"
@@ -99,7 +111,9 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
             {translations['CalendarView.monthView']}
           </button>
           <button
-            onClick={() => { setMode('week'); }}
+            onClick={() => {
+              setMode('week');
+            }}
             className={`px-3 py-1 text-xs rounded-r ${mode === 'week' ? 'bg-blue-600 text-white' : 'text-subtle hover:text-base'}`} // [theme-exception]
             aria-pressed={mode === 'week'}
             data-testid="calendar-mode-week"
@@ -111,9 +125,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
         {/* Cards-without-due-date note (always shown) */}
         <span className="text-xs text-subtle" data-testid="calendar-no-due-date-note">
           {translations['CalendarView.noDueDateNote']}
-          {hasUnscheduled && (
-            <> ({cards.length - scheduledCards.length} hidden)</>
-          )}
+          {hasUnscheduled && <> ({cards.length - scheduledCards.length} hidden)</>}
         </span>
       </div>
 

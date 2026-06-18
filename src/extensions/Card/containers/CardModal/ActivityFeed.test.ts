@@ -4,7 +4,10 @@ test('activity feed: newest item is first', async ({ page }) => {
   await page.goto('/');
   // Open a board and card with multiple comments
   // (adapt selectors to match actual app routing)
-  await page.getByRole('button', { name: /open card/i }).first().click();
+  await page
+    .getByRole('button', { name: /open card/i })
+    .first()
+    .click();
 
   const feedItems = page.locator('.activity-feed-item');
   const count = await feedItems.count();
@@ -17,7 +20,10 @@ test('activity feed: newest item is first', async ({ page }) => {
 
 test('activity feed: comment input is above feed list', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: /open card/i }).first().click();
+  await page
+    .getByRole('button', { name: /open card/i })
+    .first()
+    .click();
 
   const input = page.locator('textarea[placeholder="Add a comment…"]');
   const firstItem = page.locator('.activity-feed-item').first();
@@ -33,7 +39,10 @@ test('activity feed: comment input is above feed list', async ({ page }) => {
 test('activity feed: empty feed shows placeholder below input', async ({ page }) => {
   await page.goto('/');
   // Open a card with no activity
-  await page.getByRole('button', { name: /open card/i }).first().click();
+  await page
+    .getByRole('button', { name: /open card/i })
+    .first()
+    .click();
 
   const input = page.locator('textarea[placeholder="Add a comment…"]');
   await expect(input).toBeVisible();

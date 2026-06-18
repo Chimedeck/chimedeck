@@ -6,10 +6,7 @@
 import { collectEvidence } from '../evidenceCollector';
 import { updateDocs } from '../docUpdater';
 import { commitAsBuilt } from '../committer';
-import {
-  createAsBuiltSyncRun,
-  updateAsBuiltSyncRunStatus,
-} from '../persistence';
+import { createAsBuiltSyncRun, updateAsBuiltSyncRunStatus } from '../persistence';
 import {
   emitAsBuiltStarted,
   emitAsBuiltEvidenceCollected,
@@ -128,8 +125,7 @@ export async function runAsBuiltSyncPipeline({
   });
 
   if (evidenceResult.status !== 200 || !evidenceResult.data) {
-    const errorMsg =
-      evidenceResult.message ?? 'Failed to collect evidence';
+    const errorMsg = evidenceResult.message ?? 'Failed to collect evidence';
     await deps.updateAsBuiltSyncRunStatus({
       runId: run.id,
       status: 'FAILED',
@@ -219,10 +215,7 @@ export async function runAsBuiltSyncPipeline({
   });
 
   if (commitResult.status >= 400) {
-    console.warn(
-      `[asBuiltSync/pipeline] Commit warning for run ${run.id}:`,
-      commitResult.message,
-    );
+    console.warn(`[asBuiltSync/pipeline] Commit warning for run ${run.id}:`, commitResult.message);
     // Non-fatal — still mark as succeeded
   } else {
     // Persist commit hash on success

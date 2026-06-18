@@ -19,14 +19,17 @@ interface SprintGenEventProps {
   onEdit?: (runId: string) => void | Promise<void>;
 }
 
-function filesFromPayload(payload: Record<string, unknown>): Array<{ path: string; status: 'added' | 'modified' | 'deleted' }> {
+function filesFromPayload(
+  payload: Record<string, unknown>
+): Array<{ path: string; status: 'added' | 'modified' | 'deleted' }> {
   const files = payload.changedFiles;
   if (!Array.isArray(files)) return [];
   return files.filter(
     (f): f is { path: string; status: 'added' | 'modified' | 'deleted' } =>
-      typeof f === 'object' && f !== null &&
+      typeof f === 'object' &&
+      f !== null &&
       typeof (f as { path?: unknown }).path === 'string' &&
-      ['added', 'modified', 'deleted'].includes((f as { status?: string }).status ?? ''),
+      ['added', 'modified', 'deleted'].includes((f as { status?: string }).status ?? '')
   );
 }
 
@@ -35,12 +38,13 @@ function artifactsFromPayload(payload: Record<string, unknown>): SprintArtifactL
   if (!Array.isArray(links)) return [];
   return links.filter(
     (l): l is SprintArtifactLink =>
-      typeof l === 'object' && l !== null &&
+      typeof l === 'object' &&
+      l !== null &&
       typeof (l as { label?: unknown }).label === 'string' &&
       typeof (l as { url?: unknown }).url === 'string' &&
       ['sprint-spec', 'changelog', 'commit', 'architecture', 'security'].includes(
-        (l as { type?: string }).type ?? '',
-      ),
+        (l as { type?: string }).type ?? ''
+      )
   );
 }
 
@@ -64,9 +68,8 @@ export default function SprintGenEvent({
   const artifactLinks = artifactsFromPayload(payload);
   // [why] Read tier-policy metadata from the event payload to gate
   // approve button visibility according to the user's subscription tier.
-  const requiresHumanApproval = typeof payload.requiresHumanApproval === 'boolean'
-    ? payload.requiresHumanApproval
-    : false;
+  const requiresHumanApproval =
+    typeof payload.requiresHumanApproval === 'boolean' ? payload.requiresHumanApproval : false;
 
   const isCompleted = action === 'sprint_generation_completed';
   const isFailed = action === 'sprint_generation_failed';

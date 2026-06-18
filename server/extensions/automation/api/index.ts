@@ -55,7 +55,7 @@ export async function automationRouter(req: Request, pathname: string): Promise<
 
   // GET /api/v1/boards/:boardId/automations/:automationId/runs
   const automationRunsMatch = pathname.match(
-    /^\/api\/v1\/boards\/([^/]+)\/automations\/([^/]+)\/runs$/,
+    /^\/api\/v1\/boards\/([^/]+)\/automations\/([^/]+)\/runs$/
   );
   if (automationRunsMatch && req.method === 'GET') {
     const boardIdentifier = automationRunsMatch[1] as string;
@@ -76,7 +76,7 @@ export async function automationRouter(req: Request, pathname: string): Promise<
 
   // POST /api/v1/cards/:cardId/automation-buttons/:automationId/run
   const runCardButtonMatch = pathname.match(
-    /^\/api\/v1\/cards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/,
+    /^\/api\/v1\/cards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/
   );
   if (runCardButtonMatch && req.method === 'POST') {
     const cardId = runCardButtonMatch[1] as string;
@@ -86,7 +86,7 @@ export async function automationRouter(req: Request, pathname: string): Promise<
 
   // POST /api/v1/boards/:boardId/automation-buttons/:automationId/run
   const runBoardButtonMatch = pathname.match(
-    /^\/api\/v1\/boards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/,
+    /^\/api\/v1\/boards\/([^/]+)\/automation-buttons\/([^/]+)\/run$/
   );
   if (runBoardButtonMatch && req.method === 'POST') {
     const boardIdentifier = runBoardButtonMatch[1] as string;

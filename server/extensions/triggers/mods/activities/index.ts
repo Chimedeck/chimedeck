@@ -37,7 +37,7 @@ export async function emitTriggerActivity({
     console.error(
       '[triggers/activities] Failed to emit event:',
       type,
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
   }
 }

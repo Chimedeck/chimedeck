@@ -4,9 +4,7 @@ import { buildPendingColumnDeletionSelection } from '../index';
 describe('GraphEditor deletion selection helper', () => {
   it('returns null when there is no column node in selection', () => {
     const selection = buildPendingColumnDeletionSelection({
-      selectedNodes: [
-        { id: 'note-1', type: 'stickyNoteNode', data: { label: 'Note' } },
-      ],
+      selectedNodes: [{ id: 'note-1', type: 'stickyNoteNode', data: { label: 'Note' } }],
       selectedEdges: [{ id: 'edge-1' }],
     });
 
@@ -30,4 +28,3 @@ describe('GraphEditor deletion selection helper', () => {
     });
   });
 });
-

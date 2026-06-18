@@ -14,11 +14,7 @@ interface ExchangeResult {
   name?: string;
 }
 
-export async function exchangeGitHubCode({
-  code,
-}: {
-  code: string;
-}): Promise<ExchangeResult> {
+export async function exchangeGitHubCode({ code }: { code: string }): Promise<ExchangeResult> {
   // Exchange code for access token.
   const tokenRes = await fetch(oauthConfig.github.tokenUrl, {
     method: 'POST',

@@ -7,7 +7,7 @@ import { formatAutomation } from './format';
 export async function handleGetAutomation(
   req: Request,
   boardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -27,7 +27,10 @@ export async function handleGetAutomation(
 
   const [trigger, actions] = await Promise.all([
     db('automation_triggers').where({ automation_id: automationId }).first(),
-    db('automation_actions').where({ automation_id: automationId }).orderBy('position', 'asc').select('*'),
+    db('automation_actions')
+      .where({ automation_id: automationId })
+      .orderBy('position', 'asc')
+      .select('*'),
   ]);
 
   return Response.json({ data: formatAutomation(automation, trigger ?? null, actions) });

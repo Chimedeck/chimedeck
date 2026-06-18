@@ -9,10 +9,7 @@ import { validateUrl, UrlValidationError } from '../common/validateUrl';
 
 const MAX_NAME_LENGTH = 120;
 
-export async function handleCreateHealthCheck(
-  req: Request,
-  boardId: string,
-): Promise<Response> {
+export async function handleCreateHealthCheck(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -31,7 +28,7 @@ export async function handleCreateHealthCheck(
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -39,21 +36,24 @@ export async function handleCreateHealthCheck(
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.name.trim().length > MAX_NAME_LENGTH) {
     return Response.json(
-      { name: 'bad-request', data: { message: `name must not exceed ${MAX_NAME_LENGTH} characters` } },
-      { status: 400 },
+      {
+        name: 'bad-request',
+        data: { message: `name must not exceed ${MAX_NAME_LENGTH} characters` },
+      },
+      { status: 400 }
     );
   }
 
   if (!body.url || typeof body.url !== 'string' || body.url.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'url is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -63,10 +63,7 @@ export async function handleCreateHealthCheck(
     parsedUrl = validateUrl(body.url.trim());
   } catch (err) {
     if (err instanceof UrlValidationError) {
-      return Response.json(
-        { name: err.name, data: { message: err.message } },
-        { status: 422 },
-      );
+      return Response.json({ name: err.name, data: { message: err.message } }, { status: 422 });
     }
     throw err;
   }
@@ -76,7 +73,7 @@ export async function handleCreateHealthCheck(
   if (type === 'preset' && !body.presetKey) {
     return Response.json(
       { name: 'bad-request', data: { message: 'presetKey is required when type is preset' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -86,8 +83,11 @@ export async function handleCreateHealthCheck(
     const code = Number(body.expectedStatus);
     if (!Number.isInteger(code) || code < 100 || code > 599) {
       return Response.json(
-        { name: 'bad-request', data: { message: 'expectedStatus must be an integer between 100 and 599' } },
-        { status: 400 },
+        {
+          name: 'bad-request',
+          data: { message: 'expectedStatus must be an integer between 100 and 599' },
+        },
+        { status: 400 }
       );
     }
     expectedStatus = code;
@@ -101,8 +101,11 @@ export async function handleCreateHealthCheck(
 
   if (duplicate) {
     return Response.json(
-      { name: 'health-check-url-already-monitored', data: { message: 'This URL is already being monitored on this board' } },
-      { status: 409 },
+      {
+        name: 'health-check-url-already-monitored',
+        data: { message: 'This URL is already being monitored on this board' },
+      },
+      { status: 409 }
     );
   }
 
@@ -138,6 +141,6 @@ export async function handleCreateHealthCheck(
         latestResult: null,
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

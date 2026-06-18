@@ -65,4 +65,4 @@ export const ALL_FEATURE_KEYS = [
 ] as const;
 
 // Type for feature keys (used in entitlements objects)
-export type FeatureKey = typeof ALL_FEATURE_KEYS[number];
+export type FeatureKey = (typeof ALL_FEATURE_KEYS)[number];

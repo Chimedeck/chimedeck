@@ -61,12 +61,13 @@ async function readProviderFailureMessage(response: Response): Promise<string | 
 function normalizeUsage(usage: ChatCompletionResponse['usage']) {
   if (!usage) return undefined;
   const promptTokens = typeof usage.prompt_tokens === 'number' ? usage.prompt_tokens : undefined;
-  const completionTokens = typeof usage.completion_tokens === 'number' ? usage.completion_tokens : undefined;
+  const completionTokens =
+    typeof usage.completion_tokens === 'number' ? usage.completion_tokens : undefined;
   const totalTokens = typeof usage.total_tokens === 'number' ? usage.total_tokens : undefined;
   if (
-    typeof promptTokens === 'undefined'
-    && typeof completionTokens === 'undefined'
-    && typeof totalTokens === 'undefined'
+    typeof promptTokens === 'undefined' &&
+    typeof completionTokens === 'undefined' &&
+    typeof totalTokens === 'undefined'
   ) {
     return undefined;
   }
@@ -94,7 +95,8 @@ function normalizeToolCalls(toolCalls: unknown): BoardChatAssistToolCall[] | und
 
       if (typeof candidate.id !== 'string' || candidate.id.trim() === '') return null;
       if (candidate.type !== 'function') return null;
-      if (typeof candidate.function?.name !== 'string' || candidate.function.name.trim() === '') return null;
+      if (typeof candidate.function?.name !== 'string' || candidate.function.name.trim() === '')
+        return null;
       if (typeof candidate.function.arguments !== 'string') return null;
 
       return {
@@ -137,9 +139,9 @@ export async function requestBoardChatAssistCompletion({
     messages,
     ...(tools && tools.length > 0
       ? {
-        tools,
-        tool_choice: 'auto',
-      }
+          tools,
+          tool_choice: 'auto',
+        }
       : {}),
   };
 
@@ -155,7 +157,10 @@ export async function requestBoardChatAssistCompletion({
       signal: AbortSignal.timeout(boardChatAssistProviderDeps.timeoutMs),
     });
   } catch (error) {
-    console.error('[chat/assist] Provider fetch failed (network error or timeout):', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[chat/assist] Provider fetch failed (network error or timeout):',
+      error instanceof Error ? error.message : String(error)
+    );
     return {
       status: 502,
       name: 'assist-provider-unreachable',
@@ -165,9 +170,13 @@ export async function requestBoardChatAssistCompletion({
 
   if (!response.ok) {
     const providerMessage = await readProviderFailureMessage(response);
-  console.error('[chat/assist] Provider returned non-OK status:', response.status, providerMessage ?? '(no body)');
+    console.error(
+      '[chat/assist] Provider returned non-OK status:',
+      response.status,
+      providerMessage ?? '(no body)'
+    );
 
-  if (response.status === 429) {
+    if (response.status === 429) {
       return {
         status: 429,
         name: 'assist-rate-limited',
@@ -186,7 +195,8 @@ export async function requestBoardChatAssistCompletion({
     return {
       status: 502,
       name: 'assist-provider-request-failed',
-      message: providerMessage ?? `Assist provider request failed with status ${String(response.status)}`,
+      message:
+        providerMessage ?? `Assist provider request failed with status ${String(response.status)}`,
     };
   }
 
@@ -211,9 +221,8 @@ export async function requestBoardChatAssistCompletion({
     };
   }
 
-  const model = typeof payload.model === 'string' && payload.model.trim() !== ''
-    ? payload.model
-    : config.model;
+  const model =
+    typeof payload.model === 'string' && payload.model.trim() !== '' ? payload.model : config.model;
   const usage = normalizeUsage(payload.usage);
   const data: {
     model: string;

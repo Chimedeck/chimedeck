@@ -121,7 +121,9 @@ describe('ActivityEventRenderer', () => {
   });
 
   it('passes onFileClick callback through', () => {
-    const onFileClick = (path: string) => { /* noop */ };
+    const onFileClick = (path: string) => {
+      /* noop */
+    };
     const result = ActivityEventRenderer({
       ...baseProps,
       onFileClick,
@@ -130,7 +132,9 @@ describe('ActivityEventRenderer', () => {
   });
 
   it('passes onApprove callback through', () => {
-    const onApprove = async (runId: string) => { /* noop */ };
+    const onApprove = async (runId: string) => {
+      /* noop */
+    };
     const result = ActivityEventRenderer({
       ...baseProps,
       onApprove,

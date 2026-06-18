@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  FEATURE_GATES,
-  type GateRule,
-} from './feature-gates';
+import { FEATURE_GATES, type GateRule } from './feature-gates';
 import type { BooleanFeatureKey } from './subscription-tiers';
 
 describe('FEATURE_GATES map', () => {
@@ -46,7 +43,7 @@ describe('FEATURE_GATES map', () => {
 
   test('stateTransitions gate covers board-scoped state-transitions routes', () => {
     const stRule = FEATURE_GATES.find(
-      (r) => r.feature === 'stateTransitions' && r.pathPrefix.includes('state-transitions'),
+      (r) => r.feature === 'stateTransitions' && r.pathPrefix.includes('state-transitions')
     );
     expect(stRule).toBeDefined();
   });
@@ -60,7 +57,7 @@ describe('GateRule structure', () => {
 
   test('GET-only rules are defined for discovery endpoints', () => {
     const getOnlyRules = FEATURE_GATES.filter(
-      (r) => r.methods.length === 1 && r.methods[0] === 'GET',
+      (r) => r.methods.length === 1 && r.methods[0] === 'GET'
     );
     expect(getOnlyRules.length).toBeGreaterThan(0);
   });

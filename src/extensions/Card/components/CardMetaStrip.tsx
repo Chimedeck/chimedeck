@@ -52,9 +52,13 @@ function usePopover() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); };
+    return () => {
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   return { open, setOpen, ref };
@@ -62,7 +66,12 @@ function usePopover() {
 
 function getInitials(name: string | null, email: string) {
   const src = name ?? email;
-  return src.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+  return src
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 function formatDate(iso: string) {
@@ -132,7 +141,9 @@ const ColorGrid = ({
           selected === c.hex ? 'ring-2 ring-bg-surface ring-offset-2 ring-offset-bg-base' : ''
         }`}
         style={{ backgroundColor: c.hex }}
-        onClick={() => { onChange(c.hex); }}
+        onClick={() => {
+          onChange(c.hex);
+        }}
         aria-label={c.name}
       />
     ))}
@@ -214,7 +225,7 @@ const LabelSection = ({
   };
 
   const filteredLabels = allLabels.filter((l) =>
-    l.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    l.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const isEditingLabel = view !== 'list' && view !== 'create';
@@ -226,15 +237,21 @@ const LabelSection = ({
         <LabelChip
           key={label.id}
           label={label}
-          {...(!disabled && { onRemove: () => { void onDetach(label.id); } })}
+          {...(!disabled && {
+            onRemove: () => {
+              void onDetach(label.id);
+            },
+          })}
         />
       ))}
-      {overflow > 0 && (
-        <span className="text-xs text-subtle font-medium">+{overflow}</span>
-      )}
+      {overflow > 0 && <span className="text-xs text-subtle font-medium">+{overflow}</span>}
       {!disabled && (
         <PillButton
-          onClick={() => { setOpen((v) => !v); resetToList(); setSearchQuery(''); }}
+          onClick={() => {
+            setOpen((v) => !v);
+            resetToList();
+            setSearchQuery('');
+          }}
           aria-label="Manage labels"
           aria-expanded={open}
           aria-haspopup="dialog"
@@ -246,13 +263,17 @@ const LabelSection = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
           <div
-            className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-bg-surface border border-border shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]"
-          >
+            className="fixed inset-0 z-10"
+            onClick={() => {
+              setOpen(false);
+            }}
+            aria-hidden="true"
+          />
+          <div className="absolute left-0 top-full mt-1 z-20 w-72 rounded-xl bg-bg-surface border border-border shadow-2xl overflow-hidden flex flex-col max-h-[min(28rem,80vh)]">
             {/* ── Header ── */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-              {(view === 'list') ? (
+              {view === 'list' ? (
                 <span className="text-sm font-semibold text-base">Labels</span>
               ) : (
                 <button
@@ -266,7 +287,9 @@ const LabelSection = ({
               <button
                 type="button"
                 className="rounded p-0.5 text-subtle hover:text-base"
-                onClick={() => { setOpen(false); }}
+                onClick={() => {
+                  setOpen(false);
+                }}
                 aria-label="Close"
               >
                 ✕
@@ -280,7 +303,9 @@ const LabelSection = ({
                   className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary mb-1"
                   placeholder="Search labels..."
                   value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); }}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
                   autoFocus
                 />
                 {filteredLabels.length === 0 && (
@@ -312,10 +337,17 @@ const LabelSection = ({
                       <button
                         type="button"
                         className="flex-shrink-0 rounded p-1 text-subtle hover:bg-bg-overlay hover:text-base transition-colors"
-                        onClick={() => { openEdit(label); }}
+                        onClick={() => {
+                          openEdit(label);
+                        }}
                         aria-label={`Edit ${label.name}`}
                       >
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <svg
+                          className="h-3.5 w-3.5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
                           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                         </svg>
                       </button>
@@ -325,7 +357,11 @@ const LabelSection = ({
                 <button
                   type="button"
                   className="w-full mt-1 rounded-lg bg-bg-overlay hover:bg-bg-sunken text-sm text-base py-1.5 transition-colors"
-                  onClick={() => { setFormName(''); setFormColor(DEFAULT_LABEL_COLOR); setView('create'); }}
+                  onClick={() => {
+                    setFormName('');
+                    setFormColor(DEFAULT_LABEL_COLOR);
+                    setView('create');
+                  }}
                 >
                   Create a new label
                 </button>
@@ -350,8 +386,14 @@ const LabelSection = ({
                     className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Label name"
                     value={formName}
-                    onChange={(e) => { setFormName(e.target.value); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { void (view === 'create' ? handleCreate() : handleSaveEdit()); } }}
+                    onChange={(e) => {
+                      setFormName(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        void (view === 'create' ? handleCreate() : handleSaveEdit());
+                      }
+                    }}
                     autoFocus
                   />
                 </div>
@@ -361,7 +403,7 @@ const LabelSection = ({
                   <ColorGrid selected={formColor} onChange={setFormColor} />
                 </div>
                 {/* Actions */}
-                                <button
+                <button
                   type="button"
                   className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1.5 transition-colors disabled:opacity-50" // [theme-exception] text-white on indigo-600 background
                   onClick={() => void (view === 'create' ? handleCreate() : handleSaveEdit())}
@@ -407,7 +449,10 @@ const MemberSection = ({
   const filteredMembers = boardMembers.filter((member) => {
     if (!normalizedSearch) return true;
     const name = member.name ?? '';
-    return name.toLowerCase().includes(normalizedSearch) || member.email.toLowerCase().includes(normalizedSearch);
+    return (
+      name.toLowerCase().includes(normalizedSearch) ||
+      member.email.toLowerCase().includes(normalizedSearch)
+    );
   });
 
   const isAvatarFailed = (memberId: string): boolean => failedAvatarIds.has(memberId);
@@ -476,13 +521,21 @@ const MemberSection = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => {
+              setOpen(false);
+            }}
+            aria-hidden="true"
+          />
           <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-2 space-y-1">
             <input
               className="w-full bg-bg-overlay border border-border rounded-lg px-2.5 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Search members..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               autoFocus
             />
             {boardMembers.length === 0 && (
@@ -547,7 +600,8 @@ function getDuePillClass(status: DueDateStatus, hasDate: boolean): string {
   if (status === 'done') return 'bg-success/10 text-success border border-success/30';
   // [theme-exception] overdue status chip: intentional red text on red bg
   if (status === 'overdue') return 'bg-danger/10 text-danger border border-danger/30';
-  if (status === 'due-soon') return 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-500/30'; // orange due-soon chip — darker text for light mode
+  if (status === 'due-soon')
+    return 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-500/30'; // orange due-soon chip — darker text for light mode
   if (hasDate) return 'bg-bg-overlay text-base hover:bg-bg-sunken border border-border';
   return 'border border-dashed border-border text-muted hover:border-border-strong hover:text-base';
 }
@@ -606,17 +660,23 @@ const DatesButton = ({
         <button
           type="button"
           className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-colors ${checkboxClass} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
-          onClick={(e) => { e.stopPropagation(); onDueCompleteChange(!dueComplete); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDueCompleteChange(!dueComplete);
+          }}
           aria-label={dueComplete ? 'Mark as not done' : 'Mark as done'}
           disabled={disabled}
         >
-          {dueComplete && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />} {/* [theme-exception] text-white on success/danger checkbox background */}
+          {dueComplete && <CheckIcon className="h-2.5 w-2.5 text-white" aria-hidden="true" />}{' '}
+          {/* [theme-exception] text-white on success/danger checkbox background */}
         </button>
       )}
       <button
         type="button"
         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${pillClass}`}
-        onClick={() => { setOpen((v) => !v); }}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
         disabled={disabled}
         aria-label="Dates"
         aria-expanded={open}
@@ -628,7 +688,13 @@ const DatesButton = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => {
+              setOpen(false);
+            }}
+            aria-hidden="true"
+          />
           <div className="absolute left-0 top-full mt-1 z-20">
             <CardDatesPicker
               startDate={startDate}
@@ -636,7 +702,9 @@ const DatesButton = ({
               disabled={disabled}
               onSave={handleSave}
               onRemove={handleRemove}
-              onClose={() => { setOpen(false); }}
+              onClose={() => {
+                setOpen(false);
+              }}
             />
           </div>
         </>
@@ -687,7 +755,9 @@ const MoneyButton = ({
       <button
         type="button"
         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors disabled:opacity-40 disabled:pointer-events-none ${pillClass}`}
-        onClick={() => { setOpen((v) => !v); }}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
         disabled={disabled}
         aria-label="Card pricing"
         aria-expanded={open}
@@ -699,7 +769,13 @@ const MoneyButton = ({
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => { setOpen(false); }} aria-hidden="true" />
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => {
+              setOpen(false);
+            }}
+            aria-hidden="true"
+          />
           <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-xl bg-bg-surface border border-border shadow-2xl p-3">
             <CardValue
               amount={amount}

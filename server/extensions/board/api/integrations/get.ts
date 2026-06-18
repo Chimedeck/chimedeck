@@ -14,13 +14,16 @@ export async function handleGetBoardIntegrations(req: Request, boardId: string):
   if (accessError) return accessError;
 
   const workspaceReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(workspaceReq, boardReq.board!.workspace_id);
+  const membershipError = await requireWorkspaceMembership(
+    workspaceReq,
+    boardReq.board!.workspace_id
+  );
   if (membershipError) return membershipError;
 
   return Response.json({
     data: {
       github_project_url:
-        ((boardReq.board as { github_project_url?: string | null }).github_project_url ?? null),
+        (boardReq.board as { github_project_url?: string | null }).github_project_url ?? null,
     },
   });
 }

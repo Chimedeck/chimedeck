@@ -11,12 +11,7 @@ const THUMBNAIL_MAX_WIDTH = 400;
 const THUMBNAIL_MAX_HEIGHT = 300;
 
 // SVG excluded — sharp requires explicit rasterization density per file.
-const THUMBNAIL_SUPPORTED_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-]);
+const THUMBNAIL_SUPPORTED_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 export async function generateThumbnail({ attachmentId }: { attachmentId: string }): Promise<void> {
   const attachment = await db('attachments').where({ id: attachmentId }).first();
@@ -30,7 +25,7 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
 
   // Download original file from S3
   const getResult = await s3Client.send(
-    new GetObjectCommand({ Bucket: s3Config.bucket, Key: attachment.s3_key }),
+    new GetObjectCommand({ Bucket: s3Config.bucket, Key: attachment.s3_key })
   );
 
   const chunks: Uint8Array[] = [];
@@ -46,10 +41,12 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
   // GIFs must not be converted to WebP — animation would be lost.
   // Persist dimensions and return without generating a thumbnail_key.
   if (mimeType === 'image/gif') {
-    await db('attachments').where({ id: attachmentId }).update({
-      width: metadata.width ?? null,
-      height: metadata.height ?? null,
-    });
+    await db('attachments')
+      .where({ id: attachmentId })
+      .update({
+        width: metadata.width ?? null,
+        height: metadata.height ?? null,
+      });
     return;
   }
 
@@ -69,12 +66,14 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
       Key: thumbnailKey,
       Body: resized,
       ContentType: 'image/webp',
-    }),
+    })
   );
 
-  await db('attachments').where({ id: attachmentId }).update({
-    thumbnail_key: thumbnailKey,
-    width: metadata.width ?? null,
-    height: metadata.height ?? null,
-  });
+  await db('attachments')
+    .where({ id: attachmentId })
+    .update({
+      thumbnail_key: thumbnailKey,
+      width: metadata.width ?? null,
+      height: metadata.height ?? null,
+    });
 }

@@ -24,7 +24,10 @@ function checkRateLimit(ip: string): boolean {
   return count <= RATE_LIMIT_MAX;
 }
 
-async function resendVerificationEmailForUser(user: { id: string; email: string }): Promise<boolean> {
+async function resendVerificationEmailForUser(user: {
+  id: string;
+  email: string;
+}): Promise<boolean> {
   const rlKey = `rl:login-resend-verification:${user.id}`;
   const count = memCache.incr(rlKey, VERIFICATION_RESEND_WINDOW_SECONDS);
   if (count > VERIFICATION_RESEND_RATE_LIMIT) return false;
@@ -50,7 +53,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (!checkRateLimit(ip)) {
     return Response.json(
       { error: { code: 'rate-limit-exceeded', message: 'Too many login attempts' } },
-      { status: 429 },
+      { status: 429 }
     );
   }
 
@@ -60,14 +63,14 @@ export async function handleLogin(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.email || !body.password) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Email and password are required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -76,7 +79,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (!user?.password_hash) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Invalid email or password' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -84,7 +87,7 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (!valid) {
     return Response.json(
       { error: { code: 'credentials-invalid', message: 'Invalid email or password' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -94,7 +97,10 @@ export async function handleLogin(req: Request): Promise<Response> {
   if (verificationEnabled && !user.email_verified) {
     let verificationEmailSent = false;
     try {
-      verificationEmailSent = await resendVerificationEmailForUser({ id: user.id, email: user.email });
+      verificationEmailSent = await resendVerificationEmailForUser({
+        id: user.id,
+        email: user.email,
+      });
     } catch {
       verificationEmailSent = false;
     }
@@ -107,7 +113,7 @@ export async function handleLogin(req: Request): Promise<Response> {
           data: { verificationEmailSent },
         },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -121,8 +127,13 @@ export async function handleLogin(req: Request): Promise<Response> {
     if (error instanceof AccessTokenKeyError) {
       console.error('[auth/token] JWT key error:', error.message);
       return Response.json(
-        { error: { code: 'auth-server-misconfigured', message: 'Authentication server is misconfigured — see server logs.' } },
-        { status: 500 },
+        {
+          error: {
+            code: 'auth-server-misconfigured',
+            message: 'Authentication server is misconfigured — see server logs.',
+          },
+        },
+        { status: 500 }
       );
     }
     throw error;
@@ -145,14 +156,14 @@ export async function handleLogin(req: Request): Promise<Response> {
   // httpOnly Secure cookie for refresh token.
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`
   );
   // [why] access_token cookie lets <img> tags and other browser resource
   // requests authenticate without an Authorization header. HttpOnly prevents
   // JS from reading it; Path=/ ensures it is sent with all API calls.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
@@ -164,6 +175,6 @@ export async function handleLogin(req: Request): Promise<Response> {
         user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
-    { status: 200, headers: responseHeaders },
+    { status: 200, headers: responseHeaders }
   );
 }

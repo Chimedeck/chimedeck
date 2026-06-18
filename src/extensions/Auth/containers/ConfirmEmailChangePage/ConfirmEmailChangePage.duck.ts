@@ -26,7 +26,9 @@ export const confirmEmailChangeThunk = createAppAsyncThunk(
       const response = await authApi.confirmEmailChange({ token });
       return (response as unknown as { data: { confirmed: boolean } }).data;
     } catch (err: unknown) {
-      const msg = isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'confirmation-failed';
+      const msg = isApiError(err)
+        ? (err.response.data.error?.code ?? 'unknown-error')
+        : 'confirmation-failed';
       return rejectWithValue(msg);
     }
   }

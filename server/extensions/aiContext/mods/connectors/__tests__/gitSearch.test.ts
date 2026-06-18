@@ -18,7 +18,8 @@ describe('searchGit', () => {
   });
 
   it('parses git log output and scores by intent', async () => {
-    const commitData = 'abc1234\nfeat(auth): implement JWT authentication\nsrc/auth/index.ts\n---\ndef5678\nchore(deps): update dependencies\npackage.json\n';
+    const commitData =
+      'abc1234\nfeat(auth): implement JWT authentication\nsrc/auth/index.ts\n---\ndef5678\nchore(deps): update dependencies\npackage.json\n';
 
     const mockGit: GitOps = {
       log: async () => ({ stdout: commitData, exitCode: 0 }),

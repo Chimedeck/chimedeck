@@ -16,7 +16,7 @@ export function validatePathAllowlist({
   if (!focusPaths || focusPaths.length === 0) return null;
 
   for (const requested of focusPaths) {
-    const allowed = PATH_ALLOWLIST.some(pattern => {
+    const allowed = PATH_ALLOWLIST.some((pattern) => {
       // [why] Simple prefix match — a requested path "specs/architecture/"
       // matches the allowlist entry "specs/architecture/".
       if (pattern.endsWith('**') || pattern.endsWith('*')) {

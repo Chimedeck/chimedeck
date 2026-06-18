@@ -124,7 +124,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Please enter a valid GitHub project or repository URL')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -137,7 +139,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.getByText('Please enter a valid GitHub project or repository URL')).toBeInTheDocument();
+        expect(
+          screen.getByText('Please enter a valid GitHub project or repository URL')
+        ).toBeInTheDocument();
       });
     });
 
@@ -150,7 +154,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Please enter a valid GitHub project or repository URL')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -163,7 +169,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Please enter a valid GitHub project or repository URL')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -176,7 +184,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Please enter a valid GitHub project or repository URL')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -189,7 +199,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.queryByText('Please enter a valid GitHub project or repository URL')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Please enter a valid GitHub project or repository URL')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -202,7 +214,9 @@ describe('GithubProjectUrlSetting', () => {
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(screen.getByText('Please enter a valid GitHub project or repository URL')).toBeInTheDocument();
+        expect(
+          screen.getByText('Please enter a valid GitHub project or repository URL')
+        ).toBeInTheDocument();
       });
     });
   });
@@ -255,7 +269,7 @@ describe('GithubProjectUrlSetting', () => {
         expect(vi.mocked(BoardAPI.patchBoardIntegrations)).toHaveBeenCalledWith(
           expect.objectContaining({
             settings: { github_project_url: 'https://github.com/orgs/example/projects/1' },
-          }),
+          })
         );
       });
     });
@@ -345,7 +359,7 @@ describe('GithubProjectUrlSetting', () => {
         expect(vi.mocked(BoardAPI.patchBoardIntegrations)).toHaveBeenCalledWith(
           expect.objectContaining({
             settings: { github_project_url: null },
-          }),
+          })
         );
       });
     });
@@ -398,11 +412,13 @@ describe('GithubProjectUrlSetting', () => {
         // block + a follow-up hint.  We assert on the stable sentence so the
         // test is robust to copy tweaks in the example / hint rows.
         expect(
-          screen.getByText('Link this board to a GitHub project or repository for better integration.'),
+          screen.getByText(
+            'Link this board to a GitHub project or repository for better integration.'
+          )
         ).toBeInTheDocument();
         // Examples should be rendered in a monospace block.
         expect(
-          screen.getByText(/https:\/\/github\.com\/orgs\/<owner>\/projects\/<n>/),
+          screen.getByText(/https:\/\/github\.com\/orgs\/<owner>\/projects\/<n>/)
         ).toBeInTheDocument();
       });
     });
@@ -423,7 +439,10 @@ describe('GithubProjectUrlSetting', () => {
 
     const sampleUrls: ReadonlyArray<{ label: string; value: string }> = [
       { label: 'project URL', value: 'https://github.com/orgs/example/projects/1' },
-      { label: 'HTTPS repo URL', value: 'https://github.com/journeyhorizon/sample-agentic-project.git' },
+      {
+        label: 'HTTPS repo URL',
+        value: 'https://github.com/journeyhorizon/sample-agentic-project.git',
+      },
       { label: 'SSH clone URL', value: 'git@github.com:journeyhorizon/sample-agentic-project.git' },
     ];
 
@@ -459,7 +478,7 @@ describe('GithubProjectUrlSetting', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('github-project-url-parsed-value')).toHaveTextContent(
-          'example · project #7',
+          'example · project #7'
         );
       });
     });
@@ -471,7 +490,7 @@ describe('GithubProjectUrlSetting', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('github-project-url-parsed-value')).toHaveTextContent(
-          'journeyhorizon/sample-agentic-project',
+          'journeyhorizon/sample-agentic-project'
         );
       });
     });
@@ -483,7 +502,7 @@ describe('GithubProjectUrlSetting', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('github-project-url-parsed-value')).toHaveTextContent(
-          'journeyhorizon/sample-agentic-project',
+          'journeyhorizon/sample-agentic-project'
         );
       });
     });
@@ -522,7 +541,7 @@ describe('GithubProjectUrlSetting', () => {
             settings: {
               github_project_url: 'https://github.com/journeyhorizon/sample-agentic-project',
             },
-          }),
+          })
         );
       });
     });
@@ -545,7 +564,7 @@ describe('GithubProjectUrlSetting', () => {
             settings: {
               github_project_url: 'https://github.com/journeyhorizon/sample-agentic-project',
             },
-          }),
+          })
         );
       });
     });

@@ -15,7 +15,9 @@ const PluginIcon = ({ iconUrl, name }: { iconUrl: string; name: string }) => {
       src={iconUrl}
       alt={name}
       className="w-full h-full object-cover"
-      onError={() => { setBroken(true); }}
+      onError={() => {
+        setBroken(true);
+      }}
     />
   );
 };
@@ -39,12 +41,16 @@ const PluginRegistryRow = ({
 }: Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleDeactivateClick = () => { setConfirmOpen(true); };
+  const handleDeactivateClick = () => {
+    setConfirmOpen(true);
+  };
   const handleConfirmYes = () => {
     setConfirmOpen(false);
     onDeactivate(plugin.id);
   };
-  const handleConfirmNo = () => { setConfirmOpen(false); };
+  const handleConfirmNo = () => {
+    setConfirmOpen(false);
+  };
 
   return (
     <tr className="border-b border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -103,7 +109,9 @@ const PluginRegistryRow = ({
           {/* Edit button */}
           <button
             type="button"
-            onClick={() => { onEdit(plugin); }}
+            onClick={() => {
+              onEdit(plugin);
+            }}
             className="inline-flex items-center gap-1 text-xs text-muted hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded border border-border hover:border-indigo-400 transition-colors"
             aria-label={`${translations['plugins.registry.row.edit']} ${plugin.name}`}
           >
@@ -152,7 +160,9 @@ const PluginRegistryRow = ({
           ) : (
             <button
               type="button"
-              onClick={() => { onReactivate(plugin.id); }}
+              onClick={() => {
+                onReactivate(plugin.id);
+              }}
               disabled={isReactivating}
               className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-colors disabled:opacity-50"
               aria-label={`${translations['plugins.registry.row.reactivate']} ${plugin.name}`}

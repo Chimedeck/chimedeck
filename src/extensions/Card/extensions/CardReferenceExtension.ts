@@ -78,7 +78,7 @@ export const CardReference = Node.create({
           'data-card-title': HTMLAttributes['title'] ?? '',
           'data-card-list': HTMLAttributes['listName'] ?? '',
         },
-        { href: HTMLAttributes['href'] },
+        { href: HTMLAttributes['href'] }
       ),
     ];
   },

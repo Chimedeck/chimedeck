@@ -93,14 +93,14 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
         name: 'specs-load-failed',
         data: { message: 'Board not found' },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await specsLoadDeps.requireWorkspaceMembership(
     workspaceReq,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -115,7 +115,7 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
         name: 'specs-not-configured',
         data: { message: 'You must configure your Github documentation respository first' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -138,7 +138,7 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
         name: 'specs-load-failed',
         data: { message: 'Our app do not have access to this respository' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -157,6 +157,6 @@ export async function handleLoadSpecsManifest(req: Request, boardId: string): Pr
         ETag: `"${manifest.etag}"`,
         'Cache-Control': 'private, max-age=300',
       },
-    },
+    }
   );
 }

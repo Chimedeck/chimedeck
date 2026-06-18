@@ -117,12 +117,15 @@ async function createStripeCheckoutSession({
 }
 
 async function getStripeSubscriptionItemId(subscriptionId: string): Promise<string> {
-  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-    },
-  });
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      },
+    }
+  );
 
   const payload = (await response.json()) as {
     items?: { data?: Array<{ id?: string | null }> | null } | null;
@@ -151,14 +154,17 @@ async function updateStripeSubscriptionPrice({
   body.set('items[0][price]', priceId);
   body.set('proration_behavior', 'create_prorations');
 
-  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body,
-  });
+  const response = await fetch(
+    `https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    }
+  );
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: { message?: string } };
@@ -168,13 +174,13 @@ async function updateStripeSubscriptionPrice({
 
 function toInternalStatus(status: string | undefined): StripeSubscriptionStatus {
   if (
-    status === 'active'
-    || status === 'trialing'
-    || status === 'past_due'
-    || status === 'canceled'
-    || status === 'incomplete'
-    || status === 'incomplete_expired'
-    || status === 'unpaid'
+    status === 'active' ||
+    status === 'trialing' ||
+    status === 'past_due' ||
+    status === 'canceled' ||
+    status === 'incomplete' ||
+    status === 'incomplete_expired' ||
+    status === 'unpaid'
   ) {
     return status;
   }
@@ -195,7 +201,7 @@ async function getLatestStripeSubscriptionByCustomer(customerId: string): Promis
       headers: {
         Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
       },
-    },
+    }
   );
 
   const payload = (await response.json()) as {
@@ -203,7 +209,9 @@ async function getLatestStripeSubscriptionByCustomer(customerId: string): Promis
       id?: string | null;
       status?: string;
       current_period_end?: number;
-      items?: { data?: Array<{ id?: string | null; price?: { id?: string | null } | null }> } | null;
+      items?: {
+        data?: Array<{ id?: string | null; price?: { id?: string | null } | null }>;
+      } | null;
     }>;
     error?: { message?: string };
   };
@@ -212,7 +220,9 @@ async function getLatestStripeSubscriptionByCustomer(customerId: string): Promis
     throw new Error(payload.error?.message ?? 'stripe-subscription-list-failed');
   }
 
-  const candidate = payload.data?.find((subscription) => subscription.id && subscription.items?.data?.[0]?.id);
+  const candidate = payload.data?.find(
+    (subscription) => subscription.id && subscription.items?.data?.[0]?.id
+  );
   if (!candidate?.id || !candidate.items?.data?.[0]?.id) return null;
 
   return {
@@ -241,7 +251,9 @@ async function handleExistingWorkspaceSubscriptionChange({
   billingReturnUrl: string;
 }): Promise<Response | null> {
   if (billingSubscription.stripeCustomerId && !billingSubscription.stripeSubscriptionId) {
-    const latest = await getLatestStripeSubscriptionByCustomer(billingSubscription.stripeCustomerId);
+    const latest = await getLatestStripeSubscriptionByCustomer(
+      billingSubscription.stripeCustomerId
+    );
     if (latest) {
       const latestTier = mapStripePriceIdToTier(latest.priceId);
       await upsertWorkspaceSubscription({
@@ -315,7 +327,10 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   const workspaceResolution = await resolveWorkspaceContext(req, {
@@ -376,8 +391,11 @@ export async function handleCreateCheckout(req: Request): Promise<Response> {
     return Response.json({ data: { url } });
   } catch (error) {
     return Response.json(
-      { name: 'stripe-error', data: { message: error instanceof Error ? error.message : 'Stripe request failed' } },
-      { status: 502 },
+      {
+        name: 'stripe-error',
+        data: { message: error instanceof Error ? error.message : 'Stripe request failed' },
+      },
+      { status: 502 }
     );
   }
 }

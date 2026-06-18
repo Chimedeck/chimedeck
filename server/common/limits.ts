@@ -39,9 +39,10 @@ export function remaining(usage: number, quota: QuotaValue): number {
  * Validate that usage does not exceed quota.
  * Returns { valid: true } on pass, { valid: false, remaining: number } on overage.
  */
-export function validate(usage: number, quota: QuotaValue): 
-  | { valid: true }
-  | { valid: false; remaining: number; quota: number } {
+export function validate(
+  usage: number,
+  quota: QuotaValue
+): { valid: true } | { valid: false; remaining: number; quota: number } {
   if (isUnlimited(quota)) {
     return { valid: true };
   }

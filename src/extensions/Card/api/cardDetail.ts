@@ -22,7 +22,25 @@ export async function patchCard({
   api: ApiClient;
   cardId: string;
   // amount is number | null at the API boundary (server enforces numeric)
-  fields: Partial<Omit<Pick<Card, 'title' | 'description' | 'due_date' | 'due_complete' | 'start_date' | 'archived' | 'amount' | 'currency' | 'cover_attachment_id' | 'cover_color' | 'cover_size'>, 'amount'>> & { amount?: number | null };
+  fields: Partial<
+    Omit<
+      Pick<
+        Card,
+        | 'title'
+        | 'description'
+        | 'due_date'
+        | 'due_complete'
+        | 'start_date'
+        | 'archived'
+        | 'amount'
+        | 'currency'
+        | 'cover_attachment_id'
+        | 'cover_color'
+        | 'cover_size'
+      >,
+      'amount'
+    >
+  > & { amount?: number | null };
 }): Promise<Card> {
   const res = await api.patch<{ data: Card }>(`/cards/${cardId}`, fields);
   // interceptor returns { data: Card } as the resolved value
@@ -60,7 +78,12 @@ export async function patchChecklistItem({
 }: {
   api: ApiClient;
   itemId: string;
-  fields: Partial<Pick<ChecklistItem, 'title' | 'checked' | 'assigned_member_id' | 'due_date' | 'position' | 'checklist_id'>>;
+  fields: Partial<
+    Pick<
+      ChecklistItem,
+      'title' | 'checked' | 'assigned_member_id' | 'due_date' | 'position' | 'checklist_id'
+    >
+  >;
 }): Promise<ChecklistItem> {
   const res = await api.patch<{ data: ChecklistItem }>(`/checklist-items/${itemId}`, fields);
   return (res as unknown as { data: ChecklistItem }).data;
@@ -73,8 +96,14 @@ export async function convertChecklistItemToCard({
   api: ApiClient;
   itemId: string;
 }): Promise<{ card: Card; removedItemId: string; removedChecklistId: string | null }> {
-  const res = await api.post<{ data: { card: Card; removedItemId: string; removedChecklistId: string | null } }>(`/checklist-items/${itemId}/convert`, {});
-  return (res as unknown as { data: { card: Card; removedItemId: string; removedChecklistId: string | null } }).data;
+  const res = await api.post<{
+    data: { card: Card; removedItemId: string; removedChecklistId: string | null };
+  }>(`/checklist-items/${itemId}/convert`, {});
+  return (
+    res as unknown as {
+      data: { card: Card; removedItemId: string; removedChecklistId: string | null };
+    }
+  ).data;
 }
 
 export async function deleteChecklistItemById({
@@ -96,7 +125,9 @@ export async function createChecklist({
   cardId: string;
   title?: string;
 }): Promise<Checklist> {
-  const res = await api.post<{ data: Checklist }>(`/cards/${cardId}/checklists`, { title: title || 'Checklist' });
+  const res = await api.post<{ data: Checklist }>(`/cards/${cardId}/checklists`, {
+    title: title || 'Checklist',
+  });
   return (res as unknown as { data: Checklist }).data;
 }
 
@@ -111,7 +142,10 @@ export async function patchChecklist({
   title?: string;
   position?: string;
 }): Promise<Checklist> {
-  const res = await api.patch<{ data: Checklist }>(`/checklists/${checklistId}`, { title, position });
+  const res = await api.patch<{ data: Checklist }>(`/checklists/${checklistId}`, {
+    title,
+    position,
+  });
   return (res as unknown as { data: Checklist }).data;
 }
 
@@ -134,7 +168,9 @@ export async function postChecklistItemInGroup({
   checklistId: string;
   title: string;
 }): Promise<ChecklistItem> {
-  const res = await api.post<{ data: ChecklistItem }>(`/checklists/${checklistId}/items`, { title });
+  const res = await api.post<{ data: ChecklistItem }>(`/checklists/${checklistId}/items`, {
+    title,
+  });
   return (res as unknown as { data: ChecklistItem }).data;
 }
 
@@ -244,8 +280,24 @@ export async function getBoardMembers({
   api: ApiClient;
   boardId: string;
 }): Promise<CardMember[]> {
-  const res = await api.get<{ data: Array<{ user_id: string; email: string; display_name: string | null; avatar_url?: string | null }> }>(`/boards/${boardId}/members`);
-  return (res as unknown as { data: Array<{ user_id: string; email: string; display_name: string | null; avatar_url?: string | null }> }).data.map((m) => ({
+  const res = await api.get<{
+    data: Array<{
+      user_id: string;
+      email: string;
+      display_name: string | null;
+      avatar_url?: string | null;
+    }>;
+  }>(`/boards/${boardId}/members`);
+  return (
+    res as unknown as {
+      data: Array<{
+        user_id: string;
+        email: string;
+        display_name: string | null;
+        avatar_url?: string | null;
+      }>;
+    }
+  ).data.map((m) => ({
     id: m.user_id,
     email: m.email,
     name: m.display_name,
@@ -263,9 +315,11 @@ export async function getBoardGuests({
   const res = await api.get<{
     data: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
   }>(`/boards/${boardId}/guests`);
-  return (res as unknown as {
-    data: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
-  }).data.map((g) => ({
+  return (
+    res as unknown as {
+      data: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+    }
+  ).data.map((g) => ({
     id: g.id,
     email: g.email,
     name: g.name,

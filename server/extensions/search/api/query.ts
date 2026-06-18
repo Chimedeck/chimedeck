@@ -24,7 +24,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
     searchLog.featureDisabled({ workspaceId });
     return Response.json(
       { error: { code: 'search-not-available', message: 'Search feature is not enabled' } },
-      { status: 501 },
+      { status: 501 }
     );
   }
 
@@ -38,7 +38,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   if (!workspace) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -82,7 +82,7 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   if (result.status !== 200) {
     return Response.json(
       { error: { code: result.name, message: result.message } },
-      { status: result.status },
+      { status: result.status }
     );
   }
 

@@ -35,9 +35,21 @@ function relativeTime(dateStr: string): string {
 }
 
 const STATUS_ICON: Record<string, { icon: typeof CheckCircleIcon; cls: string; label: string }> = {
-  SUCCESS: { icon: CheckCircleIcon, cls: 'text-emerald-400', label: translations['automation.runLogRow.status.success'] },
-  PARTIAL: { icon: ExclamationCircleIcon, cls: 'text-amber-400', label: translations['automation.runLogRow.status.partial'] },
-  FAILED: { icon: XCircleIcon, cls: 'text-danger', label: translations['automation.runLogRow.status.failed'] },
+  SUCCESS: {
+    icon: CheckCircleIcon,
+    cls: 'text-emerald-400',
+    label: translations['automation.runLogRow.status.success'],
+  },
+  PARTIAL: {
+    icon: ExclamationCircleIcon,
+    cls: 'text-amber-400',
+    label: translations['automation.runLogRow.status.partial'],
+  },
+  FAILED: {
+    icon: XCircleIcon,
+    cls: 'text-danger',
+    label: translations['automation.runLogRow.status.failed'],
+  },
 };
 
 const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {
@@ -65,10 +77,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
       >
         {/* Status */}
         <td className="py-2 pl-4 pr-2 w-8">
-          <StatusIcon
-            className={`h-4 w-4 ${statusMeta.cls}`}
-            aria-label={statusMeta.label}
-          />
+          <StatusIcon className={`h-4 w-4 ${statusMeta.cls}`} aria-label={statusMeta.label} />
         </td>
 
         {/* Automation name + type chip */}
@@ -93,14 +102,18 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
               {run.cardName}
             </button>
           ) : (
-            <span className="text-xs text-muted">{translations['automation.runLogRow.boardWide']}</span>
+            <span className="text-xs text-muted">
+              {translations['automation.runLogRow.boardWide']}
+            </span>
           )}
         </td>
 
         {/* Triggered by */}
         <td className="py-2 px-2">
           <span className="text-xs text-muted">
-            {run.triggeredByUser ? run.triggeredByUser.name : translations['automation.runLogRow.scheduledTrigger']}
+            {run.triggeredByUser
+              ? run.triggeredByUser.name
+              : translations['automation.runLogRow.scheduledTrigger']}
           </span>
         </td>
 
@@ -116,8 +129,14 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => { setExpanded((v) => !v); }}
-            aria-label={expanded ? translations['automation.runLogRow.collapseAriaLabel'] : translations['automation.runLogRow.expandAriaLabel']}
+            onClick={() => {
+              setExpanded((v) => !v);
+            }}
+            aria-label={
+              expanded
+                ? translations['automation.runLogRow.collapseAriaLabel']
+                : translations['automation.runLogRow.expandAriaLabel']
+            }
           >
             {expanded ? (
               <ChevronUpIcon className="h-4 w-4" />

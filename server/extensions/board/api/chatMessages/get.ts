@@ -2,7 +2,10 @@
 // Sprint 199 — optional sessionId query param to scope history to one session.
 import { db } from '../../../../common/db';
 import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { requireGuestCanViewBoardChat } from '../../middlewares/chatPermissions';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 
@@ -15,7 +18,10 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
   if (accessError) return accessError;
 
   const workspaceReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(workspaceReq, boardReq.board!.workspace_id);
+  const membershipError = await requireWorkspaceMembership(
+    workspaceReq,
+    boardReq.board!.workspace_id
+  );
   if (membershipError) return membershipError;
 
   const guestError = await requireGuestCanViewBoardChat(workspaceReq, boardId);
@@ -25,7 +31,10 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
   const cursor = url.searchParams.get('cursor') ?? null;
   const sessionId = url.searchParams.get('sessionId') ?? null;
   const limitParam = Number.parseInt(url.searchParams.get('limit') ?? `${DEFAULT_LIMIT}`, 10);
-  const limit = Math.min(Number.isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam, MAX_LIMIT);
+  const limit = Math.min(
+    Number.isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam,
+    MAX_LIMIT
+  );
 
   let query = db('board_chat_messages as m')
     .leftJoin('users as u', 'm.author_id', 'u.id')
@@ -43,7 +52,7 @@ export async function handleGetChatMessages(req: Request, boardId: string): Prom
       'm.created_at',
       'm.updated_at',
       db.raw('COALESCE(u.name, u.email) as author_name'),
-      'u.avatar_url as author_avatar_url',
+      'u.avatar_url as author_avatar_url'
     );
 
   // [why] Scope to a specific session when provided — keeps history bounded

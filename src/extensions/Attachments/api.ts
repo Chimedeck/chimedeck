@@ -17,7 +17,11 @@ import type {
 
 // ---------- List ----------
 
-export async function listAttachments({ cardId }: { cardId: string }): Promise<{ data: Attachment[] }> {
+export async function listAttachments({
+  cardId,
+}: {
+  cardId: string;
+}): Promise<{ data: Attachment[] }> {
   return apiClient.get(`/cards/${cardId}/attachments`);
 }
 
@@ -29,7 +33,11 @@ export async function requestUploadUrl({
   mimeType,
   sizeBytes,
 }: { cardId: string } & UploadUrlRequest): Promise<{ data: UploadUrlResponse }> {
-  return apiClient.post(`/cards/${cardId}/attachments/upload-url`, { filename, mimeType, sizeBytes });
+  return apiClient.post(`/cards/${cardId}/attachments/upload-url`, {
+    filename,
+    mimeType,
+    sizeBytes,
+  });
 }
 
 export async function confirmUpload({
@@ -47,7 +55,11 @@ export async function startMultipart({
   mimeType,
   sizeBytes,
 }: { cardId: string } & MultipartStartRequest): Promise<{ data: MultipartStartResponse }> {
-  return apiClient.post(`/cards/${cardId}/attachments/multipart/start`, { filename, mimeType, sizeBytes });
+  return apiClient.post(`/cards/${cardId}/attachments/multipart/start`, {
+    filename,
+    mimeType,
+    sizeBytes,
+  });
 }
 
 export async function getPartUrl({
@@ -56,7 +68,11 @@ export async function getPartUrl({
   key,
   partNumber,
 }: { cardId: string } & PartUrlRequest): Promise<{ data: PartUrlResponse }> {
-  return apiClient.post(`/cards/${cardId}/attachments/multipart/part-url`, { uploadId, key, partNumber });
+  return apiClient.post(`/cards/${cardId}/attachments/multipart/part-url`, {
+    uploadId,
+    key,
+    partNumber,
+  });
 }
 
 export async function completeMultipart({
@@ -83,7 +99,9 @@ export async function abortMultipart({
   uploadId: string;
   key: string;
 }): Promise<void> {
-  return apiClient.delete(`/cards/${cardId}/attachments/multipart/${uploadId}?key=${encodeURIComponent(key)}`);
+  return apiClient.delete(
+    `/cards/${cardId}/attachments/multipart/${uploadId}?key=${encodeURIComponent(key)}`
+  );
 }
 
 // ---------- URL attachment ----------
@@ -110,7 +128,11 @@ export async function fetchCardPreview({ cardId }: { cardId: string }): Promise<
 
 // ---------- Link preview ----------
 
-export async function fetchLinkPreview({ url }: { url: string }): Promise<{ data: { title: string; faviconUrl: string } }> {
+export async function fetchLinkPreview({
+  url,
+}: {
+  url: string;
+}): Promise<{ data: { title: string; faviconUrl: string } }> {
   return apiClient.get(`/link-preview?url=${encodeURIComponent(url)}`);
 }
 

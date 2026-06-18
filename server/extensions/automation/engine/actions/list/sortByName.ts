@@ -26,7 +26,7 @@ export const listSortByNameAction: ActionHandler = {
     if (cards.length < 2) return;
 
     const sorted = [...cards].sort((a, b) =>
-      (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' }),
+      (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' })
     );
 
     let prev = '';

@@ -27,7 +27,11 @@ describe('createFile', () => {
       exists: () => Promise.resolve(mockFileExists()),
     });
     mockBunWrite.mockResolvedValue(undefined);
-    mockBunSpawnSync.mockReturnValue({ exitCode: 0, stdout: new Uint8Array(), stderr: new Uint8Array() });
+    mockBunSpawnSync.mockReturnValue({
+      exitCode: 0,
+      stdout: new Uint8Array(),
+      stderr: new Uint8Array(),
+    });
   });
 
   it('returns 403 when path is not allowed', async () => {

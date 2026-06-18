@@ -27,9 +27,9 @@ export const ALLOWED_MIME_TYPES: string[] = [
   'video/mp4',
   'video/webm',
   'video/ogg',
-  'video/quicktime',     // .mov
-  'video/x-msvideo',     // .avi
-  'video/x-matroska',   // .mkv
+  'video/quicktime', // .mov
+  'video/x-msvideo', // .avi
+  'video/x-matroska', // .mkv
   'video/mpeg',
   'video/3gpp',
   'video/3gpp2',

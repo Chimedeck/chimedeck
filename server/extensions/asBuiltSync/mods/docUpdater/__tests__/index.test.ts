@@ -118,9 +118,7 @@ describe('docUpdater', () => {
     expect(result.status).toBe(200);
     expect(result.data?.changelogWritten).toBe(true);
 
-    const changelogPath = Object.keys(writtenFiles).find((k) =>
-      k.includes('request_changelog'),
-    );
+    const changelogPath = Object.keys(writtenFiles).find((k) => k.includes('request_changelog'));
     expect(changelogPath).toBeDefined();
     const changelogContent = writtenFiles[changelogPath!];
     expect(changelogContent).toContain('As-Built Update');
@@ -138,9 +136,7 @@ describe('docUpdater', () => {
 
     expect(result.status).toBe(200);
 
-    const changelogPath = Object.keys(writtenFiles).find((k) =>
-      k.includes('request_changelog'),
-    );
+    const changelogPath = Object.keys(writtenFiles).find((k) => k.includes('request_changelog'));
     const changelogContent = writtenFiles[changelogPath!];
     expect(changelogContent).toContain('Added (1)');
     expect(changelogContent).toContain('Modified (1)');
@@ -155,8 +151,7 @@ describe('docUpdater', () => {
 
     expect(result.status).toBe(200);
 
-    const securityContent =
-      writtenFiles['/fake/repo/specs/security/security.md'];
+    const securityContent = writtenFiles['/fake/repo/specs/security/security.md'];
     expect(securityContent).toBeDefined();
     expect(securityContent).toContain('Test Evidence');
     expect(securityContent).toContain('15 passing');
@@ -175,9 +170,7 @@ describe('docUpdater', () => {
 
     expect(result.status).toBe(200);
     // Security doc should be skipped, not in updated files
-    expect(result.data?.updatedFiles).not.toContain(
-      'specs/security/security.md',
-    );
+    expect(result.data?.updatedFiles).not.toContain('specs/security/security.md');
   });
 
   it('should handle empty evidence gracefully', async () => {
@@ -202,9 +195,7 @@ describe('docUpdater', () => {
 
     expect(result.status).toBe(200);
 
-    const changelogPath = Object.keys(writtenFiles).find((k) =>
-      k.includes('request_changelog'),
-    );
+    const changelogPath = Object.keys(writtenFiles).find((k) => k.includes('request_changelog'));
     const changelogContent = writtenFiles[changelogPath!];
     expect(changelogContent).toContain('No files changed');
     expect(changelogContent).toContain('No merged PRs found');

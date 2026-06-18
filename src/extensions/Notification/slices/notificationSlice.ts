@@ -38,7 +38,7 @@ export const fetchNotificationsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('fetch-failed');
     }
-  },
+  }
 );
 
 export const fetchMoreNotificationsThunk = createAppAsyncThunk(
@@ -50,7 +50,7 @@ export const fetchMoreNotificationsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('fetch-more-failed');
     }
-  },
+  }
 );
 
 export const markReadThunk = createAppAsyncThunk(
@@ -62,7 +62,7 @@ export const markReadThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('mark-read-failed');
     }
-  },
+  }
 );
 
 export const markAllReadThunk = createAppAsyncThunk(
@@ -73,7 +73,7 @@ export const markAllReadThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('mark-all-read-failed');
     }
-  },
+  }
 );
 
 export const deleteNotificationThunk = createAppAsyncThunk(
@@ -85,7 +85,7 @@ export const deleteNotificationThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('delete-failed');
     }
-  },
+  }
 );
 
 export const clearAllNotificationsThunk = createAppAsyncThunk(
@@ -96,7 +96,7 @@ export const clearAllNotificationsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('clear-all-failed');
     }
-  },
+  }
 );
 
 export const markUnreadThunk = createAppAsyncThunk(
@@ -108,7 +108,7 @@ export const markUnreadThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('mark-unread-failed');
     }
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -156,17 +156,14 @@ const notificationSlice = createSlice({
     // Keeps comment reactions in Redux so close/reopen preserves optimistic updates.
     setNotificationCommentReactions(
       state,
-      action: PayloadAction<{ id: string; reactions: NotificationCommentReaction[] }>,
+      action: PayloadAction<{ id: string; reactions: NotificationCommentReaction[] }>
     ) {
       const notification = state.notifications.find((item) => item.id === action.payload.id);
       if (!notification) return;
       notification.comment_reactions = action.payload.reactions;
     },
 
-    setNotificationReadState(
-      state,
-      action: PayloadAction<{ id: string; read: boolean }>,
-    ) {
+    setNotificationReadState(state, action: PayloadAction<{ id: string; read: boolean }>) {
       const notification = state.notifications.find((item) => item.id === action.payload.id);
       if (!notification || notification.read === action.payload.read) return;
 

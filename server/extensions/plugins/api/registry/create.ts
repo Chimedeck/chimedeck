@@ -75,7 +75,9 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
 
   if (!connectorUrl.startsWith('https://')) {
     return Response.json(
-      { error: { code: 'invalid-connector-url', message: 'connectorUrl must start with https://' } },
+      {
+        error: { code: 'invalid-connector-url', message: 'connectorUrl must start with https://' },
+      },
       { status: 422 }
     );
   }

@@ -42,7 +42,9 @@ function verifyStripeSignature({
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(now - timestamp) > STRIPE_SIGNATURE_TOLERANCE_SECONDS) return false;
 
-  const expected = createHmac('sha256', webhookSecret).update(`${parsed.timestamp}.${rawBody}`).digest('hex');
+  const expected = createHmac('sha256', webhookSecret)
+    .update(`${parsed.timestamp}.${rawBody}`)
+    .digest('hex');
   return parsed.signatures.some((signature) => safeCompareHex(expected, signature));
 }
 
@@ -75,7 +77,10 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
   try {
     event = JSON.parse(rawBody) as unknown;
   } catch {
-    return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { name: 'bad-request', data: { message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   try {
@@ -103,9 +108,11 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
     return Response.json(
       {
         name: 'stripe-webhook-processing-failed',
-        data: { message: error instanceof Error ? error.message : 'Stripe webhook processing failed' },
+        data: {
+          message: error instanceof Error ? error.message : 'Stripe webhook processing failed',
+        },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

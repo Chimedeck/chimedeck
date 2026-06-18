@@ -18,7 +18,10 @@ import { publishCardActivityEvent } from '../../activity/events/publishCardActiv
 import { mapActivityToNotification } from '../../activity/mods/mapActivityToNotification';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 
-interface CardContext { boardId: string; workspaceId: string; }
+interface CardContext {
+  boardId: string;
+  workspaceId: string;
+}
 
 interface ChecklistItemPatchBody {
   title?: string;
@@ -39,7 +42,9 @@ async function resolveContextFromCard(cardId: string): Promise<CardContext | nul
   return { boardId: board.id, workspaceId: board.workspace_id };
 }
 
-async function resolveContextFromItem(itemId: string): Promise<{ context: CardContext | null; cardId: string | null }> {
+async function resolveContextFromItem(
+  itemId: string
+): Promise<{ context: CardContext | null; cardId: string | null }> {
   const item = await db('checklist_items').where({ id: itemId }).first();
   if (!item) return { context: null, cardId: null };
   const context = await resolveContextFromCard(item.card_id);
@@ -54,7 +59,7 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -62,7 +67,7 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   if (!context) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -79,14 +84,14 @@ export async function handleCreateChecklistItem(req: Request, cardId: string): P
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -118,7 +123,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -126,7 +131,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   if (!updateContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -143,7 +148,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -160,7 +165,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (typeof body.title !== 'string' || body.title.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'title must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.title = body.title.trim();
@@ -170,7 +175,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (typeof body.checked !== 'boolean') {
       return Response.json(
         { error: { code: 'bad-request', message: 'checked must be a boolean' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.checked = body.checked;
@@ -180,7 +185,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (typeof body.position !== 'string' || body.position.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'position must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.position = body.position;
@@ -190,26 +195,29 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (body.checklist_id !== null && typeof body.checklist_id !== 'string') {
       return Response.json(
         { error: { code: 'bad-request', message: 'checklist_id must be a string or null' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (typeof body.checklist_id === 'string') {
-      const targetChecklist = await db('checklists')
-        .where({ id: body.checklist_id })
-        .first();
+      const targetChecklist = await db('checklists').where({ id: body.checklist_id }).first();
 
       if (!targetChecklist) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'checklist_id must reference an existing checklist' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'checklist_id must reference an existing checklist',
+            },
+          },
+          { status: 400 }
         );
       }
 
       if (targetChecklist.card_id !== item.card_id) {
         return Response.json(
           { error: { code: 'bad-request', message: 'checklist_id must belong to the same card' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
@@ -221,7 +229,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (body.assigned_member_id !== null && typeof body.assigned_member_id !== 'string') {
       return Response.json(
         { error: { code: 'bad-request', message: 'assigned_member_id must be a string or null' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -235,8 +243,13 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
 
       if (!boardMember && !boardGuest) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'assigned_member_id must be a member or guest of this board' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'assigned_member_id must be a member or guest of this board',
+            },
+          },
+          { status: 400 }
         );
       }
     }
@@ -248,15 +261,20 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (body.due_date !== null && typeof body.due_date !== 'string') {
       return Response.json(
         { error: { code: 'bad-request', message: 'due_date must be an ISO date string or null' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (typeof body.due_date === 'string') {
       const parsed = new Date(body.due_date);
       if (Number.isNaN(parsed.getTime())) {
         return Response.json(
-          { error: { code: 'bad-request', message: 'due_date must be a valid ISO date string or null' } },
-          { status: 400 },
+          {
+            error: {
+              code: 'bad-request',
+              message: 'due_date must be a valid ISO date string or null',
+            },
+          },
+          { status: 400 }
         );
       }
       updates.due_date = parsed.toISOString();
@@ -273,11 +291,10 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
 
   const checkedChanged = updates.checked !== undefined && item.checked !== updated?.checked;
   const assigneeChanged =
-    updates.assigned_member_id !== undefined
-    && (item.assigned_member_id ?? null) !== (updated?.assigned_member_id ?? null);
+    updates.assigned_member_id !== undefined &&
+    (item.assigned_member_id ?? null) !== (updated?.assigned_member_id ?? null);
   const dueDateChanged =
-    updates.due_date !== undefined
-    && (item.due_date ?? null) !== (updated?.due_date ?? null);
+    updates.due_date !== undefined && (item.due_date ?? null) !== (updated?.due_date ?? null);
 
   if ((checkedChanged || assigneeChanged || dueDateChanged) && updateCardId && updateContext) {
     const actorId = (req as AuthenticatedRequest).currentUser!.id;
@@ -312,7 +329,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     if (checkedChanged) {
       await emitActivity(
         updated?.checked ? 'checklist_item_checked' : 'checklist_item_unchecked',
-        basePayload,
+        basePayload
       );
     }
 
@@ -346,16 +363,13 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
         },
       });
 
-      await emitActivity(
-        assignmentEventType,
-        {
-          ...basePayload,
-          checklistItemId: itemId,
-          previousUserId: previousAssigneeId,
-          userId: nextAssigneeId,
-          assigneeName,
-        },
-      );
+      await emitActivity(assignmentEventType, {
+        ...basePayload,
+        checklistItemId: itemId,
+        previousUserId: previousAssigneeId,
+        userId: nextAssigneeId,
+        assigneeName,
+      });
     }
 
     if (dueDateChanged) {
@@ -399,7 +413,7 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -407,7 +421,7 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
   if (!deleteContext) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -423,7 +437,10 @@ export async function handleDeleteChecklistItem(req: Request, itemId: string): P
 }
 
 // POST /api/v1/checklist-items/:id/convert — convert checklist item into a card
-export async function handleConvertChecklistItemToCard(req: Request, itemId: string): Promise<Response> {
+export async function handleConvertChecklistItemToCard(
+  req: Request,
+  itemId: string
+): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -431,7 +448,7 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -439,7 +456,7 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
   if (!context) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -454,14 +471,17 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
     const existingCard = await db('cards').where({ id: item.linked_card_id }).first();
     if (existingCard) {
       const existingWithCover = await resolveCoverImageUrl(
-        existingCard as { id: string; cover_attachment_id?: string | null },
+        existingCard as { id: string; cover_attachment_id?: string | null }
       );
       return Response.json(
         {
-          error: { code: 'checklist-item-already-converted', message: 'Checklist item has already been converted' },
+          error: {
+            code: 'checklist-item-already-converted',
+            message: 'Checklist item has already been converted',
+          },
           data: { item, card: existingWithCover },
         },
-        { status: 409 },
+        { status: 409 }
       );
     }
   }
@@ -470,7 +490,7 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
   if (!parentCard) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Parent card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -496,7 +516,7 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
 
   const createdCard = await db('cards').where({ id: newCardId }).first();
   const cardWithCover = await resolveCoverImageUrl(
-    createdCard as { id: string; cover_attachment_id?: string | null },
+    createdCard as { id: string; cover_attachment_id?: string | null }
   );
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
@@ -521,6 +541,6 @@ export async function handleConvertChecklistItemToCard(req: Request, itemId: str
         removedChecklistId: item.checklist_id,
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

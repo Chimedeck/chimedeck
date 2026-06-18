@@ -10,7 +10,7 @@ export async function handleListCategories(req: Request): Promise<Response> {
     `SELECT DISTINCT unnest(categories) AS category
      FROM plugins
      WHERE is_active = true
-     ORDER BY category`,
+     ORDER BY category`
   );
 
   const categories = result.rows.map((r) => r.category);

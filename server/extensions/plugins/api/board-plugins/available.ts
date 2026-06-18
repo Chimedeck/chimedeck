@@ -9,7 +9,7 @@ import { normalizePlugin } from '../../common/normalizePlugin';
 
 export async function handleListAvailableBoardPlugins(
   req: Request,
-  boardId: string,
+  boardId: string
 ): Promise<Response> {
   // boardMemberGuard handles auth + board-not-found (returns 403/404 on failure).
   const guardError = await boardMemberGuard(req as BoardAdminRequest, boardId);
@@ -29,7 +29,7 @@ export async function handleListAvailableBoardPlugins(
       .where('board_plugins.board_id', boardId)
       .whereRaw('board_plugins.plugin_id = plugins.id')
       .whereNull('board_plugins.disabled_at')
-      .select(db.raw('1')),
+      .select(db.raw('1'))
   );
 
   if (q) {
@@ -49,28 +49,26 @@ export async function handleListAvailableBoardPlugins(
   const countResult = await query.clone().count('plugins.id as count').first();
   const total = parseInt(String((countResult as any)?.count ?? '0'), 10);
 
-  const rows = await query
-    .orderBy('plugins.created_at', 'asc')
-    .select(
-      'plugins.id',
-      'plugins.name',
-      'plugins.slug',
-      'plugins.description',
-      'plugins.icon_url',
-      'plugins.connector_url',
-      'plugins.manifest_url',
-      'plugins.author',
-      'plugins.author_email',
-      'plugins.support_email',
-      'plugins.categories',
-      'plugins.capabilities',
-      'plugins.whitelisted_domains',
-      'plugins.is_public',
-      'plugins.is_active',
-      'plugins.created_at',
-      'plugins.updated_at',
-      // api_key is never returned to clients
-    );
+  const rows = await query.orderBy('plugins.created_at', 'asc').select(
+    'plugins.id',
+    'plugins.name',
+    'plugins.slug',
+    'plugins.description',
+    'plugins.icon_url',
+    'plugins.connector_url',
+    'plugins.manifest_url',
+    'plugins.author',
+    'plugins.author_email',
+    'plugins.support_email',
+    'plugins.categories',
+    'plugins.capabilities',
+    'plugins.whitelisted_domains',
+    'plugins.is_public',
+    'plugins.is_active',
+    'plugins.created_at',
+    'plugins.updated_at'
+    // api_key is never returned to clients
+  );
 
   return Response.json({
     data: rows.map((p: any) => normalizePlugin(p)),

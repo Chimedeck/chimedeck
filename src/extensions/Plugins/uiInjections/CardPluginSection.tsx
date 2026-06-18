@@ -34,8 +34,7 @@ const CardPluginSection = ({ cardId, listId, boardId }: Props) => {
         const all: PluginSection[] = [];
         for (const result of results) {
           if (Array.isArray(result)) all.push(...(result as PluginSection[]));
-          else if (result && typeof result === 'object')
-            all.push(result as PluginSection);
+          else if (result && typeof result === 'object') all.push(result as PluginSection);
         }
         setSections(all.filter((s) => s.title || s.content));
       })
@@ -53,19 +52,14 @@ const CardPluginSection = ({ cardId, listId, boardId }: Props) => {
   return (
     <>
       {sections.map((section, i) => (
-        <div
-          key={i}
-          className="rounded-lg border border-border bg-bg-overlay/50 p-4"
-        >
+        <div key={i} className="rounded-lg border border-border bg-bg-overlay/50 p-4">
           {section.title && (
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
               {section.title}
             </p>
           )}
           {section.content && (
-            <p className="text-sm text-subtle whitespace-pre-wrap">
-              {section.content}
-            </p>
+            <p className="text-sm text-subtle whitespace-pre-wrap">{section.content}</p>
           )}
         </div>
       ))}

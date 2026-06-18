@@ -84,7 +84,11 @@ describe('handleSyncAsBuilt', () => {
     const body = await res.json();
     expect(body.name).toBe('card-not-found');
     // Reset
-    mockDbQuery.first = (async () => ({ id: 'card-1', board_id: 'board-1', title: 'Test Card' })) as any;
+    mockDbQuery.first = (async () => ({
+      id: 'card-1',
+      board_id: 'board-1',
+      title: 'Test Card',
+    })) as any;
   });
 
   it('should return 409 when a succeeded run already exists', async () => {

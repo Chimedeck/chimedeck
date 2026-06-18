@@ -10,39 +10,32 @@ interface BadgeVariant {
 const BADGE_VARIANTS: BadgeVariant[] = [
   {
     label: 'Default',
-    className:
-      'bg-bg-overlay text-muted border border-border',
+    className: 'bg-bg-overlay text-muted border border-border',
   },
   {
     label: 'Primary',
-    className:
-      'bg-primary text-white', // [theme-exception] white text on primary bg
+    className: 'bg-primary text-white', // [theme-exception] white text on primary bg
   },
   {
     label: 'Success',
-    className:
-      'bg-success text-white', // [theme-exception] white text on success bg
+    className: 'bg-success text-white', // [theme-exception] white text on success bg
   },
   {
     label: 'Danger',
-    className:
-      'bg-danger text-white', // [theme-exception] white text on danger bg
+    className: 'bg-danger text-white', // [theme-exception] white text on danger bg
   },
   {
     label: 'Warning',
-    className:
-      'bg-warning text-black', // [theme-exception] black text on warning bg
+    className: 'bg-warning text-black', // [theme-exception] black text on warning bg
   },
   {
     label: 'Info',
-    className:
-      'bg-info text-white', // [theme-exception] white text on info bg
+    className: 'bg-info text-white', // [theme-exception] white text on info bg
   },
 ];
 
 /** Base classes shared by all badge variants. */
-const BASE =
-  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold';
+const BASE = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold';
 
 export default function BadgeSample() {
   return (

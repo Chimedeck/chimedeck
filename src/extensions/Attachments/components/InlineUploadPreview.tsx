@@ -24,14 +24,20 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
     if (!isImage) return;
     const url = URL.createObjectURL(entry.file);
     setObjectUrl(url);
-    return () => { URL.revokeObjectURL(url); };
+    return () => {
+      URL.revokeObjectURL(url);
+    };
   }, [entry.file, isImage]);
 
   // Auto-dismiss completed entries after 2 s so they don't clutter the editor
   useEffect(() => {
     if (entry.phase !== 'done') return;
-    const id = window.setTimeout(() => { onCancel(entry.clientId); }, 2000);
-    return () => { window.clearTimeout(id); };
+    const id = window.setTimeout(() => {
+      onCancel(entry.clientId);
+    }, 2000);
+    return () => {
+      window.clearTimeout(id);
+    };
   }, [entry.phase, entry.clientId, onCancel]);
 
   const Icon = getMimeIcon(entry.file.type);
@@ -57,38 +63,38 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
 
       {/* Filename + size + progress / status */}
       <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-xs text-base"
-          title={entry.file.name}
-        >
+        <p className="truncate text-xs text-base" title={entry.file.name}>
           {entry.file.name}
         </p>
-        <p className="text-[10px] text-muted">
-        </p>
+        <p className="text-[10px] text-muted"></p>
 
         {entry.phase === 'error' && (
-          <p
-            role="alert"
-            className="mt-0.5 text-[10px] text-danger"
-          >
+          <p role="alert" className="mt-0.5 text-[10px] text-danger">
             {entry.error ?? translations['attachments.inline.uploadFailed']}
           </p>
         )}
 
         {entry.phase === 'done' && (
-          <p className="mt-0.5 text-[10px] text-success">{translations['attachments.inline.uploaded']}</p>
+          <p className="mt-0.5 text-[10px] text-success">
+            {translations['attachments.inline.uploaded']}
+          </p>
         )}
 
         {/* [why] 'pending' means the file is queued locally and will upload on submit. */}
         {entry.phase === 'pending' && (
-          <p className="mt-0.5 text-[10px] text-muted">{translations['attachments.inline.queued']}</p>
+          <p className="mt-0.5 text-[10px] text-muted">
+            {translations['attachments.inline.queued']}
+          </p>
         )}
 
         {entry.phase !== 'error' && entry.phase !== 'done' && entry.phase !== 'pending' && (
           <div className="mt-1">
             <UploadProgressBar
               progress={entry.phase === 'uploading' ? entry.progress : null}
-              label={translations['attachments.inline.uploading.label'].replace('{fileName}', entry.file.name)}
+              label={translations['attachments.inline.uploading.label'].replace(
+                '{fileName}',
+                entry.file.name
+              )}
             />
           </div>
         )}
@@ -97,10 +103,21 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
       {/* Cancel / dismiss */}
       <button
         type="button"
-        aria-label={translations['attachments.inline.cancel.ariaLabel'].replace('{fileName}', entry.file.name)}
-        title={entry.phase === 'pending' ? translations['attachments.inline.cancel.remove'] : entry.phase === 'error' || entry.phase === 'done' ? translations['attachments.inline.cancel.dismiss'] : translations['attachments.inline.cancel.cancelUpload']}
+        aria-label={translations['attachments.inline.cancel.ariaLabel'].replace(
+          '{fileName}',
+          entry.file.name
+        )}
+        title={
+          entry.phase === 'pending'
+            ? translations['attachments.inline.cancel.remove']
+            : entry.phase === 'error' || entry.phase === 'done'
+              ? translations['attachments.inline.cancel.dismiss']
+              : translations['attachments.inline.cancel.cancelUpload']
+        }
         className="flex-shrink-0 text-muted hover:text-danger transition-colors"
-        onClick={() => { onCancel(entry.clientId); }}
+        onClick={() => {
+          onCancel(entry.clientId);
+        }}
       >
         <XMarkIcon className="h-4 w-4" />
       </button>

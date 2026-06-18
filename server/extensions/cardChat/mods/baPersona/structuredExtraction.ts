@@ -58,7 +58,7 @@ export function extractStructuredFields(responseText: string): CardRequirementFi
 
   for (const [key, patterns] of Object.entries(EXTRACTION_PATTERNS)) {
     for (const pattern of patterns) {
-      const match = (pattern).exec(responseText);
+      const match = pattern.exec(responseText);
       if (match?.[1]) {
         const extracted = match[1].trim();
         // [why] Skip false positives where the heading exists but the
@@ -89,10 +89,7 @@ export function hasAnyStructuredContent(fields: CardRequirementFields): boolean 
  * the card description stays human-readable and clearly demarcates which
  * content came from the AI assistant vs. the original author.
  */
-export function formatStructuredBlock(
-  fields: CardRequirementFields,
-  score: number,
-): string {
+export function formatStructuredBlock(fields: CardRequirementFields, score: number): string {
   const sections: string[] = [];
 
   if (fields.business_value) {

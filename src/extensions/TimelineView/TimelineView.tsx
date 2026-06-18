@@ -53,7 +53,9 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
 
   // Auto-scroll to today when component first mounts or zoom changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { scrollToToday(); }, [zoom]);
+  useEffect(() => {
+    scrollToToday();
+  }, [zoom]);
 
   const todayIso = useMemo(() => today.toISOString().slice(0, 10), [today]);
 
@@ -99,29 +101,29 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
         data-testid="timeline-scroll"
       >
         {/* Header and rows each carry their own bg-bg-surface so solid coverage extends to full scroll width */}
-          <TimelineHeader
+        <TimelineHeader
+          zoom={zoom}
+          originDate={originDate}
+          totalDays={TIMELINE_DAYS}
+          dayWidth={dayWidth}
+          labelWidth={LABEL_WIDTH}
+          today={today}
+        />
+
+        {swimlanes.map((lane) => (
+          <TimelineRow
+            key={lane.listId}
+            swimlane={lane}
             zoom={zoom}
             originDate={originDate}
             totalDays={TIMELINE_DAYS}
             dayWidth={dayWidth}
             labelWidth={LABEL_WIDTH}
             today={today}
+            onCardClick={onCardClick}
+            {...(_addToast !== undefined ? { addToast: _addToast } : {})}
           />
-
-          {swimlanes.map((lane) => (
-            <TimelineRow
-              key={lane.listId}
-              swimlane={lane}
-              zoom={zoom}
-              originDate={originDate}
-              totalDays={TIMELINE_DAYS}
-              dayWidth={dayWidth}
-              labelWidth={LABEL_WIDTH}
-              today={today}
-              onCardClick={onCardClick}
-              {...(_addToast !== undefined ? { addToast: _addToast } : {})}
-            />
-          ))}
+        ))}
         {/* Empty flex-1 remainder — transparent, lets board background image show through */}
       </div>
     </div>

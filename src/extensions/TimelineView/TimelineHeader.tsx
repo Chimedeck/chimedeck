@@ -7,8 +7,18 @@
 import type { TimelineHeaderProps } from './types';
 
 const MONTH_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -62,7 +72,7 @@ function buildDayColumns(
   originDate: Date,
   totalDays: number,
   dayWidth: number,
-  today: Date,
+  today: Date
 ): DateColumn[] {
   const todayIso = toIsoDate(today);
   return Array.from({ length: totalDays }, (_, i) => {
@@ -81,7 +91,7 @@ function buildWeekColumns(
   originDate: Date,
   totalDays: number,
   dayWidth: number,
-  today: Date,
+  today: Date
 ): DateColumn[] {
   const todayIso = toIsoDate(today);
   const cols: DateColumn[] = [];
@@ -91,7 +101,7 @@ function buildWeekColumns(
     const daysInChunk = Math.min(7, totalDays - i);
     const endDate = addDays(d, daysInChunk - 1);
     const isCurrentWeek = Array.from({ length: daysInChunk }, (_, k) =>
-      toIsoDate(addDays(d, k)),
+      toIsoDate(addDays(d, k))
     ).includes(todayIso);
     // Show the week range: "Mar 10 – 16" or "Mar 29 – Apr 4" when spanning a month boundary.
     const startLabel = `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`;
@@ -114,7 +124,7 @@ function buildMonthColumns(
   originDate: Date,
   totalDays: number,
   dayWidth: number,
-  today: Date,
+  today: Date
 ): DateColumn[] {
   const cols: DateColumn[] = [];
   let i = 0;
@@ -195,9 +205,7 @@ const TimelineHeader = ({
                 data-testid={col.isToday ? 'timeline-today-column' : undefined}
               >
                 <span className="font-medium leading-tight">{col.label}</span>
-                {col.subLabel && (
-                  <span className="text-muted leading-tight">{col.subLabel}</span>
-                )}
+                {col.subLabel && <span className="text-muted leading-tight">{col.subLabel}</span>}
               </div>
             ))}
           </div>
@@ -231,9 +239,7 @@ const TimelineHeader = ({
             data-testid={col.isToday ? 'timeline-today-column' : undefined}
           >
             <span className="truncate font-medium leading-tight">{col.label}</span>
-            {col.subLabel && (
-              <span className="text-muted leading-tight">{col.subLabel}</span>
-            )}
+            {col.subLabel && <span className="text-muted leading-tight">{col.subLabel}</span>}
           </div>
         ))}
       </div>

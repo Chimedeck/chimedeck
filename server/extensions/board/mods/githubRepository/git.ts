@@ -5,7 +5,9 @@ import simpleGit from 'simple-git';
 
 function isMissingRemoteBranchError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /remote branch .* not found|couldn't find remote ref|could not find remote branch|is not a commit and a branch .* cannot be created from it/i.test(message);
+  return /remote branch .* not found|couldn't find remote ref|could not find remote branch|is not a commit and a branch .* cannot be created from it/i.test(
+    message
+  );
 }
 
 function buildAuthConfig(token: string): string {
@@ -15,10 +17,7 @@ function buildAuthConfig(token: string): string {
 
 function buildUserConfig(botAlias: string): string[] {
   const emailAlias = botAlias.trim();
-  return [
-    `user.name=${botAlias}`,
-    `user.email=${emailAlias}@users.noreply.github.com`,
-  ];
+  return [`user.name=${botAlias}`, `user.email=${emailAlias}@users.noreply.github.com`];
 }
 
 export function createGithubRepositoryGit({
@@ -77,7 +76,7 @@ export async function ensureGithubRepositoryCheckout({
       await git.clone(remoteUrl, repoPath, ['--depth', '1']);
     }
     return;
-}
+  }
 
   const git = createGithubRepositoryGit({ baseDir: repoPath, token });
   try {

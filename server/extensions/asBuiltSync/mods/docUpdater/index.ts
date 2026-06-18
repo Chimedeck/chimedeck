@@ -52,9 +52,7 @@ export const docUpdaterDeps = {
  * Extract YAML front-matter (lines between --- delimiters) from a file.
  * Returns { frontMatter, body }.
  */
-function extractFrontMatter(
-  content: string,
-): { frontMatter: string; body: string } {
+function extractFrontMatter(content: string): { frontMatter: string; body: string } {
   const lines = content.split('\n');
   if (lines[0]?.trim() === '---') {
     const endIndex = lines.findIndex((l, i) => i > 0 && l.trim() === '---');
@@ -71,9 +69,7 @@ function extractFrontMatter(
 /**
  * Format changed files into a markdown summary.
  */
-function formatChangedFilesSummary(
-  changedFiles: AsBuiltEvidence['changedFiles'],
-): string {
+function formatChangedFilesSummary(changedFiles: AsBuiltEvidence['changedFiles']): string {
   if (changedFiles.length === 0) return 'No files changed.\n';
 
   const added = changedFiles.filter((f) => f.status === 'added');
@@ -102,9 +98,7 @@ function formatChangedFilesSummary(
 /**
  * Format merged PRs into a markdown summary.
  */
-function formatMergedPrsSummary(
-  mergedPrs: AsBuiltEvidence['mergedPrs'],
-): string {
+function formatMergedPrsSummary(mergedPrs: AsBuiltEvidence['mergedPrs']): string {
   if (mergedPrs.length === 0) return 'No merged PRs found.\n';
 
   let summary = '';
@@ -158,9 +152,13 @@ ${formatMergedPrsSummary(evidence.mergedPrs)}
 ${formatChangedFilesSummary(evidence.changedFiles)}
 
 ### Test Evidence
-${evidence.testEvidence.length > 0
-    ? evidence.testEvidence.map((t) => `- \`${t.testFile}\` (${t.passingCount} passing, ${t.failingCount} failing)`).join('\n')
-    : 'No test evidence detected.\n'}
+${
+  evidence.testEvidence.length > 0
+    ? evidence.testEvidence
+        .map((t) => `- \`${t.testFile}\` (${t.passingCount} passing, ${t.failingCount} failing)`)
+        .join('\n')
+    : 'No test evidence detected.\n'
+}
 
 ## Technical Debt
 
@@ -201,9 +199,7 @@ async function updateArchitectureDoc({
   const exists = await fileExists(archPath);
 
   if (!exists) {
-    console.warn(
-      `[asBuiltSync/docUpdater] architecture.md not found at ${archPath} — skipping`,
-    );
+    console.warn(`[asBuiltSync/docUpdater] architecture.md not found at ${archPath} — skipping`);
     return null;
   }
 
@@ -258,9 +254,7 @@ async function updateSecurityDoc({
   const exists = await fileExists(securityPath);
 
   if (!exists) {
-    console.warn(
-      `[asBuiltSync/docUpdater] security.md not found at ${securityPath} — skipping`,
-    );
+    console.warn(`[asBuiltSync/docUpdater] security.md not found at ${securityPath} — skipping`);
     return null;
   }
 
@@ -279,9 +273,13 @@ async function updateSecurityDoc({
 ### Changed Files
 ${formatChangedFilesSummary(evidence.changedFiles)}
 ### Test Evidence
-${evidence.testEvidence.length > 0
-    ? evidence.testEvidence.map((t) => `- \`${t.testFile}\` (${t.passingCount} passing, ${t.failingCount} failing)`).join('\n')
-    : 'No test evidence detected.\n'}
+${
+  evidence.testEvidence.length > 0
+    ? evidence.testEvidence
+        .map((t) => `- \`${t.testFile}\` (${t.passingCount} passing, ${t.failingCount} failing)`)
+        .join('\n')
+    : 'No test evidence detected.\n'
+}
 `;
 
   const updatedContent = frontMatter

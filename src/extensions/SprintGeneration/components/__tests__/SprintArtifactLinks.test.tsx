@@ -5,10 +5,26 @@ import { describe, it, expect, vi } from 'vitest';
 
 describe('SprintArtifactLinks', () => {
   const sampleArtifacts = [
-    { label: 'Sprint 177 Specification', url: '/specs/sprints/sprint-177.md', type: 'sprint-spec' as const },
-    { label: 'Request Changelog', url: '/specs/changelog/20260611_000000.md', type: 'changelog' as const },
-    { label: 'Commit a1b2c3d', url: 'https://github.com/org/repo/commit/a1b2c3d', type: 'commit' as const },
-    { label: 'Architecture Delta', url: '/specs/architecture/architecture.md', type: 'architecture' as const },
+    {
+      label: 'Sprint 177 Specification',
+      url: '/specs/sprints/sprint-177.md',
+      type: 'sprint-spec' as const,
+    },
+    {
+      label: 'Request Changelog',
+      url: '/specs/changelog/20260611_000000.md',
+      type: 'changelog' as const,
+    },
+    {
+      label: 'Commit a1b2c3d',
+      url: 'https://github.com/org/repo/commit/a1b2c3d',
+      type: 'commit' as const,
+    },
+    {
+      label: 'Architecture Delta',
+      url: '/specs/architecture/architecture.md',
+      type: 'architecture' as const,
+    },
     { label: 'Security Review', url: '/specs/security/review.md', type: 'security' as const },
   ];
 

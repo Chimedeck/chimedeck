@@ -41,7 +41,7 @@ async function handleInviteGuestById(req: Request, boardId: string): Promise<Res
   } catch {
     return Response.json(
       { error: { code: 'invalid-request-body', message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -49,7 +49,7 @@ async function handleInviteGuestById(req: Request, boardId: string): Promise<Res
   if (!userId) {
     return Response.json(
       { error: { code: 'missing-user-id', message: 'userId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -57,16 +57,16 @@ async function handleInviteGuestById(req: Request, boardId: string): Promise<Res
   if (rawGuestType !== undefined && rawGuestType !== 'VIEWER' && rawGuestType !== 'MEMBER') {
     return Response.json(
       { error: { code: 'invalid-guest-type', message: 'guestType must be VIEWER or MEMBER' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
-  const guestType: GuestType = (rawGuestType) ?? 'VIEWER';
+  const guestType: GuestType = rawGuestType ?? 'VIEWER';
 
   const targetUser = await db('users').where({ id: userId }).first();
   if (!targetUser) {
     return Response.json(
       { error: { code: 'user-not-found', message: 'User not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -77,8 +77,13 @@ async function handleInviteGuestById(req: Request, boardId: string): Promise<Res
 
   if (existingMembership && existingMembership.role !== 'GUEST') {
     return Response.json(
-      { error: { code: 'user-already-workspace-member', message: 'User is already a workspace member with a higher role' } },
-      { status: 409 },
+      {
+        error: {
+          code: 'user-already-workspace-member',
+          message: 'User is already a workspace member with a higher role',
+        },
+      },
+      { status: 409 }
     );
   }
 
@@ -133,7 +138,7 @@ async function handleInviteGuestById(req: Request, boardId: string): Promise<Res
 export async function handleRevokeGuest(
   req: Request,
   boardId: string,
-  userId: string,
+  userId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -150,11 +155,13 @@ export async function handleRevokeGuest(
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  const grantRow = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first();
+  const grantRow = await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first();
   if (!grantRow) {
     return Response.json(
       { error: { code: 'guest-access-not-found', message: 'Guest access record not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -206,7 +213,7 @@ export async function handleListGuests(req: Request, boardId: string): Promise<R
       db.raw('COALESCE(users.name, users.email) as name'),
       'board_guest_access.guest_type as guestType',
       'board_guest_access.granted_at as grantedAt',
-      'board_guest_access.granted_by as grantedBy',
+      'board_guest_access.granted_by as grantedBy'
     );
 
   return Response.json({ data: guests });

@@ -9,7 +9,10 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { between, HIGH_SENTINEL } from '../mods/fractional';
 import { sanitizeText } from '../../../common/sanitize';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
@@ -40,14 +43,14 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.title || typeof body.title !== 'string' || body.title.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'title is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -75,7 +78,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
     if (afterIndex === -1) {
       return Response.json(
         { error: { code: 'list-not-found', message: 'afterId list not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     const after = activeLists[afterIndex]!;
@@ -97,7 +100,13 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   const list = await db('lists').where({ id }).first();
 
   // Broadcast full list object so clients can update their local state
-  await writeEvent({ type: 'list_created', boardId: canonicalBoardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list } });
+  await writeEvent({
+    type: 'list_created',
+    boardId: canonicalBoardId,
+    entityId: id,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: { list },
+  });
 
   return Response.json({ data: list }, { status: 201 });
 }

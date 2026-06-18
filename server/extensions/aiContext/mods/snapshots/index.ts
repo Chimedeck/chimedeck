@@ -20,7 +20,7 @@ export async function computeHash(data: string): Promise<string> {
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -50,10 +50,7 @@ export const liveSnapshotDB: SnapshotDB = {
     return id;
   },
   findById: async (id: string) => {
-    const row = await db('card_ai_context_snapshots')
-      .select('*')
-      .where({ id })
-      .first();
+    const row = await db('card_ai_context_snapshots').select('*').where({ id }).first();
     if (!row) return undefined;
     return rowToSnapshot(row);
   },

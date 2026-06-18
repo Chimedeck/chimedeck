@@ -1,9 +1,6 @@
 import { db } from '../../../../common/db';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import {
-  TRELLO_PERMISSION_DENIED,
-  trelloError,
-} from '../../common/errors';
+import { TRELLO_PERMISSION_DENIED, trelloError } from '../../common/errors';
 import { getTrelloAuthUser } from '../../middlewares/trelloAuth';
 import { serializeBoard } from '../../serializers/board';
 import { serializeMember, usernameFromEmail } from '../../serializers/member';
@@ -33,9 +30,21 @@ type BoardRow = {
 };
 
 type ListRow = { id: string; board_id: string };
-type CardRow = { id: string; list_id: string; title?: string | null; description?: string | null; archived?: boolean };
+type CardRow = {
+  id: string;
+  list_id: string;
+  title?: string | null;
+  description?: string | null;
+  archived?: boolean;
+};
 type UserRow = { id: string; email: string; name?: string | null; avatar_url?: string | null };
-type WorkspaceRow = { id: string; name: string; owner_id?: string | null; desc?: string | null; website?: string | null };
+type WorkspaceRow = {
+  id: string;
+  name: string;
+  owner_id?: string | null;
+  desc?: string | null;
+  website?: string | null;
+};
 
 function normalizeQuery(value: unknown): string {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
@@ -48,10 +57,13 @@ function toPositiveInt(value: string | null, fallback: number): number {
   return parsed;
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
-  const memberships = await db('memberships')
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
+  const memberships = (await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
-    .select('role') as Array<Record<string, unknown>>;
+    .select('role')) as Array<Record<string, unknown>>;
   let highest: MembershipRole | null = null;
   for (const row of memberships) {
     const rawRole = row['role'];
@@ -62,8 +74,11 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first() as
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as
     | Record<string, unknown>
     | undefined;
   const role = row?.['role'];
@@ -72,9 +87,9 @@ async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADM
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first() as
-    | Record<string, unknown>
-    | undefined;
+  const row = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as Record<string, unknown> | undefined;
   return !!row;
 }
 
@@ -92,26 +107,25 @@ async function canReadBoard(userId: string, board: BoardRow): Promise<boolean> {
   return true;
 }
 
-async function listBoardMemberships(boardId: string): Promise<Array<{
-  id: string;
-  idMember: string;
-  memberType: 'admin' | 'normal' | 'observer';
-  unconfirmed: false;
-  deactivated: false;
-}>> {
-  const boardMembers = await db('board_members')
+async function listBoardMemberships(boardId: string): Promise<
+  Array<{
+    id: string;
+    idMember: string;
+    memberType: 'admin' | 'normal' | 'observer';
+    unconfirmed: false;
+    deactivated: false;
+  }>
+> {
+  const boardMembers = (await db('board_members')
     .where({ board_id: boardId })
-    .orderBy('created_at', 'asc') as Array<{ id: string; user_id: string; role: string }>;
-  const guestRows = await db('board_guest_access')
+    .orderBy('created_at', 'asc')) as Array<{ id: string; user_id: string; role: string }>;
+  const guestRows = (await db('board_guest_access')
     .where({ board_id: boardId })
-    .orderBy('granted_at', 'asc') as Array<{ id: string; user_id: string }>;
+    .orderBy('granted_at', 'asc')) as Array<{ id: string; user_id: string }>;
 
   const memberships = boardMembers.map((row) => {
-    const memberType: 'admin' | 'normal' | 'observer' = row.role === 'ADMIN'
-      ? 'admin'
-      : row.role === 'VIEWER'
-        ? 'observer'
-        : 'normal';
+    const memberType: 'admin' | 'normal' | 'observer' =
+      row.role === 'ADMIN' ? 'admin' : row.role === 'VIEWER' ? 'observer' : 'normal';
 
     return {
       id: row.id,
@@ -144,10 +158,7 @@ function splitCsvParam(values: string[]): string[] {
 }
 
 export function parseSearchModelTypes(params: URLSearchParams): Set<SearchModelType> {
-  const rawTokens = splitCsvParam([
-    ...params.getAll('modelType'),
-    ...params.getAll('modelTypes'),
-  ]);
+  const rawTokens = splitCsvParam([...params.getAll('modelType'), ...params.getAll('modelTypes')]);
   if (rawTokens.length === 0 || rawTokens.includes('all')) {
     return new Set(['boards', 'cards', 'members', 'organizations']);
   }
@@ -169,7 +180,7 @@ function matchByQuery(query: string, ...values: Array<string | null | undefined>
 }
 
 async function listVisibleBoards(userId: string): Promise<BoardRow[]> {
-  const boards = await db('boards').orderBy('created_at', 'asc') as BoardRow[];
+  const boards = (await db('boards').orderBy('created_at', 'asc')) as BoardRow[];
   const visible: BoardRow[] = [];
   for (const board of boards) {
     if (await canReadBoard(userId, board)) visible.push(board);
@@ -180,7 +191,7 @@ async function listVisibleBoards(userId: string): Promise<BoardRow[]> {
 async function searchBoards(
   userId: string,
   query: string,
-  limit: number,
+  limit: number
 ): Promise<Awaited<ReturnType<typeof serializeBoard>>[]> {
   const visibleBoards = await listVisibleBoards(userId);
   const result = [];
@@ -188,7 +199,9 @@ async function searchBoards(
     if (!matchByQuery(query, board.title, board.description)) continue;
     const memberships = await listBoardMemberships(board.id);
     const creator = memberships.find((row) => row.memberType === 'admin');
-    result.push(serializeBoard({ ...board, memberships, idMemberCreator: creator?.idMember ?? '' }));
+    result.push(
+      serializeBoard({ ...board, memberships, idMemberCreator: creator?.idMember ?? '' })
+    );
     if (result.length >= limit) break;
   }
   return result;
@@ -197,14 +210,16 @@ async function searchBoards(
 async function searchCards(
   userId: string,
   query: string,
-  limit: number,
+  limit: number
 ): Promise<Awaited<ReturnType<typeof loadTrelloCardById>>[]> {
   const visibleBoards = await listVisibleBoards(userId);
   const visibleBoardIds = new Set(visibleBoards.map((board) => board.id));
-  const lists = await db('lists') as ListRow[];
-  const allowedListIds = new Set(lists.filter((row) => visibleBoardIds.has(row.board_id)).map((row) => row.id));
+  const lists = (await db('lists')) as ListRow[];
+  const allowedListIds = new Set(
+    lists.filter((row) => visibleBoardIds.has(row.board_id)).map((row) => row.id)
+  );
 
-  const cards = await db('cards').orderBy('created_at', 'asc') as CardRow[];
+  const cards = (await db('cards').orderBy('created_at', 'asc')) as CardRow[];
   const result = [];
   for (const card of cards) {
     if (card.archived) continue;
@@ -218,23 +233,16 @@ async function searchCards(
   return result;
 }
 
-async function searchMembers(
-  userId: string,
-  query: string,
-  limit: number,
-  prefixOnly = false,
-) {
+async function searchMembers(userId: string, query: string, limit: number, prefixOnly = false) {
   const visibleBoards = await listVisibleBoards(userId);
   const workspaceIds = new Set(visibleBoards.map((board) => board.workspace_id));
 
-  const memberships = await db('memberships') as Array<{ user_id: string; workspace_id: string }>;
+  const memberships = (await db('memberships')) as Array<{ user_id: string; workspace_id: string }>;
   const memberIds = new Set(
-    memberships
-      .filter((row) => workspaceIds.has(row.workspace_id))
-      .map((row) => row.user_id),
+    memberships.filter((row) => workspaceIds.has(row.workspace_id)).map((row) => row.user_id)
   );
 
-  const users = await db('users').orderBy('email', 'asc') as UserRow[];
+  const users = (await db('users').orderBy('email', 'asc')) as UserRow[];
   const result = [];
   for (const user of users) {
     if (!memberIds.has(user.id)) continue;
@@ -245,31 +253,29 @@ async function searchMembers(
       ? haystack.some((value) => value.startsWith(query))
       : haystack.some((value) => value.includes(query));
     if (!matched) continue;
-    result.push(serializeMember({
-      id: user.id,
-      email: user.email,
-      name: fullName,
-      avatar_url: user.avatar_url ?? null,
-    }));
+    result.push(
+      serializeMember({
+        id: user.id,
+        email: user.email,
+        name: fullName,
+        avatar_url: user.avatar_url ?? null,
+      })
+    );
     if (result.length >= limit) break;
   }
   return result;
 }
 
-async function searchOrganizations(
-  userId: string,
-  query: string,
-  limit: number,
-) {
-  const myMemberships = await db('memberships').where({ user_id: userId }) as Array<{
+async function searchOrganizations(userId: string, query: string, limit: number) {
+  const myMemberships = (await db('memberships').where({ user_id: userId })) as Array<{
     workspace_id: string;
     role: string;
   }>;
   const visibleWorkspaceIds = new Set(
-    myMemberships.filter((row) => row.role !== 'GUEST').map((row) => row.workspace_id),
+    myMemberships.filter((row) => row.role !== 'GUEST').map((row) => row.workspace_id)
   );
-  const workspaces = await db('workspaces').orderBy('name', 'asc') as WorkspaceRow[];
-  const allMemberships = await db('memberships').orderBy('workspace_id', 'asc') as Array<{
+  const workspaces = (await db('workspaces').orderBy('name', 'asc')) as WorkspaceRow[];
+  const allMemberships = (await db('memberships').orderBy('workspace_id', 'asc')) as Array<{
     workspace_id: string;
     user_id: string;
     role: string;
@@ -283,16 +289,21 @@ async function searchOrganizations(
       serializeOrganization({
         ...workspace,
         memberships: allMemberships
-          .filter((membership) => membership.workspace_id === workspace.id && membership.role !== 'GUEST')
+          .filter(
+            (membership) => membership.workspace_id === workspace.id && membership.role !== 'GUEST'
+          )
           .map((membership) => ({ user_id: membership.user_id, role: membership.role })),
-      }),
+      })
     );
     if (result.length >= limit) break;
   }
   return result;
 }
 
-export async function searchRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function searchRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -322,10 +333,11 @@ export async function searchRouter(req: AuthenticatedRequest, path: string): Pro
   if (modelTypes.has('boards')) response.boards = await searchBoards(user.id, query, boardsLimit);
   if (modelTypes.has('cards')) {
     response.cards = (await searchCards(user.id, query, cardsLimit)).filter(
-      (card): card is NonNullable<typeof card> => !!card,
+      (card): card is NonNullable<typeof card> => !!card
     );
   }
-  if (modelTypes.has('members')) response.members = await searchMembers(user.id, query, membersLimit);
+  if (modelTypes.has('members'))
+    response.members = await searchMembers(user.id, query, membersLimit);
   if (modelTypes.has('organizations')) {
     response.organizations = await searchOrganizations(user.id, query, organizationsLimit);
   }

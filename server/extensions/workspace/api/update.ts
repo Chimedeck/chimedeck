@@ -40,14 +40,19 @@ function validatePluginDomains(input: string[] | null): Response | string | null
   if (!Array.isArray(input)) {
     return Response.json(
       { error: { code: 'bad-request', message: 'pluginDomains must be an array or null' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (input.length > MAX_PLUGIN_DOMAINS) {
     return Response.json(
-      { error: { code: 'bad-request', message: `pluginDomains cannot exceed ${String(MAX_PLUGIN_DOMAINS)} entries` } },
-      { status: 400 },
+      {
+        error: {
+          code: 'bad-request',
+          message: `pluginDomains cannot exceed ${String(MAX_PLUGIN_DOMAINS)} entries`,
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -55,7 +60,7 @@ function validatePluginDomains(input: string[] | null): Response | string | null
     if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
       return Response.json(
         { error: { code: 'bad-request', message: `'${domain}' is not a valid HTTPS origin` } },
-        { status: 400 },
+        { status: 400 }
       );
     }
   }
@@ -80,7 +85,7 @@ export async function handleUpdateWorkspace(req: Request, workspaceId: string): 
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -90,7 +95,7 @@ export async function handleUpdateWorkspace(req: Request, workspaceId: string): 
     if (typeof body.name !== 'string' || body.name.trim() === '') {
       return Response.json(
         { error: { code: 'bad-request', message: 'name must be a non-empty string' } },
-        { status: 400 },
+        { status: 400 }
       );
     }
     updates.name = body.name.trim();
@@ -108,18 +113,16 @@ export async function handleUpdateWorkspace(req: Request, workspaceId: string): 
   if (Object.keys(updates).length === 0) {
     return Response.json(
       { error: { code: 'bad-request', message: 'No valid fields to update' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const updated = await db('workspaces')
-    .where({ id: workspaceId })
-    .update(updates, ['*']);
+  const updated = await db('workspaces').where({ id: workspaceId }).update(updates, ['*']);
 
   if (!updated.length) {
     return Response.json(
       { error: { code: 'workspace-not-found', message: 'Workspace not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

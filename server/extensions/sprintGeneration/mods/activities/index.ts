@@ -6,10 +6,7 @@
 
 import { writeActivity } from '../../../activity/mods/write';
 import { publishCardActivityEvent } from '../../../activity/events/publishCardActivityEvent';
-import type {
-  SprintGenActivityType,
-  SprintGenActivityInput,
-} from '../../types';
+import type { SprintGenActivityType, SprintGenActivityInput } from '../../types';
 
 export const activitiesDeps = {
   /**
@@ -39,16 +36,18 @@ export async function emitSprintGenActivity(input: SprintGenActivityInput): Prom
     });
 
     // Fire-and-forget realtime broadcast
-    activitiesDeps.publishCardActivityEvent({
-      activity,
-      boardId: input.boardId ?? '',
-    }).catch(() => {});
+    activitiesDeps
+      .publishCardActivityEvent({
+        activity,
+        boardId: input.boardId ?? '',
+      })
+      .catch(() => {});
   } catch (error) {
     // [why] Activity emission is fire-and-forget — failures are logged
     // but must not block the pipeline.
     console.error(
       `[sprintGeneration/activities] Failed to emit ${input.type}:`,
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
   }
 }

@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import {
-  getAdjustedPointerY,
-  shouldRecomputeFromPointerDestination,
-} from './dragPlacementUtils';
+import { getAdjustedPointerY, shouldRecomputeFromPointerDestination } from './dragPlacementUtils';
 
 describe('dragPlacementUtils', () => {
   describe('getAdjustedPointerY', () => {

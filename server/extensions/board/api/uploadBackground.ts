@@ -66,7 +66,7 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Expected multipart/form-data' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -74,21 +74,21 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   if (!(file instanceof File)) {
     return Response.json(
       { error: { code: 'bad-request', message: 'Missing background field' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
     return Response.json(
       { name: 'mime-type-not-allowed', data: { mimeType: file.type } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (file.size > MAX_SIZE_BYTES) {
     return Response.json(
       { name: 'file-too-large', data: { sizeBytes: file.size, maxBytes: MAX_SIZE_BYTES } },
-      { status: 413 },
+      { status: 413 }
     );
   }
 
@@ -113,7 +113,7 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
       Key: s3Key,
       Body: rawBuffer,
       ContentType: file.type,
-    }),
+    })
   );
 
   const backgroundUrl = buildPublicUrl(s3Key);

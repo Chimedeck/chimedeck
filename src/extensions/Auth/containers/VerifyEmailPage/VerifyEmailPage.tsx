@@ -31,8 +31,12 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     if (status === 'success') {
       // Slight delay so user sees the success message before redirect
-      const timer = setTimeout(() => { navigate('/workspaces', { replace: true }); }, 1500);
-      return () => { clearTimeout(timer); };
+      const timer = setTimeout(() => {
+        navigate('/workspaces', { replace: true });
+      }, 1500);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [status, navigate]);
 
@@ -52,13 +56,9 @@ export default function VerifyEmailPage() {
           <span className="text-xl font-bold text-base">{translations.appName}</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-base mb-4">
-          {translations.verifyEmail.title}
-        </h1>
+        <h1 className="text-2xl font-bold text-base mb-4">{translations.verifyEmail.title}</h1>
 
-        {status === 'loading' && (
-          <p className="text-subtle">Verifying your email…</p>
-        )}
+        {status === 'loading' && <p className="text-subtle">Verifying your email…</p>}
 
         {status === 'success' && (
           <p className="text-success font-medium">{translations.verifyEmail.success}</p>
@@ -83,9 +83,7 @@ export default function VerifyEmailPage() {
             {resendStatus === 'error' && (
               <p className="text-danger text-sm mt-2">Failed to resend. Please try again later.</p>
             )}
-            {!token && (
-              <p className="text-muted text-sm mt-4">{error}</p>
-            )}
+            {!token && <p className="text-muted text-sm mt-4">{error}</p>}
           </div>
         )}
 

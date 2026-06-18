@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/chat/assist/commit-description
 // Sprint 208 — commit a confirmed description proposal to the card.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { db } from '../../../../common/db';
 
 export const cardChatAssistCommitDeps = {
@@ -10,7 +13,10 @@ export const cardChatAssistCommitDeps = {
   db,
 };
 
-export async function handleCommitCardChatProposal(req: Request, cardId: string): Promise<Response> {
+export async function handleCommitCardChatProposal(
+  req: Request,
+  cardId: string
+): Promise<Response> {
   const authError = await cardChatAssistCommitDeps.authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
@@ -18,7 +24,7 @@ export async function handleCommitCardChatProposal(req: Request, cardId: string)
 
   const membershipError = await cardChatAssistCommitDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -28,29 +34,24 @@ export async function handleCommitCardChatProposal(req: Request, cardId: string)
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.description !== 'string' || body.description.trim() === '') {
     return Response.json(
       { name: 'missing-description', data: { message: 'description is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const now = new Date().toISOString();
 
   // Update the card description
-  await cardChatAssistCommitDeps.db('cards')
-    .where({ id: cardId })
-    .update({
-      description: body.description.trim(),
-      updated_at: now,
-    });
+  await cardChatAssistCommitDeps.db('cards').where({ id: cardId }).update({
+    description: body.description.trim(),
+    updated_at: now,
+  });
 
-  return Response.json(
-    { data: { success: true } },
-    { status: 200 },
-  );
+  return Response.json({ data: { success: true } }, { status: 200 });
 }

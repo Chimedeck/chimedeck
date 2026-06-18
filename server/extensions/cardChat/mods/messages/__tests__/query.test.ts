@@ -24,7 +24,9 @@ mock.module('../../../../../common/db', () => ({ db: dbFn }));
 // returns a thenable QueryBuilder. Our mock's .select() returns a proxy — needs to be thenable.
 function withRows(rows: unknown[]) {
   return mock(() => {
-    const obj: Record<string, unknown> & { then: (resolve: (v: unknown) => void) => Promise<unknown> } = {
+    const obj: Record<string, unknown> & {
+      then: (resolve: (v: unknown) => void) => Promise<unknown>;
+    } = {
       ...chainProxy,
       then: (resolve: (v: unknown) => void) => Promise.resolve(rows).then(resolve),
     };
@@ -34,7 +36,10 @@ function withRows(rows: unknown[]) {
 
 beforeEach(() => {
   const fns = [dbFn, dbRaw, ...Object.values(chainFns)];
-  for (const fn of fns) { fn.mockClear(); fn.mockImplementation(() => undefined); }
+  for (const fn of fns) {
+    fn.mockClear();
+    fn.mockImplementation(() => undefined);
+  }
   for (const m of KNOWN_CHAIN) chainFns[m].mockImplementation(() => chainProxy);
   dbRaw.mockImplementation((sql: string) => sql);
   dbFn.mockImplementation((_tableName: string) => chainProxy);
@@ -56,9 +61,15 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     const messageRow = {
-      id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hello',
-      metadata: null, author_id: 'user-1', created_at: '2026-01-01T00:00:00.000Z',
-      updated_at: '2026-01-01T00:00:00.000Z', author_name: 'Test User',
+      id: 'msg-1',
+      session_id: 'sess-1',
+      role: 'user',
+      content: 'Hello',
+      metadata: null,
+      author_id: 'user-1',
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      author_name: 'Test User',
       author_avatar_url: 'https://example.com/avatar.png',
     };
 
@@ -82,11 +93,16 @@ describe('getCardChatMessages', () => {
     q('first').mockResolvedValueOnce(session);
 
     const rows = Array.from({ length: 51 }, (_, i) => ({
-      id: `msg-${i}`, session_id: 'sess-1', role: 'user', content: `Msg ${i}`,
-      metadata: null, author_id: null,
+      id: `msg-${i}`,
+      session_id: 'sess-1',
+      role: 'user',
+      content: `Msg ${i}`,
+      metadata: null,
+      author_id: null,
       created_at: `2026-01-01T00:${String(i).padStart(2, '0')}:00.000Z`,
       updated_at: `2026-01-01T00:${String(i).padStart(2, '0')}:00.000Z`,
-      author_name: null, author_avatar_url: null,
+      author_name: null,
+      author_avatar_url: null,
     }));
     chainFns['select'] = withRows(rows);
 
@@ -103,10 +119,26 @@ describe('getCardChatMessages', () => {
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
 
-    const rows = [{ id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hi', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null }];
+    const rows = [
+      {
+        id: 'msg-1',
+        session_id: 'sess-1',
+        role: 'user',
+        content: 'Hi',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
+    ];
     chainFns['select'] = withRows(rows);
 
-    const result = await getCardChatMessages({ cardId: 'card-1', cursor: 'eyJpZCI6Im1zZy0wIiwiY3JlYXRlZF9hdCI6IjIwMjYtMDEtMDFUMjM6NTk6MDAuMDAwWiJ9' });
+    const result = await getCardChatMessages({
+      cardId: 'card-1',
+      cursor: 'eyJpZCI6Im1zZy0wIiwiY3JlYXRlZF9hdCI6IjIwMjYtMDEtMDFUMjM6NTk6MDAuMDAwWiJ9',
+    });
 
     expect(result.data).toHaveLength(1);
     expect(q('where')).toHaveBeenCalled();
@@ -117,7 +149,20 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
-    const rows = [{ id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hi', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null }];
+    const rows = [
+      {
+        id: 'msg-1',
+        session_id: 'sess-1',
+        role: 'user',
+        content: 'Hi',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
+    ];
     chainFns['select'] = withRows(rows);
 
     const result = await getCardChatMessages({ cardId: 'card-1', limit: 200 });
@@ -131,7 +176,18 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
-    const row = { id: 'msg-1', session_id: 'sess-1', role: 'assistant', content: 'AI response', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null };
+    const row = {
+      id: 'msg-1',
+      session_id: 'sess-1',
+      role: 'assistant',
+      content: 'AI response',
+      metadata: null,
+      author_id: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      author_name: null,
+      author_avatar_url: null,
+    };
     chainFns['select'] = withRows([row]);
 
     const result = await getCardChatMessages({ cardId: 'card-1' });
@@ -145,7 +201,18 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
-    const row = { id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hi', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null };
+    const row = {
+      id: 'msg-1',
+      session_id: 'sess-1',
+      role: 'user',
+      content: 'Hi',
+      metadata: null,
+      author_id: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      author_name: null,
+      author_avatar_url: null,
+    };
     chainFns['select'] = withRows([row]);
 
     const result = await getCardChatMessages({ cardId: 'card-1' });
@@ -160,8 +227,30 @@ describe('getCardChatMessages', () => {
     const newestSession = { id: 'sess-latest', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(newestSession);
     const rows = [
-      { id: 'msg-1', session_id: 'sess-latest', role: 'user', content: 'First', metadata: null, author_id: null, created_at: '2026-01-01T00:01:00.000Z', updated_at: '2026-01-01T00:01:00.000Z', author_name: null, author_avatar_url: null },
-      { id: 'msg-2', session_id: 'sess-latest', role: 'user', content: 'Second', metadata: null, author_id: null, created_at: '2026-01-01T00:02:00.000Z', updated_at: '2026-01-01T00:02:00.000Z', author_name: null, author_avatar_url: null },
+      {
+        id: 'msg-1',
+        session_id: 'sess-latest',
+        role: 'user',
+        content: 'First',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:01:00.000Z',
+        updated_at: '2026-01-01T00:01:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
+      {
+        id: 'msg-2',
+        session_id: 'sess-latest',
+        role: 'user',
+        content: 'Second',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:02:00.000Z',
+        updated_at: '2026-01-01T00:02:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
     ];
     chainFns['select'] = withRows(rows);
 
@@ -177,7 +266,20 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
-    const rows = [{ id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hi', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null }];
+    const rows = [
+      {
+        id: 'msg-1',
+        session_id: 'sess-1',
+        role: 'user',
+        content: 'Hi',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
+    ];
     chainFns['select'] = withRows(rows);
 
     await getCardChatMessages({ cardId: 'card-1' });
@@ -194,7 +296,20 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
-    const rows = [{ id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hi', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null }];
+    const rows = [
+      {
+        id: 'msg-1',
+        session_id: 'sess-1',
+        role: 'user',
+        content: 'Hi',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
+    ];
     chainFns['select'] = withRows(rows);
 
     const result = await getCardChatMessages({ cardId: 'card-1', limit: NaN });
@@ -208,7 +323,20 @@ describe('getCardChatMessages', () => {
 
     const session = { id: 'sess-1', card_id: 'card-1', status: 'ACTIVE_REFINEMENT' };
     q('first').mockResolvedValueOnce(session);
-    const rows = [{ id: 'msg-1', session_id: 'sess-1', role: 'user', content: 'Hi', metadata: null, author_id: null, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z', author_name: null, author_avatar_url: null }];
+    const rows = [
+      {
+        id: 'msg-1',
+        session_id: 'sess-1',
+        role: 'user',
+        content: 'Hi',
+        metadata: null,
+        author_id: null,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        author_name: null,
+        author_avatar_url: null,
+      },
+    ];
     chainFns['select'] = withRows(rows);
 
     const result = await getCardChatMessages({ cardId: 'card-1', limit: 0 });

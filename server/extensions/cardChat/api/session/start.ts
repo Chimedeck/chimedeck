@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/chat/session/start
 // Sprint 171 — start or resume a card-chat session.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { startSession } from '../../mods/session/lifecycle';
 
 export const cardChatSessionStartApiDeps = {
@@ -19,7 +22,7 @@ export async function handleStartCardChatSession(req: Request, cardId: string): 
 
   const membershipError = await cardChatSessionStartApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 

@@ -24,7 +24,9 @@ const initialState: ProfileState = {
 
 // ---------- Helpers ----------
 
-function isApiError(err: unknown): err is { response: { data: { error?: { code: string; message: string } } } } {
+function isApiError(
+  err: unknown
+): err is { response: { data: { error?: { code: string; message: string } } } } {
   return (
     typeof err === 'object' &&
     err !== null &&
@@ -42,9 +44,11 @@ export const fetchProfileThunk = createAppAsyncThunk(
       const res = await userApi.getProfile();
       return (res as unknown as { data: UserProfile }).data;
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'fetch-failed');
+      return rejectWithValue(
+        isApiError(err) ? (err.response.data.error?.code ?? 'unknown-error') : 'fetch-failed'
+      );
     }
-  },
+  }
 );
 
 export const updateProfileThunk = createAppAsyncThunk(
@@ -57,9 +61,11 @@ export const updateProfileThunk = createAppAsyncThunk(
       const res = await userApi.updateProfile(payload);
       return (res as unknown as { data: UserProfile }).data;
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'update-failed');
+      return rejectWithValue(
+        isApiError(err) ? (err.response.data.error?.code ?? 'unknown-error') : 'update-failed'
+      );
     }
-  },
+  }
 );
 
 export const uploadAvatarThunk = createAppAsyncThunk(
@@ -69,9 +75,11 @@ export const uploadAvatarThunk = createAppAsyncThunk(
       const res = await userApi.uploadAvatar({ file });
       return (res as unknown as { data: { avatar_url: string } }).data;
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'upload-failed');
+      return rejectWithValue(
+        isApiError(err) ? (err.response.data.error?.code ?? 'unknown-error') : 'upload-failed'
+      );
     }
-  },
+  }
 );
 
 export const removeAvatarThunk = createAppAsyncThunk(
@@ -80,9 +88,11 @@ export const removeAvatarThunk = createAppAsyncThunk(
     try {
       await userApi.removeAvatar();
     } catch (err) {
-      return rejectWithValue(isApiError(err) ? err.response.data.error?.code ?? 'unknown-error' : 'remove-failed');
+      return rejectWithValue(
+        isApiError(err) ? (err.response.data.error?.code ?? 'unknown-error') : 'remove-failed'
+      );
     }
-  },
+  }
 );
 
 // ---------- Slice ----------
@@ -125,16 +135,19 @@ const profileSlice = createSlice({
       .addCase(uploadAvatarThunk.pending, (state) => {
         state.avatarUploading = true;
       })
-      .addCase(uploadAvatarThunk.fulfilled, (state, action: PayloadAction<{ avatar_url: string }>) => {
-        state.avatarUploading = false;
-        if (state.user) {
-          // [why] The proxy URL is stable (/api/v1/users/:id/avatar) so the browser caches
-          // the old image and never refetches it. Append a timestamp to bust the cache
-          // whenever a new avatar is uploaded.
-          const url = action.payload.avatar_url;
-          state.user.avatar_url = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+      .addCase(
+        uploadAvatarThunk.fulfilled,
+        (state, action: PayloadAction<{ avatar_url: string }>) => {
+          state.avatarUploading = false;
+          if (state.user) {
+            // [why] The proxy URL is stable (/api/v1/users/:id/avatar) so the browser caches
+            // the old image and never refetches it. Append a timestamp to bust the cache
+            // whenever a new avatar is uploaded.
+            const url = action.payload.avatar_url;
+            state.user.avatar_url = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+          }
         }
-      })
+      )
       .addCase(uploadAvatarThunk.rejected, (state) => {
         state.avatarUploading = false;
       })

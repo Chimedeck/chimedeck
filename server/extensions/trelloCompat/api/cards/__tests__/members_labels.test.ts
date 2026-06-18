@@ -27,10 +27,15 @@ class QueryBuilder {
   private orderByDirection: 'asc' | 'desc' = 'asc';
   private pickedColumns: string[] | null = null;
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -52,7 +57,7 @@ class QueryBuilder {
 
   async insert(payload: Row | Row[]): Promise<void> {
     const rows = Array.isArray(payload) ? payload : [payload];
-    for (const row of rows) (this.store[this.tableName]).push({ ...row });
+    for (const row of rows) this.store[this.tableName].push({ ...row });
   }
 
   async update(patch: Row): Promise<number> {
@@ -70,7 +75,7 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
@@ -116,11 +121,38 @@ function createStore(): DataStore {
       { id: 'user-new', email: 'new@example.com', name: 'New User', avatar_url: null },
     ],
     memberships: [{ user_id: 'user-admin', workspace_id: 'ws-1', role: 'OWNER' }],
-    boards: [{ id: 'board-1', workspace_id: 'ws-1', title: 'Board One', state: 'ACTIVE', visibility: 'PRIVATE' }],
+    boards: [
+      {
+        id: 'board-1',
+        workspace_id: 'ws-1',
+        title: 'Board One',
+        state: 'ACTIVE',
+        visibility: 'PRIVATE',
+      },
+    ],
     board_members: [{ id: 'bm-1', board_id: 'board-1', user_id: 'user-admin', role: 'ADMIN' }],
     board_guest_access: [],
-    lists: [{ id: 'list-1', board_id: 'board-1', title: 'Todo', archived: false, color: null, position: 'a' }],
-    cards: [{ id: 'card-1', short_id: 'card0001', list_id: 'list-1', title: 'Card One', archived: false, due_complete: false, position: 'a' }],
+    lists: [
+      {
+        id: 'list-1',
+        board_id: 'board-1',
+        title: 'Todo',
+        archived: false,
+        color: null,
+        position: 'a',
+      },
+    ],
+    cards: [
+      {
+        id: 'card-1',
+        short_id: 'card0001',
+        list_id: 'list-1',
+        title: 'Card One',
+        archived: false,
+        due_complete: false,
+        position: 'a',
+      },
+    ],
     labels: [
       { id: 'label-1', board_id: 'board-1', name: 'Urgent', color: 'red' },
       { id: 'label-2', board_id: 'board-1', name: 'Backlog', color: 'blue' },
@@ -147,12 +179,21 @@ const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) =
     req.currentUser = { id: 'user-admin', email: 'admin@example.com', name: 'Admin User' };
     return null;
   }
-  return Response.json({ error: { code: 'unauthorized', message: 'Invalid API token' } }, { status: 401 });
+  return Response.json(
+    { error: { code: 'unauthorized', message: 'Invalid API token' } },
+    { status: 401 }
+  );
 });
 
-mock.module('../../../../auth/middlewares/authentication', () => ({ authenticate: authenticateMock }));
+mock.module('../../../../auth/middlewares/authentication', () => ({
+  authenticate: authenticateMock,
+}));
 mock.module('../../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(
+      dataStore,
+      tableName
+    )) as unknown as typeof import('../../../../../common/db').db,
 }));
 mock.module('../../../../../common/ids/shortId', () => ({
   generateUniqueShortId: async () => {
@@ -162,15 +203,21 @@ mock.module('../../../../../common/ids/shortId', () => ({
 }));
 mock.module('../../../../../common/ids/resolveEntityId', () => ({
   resolveCardId: async (identifier: string) => {
-    const found = dataStore.cards.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.cards.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
   resolveListId: async (identifier: string) => {
-    const found = dataStore.lists.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.lists.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
   resolveBoardId: async (identifier: string) => {
-    const found = dataStore.boards.find((row) => row.id === identifier || row.short_id === identifier);
+    const found = dataStore.boards.find(
+      (row) => row.id === identifier || row.short_id === identifier
+    );
     return (found?.id as string | undefined) ?? null;
   },
 }));
@@ -193,16 +240,19 @@ describe('trelloCompat card member/label endpoints', () => {
     });
     const addRes = await trelloCompatRouter(addReq, '/trello/1/cards/card-1/idMembers');
     expect(addRes?.status).toBe(200);
-    const added = await addRes!.json() as { idMembers: string[] };
+    const added = (await addRes!.json()) as { idMembers: string[] };
     expect(added.idMembers.includes('user-new')).toBe(true);
 
     const deleteReq = new Request('http://localhost/trello/1/cards/card-1/idMembers/user-new', {
       method: 'DELETE',
       headers: { Authorization: 'Bearer hf_admin_token' },
     });
-    const deleteRes = await trelloCompatRouter(deleteReq, '/trello/1/cards/card-1/idMembers/user-new');
+    const deleteRes = await trelloCompatRouter(
+      deleteReq,
+      '/trello/1/cards/card-1/idMembers/user-new'
+    );
     expect(deleteRes?.status).toBe(200);
-    const removed = await deleteRes!.json() as { idMembers: string[] };
+    const removed = (await deleteRes!.json()) as { idMembers: string[] };
     expect(removed.idMembers.includes('user-new')).toBe(false);
   });
 
@@ -214,16 +264,19 @@ describe('trelloCompat card member/label endpoints', () => {
     });
     const addRes = await trelloCompatRouter(addReq, '/trello/1/cards/card-1/idLabels');
     expect(addRes?.status).toBe(200);
-    const added = await addRes!.json() as { idLabels: string[] };
+    const added = (await addRes!.json()) as { idLabels: string[] };
     expect(added.idLabels.includes('label-2')).toBe(true);
 
     const deleteReq = new Request('http://localhost/trello/1/cards/card-1/idLabels/label-2', {
       method: 'DELETE',
       headers: { Authorization: 'Bearer hf_admin_token' },
     });
-    const deleteRes = await trelloCompatRouter(deleteReq, '/trello/1/cards/card-1/idLabels/label-2');
+    const deleteRes = await trelloCompatRouter(
+      deleteReq,
+      '/trello/1/cards/card-1/idLabels/label-2'
+    );
     expect(deleteRes?.status).toBe(200);
-    const removed = await deleteRes!.json() as { idLabels: string[] };
+    const removed = (await deleteRes!.json()) as { idLabels: string[] };
     expect(removed.idLabels.includes('label-2')).toBe(false);
   });
 });

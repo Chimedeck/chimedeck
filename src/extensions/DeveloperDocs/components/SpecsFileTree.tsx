@@ -50,7 +50,7 @@ function buildTree(files: SpecsManifestEntry[]): TreeNode[] {
         current.children.push({ type: 'file', name: part, path: file.path });
       } else {
         let folder = current.children.find(
-          (n): n is FolderNode => n.type === 'folder' && n.name === part,
+          (n): n is FolderNode => n.type === 'folder' && n.name === part
         );
         if (!folder) {
           folder = { type: 'folder', name: part, children: [] };
@@ -128,7 +128,9 @@ function TreeNodes({
           <button
             key={node.path}
             type="button"
-            onClick={() => { onSelect(node.path); }}
+            onClick={() => {
+              onSelect(node.path);
+            }}
             style={{ paddingLeft: `${(depth + 1) * 12}px` }}
             className={[
               'flex w-full items-center gap-1.5 rounded py-1 pr-2 text-left text-sm transition-colors',
@@ -161,7 +163,13 @@ function TreeNodes({
   );
 }
 
-const SpecsFileTree = ({ files, selectedPath, dirtyPaths, pendingCommitPaths, onSelect }: SpecsFileTreeProps) => {
+const SpecsFileTree = ({
+  files,
+  selectedPath,
+  dirtyPaths,
+  pendingCommitPaths,
+  onSelect,
+}: SpecsFileTreeProps) => {
   const tree = useMemo(() => buildTree(files), [files]);
 
   if (files.length === 0) {

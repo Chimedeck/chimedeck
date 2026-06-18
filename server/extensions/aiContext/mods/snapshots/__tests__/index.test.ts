@@ -16,10 +16,10 @@ function mockSnapshotDB(): SnapshotDB {
       return id;
     }),
     findById: vi.fn().mockImplementation(async (id: string) => {
-      return records.find(r => r.id === id);
+      return records.find((r) => r.id === id);
     }),
     findByCardId: vi.fn().mockImplementation(async (cardId: string) => {
-      return records.filter(r => r.cardId === cardId);
+      return records.filter((r) => r.cardId === cardId);
     }),
   };
 }

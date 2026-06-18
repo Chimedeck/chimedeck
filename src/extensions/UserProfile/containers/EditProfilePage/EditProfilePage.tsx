@@ -52,7 +52,9 @@ const EditProfilePage = () => {
         <div className="flex items-center gap-3">
           <button
             className="text-subtle hover:text-base transition-colors text-sm"
-            onClick={() => { navigate(-1); }}
+            onClick={() => {
+              navigate(-1);
+            }}
           >
             {translations['UserProfile.backButton']}
           </button>
@@ -60,13 +62,19 @@ const EditProfilePage = () => {
         </div>
 
         {/* Tab navigation */}
-        <nav className="flex gap-1 border-b border-border -mx-8 px-8" role="tablist" aria-label={translations['UserProfile.tabsAriaLabel']}>
+        <nav
+          className="flex gap-1 border-b border-border -mx-8 px-8"
+          role="tablist"
+          aria-label={translations['UserProfile.tabsAriaLabel']}
+        >
           <button
             role="tab"
             aria-selected={activeTab === 'profile'}
             aria-controls="tab-panel-profile"
             className={tabClass('profile')}
-            onClick={() => { switchTab('profile'); }}
+            onClick={() => {
+              switchTab('profile');
+            }}
           >
             {translations['UserProfile.tabProfile']}
           </button>
@@ -75,7 +83,9 @@ const EditProfilePage = () => {
             aria-selected={activeTab === 'notifications'}
             aria-controls="tab-panel-notifications"
             className={tabClass('notifications')}
-            onClick={() => { switchTab('notifications'); }}
+            onClick={() => {
+              switchTab('notifications');
+            }}
           >
             {translations['UserProfile.tabNotifications']}
           </button>
@@ -86,7 +96,9 @@ const EditProfilePage = () => {
           <div id="tab-panel-profile" role="tabpanel" className="space-y-6">
             {/* Current account info */}
             <div className="space-y-1">
-              <p className="text-xs text-muted uppercase tracking-wide font-medium">{translations['UserProfile.signedInAs']}</p>
+              <p className="text-xs text-muted uppercase tracking-wide font-medium">
+                {translations['UserProfile.signedInAs']}
+              </p>
               <p className="text-sm text-subtle">{displayEmail}</p>
             </div>
 
@@ -95,7 +107,9 @@ const EditProfilePage = () => {
             <section>
               <ChangeEmailForm
                 currentEmail={displayEmail}
-                onSuccess={(newEmail) => { setDisplayEmail(newEmail); }}
+                onSuccess={(newEmail) => {
+                  setDisplayEmail(newEmail);
+                }}
               />
             </section>
           </div>

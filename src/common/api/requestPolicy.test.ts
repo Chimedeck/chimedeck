@@ -17,13 +17,13 @@ describe('requestPolicy', () => {
       isPublicApiRoute({
         url: '/api/v1/auth/verify-email?token=abc123',
         method: 'GET',
-      }),
+      })
     ).toBe(true);
     expect(
       shouldAttemptAuthRecovery({
         url: 'https://example.com/api/v1/auth/confirm-email-change?token=abc123',
         method: 'GET',
-      }),
+      })
     ).toBe(false);
   });
 

@@ -52,8 +52,6 @@ async function walkSpecsDir(repoPath: string): Promise<SpecsFileEntry[]> {
   return entries;
 }
 
-export async function listSpecsFiles({
-  repoPath,
-}: ListSpecsFilesInput): Promise<SpecsFileEntry[]> {
+export async function listSpecsFiles({ repoPath }: ListSpecsFilesInput): Promise<SpecsFileEntry[]> {
   return walkSpecsDir(repoPath);
 }

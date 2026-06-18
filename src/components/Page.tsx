@@ -8,6 +8,6 @@ interface PageProps {
 
 // Thin wrapper that sets the document title and provides a page-level container
 export default function Page({ title, children }: PageProps) {
-  if (title) document.title = `${title} — ${translations['App.name']}`;  
+  if (title) document.title = `${title} — ${translations['App.name']}`;
   return <div className="min-h-screen bg-bg-base text-base">{children}</div>;
 }

@@ -19,19 +19,19 @@ export type StateTransitionErrorResponse = {
 
 export function stateTransitionError(
   name: StateTransitionErrorName | string,
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): StateTransitionErrorResponse {
   return data ? { name, data } : { name };
 }
 
 export function stateTransitionSyncError(
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): StateTransitionErrorResponse {
   return stateTransitionError('state-transition-sync-failed', data);
 }
 
 export function stateTransitionRulesError(
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): StateTransitionErrorResponse {
   return stateTransitionError('state-transition-rules-invalid', data);
 }

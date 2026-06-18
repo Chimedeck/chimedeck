@@ -30,7 +30,7 @@ describe('HealthCheckStatusDot', () => {
     render(<HealthCheckStatusDot status="unknown" />);
     expect(screen.getByRole('img')).toHaveAttribute(
       'aria-label',
-      'Not yet checked — click ↻ to probe',
+      'Not yet checked — click ↻ to probe'
     );
   });
 });

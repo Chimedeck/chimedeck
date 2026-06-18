@@ -2,7 +2,7 @@ import { db } from '../db';
 
 async function resolveEntityId(
   tableName: 'boards' | 'cards' | 'lists' | 'comments' | 'attachments',
-  identifier: string,
+  identifier: string
 ): Promise<string | null> {
   const row = await db(tableName)
     .where('id', identifier)

@@ -25,12 +25,11 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
 
   const [name, setName] = useState('');
 
-  const isBlockedByWorkspaceLimit =
-    error?.code === 'workspace-creation-limit-reached';
+  const isBlockedByWorkspaceLimit = error?.code === 'workspace-creation-limit-reached';
 
   const errorText = isBlockedByWorkspaceLimit
     ? translations['CreateWorkspaceModal.errorUpgradeAllOwnedWorkspaces']
-    : (error?.message || translations['CreateWorkspaceModal.errorGeneric']);
+    : error?.message || translations['CreateWorkspaceModal.errorGeneric'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,14 +64,19 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="workspace-name" className="mb-1.5 block text-sm font-medium text-subtle">
+              <label
+                htmlFor="workspace-name"
+                className="mb-1.5 block text-sm font-medium text-subtle"
+              >
                 {translations['CreateWorkspaceModal.nameLabel']}
               </label>
               <input
                 id="workspace-name"
                 type="text"
                 value={name}
-                onChange={(e) => { setName(e.target.value); }}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 placeholder={translations['CreateWorkspaceModal.namePlaceholder']}
                 required
                 autoFocus
@@ -86,7 +90,9 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
                 {isBlockedByWorkspaceLimit && error.data?.upgradeUrl && (
                   <button
                     type="button"
-                    onClick={() => { navigate(error.data!.upgradeUrl!); }}
+                    onClick={() => {
+                      navigate(error.data!.upgradeUrl!);
+                    }}
                     className="text-sm text-primary underline underline-offset-2"
                   >
                     {translations['CreateWorkspaceModal.upgradeWorkspaceLink']}
@@ -99,7 +105,12 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
               <Button type="button" variant="ghost" size="md" onClick={handleCancel}>
                 {translations['CreateWorkspaceModal.cancelButton']}
               </Button>
-              <Button type="submit" variant="primary" size="md" disabled={inProgress || !name.trim()}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={inProgress || !name.trim()}
+              >
                 {inProgress
                   ? translations['CreateWorkspaceModal.submitting']
                   : translations['CreateWorkspaceModal.submitButton']}

@@ -21,9 +21,7 @@ export async function evaluatePhaseTierEligibility({
   workspaceId: string;
   phase: WorkflowPhase;
 }): Promise<TierEligibilityResult> {
-  const { tier, features } = await tierGateDeps.resolveWorkspaceEntitlements(
-    workspaceId,
-  );
+  const { tier, features } = await tierGateDeps.resolveWorkspaceEntitlements(workspaceId);
 
   // [why] If the workspace doesn't have the agenticWorkflow feature at all,
   // no phases can execute — even ones without a specific tier minimum.

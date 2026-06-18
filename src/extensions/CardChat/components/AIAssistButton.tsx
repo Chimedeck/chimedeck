@@ -21,7 +21,9 @@ const AIAssistButton = ({ cardId, enabled, disabled, onStartChat }: Props) => {
       size="md"
       className="w-full justify-start gap-2"
       disabled={disabled}
-      onClick={() => { onStartChat(cardId); }}
+      onClick={() => {
+        onStartChat(cardId);
+      }}
     >
       <SparklesIcon className="w-4 h-4 shrink-0 text-blue-500" />
       {translations['CardChat.aiAssistButton']}

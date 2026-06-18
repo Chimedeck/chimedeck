@@ -2,7 +2,12 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
-import { signupThunk, selectAuthStatus, selectAuthError, selectPendingEmail } from '../../duck/authDuck';
+import {
+  signupThunk,
+  selectAuthStatus,
+  selectAuthError,
+  selectPendingEmail,
+} from '../../duck/authDuck';
 import SignupForm from '../../components/SignupForm';
 import VerificationPending from '../../components/VerificationPending';
 import translations from '../../translations/en.json';
@@ -61,11 +66,7 @@ export default function SignupPage() {
         <h1 className="text-2xl font-bold text-base mb-1">{translations.signup.title}</h1>
         <p className="text-subtle text-sm mb-6">{translations.signup.subtitle}</p>
 
-        <SignupForm
-          onSubmit={handleSubmit}
-          isLoading={status === 'loading'}
-          apiError={apiError}
-        />
+        <SignupForm onSubmit={handleSubmit} isLoading={status === 'loading'} apiError={apiError} />
 
         <p className="text-muted text-sm text-center mt-6">
           {translations.signup.haveAccount}{' '}

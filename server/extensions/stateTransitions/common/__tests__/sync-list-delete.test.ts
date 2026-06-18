@@ -25,6 +25,8 @@ describe('stateTransitions sync list delete', () => {
     const synced = stripDeletedNodes(graph, [{ id: 'list-1', title: 'Todo' }]);
     expect(synced.nodes).toEqual([expect.objectContaining({ id: 'list-1' })]);
     expect(synced.edges).toEqual([]);
-    expect(synced.notes).toEqual([{ id: 'note-1', content: 'keep me', positionX: 8, positionY: 9 }]);
+    expect(synced.notes).toEqual([
+      { id: 'note-1', content: 'keep me', positionX: 8, positionY: 9 },
+    ]);
   });
 });

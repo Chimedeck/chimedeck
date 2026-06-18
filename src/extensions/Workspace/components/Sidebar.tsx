@@ -89,7 +89,9 @@ export default function Sidebar() {
           <div className="relative">
             <Button
               variant="ghost"
-              onClick={() => { setSwitcherOpen((o) => !o); }}
+              onClick={() => {
+                setSwitcherOpen((o) => !o);
+              }}
               aria-expanded={switcherOpen}
               aria-haspopup="listbox"
               aria-label={translations['WorkspaceSwitcher.label']}
@@ -118,7 +120,9 @@ export default function Sidebar() {
                   <li key={ws.id} role="option" aria-selected={ws.id === activeWorkspace?.id}>
                     <Button
                       variant="ghost"
-                      onClick={() => { handleSwitchWorkspace(ws.id); }}
+                      onClick={() => {
+                        handleSwitchWorkspace(ws.id);
+                      }}
                       className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                     >
                       {ws.name}
@@ -129,7 +133,10 @@ export default function Sidebar() {
                 <li>
                   <Button
                     variant="ghost"
-                    onClick={() => { setSwitcherOpen(false); setShowCreateModal(true); }}
+                    onClick={() => {
+                      setSwitcherOpen(false);
+                      setShowCreateModal(true);
+                    }}
                     className="flex w-full items-center gap-1.5 rounded-none px-3 py-1.5 text-sm text-indigo-400 hover:text-indigo-400 font-normal justify-start"
                   >
                     <PlusIcon className="h-4 w-4" aria-hidden="true" />
@@ -149,7 +156,7 @@ export default function Sidebar() {
             className="mb-2 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-normal justify-start"
             onClick={() =>
               document.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }),
+                new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true })
               )
             }
             aria-label="Search (⌘K)"
@@ -182,21 +189,21 @@ export default function Sidebar() {
               </li>
               {/* [why] GUEST users are not allowed to view workspace members (server enforces 403). */}
               {!isGuest && (
-              <li>
-                <NavLink
-                  to={`/workspace/${activeWorkspace.id}`}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                      isActive
-                        ? 'bg-bg-sunken text-base font-medium'
-                        : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
-                    }`
-                  }
-                >
-                  <UsersIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                  {translations['Sidebar.members']}
-                </NavLink>
-              </li>
+                <li>
+                  <NavLink
+                    to={`/workspace/${activeWorkspace.id}`}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? 'bg-bg-sunken text-base font-medium'
+                          : 'text-muted hover:bg-bg-overlay dark:hover:bg-slate-800 hover:text-base'
+                      }`
+                    }
+                  >
+                    <UsersIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    {translations['Sidebar.members']}
+                  </NavLink>
+                </li>
               )}
               <li>
                 <NavLink
@@ -292,7 +299,9 @@ export default function Sidebar() {
           ) : (
             <Button
               variant="ghost"
-              onClick={() => { setShowCreateModal(true); }}
+              onClick={() => {
+                setShowCreateModal(true);
+              }}
               className="mt-2 w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-sm font-normal text-muted hover:border-slate-400 dark:hover:border-slate-500"
             >
               {translations['Sidebar.createFirst']}
@@ -305,7 +314,9 @@ export default function Sidebar() {
           <div className="relative">
             <Button
               variant="ghost"
-              onClick={() => { setUserMenuOpen((o) => !o); }}
+              onClick={() => {
+                setUserMenuOpen((o) => !o);
+              }}
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"
               className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm font-normal justify-start"
@@ -343,7 +354,9 @@ export default function Sidebar() {
                   <NavLink
                     to="/settings/profile"
                     role="menuitem"
-                    onClick={() => { setUserMenuOpen(false); }}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                    }}
                     className="block w-full px-3 py-1.5 text-left text-sm text-base hover:bg-bg-overlay dark:hover:bg-slate-700 transition-colors"
                   >
                     {translations['Sidebar.settings']}

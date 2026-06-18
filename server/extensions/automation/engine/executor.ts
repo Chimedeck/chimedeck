@@ -62,7 +62,11 @@ export async function executeAutomation({
 
   // Fire post-commit side effects (e.g. WS broadcasts) after the transaction is committed.
   for (const fn of postCommitCallbacks) {
-    try { fn(); } catch { /* ignore */ }
+    try {
+      fn();
+    } catch {
+      /* ignore */
+    }
   }
 
   const totalActions = sortedActions.length;

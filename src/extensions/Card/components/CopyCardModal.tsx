@@ -73,9 +73,10 @@ const CopyCardModal = ({
       try {
         const [listsRes, boardRes] = await Promise.all([
           api.get<{ data: List[] }>(`/boards/${boardId}/lists`),
-          api.get<{ data: Board; includes: { lists: unknown[]; cards: Array<{ list_id: string; archived: boolean }> } }>(
-            `/boards/${boardId}`,
-          ),
+          api.get<{
+            data: Board;
+            includes: { lists: unknown[]; cards: Array<{ list_id: string; archived: boolean }> };
+          }>(`/boards/${boardId}`),
         ]);
 
         const nonArchivedLists = listsRes.data.filter((l) => !l.archived);
@@ -93,7 +94,7 @@ const CopyCardModal = ({
         // When board changes, default to first list (or keep current if same board)
         const defaultList =
           boardId === currentBoardId
-            ? nonArchivedLists.find((l) => l.id === currentListId) ?? nonArchivedLists[0]
+            ? (nonArchivedLists.find((l) => l.id === currentListId) ?? nonArchivedLists[0])
             : nonArchivedLists[0];
 
         if (defaultList) {
@@ -106,7 +107,7 @@ const CopyCardModal = ({
         setCardCountsByList({});
       }
     },
-    [api, currentBoardId, currentListId],
+    [api, currentBoardId, currentListId]
   );
 
   useEffect(() => {
@@ -146,12 +147,20 @@ const CopyCardModal = ({
   const maxPosition = (cardCountsByList[selectedListId] ?? 0) + 1;
 
   return (
-    <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[70] bg-black/50" />
         <Dialog.Content
           className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none"
-          onInteractOutside={(e) => { e.preventDefault(); onClose(); }}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
           onEscapeKeyDown={onClose}
           aria-label="Copy card"
         >
@@ -174,137 +183,144 @@ const CopyCardModal = ({
             </div>
 
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Name */}
-          <div>
-            <label htmlFor="copy-card-title" className="block text-xs font-medium text-muted mb-1">
-              Name
-            </label>
-            <input
-              id="copy-card-title"
-              type="text"
-              value={title}
-              onChange={(e) => { setTitle(e.target.value); }}
-              className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
-              autoFocus
-            />
-          </div>
-
-          {/* Keep... section */}
-          <div>
-            <p className="text-xs font-medium text-muted mb-2">Keep...</p>
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={keepChecklists}
-                  onChange={(e) => { setKeepChecklists(e.target.checked); }}
-                  className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
-                />
-                <span className="text-sm text-base">
-                  Checklists
-                  {checklistCount > 0 && (
-                    <span className="ml-1 text-muted">
-                      ({checklistCount})
-                    </span>
-                  )}
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={keepMembers}
-                  onChange={(e) => { setKeepMembers(e.target.checked); }}
-                  className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
-                />
-                <span className="text-sm text-base">
-                  Members
-                  {memberCount > 0 && (
-                    <span className="ml-1 text-muted">({memberCount})</span>
-                  )}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* Copy to... section */}
-          <div>
-            <p className="text-xs font-medium text-muted mb-2">
-              Copy to...
-            </p>
-            <div className="space-y-2">
-              {/* Board */}
+              {/* Name */}
               <div>
-                <label htmlFor="copy-card-board" className="block text-xs text-muted mb-1">
-                  Board
-                </label>
-                <select
-                  id="copy-card-board"
-                  value={selectedBoardId}
-                  onChange={(e) => { setSelectedBoardId(e.target.value); }}
-                  className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                <label
+                  htmlFor="copy-card-title"
+                  className="block text-xs font-medium text-muted mb-1"
                 >
-                  {boards.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.title}
-                    </option>
-                  ))}
-                </select>
+                  Name
+                </label>
+                <input
+                  id="copy-card-title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                  autoFocus
+                />
               </div>
 
-              {/* List + Position */}
-              <div className="flex gap-2">
-                <div className="flex-1 min-w-0">
-                  <label htmlFor="copy-card-list" className="block text-xs text-muted mb-1">
-                    List
+              {/* Keep... section */}
+              <div>
+                <p className="text-xs font-medium text-muted mb-2">Keep...</p>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={keepChecklists}
+                      onChange={(e) => {
+                        setKeepChecklists(e.target.checked);
+                      }}
+                      className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-base">
+                      Checklists
+                      {checklistCount > 0 && (
+                        <span className="ml-1 text-muted">({checklistCount})</span>
+                      )}
+                    </span>
                   </label>
-                  <select
-                    id="copy-card-list"
-                    value={selectedListId}
-                    onChange={(e) => { handleListChange(e.target.value); }}
-                    className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    {lists.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="w-20 flex-shrink-0">
-                  <label htmlFor="copy-card-position" className="block text-xs text-muted mb-1">
-                    Position
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={keepMembers}
+                      onChange={(e) => {
+                        setKeepMembers(e.target.checked);
+                      }}
+                      className="rounded border-border-strong text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-base">
+                      Members
+                      {memberCount > 0 && <span className="ml-1 text-muted">({memberCount})</span>}
+                    </span>
                   </label>
-                  <select
-                    id="copy-card-position"
-                    value={selectedPosition}
-                    onChange={(e) => { setSelectedPosition(Number(e.target.value)); }}
-                    className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    {Array.from({ length: maxPosition }, (_, i) => i + 1).map((pos) => (
-                      <option key={pos} value={pos}>
-                        {pos}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {error && (
-            <p className="text-xs text-danger">{error}</p>
-          )}
+              {/* Copy to... section */}
+              <div>
+                <p className="text-xs font-medium text-muted mb-2">Copy to...</p>
+                <div className="space-y-2">
+                  {/* Board */}
+                  <div>
+                    <label htmlFor="copy-card-board" className="block text-xs text-muted mb-1">
+                      Board
+                    </label>
+                    <select
+                      id="copy-card-board"
+                      value={selectedBoardId}
+                      onChange={(e) => {
+                        setSelectedBoardId(e.target.value);
+                      }}
+                      className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      {boards.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={submitting || !selectedListId}
-            className="w-full flex items-center justify-center gap-2"
-          >
-            <DocumentDuplicateIcon className="w-4 h-4" />
-            {submitting ? 'Creating...' : 'Create card'}
-          </Button>
+                  {/* List + Position */}
+                  <div className="flex gap-2">
+                    <div className="flex-1 min-w-0">
+                      <label htmlFor="copy-card-list" className="block text-xs text-muted mb-1">
+                        List
+                      </label>
+                      <select
+                        id="copy-card-list"
+                        value={selectedListId}
+                        onChange={(e) => {
+                          handleListChange(e.target.value);
+                        }}
+                        className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        {lists.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="w-20 flex-shrink-0">
+                      <label htmlFor="copy-card-position" className="block text-xs text-muted mb-1">
+                        Position
+                      </label>
+                      <select
+                        id="copy-card-position"
+                        value={selectedPosition}
+                        onChange={(e) => {
+                          setSelectedPosition(Number(e.target.value));
+                        }}
+                        className="w-full rounded-lg border border-border bg-bg-overlay px-2 py-1.5 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        {Array.from({ length: maxPosition }, (_, i) => i + 1).map((pos) => (
+                          <option key={pos} value={pos}>
+                            {pos}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {error && <p className="text-xs text-danger">{error}</p>}
+
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={submitting || !selectedListId}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <DocumentDuplicateIcon className="w-4 h-4" />
+                {submitting ? 'Creating...' : 'Create card'}
+              </Button>
             </form>
           </div>
         </Dialog.Content>

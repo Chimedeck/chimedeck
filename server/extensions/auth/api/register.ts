@@ -19,7 +19,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -28,14 +28,14 @@ export async function handleRegister(req: Request): Promise<Response> {
   if (!name || !email || !password) {
     return Response.json(
       { error: { code: 'validation-error', message: 'name, email, and password are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (password.length < 8) {
     return Response.json(
       { error: { code: 'validation-error', message: 'Password must be at least 8 characters' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -48,7 +48,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   if (existing) {
     return Response.json(
       { error: { code: 'email-already-registered', message: 'Email is already in use' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -104,7 +104,7 @@ export async function handleRegister(req: Request): Promise<Response> {
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
@@ -116,6 +116,6 @@ export async function handleRegister(req: Request): Promise<Response> {
         user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
-    { status: 201, headers: responseHeaders },
+    { status: 201, headers: responseHeaders }
   );
 }

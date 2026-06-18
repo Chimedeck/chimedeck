@@ -19,10 +19,15 @@ async function scanFile({ s3Key }: { s3Key: string }): Promise<'READY' | 'REJECT
   try {
     const resp = await fetch(`https://www.virustotal.com/api/v3/urls`, {
       method: 'POST',
-      headers: { 'x-apikey': env.VIRUS_SCAN_API_KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'x-apikey': env.VIRUS_SCAN_API_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       body: `url=${encodeURIComponent(s3Key)}`,
     });
-    const json = (await resp.json()) as { data?: { attributes?: { last_analysis_stats?: { malicious: number } } } };
+    const json = (await resp.json()) as {
+      data?: { attributes?: { last_analysis_stats?: { malicious: number } } };
+    };
     const malicious = json.data?.attributes?.last_analysis_stats?.malicious ?? 0;
     return malicious > 0 ? 'REJECTED' : 'READY';
   } catch {

@@ -34,7 +34,9 @@ export default function CredentialSheet({
     try {
       await navigator.clipboard.writeText(clipboardText);
       setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2500);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2500);
     } catch {
       // Fallback — clipboard unavailable in some test environments
     }
@@ -42,7 +44,9 @@ export default function CredentialSheet({
 
   return (
     <div aria-live="polite">
-      <h3 className="text-lg font-semibold text-base mb-4">{translations['AdminInvite.credentialSheetTitle']}</h3>
+      <h3 className="text-lg font-semibold text-base mb-4">
+        {translations['AdminInvite.credentialSheetTitle']}
+      </h3>
 
       {emailSent && (
         <p className="mb-4 rounded-md bg-indigo-900/40 px-3 py-2 text-sm text-indigo-300">
@@ -54,27 +58,33 @@ export default function CredentialSheet({
       {emailVerifiedAt !== undefined && (
         <p
           className={`mb-4 rounded-md px-3 py-2 text-sm ${
-            emailVerifiedAt
-              ? 'bg-success/10 text-success'
-              : 'bg-yellow-900/30 text-yellow-300'
+            emailVerifiedAt ? 'bg-success/10 text-success' : 'bg-yellow-900/30 text-yellow-300'
           }`}
           data-testid="email-verification-status"
         >
-          {emailVerifiedAt ? translations['AdminInvite.credentialEmailVerified'] : translations['AdminInvite.credentialEmailNotVerified']}
+          {emailVerifiedAt
+            ? translations['AdminInvite.credentialEmailVerified']
+            : translations['AdminInvite.credentialEmailNotVerified']}
         </p>
       )}
 
       <div className="rounded-lg border border-border bg-bg-base p-4 font-mono text-sm text-base space-y-1 mb-6">
         <p>
-          <span className="text-muted">{translations['AdminInvite.credentialFieldEmail']}&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <span className="text-muted">
+            {translations['AdminInvite.credentialFieldEmail']}&nbsp;&nbsp;&nbsp;&nbsp;
+          </span>
           {email}
         </p>
         <p>
-          <span className="text-muted">{translations['AdminInvite.credentialFieldPassword']}&nbsp;</span>
+          <span className="text-muted">
+            {translations['AdminInvite.credentialFieldPassword']}&nbsp;
+          </span>
           {plainPassword}
         </p>
         <p className="break-all">
-          <span className="text-muted">{translations['AdminInvite.credentialFieldLoginUrl']}&nbsp;</span>
+          <span className="text-muted">
+            {translations['AdminInvite.credentialFieldLoginUrl']}&nbsp;
+          </span>
           {loginUrl}
         </p>
       </div>

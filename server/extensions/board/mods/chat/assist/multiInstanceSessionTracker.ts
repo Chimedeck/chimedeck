@@ -87,10 +87,7 @@ export function recordSessionInstance(sessionId: string, request: Request): void
  * @returns null if the instance matches (or no record exists — first request),
  *          or an error response if the instance doesn't match.
  */
-export function verifySessionInstance(
-  sessionId: string,
-  request: Request,
-): Response | null {
+export function verifySessionInstance(sessionId: string, request: Request): Response | null {
   const record = sessionInstanceMap.get(sessionId);
 
   // [why] No record means either: (a) this is the first request and it
@@ -117,7 +114,7 @@ export function verifySessionInstance(
             'Please re-run the AI prompt to generate the proposals again.',
         },
       },
-      { status: 409 },
+      { status: 409 }
     );
   }
 

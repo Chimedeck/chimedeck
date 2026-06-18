@@ -2,7 +2,10 @@
 // [why] Human-in-the-loop approval checkpoints. After a run reaches COMMITTED,
 // a human reviewer can approve or reject the changes before they are merged.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { getEditRun, updateEditRunStatus } from '../../mods/persistence';
 import { EditRunStatus, APPROVED_COMMIT_MESSAGE_TEMPLATE } from '../../common/config';
 import { commit } from '../../mods/committer';
@@ -24,7 +27,7 @@ export const approveApiDeps = {
 export async function handleApproveEditRun(
   req: Request,
   cardId: string,
-  runId: string,
+  runId: string
 ): Promise<Response> {
   // 1. Authenticate
   const authError = await approveApiDeps.authenticate(req as AuthenticatedRequest);
@@ -33,7 +36,7 @@ export async function handleApproveEditRun(
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await approveApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -42,7 +45,7 @@ export async function handleApproveEditRun(
   if (!run) {
     return Response.json(
       { name: 'run-not-found', data: { message: `Edit run "${runId}" not found` } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -53,7 +56,7 @@ export async function handleApproveEditRun(
         name: 'invalid-run-status',
         data: { message: `Run is in status "${run.status}" — only COMMITTED runs can be approved` },
       },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -61,13 +64,16 @@ export async function handleApproveEditRun(
   if (run.approval_status === 'APPROVED') {
     return Response.json(
       { name: 'already-approved', data: { message: 'Run has already been approved' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
   if (run.approval_status === 'REJECTED') {
     return Response.json(
-      { name: 'already-rejected', data: { message: 'Run has already been rejected — cannot re-approve' } },
-      { status: 409 },
+      {
+        name: 'already-rejected',
+        data: { message: 'Run has already been rejected — cannot re-approve' },
+      },
+      { status: 409 }
     );
   }
 
@@ -89,13 +95,16 @@ export async function handleApproveEditRun(
           message: 'Edit run approved. Changes are ready for review/merge.',
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
-    console.error('[aiEditOrchestrator/approve] Error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[aiEditOrchestrator/approve] Error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return Response.json(
       { name: 'internal-error', data: { message: 'Approval processing failed' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

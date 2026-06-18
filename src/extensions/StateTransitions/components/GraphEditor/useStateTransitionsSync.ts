@@ -51,9 +51,9 @@ export function applyRemoteGraphMerge({
   recentLocalNodeIds: Set<string>;
 }): StateTransitionGraph {
   const remoteNodeIds = new Set(remoteGraph.nodes.map((node) => node.id));
-  const preservedLocalNodes = localGraph.nodes.filter((node) => (
-    recentLocalNodeIds.has(node.id) && !remoteNodeIds.has(node.id)
-  ));
+  const preservedLocalNodes = localGraph.nodes.filter(
+    (node) => recentLocalNodeIds.has(node.id) && !remoteNodeIds.has(node.id)
+  );
 
   return {
     nodes: [...remoteGraph.nodes, ...preservedLocalNodes],
@@ -80,7 +80,7 @@ async function fetchPresenceUserIds({
     return new Set();
   }
 
-  const payload = await response.json() as { data?: Array<{ id?: string }> };
+  const payload = (await response.json()) as { data?: Array<{ id?: string }> };
   const ids = new Set<string>();
   for (const user of payload.data ?? []) {
     if (typeof user.id === 'string' && user.id.length > 0) ids.add(user.id);
@@ -106,30 +106,29 @@ export const useStateTransitionsSync = ({ boardId, active }: Args) => {
   const [presenceUserIds, setPresenceUserIds] = useState<Set<string>>(new Set());
   const [remoteUpdate, setRemoteUpdate] = useState<RemoteStateTransitionUpdate | null>(null);
 
-  const {
-    data,
-    isFetching,
-    isLoading,
-    isError,
-    error,
-  } = useGetStateTransitionsQuery(boardId, { skip: shouldSkip });
+  const { data, isFetching, isLoading, isError, error } = useGetStateTransitionsQuery(boardId, {
+    skip: shouldSkip,
+  });
 
   const [putStateTransitions, putStatus] = usePutStateTransitionsMutation();
 
-  const persistTransitions = useCallback(async ({ enabled, graph }: PersistInput) => {
-    const now = Date.now();
-    for (const node of graph.nodes) {
-      if (!knownNodeIdsRef.current.has(node.id) && !recentLocalNodeIdsRef.current.has(node.id)) {
-        recentLocalNodeIdsRef.current.set(node.id, now);
+  const persistTransitions = useCallback(
+    async ({ enabled, graph }: PersistInput) => {
+      const now = Date.now();
+      for (const node of graph.nodes) {
+        if (!knownNodeIdsRef.current.has(node.id) && !recentLocalNodeIdsRef.current.has(node.id)) {
+          recentLocalNodeIdsRef.current.set(node.id, now);
+        }
       }
-    }
-    await putStateTransitions({
-      boardId,
-      enabled,
-      graph,
-    }).unwrap();
-    knownNodeIdsRef.current = new Set(graph.nodes.map((node) => node.id));
-  }, [boardId, putStateTransitions]);
+      await putStateTransitions({
+        boardId,
+        enabled,
+        graph,
+      }).unwrap();
+      knownNodeIdsRef.current = new Set(graph.nodes.map((node) => node.id));
+    },
+    [boardId, putStateTransitions]
+  );
 
   useEffect(() => {
     knownNodeIdsRef.current = new Set((data?.graph.nodes ?? []).map((node) => node.id));
@@ -155,9 +154,10 @@ export const useStateTransitionsSync = ({ boardId, active }: Args) => {
         if (event.board_id && event.board_id !== boardId) return;
 
         if (event.type === 'presence_update') {
-          const eventPayload = typeof event.payload === 'object' && event.payload !== null
-            ? event.payload as { user?: { userId?: string }; action?: 'join' | 'leave' }
-            : event as unknown as { user?: { userId?: string }; action?: 'join' | 'leave' };
+          const eventPayload =
+            typeof event.payload === 'object' && event.payload !== null
+              ? (event.payload as { user?: { userId?: string }; action?: 'join' | 'leave' })
+              : (event as unknown as { user?: { userId?: string }; action?: 'join' | 'leave' });
           const userId = eventPayload.user?.userId;
           if (!userId) return;
           setPresenceUserIds((current) => {
@@ -177,16 +177,21 @@ export const useStateTransitionsSync = ({ boardId, active }: Args) => {
           actor_id?: string;
           payload?: { enabled?: unknown; graph?: unknown };
         };
-        if (shouldIgnoreStateTransitionEcho({ actorId: wsEvent.actor_id, currentUserId: currentUser?.id ?? null })) {
+        if (
+          shouldIgnoreStateTransitionEcho({
+            actorId: wsEvent.actor_id,
+            currentUserId: currentUser?.id ?? null,
+          })
+        ) {
           return;
         }
 
         const payload = wsEvent.payload;
         if (
-          !payload
-          || typeof payload.enabled !== 'boolean'
-          || typeof payload.graph !== 'object'
-          || payload.graph === null
+          !payload ||
+          typeof payload.enabled !== 'boolean' ||
+          typeof payload.graph !== 'object' ||
+          payload.graph === null
         ) {
           return;
         }

@@ -40,5 +40,9 @@ export const FEATURE_GATES: GateRule[] = [
   { methods: ['*'], pathPrefix: '/api/v1/tokens', feature: 'apiTokens' },
 
   // State transitions — board-scoped workflow definitions
-  { methods: ['*'], pathPrefix: '/api/v1/boards/:boardId/state-transitions', feature: 'stateTransitions' },
+  {
+    methods: ['*'],
+    pathPrefix: '/api/v1/boards/:boardId/state-transitions',
+    feature: 'stateTransitions',
+  },
 ];

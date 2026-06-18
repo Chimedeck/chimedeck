@@ -37,7 +37,7 @@ describe('handleGatherContext', () => {
 
   it('returns 401 when authentication fails', async () => {
     mockAuthenticate.mockResolvedValueOnce(
-      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 }),
+      new Response(JSON.stringify({ name: 'unauthorized' }), { status: 401 })
     );
 
     const { handleGatherContext } = await import('../gather');
@@ -47,7 +47,7 @@ describe('handleGatherContext', () => {
         method: 'POST',
         body: JSON.stringify({ intent: 'build auth' }),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(401);
@@ -64,7 +64,7 @@ describe('handleGatherContext', () => {
         method: 'POST',
         body: JSON.stringify({}),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(400);
@@ -83,7 +83,7 @@ describe('handleGatherContext', () => {
         method: 'POST',
         body: 'not json',
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(400);
@@ -119,7 +119,7 @@ describe('handleGatherContext', () => {
         method: 'POST',
         body: JSON.stringify({ intent: 'authentication system' }),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(200);
@@ -145,7 +145,7 @@ describe('handleGatherContext', () => {
         method: 'POST',
         body: JSON.stringify({ intent: 'test', focusPaths: ['.env'] }),
       }),
-      'card-abc',
+      'card-abc'
     );
 
     expect(result.status).toBe(403);

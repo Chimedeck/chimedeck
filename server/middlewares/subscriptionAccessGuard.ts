@@ -3,21 +3,24 @@ import type { RequestWorkspaceContext } from '../common/requestContext';
 import { getWorkspaceBillingEnforcement } from '../extensions/subscription/common/enforcement';
 
 function isSubscriptionRoute(pathname: string): boolean {
-  return pathname.startsWith('/api/subscription') || /\/api\/v1\/workspaces\/[^/]+\/entitlements$/.test(pathname);
+  return (
+    pathname.startsWith('/api/subscription') ||
+    /\/api\/v1\/workspaces\/[^/]+\/entitlements$/.test(pathname)
+  );
 }
 
 function isBoardScopedRoute(pathname: string): boolean {
   return (
-    pathname.startsWith('/api/v1/boards/')
-    || pathname.startsWith('/api/v1/lists/')
-    || pathname.startsWith('/api/v1/cards/')
-    || /^\/api\/v1\/workspaces\/[^/]+\/boards$/.test(pathname)
+    pathname.startsWith('/api/v1/boards/') ||
+    pathname.startsWith('/api/v1/lists/') ||
+    pathname.startsWith('/api/v1/cards/') ||
+    /^\/api\/v1\/workspaces\/[^/]+\/boards$/.test(pathname)
   );
 }
 
 export async function applySubscriptionAccessGuard(
   req: Request,
-  workspaceContext: RequestWorkspaceContext,
+  workspaceContext: RequestWorkspaceContext
 ): Promise<Response | null> {
   if (!env.SUBSCRIPTIONS_ENABLED) return null;
 
@@ -47,7 +50,7 @@ export async function applySubscriptionAccessGuard(
           },
         },
       },
-      { status: 402 },
+      { status: 402 }
     );
   }
 

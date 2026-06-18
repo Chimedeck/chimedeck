@@ -7,7 +7,7 @@ export async function handleInspectInvite(req: Request, token: string): Promise<
   if (!invite) {
     return Response.json(
       { error: { code: 'invite-not-found', message: 'Invite not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

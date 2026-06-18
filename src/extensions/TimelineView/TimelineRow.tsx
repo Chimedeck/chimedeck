@@ -36,7 +36,7 @@ function assignRows(cards: Card[], originDate: Date): Map<string, number> {
   const intervals = cards.map((card) => {
     const startStr = card.start_date ?? card.due_date!;
     const startDay = daysBetween(originDate, parseLocalDate(startStr));
-    const dueDay   = daysBetween(originDate, parseLocalDate(card.due_date!));
+    const dueDay = daysBetween(originDate, parseLocalDate(card.due_date!));
     return { id: card.id, startDay, dueDay };
   });
 
@@ -85,7 +85,7 @@ const TimelineRow = ({
   // layout stays stable during a drag.
   const rowAssignments = useMemo(
     () => assignRows(swimlane.scheduledCards, originDate),
-    [swimlane.scheduledCards, originDate],
+    [swimlane.scheduledCards, originDate]
   );
 
   const rowCount = Math.max(1, ...Array.from(rowAssignments.values()).map((r) => r + 1));
@@ -106,9 +106,7 @@ const TimelineRow = ({
           style={{ width: labelWidth, minHeight: barAreaHeight }}
           data-testid={`timeline-lane-label-${swimlane.listId}`}
         >
-          <span className="truncate text-sm font-medium text-subtle">
-            {swimlane.listTitle}
-          </span>
+          <span className="truncate text-sm font-medium text-subtle">{swimlane.listTitle}</span>
           {swimlane.scheduledCards.length > 0 && (
             <span className="text-xs text-muted">
               {swimlane.scheduledCards.length} {translations['TimelineView.scheduledCount']}
@@ -129,7 +127,9 @@ const TimelineRow = ({
               originDate={originDate}
               dayWidth={dayWidth}
               rowIndex={rowAssignments.get(card.id) ?? 0}
-              {...(dragOverrides[card.id] !== undefined ? { dragOverride: dragOverrides[card.id] } : {})}
+              {...(dragOverrides[card.id] !== undefined
+                ? { dragOverride: dragOverrides[card.id] }
+                : {})}
               onCardClick={onCardClick}
               onMoveStart={handleMoveStart}
               onResizeLeftStart={handleResizeLeftStart}
@@ -151,7 +151,9 @@ const TimelineRow = ({
             className="sticky left-0 z-10 shrink-0 border-r border-border bg-bg-surface px-3 py-1"
             style={{ width: labelWidth }}
           >
-            <span className="text-xs italic text-muted">{translations['TimelineView.unscheduledLabel']}</span>
+            <span className="text-xs italic text-muted">
+              {translations['TimelineView.unscheduledLabel']}
+            </span>
           </div>
 
           {/* Chips */}
@@ -161,7 +163,9 @@ const TimelineRow = ({
                 key={card.id}
                 variant="ghost"
                 className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
-                onClick={() => { onCardClick(card.id); }}
+                onClick={() => {
+                  onCardClick(card.id);
+                }}
                 data-testid={`timeline-unscheduled-chip-${card.id}`}
               >
                 {card.title}

@@ -58,9 +58,7 @@ export async function duplicateBoard({
         const hasCards = await trx.schema.hasTable('cards');
         if (!hasCards) continue;
 
-        const cards = await trx('cards')
-          .where({ list_id: list.id })
-          .orderBy('position', 'asc');
+        const cards = await trx('cards').where({ list_id: list.id }).orderBy('position', 'asc');
 
         for (const card of cards) {
           const newCardShortId = await generateUniqueShortId('cards');

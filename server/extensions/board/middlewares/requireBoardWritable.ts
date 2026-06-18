@@ -9,21 +9,26 @@ export interface BoardScopedRequest extends Request {
 // Returns a Response if the board is not found or is ARCHIVED, null on success.
 export async function requireBoardWritable(
   req: BoardScopedRequest,
-  boardId: string,
+  boardId: string
 ): Promise<Response | null> {
   const board = await db('boards').where({ id: boardId }).first();
 
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 

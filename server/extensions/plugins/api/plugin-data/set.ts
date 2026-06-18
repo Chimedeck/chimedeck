@@ -34,11 +34,19 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const { boardId: boardIdBody, scope, resourceId, key, visibility = 'shared', value, userId } = body;
+  const {
+    boardId: boardIdBody,
+    scope,
+    resourceId,
+    key,
+    visibility = 'shared',
+    value,
+    userId,
+  } = body;
 
   // boardId is sourced from the token claims — the body param must match if provided.
   // Use canonical long UUID for DB operations; fall back to boardId for old tokens.
@@ -55,44 +63,49 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
   if (!incomingMatchesClaims) {
     return Response.json(
       { error: { code: 'forbidden', message: 'boardId does not match token scope' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
   if (!boardId) {
     return Response.json(
       { error: { code: 'missing-param', message: 'boardId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!scope || !VALID_SCOPES.includes(scope as Scope)) {
     return Response.json(
-      { error: { code: 'missing-param', message: 'scope must be one of: card, list, board, member' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'missing-param',
+          message: 'scope must be one of: card, list, board, member',
+        },
+      },
+      { status: 400 }
     );
   }
   if (!resourceId || typeof resourceId !== 'string') {
     return Response.json(
       { error: { code: 'missing-param', message: 'resourceId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!key || typeof key !== 'string') {
     return Response.json(
       { error: { code: 'missing-param', message: 'key is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!VALID_VISIBILITY.includes(visibility as Visibility)) {
     return Response.json(
       { error: { code: 'missing-param', message: 'visibility must be private or shared' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (visibility === 'private' && (!userId || typeof userId !== 'string')) {
     return Response.json(
       { error: { code: 'missing-param', message: 'userId is required for private visibility' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -100,12 +113,16 @@ export async function handleSetPluginData(req: Request): Promise<Response> {
 
   let canonicalResourceId: string;
   try {
-    canonicalResourceId = await validateResourceBelongsToBoard(scope as 'card' | 'list' | 'board' | 'member', resourceId, boardId);
+    canonicalResourceId = await validateResourceBelongsToBoard(
+      scope as 'card' | 'list' | 'board' | 'member',
+      resourceId,
+      boardId
+    );
   } catch (err) {
     if (err instanceof ResourceBoardMismatchError) {
       return Response.json(
         { error: { code: 'resource-board-mismatch', message: err.message } },
-        { status: 403 },
+        { status: 403 }
       );
     }
     throw err;

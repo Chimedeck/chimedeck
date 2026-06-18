@@ -131,7 +131,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
       role="dialog"
       aria-modal="true"
       aria-labelledby="register-webhook-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="relative w-full max-w-lg rounded-lg bg-bg-surface shadow-xl mx-4">
         {/* Header */}
@@ -153,7 +155,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
             <Input
               label={translations['RegisterWebhookModal.labelField']}
               value={label}
-              onChange={(e) => { setLabel(e.target.value); }}
+              onChange={(e) => {
+                setLabel(e.target.value);
+              }}
               maxLength={100}
               required
               placeholder={translations['RegisterWebhookModal.labelPlaceholder']}
@@ -200,11 +204,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                         <Button
                           variant="link"
                           size="sm"
-                          onClick={() =>
-                            { allSelected
-                              ? clearAllInGroup(available)
-                              : selectAllInGroup(available); }
-                          }
+                          onClick={() => {
+                            allSelected ? clearAllInGroup(available) : selectAllInGroup(available);
+                          }}
                           data-testid={`group-toggle-${group.label.replace(/\s+/g, '-').toLowerCase()}`}
                         >
                           {allSelected
@@ -221,7 +223,9 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                             <input
                               type="checkbox"
                               checked={selectedEvents.has(event)}
-                              onChange={() => { toggleEvent(event); }}
+                              onChange={() => {
+                                toggleEvent(event);
+                              }}
                               className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
                               data-testid={`event-checkbox-${event}`}
                             />

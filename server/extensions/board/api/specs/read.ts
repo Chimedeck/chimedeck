@@ -90,7 +90,7 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await specsReadDeps.requireWorkspaceMembership(
     workspaceReq,
-    boardReq.board!.workspace_id,
+    boardReq.board!.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -105,7 +105,7 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
         name: 'specs-not-configured',
         data: { message: 'You must configure your Github documentation respository first' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -114,7 +114,7 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
   if (!filePath || filePath.trim() === '') {
     return Response.json(
       { name: 'missing-path', data: { message: 'Query parameter ?path= is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -134,7 +134,7 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
         name: 'specs-load-failed',
         data: { message: 'Our app do not have access to this respository' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -143,27 +143,29 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
   if (!resolved.ok) {
     return Response.json(
       { name: 'path-traversal-rejected', data: { reason: resolved.reason } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   // Manifest-first: only allow paths that appear in the manifest.
-  const inManifest = manifest.files.some((f) => f.path === filePath || f.path === filePath.replace(/^\//, ''));
+  const inManifest = manifest.files.some(
+    (f) => f.path === filePath || f.path === filePath.replace(/^\//, '')
+  );
   if (!inManifest) {
     return Response.json(
       { name: 'specs-file-not-found', data: { message: 'File not found in specs manifest' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   // Check the manifest-recorded size before attempting to read (fast path to reject large files).
   const manifestEntry = manifest.files.find(
-    (f) => f.path === filePath || f.path === filePath.replace(/^\//, ''),
+    (f) => f.path === filePath || f.path === filePath.replace(/^\//, '')
   );
   if (manifestEntry && manifestEntry.sizeBytes > MAX_FILE_SIZE_BYTES) {
     return Response.json(
       { name: 'specs-file-too-large', data: { maxBytes: MAX_FILE_SIZE_BYTES } },
-      { status: 422 },
+      { status: 422 }
     );
   }
 
@@ -177,28 +179,30 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
     }
     return Response.json(
       { data: { path: filePath, content: cachedFile.content } },
-      { headers: { ETag: `"${cachedFile.etag}"`, 'Cache-Control': 'private, max-age=300' } },
+      { headers: { ETag: `"${cachedFile.etag}"`, 'Cache-Control': 'private, max-age=300' } }
     );
   }
 
   // Deduplicate concurrent reads for the same file.
   const inflight = specsFileInflight.get(fileCacheKey);
-  const fileResult = await (inflight ?? (() => {
-    const task = specsReadDeps.readSpecsFile({ absolutePath: resolved.absolutePath })
-      .then((r) => {
-        specsFileCache.set(fileCacheKey, {
-          content: r.content,
-          etag: r.etag,
-          cachedAtMs: specsReadDeps.now().getTime(),
+  const fileResult = await (inflight ??
+    (() => {
+      const task = specsReadDeps
+        .readSpecsFile({ absolutePath: resolved.absolutePath })
+        .then((r) => {
+          specsFileCache.set(fileCacheKey, {
+            content: r.content,
+            etag: r.etag,
+            cachedAtMs: specsReadDeps.now().getTime(),
+          });
+          return { content: r.content, etag: r.etag };
+        })
+        .finally(() => {
+          specsFileInflight.delete(fileCacheKey);
         });
-        return { content: r.content, etag: r.etag };
-      })
-      .finally(() => {
-        specsFileInflight.delete(fileCacheKey);
-      });
-    specsFileInflight.set(fileCacheKey, task);
-    return task;
-  })());
+      specsFileInflight.set(fileCacheKey, task);
+      return task;
+    })());
 
   const ifNoneMatch = req.headers.get('if-none-match');
   if (ifNoneMatch && ifNoneMatch === `"${fileResult.etag}"`) {
@@ -207,6 +211,6 @@ export async function handleReadSpecsFile(req: Request, boardId: string): Promis
 
   return Response.json(
     { data: { path: filePath, content: fileResult.content, etag: fileResult.etag } },
-    { headers: { ETag: `"${fileResult.etag}"`, 'Cache-Control': 'private, max-age=300' } },
+    { headers: { ETag: `"${fileResult.etag}"`, 'Cache-Control': 'private, max-age=300' } }
   );
 }

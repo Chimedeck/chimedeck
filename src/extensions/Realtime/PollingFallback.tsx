@@ -30,16 +30,18 @@ export function usePollingFallback({
   // duplicates if WS reconnects while a poll is in flight.
   const deliveredRef = useRef<Set<number>>(new Set());
 
-  useEffect(() => { lastSeqRef.current = lastSequence; }, [lastSequence]);
-  useEffect(() => { activeRef.current = active; }, [active]);
+  useEffect(() => {
+    lastSeqRef.current = lastSequence;
+  }, [lastSequence]);
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   const poll = useCallback(async () => {
     if (!activeRef.current) return;
     try {
       // apiClient response interceptor auto-unwraps to response.data
-      const result = (await apiClient.get(
-        `/boards/${boardId}/events?since=${lastSeqRef.current}`
-      ));
+      const result = await apiClient.get(`/boards/${boardId}/events?since=${lastSeqRef.current}`);
 
       const events = result.data;
       if (!events || events.length === 0) return;

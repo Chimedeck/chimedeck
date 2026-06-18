@@ -46,8 +46,7 @@ function renderLabels(labels: Card['labels']): string {
   if (!labels?.length) return '';
   const chips = labels
     .map(
-      (l) =>
-        `<span class="label" style="background:${escHtml(l.color)}">${escHtml(l.name)}</span>`,
+      (l) => `<span class="label" style="background:${escHtml(l.color)}">${escHtml(l.name)}</span>`
     )
     .join('');
   return `<div class="labels">${chips}</div>`;
@@ -66,7 +65,7 @@ function renderChecklists(checklists: Checklist[]): string {
             `<li class="checklist-item ${item.checked ? 'checked' : ''}">
               <span class="checkbox">${item.checked ? '&#10003;' : '&nbsp;'}</span>
               <span class="item-text">${escHtml(item.title)}</span>
-            </li>`,
+            </li>`
         )
         .join('');
       return `
@@ -94,7 +93,7 @@ function renderComments(comments: CommentData[]): string {
       const author = escHtml(c.author_name ?? c.author_email ?? 'Unknown');
       const date = formatDate(c.created_at);
       // Render markdown inside comments the same way descriptions are rendered
-      const contentHtml = (marked.parse(c.content) as string);
+      const contentHtml = marked.parse(c.content) as string;
       return `
         <li class="comment-row">
           <div class="comment-meta"><strong>${author}</strong> &middot; ${date}</div>
@@ -113,9 +112,7 @@ function renderAttachments(attachments: Attachment[]): string {
   if (!attachments.length) return '';
 
   const fileAttachments = attachments.filter((a) => a.type === 'FILE');
-  const linkAttachments = attachments.filter(
-    (a) => a.type === 'URL' && !a.referenced_card_id,
-  );
+  const linkAttachments = attachments.filter((a) => a.type === 'URL' && !a.referenced_card_id);
   const cardLinks = attachments.filter((a) => a.type === 'URL' && a.referenced_card_id);
 
   const rows: string[] = [];
@@ -126,14 +123,18 @@ function renderAttachments(attachments: Attachment[]): string {
     const thumb = a.thumbnail_url
       ? `<img src="${escHtml(a.thumbnail_url)}" class="thumb" alt="" />`
       : `<span class="thumb no-thumb"></span>`;
-    rows.push(`<li class="attachment-row">${thumb}<div class="attachment-info"><strong>${escHtml(name)}</strong><span class="attachment-meta">Added ${date}</span></div></li>`);
+    rows.push(
+      `<li class="attachment-row">${thumb}<div class="attachment-info"><strong>${escHtml(name)}</strong><span class="attachment-meta">Added ${date}</span></div></li>`
+    );
   }
 
   for (const a of linkAttachments) {
     const name = a.alias ?? a.name;
     const url = a.external_url ?? '';
     const date = formatDate(a.created_at);
-    rows.push(`<li class="attachment-row"><span class="thumb link-thumb">&#128279;</span><div class="attachment-info"><strong>${escHtml(name)}</strong><a href="${escHtml(url)}" class="attachment-url">${escHtml(url)}</a><span class="attachment-meta">Added ${date}</span></div></li>`);
+    rows.push(
+      `<li class="attachment-row"><span class="thumb link-thumb">&#128279;</span><div class="attachment-info"><strong>${escHtml(name)}</strong><a href="${escHtml(url)}" class="attachment-url">${escHtml(url)}</a><span class="attachment-meta">Added ${date}</span></div></li>`
+    );
   }
 
   for (const a of cardLinks) {
@@ -149,7 +150,9 @@ function renderAttachments(attachments: Attachment[]): string {
     const boardSpan = boardBreadcrumb
       ? `<span class="attachment-meta">${escHtml(boardBreadcrumb)}</span>`
       : '';
-    rows.push(`<li class="attachment-row"><span class="thumb card-thumb">&#9001;</span><div class="attachment-info"><strong>${escHtml(title)}</strong>${boardSpan}<span class="attachment-meta">Added ${date}</span></div></li>`);
+    rows.push(
+      `<li class="attachment-row"><span class="thumb card-thumb">&#9001;</span><div class="attachment-info"><strong>${escHtml(title)}</strong>${boardSpan}<span class="attachment-meta">Added ${date}</span></div></li>`
+    );
   }
 
   return `
@@ -192,7 +195,9 @@ export function printCard({
   const amountHtml = (() => {
     if (!card.amount) return '';
     const currency = card.currency ?? 'USD';
-    const formatted = new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(Number.parseFloat(card.amount));
+    const formatted = new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(
+      Number.parseFloat(card.amount)
+    );
     return `<div class="meta-row"><span class="meta-label">Amount</span> ${escHtml(formatted)}</div>`;
   })();
 
@@ -414,9 +419,13 @@ export function printCard({
     a.href = url;
     a.download = `${safeName}.html`;
     a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); }, 10_000);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 10_000);
   } else {
     window.open(url, '_blank', 'width=900,height=700');
-    setTimeout(() => { URL.revokeObjectURL(url); }, 60_000);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 60_000);
   }
 }

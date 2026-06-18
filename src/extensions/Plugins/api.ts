@@ -36,7 +36,11 @@ export interface BoardPlugin {
 }
 
 /** GET /api/v1/boards/:boardId/plugins — active plugins for the board */
-export async function fetchBoardPlugins({ boardId }: { boardId: string }): Promise<{ data: BoardPlugin[] }> {
+export async function fetchBoardPlugins({
+  boardId,
+}: {
+  boardId: string;
+}): Promise<{ data: BoardPlugin[] }> {
   return apiClient.get(pluginsConfig.boardPluginsPath(boardId));
 }
 
@@ -66,13 +70,13 @@ export async function fetchBoardAvailablePlugins({
   return apiClient.get(
     qs
       ? `${pluginsConfig.boardPluginsPath(boardId)}/available?${qs}`
-      : `${pluginsConfig.boardPluginsPath(boardId)}/available`,
+      : `${pluginsConfig.boardPluginsPath(boardId)}/available`
   );
 }
 
 /** GET /api/v1/plugins — public+active plugin registry, with optional search/filter/pagination */
 export async function fetchAvailablePlugins(
-  params?: FetchAvailablePluginsParams,
+  params?: FetchAvailablePluginsParams
 ): Promise<{ data: Plugin[] }> {
   const searchParams = new URLSearchParams();
   if (params?.q) searchParams.set('q', params.q);
@@ -127,7 +131,9 @@ export interface RegisterPluginBody {
 }
 
 /** POST /api/v1/plugins — register a new plugin (platform admin only). Returns api_key once. */
-export async function registerPlugin(body: RegisterPluginBody): Promise<{ data: Plugin & { apiKey: string } }> {
+export async function registerPlugin(
+  body: RegisterPluginBody
+): Promise<{ data: Plugin & { apiKey: string } }> {
   return apiClient.post(pluginsConfig.registryPath, body);
 }
 
@@ -157,11 +163,7 @@ export async function updatePlugin({
 }
 
 /** DELETE /api/v1/plugins/:pluginId — soft-deactivate a plugin (platform admin only). */
-export async function deletePlugin({
-  pluginId,
-}: {
-  pluginId: string;
-}): Promise<{ data: Plugin }> {
+export async function deletePlugin({ pluginId }: { pluginId: string }): Promise<{ data: Plugin }> {
   return apiClient.delete(`${pluginsConfig.registryPath}/${pluginId}`);
 }
 

@@ -21,7 +21,8 @@ export const boardGuestsApi = createApi({
     baseUrl: '/api/v1',
     // [why] Attach Bearer token from Redux auth state for authenticated requests.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
+      const token =
+        (getState() as { auth: { accessToken: string | null } }).auth?.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
@@ -38,7 +39,10 @@ export const boardGuestsApi = createApi({
     }),
 
     // POST /api/v1/boards/:boardId/guests — invite by email with optional guestType
-    inviteBoardGuest: builder.mutation<BoardGuest, { boardId: string; email: string; guestType?: GuestType }>({
+    inviteBoardGuest: builder.mutation<
+      BoardGuest,
+      { boardId: string; email: string; guestType?: GuestType }
+    >({
       query: ({ boardId, email, guestType = 'VIEWER' }) => ({
         url: `/boards/${boardId}/guests`,
         method: 'POST',
@@ -58,7 +62,10 @@ export const boardGuestsApi = createApi({
     }),
 
     // PATCH /api/v1/boards/:boardId/guests/:userId — update guest type (ADMIN+ only)
-    updateBoardGuest: builder.mutation<BoardGuest, { boardId: string; userId: string; guestType: GuestType }>({
+    updateBoardGuest: builder.mutation<
+      BoardGuest,
+      { boardId: string; userId: string; guestType: GuestType }
+    >({
       query: ({ boardId, userId, guestType }) => ({
         url: `/boards/${boardId}/guests/${userId}`,
         method: 'PATCH',

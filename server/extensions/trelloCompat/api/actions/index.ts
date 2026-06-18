@@ -9,10 +9,7 @@ import {
   TRELLO_PERMISSION_DENIED,
   trelloError,
 } from '../../common/errors';
-import {
-  serializeActivityAction,
-  serializeCommentAction,
-} from '../../serializers/action';
+import { serializeActivityAction, serializeCommentAction } from '../../serializers/action';
 import { serializeBoard } from '../../serializers/board';
 import { serializeList } from '../../serializers/list';
 import { serializeMember } from '../../serializers/member';
@@ -127,7 +124,12 @@ const ACTION_RESERVED_SUBPATHS = new Set([
   'reactionsSummary',
 ]);
 
-function toBasicMember(user: UserRow): { id: string; email: string; name: string; avatar_url?: string | null } {
+function toBasicMember(user: UserRow): {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url?: string | null;
+} {
   return {
     id: user.id,
     email: user.email,
@@ -143,7 +145,7 @@ async function parseBody(req: Request): Promise<Record<string, unknown>> {
 
   try {
     const parsed = JSON.parse(text) as unknown;
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
   } catch {
     return Object.fromEntries(new URLSearchParams(text).entries());
   }
@@ -158,10 +160,13 @@ function getInput(url: URL, body: Record<string, unknown>, ...keys: string[]): u
   return undefined;
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
-  const memberships = await db('memberships')
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
+  const memberships = (await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
-    .select('role') as Array<Record<string, unknown>>;
+    .select('role')) as Array<Record<string, unknown>>;
   let highest: MembershipRole | null = null;
   for (const row of memberships) {
     const rawRole = row['role'];
@@ -172,8 +177,11 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first() as
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as
     | Record<string, unknown>
     | undefined;
   const role = row?.['role'];
@@ -182,9 +190,9 @@ async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADM
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first() as
-    | Record<string, unknown>
-    | undefined;
+  const row = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as Record<string, unknown> | undefined;
   return !!row;
 }
 
@@ -209,16 +217,18 @@ async function isBoardAdmin(userId: string, board: BoardRow): Promise<boolean> {
 }
 
 async function findComment(identifier: string): Promise<CommentRow | null> {
-  const byId = await db('comments').where({ id: identifier }).first() as CommentRow | undefined;
+  const byId = (await db('comments').where({ id: identifier }).first()) as CommentRow | undefined;
   if (byId) return byId;
-  const all = await db('comments') as CommentRow[];
+  const all = (await db('comments')) as CommentRow[];
   return all.find((row) => row.short_id === identifier) ?? null;
 }
 
 async function findActivity(identifier: string): Promise<ActivityRow | null> {
-  const byId = await db('activities').where({ id: identifier }).first() as ActivityRow | undefined;
+  const byId = (await db('activities').where({ id: identifier }).first()) as
+    | ActivityRow
+    | undefined;
   if (byId) return byId;
-  const all = await db('activities') as ActivityRow[];
+  const all = (await db('activities')) as ActivityRow[];
   return all.find((row) => row.short_id === identifier) ?? null;
 }
 
@@ -227,11 +237,11 @@ async function resolveCardListBoardFromCardId(cardId: string): Promise<{
   list: ListRow;
   board: BoardRow;
 } | null> {
-  const card = await db('cards').where({ id: cardId }).first() as CardRow | undefined;
+  const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
   if (!card) return null;
-  const list = await db('lists').where({ id: card.list_id }).first() as ListRow | undefined;
+  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
   if (!list) return null;
-  const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+  const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
   if (!board) return null;
   return { card, list, board };
 }
@@ -241,7 +251,9 @@ async function resolveActionContext(identifier: string): Promise<ActionContext |
   if (comment && !comment.deleted) {
     const related = await resolveCardListBoardFromCardId(comment.card_id);
     if (!related) return null;
-    const member = await db('users').where({ id: comment.user_id }).first() as UserRow | undefined;
+    const member = (await db('users').where({ id: comment.user_id }).first()) as
+      | UserRow
+      | undefined;
     if (!member) return null;
     return { kind: 'comment', comment, ...related, member };
   }
@@ -254,8 +266,7 @@ async function resolveActionContext(identifier: string): Promise<ActionContext |
   let board: BoardRow | null = null;
 
   const explicitCardId =
-    activity.card_id
-    ?? (activity.entity_type === 'card' ? activity.entity_id ?? null : null);
+    activity.card_id ?? (activity.entity_type === 'card' ? (activity.entity_id ?? null) : null);
   if (explicitCardId) {
     const related = await resolveCardListBoardFromCardId(explicitCardId);
     if (related) {
@@ -266,25 +277,30 @@ async function resolveActionContext(identifier: string): Promise<ActionContext |
   }
 
   const explicitListId =
-    activity.list_id
-    ?? (activity.entity_type === 'list' ? activity.entity_id ?? null : null);
+    activity.list_id ?? (activity.entity_type === 'list' ? (activity.entity_id ?? null) : null);
   if (!list && explicitListId) {
-    const foundList = await db('lists').where({ id: explicitListId }).first() as ListRow | undefined;
+    const foundList = (await db('lists').where({ id: explicitListId }).first()) as
+      | ListRow
+      | undefined;
     if (foundList) {
       list = foundList;
-      board = await db('boards').where({ id: foundList.board_id }).first() as BoardRow | undefined ?? null;
+      board =
+        ((await db('boards').where({ id: foundList.board_id }).first()) as BoardRow | undefined) ??
+        null;
     }
   }
 
   const explicitBoardId =
-    activity.board_id
-    ?? (activity.entity_type === 'board' ? activity.entity_id ?? null : null);
+    activity.board_id ?? (activity.entity_type === 'board' ? (activity.entity_id ?? null) : null);
   if (!board && explicitBoardId) {
-    board = await db('boards').where({ id: explicitBoardId }).first() as BoardRow | undefined ?? null;
+    board =
+      ((await db('boards').where({ id: explicitBoardId }).first()) as BoardRow | undefined) ?? null;
   }
 
   if (!board) return null;
-  const member = await db('users').where({ id: activity.actor_id }).first() as UserRow | undefined;
+  const member = (await db('users').where({ id: activity.actor_id }).first()) as
+    | UserRow
+    | undefined;
   if (!member) return null;
 
   return {
@@ -331,7 +347,7 @@ function serializeActionByContext(context: ActionContext) {
 
 export function projectActionField(
   action: ReturnType<typeof serializeActionByContext>,
-  field: string,
+  field: string
 ): { found: true; value: unknown } | { found: false } {
   if (!Object.prototype.hasOwnProperty.call(action, field)) {
     return { found: false };
@@ -339,33 +355,32 @@ export function projectActionField(
   return { found: true, value: (action as Record<string, unknown>)[field] };
 }
 
-async function listBoardMemberships(boardId: string): Promise<Array<{
-  id: string;
-  idMember: string;
-  memberType: 'admin' | 'normal' | 'observer';
-  unconfirmed: false;
-  deactivated: false;
-}>> {
-  const boardMembers = await db('board_members')
+async function listBoardMemberships(boardId: string): Promise<
+  Array<{
+    id: string;
+    idMember: string;
+    memberType: 'admin' | 'normal' | 'observer';
+    unconfirmed: false;
+    deactivated: false;
+  }>
+> {
+  const boardMembers = (await db('board_members')
     .where({ board_id: boardId })
-    .orderBy('created_at', 'asc') as Array<{ id: string; user_id: string; role: string }>;
-  const guestRows = await db('board_guest_access')
+    .orderBy('created_at', 'asc')) as Array<{ id: string; user_id: string; role: string }>;
+  const guestRows = (await db('board_guest_access')
     .where({ board_id: boardId })
-    .orderBy('granted_at', 'asc') as Array<{ id: string; user_id: string }>;
+    .orderBy('granted_at', 'asc')) as Array<{ id: string; user_id: string }>;
 
   const memberships = boardMembers.map((row) => {
-    const memberType: 'admin' | 'normal' | 'observer' = row.role === 'ADMIN'
-    ? 'admin'
-    : row.role === 'VIEWER'
-      ? 'observer'
-      : 'normal';
+    const memberType: 'admin' | 'normal' | 'observer' =
+      row.role === 'ADMIN' ? 'admin' : row.role === 'VIEWER' ? 'observer' : 'normal';
 
     return {
-    id: row.id,
-    idMember: row.user_id,
-    memberType,
-    unconfirmed: false as const,
-    deactivated: false as const,
+      id: row.id,
+      idMember: row.user_id,
+      memberType,
+      unconfirmed: false as const,
+      deactivated: false as const,
     };
   });
 
@@ -381,12 +396,19 @@ async function listBoardMemberships(boardId: string): Promise<Array<{
   return memberships;
 }
 
-function canMutateComment(userId: string, context: CommentActionContext, isAdmin: boolean): boolean {
+function canMutateComment(
+  userId: string,
+  context: CommentActionContext,
+  isAdmin: boolean
+): boolean {
   if (context.comment.user_id === userId) return true;
   return isAdmin;
 }
 
-export async function actionsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function actionsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return TRELLO_PERMISSION_DENIED();
 
@@ -412,9 +434,11 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
 
     const body = await parseBody(req);
     const value = getInput(url, body, 'value', 'text');
-    if (typeof value !== 'string' || !value.trim()) return trelloError('invalid value for text', 400);
+    if (typeof value !== 'string' || !value.trim())
+      return trelloError('invalid value for text', 400);
 
-    const currentVersion = typeof context.comment.version === 'number' ? context.comment.version : 1;
+    const currentVersion =
+      typeof context.comment.version === 'number' ? context.comment.version : 1;
     const nextVersion = currentVersion + 1;
     const now = new Date().toISOString();
     await db('comments').where({ id: context.comment.id }).update({
@@ -436,7 +460,7 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
         cardName: context.card.title,
         boardName: context.board.title,
         listName: context.list.title,
-      }),
+      })
     );
   }
 
@@ -455,7 +479,7 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
         ...context.board,
         idMemberCreator: creator?.idMember ?? '',
         memberships,
-      }),
+      })
     );
   }
 
@@ -470,20 +494,25 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
   if (subPath === 'list' && req.method === 'GET') {
     const list = context.kind === 'comment' ? context.list : context.list;
     if (!list) return TRELLO_LIST_NOT_FOUND();
-    const boardLists = await db('lists')
+    const boardLists = (await db('lists')
       .where({ board_id: context.board.id })
-      .orderBy('position', 'asc') as ListRow[];
-    const rank = Math.max(0, boardLists.findIndex((row) => row.id === list.id));
+      .orderBy('position', 'asc')) as ListRow[];
+    const rank = Math.max(
+      0,
+      boardLists.findIndex((row) => row.id === list.id)
+    );
     return Response.json(serializeList({ ...list, _rank: rank }));
   }
 
   if ((subPath === 'member' || subPath === 'memberCreator') && req.method === 'GET') {
-    return Response.json(serializeMember({
-      id: context.member.id,
-      email: context.member.email,
-      name: context.member.name ?? context.member.email,
-      avatar_url: context.member.avatar_url ?? null,
-    }));
+    return Response.json(
+      serializeMember({
+        id: context.member.id,
+        email: context.member.email,
+        name: context.member.name ?? context.member.email,
+        avatar_url: context.member.avatar_url ?? null,
+      })
+    );
   }
 
   if (subPath === 'organization' && req.method === 'GET') {
@@ -512,11 +541,13 @@ export async function actionsRouter(req: AuthenticatedRequest, path: string): Pr
     if (typeof shortName !== 'string' || !shortName.trim() || shortName.trim().length > 32) {
       return trelloError('invalid value for shortName', 400);
     }
-    return Response.json(await createOrGetActionReaction({
-      commentId: context.comment.id,
-      emoji: shortName.trim(),
-      user,
-    }));
+    return Response.json(
+      await createOrGetActionReaction({
+        commentId: context.comment.id,
+        emoji: shortName.trim(),
+        user,
+      })
+    );
   }
 
   const reactionMatch = subPath.match(/^reactions\/([^/]+)$/);

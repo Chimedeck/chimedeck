@@ -33,9 +33,15 @@ const listA: List = { id: 'l1', boardId: 'b1', title: 'To Do', position: '1', ar
 const listB: List = { id: 'l2', boardId: 'b1', title: 'Done', position: '2', archived: false };
 
 const card1: Card = {
-  id: 'c1', list_id: 'l1', title: 'Card 1', description: null,
-  position: '1', archived: false, due_date: null,
-  created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+  id: 'c1',
+  list_id: 'l1',
+  title: 'Card 1',
+  description: null,
+  position: '1',
+  archived: false,
+  due_date: null,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
 };
 
 describe('Realtime state convergence (integration)', () => {
@@ -69,9 +75,7 @@ describe('Realtime state convergence (integration)', () => {
     clientA.dispatch(listSliceActions.remoteReorder({ boardId: 'b1', lists: reorderedLists }));
     clientB.dispatch(listSliceActions.remoteReorder({ boardId: 'b1', lists: reorderedLists }));
 
-    expect(clientA.getState().orderByBoard['b1']).toEqual(
-      clientB.getState().orderByBoard['b1'],
-    );
+    expect(clientA.getState().orderByBoard['b1']).toEqual(clientB.getState().orderByBoard['b1']);
   });
 
   it('optimistic card move rolls back correctly on error', () => {
@@ -87,7 +91,7 @@ describe('Realtime state convergence (integration)', () => {
         fromListId: 'l1',
         toListId: 'l2',
         afterCardId: null,
-      }),
+      })
     );
     expect(store.getState().byId['c1']?.list_id).toBe('l2');
 

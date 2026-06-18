@@ -10,13 +10,7 @@ interface Props {
   onCreate: (title: string) => Promise<void>;
 }
 
-const AddColumnModal = ({
-  open,
-  busy,
-  error,
-  onCancel,
-  onCreate,
-}: Props) => {
+const AddColumnModal = ({ open, busy, error, onCancel, onCreate }: Props) => {
   const [title, setTitle] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -35,7 +29,9 @@ const AddColumnModal = ({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
       <div className="w-full max-w-md rounded-xl border border-border bg-bg-surface p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-base">{translations['StateTransitions.addColumnModalTitle']}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-base">
+          {translations['StateTransitions.addColumnModalTitle']}
+        </h2>
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -63,8 +59,15 @@ const AddColumnModal = ({
             <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={busy}>
               {translations['StateTransitions.cancelButton']}
             </Button>
-            <Button type="submit" variant="primary" size="md" disabled={trimmed.length === 0 || busy}>
-              {busy ? translations['StateTransitions.creating'] : translations['StateTransitions.createButton']}
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              disabled={trimmed.length === 0 || busy}
+            >
+              {busy
+                ? translations['StateTransitions.creating']
+                : translations['StateTransitions.createButton']}
             </Button>
           </div>
         </form>

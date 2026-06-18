@@ -19,10 +19,15 @@ class QueryBuilder {
   private orderDirection: 'asc' | 'desc' = 'asc';
   private countAlias: string | null = null;
 
-  constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
+  constructor(
+    private readonly store: DataStore,
+    private readonly tableName: keyof DataStore
+  ) {}
 
   where(criteria: Row): this {
-    this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
+    this.filters.push((row) =>
+      Object.entries(criteria).every(([key, value]) => row[key] === value)
+    );
     return this;
   }
 
@@ -45,7 +50,7 @@ class QueryBuilder {
   async first(): Promise<Row | undefined> {
     if (this.countAlias) {
       const rows = (this.store[this.tableName] as Row[]).filter((row) =>
-        this.filters.every((predicate) => predicate(row)),
+        this.filters.every((predicate) => predicate(row))
       );
       return { [this.countAlias]: rows.length };
     }
@@ -55,7 +60,7 @@ class QueryBuilder {
 
   async update(patch: Row, returning?: string[]): Promise<Row[] | number> {
     const rows = (this.store[this.tableName] as Row[]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
     for (const row of rows) Object.assign(row, patch);
     if (returning && returning.length > 0) {
@@ -74,14 +79,14 @@ class QueryBuilder {
 
   then<TResult1 = Row[], TResult2 = never>(
     onfulfilled?: ((value: Row[]) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
   }
 
   private async execute(): Promise<Row[]> {
     let rows = (this.store[this.tableName] as Row[]).filter((row) =>
-      this.filters.every((predicate) => predicate(row)),
+      this.filters.every((predicate) => predicate(row))
     );
 
     if (this.orderedBy) {
@@ -153,7 +158,8 @@ function resetStore(): DataStore {
 }
 
 mock.module('../../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
+  db: ((tableName: keyof DataStore) =>
+    new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
 mock.module('../../../auth/middlewares/authentication', () => ({
@@ -169,7 +175,10 @@ mock.module('../../../../middlewares/permissionManager', () => ({
 }));
 
 mock.module('../../../board/middlewares/requireBoardWritable', () => ({
-  requireBoardWritable: async (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
+  requireBoardWritable: async (
+    req: Request & { board?: { id: string; workspace_id: string } },
+    boardId: string
+  ) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
     return null;
   },
@@ -208,7 +217,7 @@ describe('state transitions list sync hooks', () => {
     expect(res.status).toBe(200);
 
     const node = dataStore.board_state_transitions[0]?.graph_data.nodes.find(
-      (entry) => entry.id === 'list-2',
+      (entry) => entry.id === 'list-2'
     );
     expect(node?.label).toBe('In Progress');
   });
@@ -225,6 +234,8 @@ describe('state transitions list sync hooks', () => {
     expect(graph).toBeDefined();
     if (!graph) throw new Error('expected graph_data to be defined');
     expect(graph.nodes.some((node) => node.id === 'list-2')).toBe(false);
-    expect(graph.edges.some((edge) => edge.fromNodeId === 'list-2' || edge.toNodeId === 'list-2')).toBe(false);
+    expect(
+      graph.edges.some((edge) => edge.fromNodeId === 'list-2' || edge.toNodeId === 'list-2')
+    ).toBe(false);
   });
 });

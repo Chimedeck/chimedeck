@@ -28,15 +28,20 @@ interface Props {
   label?: string;
 }
 
-const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, label = 'Due date' }: Props) => {
+const CardDueDate = ({
+  dueDate,
+  dueComplete,
+  onChange,
+  onDoneChange,
+  disabled,
+  label = 'Due date',
+}: Props) => {
   const status = dueDate ? getDueDateStatus(dueDate, dueComplete) : 'normal';
 
   const checkboxBg = getCheckboxClass(status);
 
   // Convert stored ISO string to datetime-local value (strip seconds/tz)
-  const localValue = dueDate
-    ? new Date(dueDate).toISOString().slice(0, 16)
-    : '';
+  const localValue = dueDate ? new Date(dueDate).toISOString().slice(0, 16) : '';
 
   return (
     <div className="space-y-2">
@@ -45,13 +50,13 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
           <button
             type="button"
             className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-colors ${checkboxBg} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
-            onClick={() => { onDoneChange(!dueComplete); }}
+            onClick={() => {
+              onDoneChange(!dueComplete);
+            }}
             aria-label={dueComplete ? 'Mark as not done' : 'Mark as done'}
             disabled={disabled}
           >
-            {dueComplete && (
-              <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />
-            )}
+            {dueComplete && <CheckIcon className="h-2.5 w-2.5 text-inverse" aria-hidden="true" />}
           </button>
         )}
         <input
@@ -70,7 +75,9 @@ const CardDueDate = ({ dueDate, dueComplete, onChange, onDoneChange, disabled, l
         <button
           type="button"
           className="text-xs text-muted hover:text-base transition-colors"
-          onClick={() => { onChange(null); }}
+          onClick={() => {
+            onChange(null);
+          }}
         >
           Clear
         </button>

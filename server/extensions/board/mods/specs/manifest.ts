@@ -39,13 +39,7 @@ async function walkMarkdownFiles({
   return results;
 }
 
-function computeManifestEtag({
-  files,
-  ref,
-}: {
-  files: SpecsManifestEntry[];
-  ref: string;
-}): string {
+function computeManifestEtag({ files, ref }: { files: SpecsManifestEntry[]; ref: string }): string {
   const fingerprint = files.map((f) => `${f.path}:${f.sizeBytes}`).join('\n') + '\n' + ref;
   return createHash('sha256').update(fingerprint).digest('hex').slice(0, 32);
 }

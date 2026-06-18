@@ -17,19 +17,19 @@ export async function handleAcceptInvite(req: Request, token: string): Promise<R
     if (result.reason === 'not-found') {
       return Response.json(
         { error: { code: 'invite-not-found', message: 'Invite not found' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
     if (result.reason === 'invite-expired') {
       return Response.json(
         { error: { code: 'invite-expired', message: 'Invite has expired' } },
-        { status: 410 },
+        { status: 410 }
       );
     }
     if (result.reason === 'invite-already-used') {
       return Response.json(
         { error: { code: 'invite-already-used', message: 'Invite has already been used' } },
-        { status: 409 },
+        { status: 409 }
       );
     }
   }
@@ -40,22 +40,26 @@ export async function handleAcceptInvite(req: Request, token: string): Promise<R
 
   // Emit real-time event so connected clients learn about the new workspace member (§8).
   // Resolve displayName from the users table since the JWT only carries id + email.
-  db('users').where({ id: currentUser!.id }).first().then((user) => {
-    const displayName = (user?.name as string | undefined) ?? currentUser!.email;
-    return writeEvent({
-      type: 'member_joined',
-      boardId: null,
-      entityId: invite.workspace_id,
-      actorId: currentUser!.id,
-      payload: {
-        scope: 'workspace',
-        userId: currentUser!.id,
-        displayName,
-        role: invite.role,
-        joinedAt: new Date().toISOString(),
-      },
-    });
-  }).catch(() => {});
+  db('users')
+    .where({ id: currentUser!.id })
+    .first()
+    .then((user) => {
+      const displayName = (user?.name as string | undefined) ?? currentUser!.email;
+      return writeEvent({
+        type: 'member_joined',
+        boardId: null,
+        entityId: invite.workspace_id,
+        actorId: currentUser!.id,
+        payload: {
+          scope: 'workspace',
+          userId: currentUser!.id,
+          displayName,
+          role: invite.role,
+          joinedAt: new Date().toISOString(),
+        },
+      });
+    })
+    .catch(() => {});
 
   return Response.json({
     data: {

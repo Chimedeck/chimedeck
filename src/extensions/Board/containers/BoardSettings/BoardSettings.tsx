@@ -28,7 +28,13 @@ interface Props {
   canManageIntegrations?: boolean;
 }
 
-const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoardParticipant = true, canManageIntegrations = false }: Props) => {
+const BoardSettings = ({
+  onClose,
+  isGuest = false,
+  isViewerGuest = false,
+  isBoardParticipant = true,
+  canManageIntegrations = false,
+}: Props) => {
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const board = useAppSelector(selectBoard);
@@ -36,7 +42,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
 
   // Local state mirrors board.visibility; initialised once board is loaded.
   const [visibility, setVisibility] = useState<BoardVisibility>(
-    (board as { visibility?: BoardVisibility } | null)?.visibility ?? 'PRIVATE',
+    (board as { visibility?: BoardVisibility } | null)?.visibility ?? 'PRIVATE'
   );
   const [saving, setSaving] = useState(false);
   const [boardNotificationsEnabled, setBoardNotificationsEnabled] = useState(true);
@@ -70,11 +76,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
 
   return (
     // Backdrop
-    <div
-      className="fixed inset-0 z-30 bg-black/50"
-      onClick={onClose}
-      aria-label="Close settings"
-    >
+    <div className="fixed inset-0 z-30 bg-black/50" onClick={onClose} aria-label="Close settings">
       {/* Panel — stop click propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
@@ -151,10 +153,7 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
               {!isGuest && (
                 <div className="border-t border-border pt-4">
                   {boardId && (
-                    <GithubProjectUrlSetting
-                      boardId={boardId}
-                      disabled={!canManageIntegrations}
-                    />
+                    <GithubProjectUrlSetting boardId={boardId} disabled={!canManageIntegrations} />
                   )}
                 </div>
               )}
@@ -174,28 +173,28 @@ const BoardSettings = ({ onClose, isGuest = false, isViewerGuest = false, isBoar
 
           {/* User settings — per-board notification preferences; only shown for board participants (members/guests). */}
           {isBoardParticipant && (
-          <div className={isGuest ? '' : 'border-t border-border pt-4'}>
-            <div className="flex items-center gap-2 mb-3">
-              <UserCircleIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
-                User settings
-              </h3>
-            </div>
-            {boardId && (
-              <>
-                <BoardNotificationToggle
-                  boardId={boardId}
-                  onMasterEnabledChange={setBoardNotificationsEnabled}
-                />
-                <div className="mt-4">
-                  <BoardNotificationTypePreferences
+            <div className={isGuest ? '' : 'border-t border-border pt-4'}>
+              <div className="flex items-center gap-2 mb-3">
+                <UserCircleIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  User settings
+                </h3>
+              </div>
+              {boardId && (
+                <>
+                  <BoardNotificationToggle
                     boardId={boardId}
-                    disabledByBoardNotifications={!boardNotificationsEnabled}
+                    onMasterEnabledChange={setBoardNotificationsEnabled}
                   />
-                </div>
-              </>
-            )}
-          </div>
+                  <div className="mt-4">
+                    <BoardNotificationTypePreferences
+                      boardId={boardId}
+                      disabledByBoardNotifications={!boardNotificationsEnabled}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
-import { resolveBoardId, resolveCardId, resolveListId } from '../../../../common/ids/resolveEntityId';
+import {
+  resolveBoardId,
+  resolveCardId,
+  resolveListId,
+} from '../../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../../common/ids/shortId';
 import { between, HIGH_SENTINEL } from '../../../list/mods/fractional';
 import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
@@ -111,7 +115,10 @@ type CustomFieldRow = {
   id: string;
   board_id: string;
   field_type: 'TEXT' | 'NUMBER' | 'DATE' | 'CHECKBOX' | 'DROPDOWN';
-  options?: Array<{ id: string; value?: string | { text?: string } | null; color?: string | null }> | string | null;
+  options?:
+    | Array<{ id: string; value?: string | { text?: string } | null; color?: string | null }>
+    | string
+    | null;
 };
 
 type PluginDataRow = {
@@ -169,7 +176,9 @@ function toBoolean(value: unknown, fallback = false): boolean {
 
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+    return value.filter(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0
+    );
   }
   if (typeof value !== 'string') return [];
   return value
@@ -185,7 +194,7 @@ async function parseBody(req: Request): Promise<Record<string, unknown>> {
 
   try {
     const parsed = JSON.parse(text) as unknown;
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : {};
   } catch {
     return Object.fromEntries(new URLSearchParams(text).entries());
   }
@@ -201,12 +210,15 @@ function getInput(url: URL, body: Record<string, unknown>, ...keys: string[]): u
 }
 
 function parseCustomFieldOptions(raw: unknown): Array<{ id: string }> {
-  if (Array.isArray(raw)) return raw.filter((row): row is { id: string } => !!row && typeof row.id === 'string');
+  if (Array.isArray(raw))
+    return raw.filter((row): row is { id: string } => !!row && typeof row.id === 'string');
   if (typeof raw === 'string' && raw.trim()) {
     try {
       const parsed = JSON.parse(raw) as unknown;
       if (Array.isArray(parsed)) {
-        return parsed.filter((row): row is { id: string } => !!row && typeof (row as { id?: unknown }).id === 'string');
+        return parsed.filter(
+          (row): row is { id: string } => !!row && typeof (row as { id?: unknown }).id === 'string'
+        );
       }
     } catch {
       return [];
@@ -218,7 +230,7 @@ function parseCustomFieldOptions(raw: unknown): Array<{ id: string }> {
 function buildCustomFieldValuePatch(
   fieldType: CustomFieldRow['field_type'],
   value: unknown,
-  fieldOptions: CustomFieldRow['options'],
+  fieldOptions: CustomFieldRow['options']
 ): Record<string, unknown> | null {
   if (!value || typeof value !== 'object') return null;
   const payload = value as Record<string, unknown>;
@@ -235,7 +247,8 @@ function buildCustomFieldValuePatch(
     return { ...base, value_text: payload.text };
   }
   if (fieldType === 'NUMBER') {
-    const numberValue = typeof payload.number === 'number' ? payload.number : Number(payload.number);
+    const numberValue =
+      typeof payload.number === 'number' ? payload.number : Number(payload.number);
     if (!Number.isFinite(numberValue)) return null;
     return { ...base, value_number: numberValue };
   }
@@ -251,18 +264,22 @@ function buildCustomFieldValuePatch(
     return { ...base, value_checkbox: toBoolean(checked) };
   }
 
-  const optionId = typeof payload.optionId === 'string'
-    ? payload.optionId
-    : typeof payload.idValue === 'string'
-      ? payload.idValue
-      : null;
+  const optionId =
+    typeof payload.optionId === 'string'
+      ? payload.optionId
+      : typeof payload.idValue === 'string'
+        ? payload.idValue
+        : null;
   if (!optionId) return null;
   const options = parseCustomFieldOptions(fieldOptions);
   if (!options.some((option) => option.id === optionId)) return null;
   return { ...base, value_option_id: optionId };
 }
 
-async function getWorkspaceRole(userId: string, workspaceId: string): Promise<MembershipRole | null> {
+async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<MembershipRole | null> {
   const memberships = await db('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .select('role');
@@ -275,7 +292,10 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
   return highest;
 }
 
-async function getBoardMemberRole(userId: string, boardId: string): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
+async function getBoardMemberRole(
+  userId: string,
+  boardId: string
+): Promise<'ADMIN' | 'MEMBER' | 'VIEWER' | null> {
   const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first();
   const role = row?.role as string | undefined;
   if (role === 'ADMIN' || role === 'MEMBER' || role === 'VIEWER') return role;
@@ -313,40 +333,45 @@ async function canMutateBoard(userId: string, board: BoardRow): Promise<boolean>
 async function resolveCardContext(cardIdentifier: string): Promise<CardContext | null> {
   const cardId = await resolveCardId(cardIdentifier);
   if (!cardId) return null;
-  const card = await db('cards').where({ id: cardId }).first() as CardRow | undefined;
+  const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
   if (!card) return null;
-  const list = await db('lists').where({ id: card.list_id }).first() as ListRow | undefined;
+  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
   if (!list) return null;
-  const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+  const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
   if (!board) return null;
   return { card, list, board };
 }
 
 async function resolvePositionForList(listId: string, posValue: unknown): Promise<string> {
-  const cards = await db('cards')
+  const cards = (await db('cards')
     .where({ list_id: listId, archived: false })
-    .orderBy('position', 'asc') as CardRow[];
+    .orderBy('position', 'asc')) as CardRow[];
   const first = cards[0];
   const last = cards.at(-1);
 
   if (typeof posValue === 'string') {
     const normalized = posValue.trim().toLowerCase();
     if (normalized === 'top') return between('', first?.position ?? HIGH_SENTINEL);
-    if (normalized === 'bottom' || normalized === '') return between(last?.position ?? '', HIGH_SENTINEL);
+    if (normalized === 'bottom' || normalized === '')
+      return between(last?.position ?? '', HIGH_SENTINEL);
 
     const asNumber = Number(normalized);
     if (!Number.isNaN(asNumber)) {
       const insertIndex = Math.max(0, Math.min(cards.length, Math.floor(asNumber / 65535)));
-      const left = insertIndex > 0 ? cards[insertIndex - 1]?.position ?? '' : '';
-      const right = insertIndex < cards.length ? cards[insertIndex]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+      const left = insertIndex > 0 ? (cards[insertIndex - 1]?.position ?? '') : '';
+      const right =
+        insertIndex < cards.length
+          ? (cards[insertIndex]?.position ?? HIGH_SENTINEL)
+          : HIGH_SENTINEL;
       return between(left, right);
     }
   }
 
   if (typeof posValue === 'number' && !Number.isNaN(posValue)) {
     const insertIndex = Math.max(0, Math.min(cards.length, Math.floor(posValue / 65535)));
-    const left = insertIndex > 0 ? cards[insertIndex - 1]?.position ?? '' : '';
-    const right = insertIndex < cards.length ? cards[insertIndex]?.position ?? HIGH_SENTINEL : HIGH_SENTINEL;
+    const left = insertIndex > 0 ? (cards[insertIndex - 1]?.position ?? '') : '';
+    const right =
+      insertIndex < cards.length ? (cards[insertIndex]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
     return between(left, right);
   }
 
@@ -370,9 +395,9 @@ async function hydrateCards(cards: CardRow[]): Promise<Map<string, HydratedCard>
     if (boardIds.has(row.id)) boardsById.set(row.id, row);
   }
 
-  const labels = await db('labels') as LabelRow[];
+  const labels = (await db('labels')) as LabelRow[];
   const labelsById = new Map(labels.map((label) => [label.id, label]));
-  const cardLabels = await db('card_labels') as Array<{ card_id: string; label_id: string }>;
+  const cardLabels = (await db('card_labels')) as Array<{ card_id: string; label_id: string }>;
   const labelsByCardId = new Map<string, LabelRow[]>();
   for (const row of cardLabels) {
     if (!cardIds.has(row.card_id)) continue;
@@ -383,7 +408,7 @@ async function hydrateCards(cards: CardRow[]): Promise<Map<string, HydratedCard>
     labelsByCardId.set(row.card_id, current);
   }
 
-  const cardMembers = await db('card_members') as Array<{ card_id: string; user_id: string }>;
+  const cardMembers = (await db('card_members')) as Array<{ card_id: string; user_id: string }>;
   const membersByCardId = new Map<string, Array<{ user_id: string }>>();
   for (const row of cardMembers) {
     if (!cardIds.has(row.card_id)) continue;
@@ -392,7 +417,7 @@ async function hydrateCards(cards: CardRow[]): Promise<Map<string, HydratedCard>
     membersByCardId.set(row.card_id, current);
   }
 
-  const checklists = await db('checklists') as Array<{ id: string; card_id: string }>;
+  const checklists = (await db('checklists')) as Array<{ id: string; card_id: string }>;
   const checklistsByCardId = new Map<string, Array<{ id: string }>>();
   for (const row of checklists) {
     if (!cardIds.has(row.card_id)) continue;
@@ -401,32 +426,36 @@ async function hydrateCards(cards: CardRow[]): Promise<Map<string, HydratedCard>
     checklistsByCardId.set(row.card_id, current);
   }
 
-  const checklistItems = await db('checklist_items') as Array<{ card_id: string; checked: boolean }>;
+  const checklistItems = (await db('checklist_items')) as Array<{
+    card_id: string;
+    checked: boolean;
+  }>;
   const checkItemCountByCardId = new Map<string, number>();
   const checkedCountByCardId = new Map<string, number>();
   for (const row of checklistItems) {
     if (!cardIds.has(row.card_id)) continue;
     checkItemCountByCardId.set(row.card_id, (checkItemCountByCardId.get(row.card_id) ?? 0) + 1);
-    if (row.checked) checkedCountByCardId.set(row.card_id, (checkedCountByCardId.get(row.card_id) ?? 0) + 1);
+    if (row.checked)
+      checkedCountByCardId.set(row.card_id, (checkedCountByCardId.get(row.card_id) ?? 0) + 1);
   }
 
-  const comments = await db('comments') as Array<{ card_id: string; deleted?: boolean }>;
+  const comments = (await db('comments')) as Array<{ card_id: string; deleted?: boolean }>;
   const commentCountByCardId = new Map<string, number>();
   for (const row of comments) {
     if (!cardIds.has(row.card_id) || row.deleted) continue;
     commentCountByCardId.set(row.card_id, (commentCountByCardId.get(row.card_id) ?? 0) + 1);
   }
 
-  const attachments = await db('attachments') as Array<{ card_id: string }>;
+  const attachments = (await db('attachments')) as Array<{ card_id: string }>;
   const attachmentCountByCardId = new Map<string, number>();
   for (const row of attachments) {
     if (!cardIds.has(row.card_id)) continue;
     attachmentCountByCardId.set(row.card_id, (attachmentCountByCardId.get(row.card_id) ?? 0) + 1);
   }
 
-  const customFields = await db('custom_fields') as CustomFieldRow[];
+  const customFields = (await db('custom_fields')) as CustomFieldRow[];
   const customFieldById = new Map(customFields.map((row) => [row.id, row]));
-  const customFieldValues = await db('card_custom_field_values') as Array<{
+  const customFieldValues = (await db('card_custom_field_values')) as Array<{
     id: string;
     card_id: string;
     custom_field_id: string;
@@ -484,20 +513,23 @@ function serializeHydratedCard(hydrated: HydratedCard, rank: number): TrelloCard
     checkItemCount: hydrated.checkItemCount,
     checkItemsChecked: hydrated.checkItemsChecked,
     customFieldItems: hydrated.customFieldItems.map((item) =>
-      serializeCustomFieldItem(item, item.field_type)),
+      serializeCustomFieldItem(item, item.field_type)
+    ),
     _rank: rank,
   });
 }
 
 export async function listTrelloCardsForBoard(
   boardId: string,
-  filter: 'open' | 'closed' | 'all',
+  filter: 'open' | 'closed' | 'all'
 ): Promise<TrelloCard[]> {
-  const lists = await db('lists').where({ board_id: boardId }).orderBy('position', 'asc') as ListRow[];
+  const lists = (await db('lists')
+    .where({ board_id: boardId })
+    .orderBy('position', 'asc')) as ListRow[];
   const listIds = new Set(lists.map((row) => row.id));
   if (listIds.size === 0) return [];
 
-  const allCards = await db('cards').orderBy('position', 'asc') as CardRow[];
+  const allCards = (await db('cards').orderBy('position', 'asc')) as CardRow[];
   const cards = allCards.filter((card) => {
     if (!listIds.has(card.list_id)) return false;
     if (filter === 'all') return true;
@@ -516,11 +548,11 @@ export async function listTrelloCardsForBoard(
 
 export async function listTrelloCardsForList(
   listId: string,
-  filter: 'open' | 'closed' | 'all',
+  filter: 'open' | 'closed' | 'all'
 ): Promise<TrelloCard[]> {
-  const cards = await db('cards')
+  const cards = (await db('cards')
     .where({ list_id: listId })
-    .orderBy('position', 'asc') as CardRow[];
+    .orderBy('position', 'asc')) as CardRow[];
 
   const filtered = cards.filter((card) => {
     if (filter === 'all') return true;
@@ -538,7 +570,7 @@ export async function listTrelloCardsForList(
 }
 
 export async function loadTrelloCardById(cardId: string): Promise<TrelloCard | null> {
-  const card = await db('cards').where({ id: cardId }).first() as CardRow | undefined;
+  const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
   if (!card) return null;
   const hydrated = await hydrateCards([card]);
   const item = hydrated.get(card.id);
@@ -546,13 +578,21 @@ export async function loadTrelloCardById(cardId: string): Promise<TrelloCard | n
   return serializeHydratedCard(item, 0);
 }
 
-async function listBoardMemberships(boardId: string): Promise<Array<{ id: string; idMember: string; memberType: 'admin' | 'normal' | 'observer'; unconfirmed: false; deactivated: false }>> {
-  const boardMembers = await db('board_members')
+async function listBoardMemberships(boardId: string): Promise<
+  Array<{
+    id: string;
+    idMember: string;
+    memberType: 'admin' | 'normal' | 'observer';
+    unconfirmed: false;
+    deactivated: false;
+  }>
+> {
+  const boardMembers = (await db('board_members')
     .where({ board_id: boardId })
-    .orderBy('created_at', 'asc') as Array<{ id: string; user_id: string; role: string }>;
-  const guestRows = await db('board_guest_access')
+    .orderBy('created_at', 'asc')) as Array<{ id: string; user_id: string; role: string }>;
+  const guestRows = (await db('board_guest_access')
     .where({ board_id: boardId })
-    .orderBy('granted_at', 'asc') as Array<{ id: string; user_id: string }>;
+    .orderBy('granted_at', 'asc')) as Array<{ id: string; user_id: string }>;
 
   const memberships: Array<{
     id: string;
@@ -563,7 +603,7 @@ async function listBoardMemberships(boardId: string): Promise<Array<{ id: string
   }> = boardMembers.map((row) => ({
     id: row.id,
     idMember: row.user_id,
-    memberType: (row.role === 'ADMIN' ? 'admin' : 'normal'),
+    memberType: row.role === 'ADMIN' ? 'admin' : 'normal',
     unconfirmed: false as const,
     deactivated: false as const,
   }));
@@ -582,37 +622,42 @@ async function listBoardMemberships(boardId: string): Promise<Array<{ id: string
 async function loadUsersByIds(ids: string[]): Promise<Map<string, UserRow>> {
   if (ids.length === 0) return new Map();
   const idSet = new Set(ids);
-  const users = await db('users') as UserRow[];
+  const users = (await db('users')) as UserRow[];
   return new Map(users.filter((user) => idSet.has(user.id)).map((user) => [user.id, user]));
 }
 
 function mapActivityType(action: string): string {
   if (action === 'card_created') return 'createCard';
-  if (action === 'card_updated' || action === 'card_moved' || action === 'card_move_blocked') return 'updateCard';
+  if (action === 'card_updated' || action === 'card_moved' || action === 'card_move_blocked')
+    return 'updateCard';
   if (action === 'card_member_assigned') return 'addMemberToCard';
   if (action === 'card_member_unassigned') return 'removeMemberFromCard';
   return action;
 }
 
-async function listCardActions(card: TrelloCard, board: BoardRow, list: ListRow): Promise<Response> {
-  const comments = await db('comments')
+async function listCardActions(
+  card: TrelloCard,
+  board: BoardRow,
+  list: ListRow
+): Promise<Response> {
+  const comments = (await db('comments')
     .where({ card_id: card.id })
-    .orderBy('created_at', 'asc') as Array<{
-      id: string;
-      user_id: string;
-      content: string;
-      created_at?: string | Date | null;
-      deleted?: boolean;
-    }>;
-  const activities = await db('activities')
+    .orderBy('created_at', 'asc')) as Array<{
+    id: string;
+    user_id: string;
+    content: string;
+    created_at?: string | Date | null;
+    deleted?: boolean;
+  }>;
+  const activities = (await db('activities')
     .where({ entity_id: card.id })
-    .orderBy('created_at', 'asc') as Array<{
-      id: string;
-      actor_id: string;
-      action: string;
-      payload?: Record<string, unknown>;
-      created_at?: string | Date | null;
-    }>;
+    .orderBy('created_at', 'asc')) as Array<{
+    id: string;
+    actor_id: string;
+    action: string;
+    payload?: Record<string, unknown>;
+    created_at?: string | Date | null;
+  }>;
 
   const actorIds = [
     ...new Set([
@@ -627,45 +672,49 @@ async function listCardActions(card: TrelloCard, board: BoardRow, list: ListRow)
     if (comment.deleted) continue;
     const user = users.get(comment.user_id);
     if (!user) continue;
-    result.push(serializeAction({
-      id: comment.id,
-      type: 'commentCard',
-      date: comment.created_at ?? null,
-      memberCreator: {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? user.email,
-        avatar_url: user.avatar_url ?? null,
-      },
-      data: {
-        text: comment.content,
-        card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
-        board: { id: board.id, name: board.title, shortLink: board.id.slice(0, 8) },
-        list: { id: list.id, name: list.title },
-      },
-    }));
+    result.push(
+      serializeAction({
+        id: comment.id,
+        type: 'commentCard',
+        date: comment.created_at ?? null,
+        memberCreator: {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? user.email,
+          avatar_url: user.avatar_url ?? null,
+        },
+        data: {
+          text: comment.content,
+          card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
+          board: { id: board.id, name: board.title, shortLink: board.id.slice(0, 8) },
+          list: { id: list.id, name: list.title },
+        },
+      })
+    );
   }
 
   for (const activity of activities) {
     const user = users.get(activity.actor_id);
     if (!user) continue;
-    result.push(serializeAction({
-      id: activity.id,
-      type: mapActivityType(activity.action),
-      date: activity.created_at ?? null,
-      memberCreator: {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? user.email,
-        avatar_url: user.avatar_url ?? null,
-      },
-      data: {
-        card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
-        board: { id: board.id, name: board.title, shortLink: board.id.slice(0, 8) },
-        list: { id: list.id, name: list.title },
-        ...(activity.payload ?? {}),
-      },
-    }));
+    result.push(
+      serializeAction({
+        id: activity.id,
+        type: mapActivityType(activity.action),
+        date: activity.created_at ?? null,
+        memberCreator: {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? user.email,
+          avatar_url: user.avatar_url ?? null,
+        },
+        data: {
+          card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
+          board: { id: board.id, name: board.title, shortLink: board.id.slice(0, 8) },
+          list: { id: list.id, name: list.title },
+          ...(activity.payload ?? {}),
+        },
+      })
+    );
   }
 
   return Response.json(result);
@@ -685,7 +734,9 @@ function serializeAttachmentRow(attachment: {
   return {
     id: attachment.id,
     bytes: attachment.size_bytes ?? 0,
-    date: attachment.created_at ? new Date(attachment.created_at).toISOString() : new Date().toISOString(),
+    date: attachment.created_at
+      ? new Date(attachment.created_at).toISOString()
+      : new Date().toISOString(),
     edgeColor: null,
     idMember: attachment.uploaded_by,
     isUpload: attachment.type === 'FILE',
@@ -697,7 +748,10 @@ function serializeAttachmentRow(attachment: {
   };
 }
 
-export async function cardsRouter(req: AuthenticatedRequest, path: string): Promise<Response | null> {
+export async function cardsRouter(
+  req: AuthenticatedRequest,
+  path: string
+): Promise<Response | null> {
   const user = getTrelloAuthUser(req);
   if (!user) return trelloError('invalid token', 401);
 
@@ -715,15 +769,17 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     const idMembers = toStringArray(getInput(url, body, 'idMembers'));
     const idLabels = toStringArray(getInput(url, body, 'idLabels'));
 
-    if (typeof name !== 'string' || name.trim() === '') return trelloError('invalid value for name', 400);
-    if (typeof idListInput !== 'string' || idListInput.trim() === '') return trelloError('invalid value for idList', 400);
+    if (typeof name !== 'string' || name.trim() === '')
+      return trelloError('invalid value for name', 400);
+    if (typeof idListInput !== 'string' || idListInput.trim() === '')
+      return trelloError('invalid value for idList', 400);
 
     const listId = await resolveListId(idListInput);
     if (!listId) return TRELLO_LIST_NOT_FOUND();
 
-    const list = await db('lists').where({ id: listId }).first() as ListRow | undefined;
+    const list = (await db('lists').where({ id: listId }).first()) as ListRow | undefined;
     if (!list) return TRELLO_LIST_NOT_FOUND();
-    const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+    const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
     if (!board) return TRELLO_NOT_FOUND();
     if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
@@ -749,14 +805,18 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     for (const memberId of idMembers) {
       const exists = await db('users').where({ id: memberId }).first();
       if (!exists) continue;
-      const existing = await db('card_members').where({ card_id: cardId, user_id: memberId }).first();
+      const existing = await db('card_members')
+        .where({ card_id: cardId, user_id: memberId })
+        .first();
       if (!existing) await db('card_members').insert({ card_id: cardId, user_id: memberId });
     }
 
     for (const labelId of idLabels) {
       const label = await db('labels').where({ id: labelId, board_id: board.id }).first();
       if (!label) continue;
-      const existing = await db('card_labels').where({ card_id: cardId, label_id: labelId }).first();
+      const existing = await db('card_labels')
+        .where({ card_id: cardId, label_id: labelId })
+        .first();
       if (!existing) await db('card_labels').insert({ card_id: cardId, label_id: labelId });
     }
 
@@ -819,14 +879,14 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (typeof idBoardInput === 'string' && idBoardInput.trim()) {
       const boardId = await resolveBoardId(idBoardInput);
       if (!boardId) return TRELLO_NOT_FOUND();
-      const board = await db('boards').where({ id: boardId }).first() as BoardRow | undefined;
+      const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
       if (!board) return TRELLO_NOT_FOUND();
       if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
       targetBoardId = board.id;
 
-      const boardLists = await db('lists')
+      const boardLists = (await db('lists')
         .where({ board_id: board.id, archived: false })
-        .orderBy('position', 'asc') as ListRow[];
+        .orderBy('position', 'asc')) as ListRow[];
       const firstList = boardLists[0];
       if (!firstList) return trelloError('invalid value for idBoard', 400);
       targetListId = firstList.id;
@@ -835,9 +895,11 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (typeof idListInput === 'string' && idListInput.trim()) {
       const listId = await resolveListId(idListInput);
       if (!listId) return TRELLO_LIST_NOT_FOUND();
-      const list = await db('lists').where({ id: listId }).first() as ListRow | undefined;
+      const list = (await db('lists').where({ id: listId }).first()) as ListRow | undefined;
       if (!list) return TRELLO_LIST_NOT_FOUND();
-      const board = await db('boards').where({ id: list.board_id }).first() as BoardRow | undefined;
+      const board = (await db('boards').where({ id: list.board_id }).first()) as
+        | BoardRow
+        | undefined;
       if (!board) return TRELLO_NOT_FOUND();
       if (!(await canMutateBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
       targetListId = list.id;
@@ -852,7 +914,8 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
           toListId: targetListId,
           cardId: context.card.id,
           actorId: user.id,
-          ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+          ipAddress:
+            req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
           userAgent: req.headers.get('user-agent') ?? null,
         });
       } catch (error) {
@@ -872,7 +935,7 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     const updated = await loadTrelloCardById(context.card.id);
     if (!updated) return TRELLO_CARD_NOT_FOUND();
     if (updated.idBoard !== targetBoardId) {
-      const list = await db('lists').where({ id: updated.idList }).first() as ListRow | undefined;
+      const list = (await db('lists').where({ id: updated.idList }).first()) as ListRow | undefined;
       if (list) {
         const hydrated = await loadTrelloCardById(updated.id);
         if (hydrated) return Response.json(hydrated);
@@ -889,16 +952,23 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
 
   if (subPath === 'board' && req.method === 'GET') {
     const memberships = await listBoardMemberships(context.board.id);
-    return Response.json(serializeBoard({
-      ...context.board,
-      idMemberCreator: memberships[0]?.idMember ?? '',
-      memberships,
-    }));
+    return Response.json(
+      serializeBoard({
+        ...context.board,
+        idMemberCreator: memberships[0]?.idMember ?? '',
+        memberships,
+      })
+    );
   }
 
   if (subPath === 'list' && req.method === 'GET') {
-    const boardLists = await db('lists').where({ board_id: context.board.id }).orderBy('position', 'asc') as ListRow[];
-    const rank = Math.max(0, boardLists.findIndex((row) => row.id === context.list.id));
+    const boardLists = (await db('lists')
+      .where({ board_id: context.board.id })
+      .orderBy('position', 'asc')) as ListRow[];
+    const rank = Math.max(
+      0,
+      boardLists.findIndex((row) => row.id === context.list.id)
+    );
     return Response.json(serializeList({ ...context.list, _rank: rank }));
   }
 
@@ -910,7 +980,8 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     const body = await parseBody(req);
     const textInput = getInput(url, body, 'text');
-    if (typeof textInput !== 'string' || !textInput.trim()) return trelloError('invalid value for text', 400);
+    if (typeof textInput !== 'string' || !textInput.trim())
+      return trelloError('invalid value for text', 400);
 
     const commentId = randomUUID();
     const shortId = await generateUniqueShortId('comments');
@@ -926,64 +997,83 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       updated_at: new Date().toISOString(),
     });
 
-    return Response.json(serializeAction({
-      id: commentId,
-      type: 'commentCard',
-      date: new Date().toISOString(),
-      memberCreator: {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? user.email,
-        avatar_url: user.avatar_url ?? null,
-      },
-      data: {
-        text: textInput.trim(),
-        card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
-        board: { id: context.board.id, name: context.board.title, shortLink: context.board.id.slice(0, 8) },
-        list: { id: context.list.id, name: context.list.title },
-      },
-    }));
+    return Response.json(
+      serializeAction({
+        id: commentId,
+        type: 'commentCard',
+        date: new Date().toISOString(),
+        memberCreator: {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? user.email,
+          avatar_url: user.avatar_url ?? null,
+        },
+        data: {
+          text: textInput.trim(),
+          card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
+          board: {
+            id: context.board.id,
+            name: context.board.title,
+            shortLink: context.board.id.slice(0, 8),
+          },
+          list: { id: context.list.id, name: context.list.title },
+        },
+      })
+    );
   }
 
   const actionCommentMatch = subPath.match(/^actions\/([^/]+)\/comments$/);
   if (actionCommentMatch && req.method === 'PUT') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     const actionId = actionCommentMatch[1] as string;
-    const commentId = await resolveCardId(actionId) ? actionId : actionId;
-    const existing = await db('comments').where({ id: commentId, card_id: context.card.id }).first() as { id: string; user_id: string; version: number } | undefined;
+    const commentId = (await resolveCardId(actionId)) ? actionId : actionId;
+    const existing = (await db('comments')
+      .where({ id: commentId, card_id: context.card.id })
+      .first()) as { id: string; user_id: string; version: number } | undefined;
     if (!existing) return TRELLO_COMMENT_NOT_FOUND();
     if (existing.user_id !== user.id) return TRELLO_PERMISSION_DENIED();
     const body = await parseBody(req);
     const textInput = getInput(url, body, 'text');
-    if (typeof textInput !== 'string' || !textInput.trim()) return trelloError('invalid value for text', 400);
-    await db('comments').where({ id: existing.id }).update({
-      content: textInput.trim(),
-      version: existing.version + 1,
-      updated_at: new Date().toISOString(),
-    });
-    return Response.json(serializeAction({
-      id: existing.id,
-      type: 'commentCard',
-      date: new Date().toISOString(),
-      memberCreator: {
-        id: user.id,
-        email: user.email,
-        name: user.name ?? user.email,
-        avatar_url: user.avatar_url ?? null,
-      },
-      data: {
-        text: textInput.trim(),
-        card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
-        board: { id: context.board.id, name: context.board.title, shortLink: context.board.id.slice(0, 8) },
-        list: { id: context.list.id, name: context.list.title },
-      },
-    }));
+    if (typeof textInput !== 'string' || !textInput.trim())
+      return trelloError('invalid value for text', 400);
+    await db('comments')
+      .where({ id: existing.id })
+      .update({
+        content: textInput.trim(),
+        version: existing.version + 1,
+        updated_at: new Date().toISOString(),
+      });
+    return Response.json(
+      serializeAction({
+        id: existing.id,
+        type: 'commentCard',
+        date: new Date().toISOString(),
+        memberCreator: {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? user.email,
+          avatar_url: user.avatar_url ?? null,
+        },
+        data: {
+          text: textInput.trim(),
+          card: { id: card.id, name: card.name, idShort: card.idShort, shortLink: card.shortLink },
+          board: {
+            id: context.board.id,
+            name: context.board.title,
+            shortLink: context.board.id.slice(0, 8),
+          },
+          list: { id: context.list.id, name: context.list.title },
+        },
+      })
+    );
   }
 
   if (actionCommentMatch && req.method === 'DELETE') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     const actionId = actionCommentMatch[1] as string;
-    const existing = await db('comments').where({ id: actionId, card_id: context.card.id }).first() as { id: string; user_id: string } | undefined;
+    const existing = (await db('comments')
+      .where({ id: actionId, card_id: context.card.id })
+      .first()) as { id: string; user_id: string } | undefined;
     if (!existing) return TRELLO_COMMENT_NOT_FOUND();
     if (existing.user_id !== user.id) return TRELLO_PERMISSION_DENIED();
     await db('comments').where({ id: existing.id }).delete();
@@ -991,18 +1081,22 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
   }
 
   if (subPath === 'members' && req.method === 'GET') {
-    const cardMembers = await db('card_members').where({ card_id: context.card.id }) as Array<{ user_id: string }>;
+    const cardMembers = (await db('card_members').where({ card_id: context.card.id })) as Array<{
+      user_id: string;
+    }>;
     const users = await loadUsersByIds(cardMembers.map((row) => row.user_id));
     const response = [];
     for (const row of cardMembers) {
       const member = users.get(row.user_id);
       if (!member) continue;
-      response.push(serializeMember({
-        id: member.id,
-        email: member.email,
-        name: member.name ?? member.email,
-        avatar_url: member.avatar_url ?? null,
-      }));
+      response.push(
+        serializeMember({
+          id: member.id,
+          email: member.email,
+          name: member.name ?? member.email,
+          avatar_url: member.avatar_url ?? null,
+        })
+      );
     }
     return Response.json(response);
   }
@@ -1011,10 +1105,13 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     const body = await parseBody(req);
     const value = getInput(url, body, 'value');
-    if (typeof value !== 'string' || !value.trim()) return trelloError('invalid value for value', 400);
+    if (typeof value !== 'string' || !value.trim())
+      return trelloError('invalid value for value', 400);
     const member = await db('users').where({ id: value }).first();
     if (!member) return TRELLO_NOT_FOUND();
-    const existing = await db('card_members').where({ card_id: context.card.id, user_id: value }).first();
+    const existing = await db('card_members')
+      .where({ card_id: context.card.id, user_id: value })
+      .first();
     if (!existing) await db('card_members').insert({ card_id: context.card.id, user_id: value });
     const updated = await loadTrelloCardById(context.card.id);
     if (!updated) return TRELLO_CARD_NOT_FOUND();
@@ -1024,7 +1121,9 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
   const memberDeleteMatch = subPath.match(/^idMembers\/([^/]+)$/);
   if (memberDeleteMatch && req.method === 'DELETE') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
-    await db('card_members').where({ card_id: context.card.id, user_id: memberDeleteMatch[1] }).delete();
+    await db('card_members')
+      .where({ card_id: context.card.id, user_id: memberDeleteMatch[1] })
+      .delete();
     const updated = await loadTrelloCardById(context.card.id);
     if (!updated) return TRELLO_CARD_NOT_FOUND();
     return Response.json(updated);
@@ -1034,10 +1133,13 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     const body = await parseBody(req);
     const value = getInput(url, body, 'value');
-    if (typeof value !== 'string' || !value.trim()) return trelloError('invalid value for value', 400);
+    if (typeof value !== 'string' || !value.trim())
+      return trelloError('invalid value for value', 400);
     const label = await db('labels').where({ id: value, board_id: context.board.id }).first();
     if (!label) return TRELLO_NOT_FOUND();
-    const existing = await db('card_labels').where({ card_id: context.card.id, label_id: value }).first();
+    const existing = await db('card_labels')
+      .where({ card_id: context.card.id, label_id: value })
+      .first();
     if (!existing) await db('card_labels').insert({ card_id: context.card.id, label_id: value });
     const updated = await loadTrelloCardById(context.card.id);
     if (!updated) return TRELLO_CARD_NOT_FOUND();
@@ -1047,29 +1149,21 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
   const labelDeleteMatch = subPath.match(/^idLabels\/([^/]+)$/);
   if (labelDeleteMatch && req.method === 'DELETE') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
-    await db('card_labels').where({ card_id: context.card.id, label_id: labelDeleteMatch[1] }).delete();
+    await db('card_labels')
+      .where({ card_id: context.card.id, label_id: labelDeleteMatch[1] })
+      .delete();
     const updated = await loadTrelloCardById(context.card.id);
     if (!updated) return TRELLO_CARD_NOT_FOUND();
     return Response.json(updated);
   }
 
   if (subPath === 'checklists' && req.method === 'GET') {
-    const checklists = await db('checklists')
+    const checklists = (await db('checklists')
       .where({ card_id: context.card.id })
-      .orderBy('position', 'asc') as Array<{ id: string; card_id: string; title: string }>;
-    const allItems = await db('checklist_items')
+      .orderBy('position', 'asc')) as Array<{ id: string; card_id: string; title: string }>;
+    const allItems = (await db('checklist_items')
       .where({ card_id: context.card.id })
-      .orderBy('position', 'asc') as Array<{
-        id: string;
-        checklist_id: string;
-        card_id: string;
-        title: string;
-        checked: boolean;
-        due_date?: string | Date | null;
-        assigned_member_id?: string | null;
-      }>;
-
-    const itemsByChecklistId = new Map<string, Array<{
+      .orderBy('position', 'asc')) as Array<{
       id: string;
       checklist_id: string;
       card_id: string;
@@ -1077,7 +1171,20 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       checked: boolean;
       due_date?: string | Date | null;
       assigned_member_id?: string | null;
-    }>>();
+    }>;
+
+    const itemsByChecklistId = new Map<
+      string,
+      Array<{
+        id: string;
+        checklist_id: string;
+        card_id: string;
+        title: string;
+        checked: boolean;
+        due_date?: string | Date | null;
+        assigned_member_id?: string | null;
+      }>
+    >();
     for (const item of allItems) {
       const current = itemsByChecklistId.get(item.checklist_id) ?? [];
       current.push(item);
@@ -1085,17 +1192,21 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     }
 
     return Response.json(
-      checklists.map((checklist, checklistRank) => serializeChecklist({
-        id: checklist.id,
-        board_id: context.board.id,
-        card_id: context.card.id,
-        title: checklist.title,
-        _rank: checklistRank,
-        checkItems: (itemsByChecklistId.get(checklist.id) ?? []).map((item, itemRank) => serializeCheckItem({
-          ...item,
-          _rank: itemRank,
-        })),
-      })),
+      checklists.map((checklist, checklistRank) =>
+        serializeChecklist({
+          id: checklist.id,
+          board_id: context.board.id,
+          card_id: context.card.id,
+          title: checklist.title,
+          _rank: checklistRank,
+          checkItems: (itemsByChecklistId.get(checklist.id) ?? []).map((item, itemRank) =>
+            serializeCheckItem({
+              ...item,
+              _rank: itemRank,
+            })
+          ),
+        })
+      )
     );
   }
 
@@ -1104,9 +1215,9 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     const body = await parseBody(req);
     const name = getInput(url, body, 'name');
 
-    const existing = await db('checklists')
+    const existing = (await db('checklists')
       .where({ card_id: context.card.id })
-      .orderBy('position', 'asc') as Array<{ id: string; position: string }>;
+      .orderBy('position', 'asc')) as Array<{ id: string; position: string }>;
     const position = between(existing.at(-1)?.position ?? '', HIGH_SENTINEL);
 
     const checklistId = randomUUID();
@@ -1119,73 +1230,92 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       updated_at: new Date().toISOString(),
     });
 
-    const created = await db('checklists').where({ id: checklistId }).first() as {
-      id: string;
-      card_id: string;
-      title: string;
-    } | undefined;
+    const created = (await db('checklists').where({ id: checklistId }).first()) as
+      | {
+          id: string;
+          card_id: string;
+          title: string;
+        }
+      | undefined;
     if (!created) return TRELLO_NOT_FOUND();
 
-    return Response.json(serializeChecklist({
-      id: created.id,
-      board_id: context.board.id,
-      card_id: created.card_id,
-      title: created.title,
-      _rank: existing.length,
-      checkItems: [],
-    }));
+    return Response.json(
+      serializeChecklist({
+        id: created.id,
+        board_id: context.board.id,
+        card_id: created.card_id,
+        title: created.title,
+        _rank: existing.length,
+        checkItems: [],
+      })
+    );
   }
 
   const checklistDeleteMatch = subPath.match(/^checklists\/([^/]+)$/);
   if (checklistDeleteMatch && req.method === 'DELETE') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
-    await db('checklists').where({ id: checklistDeleteMatch[1], card_id: context.card.id }).delete();
+    await db('checklists')
+      .where({ id: checklistDeleteMatch[1], card_id: context.card.id })
+      .delete();
     return Response.json({});
   }
 
   if (subPath === 'checkItemStates' && req.method === 'GET') {
-    const items = await db('checklist_items')
+    const items = (await db('checklist_items')
       .where({ card_id: context.card.id })
-      .orderBy('position', 'asc') as Array<{ id: string; checked: boolean }>;
-    return Response.json(items.map((item) => ({
-      idCheckItem: item.id,
-      state: item.checked ? 'complete' : 'incomplete',
-    })));
+      .orderBy('position', 'asc')) as Array<{ id: string; checked: boolean }>;
+    return Response.json(
+      items.map((item) => ({
+        idCheckItem: item.id,
+        state: item.checked ? 'complete' : 'incomplete',
+      }))
+    );
   }
 
   const checkItemMatch = subPath.match(/^checkItem\/([^/]+)$/);
   if (checkItemMatch && req.method === 'GET') {
-    const item = await db('checklist_items').where({ id: checkItemMatch[1], card_id: context.card.id }).first() as {
-      id: string;
-      checklist_id: string;
-      card_id: string;
-      title: string;
-      checked: boolean;
-      due_date?: string | Date | null;
-      assigned_member_id?: string | null;
-    } | undefined;
+    const item = (await db('checklist_items')
+      .where({ id: checkItemMatch[1], card_id: context.card.id })
+      .first()) as
+      | {
+          id: string;
+          checklist_id: string;
+          card_id: string;
+          title: string;
+          checked: boolean;
+          due_date?: string | Date | null;
+          assigned_member_id?: string | null;
+        }
+      | undefined;
     if (!item) return TRELLO_NOT_FOUND();
 
-    const checklistItems = await db('checklist_items')
+    const checklistItems = (await db('checklist_items')
       .where({ checklist_id: item.checklist_id })
-      .orderBy('position', 'asc') as Array<{ id: string }>;
-    const rank = Math.max(0, checklistItems.findIndex((row) => row.id === item.id));
+      .orderBy('position', 'asc')) as Array<{ id: string }>;
+    const rank = Math.max(
+      0,
+      checklistItems.findIndex((row) => row.id === item.id)
+    );
 
     return Response.json(serializeCheckItem({ ...item, _rank: rank }));
   }
 
   if (checkItemMatch && req.method === 'PUT') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
-    const existing = await db('checklist_items').where({ id: checkItemMatch[1], card_id: context.card.id }).first() as {
-      id: string;
-      checklist_id: string;
-      card_id: string;
-      title: string;
-      checked: boolean;
-      due_date?: string | Date | null;
-      assigned_member_id?: string | null;
-      position: string;
-    } | undefined;
+    const existing = (await db('checklist_items')
+      .where({ id: checkItemMatch[1], card_id: context.card.id })
+      .first()) as
+      | {
+          id: string;
+          checklist_id: string;
+          card_id: string;
+          title: string;
+          checked: boolean;
+          due_date?: string | Date | null;
+          assigned_member_id?: string | null;
+          position: string;
+        }
+      | undefined;
     if (!existing) return TRELLO_NOT_FOUND();
 
     const body = await parseBody(req);
@@ -1207,9 +1337,9 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       else if (typeof idMember === 'string') updates['assigned_member_id'] = idMember;
     }
     if (pos !== undefined) {
-      const siblings = await db('checklist_items')
+      const siblings = (await db('checklist_items')
         .where({ checklist_id: existing.checklist_id })
-        .orderBy('position', 'asc') as Array<{ id: string; position: string }>;
+        .orderBy('position', 'asc')) as Array<{ id: string; position: string }>;
       if (String(pos).toLowerCase() === 'top') {
         updates['position'] = between('', siblings[0]?.position ?? HIGH_SENTINEL);
       } else if (String(pos).toLowerCase() === 'bottom') {
@@ -1220,21 +1350,26 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (Object.keys(updates).length > 0) {
       await db('checklist_items').where({ id: existing.id }).update(updates);
     }
-    const updated = await db('checklist_items').where({ id: existing.id }).first() as {
-      id: string;
-      checklist_id: string;
-      card_id: string;
-      title: string;
-      checked: boolean;
-      due_date?: string | Date | null;
-      assigned_member_id?: string | null;
-    } | undefined;
+    const updated = (await db('checklist_items').where({ id: existing.id }).first()) as
+      | {
+          id: string;
+          checklist_id: string;
+          card_id: string;
+          title: string;
+          checked: boolean;
+          due_date?: string | Date | null;
+          assigned_member_id?: string | null;
+        }
+      | undefined;
     if (!updated) return TRELLO_NOT_FOUND();
 
-    const checklistItems = await db('checklist_items')
+    const checklistItems = (await db('checklist_items')
       .where({ checklist_id: updated.checklist_id })
-      .orderBy('position', 'asc') as Array<{ id: string }>;
-    const rank = Math.max(0, checklistItems.findIndex((row) => row.id === updated.id));
+      .orderBy('position', 'asc')) as Array<{ id: string }>;
+    const rank = Math.max(
+      0,
+      checklistItems.findIndex((row) => row.id === updated.id)
+    );
     return Response.json(serializeCheckItem({ ...updated, _rank: rank }));
   }
 
@@ -1249,37 +1384,50 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
     const checklistId = checklistItemStateMatch[1] as string;
     const itemId = checklistItemStateMatch[2] as string;
-    const item = await db('checklist_items').where({ id: itemId, checklist_id: checklistId, card_id: context.card.id }).first() as {
-      id: string;
-    } | undefined;
+    const item = (await db('checklist_items')
+      .where({ id: itemId, checklist_id: checklistId, card_id: context.card.id })
+      .first()) as
+      | {
+          id: string;
+        }
+      | undefined;
     if (!item) return TRELLO_NOT_FOUND();
     const body = await parseBody(req);
     const state = getInput(url, body, 'state');
     if (state === undefined) return trelloError('invalid value for state', 400);
-    await db('checklist_items').where({ id: item.id }).update({
-      checked: String(state).toLowerCase() === 'complete',
-    });
-    const updated = await db('checklist_items').where({ id: item.id }).first() as {
-      id: string;
-      checklist_id: string;
-      card_id: string;
-      title: string;
-      checked: boolean;
-      due_date?: string | Date | null;
-      assigned_member_id?: string | null;
-    } | undefined;
+    await db('checklist_items')
+      .where({ id: item.id })
+      .update({
+        checked: String(state).toLowerCase() === 'complete',
+      });
+    const updated = (await db('checklist_items').where({ id: item.id }).first()) as
+      | {
+          id: string;
+          checklist_id: string;
+          card_id: string;
+          title: string;
+          checked: boolean;
+          due_date?: string | Date | null;
+          assigned_member_id?: string | null;
+        }
+      | undefined;
     if (!updated) return TRELLO_NOT_FOUND();
-    const checklistItems = await db('checklist_items')
+    const checklistItems = (await db('checklist_items')
       .where({ checklist_id: updated.checklist_id })
-      .orderBy('position', 'asc') as Array<{ id: string }>;
-    const rank = Math.max(0, checklistItems.findIndex((row) => row.id === updated.id));
+      .orderBy('position', 'asc')) as Array<{ id: string }>;
+    const rank = Math.max(
+      0,
+      checklistItems.findIndex((row) => row.id === updated.id)
+    );
     return Response.json(serializeCheckItem({ ...updated, _rank: rank }));
   }
 
   const customFieldItemMatch = subPath.match(/^customField\/([^/]+)\/item$/);
   if (customFieldItemMatch && req.method === 'PUT') {
     if (!(await canMutateBoard(user.id, context.board))) return TRELLO_PERMISSION_DENIED();
-    const field = await db('custom_fields').where({ id: customFieldItemMatch[1] }).first() as CustomFieldRow | undefined;
+    const field = (await db('custom_fields').where({ id: customFieldItemMatch[1] }).first()) as
+      | CustomFieldRow
+      | undefined;
     if (!field || field.board_id !== context.board.id) return TRELLO_CUSTOM_FIELD_NOT_FOUND();
 
     const body = await parseBody(req);
@@ -1287,9 +1435,9 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     const patch = buildCustomFieldValuePatch(field.field_type, value, field.options);
     if (!patch) return trelloError('invalid value for value', 400);
 
-    const existing = await db('card_custom_field_values')
+    const existing = (await db('card_custom_field_values')
       .where({ card_id: context.card.id, custom_field_id: field.id })
-      .first() as { id: string } | undefined;
+      .first()) as { id: string } | undefined;
 
     if (existing) {
       await db('card_custom_field_values').where({ id: existing.id }).update(patch);
@@ -1302,26 +1450,30 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       });
     }
 
-    const updated = await db('card_custom_field_values')
+    const updated = (await db('card_custom_field_values')
       .where({ card_id: context.card.id, custom_field_id: field.id })
-      .first() as {
-        id: string;
-        card_id: string;
-        custom_field_id: string;
-        value_text?: string | null;
-        value_number?: number | string | null;
-        value_date?: string | Date | null;
-        value_checkbox?: boolean | null;
-        value_option_id?: string | null;
-      } | undefined;
+      .first()) as
+      | {
+          id: string;
+          card_id: string;
+          custom_field_id: string;
+          value_text?: string | null;
+          value_number?: number | string | null;
+          value_date?: string | Date | null;
+          value_checkbox?: boolean | null;
+          value_option_id?: string | null;
+        }
+      | undefined;
     if (!updated) return TRELLO_CUSTOM_FIELD_NOT_FOUND();
     return Response.json(serializeCustomFieldItem(updated, field.field_type));
   }
 
   if (subPath === 'customFieldItems' && req.method === 'GET') {
-    const customFields = await db('custom_fields') as CustomFieldRow[];
+    const customFields = (await db('custom_fields')) as CustomFieldRow[];
     const customFieldTypeById = new Map(customFields.map((row) => [row.id, row.field_type]));
-    const values = await db('card_custom_field_values').where({ card_id: context.card.id }) as Array<{
+    const values = (await db('card_custom_field_values').where({
+      card_id: context.card.id,
+    })) as Array<{
       id: string;
       card_id: string;
       custom_field_id: string;
@@ -1331,15 +1483,19 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
       value_checkbox?: boolean | null;
       value_option_id?: string | null;
     }>;
-    return Response.json(values.map((row) => serializeCustomFieldItem(row, customFieldTypeById.get(row.custom_field_id))));
+    return Response.json(
+      values.map((row) =>
+        serializeCustomFieldItem(row, customFieldTypeById.get(row.custom_field_id))
+      )
+    );
   }
 
   if (subPath === 'pluginData' && req.method === 'GET') {
-    const rows = await db('plugin_data').where({
+    const rows = (await db('plugin_data').where({
       scope: 'card',
       resource_id: context.card.id,
       board_id: context.board.id,
-    }) as PluginDataRow[];
+    })) as PluginDataRow[];
 
     const visibleRows = rows.filter((row) => {
       const visibility = resolvePluginDataVisibility(row);
@@ -1352,7 +1508,7 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
         return value === undefined
           ? { idPlugin: row.plugin_id ?? undefined }
           : { idPlugin: row.plugin_id ?? undefined, value };
-      }),
+      })
     );
   }
 
@@ -1360,32 +1516,40 @@ export async function cardsRouter(req: AuthenticatedRequest, path: string): Prom
     const attachments = await db('attachments')
       .where({ card_id: context.card.id })
       .orderBy('created_at', 'asc');
-    return Response.json((attachments as Array<{
-      id: string;
-      card_id: string;
-      uploaded_by: string;
-      name: string;
-      type: string;
-      size_bytes?: number | null;
-      mime_type?: string | null;
-      url?: string | null;
-      created_at?: string | Date | null;
-    }>).map((row) => serializeAttachmentRow(row)));
+    return Response.json(
+      (
+        attachments as Array<{
+          id: string;
+          card_id: string;
+          uploaded_by: string;
+          name: string;
+          type: string;
+          size_bytes?: number | null;
+          mime_type?: string | null;
+          url?: string | null;
+          created_at?: string | Date | null;
+        }>
+      ).map((row) => serializeAttachmentRow(row))
+    );
   }
 
   const attachmentMatch = subPath.match(/^attachments\/([^/]+)$/);
   if (attachmentMatch && req.method === 'GET') {
-    const attachment = await db('attachments').where({ id: attachmentMatch[1], card_id: context.card.id }).first() as {
-      id: string;
-      card_id: string;
-      uploaded_by: string;
-      name: string;
-      type: string;
-      size_bytes?: number | null;
-      mime_type?: string | null;
-      url?: string | null;
-      created_at?: string | Date | null;
-    } | undefined;
+    const attachment = (await db('attachments')
+      .where({ id: attachmentMatch[1], card_id: context.card.id })
+      .first()) as
+      | {
+          id: string;
+          card_id: string;
+          uploaded_by: string;
+          name: string;
+          type: string;
+          size_bytes?: number | null;
+          mime_type?: string | null;
+          url?: string | null;
+          created_at?: string | Date | null;
+        }
+      | undefined;
     if (!attachment) return TRELLO_NOT_FOUND();
     return Response.json(serializeAttachmentRow(attachment));
   }

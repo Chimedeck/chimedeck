@@ -9,10 +9,7 @@ export interface TriggerValidationResult {
   errorData?: unknown;
 }
 
-export function validateTrigger(
-  triggerType: string,
-  config: unknown,
-): TriggerValidationResult {
+export function validateTrigger(triggerType: string, config: unknown): TriggerValidationResult {
   const handler = getTriggerHandler(triggerType);
   if (!handler) {
     return { valid: false, errorName: 'trigger-type-unknown' };

@@ -37,9 +37,7 @@ async function processSyncDocument({
   phase: WorkflowPhase;
 }): Promise<ProcessResult> {
   const strictMode = phase === 'READY_FOR_DEV';
-  console.log(
-    `[triggers/dispatch] SYNC_DOCUMENT stub for card ${cardId} (strict=${strictMode})`,
-  );
+  console.log(`[triggers/dispatch] SYNC_DOCUMENT stub for card ${cardId} (strict=${strictMode})`);
   return { success: true };
 }
 
@@ -58,9 +56,7 @@ async function processGenerateSprint({
   // The pipeline reads refined requirements from cardChat, generates
   // sprint artifacts, and creates sprint cards on the board.
   try {
-    const { runSprintGenerationPipeline } = await import(
-      '../../../sprintGeneration/mods/pipeline'
-    );
+    const { runSprintGenerationPipeline } = await import('../../../sprintGeneration/mods/pipeline');
 
     const result = await runSprintGenerationPipeline({
       cardId,
@@ -72,7 +68,7 @@ async function processGenerateSprint({
 
     if (result.success) {
       console.log(
-        `[triggers/dispatch] GENERATE_SPRINT succeeded for card ${cardId} (run ${runId})`,
+        `[triggers/dispatch] GENERATE_SPRINT succeeded for card ${cardId} (run ${runId})`
       );
       return { success: true };
     }
@@ -80,9 +76,7 @@ async function processGenerateSprint({
     return { success: false, error: result.error ?? 'Sprint generation pipeline failed' };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(
-      `[triggers/dispatch] GENERATE_SPRINT failed for card ${cardId}: ${errorMsg}`,
-    );
+    console.error(`[triggers/dispatch] GENERATE_SPRINT failed for card ${cardId}: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
 }
@@ -103,9 +97,7 @@ async function processUpdateAsBuilt({
   // updates architecture/security/changelog docs, and commits via
   // the aiEditOrchestrator committer.
   try {
-    const { runAsBuiltSyncPipeline } = await import(
-      '../../../asBuiltSync/mods/pipeline'
-    );
+    const { runAsBuiltSyncPipeline } = await import('../../../asBuiltSync/mods/pipeline');
 
     if (!workspaceId || !boardId) {
       return { success: false, error: 'Missing workspaceId or boardId for as-built sync' };
@@ -121,7 +113,7 @@ async function processUpdateAsBuilt({
 
     if (result.success) {
       console.log(
-        `[triggers/dispatch] UPDATE_AS_BUILT succeeded for card ${cardId} (run ${runId})`,
+        `[triggers/dispatch] UPDATE_AS_BUILT succeeded for card ${cardId} (run ${runId})`
       );
       return { success: true };
     }
@@ -129,9 +121,7 @@ async function processUpdateAsBuilt({
     return { success: false, error: result.error ?? 'As-built sync pipeline failed' };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(
-      `[triggers/dispatch] UPDATE_AS_BUILT failed for card ${cardId}: ${errorMsg}`,
-    );
+    console.error(`[triggers/dispatch] UPDATE_AS_BUILT failed for card ${cardId}: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
 }
@@ -146,10 +136,7 @@ type ProcessorParams = {
   runId?: string;
 };
 
-const PROCESSOR_MAP: Record<
-  WorkflowPhase,
-  (params: ProcessorParams) => Promise<ProcessResult>
-> = {
+const PROCESSOR_MAP: Record<WorkflowPhase, (params: ProcessorParams) => Promise<ProcessResult>> = {
   NEW_DRAFT: processSyncDocument as any,
   REFINED_PENDING_REVIEW: processSyncDocument as any,
   SYNC_DOCUMENT: processSyncDocument as any,
@@ -178,9 +165,7 @@ export interface RunTriggerResult {
  * - Marks FAILED after exhausting max attempts
  * - Logs to dead-letter on terminal failure
  */
-export async function runTrigger({
-  run,
-}: RunTriggerInput): Promise<RunTriggerResult> {
+export async function runTrigger({ run }: RunTriggerInput): Promise<RunTriggerResult> {
   const attempts: TriggerAttempt[] = [];
   let lastError: string | null = null;
 
@@ -194,7 +179,7 @@ export async function runTrigger({
     PROCESSOR_MAP[run.phase] ??
     (async () => {
       console.warn(
-        `[triggers/dispatch] No processor mapped for phase "${run.phase}" — defaulting to no-op`,
+        `[triggers/dispatch] No processor mapped for phase "${run.phase}" — defaulting to no-op`
       );
       return { success: true };
     });
@@ -242,15 +227,16 @@ export async function runTrigger({
         attemptId: attempt.id,
         success: false,
         errorMessage: lastError,
-        errorPayload: error instanceof Error ? error.stack ?? null : null,
+        errorPayload: error instanceof Error ? (error.stack ?? null) : null,
       });
     }
 
     // If more attempts remain, wait for backoff
     if (attemptNum < MAX_RETRY_ATTEMPTS) {
-      const delay = RETRY_BACKOFF_MS[attemptNum - 1] ?? RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1];
+      const delay =
+        RETRY_BACKOFF_MS[attemptNum - 1] ?? RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1];
       console.warn(
-        `[triggers/dispatch] Attempt ${attemptNum}/${MAX_RETRY_ATTEMPTS} failed for run ${run.id}. Retrying in ${delay}ms...`,
+        `[triggers/dispatch] Attempt ${attemptNum}/${MAX_RETRY_ATTEMPTS} failed for run ${run.id}. Retrying in ${delay}ms...`
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
     }

@@ -54,7 +54,11 @@ describe('BoardChatDrawer', () => {
   });
 
   it('displays denied history state for guest when guest_can_view is false', async () => {
-    (boardChatApiModule.getBoardChatPermissions as unknown as { mockResolvedValue: (value: unknown) => void }).mockResolvedValue({
+    (
+      boardChatApiModule.getBoardChatPermissions as unknown as {
+        mockResolvedValue: (value: unknown) => void;
+      }
+    ).mockResolvedValue({
       data: {
         board_id: 'board-1',
         guest_can_view: false,
@@ -69,16 +73,22 @@ describe('BoardChatDrawer', () => {
         isGuest={true}
         callerGuestType="VIEWER"
         onClose={mockOnClose}
-      />,
+      />
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Guest access does not allow viewing chat history.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Guest access does not allow viewing chat history.')
+      ).toBeInTheDocument();
     });
   });
 
   it('disables composer and shows helper copy when guest cannot send', async () => {
-    (boardChatApiModule.getBoardChatPermissions as unknown as { mockResolvedValue: (value: unknown) => void }).mockResolvedValue({
+    (
+      boardChatApiModule.getBoardChatPermissions as unknown as {
+        mockResolvedValue: (value: unknown) => void;
+      }
+    ).mockResolvedValue({
       data: {
         board_id: 'board-1',
         guest_can_view: true,
@@ -86,7 +96,11 @@ describe('BoardChatDrawer', () => {
         updated_at: new Date().toISOString(),
       },
     });
-    (useBoardChatHistoryModule.useBoardChatHistory as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue({
+    (
+      useBoardChatHistoryModule.useBoardChatHistory as unknown as {
+        mockReturnValue: (value: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [],
       state: 'empty',
       isLoading: false,
@@ -99,11 +113,13 @@ describe('BoardChatDrawer', () => {
         isGuest={true}
         callerGuestType="VIEWER"
         onClose={mockOnClose}
-      />,
+      />
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Guests are not allowed to send messages on this board.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Guests are not allowed to send messages on this board.')
+      ).toBeInTheDocument();
     });
 
     const textarea = screen.getByPlaceholderText('Guest access does not allow sending messages.');
@@ -114,15 +130,13 @@ describe('BoardChatDrawer', () => {
 
   it('shows lock state for non-admin/non-owner users', async () => {
     render(
-      <BoardChatDrawer
-        boardId="board-1"
-        canManageGuestPermissions={false}
-        onClose={mockOnClose}
-      />,
+      <BoardChatDrawer boardId="board-1" canManageGuestPermissions={false} onClose={mockOnClose} />
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Only board admins and owners can change guest chat permissions.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Only board admins and owners can change guest chat permissions.')
+      ).toBeInTheDocument();
     });
 
     const viewButton = screen.getByRole('button', { name: 'ALLOW GUEST TO VIEW' });
@@ -132,7 +146,11 @@ describe('BoardChatDrawer', () => {
   });
 
   it('supports coupling rules: enabling use auto-enables view', async () => {
-    (boardChatApiModule.getBoardChatPermissions as unknown as { mockResolvedValue: (value: unknown) => void }).mockResolvedValue({
+    (
+      boardChatApiModule.getBoardChatPermissions as unknown as {
+        mockResolvedValue: (value: unknown) => void;
+      }
+    ).mockResolvedValue({
       data: {
         board_id: 'board-1',
         guest_can_view: false,
@@ -140,7 +158,11 @@ describe('BoardChatDrawer', () => {
         updated_at: new Date().toISOString(),
       },
     });
-    (boardChatApiModule.patchBoardChatPermissions as unknown as { mockResolvedValue: (value: unknown) => void }).mockResolvedValue({
+    (
+      boardChatApiModule.patchBoardChatPermissions as unknown as {
+        mockResolvedValue: (value: unknown) => void;
+      }
+    ).mockResolvedValue({
       data: {
         board_id: 'board-1',
         guest_can_view: true,
@@ -150,11 +172,7 @@ describe('BoardChatDrawer', () => {
     });
 
     render(
-      <BoardChatDrawer
-        boardId="board-1"
-        canManageGuestPermissions={true}
-        onClose={mockOnClose}
-      />,
+      <BoardChatDrawer boardId="board-1" canManageGuestPermissions={true} onClose={mockOnClose} />
     );
 
     const useButton = await screen.findByRole('button', { name: 'ALLOW GUEST TO USE' });
@@ -164,7 +182,9 @@ describe('BoardChatDrawer', () => {
       expect(boardChatApiModule.patchBoardChatPermissions).toHaveBeenCalled();
     });
 
-    const patchArgs = ((boardChatApiModule.patchBoardChatPermissions as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]?.[0]) as {
+    const patchArgs = (
+      boardChatApiModule.patchBoardChatPermissions as unknown as { mock: { calls: unknown[][] } }
+    ).mock.calls[0]?.[0] as {
       body: { guest_can_view: boolean; guest_can_use: boolean };
     };
     expect(patchArgs.body.guest_can_view).toBe(true);
@@ -172,7 +192,11 @@ describe('BoardChatDrawer', () => {
   });
 
   it('rolls back optimistic state when permission patch fails', async () => {
-    (boardChatApiModule.getBoardChatPermissions as unknown as { mockResolvedValue: (value: unknown) => void }).mockResolvedValue({
+    (
+      boardChatApiModule.getBoardChatPermissions as unknown as {
+        mockResolvedValue: (value: unknown) => void;
+      }
+    ).mockResolvedValue({
       data: {
         board_id: 'board-1',
         guest_can_view: true,
@@ -180,14 +204,14 @@ describe('BoardChatDrawer', () => {
         updated_at: new Date().toISOString(),
       },
     });
-    (boardChatApiModule.patchBoardChatPermissions as unknown as { mockRejectedValueOnce: (value: unknown) => void }).mockRejectedValueOnce(new Error('boom'));
+    (
+      boardChatApiModule.patchBoardChatPermissions as unknown as {
+        mockRejectedValueOnce: (value: unknown) => void;
+      }
+    ).mockRejectedValueOnce(new Error('boom'));
 
     render(
-      <BoardChatDrawer
-        boardId="board-1"
-        canManageGuestPermissions={true}
-        onClose={mockOnClose}
-      />,
+      <BoardChatDrawer boardId="board-1" canManageGuestPermissions={true} onClose={mockOnClose} />
     );
 
     const viewButton = await screen.findByRole('button', { name: 'ALLOW GUEST TO VIEW' });

@@ -7,11 +7,7 @@ interface LayoutSingleColumnProps {
 }
 
 // Single-column layout shell — topbar + scrollable content + footer
-export default function LayoutSingleColumn({
-  topbar,
-  footer,
-  children,
-}: LayoutSingleColumnProps) {
+export default function LayoutSingleColumn({ topbar, footer, children }: LayoutSingleColumnProps) {
   return (
     <div className="flex min-h-screen flex-col">
       {topbar && <header className="sticky top-0 z-40">{topbar}</header>}

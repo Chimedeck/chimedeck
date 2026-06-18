@@ -6,9 +6,8 @@
 //   3. SSH clone URLs:   git@github.com:<owner>/<repo>(.git)?
 import { describe, expect, it } from 'bun:test';
 
-const { normalizeGithubProjectUrl, toGithubProjectAuditValue } = await import(
-  '../githubProjectUrl'
-);
+const { normalizeGithubProjectUrl, toGithubProjectAuditValue } =
+  await import('../githubProjectUrl');
 
 describe('normalizeGithubProjectUrl — project URLs (existing behaviour)', () => {
   it('accepts an org-scoped project URL and strips the trailing slash', () => {
@@ -17,9 +16,7 @@ describe('normalizeGithubProjectUrl — project URLs (existing behaviour)', () =
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.normalizedUrl).toBe(
-      'https://github.com/orgs/JourneyHorizon/projects/42',
-    );
+    expect(result.value.normalizedUrl).toBe('https://github.com/orgs/JourneyHorizon/projects/42');
     expect(result.value.reference.scope).toBe('org');
     expect(result.value.reference.owner).toBe('JourneyHorizon');
     expect(result.value.reference.repository).toBeNull();
@@ -80,7 +77,7 @@ describe('normalizeGithubProjectUrl — HTTPS repo URLs (new behaviour)', () => 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.normalizedUrl).toBe(
-      'https://github.com/journeyhorizon/sample-agentic-project',
+      'https://github.com/journeyhorizon/sample-agentic-project'
     );
     expect(result.value.reference.scope).toBe('repo-https');
     expect(result.value.reference.owner).toBe('journeyhorizon');
@@ -104,7 +101,7 @@ describe('normalizeGithubProjectUrl — HTTPS repo URLs (new behaviour)', () => 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.normalizedUrl).toBe(
-      'https://github.com/journeyhorizon/sample-agentic-project',
+      'https://github.com/journeyhorizon/sample-agentic-project'
     );
   });
 
@@ -138,7 +135,7 @@ describe('normalizeGithubProjectUrl — SSH clone URLs (new behaviour)', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.normalizedUrl).toBe(
-      'https://github.com/journeyhorizon/sample-agentic-project',
+      'https://github.com/journeyhorizon/sample-agentic-project'
     );
     expect(result.value.reference.scope).toBe('repo-ssh');
     expect(result.value.reference.owner).toBe('journeyhorizon');

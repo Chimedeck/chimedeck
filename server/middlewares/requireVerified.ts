@@ -13,7 +13,7 @@ export async function requireVerified(req: AuthenticatedRequest): Promise<Respon
   if (!userId) {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -21,7 +21,7 @@ export async function requireVerified(req: AuthenticatedRequest): Promise<Respon
   if (!user?.email_verified) {
     return Response.json(
       { error: { code: 'email-not-verified', message: 'Please verify your email to continue.' } },
-      { status: 403 },
+      { status: 403 }
     );
   }
 

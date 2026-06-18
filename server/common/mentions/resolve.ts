@@ -30,7 +30,9 @@ export async function resolveNicknames({
 
   if (!board) return [];
 
-  const idTokens = nicknames.filter((value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+  const idTokens = nicknames.filter((value) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
 
   const users = (await db('users')
     // [why] Mention scope depends on board visibility.
@@ -40,7 +42,7 @@ export async function resolveNicknames({
           db('board_members')
             .select(db.raw('1'))
             .whereRaw('board_members.user_id = users.id')
-            .andWhere('board_members.board_id', boardId),
+            .andWhere('board_members.board_id', boardId)
         );
       } else {
         builder.whereExists(
@@ -48,7 +50,7 @@ export async function resolveNicknames({
             .select(db.raw('1'))
             .whereRaw('memberships.user_id = users.id')
             .andWhere('memberships.workspace_id', board.workspace_id)
-            .whereNot('memberships.role', 'GUEST'),
+            .whereNot('memberships.role', 'GUEST')
         );
       }
 
@@ -56,7 +58,7 @@ export async function resolveNicknames({
         db('board_guest_access')
           .select(db.raw('1'))
           .whereRaw('board_guest_access.user_id = users.id')
-          .andWhere('board_guest_access.board_id', boardId),
+          .andWhere('board_guest_access.board_id', boardId)
       );
     })
     .where((builder) => {
@@ -70,7 +72,7 @@ export async function resolveNicknames({
       'users.nickname',
       'users.name',
       'users.email',
-      'users.avatar_url',
+      'users.avatar_url'
     )) as User[];
 
   return users;

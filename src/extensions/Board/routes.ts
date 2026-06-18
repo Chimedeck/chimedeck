@@ -4,15 +4,13 @@ import type { RouteConfig } from '~/config/routeTypes';
 export const routes: RouteConfig[] = [
   {
     path: '/workspace/:workspaceId/boards',
-    component: () =>
-      import('./containers/BoardListPage/BoardListPage').then((m) => m.default),
+    component: () => import('./containers/BoardListPage/BoardListPage').then((m) => m.default),
     name: 'BoardListPage',
     auth: true,
   },
   {
     path: '/b/:boardId',
-    component: () =>
-      import('./containers/BoardPage/BoardPage').then((m) => m.default),
+    component: () => import('./containers/BoardPage/BoardPage').then((m) => m.default),
     name: 'BoardPage',
     auth: true,
   },

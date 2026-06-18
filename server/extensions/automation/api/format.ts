@@ -4,7 +4,7 @@ import type { AutomationRow, AutomationTriggerRow, AutomationActionRow } from '.
 export function formatAutomation(
   automation: AutomationRow,
   trigger: AutomationTriggerRow | null,
-  actions: AutomationActionRow[],
+  actions: AutomationActionRow[]
 ) {
   return {
     id: automation.id,

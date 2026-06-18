@@ -15,10 +15,7 @@ export const tierPolicyDeps = {
  * Resolve the tier policy for a given tier and sprint count.
  * Returns what features are enabled and whether any sprints need truncation.
  */
-export function resolveTierPolicy({
-  tier,
-  sprintCount,
-}: TierPolicyInput): TierPolicyResult {
+export function resolveTierPolicy({ tier, sprintCount }: TierPolicyInput): TierPolicyResult {
   const quota = TIER_SPRINT_QUOTAS[tier];
 
   // [why] If tier is not recognised, fall back to tier_1 limits.
@@ -38,14 +35,11 @@ export function resolveTierPolicy({
   }
 
   // Enforce sprint count cap
-  const maxSprints = quota.maxSprints === 'unlimited'
-    ? ('unlimited' as const)
-    : (quota.maxSprints);
+  const maxSprints = quota.maxSprints === 'unlimited' ? ('unlimited' as const) : quota.maxSprints;
 
   const truncatedSprints: Array<{ sprintNumber: number; reason: string }> = [];
-  const effectiveSprintCount = maxSprints === 'unlimited'
-    ? sprintCount
-    : Math.min(sprintCount, maxSprints);
+  const effectiveSprintCount =
+    maxSprints === 'unlimited' ? sprintCount : Math.min(sprintCount, maxSprints);
 
   if (maxSprints !== 'unlimited' && sprintCount > maxSprints) {
     for (let i = effectiveSprintCount + 1; i <= sprintCount; i++) {
@@ -56,11 +50,14 @@ export function resolveTierPolicy({
     }
   }
 
-  const upgradeHint = truncatedSprints.length > 0
-    ? `Upgrade to a higher tier to generate up to ${
-        TIER_SPRINT_QUOTAS.tier_4?.maxSprints === 'unlimited' ? 'unlimited' : TIER_SPRINT_QUOTAS.tier_4?.maxSprints
-      } sprints with dependency graph and test matrix.`
-    : undefined;
+  const upgradeHint =
+    truncatedSprints.length > 0
+      ? `Upgrade to a higher tier to generate up to ${
+          TIER_SPRINT_QUOTAS.tier_4?.maxSprints === 'unlimited'
+            ? 'unlimited'
+            : TIER_SPRINT_QUOTAS.tier_4?.maxSprints
+        } sprints with dependency graph and test matrix.`
+      : undefined;
 
   // [why] Lower tiers (tier_1, tier_2) require human approval for generated
   // output before committing. Higher tiers (tier_3+) can skip approval.
@@ -83,11 +80,17 @@ export function resolveTierPolicy({
  */
 export function tierDisplayName(tier: string): string {
   switch (tier) {
-    case 'tier_1': return 'Personal';
-    case 'tier_2': return 'Hobby';
-    case 'tier_3': return 'Pro';
-    case 'tier_4': return 'Business';
-    case 'unlimited': return 'Enterprise';
-    default: return tier;
+    case 'tier_1':
+      return 'Personal';
+    case 'tier_2':
+      return 'Hobby';
+    case 'tier_3':
+      return 'Pro';
+    case 'tier_4':
+      return 'Business';
+    case 'unlimited':
+      return 'Enterprise';
+    default:
+      return tier;
   }
 }

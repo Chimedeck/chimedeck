@@ -48,13 +48,13 @@ function coerceLegacyGraph(value: unknown): StateTransitionGraph | null {
   const normalizedNodes = nodes.filter((node): node is StateTransitionGraph['nodes'][number] => {
     if (!isRecord(node)) return false;
     return (
-      typeof node.id === 'string'
-      && node.id.trim() !== ''
-      && typeof node.listId === 'string'
-      && node.listId.trim() !== ''
-      && typeof node.label === 'string'
-      && isFiniteNumber(node.positionX)
-      && isFiniteNumber(node.positionY)
+      typeof node.id === 'string' &&
+      node.id.trim() !== '' &&
+      typeof node.listId === 'string' &&
+      node.listId.trim() !== '' &&
+      typeof node.label === 'string' &&
+      isFiniteNumber(node.positionX) &&
+      isFiniteNumber(node.positionY)
     );
   });
   const nodeIds = new Set(normalizedNodes.map((node) => node.id));
@@ -74,11 +74,11 @@ function coerceLegacyGraph(value: unknown): StateTransitionGraph | null {
   const normalizedNotes = notes.filter((note): note is StateTransitionGraph['notes'][number] => {
     if (!isRecord(note)) return false;
     return (
-      typeof note.id === 'string'
-      && note.id.trim() !== ''
-      && typeof note.content === 'string'
-      && isFiniteNumber(note.positionX)
-      && isFiniteNumber(note.positionY)
+      typeof note.id === 'string' &&
+      note.id.trim() !== '' &&
+      typeof note.content === 'string' &&
+      isFiniteNumber(note.positionX) &&
+      isFiniteNumber(note.positionY)
     );
   });
 
@@ -140,14 +140,14 @@ export async function getRulesForBoard(boardId: string): Promise<BoardTransition
     return cached.rules;
   }
 
-  const row = await db('board_state_transitions')
-    .where({ board_id: boardId })
-    .first() as TransitionRow | undefined;
+  const row = (await db('board_state_transitions').where({ board_id: boardId }).first()) as
+    | TransitionRow
+    | undefined;
 
-  const activeLists = await db('lists')
+  const activeLists = (await db('lists')
     .where({ board_id: boardId, archived: false })
     .orderBy('position', 'asc')
-    .select('id', 'title') as Array<{ id: string; title: string }>;
+    .select('id', 'title')) as Array<{ id: string; title: string }>;
 
   const nextRules = (() => {
     if (!row) return createEmptyRules({ enabled: false, hasStateTransitionRow: false });
@@ -173,7 +173,7 @@ export function invalidateRulesCacheForBoard(boardId: string): void {
 }
 
 export function invalidateRulesCacheFromStateTransitionEvent(
-  event: Pick<StateTransitionUpdatedEvent, 'type' | 'board_id'>,
+  event: Pick<StateTransitionUpdatedEvent, 'type' | 'board_id'>
 ): void {
   if (event.type !== 'state_transition_updated') return;
   invalidateRulesCacheForBoard(event.board_id);

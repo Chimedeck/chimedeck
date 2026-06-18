@@ -71,19 +71,15 @@ const NotificationPreferencesPanel = () => {
   }, []);
 
   const addErrorToast = useCallback((message: string) => {
-    setToasts((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), message, variant: 'error' },
-    ]);
+    setToasts((prev) => [...prev, { id: crypto.randomUUID(), message, variant: 'error' }]);
   }, []);
 
-  const getPreference = (type: NotificationType) =>
-    preferences?.find((p) => p.type === type);
+  const getPreference = (type: NotificationType) => preferences?.find((p) => p.type === type);
 
   const handleToggle = async (
     type: NotificationType,
     channel: 'in_app_enabled' | 'email_enabled',
-    next: boolean,
+    next: boolean
   ) => {
     try {
       await updatePreference({ type, [channel]: next }).unwrap();
@@ -106,9 +102,15 @@ const NotificationPreferencesPanel = () => {
         <table className="w-full text-sm text-subtle">
           <thead>
             <tr className="text-xs text-muted uppercase tracking-wide">
-              <th className="pb-3 text-left font-medium">{translations['NotificationPreferences.columnNotification']}</th>
-              <th className="pb-3 text-center font-medium w-24">{translations['NotificationPreferences.columnInApp']}</th>
-              <th className="pb-3 text-center font-medium w-24">{translations['NotificationPreferences.columnEmail']}</th>
+              <th className="pb-3 text-left font-medium">
+                {translations['NotificationPreferences.columnNotification']}
+              </th>
+              <th className="pb-3 text-center font-medium w-24">
+                {translations['NotificationPreferences.columnInApp']}
+              </th>
+              <th className="pb-3 text-center font-medium w-24">
+                {translations['NotificationPreferences.columnEmail']}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -120,9 +122,7 @@ const NotificationPreferencesPanel = () => {
 
               return (
                 <tr key={type} className="py-2">
-                  <td className="py-3 text-subtle">
-                    {NOTIFICATION_TYPE_LABELS[type]}
-                  </td>
+                  <td className="py-3 text-subtle">{NOTIFICATION_TYPE_LABELS[type]}</td>
                   <td className="py-3 text-center">
                     <ToggleSwitch
                       enabled={inAppChecked}

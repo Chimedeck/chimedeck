@@ -84,7 +84,10 @@ function isTrustedInternalOrigin(targetOrigin: string, requestUrl?: string): boo
 // - /boards/:boardId/cards/:cardId[/slug]
 // - /b/:boardId[/slug]?card=:cardId
 // - /boards/:boardId?card=:cardId
-export function parseInternalCardUrl(rawUrl: string, requestUrl?: string): { cardId: string } | null {
+export function parseInternalCardUrl(
+  rawUrl: string,
+  requestUrl?: string
+): { cardId: string } | null {
   try {
     const parsed = new URL(rawUrl);
     if (!isTrustedInternalOrigin(parsed.origin, requestUrl)) return null;
@@ -128,7 +131,7 @@ async function resolveTargetCard(cardId: string) {
 async function resolveReferencedCard(
   rawUrl: string,
   workspaceId: string,
-  requestUrl?: string,
+  requestUrl?: string
 ): Promise<{ id: string; title: string | null } | null> {
   const internalCard = parseInternalCardUrl(rawUrl, requestUrl);
   if (!internalCard) return null;
@@ -140,8 +143,11 @@ async function resolveReferencedCard(
 
   if (!referencedCard) {
     throw new Response(
-      JSON.stringify({ name: 'referenced-card-not-found', data: { message: 'The linked card was not found' } }),
-      { status: 404, headers: { 'content-type': 'application/json' } },
+      JSON.stringify({
+        name: 'referenced-card-not-found',
+        data: { message: 'The linked card was not found' },
+      }),
+      { status: 404, headers: { 'content-type': 'application/json' } }
     );
   }
 
@@ -153,7 +159,7 @@ async function resolveReferencedCard(
         name: 'referenced-card-not-in-workspace',
         data: { message: 'The linked card is not in the same workspace' },
       }),
-      { status: 400, headers: { 'content-type': 'application/json' } },
+      { status: 400, headers: { 'content-type': 'application/json' } }
     );
   }
 
@@ -169,7 +175,10 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
 
   const target = await resolveTargetCard(cardId);
   if (!target) {
-    return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found' } },
+      { status: 404 }
+    );
   }
 
   const { resolvedCardId, card, board } = target;
@@ -184,20 +193,28 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
   try {
     body = (await req.json()) as AddUrlBody;
   } catch {
-    return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
+    return Response.json(
+      { error: { code: 'bad-request', message: 'Invalid JSON body' } },
+      { status: 400 }
+    );
   }
 
   if (!body.name || !body.url) {
     return Response.json(
       { error: { code: 'bad-request', message: 'name and url are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!parseInternalCardUrl(body.url, req.url) && isForbiddenUrl(body.url)) {
     return Response.json(
-      { error: { code: 'url-target-forbidden', message: 'URL resolves to a forbidden internal address' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'url-target-forbidden',
+          message: 'URL resolves to a forbidden internal address',
+        },
+      },
+      { status: 400 }
     );
   }
 
@@ -261,7 +278,11 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
   publisher
     .publish(
       board.id,
-      JSON.stringify({ type: 'attachment_added', entity_id: resolvedCardId, payload: { attachmentId } }),
+      JSON.stringify({
+        type: 'attachment_added',
+        entity_id: resolvedCardId,
+        payload: { attachmentId },
+      })
     )
     .catch(() => {});
 

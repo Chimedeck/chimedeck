@@ -26,8 +26,13 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   const count = memCache.incr(rlKey, RESEND_WINDOW_SECONDS);
   if (count > RESEND_RATE_LIMIT) {
     return Response.json(
-      { error: { code: 'rate-limit-exceeded', message: 'Too many resend requests. Try again in an hour.' } },
-      { status: 429 },
+      {
+        error: {
+          code: 'rate-limit-exceeded',
+          message: 'Too many resend requests. Try again in an hour.',
+        },
+      },
+      { status: 429 }
     );
   }
 
@@ -35,14 +40,14 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   if (!user) {
     return Response.json(
       { error: { code: 'user-not-found', message: 'User not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (user.email_verified) {
     return Response.json(
       { error: { code: 'already-verified', message: 'Email is already verified' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -50,7 +55,7 @@ export async function handleResendVerification(req: Request): Promise<Response> 
   if (!verificationEnabled) {
     return Response.json(
       { error: { code: 'feature-disabled', message: 'Email verification is not enabled' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

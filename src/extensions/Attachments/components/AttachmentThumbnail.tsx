@@ -34,7 +34,7 @@ function useLightboxKeyboard(onClose: () => void): {
     (e: React.MouseEvent): void => {
       if (e.target === e.currentTarget) onClose();
     },
-    [onClose],
+    [onClose]
   );
 
   const handleKeyDown = useCallback(
@@ -45,13 +45,21 @@ function useLightboxKeyboard(onClose: () => void): {
         onClose();
       }
     },
-    [onClose],
+    [onClose]
   );
 
   return { handleBackdropClick, handleKeyDown };
 }
 
-export function ImageLightbox({ src, name, onClose }: { src: string; name: string; onClose: () => void }): React.ReactElement {
+export function ImageLightbox({
+  src,
+  name,
+  onClose,
+}: {
+  src: string;
+  name: string;
+  onClose: () => void;
+}): React.ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,9 +124,14 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
     <>
       <div className="w-24">
         <button
-          onClick={() => { setLightboxOpen(true); }}
+          onClick={() => {
+            setLightboxOpen(true);
+          }}
           className="relative h-16 w-full rounded overflow-hidden border border-border hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label={translations['attachments.thumbnail.image.preview.ariaLabel'].replace('{name}', attachment.name)}
+          aria-label={translations['attachments.thumbnail.image.preview.ariaLabel'].replace(
+            '{name}',
+            attachment.name
+          )}
         >
           <img
             src={src}
@@ -130,7 +143,9 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
         {fullSrc && (
           <button
             type="button"
-            onClick={() => { setLightboxOpen(true); }}
+            onClick={() => {
+              setLightboxOpen(true);
+            }}
             className="mt-1 block w-full truncate text-left text-[10px] text-link hover:underline"
             title={displayName}
           >
@@ -139,7 +154,13 @@ export function AttachmentThumbnail({ attachment }: Props): React.ReactElement {
         )}
       </div>
       {lightboxOpen && fullSrc && (
-        <ImageLightbox src={fullSrc} name={attachment.name} onClose={() => { setLightboxOpen(false); }} />
+        <ImageLightbox
+          src={fullSrc}
+          name={attachment.name}
+          onClose={() => {
+            setLightboxOpen(false);
+          }}
+        />
       )}
     </>
   );
@@ -260,7 +281,9 @@ export function PdfLightbox({
         <XMarkIcon className="h-8 w-8" />
       </button>
       {loadError && (
-        <p className="text-white/80 text-sm">{translations['attachments.thumbnail.pdf.loadError']}</p>
+        <p className="text-white/80 text-sm">
+          {translations['attachments.thumbnail.pdf.loadError']}
+        </p>
       )}
       {!blobUrl && !loadError && (
         <p className="text-white/60 text-sm">{translations['attachments.thumbnail.pdf.loading']}</p>
@@ -292,16 +315,33 @@ export function VideoThumbnail({ attachment }: Props): React.ReactElement {
   return (
     <>
       <button
-        onClick={() => { setLightboxOpen(true); }}
+        onClick={() => {
+          setLightboxOpen(true);
+        }}
         className="relative w-24 h-16 rounded overflow-hidden border border-border bg-bg-surface hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center group"
-        aria-label={translations['attachments.thumbnail.video.play.ariaLabel'].replace('{name}', attachment.name)}
+        aria-label={translations['attachments.thumbnail.video.play.ariaLabel'].replace(
+          '{name}',
+          attachment.name
+        )}
       >
-        <FilmIcon className="h-6 w-6 text-muted group-hover:text-subtle transition-colors" aria-hidden="true" />
+        <FilmIcon
+          className="h-6 w-6 text-muted group-hover:text-subtle transition-colors"
+          aria-hidden="true"
+        />
         {/* [theme-exception] text-white on media overlay */}
-        <PlayIcon className="absolute h-5 w-5 text-white/80 group-hover:text-white" aria-hidden="true" />
+        <PlayIcon
+          className="absolute h-5 w-5 text-white/80 group-hover:text-white"
+          aria-hidden="true"
+        />
       </button>
       {lightboxOpen && (
-        <VideoLightbox src={src} name={attachment.name} onClose={() => { setLightboxOpen(false); }} />
+        <VideoLightbox
+          src={src}
+          name={attachment.name}
+          onClose={() => {
+            setLightboxOpen(false);
+          }}
+        />
       )}
     </>
   );

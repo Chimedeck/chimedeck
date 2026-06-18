@@ -72,7 +72,9 @@ export async function dispatchGitHubEvent({
     case 'installation':
       return handleInstallation(JSON.parse(rawBody) as InstallationEventPayload);
     case 'installation_repositories':
-      return handleInstallationRepositories(JSON.parse(rawBody) as InstallationRepositoriesEventPayload);
+      return handleInstallationRepositories(
+        JSON.parse(rawBody) as InstallationRepositoriesEventPayload
+      );
     case 'push':
       return handlePush(JSON.parse(rawBody) as PushEventPayload);
     default:
@@ -80,9 +82,7 @@ export async function dispatchGitHubEvent({
   }
 }
 
-async function handleInstallation(
-  payload: InstallationEventPayload,
-): Promise<DispatcherResult> {
+async function handleInstallation(payload: InstallationEventPayload): Promise<DispatcherResult> {
   const installationId = String(payload.installation?.id ?? '');
   if (!installationId) {
     return { handled: false, event: 'installation' };
@@ -105,12 +105,13 @@ async function handleInstallation(
   // it identically in the GitHub App settings and in GITHUB_APP_WEBHOOK_SECRET.
   // The encrypted-at-rest copy is a write-through cache of that same value.
   const existing = await getInstallationById({ installationId });
-  const webhookSecretEncrypted = existing?.webhook_secret_encrypted
-    ?? (env.GITHUB_APP_WEBHOOK_SECRET
+  const webhookSecretEncrypted =
+    existing?.webhook_secret_encrypted ??
+    (env.GITHUB_APP_WEBHOOK_SECRET
       ? encryptSecret({
-        plaintext: env.GITHUB_APP_WEBHOOK_SECRET,
-        hexKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
-      })
+          plaintext: env.GITHUB_APP_WEBHOOK_SECRET,
+          hexKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
+        })
       : null);
 
   await upsertInstallation({
@@ -125,7 +126,7 @@ async function handleInstallation(
 }
 
 async function handleInstallationRepositories(
-  payload: InstallationRepositoriesEventPayload,
+  payload: InstallationRepositoriesEventPayload
 ): Promise<DispatcherResult> {
   const installationId = String(payload.installation?.id ?? '');
   if (!installationId) {

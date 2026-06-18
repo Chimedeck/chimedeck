@@ -11,22 +11,9 @@ export default function FormInputSample() {
           Text Input
         </p>
         <Input label="Default" placeholder="Enter value" defaultValue="" />
-        <Input
-          label="With value"
-          placeholder="Enter value"
-          defaultValue="Hello world"
-        />
-        <Input
-          label="Error state"
-          placeholder="Enter value"
-          error="This field is required"
-        />
-        <Input
-          label="Disabled"
-          placeholder="Cannot edit"
-          disabled
-          defaultValue="Disabled value"
-        />
+        <Input label="With value" placeholder="Enter value" defaultValue="Hello world" />
+        <Input label="Error state" placeholder="Enter value" error="This field is required" />
+        <Input label="Disabled" placeholder="Cannot edit" disabled defaultValue="Disabled value" />
       </div>
 
       {/* Select */}
@@ -35,10 +22,7 @@ export default function FormInputSample() {
           Select
         </p>
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor="ds-select"
-            className="text-sm font-medium text-muted"
-          >
+          <label htmlFor="ds-select" className="text-sm font-medium text-muted">
             Priority
           </label>
           <select
@@ -52,10 +36,7 @@ export default function FormInputSample() {
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label
-            htmlFor="ds-select-disabled"
-            className="text-sm font-medium text-muted"
-          >
+          <label htmlFor="ds-select-disabled" className="text-sm font-medium text-muted">
             Disabled
           </label>
           <select
@@ -90,20 +71,14 @@ export default function FormInputSample() {
           <span className="text-sm text-base">Checked</span>
         </label>
         <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
-          <input
-            type="checkbox"
-            disabled
-            className="h-4 w-4 rounded border-border text-primary"
-          />
+          <input type="checkbox" disabled className="h-4 w-4 rounded border-border text-primary" />
           <span className="text-sm text-base">Disabled</span>
         </label>
       </div>
 
       {/* Radio */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">
-          Radio
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">Radio</p>
         <fieldset className="space-y-2">
           <legend className="sr-only">Notification preference</legend>
           {['All activity', 'Mentions only', 'None'].map((opt) => (

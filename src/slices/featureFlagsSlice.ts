@@ -69,7 +69,25 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
     try {
       const response = await apiClient.get<
         | {
-          data: {
+            data: {
+              adminEmailDomains?: string;
+              adminInviteEmailEnabled?: boolean;
+              sesEnabled?: boolean;
+              notificationPreferencesEnabled?: boolean;
+              emailNotificationsEnabled?: boolean;
+              emailVerificationEnabled?: boolean;
+              stateTransitionsEnabled?: boolean;
+              subscriptionsEnabled?: boolean;
+              chatEmbeddingEnabled?: boolean;
+              boardChatEnabled?: boolean;
+              githubEditingEnabled?: boolean;
+              innerCardChatEnabled?: boolean;
+              agenticWorkflowEnabled?: boolean;
+              aiContextEnabled?: boolean;
+              aiEditEnabled?: boolean;
+            };
+          }
+        | {
             adminEmailDomains?: string;
             adminInviteEmailEnabled?: boolean;
             sesEnabled?: boolean;
@@ -85,25 +103,7 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
             agenticWorkflowEnabled?: boolean;
             aiContextEnabled?: boolean;
             aiEditEnabled?: boolean;
-          };
-        }
-        | {
-          adminEmailDomains?: string;
-          adminInviteEmailEnabled?: boolean;
-          sesEnabled?: boolean;
-          notificationPreferencesEnabled?: boolean;
-          emailNotificationsEnabled?: boolean;
-          emailVerificationEnabled?: boolean;
-          stateTransitionsEnabled?: boolean;
-          subscriptionsEnabled?: boolean;
-          chatEmbeddingEnabled?: boolean;
-          boardChatEnabled?: boolean;
-          githubEditingEnabled?: boolean;
-          innerCardChatEnabled?: boolean;
-          agenticWorkflowEnabled?: boolean;
-          aiContextEnabled?: boolean;
-          aiEditEnabled?: boolean;
-        }
+          }
       >('/flags');
 
       // apiClient auto-unwraps Axios responses, but keep compatibility with wrapped shapes.
@@ -134,7 +134,7 @@ export const fetchFeatureFlagsThunk = createAppAsyncThunk(
     } catch {
       return rejectWithValue('flags-fetch-failed');
     }
-  },
+  }
 );
 
 const featureFlagsSlice = createSlice({
@@ -173,8 +173,7 @@ const featureFlagsSlice = createSlice({
 
 export const featureFlagsReducer = featureFlagsSlice.reducer;
 
-export const selectAdminEmailDomains = (state: RootState) =>
-  state.featureFlags.adminEmailDomains;
+export const selectAdminEmailDomains = (state: RootState) => state.featureFlags.adminEmailDomains;
 export const selectAdminInviteEmailEnabled = (state: RootState) =>
   state.featureFlags.adminInviteEmailEnabled;
 export const selectSesEnabled = (state: RootState) => state.featureFlags.sesEnabled;
@@ -192,17 +191,13 @@ export const selectSubscriptionsEnabled = (state: RootState) =>
   state.featureFlags.subscriptionsEnabled;
 export const selectChatEmbeddingEnabled = (state: RootState) =>
   state.featureFlags.chatEmbeddingEnabled;
-export const selectBoardChatEnabled = (state: RootState) =>
-  state.featureFlags.boardChatEnabled;
+export const selectBoardChatEnabled = (state: RootState) => state.featureFlags.boardChatEnabled;
 export const selectGithubEditingEnabled = (state: RootState) =>
   state.featureFlags.githubEditingEnabled;
 export const selectInnerCardChatEnabled = (state: RootState) =>
   state.featureFlags.innerCardChatEnabled;
 export const selectAgenticWorkflowEnabled = (state: RootState) =>
   state.featureFlags.agenticWorkflowEnabled;
-export const selectAiContextEnabled = (state: RootState) =>
-  state.featureFlags.aiContextEnabled;
-export const selectAiEditEnabled = (state: RootState) =>
-  state.featureFlags.aiEditEnabled;
-export const selectFeatureFlagsStatus = (state: RootState) =>
-  state.featureFlags.status;
+export const selectAiContextEnabled = (state: RootState) => state.featureFlags.aiContextEnabled;
+export const selectAiEditEnabled = (state: RootState) => state.featureFlags.aiEditEnabled;
+export const selectFeatureFlagsStatus = (state: RootState) => state.featureFlags.status;

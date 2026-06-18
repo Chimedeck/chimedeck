@@ -30,7 +30,7 @@ export async function handleListComments(req: Request, cardId: string): Promise<
   if (!resolvedCardId) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -38,7 +38,7 @@ export async function handleListComments(req: Request, cardId: string): Promise<
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -47,14 +47,14 @@ export async function handleListComments(req: Request, cardId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   // Verify workspace membership
   const membershipError = await requireWorkspaceMembership(
     req as WorkspaceScopedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -73,13 +73,13 @@ export async function handleListComments(req: Request, cardId: string): Promise<
       'comments.parent_id',
       'comments.created_at',
       'comments.updated_at',
-      db.raw("COALESCE(users.name, users.email) as author_name"),
+      db.raw('COALESCE(users.name, users.email) as author_name'),
       'users.email as author_email',
       'users.avatar_url as author_avatar_url',
       // [why] reply_count computed as a subquery to avoid N+1
       db.raw(
-        '(SELECT COUNT(*) FROM comments AS replies WHERE replies.parent_id = comments.id AND replies.deleted = false)::int AS reply_count',
-      ),
+        '(SELECT COUNT(*) FROM comments AS replies WHERE replies.parent_id = comments.id AND replies.deleted = false)::int AS reply_count'
+      )
     );
 
   const callerUserId = (req as AuthenticatedRequest).currentUser!.id;
@@ -94,12 +94,22 @@ export async function handleListComments(req: Request, cardId: string): Promise<
           'comment_reactions.comment_id',
           'comment_reactions.emoji',
           'comment_reactions.user_id',
-          db.raw("COALESCE(reactor.name, reactor.email) as reactor_name"),
+          db.raw('COALESCE(reactor.name, reactor.email) as reactor_name')
         )
     : [];
 
   // Build Map<commentId, Map<emoji, { count, meReacted, reactors }>>
-  const reactionMap = new Map<string, Map<string, { count: number; meReacted: boolean; reactors: Array<{ userId: string; name: string | null }> }>>();
+  const reactionMap = new Map<
+    string,
+    Map<
+      string,
+      {
+        count: number;
+        meReacted: boolean;
+        reactors: Array<{ userId: string; name: string | null }>;
+      }
+    >
+  >();
   for (const row of reactionRows as ReactionRow[]) {
     if (!reactionMap.has(row.comment_id)) reactionMap.set(row.comment_id, new Map());
     const emojiMap = reactionMap.get(row.comment_id)!;
@@ -115,7 +125,12 @@ export async function handleListComments(req: Request, cardId: string): Promise<
     const emojiMap = reactionMap.get(commentId);
     const reactions: ReactionSummary[] = emojiMap
       ? Array.from(emojiMap.entries())
-          .map(([emoji, { count, meReacted, reactors }]) => ({ emoji, count, reactedByMe: meReacted, reactors }))
+          .map(([emoji, { count, meReacted, reactors }]) => ({
+            emoji,
+            count,
+            reactedByMe: meReacted,
+            reactors,
+          }))
           .sort((a, b) => b.count - a.count)
       : [];
 
@@ -123,7 +138,7 @@ export async function handleListComments(req: Request, cardId: string): Promise<
       ...c,
       author_avatar_url: buildAvatarProxyUrl({
         userId: (c as Record<string, unknown>).user_id as string,
-        avatarUrl: (c as Record<string, unknown>).author_avatar_url as string | null ?? null,
+        avatarUrl: ((c as Record<string, unknown>).author_avatar_url as string | null) ?? null,
       }),
       reactions,
     };

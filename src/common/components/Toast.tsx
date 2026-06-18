@@ -2,7 +2,11 @@
 // Variant 'error' auto-dismisses after 6 s; others after 4 s.
 import { useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { XMarkIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+} from '@heroicons/react/24/outline';
 import translations from '~/common/translations/en.json';
 
 export interface ToastItem {
@@ -22,8 +26,12 @@ interface Props {
 const Toast = ({ toast, onDismiss }: Props) => {
   useEffect(() => {
     const ms = toast.durationMs ?? (toast.variant === 'error' ? 6000 : 4000);
-    const timer = setTimeout(() => { onDismiss(toast.id); }, ms);
-    return () => { clearTimeout(timer); };
+    const timer = setTimeout(() => {
+      onDismiss(toast.id);
+    }, ms);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [toast, onDismiss]);
 
   const borderClass =
@@ -53,22 +61,22 @@ const Toast = ({ toast, onDismiss }: Props) => {
     : '';
   const interactiveProps = isClickable
     ? {
-      role: 'button' as const,
-      tabIndex: 0,
-      onClick: () => {
-        toast.onClick?.();
-        onDismiss(toast.id);
-      },
-      onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        toast.onClick?.();
-        onDismiss(toast.id);
-      },
-    }
+        role: 'button' as const,
+        tabIndex: 0,
+        onClick: () => {
+          toast.onClick?.();
+          onDismiss(toast.id);
+        },
+        onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          toast.onClick?.();
+          onDismiss(toast.id);
+        },
+      }
     : {
-      role: 'alert' as const,
-    };
+        role: 'alert' as const,
+      };
 
   return (
     <div

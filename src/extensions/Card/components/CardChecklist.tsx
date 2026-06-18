@@ -11,9 +11,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import {
-  CSS,
-} from '@dnd-kit/utilities';
+import { CSS } from '@dnd-kit/utilities';
 import {
   SortableContext,
   arrayMove,
@@ -54,7 +52,11 @@ const betweenPositions = (left: string, right: string): string => {
   const leftDigits = left === LOW_SENTINEL ? [] : toDigits(left);
   const rightDigits = right === HIGH_SENTINEL ? [] : toDigits(right);
 
-  if (left !== LOW_SENTINEL && right !== HIGH_SENTINEL && compareDigits(leftDigits, rightDigits) >= 0) {
+  if (
+    left !== LOW_SENTINEL &&
+    right !== HIGH_SENTINEL &&
+    compareDigits(leftDigits, rightDigits) >= 0
+  ) {
     return `${left}O`;
   }
 
@@ -63,7 +65,7 @@ const betweenPositions = (left: string, right: string): string => {
 
   for (;;) {
     const leftDigit = leftDigits[index] ?? 0;
-    const rightDigit = rightDigits[index] ?? (BASE - 1);
+    const rightDigit = rightDigits[index] ?? BASE - 1;
 
     if (rightDigit - leftDigit > 1) {
       output.push(Math.floor((leftDigit + rightDigit) / 2));
@@ -100,7 +102,11 @@ const comparePosition = (left: string, right: string): number => {
   if (left === right) return 0;
   const numericLeft = Number(left);
   const numericRight = Number(right);
-  if (Number.isFinite(numericLeft) && Number.isFinite(numericRight) && numericLeft !== numericRight) {
+  if (
+    Number.isFinite(numericLeft) &&
+    Number.isFinite(numericRight) &&
+    numericLeft !== numericRight
+  ) {
     return numericLeft - numericRight;
   }
   return left < right ? -1 : 1;
@@ -110,7 +116,12 @@ interface SortableChecklistRowProps {
   checklist: Checklist;
   isFirst: boolean;
   isLast: boolean;
-  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  boardMembers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    avatar_url?: string | null;
+  }>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
   onMoveUp: () => void;
@@ -120,7 +131,11 @@ interface SortableChecklistRowProps {
   onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
   onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
-  onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
+  onItemDueDateChange: (
+    checklistId: string,
+    itemId: string,
+    dueDate: string | null
+  ) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
   disabled?: boolean;
   attachments?: Attachment[];
@@ -145,7 +160,15 @@ const SortableChecklistRow = ({
   disabled,
   attachments,
 }: SortableChecklistRowProps) => {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: `checklist:${checklist.id}`,
     data: {
       type: 'checklist',
@@ -204,7 +227,9 @@ const SortableChecklistRow = ({
             onItemRename={(itemId, title) => onItemRename(checklist.id, itemId, title)}
             onItemDelete={(itemId) => onItemDelete(checklist.id, itemId)}
             onItemAssign={(itemId, memberId) => onItemAssign(checklist.id, itemId, memberId)}
-            onItemDueDateChange={(itemId, dueDate) => onItemDueDateChange(checklist.id, itemId, dueDate)}
+            onItemDueDateChange={(itemId, dueDate) =>
+              onItemDueDateChange(checklist.id, itemId, dueDate)
+            }
             onItemConvertToCard={(itemId) => onItemConvertToCard(checklist.id, itemId)}
             boardMembers={boardMembers}
             {...(disabled === undefined ? {} : { disabled })}
@@ -218,7 +243,12 @@ const SortableChecklistRow = ({
 
 interface Props {
   checklists: Checklist[];
-  boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
+  boardMembers: Array<{
+    id: string;
+    email: string;
+    name: string | null;
+    avatar_url?: string | null;
+  }>;
   onCreateChecklist: (title?: string) => Promise<void>;
   onRenameChecklist: (checklistId: string, title: string) => Promise<void>;
   onDeleteChecklist: (checklistId: string) => Promise<void>;
@@ -228,9 +258,18 @@ interface Props {
   onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
   onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
-  onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
+  onItemDueDateChange: (
+    checklistId: string,
+    itemId: string,
+    dueDate: string | null
+  ) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
-  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
+  onItemReorder: (
+    sourceChecklistId: string,
+    itemId: string,
+    position: string,
+    targetChecklistId?: string
+  ) => Promise<void>;
   disabled?: boolean;
   /** Attachments for the card — forwarded to checklist items to enable attachment-reference previews. */
   attachments?: Attachment[];
@@ -253,18 +292,26 @@ const reorderWithinChecklist = ({
   sourceIndex: number;
   overType?: string;
   targetItemId: string | null;
-  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
+  onItemReorder: (
+    sourceChecklistId: string,
+    itemId: string,
+    position: string,
+    targetChecklistId?: string
+  ) => Promise<void>;
 }): void => {
-  const newIndex = overType === 'checklist-dropzone'
-    ? sourceItems.length - 1
-    : sourceItems.findIndex((item) => item.id === targetItemId);
+  const newIndex =
+    overType === 'checklist-dropzone'
+      ? sourceItems.length - 1
+      : sourceItems.findIndex((item) => item.id === targetItemId);
   if (newIndex < 0 || newIndex === sourceIndex) return;
 
   const reordered = arrayMove(sourceItems, sourceIndex, newIndex);
-  const leftPosition = newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
-  const rightPosition = newIndex < reordered.length - 1
-    ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
-    : HIGH_SENTINEL;
+  const leftPosition =
+    newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
+  const rightPosition =
+    newIndex < reordered.length - 1
+      ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
+      : HIGH_SENTINEL;
   const position = computePositionBetween(leftPosition, rightPosition);
   void onItemReorder(sourceChecklistId, movedItemId, position, sourceChecklistId);
 };
@@ -282,7 +329,12 @@ const handleChecklistItemDrop = ({
   overMeta: DragMeta;
   activeId: string;
   overType?: string;
-  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
+  onItemReorder: (
+    sourceChecklistId: string,
+    itemId: string,
+    position: string,
+    targetChecklistId?: string
+  ) => Promise<void>;
 }): void => {
   const sourceChecklistId = activeMeta.checklistId;
   const movedItemId = activeMeta.itemId ?? activeId;
@@ -295,7 +347,9 @@ const handleChecklistItemDrop = ({
   const sourceItem = sourceChecklist?.items.find((item) => item.id === movedItemId);
   if (!sourceChecklist || !targetChecklist || !sourceItem) return;
 
-  const sourceItems = [...sourceChecklist.items].sort((left, right) => comparePosition(left.position, right.position));
+  const sourceItems = [...sourceChecklist.items].sort((left, right) =>
+    comparePosition(left.position, right.position)
+  );
   const sourceIndex = sourceItems.findIndex((item) => item.id === movedItemId);
   if (sourceIndex < 0) return;
 
@@ -315,19 +369,22 @@ const handleChecklistItemDrop = ({
   const targetItems = [...targetChecklist.items]
     .filter((item) => item.id !== movedItemId)
     .sort((left, right) => comparePosition(left.position, right.position));
-  const insertionIndex = overType === 'checklist-item'
-    ? targetItems.findIndex((item) => item.id === targetItemId)
-    : targetItems.length;
+  const insertionIndex =
+    overType === 'checklist-item'
+      ? targetItems.findIndex((item) => item.id === targetItemId)
+      : targetItems.length;
   const normalizedInsertionIndex = insertionIndex >= 0 ? insertionIndex : targetItems.length;
 
   const withMoved = [...targetItems];
   withMoved.splice(normalizedInsertionIndex, 0, sourceItem);
-  const leftPosition = normalizedInsertionIndex > 0
-    ? (withMoved[normalizedInsertionIndex - 1]?.position ?? LOW_SENTINEL)
-    : LOW_SENTINEL;
-  const rightPosition = normalizedInsertionIndex < withMoved.length - 1
-    ? (withMoved[normalizedInsertionIndex + 1]?.position ?? HIGH_SENTINEL)
-    : HIGH_SENTINEL;
+  const leftPosition =
+    normalizedInsertionIndex > 0
+      ? (withMoved[normalizedInsertionIndex - 1]?.position ?? LOW_SENTINEL)
+      : LOW_SENTINEL;
+  const rightPosition =
+    normalizedInsertionIndex < withMoved.length - 1
+      ? (withMoved[normalizedInsertionIndex + 1]?.position ?? HIGH_SENTINEL)
+      : HIGH_SENTINEL;
   const position = computePositionBetween(leftPosition, rightPosition);
   void onItemReorder(sourceChecklistId, movedItemId, position, targetChecklistId);
 };
@@ -355,10 +412,12 @@ const handleChecklistDrop = ({
   const moved = reordered[newIndex];
   if (!moved) return;
 
-  const leftPosition = newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
-  const rightPosition = newIndex < reordered.length - 1
-    ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
-    : HIGH_SENTINEL;
+  const leftPosition =
+    newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
+  const rightPosition =
+    newIndex < reordered.length - 1
+      ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
+      : HIGH_SENTINEL;
   const position = computePositionBetween(leftPosition, rightPosition);
   void onChecklistReorder(moved.id, position);
 };
@@ -386,12 +445,12 @@ const CardChecklist = ({
 
   const orderedChecklists = useMemo(
     () => [...checklists].sort((left, right) => comparePosition(left.position, right.position)),
-    [checklists],
+    [checklists]
   );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const handleCreateChecklist = async () => {
@@ -405,7 +464,8 @@ const CardChecklist = ({
     if (index === 0) return;
     const cl = orderedChecklists[index];
     if (!cl) return;
-    const leftPos = index > 1 ? (orderedChecklists[index - 2]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
+    const leftPos =
+      index > 1 ? (orderedChecklists[index - 2]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
     const rightPos = orderedChecklists[index - 1]?.position ?? LOW_SENTINEL;
     void onChecklistReorder(cl.id, computePositionBetween(leftPos, rightPos));
   };
@@ -415,7 +475,10 @@ const CardChecklist = ({
     const cl = orderedChecklists[index];
     if (!cl) return;
     const leftPos = orderedChecklists[index + 1]?.position ?? HIGH_SENTINEL;
-    const rightPos = index < orderedChecklists.length - 2 ? (orderedChecklists[index + 2]?.position ?? HIGH_SENTINEL) : HIGH_SENTINEL;
+    const rightPos =
+      index < orderedChecklists.length - 2
+        ? (orderedChecklists[index + 2]?.position ?? HIGH_SENTINEL)
+        : HIGH_SENTINEL;
     void onChecklistReorder(cl.id, computePositionBetween(leftPos, rightPos));
   };
 
@@ -453,9 +516,7 @@ const CardChecklist = ({
   return (
     <section aria-label={translations['card.checklist.sectionAria']}>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">
-          Checklists
-        </h3>
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Checklists</h3>
         {!disabled && (
           <Button
             type="button"
@@ -483,7 +544,10 @@ const CardChecklist = ({
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void handleCreateChecklist();
-              if (e.key === 'Escape') { setAddingChecklist(false); setNewChecklistTitle(''); }
+              if (e.key === 'Escape') {
+                setAddingChecklist(false);
+                setNewChecklistTitle('');
+              }
             }}
             autoFocus
           />
@@ -501,18 +565,17 @@ const CardChecklist = ({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => { setAddingChecklist(false); setNewChecklistTitle(''); }}
+            onClick={() => {
+              setAddingChecklist(false);
+              setNewChecklistTitle('');
+            }}
           >
             Cancel
           </Button>
         </div>
       )}
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={orderedChecklists.map((cl) => `checklist:${cl.id}`)}
           strategy={verticalListSortingStrategy}
@@ -527,8 +590,12 @@ const CardChecklist = ({
                 boardMembers={boardMembers}
                 onRenameChecklist={onRenameChecklist}
                 onDeleteChecklist={onDeleteChecklist}
-                onMoveUp={() => { handleMoveUp(index); }}
-                onMoveDown={() => { handleMoveDown(index); }}
+                onMoveUp={() => {
+                  handleMoveUp(index);
+                }}
+                onMoveDown={() => {
+                  handleMoveDown(index);
+                }}
                 onItemAdd={onItemAdd}
                 onItemToggle={onItemToggle}
                 onItemRename={onItemRename}
@@ -548,4 +615,3 @@ const CardChecklist = ({
 };
 
 export default CardChecklist;
-

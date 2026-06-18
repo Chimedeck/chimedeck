@@ -19,7 +19,13 @@ interface Props {
   segmented?: boolean;
 }
 
-const BoardViewTab = ({ viewType, isActive, onClick, hasBackground = false, segmented = false }: Props) => {
+const BoardViewTab = ({
+  viewType,
+  isActive,
+  onClick,
+  hasBackground = false,
+  segmented = false,
+}: Props) => {
   const Icon = VIEW_ICONS[viewType];
   let stateClass: string;
   if (segmented) {
@@ -34,16 +40,22 @@ const BoardViewTab = ({ viewType, isActive, onClick, hasBackground = false, segm
         : 'text-muted border-b-2 border-transparent hover:text-base transition-colors';
     }
   } else if (isActive) {
-    stateClass = hasBackground ? 'bg-black/[0.08] rounded-[4px] font-semibold' : 'bg-blue-50 text-blue-600 font-semibold';
+    stateClass = hasBackground
+      ? 'bg-black/[0.08] rounded-[4px] font-semibold'
+      : 'bg-blue-50 text-blue-600 font-semibold';
   } else {
-    stateClass = hasBackground ? 'opacity-60 hover:opacity-100' : 'text-muted hover:bg-bg-surface hover:text-base';
+    stateClass = hasBackground
+      ? 'opacity-60 hover:opacity-100'
+      : 'text-muted hover:bg-bg-surface hover:text-base';
   }
   return (
     <button
       role="tab"
       aria-selected={isActive}
       aria-label={LABELS[viewType]}
-      onClick={() => { onClick(viewType); }}
+      onClick={() => {
+        onClick(viewType);
+      }}
       data-testid={`board-view-tab-${viewType}`}
       className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${stateClass}`}
     >

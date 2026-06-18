@@ -13,13 +13,14 @@ export const DELETE_SPECS_FILE_TOOL: BoardChatAssistToolDefinition = {
   function: {
     name: 'delete_specs_file',
     description:
-      'Delete a markdown documentation file from the board\'s linked GitHub repository. Use this to remove obsolete or incorrect specs. The file must be under specs/ and end with .md. This executes immediately — the file is deleted right away.',
+      "Delete a markdown documentation file from the board's linked GitHub repository. Use this to remove obsolete or incorrect specs. The file must be under specs/ and end with .md. This executes immediately — the file is deleted right away.",
     parameters: {
       type: 'object',
       properties: {
         path: {
           type: 'string',
-          description: 'File path relative to the repository root, must start with "specs/" and end with ".md". Example: "specs/architecture/old-design.md".',
+          description:
+            'File path relative to the repository root, must start with "specs/" and end with ".md". Example: "specs/architecture/old-design.md".',
         },
       },
       required: ['path'],
@@ -54,7 +55,9 @@ export const deleteSpecsFileDeps = {
   deleteSpecsFile,
 };
 
-function normalizeDeleteArguments(rawArguments: string): DeleteSpecsFileArguments | BoardChatAssistOutput {
+function normalizeDeleteArguments(
+  rawArguments: string
+): DeleteSpecsFileArguments | BoardChatAssistOutput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawArguments);
@@ -128,7 +131,10 @@ export async function deleteSpecsFileTool({
   }
 
   try {
-    const result = await deleteSpecsFileDeps.deleteSpecsFile({ repoPath, filePath: normalizedPath });
+    const result = await deleteSpecsFileDeps.deleteSpecsFile({
+      repoPath,
+      filePath: normalizedPath,
+    });
     return {
       status: 200,
       data: {

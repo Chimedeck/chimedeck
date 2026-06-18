@@ -34,7 +34,7 @@ export async function handlePatchChatPermissions(req: Request, boardId: string):
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -43,15 +43,21 @@ export async function handlePatchChatPermissions(req: Request, boardId: string):
     (body.guest_can_use !== undefined && typeof body.guest_can_use !== 'boolean')
   ) {
     return Response.json(
-      { name: 'invalid-field-type', data: { message: 'guest_can_view and guest_can_use must be booleans' } },
-      { status: 400 },
+      {
+        name: 'invalid-field-type',
+        data: { message: 'guest_can_view and guest_can_use must be booleans' },
+      },
+      { status: 400 }
     );
   }
 
   const existing = await db('board_chat_permissions').where({ board_id: boardId }).first();
 
   const current = existing
-    ? { guest_can_view: existing.guest_can_view as boolean, guest_can_use: existing.guest_can_use as boolean }
+    ? {
+        guest_can_view: existing.guest_can_view as boolean,
+        guest_can_use: existing.guest_can_use as boolean,
+      }
     : { ...CHAT_PERMISSION_DEFAULTS };
 
   const normalized = normalizeChatPermissions(current, body);

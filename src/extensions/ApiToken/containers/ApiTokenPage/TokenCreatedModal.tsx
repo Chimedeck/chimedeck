@@ -15,7 +15,9 @@ export default function TokenCreatedModal({ rawToken, onDone }: Props) {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(rawToken);
     setCopied(true);
-    setTimeout(() => { setCopied(false); }, 2000);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   return (
@@ -34,23 +36,14 @@ export default function TokenCreatedModal({ rawToken, onDone }: Props) {
             className="flex-1 rounded-lg bg-bg-base px-3 py-2 font-mono text-sm text-success border border-border focus:outline-none"
             aria-label="API token value"
           />
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleCopy}
-            className="min-w-[80px]"
-          >
+          <Button variant="primary" size="md" onClick={handleCopy} className="min-w-[80px]">
             {copied
               ? translations['TokenCreatedModal.copiedButton']
               : translations['TokenCreatedModal.copyButton']}
           </Button>
         </div>
         <div className="flex justify-end">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={onDone}
-          >
+          <Button variant="secondary" size="md" onClick={onDone}>
             {translations['TokenCreatedModal.doneButton']}
           </Button>
         </div>

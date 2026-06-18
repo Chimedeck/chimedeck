@@ -61,8 +61,7 @@ const WorkspacePage = () => {
 
   // Determine if the current user can manage members (OWNER or ADMIN)
   const currentMember = members.find((m) => m.userId === authUser?.id);
-  const canManageMembers =
-    currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
+  const canManageMembers = currentMember?.role === 'OWNER' || currentMember?.role === 'ADMIN';
   // Only OWNER/ADMIN may add members directly (matches remove permission).
   const canInvite = canManageMembers;
 
@@ -108,7 +107,12 @@ const WorkspacePage = () => {
         </div>
         <div className="flex items-center gap-3">
           {currentMember && (
-            <Button variant="secondary" onClick={() => { navigate(`/workspace/${workspace.id}/billing`); }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                navigate(`/workspace/${workspace.id}/billing`);
+              }}
+            >
               Billing
             </Button>
           )}
@@ -131,7 +135,9 @@ const WorkspacePage = () => {
           {canInvite && (
             <Button
               variant="primary"
-              onClick={() => { setShowInviteModal(true); }}
+              onClick={() => {
+                setShowInviteModal(true);
+              }}
               className="px-4 py-2 text-sm" // [theme-exception] text-white on primary button
             >
               + Invite Member
@@ -150,7 +156,9 @@ const WorkspacePage = () => {
         <InviteMemberModal
           workspaceId={workspace.id}
           callerRole={currentMember?.role ?? 'MEMBER'}
-          onClose={() => { setShowInviteModal(false); }}
+          onClose={() => {
+            setShowInviteModal(false);
+          }}
         />
       )}
     </div>
@@ -158,4 +166,3 @@ const WorkspacePage = () => {
 };
 
 export default WorkspacePage;
-

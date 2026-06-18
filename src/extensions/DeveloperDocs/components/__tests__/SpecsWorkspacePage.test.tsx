@@ -81,9 +81,12 @@ async function openArchitectureFile() {
 
   fireEvent.click(screen.getByRole('button', { name: /architecture\.md/i }));
 
-  await waitFor(() => {
-    expect(screen.getByTestId('editor-content')).toBeInTheDocument();
-  }, { timeout: 3000 });
+  await waitFor(
+    () => {
+      expect(screen.getByTestId('editor-content')).toBeInTheDocument();
+    },
+    { timeout: 3000 }
+  );
 }
 
 async function updateEditorMarkdown(nextContent: string) {
@@ -127,15 +130,17 @@ describe('SpecsWorkspacePage', () => {
         data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
       };
     });
-    const fetchMock = vi.fn(async () => mockResponse({
-      data: {
-        path: 'specs/architecture.md',
-        content: '# Updated',
-        etag: 'file-etag-2',
-        sha: 'file-etag-2',
-        created: false,
-      },
-    }));
+    const fetchMock = vi.fn(async () =>
+      mockResponse({
+        data: {
+          path: 'specs/architecture.md',
+          content: '# Updated',
+          etag: 'file-etag-2',
+          sha: 'file-etag-2',
+          created: false,
+        },
+      })
+    );
     vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
@@ -147,9 +152,12 @@ describe('SpecsWorkspacePage', () => {
       expect(screen.getByText('Unsaved')).toBeInTheDocument();
     });
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 3000 }
+    );
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/v1/boards/board-1/github/specs/file');
@@ -158,12 +166,15 @@ describe('SpecsWorkspacePage', () => {
       expect.objectContaining({
         Authorization: 'Bearer token',
         'If-Match': 'file-etag-1',
-      }),
+      })
     );
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    }, { timeout: 4000 });
+    await waitFor(
+      () => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 4000 }
+    );
   });
 
   it('shows a conflict banner and reloads the server copy after a stale save', async () => {
@@ -174,15 +185,24 @@ describe('SpecsWorkspacePage', () => {
       }
       fileReads += 1;
       if (fileReads === 1) {
-        return { data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' } };
+        return {
+          data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
+        };
       }
-      return { data: { path: 'specs/architecture.md', content: '# Server copy', etag: 'file-etag-3' } };
+      return {
+        data: { path: 'specs/architecture.md', content: '# Server copy', etag: 'file-etag-3' },
+      };
     });
 
-    const fetchMock = vi.fn(async () => mockResponse({
-      name: 'stale-specs-file-precondition',
-      data: { message: 'The file changed on the server. Reload and try again.' },
-    }, 412));
+    const fetchMock = vi.fn(async () =>
+      mockResponse(
+        {
+          name: 'stale-specs-file-precondition',
+          data: { message: 'The file changed on the server. Reload and try again.' },
+        },
+        412
+      )
+    );
     vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
@@ -190,9 +210,12 @@ describe('SpecsWorkspacePage', () => {
     await openArchitectureFile();
     await updateEditorMarkdown('# Conflicting local change');
 
-    await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: 'Reload file' }).length).toBeGreaterThan(0);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getAllByRole('button', { name: 'Reload file' }).length).toBeGreaterThan(0);
+      },
+      { timeout: 3000 }
+    );
     expect(screen.getAllByText(/The file changed on the server/).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Reload file' })[0]);
@@ -217,7 +240,11 @@ describe('SpecsWorkspacePage', () => {
         return new Promise((resolve) => {
           resolveChangelogRead = () => {
             resolve({
-              data: { path: 'specs/changelog/2026-01.md', content: '# Changelog', etag: 'file-etag-2' },
+              data: {
+                path: 'specs/changelog/2026-01.md',
+                content: '# Changelog',
+                etag: 'file-etag-2',
+              },
             });
           };
         });
@@ -256,33 +283,42 @@ describe('SpecsWorkspacePage', () => {
       if (url.includes('/specs/manifest')) {
         return { data: MOCK_MANIFEST };
       }
-      return { data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' } };
+      return {
+        data: { path: 'specs/architecture.md', content: '# Architecture', etag: 'file-etag-1' },
+      };
     });
 
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(mockResponse({
-        data: {
-          path: 'specs/architecture.md',
-          content: '# Updated',
-          etag: 'file-etag-2',
-          sha: 'file-etag-2',
-          created: false,
-        },
-      }))
-      .mockResolvedValueOnce(mockResponse({
-        data: {
-          commitHash: 'commit-sha-1',
-          pushStatus: 'pushed',
-          branch: 'main',
-          changedFiles: ['specs/architecture.md'],
-          footer: {
-            actorId: 'user-1',
-            boardId: 'board-1',
-            botAlias: 'github-app[bot]',
+      .mockResolvedValueOnce(
+        mockResponse({
+          data: {
+            path: 'specs/architecture.md',
+            content: '# Updated',
+            etag: 'file-etag-2',
+            sha: 'file-etag-2',
+            created: false,
           },
-        },
-      }, 201));
+        })
+      )
+      .mockResolvedValueOnce(
+        mockResponse(
+          {
+            data: {
+              commitHash: 'commit-sha-1',
+              pushStatus: 'pushed',
+              branch: 'main',
+              changedFiles: ['specs/architecture.md'],
+              footer: {
+                actorId: 'user-1',
+                boardId: 'board-1',
+                botAlias: 'github-app[bot]',
+              },
+            },
+          },
+          201
+        )
+      );
     vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock);
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token" canEdit />);
@@ -292,12 +328,17 @@ describe('SpecsWorkspacePage', () => {
     const commitButton = screen.getByRole('button', { name: 'Commit changes' });
     expect(commitButton).toBeDisabled();
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 3000 }
+    );
     expect(commitButton).not.toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText('Commit message'), { target: { value: 'Update specs' } });
+    fireEvent.change(screen.getByLabelText('Commit message'), {
+      target: { value: 'Update specs' },
+    });
     fireEvent.click(commitButton);
 
     await waitFor(() => {
@@ -309,7 +350,7 @@ describe('SpecsWorkspacePage', () => {
     expect(commitInit.headers).toEqual(
       expect.objectContaining({
         Authorization: 'Bearer token',
-      }),
+      })
     );
 
     const commitBody = JSON.parse(commitInit.body as string) as {

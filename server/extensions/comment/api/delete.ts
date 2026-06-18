@@ -18,14 +18,14 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (comment.deleted) {
     return Response.json(
       { error: { code: 'comment-deleted', message: 'Comment is already deleted' } },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
@@ -37,14 +37,19 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
   if (board.state === 'ARCHIVED') {
     return Response.json(
-      { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'board-is-archived',
+          message: 'This board is archived and cannot be modified.',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -57,8 +62,13 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   const isAdmin = scopedReq.callerRole ? hasRole(scopedReq.callerRole, 'ADMIN') : false;
   if (!isOwner && !isAdmin) {
     return Response.json(
-      { error: { code: 'comment-not-owner', message: 'You can only delete your own comments (or be an ADMIN)' } },
-      { status: 403 },
+      {
+        error: {
+          code: 'comment-not-owner',
+          message: 'You can only delete your own comments (or be an ADMIN)',
+        },
+      },
+      { status: 403 }
     );
   }
 
@@ -89,10 +99,12 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
   ]);
 
   // Broadcast so open card modals in other browser sessions remove the comment in real time
-  publisher.publish(
-    board.id,
-    JSON.stringify({ type: 'comment_deleted', payload: { commentId, cardId: comment.card_id } }),
-  ).catch(() => {});
+  publisher
+    .publish(
+      board.id,
+      JSON.stringify({ type: 'comment_deleted', payload: { commentId, cardId: comment.card_id } })
+    )
+    .catch(() => {});
 
   return Response.json({ data: deleted });
 }

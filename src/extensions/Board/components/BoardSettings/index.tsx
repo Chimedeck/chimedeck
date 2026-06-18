@@ -30,7 +30,7 @@ const BoardSettings = ({ onClose, currentUserId, isGuest = false }: Props) => {
   const board = useAppSelector(selectBoard);
 
   const [visibility, setVisibility] = useState<BoardVisibility>(
-    (board as { visibility?: BoardVisibility } | null)?.visibility ?? 'WORKSPACE',
+    (board as { visibility?: BoardVisibility } | null)?.visibility ?? 'WORKSPACE'
   );
   const [saving, setSaving] = useState(false);
 
@@ -75,15 +75,13 @@ const BoardSettings = ({ onClose, currentUserId, isGuest = false }: Props) => {
 
   return (
     // Backdrop
-    <div
-      className="fixed inset-0 z-30 bg-black/50"
-      onClick={onClose}
-      aria-label="Close settings"
-    >
+    <div className="fixed inset-0 z-30 bg-black/50" onClick={onClose} aria-label="Close settings">
       {/* Panel — stop propagation so clicks inside don't close */}
       <div
         className="absolute right-0 top-0 h-full w-80 bg-bg-base border-l border-border flex flex-col shadow-2xl"
-        onClick={(e) => { e.stopPropagation(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
         role="dialog"
         aria-label="Board Settings"
       >

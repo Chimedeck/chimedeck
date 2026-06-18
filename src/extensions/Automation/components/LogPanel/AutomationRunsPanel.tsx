@@ -43,7 +43,9 @@ const AutomationRunsPanel: FC<Props> = ({
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [boardId, automationId, page]);
 
   return (
@@ -58,7 +60,9 @@ const AutomationRunsPanel: FC<Props> = ({
           <ArrowLeftIcon className="h-4 w-4" />
         </Button>
         <span className="text-sm text-subtle font-medium truncate">{automationName}</span>
-        <span className="ml-auto text-xs text-muted">{translations['automation.runsPanel.runHistory']}</span>
+        <span className="ml-auto text-xs text-muted">
+          {translations['automation.runsPanel.runHistory']}
+        </span>
       </div>
 
       <RunLogTable

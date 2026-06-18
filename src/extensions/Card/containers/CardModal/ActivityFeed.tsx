@@ -63,12 +63,18 @@ interface Props {
 /** Consistent avatar colour based on user id. */
 // Darker shades guarantee sufficient contrast against text-inverse (white in light mode)
 const AVATAR_COLORS = [
-  'bg-blue-600', 'bg-green-700', 'bg-purple-600',
-  'bg-pink-600', 'bg-amber-700', 'bg-orange-700', 'bg-teal-700',
+  'bg-blue-600',
+  'bg-green-700',
+  'bg-purple-600',
+  'bg-pink-600',
+  'bg-amber-700',
+  'bg-orange-700',
+  'bg-teal-700',
 ];
 function avatarColor(userId: string): string {
   let hash = 0;
-  for (let i = 0; i < userId.length; i++) hash = Math.trunc(hash * 31 + (userId.codePointAt(i) ?? 0));
+  for (let i = 0; i < userId.length; i++)
+    hash = Math.trunc(hash * 31 + (userId.codePointAt(i) ?? 0));
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!;
 }
 function getInitials(name: string | null | undefined, email: string): string {
@@ -91,24 +97,26 @@ function renderSystemEventRow({
   activity: ActivityData;
   memberMap: Map<string, BoardMember>;
   currentUserId: string;
-  attachmentMap: Map<string, { thumbnail_url?: string | null; view_url?: string | null; content_type?: string | null }>;
+  attachmentMap: Map<
+    string,
+    { thumbnail_url?: string | null; view_url?: string | null; content_type?: string | null }
+  >;
 }): JSX.Element {
   const member = memberMap.get(activity.actor_id);
   const displayName =
-    activity.actor_name ||
-    activity.actor_email ||
-    member?.name ||
-    member?.email ||
-    'Unknown';
+    activity.actor_name || activity.actor_email || member?.name || member?.email || 'Unknown';
   const initials = getInitials(
     activity.actor_name ?? member?.name,
-    activity.actor_email ?? member?.email ?? activity.actor_id,
+    activity.actor_email ?? member?.email ?? activity.actor_id
   );
   const color = avatarColor(activity.actor_id);
 
-  const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
+  const attachmentId =
+    typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
   const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
-  const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
+  const showThumbnail =
+    attachmentInfo?.content_type?.startsWith('image/') &&
+    (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
   const actorAvatarUrl = activity.actor_avatar_url ?? null;
 
   const eventContext: ActivityEventContext = {
@@ -127,18 +135,21 @@ function renderSystemEventRow({
         className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${actorAvatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on dynamically-colored avatar background
         title={displayName}
       >
-        {actorAvatarUrl
-          ? <img src={actorAvatarUrl} alt={displayName} className="h-full w-full object-cover rounded-full" />
-          : initials
-        }
+        {actorAvatarUrl ? (
+          <img
+            src={actorAvatarUrl}
+            alt={displayName}
+            className="h-full w-full object-cover rounded-full"
+          />
+        ) : (
+          initials
+        )}
       </div>
       {/* Body */}
       <div className="flex-1 min-w-0">
         <p className="min-w-0 break-words text-sm text-subtle leading-5">
           {/* [theme-exception] text-white for actor name on activity feed (dark-bg avatar context) */}
-          <span className="font-semibold text-base">{displayName}</span>
-          {' '}
-          <span>{meta.label}</span>
+          <span className="font-semibold text-base">{displayName}</span> <span>{meta.label}</span>
         </p>
         <p className="mt-0.5 text-xs text-muted">{relativeTime(activity.created_at)}</p>
         {showThumbnail && (
@@ -220,19 +231,19 @@ const ActivityFeed = ({
     void loadAttachments();
   }, [loadAttachments]);
 
-  const handleAddComment = useCallback(async (content: string) => {
-    await Promise.all([
-      onAddComment(content),
-      loadAttachments(),
-    ]);
-  }, [onAddComment, loadAttachments]);
+  const handleAddComment = useCallback(
+    async (content: string) => {
+      await Promise.all([onAddComment(content), loadAttachments()]);
+    },
+    [onAddComment, loadAttachments]
+  );
 
-  const handleEditComment = useCallback(async (commentId: string, content: string) => {
-    await Promise.all([
-      onEditComment(commentId, content),
-      loadAttachments(),
-    ]);
-  }, [onEditComment, loadAttachments]);
+  const handleEditComment = useCallback(
+    async (commentId: string, content: string) => {
+      await Promise.all([onEditComment(commentId, content), loadAttachments()]);
+    },
+    [onEditComment, loadAttachments]
+  );
 
   const attachmentMap = new Map(
     attachments.map((attachment) => [
@@ -243,7 +254,7 @@ const ActivityFeed = ({
         view_url: attachment.view_url,
         content_type: attachment.content_type,
       },
-    ]),
+    ])
   );
 
   const memberMap = new Map(boardMembers.map((m) => [m.id, m]));
@@ -256,12 +267,15 @@ const ActivityFeed = ({
 
   // Convert system activity events to feed items (exclude comment-type events)
   const eventItems: FeedItem[] = activities
-    .filter((a) => VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action) || a.action === 'card.description.updated')
+    .filter(
+      (a) =>
+        VISIBLE_ACTIVITY_EVENT_TYPES.includes(a.action) || a.action === 'card.description.updated'
+    )
     .map((a) => ({ kind: 'event', ts: a.created_at, activity: a }));
 
   // Merge and sort descending (newest first)
   const feed: FeedItem[] = [...commentItems, ...eventItems].sort(
-    (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime(),
+    (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
   );
 
   return (
@@ -283,9 +297,7 @@ const ActivityFeed = ({
       )}
 
       <div className="flex flex-col gap-3">
-        {feed.length === 0 && (
-          <p className="text-sm text-subtle italic">No activity yet.</p>
-        )}
+        {feed.length === 0 && <p className="text-sm text-subtle italic">No activity yet.</p>}
 
         {feed.map((item) => {
           if (item.kind === 'comment') {

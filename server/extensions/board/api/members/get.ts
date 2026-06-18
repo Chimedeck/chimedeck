@@ -33,7 +33,7 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
       this.on('ms.user_id', '=', 'bm.user_id').andOn(
         'ms.workspace_id',
         '=',
-        db.raw('?', [board.workspace_id]),
+        db.raw('?', [board.workspace_id])
       );
     })
     .whereNot('ms.role', 'GUEST')
@@ -42,11 +42,11 @@ export async function handleGetBoardMembers(req: Request, boardId: string): Prom
       db.raw('u.id as user_id'),
       db.raw('bm.board_id as board_id'),
       'u.email',
-      db.raw("COALESCE(u.name, u.email) as display_name"),
+      db.raw('COALESCE(u.name, u.email) as display_name'),
       'u.avatar_url',
       'u.nickname',
       'bm.role',
-      'bm.created_at',
+      'bm.created_at'
     )
     .orderBy('bm.created_at', 'asc');
 

@@ -19,7 +19,7 @@ interface CursorPayload {
 }
 
 function encodeCursor(created_at: string | Date, id: string): string {
-  const iso = typeof created_at === 'string' ? created_at : (created_at).toISOString();
+  const iso = typeof created_at === 'string' ? created_at : created_at.toISOString();
   return Buffer.from(JSON.stringify({ created_at: iso, id })).toString('base64');
 }
 
@@ -95,7 +95,7 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
   const limitParam = Number.parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10);
   const limit = Math.min(
     Number.isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam,
-    MAX_LIMIT,
+    MAX_LIMIT
   );
 
   const cursor = cursorParam ? decodeCursor(cursorParam) : null;
@@ -119,7 +119,7 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
       'a.action',
       'a.actor_id',
       'a.payload',
-      'u.name as actor_name',
+      'u.name as actor_name'
     );
 
   let commentQuery = db('comments as c')
@@ -139,9 +139,9 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
       'c.version',
       'c.deleted',
       'c.updated_at',
-      db.raw("COALESCE(u.name, u.email) as author_name"),
+      db.raw('COALESCE(u.name, u.email) as author_name'),
       'u.email as author_email',
-      'cards.title as card_title',
+      'cards.title as card_title'
     );
 
   if (cursor) {
@@ -159,7 +159,7 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
     });
   }
 
-  const [activityRows, commentRows] = await Promise.all([activityQuery, commentQuery]) as [
+  const [activityRows, commentRows] = (await Promise.all([activityQuery, commentQuery])) as [
     ActivityRow[],
     CommentRow[],
   ];
@@ -170,8 +170,12 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
     | { kind: 'comment'; data: CommentRow; _ts: number };
 
   const merged: Item[] = [
-    ...activityRows.map((a): Item => ({ kind: 'activity', data: a, _ts: new Date(a.created_at).getTime() })),
-    ...commentRows.map((c): Item => ({ kind: 'comment', data: c, _ts: new Date(c.created_at).getTime() })),
+    ...activityRows.map(
+      (a): Item => ({ kind: 'activity', data: a, _ts: new Date(a.created_at).getTime() })
+    ),
+    ...commentRows.map(
+      (c): Item => ({ kind: 'comment', data: c, _ts: new Date(c.created_at).getTime() })
+    ),
   ].sort((x, y) => {
     if (y._ts !== x._ts) return y._ts - x._ts;
     // Tie-break by id descending for stable ordering
@@ -182,9 +186,8 @@ export async function handleGetBoardActivities(req: Request, boardId: string): P
   const page = hasMore ? merged.slice(0, limit) : merged;
 
   const lastItem = page.at(-1) ?? null;
-  const nextCursor = hasMore && lastItem
-    ? encodeCursor(lastItem.data.created_at, lastItem.data.id)
-    : null;
+  const nextCursor =
+    hasMore && lastItem ? encodeCursor(lastItem.data.created_at, lastItem.data.id) : null;
 
   // Strip internal sort key before returning
   const data = page.map(({ kind, data }) => ({ kind, data }));

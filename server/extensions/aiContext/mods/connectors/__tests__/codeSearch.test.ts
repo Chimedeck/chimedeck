@@ -30,7 +30,11 @@ describe('searchCode', () => {
       async readFile() {
         return {
           size: 1000,
-          text: Array.from({ length: 15 }, (_, i) => `const auth = 'token';\nexport function authenticate(token) {\n  return validateToken(token);\n}\n`).join('\n'),
+          text: Array.from(
+            { length: 15 },
+            (_, i) =>
+              `const auth = 'token';\nexport function authenticate(token) {\n  return validateToken(token);\n}\n`
+          ).join('\n'),
         };
       },
     };
@@ -55,7 +59,10 @@ describe('searchCode', () => {
         yield 'server/extensions/auth/valid.ts';
       },
       async readFile() {
-        return { size: 100, text: 'export const auth = true;\nconst auth2 = true;\nconst auth3 = true;\nconst auth4 = true;\nconst auth5 = true;\n' };
+        return {
+          size: 100,
+          text: 'export const auth = true;\nconst auth2 = true;\nconst auth3 = true;\nconst auth4 = true;\nconst auth5 = true;\n',
+        };
       },
     };
 
@@ -66,7 +73,7 @@ describe('searchCode', () => {
     });
 
     // [why] Only valid.ts should produce results; __tests__ and node_modules excluded.
-    const paths = results.map(r => r.sourcePath);
-    expect(paths.every(p => !p.includes('__tests__') && !p.includes('node_modules'))).toBe(true);
+    const paths = results.map((r) => r.sourcePath);
+    expect(paths.every((p) => !p.includes('__tests__') && !p.includes('node_modules'))).toBe(true);
   });
 });

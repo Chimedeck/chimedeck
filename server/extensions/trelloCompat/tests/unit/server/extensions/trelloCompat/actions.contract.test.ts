@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import { assertTrelloShape } from '../../../../../helpers/assertTrelloShape';
-import { createActivityActionFixture, createCommentActionFixture } from '../../../../../helpers/fixtures';
+import {
+  createActivityActionFixture,
+  createCommentActionFixture,
+} from '../../../../../helpers/fixtures';
 import { serializeActivityAction, serializeCommentAction } from '../../../../../serializers/action';
 
 describe('trelloCompat actions adapter contract', () => {
@@ -17,13 +20,15 @@ describe('trelloCompat actions adapter contract', () => {
   });
 
   it('normalizes embedded label payloads in activity actions', () => {
-    const activity = serializeActivityAction(createActivityActionFixture({
-      board_id: 'board-embedded',
-      payload: {
-        label: { id: 'label-1', board_id: 'board-embedded', name: 'Urgent', color: 'red' },
-        labels: [{ id: 'label-2' }],
-      },
-    }));
+    const activity = serializeActivityAction(
+      createActivityActionFixture({
+        board_id: 'board-embedded',
+        payload: {
+          label: { id: 'label-1', board_id: 'board-embedded', name: 'Urgent', color: 'red' },
+          labels: [{ id: 'label-2' }],
+        },
+      })
+    );
 
     expect(activity.data).toMatchObject({
       label: { id: 'label-1', idBoard: 'board-embedded', name: 'Urgent', color: 'red' },

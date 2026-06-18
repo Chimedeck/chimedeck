@@ -40,11 +40,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-base mb-1">{translations.login.title}</h1>
         <p className="text-subtle text-sm mb-6">{translations.login.subtitle}</p>
 
-        <LoginForm
-          onSubmit={handleSubmit}
-          isLoading={status === 'loading'}
-          apiError={apiError}
-        />
+        <LoginForm onSubmit={handleSubmit} isLoading={status === 'loading'} apiError={apiError} />
 
         <p className="text-muted text-sm text-center mt-4">
           <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 font-medium">

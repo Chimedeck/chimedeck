@@ -30,24 +30,25 @@ beforeEach(() => {
 
 import type { TriggerRun } from '../../../common/types';
 
-const makeRun = (overrides: Partial<TriggerRun> = {}): TriggerRun => ({
-  id: 'run-1',
-  card_id: 'card-1',
-  list_id: 'list-1',
-  workspace_id: 'ws-1',
-  board_id: 'board-1',
-  phase: 'SYNC_DOCUMENT',
-  status: 'QUEUED',
-  tier: 'tier_4',
-  move_event_id: 'event-1',
-  idempotency_key: 'card-1:list-1:SYNC_DOCUMENT:event-1',
-  failure_reason: null,
-  failure_upgrade_hint: null,
-  created_at: '2026-06-10T00:00:00.000Z',
-  updated_at: '2026-06-10T00:00:00.000Z',
-  completed_at: null,
-  ...overrides,
-} as TriggerRun);
+const makeRun = (overrides: Partial<TriggerRun> = {}): TriggerRun =>
+  ({
+    id: 'run-1',
+    card_id: 'card-1',
+    list_id: 'list-1',
+    workspace_id: 'ws-1',
+    board_id: 'board-1',
+    phase: 'SYNC_DOCUMENT',
+    status: 'QUEUED',
+    tier: 'tier_4',
+    move_event_id: 'event-1',
+    idempotency_key: 'card-1:list-1:SYNC_DOCUMENT:event-1',
+    failure_reason: null,
+    failure_upgrade_hint: null,
+    created_at: '2026-06-10T00:00:00.000Z',
+    updated_at: '2026-06-10T00:00:00.000Z',
+    completed_at: null,
+    ...overrides,
+  }) as TriggerRun;
 
 const makeAttempt = (attemptNum: number, status: string = 'RUNNING') => ({
   id: `attempt-${attemptNum}`,
@@ -77,16 +78,16 @@ describe('runTrigger', () => {
 
     // Verify RUNNING transition
     expect(mockUpdateTriggerRunStatus).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: 'run-1', status: 'RUNNING' }),
+      expect.objectContaining({ runId: 'run-1', status: 'RUNNING' })
     );
     // Verify SUCCEEDED transition
     expect(mockUpdateTriggerRunStatus).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: 'run-1', status: 'SUCCEEDED' }),
+      expect.objectContaining({ runId: 'run-1', status: 'SUCCEEDED' })
     );
     // Verify attempt created and completed
     expect(mockCreateTriggerAttempt).toHaveBeenCalledTimes(1);
     expect(mockCompleteTriggerAttempt).toHaveBeenCalledWith(
-      expect.objectContaining({ attemptId: 'attempt-1', success: true }),
+      expect.objectContaining({ attemptId: 'attempt-1', success: true })
     );
   });
 
@@ -115,7 +116,7 @@ describe('runTrigger', () => {
     // Since stubs always succeed, we verify the dispatch retry infrastructure
     // correctly handles attempt tracking and verifies FAILED state wiring.
     mockCreateTriggerAttempt.mockImplementation(({ attemptNumber }) =>
-      Promise.resolve(makeAttempt(attemptNumber)),
+      Promise.resolve(makeAttempt(attemptNumber))
     );
     mockCompleteTriggerAttempt.mockResolvedValue(undefined);
     mockUpdateTriggerRunStatus.mockResolvedValue({ id: 'run-1' });

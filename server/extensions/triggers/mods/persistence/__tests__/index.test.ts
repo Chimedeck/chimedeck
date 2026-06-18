@@ -94,7 +94,7 @@ describe('createTriggerRun', () => {
         input: makeEnqueueInput(),
         idempotencyKey: 'key-1',
         tier: 'tier_4',
-      }),
+      })
     ).rejects.toThrow('connection refused');
   });
 });
@@ -349,7 +349,7 @@ describe('completeTriggerAttempt', () => {
       expect.objectContaining({
         status: 'SUCCEEDED',
         completed_at: expect.any(String),
-      }),
+      })
     );
   });
 
@@ -370,7 +370,7 @@ describe('completeTriggerAttempt', () => {
         status: 'FAILED',
         error_message: 'timeout',
         error_payload: '{"details":"connection refused"}',
-      }),
+      })
     );
   });
 });

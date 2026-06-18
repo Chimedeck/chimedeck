@@ -14,7 +14,7 @@ interface Props {
 const DEFAULT_AUTO_DISMISS_MS = 8_000;
 
 export function normalizeAllowedNextStates(
-  allowedNextStates: StateTransitionRejectionReason['allowedNextStates'],
+  allowedNextStates: StateTransitionRejectionReason['allowedNextStates']
 ): StateTransitionRejectionReason['allowedNextStates'] {
   const seen = new Set<string>();
   const normalized: StateTransitionRejectionReason['allowedNextStates'] = [];
@@ -32,7 +32,10 @@ export function normalizeAllowedNextStates(
 
 export function getStateTransitionErrorBodyText(rejection: StateTransitionRejectionReason): string {
   if (normalizeAllowedNextStates(rejection.allowedNextStates).length === 0) {
-    return translations['StateTransitions.moveLockedBody'].replace('{fromListName}', rejection.fromListName);
+    return translations['StateTransitions.moveLockedBody'].replace(
+      '{fromListName}',
+      rejection.fromListName
+    );
   }
   return translations['StateTransitions.moveNotAllowedBody']
     .replace('{fromListName}', rejection.fromListName)
@@ -77,7 +80,10 @@ const StateTransitionErrorPopup = ({
   const allowedNextStates = normalizeAllowedNextStates(rejection.allowedNextStates);
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 px-4" role="presentation">
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 px-4"
+      role="presentation"
+    >
       <div
         role="dialog"
         aria-modal="true"

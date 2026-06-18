@@ -31,14 +31,14 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.email || typeof body.email !== 'string') {
     return Response.json(
       { error: { code: 'bad-request', message: 'email is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -48,8 +48,13 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   const callerRole = scopedReq.callerRole!;
   if (roleRank(role) > roleRank(callerRole)) {
     return Response.json(
-      { error: { code: 'role-exceeds-caller-privilege', message: `You cannot assign a role higher than your own (${callerRole})` } },
-      { status: 403 },
+      {
+        error: {
+          code: 'role-exceeds-caller-privilege',
+          message: `You cannot assign a role higher than your own (${callerRole})`,
+        },
+      },
+      { status: 403 }
     );
   }
   const email = body.email.trim().toLowerCase();
@@ -58,8 +63,13 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   const user = await db('users').where({ email }).first();
   if (!user) {
     return Response.json(
-      { error: { code: 'user-not-found', message: `No account found for ${email}. Ask them to sign up first.` } },
-      { status: 404 },
+      {
+        error: {
+          code: 'user-not-found',
+          message: `No account found for ${email}. Ask them to sign up first.`,
+        },
+      },
+      { status: 404 }
     );
   }
 
@@ -78,9 +88,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
           .where({ workspace_id: workspaceId, user_id: user.id })
           .update({ role });
 
-        const boards = await trx('boards')
-          .where({ workspace_id: workspaceId })
-          .select('id');
+        const boards = await trx('boards').where({ workspace_id: workspaceId }).select('id');
 
         if (boards.length > 0) {
           await trx('board_members')
@@ -92,7 +100,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
                 role: boardRole,
                 created_at: now,
                 updated_at: now,
-              })),
+              }))
             )
             .onConflict(['board_id', 'user_id'])
             .merge({ role: boardRole, updated_at: now });
@@ -100,10 +108,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
 
         await trx('board_guest_access')
           .where({ user_id: user.id })
-          .whereIn(
-            'board_id',
-            trx('boards').where({ workspace_id: workspaceId }).select('id'),
-          )
+          .whereIn('board_id', trx('boards').where({ workspace_id: workspaceId }).select('id'))
           .delete();
       });
 
@@ -132,8 +137,13 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
     }
 
     return Response.json(
-      { error: { code: 'already-a-member', message: `${email} is already a member of this workspace.` } },
-      { status: 409 },
+      {
+        error: {
+          code: 'already-a-member',
+          message: `${email} is already a member of this workspace.`,
+        },
+      },
+      { status: 409 }
     );
   }
 

@@ -13,7 +13,7 @@ import { MAX_TOTAL_CHUNKS } from '../../common/config';
 function normaliseRelevance(results: SearchConnectorResult[]): void {
   if (results.length === 0) return;
 
-  const maxRelevance = Math.max(...results.map(r => r.relevance), 0.01);
+  const maxRelevance = Math.max(...results.map((r) => r.relevance), 0.01);
   for (const r of results) {
     r.relevance = r.relevance / maxRelevance;
   }
@@ -25,19 +25,17 @@ function normaliseRelevance(results: SearchConnectorResult[]): void {
  * This catches near-identical chunks from different sources.
  */
 function contentHash(content: string): string {
-  return content
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 200);
+  return content.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 200);
 }
 
 /**
  * Merge, deduplicate, normalise, and rank results from all four connectors.
  */
-export function rankResults(
-  connectorResults: Record<ContextSource, SearchConnectorResult[]>,
-): { chunks: ContextChunk[]; sourceCounts: Record<ContextSource, number>; timeouts: ContextSource[] } {
+export function rankResults(connectorResults: Record<ContextSource, SearchConnectorResult[]>): {
+  chunks: ContextChunk[];
+  sourceCounts: Record<ContextSource, number>;
+  timeouts: ContextSource[];
+} {
   const sourceCounts: Record<ContextSource, number> = {
     docs: 0,
     code: 0,

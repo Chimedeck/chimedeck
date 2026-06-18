@@ -25,11 +25,14 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
 
   const membershipError = await requireWorkspaceMembership(
     req as AuthenticatedRequest,
-    board.workspace_id,
+    board.workspace_id
   );
   if (membershipError) {
     const currentUser = (req as AuthenticatedRequest).currentUser!;
-    const guest = await db('board_guests').where({ board_id: boardId, user_id: currentUser.id }).first().catch(() => null);
+    const guest = await db('board_guests')
+      .where({ board_id: boardId, user_id: currentUser.id })
+      .first()
+      .catch(() => null);
     if (!guest) return membershipError;
   }
 
@@ -58,7 +61,7 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
       'u.name as triggeredByUserName',
       'r.ran_at as ranAt',
       'r.context',
-      'r.error_message as errorMessage',
+      'r.error_message as errorMessage'
     );
 
   const allRows = await recentRuns;
@@ -75,10 +78,9 @@ export async function handleGetBoardRuns(req: Request, boardId: string): Promise
     status: row.status,
     cardId: row.cardId ?? null,
     cardName: row.cardName ?? null,
-    triggeredByUser:
-      row.triggeredByUserId
-        ? { id: row.triggeredByUserId, name: row.triggeredByUserName ?? null }
-        : null,
+    triggeredByUser: row.triggeredByUserId
+      ? { id: row.triggeredByUserId, name: row.triggeredByUserName ?? null }
+      : null,
     ranAt: row.ranAt,
     context: typeof row.context === 'string' ? JSON.parse(row.context) : (row.context ?? {}),
     errorMessage: row.errorMessage ?? null,

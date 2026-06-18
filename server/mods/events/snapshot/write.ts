@@ -12,11 +12,13 @@ export interface WriteSnapshotInput {
 export async function writeSnapshot(input: WriteSnapshotInput): Promise<void> {
   const existing = await db('board_snapshots').where({ board_id: input.boardId }).first();
   if (existing) {
-    await db('board_snapshots').where({ board_id: input.boardId }).update({
-      state: JSON.stringify(input.state),
-      last_sequence: String(input.lastSequence),
-      created_at: new Date().toISOString(),
-    });
+    await db('board_snapshots')
+      .where({ board_id: input.boardId })
+      .update({
+        state: JSON.stringify(input.state),
+        last_sequence: String(input.lastSequence),
+        created_at: new Date().toISOString(),
+      });
   } else {
     await db('board_snapshots').insert({
       id: randomUUID(),

@@ -8,7 +8,10 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { emitCardMemberAssigned, emitCardMemberUnassigned } from '../../activity/mods/createActivityEvent';
+import {
+  emitCardMemberAssigned,
+  emitCardMemberUnassigned,
+} from '../../activity/mods/createActivityEvent';
 
 interface CardContext {
   boardId: string;
@@ -33,7 +36,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -41,7 +44,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   if (!context) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -58,14 +61,14 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.userId || typeof body.userId !== 'string') {
     return Response.json(
       { error: { code: 'bad-request', message: 'userId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -76,13 +79,20 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
 
   if (!targetMembership) {
     return Response.json(
-      { error: { code: 'member-not-in-workspace', message: 'User is not a member of this workspace' } },
-      { status: 400 },
+      {
+        error: {
+          code: 'member-not-in-workspace',
+          message: 'User is not a member of this workspace',
+        },
+      },
+      { status: 400 }
     );
   }
 
   // Idempotency: already assigned → return 200 without emitting a duplicate event
-  const existing = await db('card_members').where({ card_id: cardId, user_id: body.userId }).first();
+  const existing = await db('card_members')
+    .where({ card_id: cardId, user_id: body.userId })
+    .first();
   if (existing) {
     return Response.json({ data: { card_id: cardId, user_id: body.userId } });
   }
@@ -111,7 +121,7 @@ export async function handleAssignMember(req: Request, cardId: string): Promise<
 export async function handleRemoveMember(
   req: Request,
   cardId: string,
-  userId: string,
+  userId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -120,7 +130,7 @@ export async function handleRemoveMember(
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -128,7 +138,7 @@ export async function handleRemoveMember(
   if (!context) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card context not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

@@ -5,12 +5,12 @@
 import { openDB, type IDBPDatabase } from 'idb';
 
 export interface PendingMutation {
-  id: string;            // client-assigned unique id (crypto.randomUUID())
+  id: string; // client-assigned unique id (crypto.randomUUID())
   boardId: string;
   method: 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   url: string;
   body?: unknown;
-  enqueuedAt: number;    // Date.now()
+  enqueuedAt: number; // Date.now()
 }
 
 const DB_NAME = 'kanban-offline-queue';
@@ -37,7 +37,7 @@ function getDb(): Promise<IDBPDatabase> {
 export const loadPersistedMutations = async (): Promise<PendingMutation[]> => {
   try {
     const db = await getDb();
-    const all = await db.getAll(STORE) as PendingMutation[];
+    const all = (await db.getAll(STORE)) as PendingMutation[];
     // Return sorted by enqueuedAt to preserve original enqueue order
     return all.sort((a, b) => a.enqueuedAt - b.enqueuedAt);
   } catch (err) {

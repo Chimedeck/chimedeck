@@ -25,11 +25,11 @@ import type { WorkspaceScopedRequest } from '../../../middlewares/permissionMana
  */
 export async function aiEditOrchestratorRouter(
   req: Request,
-  pathname: string,
+  pathname: string
 ): Promise<Response | null> {
   // Match all edit routes: /api/v1/cards/:cardId/ai/edit[/:runId/approve|reject]
   const editMatch = pathname.match(
-    /^\/api\/v1\/cards\/([^/]+)\/ai\/edit(?:\/([^/]+)\/(approve|reject))?$/,
+    /^\/api\/v1\/cards\/([^/]+)\/ai\/edit(?:\/([^/]+)\/(approve|reject))?$/
   );
   if (!editMatch) return null;
 
@@ -41,7 +41,7 @@ export async function aiEditOrchestratorRouter(
   if (!cardId) {
     return Response.json(
       { name: 'card-not-found', data: { message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -53,7 +53,7 @@ export async function aiEditOrchestratorRouter(
         name: 'ai-edit-disabled',
         data: { message: 'AI Edit feature is disabled' },
       },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

@@ -38,7 +38,11 @@ describe('matchGate', () => {
   });
 
   test('matches card automation-buttons route', () => {
-    const rule = matchGate('POST', '/api/v1/cards/card1/automation-buttons/auto1/run', FEATURE_GATES);
+    const rule = matchGate(
+      'POST',
+      '/api/v1/cards/card1/automation-buttons/auto1/run',
+      FEATURE_GATES
+    );
     expect(rule).not.toBeNull();
     expect(rule!.feature).toBe('automations');
   });
@@ -142,7 +146,12 @@ describe('minimumTierFor', () => {
 
   test('result is always a valid TIER_ORDER member', () => {
     const features: BooleanFeatureKey[] = [
-      'automations', 'webhooks', 'plugins', 'customFields', 'apiTokens', 'stateTransitions',
+      'automations',
+      'webhooks',
+      'plugins',
+      'customFields',
+      'apiTokens',
+      'stateTransitions',
     ];
     for (const f of features) {
       expect(TIER_ORDER).toContain(minimumTierFor(f));

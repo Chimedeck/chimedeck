@@ -33,11 +33,19 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
         ref={inputRef}
         className="text-xl font-bold text-base bg-bg-overlay focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1 w-full"
         value={draft}
-        onChange={(e) => { setDraft(e.target.value); }}
+        onChange={(e) => {
+          setDraft(e.target.value);
+        }}
         onBlur={commit}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); commit(); }
-          if (e.key === 'Escape') { setDraft(title); setEditing(false); }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commit();
+          }
+          if (e.key === 'Escape') {
+            setDraft(title);
+            setEditing(false);
+          }
         }}
         aria-label="Card title"
         maxLength={512}
@@ -52,7 +60,9 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
         disabled ? ' cursor-default pointer-events-none' : ''
       }`}
       onClick={() => !disabled && setEditing(true)}
-      onKeyDown={(e) => { if (e.key === 'Enter') setEditing(true); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') setEditing(true);
+      }}
       role={disabled ? undefined : 'button'}
       tabIndex={disabled ? undefined : 0}
       aria-label="Edit card title"

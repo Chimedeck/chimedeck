@@ -2,7 +2,10 @@
 // GET /api/v1/boards/:boardId/search
 // Board-scoped search: returns only cards and lists from the requested board.
 // RBAC: caller must have board read access (enforced via applyBoardVisibility).
-import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../middlewares/boardVisibility';
+import {
+  applyBoardVisibility,
+  type BoardVisibilityScopedRequest,
+} from '../../../middlewares/boardVisibility';
 import { queryBoardSearch } from '../mods/queryBoardSearch';
 import { searchLog } from '../common/searchLogger';
 
@@ -36,7 +39,7 @@ export async function handleBoardSearch(req: Request, boardId: string): Promise<
   if (result.status !== 200) {
     return Response.json(
       { error: { code: result.name, message: result.message } },
-      { status: result.status },
+      { status: result.status }
     );
   }
 

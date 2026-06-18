@@ -15,13 +15,8 @@ import { resolveCardId } from '../../../common/ids/resolveEntityId';
  * so the handler can focus on business logic. Follows the sprintGeneration
  * router pattern.
  */
-export async function asBuiltSyncRouter(
-  req: Request,
-  pathname: string,
-): Promise<Response | null> {
-  const syncMatch = pathname.match(
-    /^\/api\/v1\/cards\/([^/]+)\/as-built\/sync$/,
-  );
+export async function asBuiltSyncRouter(req: Request, pathname: string): Promise<Response | null> {
+  const syncMatch = pathname.match(/^\/api\/v1\/cards\/([^/]+)\/as-built\/sync$/);
   if (!syncMatch) return null;
 
   const cardIdentifier = syncMatch[1] as string;
@@ -30,7 +25,7 @@ export async function asBuiltSyncRouter(
   if (!cardId) {
     return Response.json(
       { name: 'card-not-found', data: { message: 'Card not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -42,7 +37,7 @@ export async function asBuiltSyncRouter(
         name: 'as-built-sync-disabled',
         data: { message: 'As-Built Sync feature is disabled' },
       },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

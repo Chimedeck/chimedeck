@@ -15,9 +15,15 @@ const envState: Record<string, string> = {
 
 mock.module('../../../config/env', () => ({
   env: {
-    get GITHUB_WEBHOOKS_ENABLED() { return envState.GITHUB_WEBHOOKS_ENABLED === 'true'; },
-    get GITHUB_APP_WEBHOOK_SECRET() { return envState.GITHUB_APP_WEBHOOK_SECRET ?? ''; },
-    get WEBHOOK_SECRET_ENCRYPTION_KEY() { return envState.WEBHOOK_SECRET_ENCRYPTION_KEY ?? ''; },
+    get GITHUB_WEBHOOKS_ENABLED() {
+      return envState.GITHUB_WEBHOOKS_ENABLED === 'true';
+    },
+    get GITHUB_APP_WEBHOOK_SECRET() {
+      return envState.GITHUB_APP_WEBHOOK_SECRET ?? '';
+    },
+    get WEBHOOK_SECRET_ENCRYPTION_KEY() {
+      return envState.WEBHOOK_SECRET_ENCRYPTION_KEY ?? '';
+    },
   },
 }));
 
@@ -40,10 +46,14 @@ mock.module('../../../common/db', () => {
     const state: { filters: Array<(row: InstallationRow) => boolean> } = { filters: [] };
     const query = {
       where(criteria: Partial<InstallationRow>) {
-        state.filters.push((row) => Object.entries(criteria).every(([k, v]) => (row as Record<string, unknown>)[k] === v));
+        state.filters.push((row) =>
+          Object.entries(criteria).every(([k, v]) => (row as Record<string, unknown>)[k] === v)
+        );
         return query;
       },
-      select() { return query; },
+      select() {
+        return query;
+      },
       update: async (updates: Record<string, unknown>) => {
         for (const [id, row] of installationRows) {
           if (state.filters.every((f) => f(row))) {
@@ -75,7 +85,7 @@ mock.module('../../../common/db', () => {
       },
       then<TResult1 = InstallationRow[], TResult2 = never>(
         onfulfilled?: ((value: InstallationRow[]) => TResult1 | PromiseLike<TResult1>) | null,
-        onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+        onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
       ): Promise<TResult1 | TResult2> {
         const results: InstallationRow[] = [];
         for (const row of installationRows.values()) {
@@ -102,7 +112,9 @@ function makeSignedRequest({
   event?: string;
   signatureOverride?: string;
 }): Request {
-  const signature = signatureOverride ?? `sha256=${createHmac('sha256', secret).update(body, 'utf8').digest('hex')}`;
+  const signature =
+    signatureOverride ??
+    `sha256=${createHmac('sha256', secret).update(body, 'utf8').digest('hex')}`;
   return new Request('https://example.com/api/v1/github/webhook', {
     method: 'POST',
     headers: {
@@ -164,7 +176,8 @@ describe('handleGitHubWebhook', () => {
   });
 
   it('returns 401 when the signature does not match the env fallback', async () => {
-    const body = '{"action":"created","installation":{"id":1,"account":{"login":"acme","type":"Organization"}}}';
+    const body =
+      '{"action":"created","installation":{"id":1,"account":{"login":"acme","type":"Organization"}}}';
     const req = makeSignedRequest({ body, secret: 'wrong-secret' });
     const res = await handleGitHubWebhook(req);
     expect(res.status).toBe(401);
@@ -237,14 +250,25 @@ describe('handleGitHubWebhook', () => {
     const body = JSON.stringify({
       action: 'added',
       installation: { id: 9, account: { login: 'acme', type: 'Organization' } },
-      repositories_added: [{ id: 102, full_name: 'acme/added', private: false, default_branch: 'main' }],
-      repositories_removed: [{ id: 101, full_name: 'acme/drop', private: false, default_branch: 'main' }],
+      repositories_added: [
+        { id: 102, full_name: 'acme/added', private: false, default_branch: 'main' },
+      ],
+      repositories_removed: [
+        { id: 101, full_name: 'acme/drop', private: false, default_branch: 'main' },
+      ],
     });
-    const req = makeSignedRequest({ body, secret: 'test-fallback-secret', event: 'installation_repositories' });
+    const req = makeSignedRequest({
+      body,
+      secret: 'test-fallback-secret',
+      event: 'installation_repositories',
+    });
     const res = await handleGitHubWebhook(req);
     expect(res.status).toBe(202);
 
-    const repos = JSON.parse(installationRows.get('9')?.repositories ?? '[]') as Array<{ id: number; full_name: string }>;
+    const repos = JSON.parse(installationRows.get('9')?.repositories ?? '[]') as Array<{
+      id: number;
+      full_name: string;
+    }>;
     const names = repos.map((r) => r.full_name).sort();
     expect(names).toEqual(['acme/added', 'acme/keep']);
   });

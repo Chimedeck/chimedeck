@@ -12,7 +12,9 @@ export async function startAutomationScheduler(): Promise<void> {
   if (!automationConfig.schedulerEnabled) {
     // schedulerEnabled is only true when AUTOMATION_USE_PGCRON=true, so this
     // branch covers both "flag explicitly off" and "pg_cron not configured".
-    console.info('[automation-scheduler] disabled — set AUTOMATION_USE_PGCRON=true to enable pg_cron scheduling');
+    console.info(
+      '[automation-scheduler] disabled — set AUTOMATION_USE_PGCRON=true to enable pg_cron scheduling'
+    );
     return;
   }
 

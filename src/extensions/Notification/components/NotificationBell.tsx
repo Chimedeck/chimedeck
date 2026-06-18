@@ -19,7 +19,11 @@ const NotificationBell: FC<Props> = ({ onClick }) => {
     <button
       onClick={onClick}
       className="relative p-2 rounded-full hover:bg-bg-surface transition-colors text-subtle hover:text-base"
-      aria-label={hasUnread ? translations['Notifications.ariaUnread'].replace('{count}', label) : translations['Notifications.ariaOpenPanel']}
+      aria-label={
+        hasUnread
+          ? translations['Notifications.ariaUnread'].replace('{count}', label)
+          : translations['Notifications.ariaOpenPanel']
+      }
     >
       <BellIcon className="h-5 w-5" aria-hidden="true" />
       {hasUnread && (

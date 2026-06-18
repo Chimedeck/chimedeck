@@ -39,12 +39,7 @@ const STRENGTH_LABELS = [
   translations['AdminInvite.strengthFair'],
   translations['AdminInvite.strengthStrong'],
 ] as const;
-const STRENGTH_COLORS = [
-  'bg-red-500',
-  'bg-orange-400',
-  'bg-yellow-400',
-  'bg-green-500',
-] as const;
+const STRENGTH_COLORS = ['bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'] as const;
 
 interface FieldErrors {
   email?: string;
@@ -127,7 +122,7 @@ export default function InviteExternalUserModal() {
           credentials: response.credentials,
           emailSent: response.emailSent,
           emailVerifiedAt: response.data.email_verified_at,
-        }),
+        })
       );
       resetForm();
     } catch (err: unknown) {
@@ -181,7 +176,9 @@ export default function InviteExternalUserModal() {
               loginUrl={loginUrl}
               emailSent={emailSentFromStore}
               emailVerifiedAt={emailVerifiedAt}
-              onDone={() => { handleOpenChange(false); }}
+              onDone={() => {
+                handleOpenChange(false);
+              }}
             />
           ) : (
             // ── Invite form ─────────────────────────────────────────────────
@@ -189,10 +186,7 @@ export default function InviteExternalUserModal() {
               <Dialog.Title className="mb-1 text-lg font-bold text-base">
                 {translations['AdminInvite.modalTitle']}
               </Dialog.Title>
-              <p
-                id="invite-modal-description"
-                className="mb-5 text-sm text-muted"
-              >
+              <p id="invite-modal-description" className="mb-5 text-sm text-muted">
                 {translations['AdminInvite.modalDescription']}
               </p>
 
@@ -209,11 +203,13 @@ export default function InviteExternalUserModal() {
                     id="invite-email"
                     type="email"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); }}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                    }}
                     placeholder={translations['AdminInvite.emailPlaceholder']}
                     required
                     autoFocus
-                   className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                     aria-describedby={fieldErrors.email ? 'invite-email-error' : undefined}
                   />
                   {fieldErrors.email && (
@@ -235,7 +231,9 @@ export default function InviteExternalUserModal() {
                     id="invite-display-name"
                     type="text"
                     value={displayName}
-                    onChange={(e) => { setDisplayName(e.target.value); }}
+                    onChange={(e) => {
+                      setDisplayName(e.target.value);
+                    }}
                     placeholder={translations['AdminInvite.displayNamePlaceholder']}
                     required
                     className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
@@ -262,7 +260,9 @@ export default function InviteExternalUserModal() {
                         name="password-mode"
                         value="auto"
                         checked={passwordMode === 'auto'}
-                        onChange={() => { setPasswordMode('auto'); }}
+                        onChange={() => {
+                          setPasswordMode('auto');
+                        }}
                         className="accent-indigo-500"
                       />
                       {translations['AdminInvite.passwordModeAuto']}
@@ -273,7 +273,9 @@ export default function InviteExternalUserModal() {
                         name="password-mode"
                         value="manual"
                         checked={passwordMode === 'manual'}
-                        onChange={() => { setPasswordMode('manual'); }}
+                        onChange={() => {
+                          setPasswordMode('manual');
+                        }}
                         className="accent-indigo-500"
                       />
                       {translations['AdminInvite.passwordModeManual']}
@@ -294,7 +296,9 @@ export default function InviteExternalUserModal() {
                       id="invite-password"
                       type="password"
                       value={password}
-                      onChange={(e) => { setPassword(e.target.value); }}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                      }}
                       placeholder="••••••••"
                       className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                       aria-describedby="invite-password-strength"
@@ -330,7 +334,9 @@ export default function InviteExternalUserModal() {
                       <input
                         type="checkbox"
                         checked={sendEmail}
-                        onChange={(e) => { setSendEmail(e.target.checked); }}
+                        onChange={(e) => {
+                          setSendEmail(e.target.checked);
+                        }}
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                       />
                       {translations['AdminInvite.sendEmailToggle']}
@@ -345,7 +351,9 @@ export default function InviteExternalUserModal() {
                       <input
                         type="checkbox"
                         checked={autoVerifyEmail}
-                        onChange={(e) => { setAutoVerifyEmail(e.target.checked); }}
+                        onChange={(e) => {
+                          setAutoVerifyEmail(e.target.checked);
+                        }}
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                         data-testid="auto-verify-email-checkbox"
                       />
@@ -372,13 +380,12 @@ export default function InviteExternalUserModal() {
                   </Dialog.Close>
                   <button
                     type="submit"
-                    disabled={
-                      loading ||
-                      (passwordMode === 'manual' && !isStrongPassword(password))
-                    }
+                    disabled={loading || (passwordMode === 'manual' && !isStrongPassword(password))}
                     className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 transition-colors" // [theme-exception] text-white on primary button
                   >
-                    {loading ? translations['AdminInvite.creatingButton'] : translations['AdminInvite.submitButton']}
+                    {loading
+                      ? translations['AdminInvite.creatingButton']
+                      : translations['AdminInvite.submitButton']}
                   </button>
                 </div>
               </form>

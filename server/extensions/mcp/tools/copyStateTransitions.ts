@@ -32,6 +32,6 @@ export function registerCopyStateTransitions(server: McpServer, token: string): 
       return {
         content: [{ type: 'text', text: JSON.stringify(result.data) }],
       };
-    },
+    }
   );
 }

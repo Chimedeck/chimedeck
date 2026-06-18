@@ -54,8 +54,8 @@ function extractWords(text: string): Set<string> {
     text
       .toLowerCase()
       .split(/\s+/)
-      .filter(w => w.length > 3)
-      .slice(0, 30),
+      .filter((w) => w.length > 3)
+      .slice(0, 30)
   );
 }
 
@@ -106,13 +106,13 @@ export function analyseImpact({
       const score = overlapScore(sourceWords, fileWords);
 
       if (score >= IMPACT_THRESHOLD) {
-        const matchedEntities = [...sourceWords].filter(w => fileWords.has(w));
+        const matchedEntities = [...sourceWords].filter((w) => fileWords.has(w));
 
         // [why] Recently modified files get a slight boost — they're more
         // likely to be relevant to ongoing work.
         const stat = fs.statFile(filePath);
         const now = Date.now();
-        const isRecent = stat ? (now - stat.mtimeMs) < recentlyModifiedWindowMs : false;
+        const isRecent = stat ? now - stat.mtimeMs < recentlyModifiedWindowMs : false;
         const adjustedScore = isRecent ? Math.min(score * 1.2, 1.0) : score;
 
         impacted.push({
@@ -135,9 +135,7 @@ export function analyseImpact({
   const topImpacted = impacted.slice(0, MAX_CHUNKS_PER_CONNECTOR);
 
   const overallOverlapScore =
-    specFiles.length > 0
-      ? Math.round((totalOverlap / specFiles.length) * 100) / 100
-      : 0;
+    specFiles.length > 0 ? Math.round((totalOverlap / specFiles.length) * 100) / 100 : 0;
 
   return {
     likelyImpactedFiles: topImpacted,

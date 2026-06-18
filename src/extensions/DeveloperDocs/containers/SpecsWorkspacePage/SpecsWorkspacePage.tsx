@@ -48,13 +48,24 @@ type ApiHandle = { get: <T>(url: string) => Promise<T> };
 
 type RequestError = Error & { status?: number; name?: string };
 
-function extractManifestErrorMessage(err: unknown, fallback: string): {
+function extractManifestErrorMessage(
+  err: unknown,
+  fallback: string
+): {
   message: string;
   name: string | null;
   status: number | null;
 } {
   const candidate = err as {
-    response?: { status?: number; data?: { name?: unknown; data?: { message?: unknown }; error?: { message?: unknown }; message?: unknown } };
+    response?: {
+      status?: number;
+      data?: {
+        name?: unknown;
+        data?: { message?: unknown };
+        error?: { message?: unknown };
+        message?: unknown;
+      };
+    };
     message?: unknown;
   };
   const status = typeof candidate?.response?.status === 'number' ? candidate.response.status : null;
@@ -64,15 +75,21 @@ function extractManifestErrorMessage(err: unknown, fallback: string): {
   const errorMessage = payload?.error?.message;
   const topMessage = payload?.message;
   const message =
-    (typeof dataMessage === 'string' && dataMessage)
-    || (typeof errorMessage === 'string' && errorMessage)
-    || (typeof topMessage === 'string' && topMessage)
-    || (typeof candidate?.message === 'string' && candidate.message)
-    || fallback;
+    (typeof dataMessage === 'string' && dataMessage) ||
+    (typeof errorMessage === 'string' && errorMessage) ||
+    (typeof topMessage === 'string' && topMessage) ||
+    (typeof candidate?.message === 'string' && candidate.message) ||
+    fallback;
   return { message, name: serverName, status };
 }
 
-async function fetchSpecsManifest({ api, boardId }: { api: ApiHandle; boardId: string }): Promise<SpecsManifest> {
+async function fetchSpecsManifest({
+  api,
+  boardId,
+}: {
+  api: ApiHandle;
+  boardId: string;
+}): Promise<SpecsManifest> {
   const res = await api.get<{ data: SpecsManifest }>(`/boards/${boardId}/specs/manifest`);
   return res.data;
 }
@@ -87,18 +104,18 @@ async function fetchSpecsFile({
   path: string;
 }): Promise<SpecsFileResponse> {
   const res = await api.get<{ data: SpecsFileResponse }>(
-    `/boards/${boardId}/specs/files?path=${encodeURIComponent(path)}`,
+    `/boards/${boardId}/specs/files?path=${encodeURIComponent(path)}`
   );
   return res.data;
 }
 
 function extractErrorMessage(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== 'object') return fallback;
-  const candidate = (payload as {
+  const candidate = payload as {
     data?: { message?: unknown };
     error?: { message?: unknown };
     message?: unknown;
-  });
+  };
 
   if (typeof candidate.data?.message === 'string') return candidate.data.message;
   if (typeof candidate.error?.message === 'string') return candidate.error.message;
@@ -134,7 +151,7 @@ async function requestSpecsJson<T>({
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     const error = new Error(
-      extractErrorMessage(payload, `Request failed with status code ${response.status}`),
+      extractErrorMessage(payload, `Request failed with status code ${response.status}`)
     ) as RequestError;
     error.status = response.status;
     throw error;
@@ -178,11 +195,24 @@ type WorkspaceAction =
   | { type: 'file/select'; path: string }
   | { type: 'file/ready' }
   | { type: 'file/loading' }
-  | { type: 'file/loaded'; path: string; content: string; etag: string; forceEditorContent?: boolean }
+  | {
+      type: 'file/loaded';
+      path: string;
+      content: string;
+      etag: string;
+      forceEditorContent?: boolean;
+    }
   | { type: 'file/error'; message: string }
   | { type: 'editor/change'; path: string; content: string }
   | { type: 'save/start'; path: string; content: string }
-  | { type: 'save/success'; path: string; content: string; etag: string; sha: string; created: boolean }
+  | {
+      type: 'save/success';
+      path: string;
+      content: string;
+      etag: string;
+      sha: string;
+      created: boolean;
+    }
   | { type: 'save/error'; path: string; content: string; message: string; status: number | null }
   | { type: 'save/conflict-clear' }
   | { type: 'commit/message'; message: string }
@@ -274,9 +304,9 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         fileError: null,
         editorContent: action.forceEditorContent
           ? { ...nextState.editorContent, [action.path]: action.content }
-          : (action.path in nextState.editorContent
+          : action.path in nextState.editorContent
             ? nextState.editorContent
-            : { ...nextState.editorContent, [action.path]: action.content }),
+            : { ...nextState.editorContent, [action.path]: action.content },
         lastSaveAttemptContent: action.forceEditorContent
           ? { ...nextState.lastSaveAttemptContent, [action.path]: action.content }
           : nextState.lastSaveAttemptContent,
@@ -345,7 +375,10 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
         commitStatus: 'idle',
         dirtyPaths: nextDirtyPaths,
         pendingCommitPaths: nextPendingCommitPaths,
-        lastSaveAttemptContent: { ...nextState.lastSaveAttemptContent, [action.path]: action.content },
+        lastSaveAttemptContent: {
+          ...nextState.lastSaveAttemptContent,
+          [action.path]: action.content,
+        },
       };
     }
     case 'save/error':
@@ -370,30 +403,32 @@ function workspaceReducer(state: WorkspaceState, action: WorkspaceAction): Works
       return { ...state, commitMessage: action.message, commitStatus: 'idle', commitError: null };
     case 'commit/start':
       return { ...state, commitStatus: 'committing', commitError: null };
-    case 'commit/success':
-      {
-        const nextPendingCommitPaths = new Set(state.pendingCommitPaths);
-        const nextCommittedPaths = new Set(state.committedPaths);
-        for (const changedFile of action.changedFiles) {
-          nextPendingCommitPaths.delete(changedFile);
-          // [why] Track files that have been committed so we don't re-mark them
-          // as new on subsequent manifest reloads.
-          nextCommittedPaths.add(changedFile);
-        }
+    case 'commit/success': {
+      const nextPendingCommitPaths = new Set(state.pendingCommitPaths);
+      const nextCommittedPaths = new Set(state.committedPaths);
+      for (const changedFile of action.changedFiles) {
+        nextPendingCommitPaths.delete(changedFile);
+        // [why] Track files that have been committed so we don't re-mark them
+        // as new on subsequent manifest reloads.
+        nextCommittedPaths.add(changedFile);
+      }
 
-        return {
-          ...state,
-          commitStatus: 'success',
-          commitError: null,
-          pendingCommitPaths: nextPendingCommitPaths,
-          committedPaths: nextCommittedPaths,
-          commitMessage: '',
-          lastSaveAttemptContent: action.changedFiles.reduce<Record<string, string>>((acc, path) => {
+      return {
+        ...state,
+        commitStatus: 'success',
+        commitError: null,
+        pendingCommitPaths: nextPendingCommitPaths,
+        committedPaths: nextCommittedPaths,
+        commitMessage: '',
+        lastSaveAttemptContent: action.changedFiles.reduce<Record<string, string>>(
+          (acc, path) => {
             acc[path] = state.savedContent[path] ?? '';
             return acc;
-          }, { ...state.lastSaveAttemptContent }),
-        };
-      }
+          },
+          { ...state.lastSaveAttemptContent }
+        ),
+      };
+    }
     case 'commit/error':
       return { ...state, commitStatus: 'error', commitError: action.message };
 
@@ -471,7 +506,9 @@ const SpecsWorkspacePage = ({
   const handleRetry = useCallback(() => {
     dispatch({ type: 'manifest/loading' });
     fetchSpecsManifest({ api, boardId })
-      .then((manifest) => { dispatch({ type: 'manifest/loaded', files: manifest.files }); })
+      .then((manifest) => {
+        dispatch({ type: 'manifest/loaded', files: manifest.files });
+      })
       .catch((err: unknown) => {
         const extracted = extractManifestErrorMessage(err, 'Failed to load specs manifest');
         dispatch({
@@ -528,7 +565,7 @@ const SpecsWorkspacePage = ({
       if (!state.selectedPath || !canEdit) return;
       dispatch({ type: 'editor/change', path: state.selectedPath, content });
     },
-    [canEdit, state.selectedPath],
+    [canEdit, state.selectedPath]
   );
 
   const handleReloadSelectedFile = useCallback(async () => {
@@ -552,9 +589,11 @@ const SpecsWorkspacePage = ({
 
   const currentPath = state.selectedPath;
   const currentContent = currentPath ? (state.editorContent[currentPath] ?? '') : '';
-  const currentSavedContent = currentPath ? state.savedContent[currentPath] ?? null : null;
-  const currentAttemptContent = currentPath ? state.lastSaveAttemptContent[currentPath] ?? null : null;
-  const currentSaveEtag = currentPath ? state.savedEtags[currentPath] ?? null : null;
+  const currentSavedContent = currentPath ? (state.savedContent[currentPath] ?? null) : null;
+  const currentAttemptContent = currentPath
+    ? (state.lastSaveAttemptContent[currentPath] ?? null)
+    : null;
+  const currentSaveEtag = currentPath ? (state.savedEtags[currentPath] ?? null) : null;
 
   const saveFile = useCallback(
     async ({ path, content, etag }: { path: string; content: string; etag: string | null }) => {
@@ -588,7 +627,7 @@ const SpecsWorkspacePage = ({
         });
       }
     },
-    [accessToken, boardId],
+    [accessToken, boardId]
   );
 
   useEffect(() => {
@@ -616,7 +655,10 @@ const SpecsWorkspacePage = ({
     state.isSaving,
   ]);
 
-  const commitChangedFiles = useMemo(() => [...state.pendingCommitPaths].sort(), [state.pendingCommitPaths]);
+  const commitChangedFiles = useMemo(
+    () => [...state.pendingCommitPaths].sort(),
+    [state.pendingCommitPaths]
+  );
 
   const handleCommit = useCallback(async () => {
     if (!canEdit || commitChangedFiles.length === 0 || state.isSaving) return;
@@ -680,7 +722,8 @@ const SpecsWorkspacePage = ({
       <div className="flex flex-1 flex-col items-center justify-center gap-2 py-12">
         <p className="text-sm text-muted">No documentation files found in this repository.</p>
         <p className="text-xs text-muted">
-          Add markdown files to a <code className="font-mono">specs/</code> folder in your linked GitHub repository.
+          Add markdown files to a <code className="font-mono">specs/</code> folder in your linked
+          GitHub repository.
         </p>
       </div>
     );
@@ -711,9 +754,7 @@ const SpecsWorkspacePage = ({
             Select a file to view it.
           </div>
         ) : state.fileStatus === 'loading' ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-muted">
-            Loading…
-          </div>
+          <div className="flex flex-1 items-center justify-center text-sm text-muted">Loading…</div>
         ) : fileError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2">
             <p className="text-sm text-danger">{fileError}</p>
@@ -742,11 +783,12 @@ const SpecsWorkspacePage = ({
                     Saved
                   </span>
                 )}
-                {state.pendingCommitPaths.has(state.selectedPath) && !state.dirtyPaths.has(state.selectedPath) && (
-                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-                    Ready to commit
-                  </span>
-                )}
+                {state.pendingCommitPaths.has(state.selectedPath) &&
+                  !state.dirtyPaths.has(state.selectedPath) && (
+                    <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                      Ready to commit
+                    </span>
+                  )}
               </div>
             </div>
 
@@ -754,7 +796,9 @@ const SpecsWorkspacePage = ({
               <div className="shrink-0 border-b border-red-300 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-900/20">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <p className="text-sm font-medium text-red-900 dark:text-red-200">File conflict detected</p>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-200">
+                      File conflict detected
+                    </p>
                     <p className="text-xs text-red-800 dark:text-red-300">{state.saveError}</p>
                   </div>
                   <Button
@@ -782,14 +826,19 @@ const SpecsWorkspacePage = ({
               <div className="shrink-0 border-t border-border bg-bg-surface px-4 py-3">
                 <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <label className="text-xs font-medium text-muted" htmlFor="specs-commit-message">
+                    <label
+                      className="text-xs font-medium text-muted"
+                      htmlFor="specs-commit-message"
+                    >
                       Commit message
                     </label>
                     <input
                       id="specs-commit-message"
                       type="text"
                       value={state.commitMessage}
-                      onChange={(e) => { dispatch({ type: 'commit/message', message: e.target.value }); }}
+                      onChange={(e) => {
+                        dispatch({ type: 'commit/message', message: e.target.value });
+                      }}
                       placeholder="Update specs"
                       className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
                     />
@@ -798,7 +847,11 @@ const SpecsWorkspacePage = ({
                   <button
                     type="button"
                     onClick={handleCommit}
-                    disabled={commitChangedFiles.length === 0 || state.isSaving || state.commitStatus === 'committing'}
+                    disabled={
+                      commitChangedFiles.length === 0 ||
+                      state.isSaving ||
+                      state.commitStatus === 'committing'
+                    }
                     className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Commit changes
@@ -808,9 +861,15 @@ const SpecsWorkspacePage = ({
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
                   <span>{state.pendingCommitPaths.size} file(s) ready</span>
                   {state.isSaving && <span>{translations['SpecsWorkspacePage.savingFile']}</span>}
-                  {state.commitStatus === 'committing' && <span>{translations['SpecsWorkspacePage.creatingCommit']}</span>}
-                  {state.commitStatus === 'success' && <span>{translations['SpecsWorkspacePage.commitCreated']}</span>}
-                  {saveFailure && !saveConflict && <span className="text-danger">{state.saveError}</span>}
+                  {state.commitStatus === 'committing' && (
+                    <span>{translations['SpecsWorkspacePage.creatingCommit']}</span>
+                  )}
+                  {state.commitStatus === 'success' && (
+                    <span>{translations['SpecsWorkspacePage.commitCreated']}</span>
+                  )}
+                  {saveFailure && !saveConflict && (
+                    <span className="text-danger">{state.saveError}</span>
+                  )}
                   {saveConflict && (
                     <>
                       <span className="text-danger">{state.saveError}</span>

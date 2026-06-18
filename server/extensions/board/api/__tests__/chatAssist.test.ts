@@ -65,7 +65,10 @@ beforeEach(() => {
   boardChatAssistApiDeps.authenticate = (req: Request & { currentUser?: { id: string } }) => {
     if (!authenticated) {
       return Promise.resolve(
-        Response.json({ name: 'unauthorized', data: { message: 'Authentication required' } }, { status: 401 }),
+        Response.json(
+          { name: 'unauthorized', data: { message: 'Authentication required' } },
+          { status: 401 }
+        )
       );
     }
     req.currentUser = { id: 'user-1' };
@@ -74,7 +77,10 @@ beforeEach(() => {
   boardChatAssistApiDeps.requireBoardAccess = (req, boardId) => {
     if (board.id !== boardId) {
       return Promise.resolve(
-        Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 }),
+        Response.json(
+          { error: { code: 'board-not-found', message: 'Board not found' } },
+          { status: 404 }
+        )
       );
     }
     req.board = board as unknown as typeof req.board;
@@ -82,7 +88,7 @@ beforeEach(() => {
   };
   boardChatAssistApiDeps.requireWorkspaceMembership = (
     req: Request & { callerRole?: string; workspaceId?: string },
-    workspaceId: string,
+    workspaceId: string
   ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
@@ -110,7 +116,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: '  What should we do next?  ', contextLimit: 6 }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(200);
@@ -141,7 +147,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: '{',
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);
@@ -155,7 +161,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: '  ' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);
@@ -169,7 +175,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'help', contextLimit: 0 }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);
@@ -179,8 +185,11 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
   it('rejects guests when chat use is denied', async () => {
     callerRole = 'GUEST';
     guestAccessError = Response.json(
-      { name: 'guest-chat-use-denied', data: { message: 'Guest does not have permission to send board chat messages' } },
-      { status: 403 },
+      {
+        name: 'guest-chat-use-denied',
+        data: { message: 'Guest does not have permission to send board chat messages' },
+      },
+      { status: 403 }
     );
 
     const response = await handleCreateChatAssist(
@@ -189,7 +198,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'help' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(403);
@@ -205,7 +214,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'help' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(403);
@@ -221,7 +230,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'help' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(401);
@@ -241,7 +250,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'help' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(429);
@@ -262,7 +271,7 @@ describe('POST /api/v1/boards/:boardId/chat/assist', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'help' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(422);

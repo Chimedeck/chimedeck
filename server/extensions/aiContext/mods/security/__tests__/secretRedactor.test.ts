@@ -20,9 +20,11 @@ describe('redactSecrets', () => {
   });
 
   it('redacts JWT tokens', () => {
-    const chunks = [makeChunk(
-      'Authorization header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
-    )];
+    const chunks = [
+      makeChunk(
+        'Authorization header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+      ),
+    ];
 
     const result = redactSecrets(chunks);
 
@@ -31,9 +33,9 @@ describe('redactSecrets', () => {
   });
 
   it('redacts password assignments', () => {
-    const chunks = [makeChunk(
-      'const config = {\n  password: "supersecret123",\n  api_key: "sk-abc123xyz"\n};',
-    )];
+    const chunks = [
+      makeChunk('const config = {\n  password: "supersecret123",\n  api_key: "sk-abc123xyz"\n};'),
+    ];
 
     const result = redactSecrets(chunks);
 
@@ -42,9 +44,7 @@ describe('redactSecrets', () => {
   });
 
   it('redacts connection strings', () => {
-    const chunks = [makeChunk(
-      'DATABASE_URL=postgres://user:pass@localhost:5432/db',
-    )];
+    const chunks = [makeChunk('DATABASE_URL=postgres://user:pass@localhost:5432/db')];
 
     const result = redactSecrets(chunks);
 

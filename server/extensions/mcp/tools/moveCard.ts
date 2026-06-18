@@ -9,13 +9,22 @@ export function registerMoveCard(server: McpServer, token: string): void {
     {
       cardId: z.string().describe('ID of the card to move'),
       targetListId: z.string().describe('ID of the destination list'),
-      afterCardId: z.string().nullable().optional().describe('Insert after this card ID (null places at top)'),
-      position: z.number().optional().describe('Deprecated alias. Only 0 is supported and maps to top'),
+      afterCardId: z
+        .string()
+        .nullable()
+        .optional()
+        .describe('Insert after this card ID (null places at top)'),
+      position: z
+        .number()
+        .optional()
+        .describe('Deprecated alias. Only 0 is supported and maps to top'),
     },
     async ({ cardId, targetListId, afterCardId, position }) => {
       if (afterCardId === undefined && position !== undefined && position !== 0) {
         return {
-          content: [{ type: 'text', text: 'Error: bad-request (position is deprecated; use afterCardId)' }],
+          content: [
+            { type: 'text', text: 'Error: bad-request (position is deprecated; use afterCardId)' },
+          ],
           isError: true,
         };
       }
@@ -43,6 +52,6 @@ export function registerMoveCard(server: McpServer, token: string): void {
       return {
         content: [{ type: 'text', text: JSON.stringify(result.data) }],
       };
-    },
+    }
   );
 }

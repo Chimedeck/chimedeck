@@ -18,10 +18,7 @@ export const syncAsBuiltDeps = {
 /**
  * Handle POST /api/v1/cards/:cardId/as-built/sync.
  */
-export async function handleSyncAsBuilt(
-  req: Request,
-  cardId: string,
-): Promise<Response> {
+export async function handleSyncAsBuilt(req: Request, cardId: string): Promise<Response> {
   // Extract user from auth context (set by boardVisibility middleware)
   const userId = (req as { currentUser?: { id: string } }).currentUser?.id;
   if (!userId) {
@@ -30,7 +27,7 @@ export async function handleSyncAsBuilt(
         name: 'unauthorized',
         data: { message: 'Authentication required' },
       },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -42,13 +39,14 @@ export async function handleSyncAsBuilt(
         name: 'workspace-not-found',
         data: { message: 'Workspace context not found' },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   // Verify the card exists and belongs to this workspace
   try {
-    const card = await syncAsBuiltDeps.db('cards')
+    const card = await syncAsBuiltDeps
+      .db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
       .join('boards', 'lists.board_id', 'boards.id')
       .where({ 'cards.id': cardId, 'boards.workspace_id': workspaceId })
@@ -61,7 +59,7 @@ export async function handleSyncAsBuilt(
           name: 'card-not-found',
           data: { message: 'Card not found in this workspace' },
         },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -78,7 +76,7 @@ export async function handleSyncAsBuilt(
               'An as-built sync run has already succeeded for this card. Move to another phase and back to re-trigger.',
           },
         },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
@@ -104,22 +102,20 @@ export async function handleSyncAsBuilt(
     }
 
     // Fire async pipeline execution (fire-and-forget)
-    import('../../mods/pipeline').then(
-      ({ runAsBuiltSyncPipeline }) => {
-        runAsBuiltSyncPipeline({
-          cardId,
-          workspaceId,
-          boardId,
-          userId,
-          triggerRunId: null,
-        }).catch((err) => {
-          console.error(
-            `[asBuiltSync/api/sync] Pipeline failed for run ${run.id}:`,
-            err instanceof Error ? err.message : String(err),
-          );
-        });
-      },
-    );
+    import('../../mods/pipeline').then(({ runAsBuiltSyncPipeline }) => {
+      runAsBuiltSyncPipeline({
+        cardId,
+        workspaceId,
+        boardId,
+        userId,
+        triggerRunId: null,
+      }).catch((err) => {
+        console.error(
+          `[asBuiltSync/api/sync] Pipeline failed for run ${run.id}:`,
+          err instanceof Error ? err.message : String(err)
+        );
+      });
+    });
 
     return Response.json(
       {
@@ -131,19 +127,19 @@ export async function handleSyncAsBuilt(
           },
         },
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
     console.error(
       '[asBuiltSync/api/sync] Error:',
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
     return Response.json(
       {
         name: 'internal-error',
         data: { message: 'Internal server error' },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

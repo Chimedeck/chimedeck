@@ -18,7 +18,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
   if (!refreshToken) {
     return Response.json(
       { error: { code: 'refresh-token-invalid', message: 'No refresh token cookie present' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -27,7 +27,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
   if (result.status !== 200 || !result.token || !result.userId) {
     return Response.json(
       { error: { code: 'refresh-token-invalid', message: 'Refresh token expired or revoked' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -35,7 +35,7 @@ export async function handleRefresh(req: Request): Promise<Response> {
   if (!user) {
     return Response.json(
       { error: { code: 'user-not-found', message: 'User no longer exists' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -44,12 +44,12 @@ export async function handleRefresh(req: Request): Promise<Response> {
   const responseHeaders = new Headers({ 'Content-Type': 'application/json' });
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${result.token}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`
   );
   // Rotate the access_token cookie to match the new JWT.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`
   );
 
   const avatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
@@ -61,6 +61,6 @@ export async function handleRefresh(req: Request): Promise<Response> {
         user: { id: user.id, email: user.email, name: user.name, avatarUrl },
       },
     }),
-    { status: 200, headers: responseHeaders },
+    { status: 200, headers: responseHeaders }
   );
 }

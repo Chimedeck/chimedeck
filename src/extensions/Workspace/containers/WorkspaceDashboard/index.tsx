@@ -95,9 +95,13 @@ const WorkspaceDashboard = () => {
             )}
             <BoardCard
               board={board}
-              onClick={() => { navigate(boardPath(board)); }}
+              onClick={() => {
+                navigate(boardPath(board));
+              }}
               onArchive={() => handleArchive(board.id)}
-              onDelete={() => { handleDelete(board.id); }}
+              onDelete={() => {
+                handleDelete(board.id);
+              }}
               onDuplicate={() => handleDuplicate(board.id)}
               onStar={() => handleStar(board.id)}
               onUnstar={() => handleUnstar(board.id)}
@@ -137,7 +141,9 @@ const WorkspaceDashboard = () => {
           {!isGuest && (
             <Button
               variant="primary"
-              onClick={() => { setShowCreateModal(true); }}
+              onClick={() => {
+                setShowCreateModal(true);
+              }}
               className="px-4 py-2 text-sm" // [theme-exception] text-white on primary button
             >
               Create Board
@@ -148,7 +154,9 @@ const WorkspaceDashboard = () => {
       {pageContent}
       {showCreateModal && (
         <CreateBoardModal
-          onClose={() => { setShowCreateModal(false); }}
+          onClose={() => {
+            setShowCreateModal(false);
+          }}
           onCreate={handleCreate}
         />
       )}

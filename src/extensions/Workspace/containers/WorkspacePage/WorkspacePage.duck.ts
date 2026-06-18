@@ -134,10 +134,7 @@ export const createWorkspaceThunk = createAppAsyncThunk(
 
 export const updateWorkspaceThunk = createAppAsyncThunk(
   'WorkspacePage/updateWorkspace',
-  async (
-    { workspaceId, name }: { workspaceId: string; name: string },
-    { extra: { api } }
-  ) => {
+  async ({ workspaceId, name }: { workspaceId: string; name: string }, { extra: { api } }) => {
     const response = await updateWorkspace({ api, workspaceId, name });
     return response.data;
   }
@@ -154,11 +151,7 @@ export const deleteWorkspaceThunk = createAppAsyncThunk(
 export const sendInvite = createAppAsyncThunk(
   'WorkspacePage/sendInvite',
   async (
-    {
-      workspaceId,
-      email,
-      role,
-    }: { workspaceId: string; email: string; role: Role },
+    { workspaceId, email, role }: { workspaceId: string; email: string; role: Role },
     { extra: { api } }
   ) => {
     const response = await createInvite({ api, workspaceId, email, role });
@@ -169,11 +162,7 @@ export const sendInvite = createAppAsyncThunk(
 export const addMemberThunk = createAppAsyncThunk(
   'WorkspacePage/addMember',
   async (
-    {
-      workspaceId,
-      email,
-      role,
-    }: { workspaceId: string; email: string; role: Role },
+    { workspaceId, email, role }: { workspaceId: string; email: string; role: Role },
     { extra: { api } }
   ) => {
     const response = await addMember({ api, workspaceId, email, role });
@@ -184,11 +173,7 @@ export const addMemberThunk = createAppAsyncThunk(
 export const updateMemberRoleThunk = createAppAsyncThunk(
   'WorkspacePage/updateMemberRole',
   async (
-    {
-      workspaceId,
-      userId,
-      role,
-    }: { workspaceId: string; userId: string; role: Role },
+    { workspaceId, userId, role }: { workspaceId: string; userId: string; role: Role },
     { extra: { api } }
   ) => {
     const response = await updateMemberRole({ api, workspaceId, userId, role });
@@ -198,10 +183,7 @@ export const updateMemberRoleThunk = createAppAsyncThunk(
 
 export const removeMemberThunk = createAppAsyncThunk(
   'WorkspacePage/removeMember',
-  async (
-    { workspaceId, userId }: { workspaceId: string; userId: string },
-    { extra: { api } }
-  ) => {
+  async ({ workspaceId, userId }: { workspaceId: string; userId: string }, { extra: { api } }) => {
     await removeMember({ api, workspaceId, userId });
     // Server returns 204 No Content — return the userId so the reducer can filter by it
     return userId;
@@ -211,10 +193,7 @@ export const removeMemberThunk = createAppAsyncThunk(
 // loadData is the route-level data fetcher called before the page renders.
 export const loadData = createAppAsyncThunk(
   'WorkspacePage/loadData',
-  async (
-    { params }: { params: { workspaceId?: string } },
-    { dispatch }
-  ) => {
+  async ({ params }: { params: { workspaceId?: string } }, { dispatch }) => {
     await dispatch(fetchWorkspaces()).unwrap();
     if (params.workspaceId) {
       await dispatch(fetchWorkspace({ workspaceId: params.workspaceId })).unwrap();
@@ -372,15 +351,12 @@ const WorkspacePageSlice = createSlice({
         state.updateRoleInProgress = true;
         state.updateRoleError = null;
       })
-      .addCase(
-        updateMemberRoleThunk.fulfilled,
-        (state, action: PayloadAction<WorkspaceMember>) => {
-          state.updateRoleInProgress = false;
-          const updated = action.payload;
-          const idx = state.members.findIndex((m) => m.userId === updated.userId);
-          if (idx !== -1) state.members[idx] = updated;
-        }
-      )
+      .addCase(updateMemberRoleThunk.fulfilled, (state, action: PayloadAction<WorkspaceMember>) => {
+        state.updateRoleInProgress = false;
+        const updated = action.payload;
+        const idx = state.members.findIndex((m) => m.userId === updated.userId);
+        if (idx !== -1) state.members[idx] = updated;
+      })
       .addCase(updateMemberRoleThunk.rejected, (state, action) => {
         state.updateRoleInProgress = false;
         state.updateRoleError = action.error;
@@ -392,15 +368,10 @@ const WorkspacePageSlice = createSlice({
         state.removeInProgress = true;
         state.removeError = null;
       })
-      .addCase(
-        removeMemberThunk.fulfilled,
-        (state, action: PayloadAction<string>) => {
-          state.removeInProgress = false;
-          state.members = state.members.filter(
-            (m) => m.userId !== action.payload
-          );
-        }
-      )
+      .addCase(removeMemberThunk.fulfilled, (state, action: PayloadAction<string>) => {
+        state.removeInProgress = false;
+        state.members = state.members.filter((m) => m.userId !== action.payload);
+      })
       .addCase(removeMemberThunk.rejected, (state, action) => {
         state.removeInProgress = false;
         state.removeError = action.error;
@@ -417,20 +388,14 @@ export default WorkspacePageSlice.reducer;
 const workspacePageState = (state: RootState) =>
   (state as unknown as { WorkspacePage: WorkspacePageState }).WorkspacePage;
 
-export const workspacesSelector = createSelector(
-  workspacePageState,
-  (s) => s.workspaces
-);
+export const workspacesSelector = createSelector(workspacePageState, (s) => s.workspaces);
 
 export const currentWorkspaceSelector = createSelector(
   workspacePageState,
   (s) => s.currentWorkspace
 );
 
-export const membersSelector = createSelector(
-  workspacePageState,
-  (s) => s.members
-);
+export const membersSelector = createSelector(workspacePageState, (s) => s.members);
 
 export const membersWorkspaceIdSelector = createSelector(
   workspacePageState,
@@ -462,32 +427,20 @@ export const inviteInProgressSelector = createSelector(
   (s) => s.inviteInProgress
 );
 
-export const inviteErrorSelector = createSelector(
-  workspacePageState,
-  (s) => s.inviteError
-);
+export const inviteErrorSelector = createSelector(workspacePageState, (s) => s.inviteError);
 
-export const inviteSuccessSelector = createSelector(
-  workspacePageState,
-  (s) => s.inviteSuccess
-);
+export const inviteSuccessSelector = createSelector(workspacePageState, (s) => s.inviteSuccess);
 
 export const updateRoleInProgressSelector = createSelector(
   workspacePageState,
   (s) => s.updateRoleInProgress
 );
 
-export const updateRoleErrorSelector = createSelector(
-  workspacePageState,
-  (s) => s.updateRoleError
-);
+export const updateRoleErrorSelector = createSelector(workspacePageState, (s) => s.updateRoleError);
 
 export const removeInProgressSelector = createSelector(
   workspacePageState,
   (s) => s.removeInProgress
 );
 
-export const removeErrorSelector = createSelector(
-  workspacePageState,
-  (s) => s.removeError
-);
+export const removeErrorSelector = createSelector(workspacePageState, (s) => s.removeError);

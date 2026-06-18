@@ -3,15 +3,21 @@
 import { useNavigate } from 'react-router-dom';
 import config from '~/config';
 import Button from '~/common/components/Button';
+import { CommandLineIcon, KeyIcon, BoltIcon, ServerStackIcon } from '@heroicons/react/24/outline';
 import {
-  CommandLineIcon,
-  KeyIcon,
-  BoltIcon,
-  ServerStackIcon,
-} from '@heroicons/react/24/outline';
-import {
-  Section, H2, H3, P, Code, Pre, Divider, Badge,
-  InfoCallout, WarnCallout, Table, NavItem, inlineCodeClass,
+  Section,
+  H2,
+  H3,
+  P,
+  Code,
+  Pre,
+  Divider,
+  Badge,
+  InfoCallout,
+  WarnCallout,
+  Table,
+  NavItem,
+  inlineCodeClass,
 } from '~/extensions/DeveloperDocs/components/DocsPrimitives';
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -59,7 +65,9 @@ const McpDocsPage = () => {
           <Button
             variant="link"
             size="sm"
-            onClick={() => { navigate(-1); }}
+            onClick={() => {
+              navigate(-1);
+            }}
             className="mb-2"
           >
             ← Back
@@ -69,25 +77,22 @@ const McpDocsPage = () => {
             <div>
               <h1 className="text-2xl font-bold text-base">MCP Server Developer Guide</h1>
               <p className="text-sm text-muted">
-                Connect AI assistants to ChimeDeck using the{' '}
-                <Code>Model Context Protocol</Code> (MCP).
+                Connect AI assistants to ChimeDeck using the <Code>Model Context Protocol</Code>{' '}
+                (MCP).
               </p>
             </div>
           </div>
         </div>
 
         <div className="mx-auto max-w-3xl px-8 py-10 space-y-2">
-
           {/* ── Overview ───────────────────────────────────── */}
           <Section id="overview">
             <InfoCallout className="mb-6">
-              The ChimeDeck MCP server lets AI assistants — Claude, Cursor, and any
-              MCP-compatible client — take actions inside ChimeDeck on your behalf. It bridges
-              MCP tool calls to ChimeDeck's REST API using your personal API token.
+              The ChimeDeck MCP server lets AI assistants — Claude, Cursor, and any MCP-compatible
+              client — take actions inside ChimeDeck on your behalf. It bridges MCP tool calls to
+              ChimeDeck's REST API using your personal API token.
             </InfoCallout>
-            <P>
-              The server supports two transport modes:
-            </P>
+            <P>The server supports two transport modes:</P>
             <ol className="mb-4 space-y-2 text-sm text-subtle">
               {[
                 '<strong>stdio</strong> — a local Bun subprocess that communicates over stdin/stdout. Best for Claude Desktop and Cursor.',
@@ -134,8 +139,8 @@ const McpDocsPage = () => {
               ))}
             </ol>
             <WarnCallout>
-              <strong>Keep your token secret.</strong> Treat it like a password. Anyone who has
-              it can perform any action on your behalf.
+              <strong>Keep your token secret.</strong> Treat it like a password. Anyone who has it
+              can perform any action on your behalf.
             </WarnCallout>
 
             <H3>Using the token</H3>
@@ -145,15 +150,39 @@ const McpDocsPage = () => {
                 {
                   rowId: 'auth-stdio',
                   cells: [
-                    { key: 'transport', content: <Badge color="bg-bg-overlay text-subtle">stdio</Badge> },
-                    { key: 'how', content: <><Code>CHIMEDECK_TOKEN</Code> environment variable</> },
+                    {
+                      key: 'transport',
+                      content: <Badge color="bg-bg-overlay text-subtle">stdio</Badge>,
+                    },
+                    {
+                      key: 'how',
+                      content: (
+                        <>
+                          <Code>CHIMEDECK_TOKEN</Code> environment variable
+                        </>
+                      ),
+                    },
                   ],
                 },
                 {
                   rowId: 'auth-http',
                   cells: [
-                    { key: 'transport', content: <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">HTTP</Badge> },
-                    { key: 'how', content: <><Code>Authorization: Bearer hf_your_token_here</Code> request header</> },
+                    {
+                      key: 'transport',
+                      content: (
+                        <Badge color="bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                          HTTP
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: 'how',
+                      content: (
+                        <>
+                          <Code>Authorization: Bearer hf_your_token_here</Code> request header
+                        </>
+                      ),
+                    },
                   ],
                 },
               ]}
@@ -170,8 +199,8 @@ const McpDocsPage = () => {
             </H2>
             <P>
               The ChimeDeck MCP server runs as a remote HTTP endpoint — you do not need to install
-              anything locally. Point your AI client at the server URL and supply your API token
-              as a bearer header.
+              anything locally. Point your AI client at the server URL and supply your API token as
+              a bearer header.
             </P>
 
             <H3>Claude Desktop</H3>
@@ -190,8 +219,8 @@ const McpDocsPage = () => {
   }
 }`}</Pre>
             <P>
-              Restart Claude Desktop to pick up the change.
-              Restart Claude Desktop to pick up the change.
+              Restart Claude Desktop to pick up the change. Restart Claude Desktop to pick up the
+              change.
             </P>
 
             <H3>Cursor</H3>
@@ -214,8 +243,8 @@ const McpDocsPage = () => {
             <H3>Other MCP clients</H3>
             <P>
               Any MCP-compatible client that supports remote HTTP / SSE transport can connect.
-              Configure the endpoint URL to <Code>{appUrl}/api/mcp</Code>{' '}
-              and pass <Code>Authorization: Bearer hf_your_token_here</Code> as a request header.
+              Configure the endpoint URL to <Code>{appUrl}/api/mcp</Code> and pass{' '}
+              <Code>Authorization: Bearer hf_your_token_here</Code> as a request header.
             </P>
           </Section>
 
@@ -228,8 +257,8 @@ const McpDocsPage = () => {
               Endpoint Reference (Remote HTTP)
             </H2>
             <P>
-              The HTTP MCP endpoint is served at <Code>/api/mcp</Code> on the same port as
-              ChimeDeck (default <Code>3000</Code>). No additional ports or env vars are required.
+              The HTTP MCP endpoint is served at <Code>/api/mcp</Code> on the same port as ChimeDeck
+              (default <Code>3000</Code>). No additional ports or env vars are required.
             </P>
 
             <H3>Session lifecycle</H3>
@@ -248,7 +277,9 @@ const McpDocsPage = () => {
                 </li>
               ))}
             </ol>
-            <P>Sessions expire automatically after <strong>30 minutes</strong> of inactivity.</P>
+            <P>
+              Sessions expire automatically after <strong>30 minutes</strong> of inactivity.
+            </P>
 
             <H3>curl examples</H3>
             <P>1. Initialize a session:</P>
@@ -304,15 +335,32 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-400',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">400</Badge> },
+                    {
+                      key: 'status',
+                      content: (
+                        <Badge color="bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+                          400
+                        </Badge>
+                      ),
+                    },
                     { key: 'name', content: <Code>bad-request</Code> },
-                    { key: 'meaning', content: 'mcp-session-id header missing on a non-initialize request' },
+                    {
+                      key: 'meaning',
+                      content: 'mcp-session-id header missing on a non-initialize request',
+                    },
                   ],
                 },
                 {
                   rowId: 'err-401',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">401</Badge> },  // [theme-exception]
+                    {
+                      key: 'status',
+                      content: (
+                        <Badge color="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">
+                          401
+                        </Badge>
+                      ),
+                    }, // [theme-exception]
                     { key: 'name', content: <Code>unauthorized</Code> },
                     { key: 'meaning', content: 'Token absent or invalid' },
                   ],
@@ -320,15 +368,28 @@ curl -X POST http://localhost:3000/api/mcp \\
                 {
                   rowId: 'err-403',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">403</Badge> },  // [theme-exception]
+                    {
+                      key: 'status',
+                      content: (
+                        <Badge color="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300">
+                          403
+                        </Badge>
+                      ),
+                    }, // [theme-exception]
                     { key: 'name', content: <Code>forbidden</Code> },
-                    { key: 'meaning', content: 'Token belongs to a different user than the session owner' },
+                    {
+                      key: 'meaning',
+                      content: 'Token belongs to a different user than the session owner',
+                    },
                   ],
                 },
                 {
                   rowId: 'err-404',
                   cells: [
-                    { key: 'status', content: <Badge color="bg-bg-overlay text-subtle">404</Badge> },
+                    {
+                      key: 'status',
+                      content: <Badge color="bg-bg-overlay text-subtle">404</Badge>,
+                    },
                     { key: 'name', content: <Code>session-not-found</Code> },
                     { key: 'meaning', content: 'Session expired or never existed — re-initialize' },
                   ],
@@ -342,9 +403,7 @@ curl -X POST http://localhost:3000/api/mcp \\
           {/* ── Available Tools ────────────────────────────── */}
           <Section id="available-tools">
             <H2>Available Tools</H2>
-            <P>
-              ChimeDeck exposes 13 MCP tools. Each tool maps to a specific REST API endpoint.
-            </P>
+            <P>ChimeDeck exposes 13 MCP tools. Each tool maps to a specific REST API endpoint.</P>
             <Table
               headers={['Tool', 'Description', 'Endpoint']}
               rows={[
@@ -352,7 +411,10 @@ curl -X POST http://localhost:3000/api/mcp \\
                   rowId: 'tool-move-card',
                   cells: [
                     { key: 'tool', content: <Code>move_card</Code> },
-                    { key: 'desc', content: 'Move a card to a different list, optionally at a specific position' },
+                    {
+                      key: 'desc',
+                      content: 'Move a card to a different list, optionally at a specific position',
+                    },
                     { key: 'endpoint', content: <Code>PATCH /api/v1/cards/:cardId/move</Code> },
                   ],
                 },
@@ -377,7 +439,10 @@ curl -X POST http://localhost:3000/api/mcp \\
                   cells: [
                     { key: 'tool', content: <Code>edit_card_description</Code> },
                     { key: 'desc', content: 'Update the description of a card' },
-                    { key: 'endpoint', content: <Code>PATCH /api/v1/cards/:cardId/description</Code> },
+                    {
+                      key: 'endpoint',
+                      content: <Code>PATCH /api/v1/cards/:cardId/description</Code>,
+                    },
                   ],
                 },
                 {
@@ -392,7 +457,10 @@ curl -X POST http://localhost:3000/api/mcp \\
                   rowId: 'tool-invite-to-board',
                   cells: [
                     { key: 'tool', content: <Code>invite_to_board</Code> },
-                    { key: 'desc', content: 'Invite a user to a board by email (requires board admin)' },
+                    {
+                      key: 'desc',
+                      content: 'Invite a user to a board by email (requires board admin)',
+                    },
                     { key: 'endpoint', content: <Code>POST /api/v1/boards/:boardId/members</Code> },
                   ],
                 },
@@ -401,14 +469,20 @@ curl -X POST http://localhost:3000/api/mcp \\
                   cells: [
                     { key: 'tool', content: <Code>search_cards</Code> },
                     { key: 'desc', content: 'Full-text search over cards within a workspace' },
-                    { key: 'endpoint', content: <Code>GET /api/v1/workspaces/:workspaceId/search</Code> },
+                    {
+                      key: 'endpoint',
+                      content: <Code>GET /api/v1/workspaces/:workspaceId/search</Code>,
+                    },
                   ],
                 },
                 {
                   rowId: 'tool-search-board',
                   cells: [
                     { key: 'tool', content: <Code>search_board</Code> },
-                    { key: 'desc', content: 'Full-text search over cards and lists scoped to a single board' },
+                    {
+                      key: 'desc',
+                      content: 'Full-text search over cards and lists scoped to a single board',
+                    },
                     { key: 'endpoint', content: <Code>GET /api/v1/boards/:boardId/search</Code> },
                   ],
                 },
@@ -416,7 +490,10 @@ curl -X POST http://localhost:3000/api/mcp \\
                   rowId: 'tool-get-card',
                   cells: [
                     { key: 'tool', content: <Code>get_card</Code> },
-                    { key: 'desc', content: 'Retrieve the full details of a single card by its ID' },
+                    {
+                      key: 'desc',
+                      content: 'Retrieve the full details of a single card by its ID',
+                    },
                     { key: 'endpoint', content: <Code>GET /api/v1/cards/:cardId</Code> },
                   ],
                 },
@@ -424,32 +501,56 @@ curl -X POST http://localhost:3000/api/mcp \\
                   rowId: 'tool-get-state-transitions',
                   cells: [
                     { key: 'tool', content: <Code>get_state_transitions</Code> },
-                    { key: 'desc', content: 'Retrieve state transition graph and enabled flag for a board' },
-                    { key: 'endpoint', content: <Code>GET /api/v1/boards/:boardId/state-transitions</Code> },
+                    {
+                      key: 'desc',
+                      content: 'Retrieve state transition graph and enabled flag for a board',
+                    },
+                    {
+                      key: 'endpoint',
+                      content: <Code>GET /api/v1/boards/:boardId/state-transitions</Code>,
+                    },
                   ],
                 },
                 {
                   rowId: 'tool-set-state-transitions',
                   cells: [
                     { key: 'tool', content: <Code>set_state_transitions</Code> },
-                    { key: 'desc', content: 'Update state transition graph and/or enabled flag for a board' },
-                    { key: 'endpoint', content: <Code>PUT /api/v1/boards/:boardId/state-transitions</Code> },
+                    {
+                      key: 'desc',
+                      content: 'Update state transition graph and/or enabled flag for a board',
+                    },
+                    {
+                      key: 'endpoint',
+                      content: <Code>PUT /api/v1/boards/:boardId/state-transitions</Code>,
+                    },
                   ],
                 },
                 {
                   rowId: 'tool-get-state-transition-rules',
                   cells: [
                     { key: 'tool', content: <Code>get_state_transition_rules</Code> },
-                    { key: 'desc', content: 'Retrieve enforceable state-transition rules for a board' },
-                    { key: 'endpoint', content: <Code>GET /api/v1/boards/:boardId/state-transitions/rules</Code> },
+                    {
+                      key: 'desc',
+                      content: 'Retrieve enforceable state-transition rules for a board',
+                    },
+                    {
+                      key: 'endpoint',
+                      content: <Code>GET /api/v1/boards/:boardId/state-transitions/rules</Code>,
+                    },
                   ],
                 },
                 {
                   rowId: 'tool-copy-state-transitions',
                   cells: [
                     { key: 'tool', content: <Code>copy_state_transitions</Code> },
-                    { key: 'desc', content: 'Copy state transition graph from one board to another' },
-                    { key: 'endpoint', content: <Code>POST /api/v1/boards/:boardId/state-transitions/copy</Code> },
+                    {
+                      key: 'desc',
+                      content: 'Copy state transition graph from one board to another',
+                    },
+                    {
+                      key: 'endpoint',
+                      content: <Code>POST /api/v1/boards/:boardId/state-transitions/copy</Code>,
+                    },
                   ],
                 },
               ]}
@@ -469,7 +570,10 @@ curl -X POST http://localhost:3000/api/mcp \\
           {/* move_card */}
           <Section id="tool-move-card">
             <H3>move_card</H3>
-            <P>Move a card to a different list. Optionally specify a zero-based position within the target list.</P>
+            <P>
+              Move a card to a different list. Optionally specify a zero-based position within the
+              target list.
+            </P>
             <Table
               headers={['Parameter', 'Type', 'Required', 'Description']}
               rows={[
@@ -603,7 +707,10 @@ curl -X POST http://localhost:3000/api/mcp \\
           {/* set_card_price */}
           <Section id="tool-set-card-price">
             <H3>set_card_price</H3>
-            <P>Set or clear the price on a card. Pass <Code>null</Code> for <Code>amount</Code> to remove the price.</P>
+            <P>
+              Set or clear the price on a card. Pass <Code>null</Code> for <Code>amount</Code> to
+              remove the price.
+            </P>
             <Table
               headers={['Parameter', 'Type', 'Required', 'Description']}
               rows={[
@@ -652,9 +759,9 @@ curl -X POST http://localhost:3000/api/mcp \\
             <H3>invite_to_board</H3>
             <P>Invite a user to a board by email. Requires the token holder to be a board admin.</P>
             <WarnCallout className="mb-3">
-              <strong>Access control:</strong> If the token holder is not a board admin, the
-              tool returns a structured error (<Code>current-user-is-not-admin</Code>) instead
-              of crashing.
+              <strong>Access control:</strong> If the token holder is not a board admin, the tool
+              returns a structured error (<Code>current-user-is-not-admin</Code>) instead of
+              crashing.
             </WarnCallout>
             <Table
               headers={['Parameter', 'Type', 'Required', 'Description']}
@@ -693,7 +800,10 @@ curl -X POST http://localhost:3000/api/mcp \\
           {/* search_cards */}
           <Section id="tool-search-cards">
             <H3>search_cards</H3>
-            <P>Full-text search over all cards within a workspace. Returns matching cards with title, list, and board context.</P>
+            <P>
+              Full-text search over all cards within a workspace. Returns matching cards with title,
+              list, and board context.
+            </P>
             <Table
               headers={['Parameter', 'Type', 'Required', 'Description']}
               rows={[
@@ -769,7 +879,10 @@ curl -X POST http://localhost:3000/api/mcp \\
           {/* get_card */}
           <Section id="tool-get-card">
             <H3>get_card</H3>
-            <P>Retrieve the full details of a single card by its ID, including title, description, list, price, labels, and members.</P>
+            <P>
+              Retrieve the full details of a single card by its ID, including title, description,
+              list, price, labels, and members.
+            </P>
             <Table
               headers={['Parameter', 'Type', 'Required', 'Description']}
               rows={[
@@ -904,7 +1017,6 @@ curl -X POST http://localhost:3000/api/mcp \\
               ]}
             />
           </Section>
-
         </div>
       </main>
     </div>

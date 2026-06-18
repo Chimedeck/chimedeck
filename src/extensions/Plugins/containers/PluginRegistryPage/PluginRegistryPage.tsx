@@ -196,12 +196,8 @@ const PluginRegistryPage = () => {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-base">
-            {translations['plugins.registry.title']}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {translations['plugins.registry.subtitle']}
-          </p>
+          <h1 className="text-2xl font-bold text-base">{translations['plugins.registry.title']}</h1>
+          <p className="mt-1 text-sm text-muted">{translations['plugins.registry.subtitle']}</p>
         </div>
         {/* "+ Register Plugin" button — wired in a future iteration */}
         <button
@@ -248,9 +244,7 @@ const PluginRegistryPage = () => {
       {/* Empty state */}
       {status === 'idle' && plugins.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-muted text-sm">
-            {translations['plugins.registry.empty']}
-          </p>
+          <p className="text-muted text-sm">{translations['plugins.registry.empty']}</p>
         </div>
       )}
 
@@ -284,7 +278,9 @@ const PluginRegistryPage = () => {
         open={registerOpen}
         isSubmitting={isSubmittingRegister}
         serverError={registerServerError}
-        onClose={() => { setRegisterOpen(false); }}
+        onClose={() => {
+          setRegisterOpen(false);
+        }}
         onSubmit={handleRegisterSubmit}
       />
 

@@ -37,10 +37,15 @@ mock.module('../../../../../common/avatar/resolveAvatarUrl', () => ({
 }));
 
 const firstResult = (value: unknown) => ({ first: async () => value });
-const whereSelectFirst = (value: unknown) => ({ where: () => ({ select: () => firstResult(value) }) });
+const whereSelectFirst = (value: unknown) => ({
+  where: () => ({ select: () => firstResult(value) }),
+});
 
 // Build a db mock that handles each table accessed by boardActivityDispatch.
-function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests = [] as any[] } = {}) {
+function buildDbMock({
+  boardMembers = [{ user_id: 'recipient-1' }],
+  boardGuests = [] as any[],
+} = {}) {
   const db: any = (table: string) => {
     if (table === 'boards') {
       return whereSelectFirst({ id: 'board-1', title: 'Test Board', workspace_id: 'ws-1' });
@@ -67,7 +72,12 @@ function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests 
       return whereSelectFirst({ name: 'To Do' });
     }
     if (table === 'users') {
-      return whereSelectFirst({ id: 'actor-1', nickname: 'alice', name: 'Alice', avatar_url: null });
+      return whereSelectFirst({
+        id: 'actor-1',
+        nickname: 'alice',
+        name: 'Alice',
+        avatar_url: null,
+      });
     }
     if (table === 'notifications') {
       return {
@@ -171,7 +181,7 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
     });
 
     expect(dispatchEmailMock).toHaveBeenCalledWith(
-      expect.objectContaining({ emailEnabled: false }),
+      expect.objectContaining({ emailEnabled: false })
     );
   });
 
@@ -184,8 +194,6 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
       actorId: 'actor-1',
     });
 
-    expect(dispatchEmailMock).toHaveBeenCalledWith(
-      expect.objectContaining({ emailEnabled: true }),
-    );
+    expect(dispatchEmailMock).toHaveBeenCalledWith(expect.objectContaining({ emailEnabled: true }));
   });
 });

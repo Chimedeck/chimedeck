@@ -5,7 +5,7 @@ import { handleRemoveReaction } from './remove';
 export async function reactionsRouter(
   req: Request,
   commentId: string,
-  remainingPath: string,
+  remainingPath: string
 ): Promise<Response | null> {
   // POST /api/v1/comments/:commentId/reactions
   if (req.method === 'POST' && remainingPath === '') {

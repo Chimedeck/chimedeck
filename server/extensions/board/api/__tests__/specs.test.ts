@@ -62,7 +62,10 @@ function makeAuthMock() {
 }
 
 function makeMembershipMock() {
-  return async (req: Request & { callerRole?: string; workspaceId?: string }, workspaceId: string) => {
+  return async (
+    req: Request & { callerRole?: string; workspaceId?: string },
+    workspaceId: string
+  ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
     return null;
@@ -168,7 +171,12 @@ function resetDeps() {
     value: {
       normalizedUrl: value,
       hash: 'hash',
-      reference: { scope: 'repo' as const, owner: 'journeyhorizon', repository: 'agentic-trello-replacement', projectNumber: 12 },
+      reference: {
+        scope: 'repo' as const,
+        owner: 'journeyhorizon',
+        repository: 'agentic-trello-replacement',
+        projectNumber: 12,
+      },
     },
   });
   specsCommitDeps.commitSpecsChanges = async () => {
@@ -178,9 +186,12 @@ function resetDeps() {
 
 beforeEach(() => {
   // Clear module-level caches between tests.
-  const { specsManifestCache, specsManifestInflight, specsFileCache, specsFileInflight } =
-     
-    require('../../mods/specs/cache');
+  const {
+    specsManifestCache,
+    specsManifestInflight,
+    specsFileCache,
+    specsFileInflight,
+  } = require('../../mods/specs/cache');
   specsManifestCache.clear();
   specsManifestInflight.clear();
   specsFileCache.clear();
@@ -195,11 +206,11 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
   it('returns the manifest for an authenticated member', async () => {
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: typeof FAKE_MANIFEST };
+    const body = (await res.json()) as { data: typeof FAKE_MANIFEST };
     expect(body.data.etag).toBe(FAKE_MANIFEST_ETAG);
     expect(body.data.files).toHaveLength(2);
     expect(res.headers.get('etag')).toBe(`"${FAKE_MANIFEST_ETAG}"`);
@@ -210,7 +221,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest', {
         headers: { 'If-None-Match': `"${FAKE_MANIFEST_ETAG}"` },
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(304);
@@ -220,7 +231,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     authenticated = false;
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(401);
   });
@@ -229,7 +240,7 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     callerRole = 'GUEST';
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
   });
@@ -238,10 +249,10 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     board.github_project_url = null;
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-not-configured');
     expect(body.data.message).toContain('configure your Github documentation');
   });
@@ -252,10 +263,10 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     };
     const res = await handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-load-failed');
     expect(body.data.message).toContain('do not have access to this respository');
   });
@@ -267,18 +278,20 @@ describe('GET /api/v1/boards/:boardId/specs/manifest', () => {
     specsLoadDeps.downloadRepositoryFromProjectUrl = () => {
       callCount++;
       return new Promise<{ repoPath: string; ref: string; fetchedAt: string }>((resolve) => {
-        resolveTask = () => { resolve({ repoPath: FAKE_REPO_PATH, ref: FAKE_REF, fetchedAt: FAKE_FETCHED_AT }); };
+        resolveTask = () => {
+          resolve({ repoPath: FAKE_REPO_PATH, ref: FAKE_REF, fetchedAt: FAKE_FETCHED_AT });
+        };
       });
     };
 
     // Fire two concurrent requests — only one download should be triggered.
     const p1 = handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
     const p2 = handleLoadSpecsManifest(
       new Request('http://localhost/api/v1/boards/board-1/specs/manifest'),
-      'board-1',
+      'board-1'
     );
 
     // Flush microtasks so both handlers reach the downloadRepositoryFromProjectUrl call.
@@ -297,11 +310,11 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
   it('returns file content for a valid manifest path', async () => {
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { path: string; content: string; etag: string } };
+    const body = (await res.json()) as { data: { path: string; content: string; etag: string } };
     expect(body.data.path).toBe('README.md');
     expect(body.data.content).toBe('# Hello World');
     expect(body.data.etag).toBe('fileetag001');
@@ -313,7 +326,7 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md', {
         headers: { 'If-None-Match': '"fileetag001"' },
       }),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(304);
   });
@@ -321,10 +334,10 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
   it('returns 400 when path query param is missing', async () => {
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(400);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('missing-path');
   });
 
@@ -333,20 +346,20 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
 
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=../../../etc/passwd'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(400);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('path-traversal-rejected');
   });
 
   it('returns 404 for a path not in the manifest', async () => {
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=secret.md'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(404);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('specs-file-not-found');
   });
 
@@ -354,7 +367,7 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     authenticated = false;
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(401);
   });
@@ -363,7 +376,7 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     callerRole = 'GUEST';
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
   });
@@ -372,7 +385,7 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     board.github_project_url = null;
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
   });
@@ -383,10 +396,10 @@ describe('GET /api/v1/boards/:boardId/specs/files', () => {
     };
     const res = await handleReadSpecsFile(
       new Request('http://localhost/api/v1/boards/board-1/specs/files?path=README.md'),
-      'board-1',
+      'board-1'
     );
     expect(res.status).toBe(403);
-    const body = await res.json() as { name: string; data: { message: string } };
+    const body = (await res.json()) as { name: string; data: { message: string } };
     expect(body.name).toBe('specs-load-failed');
     expect(body.data.message).toContain('do not have access to this respository');
   });
@@ -412,11 +425,13 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
         },
         body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { data: { path: string; content: string; etag: string; created: boolean } };
+    const body = (await res.json()) as {
+      data: { path: string; content: string; etag: string; created: boolean };
+    };
     expect(body.data.path).toBe('specs/guide.md');
     expect(body.data.content).toBe('# Updated');
     expect(body.data.created).toBe(false);
@@ -438,11 +453,11 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
         },
         body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(412);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('stale-specs-file-precondition');
   });
 
@@ -457,11 +472,11 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: 'specs/guide.md', content: '# Updated' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(412);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('missing-specs-file-precondition');
   });
 
@@ -476,11 +491,11 @@ describe('PUT /api/v1/boards/:boardId/github/specs/file', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: 'specs/guide.txt', content: 'plain text' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('specs-file-must-be-markdown');
   });
 });
@@ -521,11 +536,11 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit', () => {
           changedFiles: ['specs/guide.md'],
         }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(201);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         commitHash: string;
         pushStatus: 'pushed' | 'pending';
@@ -571,11 +586,11 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit', () => {
           changedFiles: ['specs/guide.md'],
         }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(201);
-    const body = await res.json() as {
+    const body = (await res.json()) as {
       data: {
         commitHash: string;
         pushStatus: 'pushed' | 'pending';
@@ -608,11 +623,11 @@ describe('POST /api/v1/boards/:boardId/github/specs/commit', () => {
           changedFiles: ['specs/guide.txt'],
         }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(res.status).toBe(422);
-    const body = await res.json() as { name: string };
+    const body = (await res.json()) as { name: string };
     expect(body.name).toBe('specs-file-must-be-markdown');
   });
 });

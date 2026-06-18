@@ -14,7 +14,7 @@ import type { GuestType } from '../../types';
 export async function handleUpdateGuestType(
   req: Request,
   boardId: string,
-  targetUserId: string,
+  targetUserId: string
 ): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -37,7 +37,7 @@ export async function handleUpdateGuestType(
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -45,13 +45,13 @@ export async function handleUpdateGuestType(
   if (!guestType) {
     return Response.json(
       { name: 'missing-guest-type', data: { message: 'guestType is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (guestType !== 'VIEWER' && guestType !== 'MEMBER') {
     return Response.json(
       { name: 'invalid-guest-type', data: { message: 'guestType must be VIEWER or MEMBER' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -64,7 +64,7 @@ export async function handleUpdateGuestType(
   if (!existing) {
     return Response.json(
       { name: 'guest-access-not-found', data: { message: 'Guest access record not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -81,7 +81,7 @@ export async function handleUpdateGuestType(
       db.raw('COALESCE(users.name, users.email) as name'),
       'board_guest_access.guest_type as guestType',
       'board_guest_access.granted_at as grantedAt',
-      'board_guest_access.granted_by as grantedBy',
+      'board_guest_access.granted_by as grantedBy'
     )
     .first();
 

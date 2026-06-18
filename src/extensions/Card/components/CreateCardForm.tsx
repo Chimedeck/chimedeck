@@ -43,19 +43,16 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
         placeholder="Enter a title for this card…"
         rows={2}
         value={title}
-        onChange={(e) => { setTitle(e.target.value); }}
+        onChange={(e) => {
+          setTitle(e.target.value);
+        }}
         autoFocus
         aria-label="New card title"
         disabled={submitting}
       />
       {error && <p className="text-xs text-danger">{error}</p>}
       <div className="flex gap-2">
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={submitting}
-          className="px-3 py-1 text-sm"
-        >
+        <Button type="submit" variant="primary" disabled={submitting} className="px-3 py-1 text-sm">
           Add card
         </Button>
         <Button

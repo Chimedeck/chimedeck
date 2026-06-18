@@ -16,12 +16,7 @@ interface Props {
   onHighlight: (index: number) => void;
 }
 
-const MentionSuggestions = ({
-  suggestions,
-  highlightedIndex,
-  onSelect,
-  onHighlight,
-}: Props) => {
+const MentionSuggestions = ({ suggestions, highlightedIndex, onSelect, onHighlight }: Props) => {
   if (!suggestions.length) return null;
 
   return (
@@ -37,8 +32,12 @@ const MentionSuggestions = ({
             name={s.name}
             avatarUrl={s.avatar_url}
             highlighted={i === highlightedIndex}
-            onSelect={() => { onSelect(s); }}
-            onMouseEnter={() => { onHighlight(i); }}
+            onSelect={() => {
+              onSelect(s);
+            }}
+            onMouseEnter={() => {
+              onHighlight(i);
+            }}
           />
         </li>
       ))}

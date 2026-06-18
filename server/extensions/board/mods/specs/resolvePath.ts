@@ -2,9 +2,7 @@
 // Rejects absolute paths, null bytes, and traversals that escape the root.
 import { join, normalize, isAbsolute } from 'node:path';
 
-export type ResolvePathResult =
-  | { ok: true; absolutePath: string }
-  | { ok: false; reason: string };
+export type ResolvePathResult = { ok: true; absolutePath: string } | { ok: false; reason: string };
 
 export function resolveSpecsFilePath({
   repoPath,

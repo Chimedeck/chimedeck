@@ -1,4 +1,7 @@
-import type { AllowedNextState, StateTransitionRejectionReason } from '../hooks/useStateTransitionGuard';
+import type {
+  AllowedNextState,
+  StateTransitionRejectionReason,
+} from '../hooks/useStateTransitionGuard';
 
 interface StateTransitionForbiddenPayload {
   name?: string;
@@ -23,14 +26,17 @@ export function extractStateTransitionRejectionFromError({
     toListName: string;
   };
 }): StateTransitionRejectionReason | null {
-  const response = (error as { response?: { status?: number; data?: StateTransitionForbiddenPayload } }).response;
+  const response = (
+    error as { response?: { status?: number; data?: StateTransitionForbiddenPayload } }
+  ).response;
   if (response?.status !== 422) return null;
   if (response.data?.name !== 'state-transition-forbidden') return null;
 
   const allowedNextStates: AllowedNextState[] = (response.data.data?.allowedNextStates ?? [])
-    .filter((entry): entry is { id: string; name: string } => (
-      typeof entry.id === 'string' && typeof entry.name === 'string'
-    ))
+    .filter(
+      (entry): entry is { id: string; name: string } =>
+        typeof entry.id === 'string' && typeof entry.name === 'string'
+    )
     .map((entry) => ({ id: entry.id, name: entry.name }));
 
   return {

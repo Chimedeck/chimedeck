@@ -14,7 +14,15 @@ import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 const MAX_ALIAS_LENGTH = 255;
 
-function patchError({ name, message, status }: { name: string; message: string; status: number }): Response {
+function patchError({
+  name,
+  message,
+  status,
+}: {
+  name: string;
+  message: string;
+  status: number;
+}): Response {
   return Response.json({ name, data: { message } }, { status });
 }
 
@@ -137,7 +145,11 @@ async function loadPatchContext({
 > {
   const attachment = await db('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
-    return patchError({ name: 'attachment-not-found', message: 'Attachment not found', status: 404 });
+    return patchError({
+      name: 'attachment-not-found',
+      message: 'Attachment not found',
+      status: 404,
+    });
   }
 
   const card = await db('cards').where({ id: attachment.card_id }).first();
@@ -224,7 +236,11 @@ export async function handlePatchAttachment(req: Request, attachmentId: string):
   try {
     body = await req.json();
   } catch {
-    return patchError({ name: 'invalid-request-body', message: 'Request body must be valid JSON', status: 400 });
+    return patchError({
+      name: 'invalid-request-body',
+      message: 'Request body must be valid JSON',
+      status: 400,
+    });
   }
 
   const updates = await buildPatchUpdates({ req, patchBody: body, attachment, board });

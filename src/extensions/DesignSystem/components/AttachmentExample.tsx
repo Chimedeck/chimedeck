@@ -24,17 +24,24 @@ const STATUS_BADGE: Record<StubAttachment['status'], { label: string; className:
 
 function FileIcon({ type }: Readonly<{ type: StubAttachment['type'] }>) {
   if (type === 'image') return <PhotoIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />;
-  if (type === 'document') return <DocumentIcon className="h-5 w-5 text-red-400" aria-hidden="true" />;
+  if (type === 'document')
+    return <DocumentIcon className="h-5 w-5 text-red-400" aria-hidden="true" />;
   return <PaperClipIcon className="h-5 w-5 text-text-secondary" aria-hidden="true" />;
 }
 
 export default function AttachmentExample() {
   return (
-    <ul className="divide-y divide-border-subtle rounded-lg border border-border overflow-hidden max-w-md" aria-label="Attachments">
+    <ul
+      className="divide-y divide-border-subtle rounded-lg border border-border overflow-hidden max-w-md"
+      aria-label="Attachments"
+    >
       {STUB_ATTACHMENTS.map((a) => {
         const badge = STATUS_BADGE[a.status];
         return (
-          <li key={a.id} className="flex items-center gap-3 px-4 py-3 bg-bg-surface hover:bg-bg-subtle transition-colors">
+          <li
+            key={a.id}
+            className="flex items-center gap-3 px-4 py-3 bg-bg-surface hover:bg-bg-subtle transition-colors"
+          >
             <FileIcon type={a.type} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text-primary truncate">{a.name}</p>

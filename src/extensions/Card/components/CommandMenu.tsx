@@ -71,7 +71,9 @@ const COMMANDS: CommandDef[] = [
 const matchesQuery = (cmd: CommandDef, query: string): boolean => {
   if (!query) return true;
   const q = query.toLowerCase();
-  return cmd.label.toLowerCase().includes(q) || cmd.keywords.some((k) => k.toLowerCase().includes(q));
+  return (
+    cmd.label.toLowerCase().includes(q) || cmd.keywords.some((k) => k.toLowerCase().includes(q))
+  );
 };
 
 const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }: Props) => {
@@ -103,7 +105,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
       if (editor) cmd.execute(editor);
       onClose();
     },
-    [editor, onClose, onOpenEmojiPicker],
+    [editor, onClose, onOpenEmojiPicker]
   );
 
   const handleKeyDown = useCallback(
@@ -129,7 +131,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
         if (cmd) executeCommand(cmd);
       }
     },
-    [activeIndex, filtered, executeCommand, onClose],
+    [activeIndex, filtered, executeCommand, onClose]
   );
 
   // Scroll active item into view when navigating with keyboard.
@@ -159,7 +161,9 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
           aria-label="Search commands"
           placeholder="Search commands…"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
           className="w-full bg-transparent text-xs text-base placeholder:text-subtle outline-none"
         />
       </div>
@@ -179,14 +183,12 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
               data-index={idx}
               className={[
                 'flex w-full justify-start items-center gap-2 transition-colors',
-                idx === activeIndex
-                  ? 'bg-bg-overlay'
-                  : 'hover:bg-bg-overlay',
-                isActive(cmd)
-                  ? 'font-semibold text-indigo-600 dark:text-indigo-300'
-                  : 'text-base',
+                idx === activeIndex ? 'bg-bg-overlay' : 'hover:bg-bg-overlay',
+                isActive(cmd) ? 'font-semibold text-indigo-600 dark:text-indigo-300' : 'text-base',
               ].join(' ')}
-              onMouseEnter={() => { setActiveIndex(idx); }}
+              onMouseEnter={() => {
+                setActiveIndex(idx);
+              }}
               onMouseDown={(e) => {
                 // Prevent editor blur so focus returns after command.
                 e.preventDefault();

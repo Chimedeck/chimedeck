@@ -17,17 +17,14 @@ export const generateSprintDeps = {
 /**
  * Handle POST /api/v1/cards/:cardId/sprint/generate.
  */
-export async function handleGenerateSprint(
-  req: Request,
-  cardId: string,
-): Promise<Response> {
+export async function handleGenerateSprint(req: Request, cardId: string): Promise<Response> {
   let body: GenerateSprintRequest;
   try {
     body = (await req.json()) as GenerateSprintRequest;
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be valid JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -36,7 +33,7 @@ export async function handleGenerateSprint(
   if (!userId) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -45,13 +42,14 @@ export async function handleGenerateSprint(
   if (!workspaceId) {
     return Response.json(
       { name: 'workspace-not-found', data: { message: 'Workspace context not found' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   // Verify the card exists and belongs to this workspace
   try {
-    const card = await generateSprintDeps.db('cards')
+    const card = await generateSprintDeps
+      .db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
       .join('boards', 'lists.board_id', 'boards.id')
       .where({ 'cards.id': cardId, 'boards.workspace_id': workspaceId })
@@ -61,7 +59,7 @@ export async function handleGenerateSprint(
     if (!card) {
       return Response.json(
         { name: 'card-not-found', data: { message: 'Card not found in this workspace' } },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -74,9 +72,12 @@ export async function handleGenerateSprint(
       return Response.json(
         {
           name: 'sprint-already-generated',
-          data: { message: 'A sprint generation run has already succeeded for this card. Create a new card or re-run the refinement loop.' },
+          data: {
+            message:
+              'A sprint generation run has already succeeded for this card. Create a new card or re-run the refinement loop.',
+          },
         },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
@@ -114,7 +115,7 @@ export async function handleGenerateSprint(
       }).catch((err) => {
         console.error(
           `[sprintGeneration/api] Pipeline failed for run ${run.id}:`,
-          err instanceof Error ? err.message : String(err),
+          err instanceof Error ? err.message : String(err)
         );
       });
     });
@@ -129,16 +130,16 @@ export async function handleGenerateSprint(
           },
         },
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
     console.error(
       '[sprintGeneration/api/generate] Error:',
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.message : String(error)
     );
     return Response.json(
       { name: 'internal-error', data: { message: 'Internal server error' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

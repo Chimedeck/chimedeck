@@ -14,16 +14,16 @@ export interface ProbeResult {
 
 // IPv4 and IPv6 private/reserved ranges blocked to prevent SSRF.
 const PRIVATE_IP_PATTERNS: RegExp[] = [
-  /^10\./,                         // 10.0.0.0/8
-  /^172\.(1[6-9]|2\d|3[01])\./,   // 172.16.0.0/12
-  /^192\.168\./,                   // 192.168.0.0/16
-  /^127\./,                        // 127.0.0.0/8 loopback
-  /^169\.254\./,                   // 169.254.0.0/16 link-local
-  /^0\./,                          // 0.0.0.0/8
-  /^::1$/,                         // IPv6 loopback
-  /^fc[0-9a-f]{2}:/i,              // fc00::/7 ULA
-  /^fd[0-9a-f]{2}:/i,              // fd00::/8 ULA
-  /^fe80:/i,                       // fe80::/10 link-local
+  /^10\./, // 10.0.0.0/8
+  /^172\.(1[6-9]|2\d|3[01])\./, // 172.16.0.0/12
+  /^192\.168\./, // 192.168.0.0/16
+  /^127\./, // 127.0.0.0/8 loopback
+  /^169\.254\./, // 169.254.0.0/16 link-local
+  /^0\./, // 0.0.0.0/8
+  /^::1$/, // IPv6 loopback
+  /^fc[0-9a-f]{2}:/i, // fc00::/7 ULA
+  /^fd[0-9a-f]{2}:/i, // fd00::/8 ULA
+  /^fe80:/i, // fe80::/10 link-local
 ];
 
 function isPrivateIp(ip: string): boolean {
@@ -61,7 +61,13 @@ async function assertPublicHost(hostname: string): Promise<void> {
  * - Enforces configurable timeout (default 10 s).
  * - Returns a ProbeResult including status classification.
  */
-export async function runProbe({ url, expectedStatus }: { url: string; expectedStatus?: number | null }): Promise<ProbeResult> {
+export async function runProbe({
+  url,
+  expectedStatus,
+}: {
+  url: string;
+  expectedStatus?: number | null;
+}): Promise<ProbeResult> {
   const { timeoutMs, amberThresholdMs } = healthCheckConfig;
   const checkedAt = new Date().toISOString();
 
@@ -103,7 +109,9 @@ export async function runProbe({ url, expectedStatus }: { url: string; expectedS
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, timeoutMs);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
   const startTime = Date.now();
 
   try {
@@ -119,14 +127,18 @@ export async function runProbe({ url, expectedStatus }: { url: string; expectedS
     // If fetch silently followed a redirect, treat the original response as 3xx → amber
     const httpStatus = response.redirected ? 301 : response.status;
 
-    const status = classify({ httpStatus, responseTimeMs, error: null, amberThresholdMs, expectedStatus });
+    const status = classify({
+      httpStatus,
+      responseTimeMs,
+      error: null,
+      amberThresholdMs,
+      expectedStatus,
+    });
     return { status, httpStatus, responseTimeMs, errorMessage: null, checkedAt };
   } catch (err) {
     const responseTimeMs = Date.now() - startTime;
     const isTimeout = (err as Error).name === 'AbortError';
-    const errorMessage = isTimeout
-      ? `Timeout after ${responseTimeMs}ms`
-      : (err as Error).message;
+    const errorMessage = isTimeout ? `Timeout after ${responseTimeMs}ms` : (err as Error).message;
 
     return {
       status: 'red',

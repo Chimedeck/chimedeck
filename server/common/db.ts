@@ -5,9 +5,7 @@ import { env } from '../config/env';
 
 const dbUrl = new URL(env.DATABASE_URL);
 const isLocal =
-  dbUrl.hostname === 'localhost' ||
-  dbUrl.hostname === '127.0.0.1' ||
-  dbUrl.hostname === 'postgres';
+  dbUrl.hostname === 'localhost' || dbUrl.hostname === '127.0.0.1' || dbUrl.hostname === 'postgres';
 
 export const db = Knex({
   client: 'pg',

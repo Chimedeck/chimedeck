@@ -124,7 +124,14 @@ describe('resumeRun', () => {
     });
     mockGetEditSteps.mockResolvedValue([
       { id: 's1', run_id: 'run-1', step_name: 'context_gather', status: 'SUCCEEDED', attempt: 1 },
-      { id: 's2', run_id: 'run-1', step_name: 'file_scope_plan', status: 'FAILED', attempt: 3, created_at: '2026-01-01T00:00:00.000Z' },
+      {
+        id: 's2',
+        run_id: 'run-1',
+        step_name: 'file_scope_plan',
+        status: 'FAILED',
+        attempt: 3,
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
     ]);
     const { resumeRun } = await import('../../resume');
     const result = await resumeRun({ runId: 'run-1', maxRetries: 3 });
@@ -138,8 +145,22 @@ describe('resumeRun', () => {
       status: 'FAILED',
     });
     mockGetEditSteps.mockResolvedValue([
-      { id: 's1', run_id: 'run-1', step_name: 'context_gather', status: 'SUCCEEDED', attempt: 1, created_at: '2026-01-01T00:00:00.000Z' },
-      { id: 's2', run_id: 'run-1', step_name: 'file_scope_plan', status: 'FAILED', attempt: 1, created_at: '2026-01-01T00:01:00.000Z' },
+      {
+        id: 's1',
+        run_id: 'run-1',
+        step_name: 'context_gather',
+        status: 'SUCCEEDED',
+        attempt: 1,
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 's2',
+        run_id: 'run-1',
+        step_name: 'file_scope_plan',
+        status: 'FAILED',
+        attempt: 1,
+        created_at: '2026-01-01T00:01:00.000Z',
+      },
     ]);
     const { resumeRun } = await import('../../resume');
     const result = await resumeRun({ runId: 'run-1' });

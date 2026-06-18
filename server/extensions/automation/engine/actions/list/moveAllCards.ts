@@ -47,9 +47,11 @@ export const listMoveAllCardsAction: ActionHandler = {
 
     for (const card of movingCards) {
       const newPos = between(prev, HIGH_SENTINEL);
-      await trx('cards')
-        .where({ id: card.id })
-        .update({ list_id: config.toListId, position: newPos, updated_at: new Date().toISOString() });
+      await trx('cards').where({ id: card.id }).update({
+        list_id: config.toListId,
+        position: newPos,
+        updated_at: new Date().toISOString(),
+      });
       prev = newPos;
     }
   },

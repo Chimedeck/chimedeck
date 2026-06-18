@@ -53,16 +53,22 @@ beforeEach(() => {
     ],
   };
 
-  boardChatSearchApiDeps.requireBoardAccess = async (req: Request & { board?: BoardRow }, boardId: string) => {
+  boardChatSearchApiDeps.requireBoardAccess = async (
+    req: Request & { board?: BoardRow },
+    boardId: string
+  ) => {
     if (board.id !== boardId) {
-      return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 }
+      );
     }
     req.board = board;
     return null;
   };
   boardChatSearchApiDeps.requireWorkspaceMembership = async (
     req: Request & { callerRole?: string; workspaceId?: string },
-    workspaceId: string,
+    workspaceId: string
   ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
@@ -80,7 +86,7 @@ describe('POST /api/v1/boards/:boardId/chat/search', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: 'find this', limit: 10 }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(200);
@@ -97,7 +103,7 @@ describe('POST /api/v1/boards/:boardId/chat/search', () => {
         headers: { 'Content-Type': 'application/json' },
         body: '{',
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);
@@ -106,8 +112,11 @@ describe('POST /api/v1/boards/:boardId/chat/search', () => {
   it('rejects guests when chat view is denied', async () => {
     callerRole = 'GUEST';
     guestAccessError = Response.json(
-      { name: 'guest-chat-view-denied', data: { message: 'Guest does not have permission to view board chat history' } },
-      { status: 403 },
+      {
+        name: 'guest-chat-view-denied',
+        data: { message: 'Guest does not have permission to view board chat history' },
+      },
+      { status: 403 }
     );
 
     const response = await handleCreateChatSearch(
@@ -116,7 +125,7 @@ describe('POST /api/v1/boards/:boardId/chat/search', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: 'hello' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(403);
@@ -135,7 +144,7 @@ describe('POST /api/v1/boards/:boardId/chat/search', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: 'x' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);

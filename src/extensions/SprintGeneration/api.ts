@@ -94,10 +94,7 @@ export async function generateSprint({
   cardId: string;
   body?: GenerateSprintRequest;
 }): Promise<GenerateSprintResponse> {
-  return api.post<GenerateSprintResponse>(
-    `/cards/${cardId}/sprint/generate`,
-    body ?? {},
-  );
+  return api.post<GenerateSprintResponse>(`/cards/${cardId}/sprint/generate`, body ?? {});
 }
 
 // ── As-Built Sync ──

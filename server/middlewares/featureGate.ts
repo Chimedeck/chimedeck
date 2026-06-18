@@ -62,11 +62,7 @@ export function minimumTierFor(feature: BooleanFeatureKey): CanonicalTierId {
  * each ':param' segment matches exactly one non-slash path segment.
  * The rule's prefix must be a complete prefix of the pathname (segment boundary aware).
  */
-export function matchGate(
-  method: string,
-  pathname: string,
-  gates: GateRule[],
-): GateRule | null {
+export function matchGate(method: string, pathname: string, gates: GateRule[]): GateRule | null {
   for (const rule of gates) {
     const methodMatches =
       rule.methods.includes('*') || rule.methods.includes(method as GateRule['methods'][number]);
@@ -116,7 +112,7 @@ function ruleMatchesPath(prefix: string, pathname: string): boolean {
  */
 export async function applyFeatureGate(
   req: Request,
-  workspaceId: string | undefined,
+  workspaceId: string | undefined
 ): Promise<Response | null> {
   // Pass-through: master kill switch or no workspace context available.
   if (!env.SUBSCRIPTIONS_ENABLED || !workspaceId) return null;
@@ -147,6 +143,6 @@ export async function applyFeatureGate(
         },
       },
     },
-    { status: 402 },
+    { status: 402 }
   );
 }

@@ -10,12 +10,16 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
 
 // ── Auth helper ─────────────────────────────────────────────────────────────
 
-async function loginAndGetBoardUrl(request: import('@playwright/test').APIRequestContext): Promise<{ token: string; boardUrl: string }> {
+async function loginAndGetBoardUrl(
+  request: import('@playwright/test').APIRequestContext
+): Promise<{ token: string; boardUrl: string }> {
   const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
     data: { email: 'test@example.com', password: 'password' },
   });
   expect(loginRes.ok()).toBeTruthy();
-  const { data: { token } } = await loginRes.json();
+  const {
+    data: { token },
+  } = await loginRes.json();
 
   const workspacesRes = await request.get(`${BASE_URL}/api/v1/workspaces`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -97,6 +101,8 @@ test.describe('BoardViewSwitcher', () => {
 
     // Calendar tab should still be active
     const calendarTabAfterReload = page.getByRole('tab', { name: 'Calendar' });
-    await expect(calendarTabAfterReload).toHaveAttribute('aria-selected', 'true', { timeout: 5000 });
+    await expect(calendarTabAfterReload).toHaveAttribute('aria-selected', 'true', {
+      timeout: 5000,
+    });
   });
 });

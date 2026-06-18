@@ -27,7 +27,11 @@ function toInstallationKey(reference: GithubProjectReference): string {
   // [why] For all repo-shaped references the App installation is the one for
   // that specific repository. org/user-scoped project URLs still resolve to
   // an org or user installation.
-  if (reference.scope === 'repo' || reference.scope === 'repo-https' || reference.scope === 'repo-ssh') {
+  if (
+    reference.scope === 'repo' ||
+    reference.scope === 'repo-https' ||
+    reference.scope === 'repo-ssh'
+  ) {
     return `repo:${reference.owner}/${reference.repository ?? ''}`;
   }
   return `${reference.scope}:${reference.owner}`;
@@ -35,7 +39,11 @@ function toInstallationKey(reference: GithubProjectReference): string {
 
 function toInstallationPath(reference: GithubProjectReference): string {
   const owner = encodeURIComponent(reference.owner);
-  if (reference.scope === 'repo' || reference.scope === 'repo-https' || reference.scope === 'repo-ssh') {
+  if (
+    reference.scope === 'repo' ||
+    reference.scope === 'repo-https' ||
+    reference.scope === 'repo-ssh'
+  ) {
     const repository = encodeURIComponent(reference.repository ?? '');
     return `/repos/${owner}/${repository}/installation`;
   }
@@ -121,9 +129,7 @@ async function resolveInstallationId({
   }
 
   const payload = (await readJson(response)) as GithubInstallationResponse | null;
-  const installationId = typeof payload?.id === 'number'
-    ? payload.id
-    : null;
+  const installationId = typeof payload?.id === 'number' ? payload.id : null;
   if (installationId === null) {
     throw new Error('github-installation-lookup-failed');
   }
@@ -202,9 +208,7 @@ export async function getGithubRepositoryDefaultBranch({
   }
 
   const payload = (await readJson(response)) as GithubRepositoryResponse | null;
-  const branch = typeof payload?.default_branch === 'string'
-    ? payload.default_branch.trim()
-    : '';
+  const branch = typeof payload?.default_branch === 'string' ? payload.default_branch.trim() : '';
   if (!branch) {
     throw new Error('github-repository-read-failed');
   }

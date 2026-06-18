@@ -19,7 +19,12 @@ globalThis.ResizeObserver = class ResizeObserver {
 } as unknown as typeof ResizeObserver;
 import GraphCanvas from '../GraphCanvas';
 import type { GraphEditorNode, GraphEditorEdge, GraphEditorNodeData } from '../useGraphEditor';
-import type { StateTransitionAction, StateTransitionDirection, StateTransitionStyle, StateTransitionWaypoint } from '../../../api';
+import type {
+  StateTransitionAction,
+  StateTransitionDirection,
+  StateTransitionStyle,
+  StateTransitionWaypoint,
+} from '../../../api';
 
 // Mock the API imports that GraphCanvas depends on
 vi.mock('../../../config/actionTypes', () => ({
@@ -136,7 +141,7 @@ function renderGraphCanvas(props: MinimalProps = {}) {
           editable={editable}
         />
       </ReactFlowProvider>
-    </Provider>,
+    </Provider>
   );
 }
 
@@ -259,7 +264,7 @@ describe('ColumnPhaseEditor wired in GraphCanvas', () => {
             editable={true}
           />
         </ReactFlowProvider>
-      </Provider>,
+      </Provider>
     );
 
     const newDraftLabel = screen.getByText('New Draft');

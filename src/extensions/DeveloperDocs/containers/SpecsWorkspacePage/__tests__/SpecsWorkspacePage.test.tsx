@@ -8,17 +8,17 @@ import SpecsWorkspacePage from '../SpecsWorkspacePage';
 
 // SpecsFileTree: renders clickable file names from the manifest.
 vi.mock('../../../components/SpecsFileTree', () => ({
-  default: ({
-    files,
-    onSelect,
-  }: {
-    files: { path: string }[];
-    onSelect: (p: string) => void;
-  }) => (
+  default: ({ files, onSelect }: { files: { path: string }[]; onSelect: (p: string) => void }) => (
     <ul>
       {files.map((f) => (
         <li key={f.path}>
-          <button onClick={() => { onSelect(f.path); }}>{f.path}</button>
+          <button
+            onClick={() => {
+              onSelect(f.path);
+            }}
+          >
+            {f.path}
+          </button>
         </li>
       ))}
     </ul>
@@ -39,7 +39,12 @@ vi.mock('../../../components/SpecsMarkdownEditor', () => ({
     <div data-testid="markdown-editor">
       <span data-testid="editor-content">{content}</span>
       {!readOnly && (
-        <button data-testid="editor-change" onClick={() => { onChange('edited content'); }}>
+        <button
+          data-testid="editor-change"
+          onClick={() => {
+            onChange('edited content');
+          }}
+        >
           Type
         </button>
       )}
@@ -110,15 +115,15 @@ describe('SpecsWorkspacePage — manifest error UX (403 not-configured / load-fa
       makeAxiosError(403, {
         name: 'specs-not-configured',
         data: { message: 'You must configure your Github documentation respository first' },
-      }),
+      })
     );
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token-abc" canEdit />);
 
     await waitFor(() =>
       expect(
-        screen.getByText('You must configure your Github documentation respository first'),
-      ).toBeInTheDocument(),
+        screen.getByText('You must configure your Github documentation respository first')
+      ).toBeInTheDocument()
     );
 
     // No "Retry" button is offered for the not-configured case.
@@ -130,13 +135,13 @@ describe('SpecsWorkspacePage — manifest error UX (403 not-configured / load-fa
       makeAxiosError(403, {
         name: 'specs-load-failed',
         data: { message: 'Our app do not have access to this respository' },
-      }),
+      })
     );
 
     render(<SpecsWorkspacePage boardId="board-1" accessToken="token-abc" canEdit />);
 
     await waitFor(() =>
-      expect(screen.getByText('Our app do not have access to this respository')).toBeInTheDocument(),
+      expect(screen.getByText('Our app do not have access to this respository')).toBeInTheDocument()
     );
 
     // Retry button is still available — the failure may be transient.
@@ -180,7 +185,7 @@ describe('SpecsWorkspacePage — save/commit UI', () => {
         ok: false,
         status: 412,
         json: async () => ({ data: { message: 'File was modified remotely.' } }),
-      }),
+      })
     );
 
     await renderAndOpenFile();
@@ -215,7 +220,7 @@ describe('SpecsWorkspacePage — save/commit UI', () => {
         const btn = screen.getByRole('button', { name: 'Commit changes' });
         expect(btn).toBeDisabled();
       },
-      { timeout: 2000 },
+      { timeout: 2000 }
     );
   });
 
@@ -225,7 +230,13 @@ describe('SpecsWorkspacePage — save/commit UI', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          data: { path: 'specs/overview.md', content: 'edited content', etag: '"etag-v2"', sha: 'abc', created: false },
+          data: {
+            path: 'specs/overview.md',
+            content: 'edited content',
+            etag: '"etag-v2"',
+            sha: 'abc',
+            created: false,
+          },
         }),
       })
       .mockResolvedValueOnce({

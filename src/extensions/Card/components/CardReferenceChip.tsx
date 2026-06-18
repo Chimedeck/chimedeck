@@ -24,7 +24,7 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
   const storedList = node.attrs['listName'] as string | null;
 
   const [preview, setPreview] = useState<CardPreview | null>(
-    storedTitle ? { title: storedTitle, listName: storedList ?? '' } : null,
+    storedTitle ? { title: storedTitle, listName: storedList ?? '' } : null
   );
   const [loading, setLoading] = useState(!storedTitle);
 
@@ -54,7 +54,7 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
       .catch(() => {
         setLoading(false);
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [href]);
 
   const displayTitle = preview?.title ?? (loading ? '…' : href);
@@ -88,9 +88,7 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
         />
       </svg>
 
-      <span className="max-w-[220px] truncate text-base">
-        {displayTitle}
-      </span>
+      <span className="max-w-[220px] truncate text-base">{displayTitle}</span>
 
       {listLabel && (
         <span className="rounded bg-teal-100 dark:bg-teal-900/50 px-1 text-[10px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">

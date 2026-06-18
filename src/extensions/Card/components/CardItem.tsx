@@ -1,7 +1,14 @@
 // CardItem — draggable card chip using @dnd-kit/core useDraggable.
 // Styled per sprint-18 spec §4.
 import { memo, useCallback, useMemo } from 'react';
-import { BellAlertIcon, CalendarIcon, ChatBubbleLeftIcon, PaperClipIcon, QueueListIcon, RectangleStackIcon } from '@heroicons/react/24/outline';
+import {
+  BellAlertIcon,
+  CalendarIcon,
+  ChatBubbleLeftIcon,
+  PaperClipIcon,
+  QueueListIcon,
+  RectangleStackIcon,
+} from '@heroicons/react/24/outline';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Card } from '../api';
@@ -75,7 +82,7 @@ function formatCardFrontDueDate(iso: string): string {
 
 function hasSameCustomFieldValues(
   prevValues: CustomFieldValue[] | undefined,
-  nextValues: CustomFieldValue[] | undefined,
+  nextValues: CustomFieldValue[] | undefined
 ): boolean {
   if (prevValues === nextValues) return true;
   if (!prevValues || !nextValues) return false;
@@ -86,13 +93,13 @@ function hasSameCustomFieldValues(
     const nextValue = nextValues[i];
     if (!prevValue || !nextValue) return false;
     if (
-      prevValue.id !== nextValue.id
-      || prevValue.custom_field_id !== nextValue.custom_field_id
-      || prevValue.value_text !== nextValue.value_text
-      || prevValue.value_number !== nextValue.value_number
-      || prevValue.value_date !== nextValue.value_date
-      || prevValue.value_checkbox !== nextValue.value_checkbox
-      || prevValue.value_option_id !== nextValue.value_option_id
+      prevValue.id !== nextValue.id ||
+      prevValue.custom_field_id !== nextValue.custom_field_id ||
+      prevValue.value_text !== nextValue.value_text ||
+      prevValue.value_number !== nextValue.value_number ||
+      prevValue.value_date !== nextValue.value_date ||
+      prevValue.value_checkbox !== nextValue.value_checkbox ||
+      prevValue.value_option_id !== nextValue.value_option_id
     ) {
       return false;
     }
@@ -105,9 +112,13 @@ function isLightCoverColor(value: string | null | undefined): boolean {
   if (!value) return false;
 
   const hex = value.trim().replace('#', '');
-  const normalized = hex.length === 3
-    ? hex.split('').map((part) => `${part}${part}`).join('')
-    : hex;
+  const normalized =
+    hex.length === 3
+      ? hex
+          .split('')
+          .map((part) => `${part}${part}`)
+          .join('')
+      : hex;
 
   if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return false;
 
@@ -119,287 +130,293 @@ function isLightCoverColor(value: string | null | undefined): boolean {
   return brightness >= 170;
 }
 
-const CardItemContent = memo(({
-  card,
-  labelsExpanded,
-  onToggleLabels,
-  listTitle,
-  boardTitle,
-  boardId,
-  customFieldValues,
-  unreadNotificationCount,
-  currentUserId,
-  onRemoveMember,
-}: CardItemContentProps) => {
-  const labels = Array.isArray(card.labels) ? card.labels : [];
-  const members = Array.isArray(card.members) ? card.members : [];
-  const hasCover = Boolean(card.cover_image_url || card.cover_color);
-  const hasImageCover = Boolean(card.cover_image_url);
-  const hasColorCover = Boolean(card.cover_color);
-  const selectedCoverSize = card.cover_size ?? 'SMALL';
-  const useBackgroundImageMode = hasImageCover && selectedCoverSize === 'SMALL';
-  const useBackgroundColorMode = !hasImageCover && hasColorCover && selectedCoverSize === 'SMALL';
-  const showTopCoverStrip = hasCover && !useBackgroundImageMode && !useBackgroundColorMode;
-  const colorModeUsesDarkText = useBackgroundColorMode && isLightCoverColor(card.cover_color);
-  const colorModePrimaryTextClass = colorModeUsesDarkText ? 'text-slate-900' : 'text-white';
-  const colorModeSecondaryTextClass = colorModeUsesDarkText ? 'text-slate-800/90' : 'text-white/90';
-  const colorModeDuePillClass = colorModeUsesDarkText ? 'text-slate-900 bg-white/60' : 'text-white bg-black/35';
-  // WHY: image covers should render at full card width and keep their original ratio.
-  // Color-only FULL mode keeps a compact top strip to avoid oversized cards.
-  let coverClass = 'h-20';
-  if (!card.cover_image_url && card.cover_size === 'FULL') {
-    coverClass = 'h-14';
-  }
+const CardItemContent = memo(
+  ({
+    card,
+    labelsExpanded,
+    onToggleLabels,
+    listTitle,
+    boardTitle,
+    boardId,
+    customFieldValues,
+    unreadNotificationCount,
+    currentUserId,
+    onRemoveMember,
+  }: CardItemContentProps) => {
+    const labels = Array.isArray(card.labels) ? card.labels : [];
+    const members = Array.isArray(card.members) ? card.members : [];
+    const hasCover = Boolean(card.cover_image_url || card.cover_color);
+    const hasImageCover = Boolean(card.cover_image_url);
+    const hasColorCover = Boolean(card.cover_color);
+    const selectedCoverSize = card.cover_size ?? 'SMALL';
+    const useBackgroundImageMode = hasImageCover && selectedCoverSize === 'SMALL';
+    const useBackgroundColorMode = !hasImageCover && hasColorCover && selectedCoverSize === 'SMALL';
+    const showTopCoverStrip = hasCover && !useBackgroundImageMode && !useBackgroundColorMode;
+    const colorModeUsesDarkText = useBackgroundColorMode && isLightCoverColor(card.cover_color);
+    const colorModePrimaryTextClass = colorModeUsesDarkText ? 'text-slate-900' : 'text-white';
+    const colorModeSecondaryTextClass = colorModeUsesDarkText
+      ? 'text-slate-800/90'
+      : 'text-white/90';
+    const colorModeDuePillClass = colorModeUsesDarkText
+      ? 'text-slate-900 bg-white/60'
+      : 'text-white bg-black/35';
+    // WHY: image covers should render at full card width and keep their original ratio.
+    // Color-only FULL mode keeps a compact top strip to avoid oversized cards.
+    let coverClass = 'h-20';
+    if (!card.cover_image_url && card.cover_size === 'FULL') {
+      coverClass = 'h-14';
+    }
 
-  const hasChecklist = (card.checklist_total ?? 0) > 0;
-  const checklistDone = card.checklist_done ?? 0;
-  const checklistTotal = card.checklist_total ?? 0;
-  const checklistComplete = checklistDone === checklistTotal;
-  let titleTextClass = 'text-base';
-  if (useBackgroundImageMode) {
-    titleTextClass = 'text-white';
-  } else if (useBackgroundColorMode) {
-    titleTextClass = colorModePrimaryTextClass;
-  }
+    const hasChecklist = (card.checklist_total ?? 0) > 0;
+    const checklistDone = card.checklist_done ?? 0;
+    const checklistTotal = card.checklist_total ?? 0;
+    const checklistComplete = checklistDone === checklistTotal;
+    let titleTextClass = 'text-base';
+    if (useBackgroundImageMode) {
+      titleTextClass = 'text-white';
+    } else if (useBackgroundColorMode) {
+      titleTextClass = colorModePrimaryTextClass;
+    }
 
-  let secondaryMetaTextClass = 'text-muted';
-  if (useBackgroundImageMode) {
-    secondaryMetaTextClass = 'text-white/90';
-  } else if (useBackgroundColorMode) {
-    secondaryMetaTextClass = colorModeSecondaryTextClass;
-  }
-  let checklistTextClass = 'text-muted';
-  if (useBackgroundImageMode) {
-    checklistTextClass = 'text-white';
-  } else if (useBackgroundColorMode) {
-    checklistTextClass = colorModeSecondaryTextClass;
-  } else if (checklistComplete) {
-    checklistTextClass = 'text-emerald-800 dark:text-emerald-400';
-  }
-  const attachmentCount = card.attachment_count ?? 0;
-  const linkedCardCount = card.linked_card_count ?? 0;
-  const commentCount = card.comment_count ?? 0;
+    let secondaryMetaTextClass = 'text-muted';
+    if (useBackgroundImageMode) {
+      secondaryMetaTextClass = 'text-white/90';
+    } else if (useBackgroundColorMode) {
+      secondaryMetaTextClass = colorModeSecondaryTextClass;
+    }
+    let checklistTextClass = 'text-muted';
+    if (useBackgroundImageMode) {
+      checklistTextClass = 'text-white';
+    } else if (useBackgroundColorMode) {
+      checklistTextClass = colorModeSecondaryTextClass;
+    } else if (checklistComplete) {
+      checklistTextClass = 'text-emerald-800 dark:text-emerald-400';
+    }
+    const attachmentCount = card.attachment_count ?? 0;
+    const linkedCardCount = card.linked_card_count ?? 0;
+    const commentCount = card.comment_count ?? 0;
 
-  const hasBadges =
-    card.description ||
-    card.due_date ||
-    unreadNotificationCount > 0 ||
-    commentCount > 0 ||
-    attachmentCount > 0 ||
-    linkedCardCount > 0 ||
-    hasChecklist;
+    const hasBadges =
+      card.description ||
+      card.due_date ||
+      unreadNotificationCount > 0 ||
+      commentCount > 0 ||
+      attachmentCount > 0 ||
+      linkedCardCount > 0 ||
+      hasChecklist;
 
-  const contentBlock = (
-    <>
-      {labels.length > 0 && (
-        <CardLabelChips
-          labels={labels}
-          expanded={labelsExpanded}
-          onToggle={onToggleLabels ?? (() => {})}
-        />
-      )}
-      <p className={`text-sm leading-snug break-words ${titleTextClass}`}>{card.title}</p>
-      {card.amount && (
-        <div className="mt-1">
-          <CardMoneyBadge amount={card.amount} currency={card.currency} />
-        </div>
-      )}
-      {hasBadges && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-          {card.due_date && (() => {
-            const now = Date.now();
-            const due = new Date(card.due_date).getTime();
-            const done = card.due_complete;
-            const overdue = !done && due < now;
-            const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
-            let dueClass = getDuePillClass(done, overdue, dueSoon);
-            if (useBackgroundImageMode) {
-              dueClass = 'text-white bg-black/45';
-            } else if (useBackgroundColorMode) {
-              dueClass = colorModeDuePillClass;
-            }
-            return (
-              <span className={`inline-flex items-center gap-0.5 rounded px-1 text-xs ${dueClass}`}>
-                <CalendarIcon className="h-3 w-3 shrink-0" />
-                {formatCardFrontDueDate(card.due_date)}
-              </span>
-            );
-          })()}
-
-          {unreadNotificationCount > 0 && (
-            <span
-              className="inline-flex items-center gap-0.5 rounded-md bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white"
-              title={`${String(unreadNotificationCount)} unread notification${unreadNotificationCount > 1 ? 's' : ''}`}
-            >
-              <BellAlertIcon className="h-3 w-3 shrink-0" />
-              {unreadNotificationCount}
-            </span>
-          )}
-
-          {hasChecklist && (
-            <span
-              className={`inline-flex items-center gap-0.5 text-xs ${checklistTextClass}`}
-              title={`Checklist: ${String(checklistDone)}/${String(checklistTotal)}`}
-            >
-              <QueueListIcon className="h-3 w-3 shrink-0" />
-              {checklistDone}/{checklistTotal}
-            </span>
-          )}
-
-          {attachmentCount > 0 && (
-            <span
-              className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
-              title={`${String(attachmentCount)} attachment${attachmentCount > 1 ? 's' : ''}`}
-            >
-              <PaperClipIcon className="h-3 w-3 shrink-0" />
-              {attachmentCount}
-            </span>
-          )}
-
-          {linkedCardCount > 0 && (
-            <span
-              className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
-              title={`${String(linkedCardCount)} linked card${linkedCardCount > 1 ? 's' : ''}`}
-            >
-              <RectangleStackIcon className="h-3 w-3 shrink-0" />
-              {linkedCardCount}
-            </span>
-          )}
-
-          {commentCount > 0 && (
-            <span
-              className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
-              title={`${String(commentCount)} comment${commentCount > 1 ? 's' : ''}`}
-            >
-              <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />
-              {commentCount}
-            </span>
-          )}
-        </div>
-      )}
-      {members.length > 0 && (
-        <div className="mt-1.5">
-          <CardMemberAvatars
-            members={members}
-            cardId={card.id}
-            currentUserId={currentUserId}
-            onRemoveMember={onRemoveMember}
-          />
-        </div>
-      )}
-      <CardPluginBadges
-        {...(typeof boardId === 'string' ? { boardId } : {})}
-        cardId={card.id}
-        listId={card.list_id}
-        cardTitle={card.title}
-        {...(typeof listTitle === 'string' ? { listTitle } : {})}
-        {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
-      />
-      {boardId && customFieldValues && (
-        <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
-      )}
-    </>
-  );
-
-  let contentContainer: React.ReactNode;
-  if (useBackgroundImageMode) {
-    contentContainer = (
-      <div className="relative">
-        {card.cover_image_url ? (
-          <>
-            <img
-              src={card.cover_image_url}
-              alt="Card cover"
-              className="block w-full h-auto"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
-          </>
-        ) : (
-          <div
-            className="w-full min-h-[112px]"
-            style={{ backgroundColor: card.cover_color ?? '#334155' }}
-            aria-hidden="true"
+    const contentBlock = (
+      <>
+        {labels.length > 0 && (
+          <CardLabelChips
+            labels={labels}
+            expanded={labelsExpanded}
+            onToggle={onToggleLabels ?? (() => {})}
           />
         )}
-        <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
-          <div className="w-full">
-            {contentBlock}
+        <p className={`text-sm leading-snug break-words ${titleTextClass}`}>{card.title}</p>
+        {card.amount && (
+          <div className="mt-1">
+            <CardMoneyBadge amount={card.amount} currency={card.currency} />
           </div>
-        </div>
-      </div>
-    );
-  } else if (useBackgroundColorMode) {
-    contentContainer = (
-      <div className="p-2.5" style={{ backgroundColor: card.cover_color ?? '#334155' }}>
-        {contentBlock}
-      </div>
-    );
-  } else {
-    contentContainer = (
-      <div className="p-2.5">
-        {contentBlock}
-      </div>
-    );
-  }
+        )}
+        {hasBadges && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {card.due_date &&
+              (() => {
+                const now = Date.now();
+                const due = new Date(card.due_date).getTime();
+                const done = card.due_complete;
+                const overdue = !done && due < now;
+                const dueSoon = !done && !overdue && due - now < 24 * 60 * 60 * 1000;
+                let dueClass = getDuePillClass(done, overdue, dueSoon);
+                if (useBackgroundImageMode) {
+                  dueClass = 'text-white bg-black/45';
+                } else if (useBackgroundColorMode) {
+                  dueClass = colorModeDuePillClass;
+                }
+                return (
+                  <span
+                    className={`inline-flex items-center gap-0.5 rounded px-1 text-xs ${dueClass}`}
+                  >
+                    <CalendarIcon className="h-3 w-3 shrink-0" />
+                    {formatCardFrontDueDate(card.due_date)}
+                  </span>
+                );
+              })()}
 
-  return (
-    <>
-      {showTopCoverStrip && (
-        <div
-          className={`w-full overflow-hidden ${card.cover_image_url ? '' : coverClass}`}
-          style={card.cover_image_url
-            ? undefined
-            : { backgroundColor: card.cover_color ?? '#334155' }}
-        >
-          {card.cover_image_url && (
-            <img
-              src={card.cover_image_url}
-              alt="Card cover"
-              className="block w-full h-auto"
-              loading="lazy"
+            {unreadNotificationCount > 0 && (
+              <span
+                className="inline-flex items-center gap-0.5 rounded-md bg-red-600 px-1.5 py-0.5 text-xs font-semibold text-white"
+                title={`${String(unreadNotificationCount)} unread notification${unreadNotificationCount > 1 ? 's' : ''}`}
+              >
+                <BellAlertIcon className="h-3 w-3 shrink-0" />
+                {unreadNotificationCount}
+              </span>
+            )}
+
+            {hasChecklist && (
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs ${checklistTextClass}`}
+                title={`Checklist: ${String(checklistDone)}/${String(checklistTotal)}`}
+              >
+                <QueueListIcon className="h-3 w-3 shrink-0" />
+                {checklistDone}/{checklistTotal}
+              </span>
+            )}
+
+            {attachmentCount > 0 && (
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
+                title={`${String(attachmentCount)} attachment${attachmentCount > 1 ? 's' : ''}`}
+              >
+                <PaperClipIcon className="h-3 w-3 shrink-0" />
+                {attachmentCount}
+              </span>
+            )}
+
+            {linkedCardCount > 0 && (
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
+                title={`${String(linkedCardCount)} linked card${linkedCardCount > 1 ? 's' : ''}`}
+              >
+                <RectangleStackIcon className="h-3 w-3 shrink-0" />
+                {linkedCardCount}
+              </span>
+            )}
+
+            {commentCount > 0 && (
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs ${secondaryMetaTextClass}`}
+                title={`${String(commentCount)} comment${commentCount > 1 ? 's' : ''}`}
+              >
+                <ChatBubbleLeftIcon className="h-3 w-3 shrink-0" />
+                {commentCount}
+              </span>
+            )}
+          </div>
+        )}
+        {members.length > 0 && (
+          <div className="mt-1.5">
+            <CardMemberAvatars
+              members={members}
+              cardId={card.id}
+              currentUserId={currentUserId}
+              onRemoveMember={onRemoveMember}
+            />
+          </div>
+        )}
+        <CardPluginBadges
+          {...(typeof boardId === 'string' ? { boardId } : {})}
+          cardId={card.id}
+          listId={card.list_id}
+          cardTitle={card.title}
+          {...(typeof listTitle === 'string' ? { listTitle } : {})}
+          {...(typeof boardTitle === 'string' ? { boardTitle } : {})}
+        />
+        {boardId && customFieldValues && (
+          <CardCustomFieldBadges boardId={boardId} values={customFieldValues} />
+        )}
+      </>
+    );
+
+    let contentContainer: React.ReactNode;
+    if (useBackgroundImageMode) {
+      contentContainer = (
+        <div className="relative">
+          {card.cover_image_url ? (
+            <>
+              <img
+                src={card.cover_image_url}
+                alt="Card cover"
+                className="block w-full h-auto"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/28" aria-hidden="true" />
+            </>
+          ) : (
+            <div
+              className="w-full min-h-[112px]"
+              style={{ backgroundColor: card.cover_color ?? '#334155' }}
+              aria-hidden="true"
             />
           )}
+          <div className="absolute inset-0 overflow-hidden p-2.5 text-white flex items-end">
+            <div className="w-full">{contentBlock}</div>
+          </div>
         </div>
-      )}
-      {contentContainer}
-    </>
-  );
-}, (prev, next) => {
-  if (prev === next) return true;
-  if (prev.labelsExpanded !== next.labelsExpanded) return false;
-  if (prev.onToggleLabels !== next.onToggleLabels) return false;
-  if (prev.listTitle !== next.listTitle) return false;
-  if (prev.boardTitle !== next.boardTitle) return false;
-  if (prev.boardId !== next.boardId) return false;
-  if (prev.currentUserId !== next.currentUserId) return false;
-  if (prev.unreadNotificationCount !== next.unreadNotificationCount) return false;
-  if (prev.onRemoveMember !== next.onRemoveMember) return false;
-  if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
+      );
+    } else if (useBackgroundColorMode) {
+      contentContainer = (
+        <div className="p-2.5" style={{ backgroundColor: card.cover_color ?? '#334155' }}>
+          {contentBlock}
+        </div>
+      );
+    } else {
+      contentContainer = <div className="p-2.5">{contentBlock}</div>;
+    }
 
-  const prevCard = prev.card;
-  const nextCard = next.card;
-  if (prevCard === nextCard) return true;
+    return (
+      <>
+        {showTopCoverStrip && (
+          <div
+            className={`w-full overflow-hidden ${card.cover_image_url ? '' : coverClass}`}
+            style={
+              card.cover_image_url ? undefined : { backgroundColor: card.cover_color ?? '#334155' }
+            }
+          >
+            {card.cover_image_url && (
+              <img
+                src={card.cover_image_url}
+                alt="Card cover"
+                className="block w-full h-auto"
+                loading="lazy"
+              />
+            )}
+          </div>
+        )}
+        {contentContainer}
+      </>
+    );
+  },
+  (prev, next) => {
+    if (prev === next) return true;
+    if (prev.labelsExpanded !== next.labelsExpanded) return false;
+    if (prev.onToggleLabels !== next.onToggleLabels) return false;
+    if (prev.listTitle !== next.listTitle) return false;
+    if (prev.boardTitle !== next.boardTitle) return false;
+    if (prev.boardId !== next.boardId) return false;
+    if (prev.currentUserId !== next.currentUserId) return false;
+    if (prev.unreadNotificationCount !== next.unreadNotificationCount) return false;
+    if (prev.onRemoveMember !== next.onRemoveMember) return false;
+    if (!hasSameCustomFieldValues(prev.customFieldValues, next.customFieldValues)) return false;
 
-  return prevCard.id === nextCard.id
-    && prevCard.title === nextCard.title
-    && prevCard.list_id === nextCard.list_id
-    && prevCard.cover_image_url === nextCard.cover_image_url
-    && prevCard.cover_color === nextCard.cover_color
-    && prevCard.cover_size === nextCard.cover_size
-    && prevCard.description === nextCard.description
-    && prevCard.due_date === nextCard.due_date
-    && prevCard.due_complete === nextCard.due_complete
-    && prevCard.amount === nextCard.amount
-    && prevCard.currency === nextCard.currency
-    && prevCard.checklist_total === nextCard.checklist_total
-    && prevCard.checklist_done === nextCard.checklist_done
-    && prevCard.attachment_count === nextCard.attachment_count
-    && prevCard.linked_card_count === nextCard.linked_card_count
-    && prevCard.comment_count === nextCard.comment_count
-    && prevCard.labels === nextCard.labels
-    && prevCard.members === nextCard.members;
-});
+    const prevCard = prev.card;
+    const nextCard = next.card;
+    if (prevCard === nextCard) return true;
+
+    return (
+      prevCard.id === nextCard.id &&
+      prevCard.title === nextCard.title &&
+      prevCard.list_id === nextCard.list_id &&
+      prevCard.cover_image_url === nextCard.cover_image_url &&
+      prevCard.cover_color === nextCard.cover_color &&
+      prevCard.cover_size === nextCard.cover_size &&
+      prevCard.description === nextCard.description &&
+      prevCard.due_date === nextCard.due_date &&
+      prevCard.due_complete === nextCard.due_complete &&
+      prevCard.amount === nextCard.amount &&
+      prevCard.currency === nextCard.currency &&
+      prevCard.checklist_total === nextCard.checklist_total &&
+      prevCard.checklist_done === nextCard.checklist_done &&
+      prevCard.attachment_count === nextCard.attachment_count &&
+      prevCard.linked_card_count === nextCard.linked_card_count &&
+      prevCard.comment_count === nextCard.comment_count &&
+      prevCard.labels === nextCard.labels &&
+      prevCard.members === nextCard.members
+    );
+  }
+);
 
 const CardItem = ({
   card,
@@ -418,11 +435,10 @@ const CardItem = ({
   const hasImageCover = Boolean(card.cover_image_url);
   const useBackgroundImageMode = Boolean(card.cover_image_url) && selectedCoverSize === 'SMALL';
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: card.id,
-      disabled: isOverlay,
-    });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: card.id,
+    disabled: isOverlay,
+  });
 
   const api = apiClient;
 
@@ -430,7 +446,7 @@ const CardItem = ({
     async (cardId: string, memberId: string) => {
       await removeMember({ api, cardId, userId: memberId });
     },
-    [api],
+    [api]
   );
 
   // WHY: memoize the style object so its reference only changes when the values
@@ -444,7 +460,7 @@ const CardItem = ({
       boxShadow: isOverlay ? undefined : CARD_ITEM_SHADOW,
       willChange: transform ? 'transform' : undefined,
     }),
-    [transform?.x, transform?.y, isDragging, isOverlay],
+    [transform?.x, transform?.y, isDragging, isOverlay]
   );
 
   let surfaceClass = 'bg-bg-surface hover:bg-bg-overlay border-border';
@@ -504,24 +520,26 @@ function areCardItemPropsEqual(prev: CardItemProps, next: CardItemProps): boolea
   const nextCard = next.card;
   if (prevCard === nextCard) return true;
 
-  return prevCard.id === nextCard.id
-    && prevCard.title === nextCard.title
-    && prevCard.list_id === nextCard.list_id
-    && prevCard.cover_image_url === nextCard.cover_image_url
-    && prevCard.cover_color === nextCard.cover_color
-    && prevCard.cover_size === nextCard.cover_size
-    && prevCard.description === nextCard.description
-    && prevCard.due_date === nextCard.due_date
-    && prevCard.due_complete === nextCard.due_complete
-    && prevCard.amount === nextCard.amount
-    && prevCard.currency === nextCard.currency
-    && prevCard.checklist_total === nextCard.checklist_total
-    && prevCard.checklist_done === nextCard.checklist_done
-    && prevCard.attachment_count === nextCard.attachment_count
-    && prevCard.linked_card_count === nextCard.linked_card_count
-    && prevCard.comment_count === nextCard.comment_count
-    && prevCard.labels === nextCard.labels
-    && prevCard.members === nextCard.members;
+  return (
+    prevCard.id === nextCard.id &&
+    prevCard.title === nextCard.title &&
+    prevCard.list_id === nextCard.list_id &&
+    prevCard.cover_image_url === nextCard.cover_image_url &&
+    prevCard.cover_color === nextCard.cover_color &&
+    prevCard.cover_size === nextCard.cover_size &&
+    prevCard.description === nextCard.description &&
+    prevCard.due_date === nextCard.due_date &&
+    prevCard.due_complete === nextCard.due_complete &&
+    prevCard.amount === nextCard.amount &&
+    prevCard.currency === nextCard.currency &&
+    prevCard.checklist_total === nextCard.checklist_total &&
+    prevCard.checklist_done === nextCard.checklist_done &&
+    prevCard.attachment_count === nextCard.attachment_count &&
+    prevCard.linked_card_count === nextCard.linked_card_count &&
+    prevCard.comment_count === nextCard.comment_count &&
+    prevCard.labels === nextCard.labels &&
+    prevCard.members === nextCard.members
+  );
 }
 
 // WHY: memo prevents re-renders when parent re-renders with the same props.

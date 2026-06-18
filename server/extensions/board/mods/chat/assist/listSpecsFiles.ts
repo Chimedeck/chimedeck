@@ -13,7 +13,7 @@ export const LIST_SPECS_FILES_TOOL: BoardChatAssistToolDefinition = {
   function: {
     name: 'list_specs_files',
     description:
-      'List all markdown documentation files under specs/ in the board\'s linked GitHub repository. Use this to discover what documentation already exists before proposing changes.',
+      "List all markdown documentation files under specs/ in the board's linked GitHub repository. Use this to discover what documentation already exists before proposing changes.",
     parameters: {
       type: 'object',
       properties: {},

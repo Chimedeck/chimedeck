@@ -87,7 +87,10 @@ export async function createBoardChatMessage({
   sessionId: string;
   content: string;
 }): Promise<{ data: BoardChatMessage }> {
-  return api.post<{ data: BoardChatMessage }>(`/boards/${boardId}/chat/messages`, { content, sessionId });
+  return api.post<{ data: BoardChatMessage }>(`/boards/${boardId}/chat/messages`, {
+    content,
+    sessionId,
+  });
 }
 
 // ---- Sessions (Sprint 199) ----
@@ -137,7 +140,9 @@ export async function updateBoardChatSession({
   sessionId: string;
   name?: string;
 }): Promise<{ data: BoardChatSession }> {
-  return api.patch<{ data: BoardChatSession }>(`/boards/${boardId}/chat/sessions/${sessionId}`, { name });
+  return api.patch<{ data: BoardChatSession }>(`/boards/${boardId}/chat/sessions/${sessionId}`, {
+    name,
+  });
 }
 
 export interface BoardChatAssistActionCard {
@@ -175,7 +180,10 @@ export async function requestBoardChatAssist({
   sessionId: string;
   prompt: string;
 }): Promise<{ data: BoardChatAssistResponse }> {
-  return api.post<{ data: BoardChatAssistResponse }>(`/boards/${boardId}/chat/assist`, { prompt, sessionId });
+  return api.post<{ data: BoardChatAssistResponse }>(`/boards/${boardId}/chat/assist`, {
+    prompt,
+    sessionId,
+  });
 }
 
 export interface BoardChatAssistCommitProposal {
@@ -212,6 +220,6 @@ export async function commitBoardChatProposals({
 }): Promise<{ data: BoardChatAssistCommitResponse }> {
   return api.post<{ data: BoardChatAssistCommitResponse }>(
     `/boards/${boardId}/chat/assist/commit`,
-    { proposals, sessionId },
+    { proposals, sessionId }
   );
 }

@@ -8,7 +8,10 @@ import {
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
-import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import {
+  requireBoardWritable,
+  type BoardScopedRequest,
+} from '../../board/middlewares/requireBoardWritable';
 import { featureFlags } from '../../../config/featureFlags';
 import { syncStateTransitionsOnListDelete } from '../../stateTransitions/hooks/listSync';
 
@@ -20,7 +23,7 @@ export async function handleDeleteList(req: Request, listId: string): Promise<Re
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -54,7 +57,7 @@ export async function handleDeleteList(req: Request, listId: string): Promise<Re
     if (!body.confirm) {
       return Response.json(
         { name: 'delete-requires-confirmation', data: { cardCount } },
-        { status: 409 },
+        { status: 409 }
       );
     }
   }
@@ -66,7 +69,13 @@ export async function handleDeleteList(req: Request, listId: string): Promise<Re
   }
 
   // Stub event emission.
-  await writeEvent({ type: 'list_deleted', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: {} });
+  await writeEvent({
+    type: 'list_deleted',
+    boardId: list.board_id,
+    entityId: listId,
+    actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+    payload: {},
+  });
 
   return new Response(null, { status: 204 });
 }

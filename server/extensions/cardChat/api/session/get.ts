@@ -1,7 +1,10 @@
 // GET /api/v1/cards/:cardId/chat
 // Sprint 171 — returns the current session and latest message, or null if no session exists.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { db } from '../../../../common/db';
 import type { CardChatSession, CardChatMessage } from '../../types';
 
@@ -26,7 +29,7 @@ export async function handleGetCardChatSession(req: Request, cardId: string): Pr
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await cardChatSessionGetDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -55,6 +58,6 @@ export async function handleGetCardChatSession(req: Request, cardId: string): Pr
         latestMessage: latestMessage ?? null,
       },
     },
-    { status: 200 },
+    { status: 200 }
   );
 }

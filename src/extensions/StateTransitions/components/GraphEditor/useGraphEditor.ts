@@ -63,7 +63,9 @@ export interface GraphEditorEdgeData extends Record<string, unknown> {
   onDelete?: (edgeId: string) => void;
 }
 
-export type GraphEditorEdge = Edge<GraphEditorEdgeData, 'transitionEdge'> & { data: GraphEditorEdgeData };
+export type GraphEditorEdge = Edge<GraphEditorEdgeData, 'transitionEdge'> & {
+  data: GraphEditorEdgeData;
+};
 
 interface PersistInput {
   enabled: boolean;
@@ -135,7 +137,7 @@ export function createColumnGraphNode({
 export function pushUndoSnapshotWithLimit(
   history: HistorySnapshot[],
   snapshot: HistorySnapshot,
-  limit = UNDO_STACK_LIMIT,
+  limit = UNDO_STACK_LIMIT
 ): HistorySnapshot[] {
   return [...history, snapshot].slice(Math.max(0, history.length + 1 - limit));
 }
@@ -147,9 +149,7 @@ const createEmptyGraph = (): StateTransitionGraph => ({
 });
 
 const sortLists = (lists: List[]): List[] =>
-  [...lists]
-    .filter((list) => !list.archived)
-    .sort((a, b) => (a.position < b.position ? -1 : 1));
+  [...lists].filter((list) => !list.archived).sort((a, b) => (a.position < b.position ? -1 : 1));
 
 const isStickyNoteNode = (node: GraphEditorNode): boolean => node.type === 'stickyNoteNode';
 const isColumnNode = (node: GraphEditorNode): boolean => node.type === 'columnNode';
@@ -206,7 +206,11 @@ const toGraphNodes = (nodes: GraphEditorNode[]): StateTransitionNode[] =>
         positionY: Math.round(node.position.y),
       };
       // Sprint 172 — carry workflow phase metadata back to API payload
-      if (node.data.workflowPhases !== undefined && Array.isArray(node.data.workflowPhases) && node.data.workflowPhases.length > 0) {
+      if (
+        node.data.workflowPhases !== undefined &&
+        Array.isArray(node.data.workflowPhases) &&
+        node.data.workflowPhases.length > 0
+      ) {
         nodeData.workflowPhases = node.data.workflowPhases;
       }
       if (node.data.phaseConfig !== undefined && Object.keys(node.data.phaseConfig).length > 0) {
@@ -256,7 +260,7 @@ const normalizeHandleId = (handleId: string | null | undefined): string | undefi
 
 const canonicalizeHandleRole = (
   handleId: string | undefined,
-  role: 'source' | 'target',
+  role: 'source' | 'target'
 ): string | undefined => {
   if (!handleId) return undefined;
   const normalized = normalizeHandleId(handleId);
@@ -394,13 +398,13 @@ export function resolveRemoteMerge({
 function connectionAlreadyExists(
   edges: GraphEditorEdge[],
   fromNodeId: string,
-  toNodeId: string,
+  toNodeId: string
 ): boolean {
   return edges.some((edge) => {
     if (edge.data.direction === 'two_way') {
       return (
-        (edge.source === fromNodeId && edge.target === toNodeId)
-        || (edge.source === toNodeId && edge.target === fromNodeId)
+        (edge.source === fromNodeId && edge.target === toNodeId) ||
+        (edge.source === toNodeId && edge.target === fromNodeId)
       );
     }
     return edge.source === fromNodeId && edge.target === toNodeId;
@@ -414,7 +418,9 @@ export const useGraphEditor = ({
   persistTransitions,
   consumeRecentLocalNodeIds,
 }: Args) => {
-  const [nodes, setNodes] = useState<GraphEditorNode[]>(() => toReactFlowNodes(lists, initialGraph));
+  const [nodes, setNodes] = useState<GraphEditorNode[]>(() =>
+    toReactFlowNodes(lists, initialGraph)
+  );
   const [edges, setEdges] = useState<GraphEditorEdge[]>(() => toReactFlowEdges(initialGraph));
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -435,11 +441,17 @@ export const useGraphEditor = ({
   const isApplyingUndoRef = useRef(false);
   const historyRef = useRef<HistorySnapshot[]>([]);
 
-  const buildGraph = useCallback((nodesToSerialize: GraphEditorNode[], edgesToSerialize: GraphEditorEdge[]): StateTransitionGraph => ({
-    nodes: toGraphNodes(nodesToSerialize),
-    edges: toGraphEdges(edgesToSerialize),
-    notes: toGraphNotes(nodesToSerialize),
-  }), []);
+  const buildGraph = useCallback(
+    (
+      nodesToSerialize: GraphEditorNode[],
+      edgesToSerialize: GraphEditorEdge[]
+    ): StateTransitionGraph => ({
+      nodes: toGraphNodes(nodesToSerialize),
+      edges: toGraphEdges(edgesToSerialize),
+      notes: toGraphNotes(nodesToSerialize),
+    }),
+    []
+  );
 
   useEffect(() => {
     isDirtyRef.current = isDirty;
@@ -466,107 +478,124 @@ export const useGraphEditor = ({
     edgesRef.current = edges;
   }, [edges]);
 
-  useEffect(() => () => {
-    if (saveTimeoutRef.current !== null) {
-      window.clearTimeout(saveTimeoutRef.current);
-    }
-    if (rejectTimeoutRef.current !== null) {
-      window.clearTimeout(rejectTimeoutRef.current);
-    }
-  }, []);
-
-  const pushHistory = useCallback((snapshotNodes: GraphEditorNode[], snapshotEdges: GraphEditorEdge[]) => {
-    if (isApplyingUndoRef.current) return;
-    historyRef.current = pushUndoSnapshotWithLimit(
-      historyRef.current,
-      {
-        nodes: snapshotNodes.map((node) => ({ ...node, data: { ...node.data } })),
-        edges: snapshotEdges.map((edge) => ({ ...edge, data: { ...edge.data } })),
-        selectedEdgeId,
-      },
-      UNDO_STACK_LIMIT,
-    );
-  }, [selectedEdgeId]);
-
-  const persistDebounced = useCallback((nodesToPersist: GraphEditorNode[], edgesToPersist: GraphEditorEdge[]) => {
-    const graph = buildGraph(nodesToPersist, edgesToPersist);
-    graphRef.current = graph;
-    setIsDirty(true);
-    setSaveError(null);
-
-    if (saveTimeoutRef.current !== null) {
-      window.clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = window.setTimeout(() => {
-      setIsSaving(true);
-      void persistTransitions({ enabled, graph })
-        .then(() => {
-          setIsDirty(false);
-          setSaveError(null);
-        })
-        .catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : 'Failed to save graph changes';
-          setSaveError(message);
-        })
-        .finally(() => {
-          setIsSaving(false);
-        });
-    }, DRAG_SAVE_DEBOUNCE_MS);
-  }, [buildGraph, enabled, persistTransitions]);
-
-  const deleteElementsByIds = useCallback(({ nodeIds = [], edgeIds = [] }: DeletionInput) => {
-    if (nodeIds.length === 0 && edgeIds.length === 0) return;
-    const nodeIdSet = new Set(nodeIds);
-    const edgeIdSet = new Set(edgeIds);
-
-    pushHistory(nodesRef.current, edgesRef.current);
-
-    const nextNodes = nodesRef.current.filter((node) => !nodeIdSet.has(node.id));
-    const nextEdges = edgesRef.current.filter((edge) => (
-      !edgeIdSet.has(edge.id)
-      && !nodeIdSet.has(edge.source)
-      && !nodeIdSet.has(edge.target)
-    ));
-
-    nodesRef.current = nextNodes;
-    edgesRef.current = nextEdges;
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-    setSelectedNodeIds((current) => current.filter((nodeId) => !nodeIdSet.has(nodeId)));
-    setSelectedEdgeIds((current) => current.filter((edgeId) => !edgeIdSet.has(edgeId)));
-    setSelectedEdgeId((current) => (
-      current && nextEdges.some((edge) => edge.id === current) ? current : null
-    ));
-    persistDebounced(nextNodes, nextEdges);
-  }, [persistDebounced, pushHistory]);
-
-  const onNodesChange: OnNodesChange<GraphEditorNode> = useCallback((changes) => {
-    const hasRemove = changes.some((change) => change.type === 'remove');
-    if (hasRemove) {
-      pushHistory(nodesRef.current, edgesRef.current);
-    }
-    setNodes((current) => {
-      const next = applyNodeChanges<GraphEditorNode>(changes, current);
-      nodesRef.current = next;
-      if (hasRemove) {
-        persistDebounced(next, edgesRef.current);
+  useEffect(
+    () => () => {
+      if (saveTimeoutRef.current !== null) {
+        window.clearTimeout(saveTimeoutRef.current);
       }
-      return next;
-    });
-  }, [persistDebounced, pushHistory]);
+      if (rejectTimeoutRef.current !== null) {
+        window.clearTimeout(rejectTimeoutRef.current);
+      }
+    },
+    []
+  );
 
-  const onNodeDragStop = useCallback((nodeId: string, x: number, y: number) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    setNodes((current) => {
-      const next = current.map((node) => (
-        node.id === nodeId ? { ...node, position: { x, y } } : node
-      ));
-      nodesRef.current = next;
-      persistDebounced(next, edgesRef.current);
-      return next;
-    });
-  }, [persistDebounced, pushHistory]);
+  const pushHistory = useCallback(
+    (snapshotNodes: GraphEditorNode[], snapshotEdges: GraphEditorEdge[]) => {
+      if (isApplyingUndoRef.current) return;
+      historyRef.current = pushUndoSnapshotWithLimit(
+        historyRef.current,
+        {
+          nodes: snapshotNodes.map((node) => ({ ...node, data: { ...node.data } })),
+          edges: snapshotEdges.map((edge) => ({ ...edge, data: { ...edge.data } })),
+          selectedEdgeId,
+        },
+        UNDO_STACK_LIMIT
+      );
+    },
+    [selectedEdgeId]
+  );
+
+  const persistDebounced = useCallback(
+    (nodesToPersist: GraphEditorNode[], edgesToPersist: GraphEditorEdge[]) => {
+      const graph = buildGraph(nodesToPersist, edgesToPersist);
+      graphRef.current = graph;
+      setIsDirty(true);
+      setSaveError(null);
+
+      if (saveTimeoutRef.current !== null) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+
+      saveTimeoutRef.current = window.setTimeout(() => {
+        setIsSaving(true);
+        void persistTransitions({ enabled, graph })
+          .then(() => {
+            setIsDirty(false);
+            setSaveError(null);
+          })
+          .catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : 'Failed to save graph changes';
+            setSaveError(message);
+          })
+          .finally(() => {
+            setIsSaving(false);
+          });
+      }, DRAG_SAVE_DEBOUNCE_MS);
+    },
+    [buildGraph, enabled, persistTransitions]
+  );
+
+  const deleteElementsByIds = useCallback(
+    ({ nodeIds = [], edgeIds = [] }: DeletionInput) => {
+      if (nodeIds.length === 0 && edgeIds.length === 0) return;
+      const nodeIdSet = new Set(nodeIds);
+      const edgeIdSet = new Set(edgeIds);
+
+      pushHistory(nodesRef.current, edgesRef.current);
+
+      const nextNodes = nodesRef.current.filter((node) => !nodeIdSet.has(node.id));
+      const nextEdges = edgesRef.current.filter(
+        (edge) =>
+          !edgeIdSet.has(edge.id) && !nodeIdSet.has(edge.source) && !nodeIdSet.has(edge.target)
+      );
+
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      setNodes(nextNodes);
+      setEdges(nextEdges);
+      setSelectedNodeIds((current) => current.filter((nodeId) => !nodeIdSet.has(nodeId)));
+      setSelectedEdgeIds((current) => current.filter((edgeId) => !edgeIdSet.has(edgeId)));
+      setSelectedEdgeId((current) =>
+        current && nextEdges.some((edge) => edge.id === current) ? current : null
+      );
+      persistDebounced(nextNodes, nextEdges);
+    },
+    [persistDebounced, pushHistory]
+  );
+
+  const onNodesChange: OnNodesChange<GraphEditorNode> = useCallback(
+    (changes) => {
+      const hasRemove = changes.some((change) => change.type === 'remove');
+      if (hasRemove) {
+        pushHistory(nodesRef.current, edgesRef.current);
+      }
+      setNodes((current) => {
+        const next = applyNodeChanges<GraphEditorNode>(changes, current);
+        nodesRef.current = next;
+        if (hasRemove) {
+          persistDebounced(next, edgesRef.current);
+        }
+        return next;
+      });
+    },
+    [persistDebounced, pushHistory]
+  );
+
+  const onNodeDragStop = useCallback(
+    (nodeId: string, x: number, y: number) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      setNodes((current) => {
+        const next = current.map((node) =>
+          node.id === nodeId ? { ...node, position: { x, y } } : node
+        );
+        nodesRef.current = next;
+        persistDebounced(next, edgesRef.current);
+        return next;
+      });
+    },
+    [persistDebounced, pushHistory]
+  );
 
   const triggerRejectedConnectionFeedback = useCallback((nodeId: string) => {
     setRejectedNodeId(nodeId);
@@ -578,84 +607,96 @@ export const useGraphEditor = ({
     }, INVALID_CONNECTION_FEEDBACK_MS);
   }, []);
 
-  const onConnect: OnConnect = useCallback((connection: Connection) => {
-    const connectStart = connectStartRef.current;
-    connectStartRef.current = null;
+  const onConnect: OnConnect = useCallback(
+    (connection: Connection) => {
+      const connectStart = connectStartRef.current;
+      connectStartRef.current = null;
 
-    const rawSource = connection.source;
-    const rawTarget = connection.target;
-    const rawSourceHandle = normalizeHandleId(connection.sourceHandle);
-    const rawTargetHandle = normalizeHandleId(connection.targetHandle);
-    const shouldSwapDirection = Boolean(
-      rawSourceHandle?.endsWith('-target') || rawTargetHandle?.endsWith('-source'),
-    );
+      const rawSource = connection.source;
+      const rawTarget = connection.target;
+      const rawSourceHandle = normalizeHandleId(connection.sourceHandle);
+      const rawTargetHandle = normalizeHandleId(connection.targetHandle);
+      const shouldSwapDirection = Boolean(
+        rawSourceHandle?.endsWith('-target') || rawTargetHandle?.endsWith('-source')
+      );
 
-    const source = shouldSwapDirection ? rawTarget : rawSource;
-    const target = shouldSwapDirection ? rawSource : rawTarget;
-    let sourceHandle = shouldSwapDirection ? rawTargetHandle : rawSourceHandle;
-    let targetHandle = shouldSwapDirection ? rawSourceHandle : rawTargetHandle;
-    if (!source || !target) return;
+      const source = shouldSwapDirection ? rawTarget : rawSource;
+      const target = shouldSwapDirection ? rawSource : rawTarget;
+      let sourceHandle = shouldSwapDirection ? rawTargetHandle : rawSourceHandle;
+      let targetHandle = shouldSwapDirection ? rawSourceHandle : rawTargetHandle;
+      if (!source || !target) return;
 
-    let normalizedSource = source;
-    let normalizedTarget = target;
-    if (connectStart?.nodeId && connectStart.nodeId === normalizedTarget && connectStart.nodeId !== normalizedSource) {
-      normalizedSource = target;
-      normalizedTarget = source;
-      const previousSourceHandle = sourceHandle;
-      sourceHandle = targetHandle;
-      targetHandle = previousSourceHandle;
-    }
+      let normalizedSource = source;
+      let normalizedTarget = target;
+      if (
+        connectStart?.nodeId &&
+        connectStart.nodeId === normalizedTarget &&
+        connectStart.nodeId !== normalizedSource
+      ) {
+        normalizedSource = target;
+        normalizedTarget = source;
+        const previousSourceHandle = sourceHandle;
+        sourceHandle = targetHandle;
+        targetHandle = previousSourceHandle;
+      }
 
-    if (connectStart?.nodeId && connectStart.handleId && connectStart.nodeId === normalizedSource) {
-      sourceHandle = normalizeHandleId(connectStart.handleId);
-    }
+      if (
+        connectStart?.nodeId &&
+        connectStart.handleId &&
+        connectStart.nodeId === normalizedSource
+      ) {
+        sourceHandle = normalizeHandleId(connectStart.handleId);
+      }
 
-    sourceHandle = canonicalizeHandleRole(sourceHandle, 'source');
-    targetHandle = canonicalizeHandleRole(targetHandle, 'target');
+      sourceHandle = canonicalizeHandleRole(sourceHandle, 'source');
+      targetHandle = canonicalizeHandleRole(targetHandle, 'target');
 
-    if (normalizedSource === normalizedTarget) {
-      triggerRejectedConnectionFeedback(normalizedSource);
-      return;
-    }
+      if (normalizedSource === normalizedTarget) {
+        triggerRejectedConnectionFeedback(normalizedSource);
+        return;
+      }
 
-    if (connectionAlreadyExists(edgesRef.current, normalizedSource, normalizedTarget)) {
-      return;
-    }
+      if (connectionAlreadyExists(edgesRef.current, normalizedSource, normalizedTarget)) {
+        return;
+      }
 
-    pushHistory(nodesRef.current, edgesRef.current);
+      pushHistory(nodesRef.current, edgesRef.current);
 
-    const edgeId = typeof globalThis.crypto.randomUUID === 'function'
-      ? globalThis.crypto.randomUUID()
-      : `edge-${source}-${target}-${String(Date.now())}`;
+      const edgeId =
+        typeof globalThis.crypto.randomUUID === 'function'
+          ? globalThis.crypto.randomUUID()
+          : `edge-${source}-${target}-${String(Date.now())}`;
 
-    const nextEdge: GraphEditorEdge = {
-      id: edgeId,
-      type: 'transitionEdge',
-      source: normalizedSource,
-      target: normalizedTarget,
-      ...(sourceHandle ? { sourceHandle } : {}),
-      ...(targetHandle ? { targetHandle } : {}),
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        color: getActionTypeConfig(defaultAction).colour,
-      },
-      data: {
-        action: defaultAction,
-        direction: 'one_way',
-        style: 'straight',
-        connectorOffsetX: 0,
-        connectorOffsetY: 0,
-        waypoints: [],
-      },
-    };
+      const nextEdge: GraphEditorEdge = {
+        id: edgeId,
+        type: 'transitionEdge',
+        source: normalizedSource,
+        target: normalizedTarget,
+        ...(sourceHandle ? { sourceHandle } : {}),
+        ...(targetHandle ? { targetHandle } : {}),
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: getActionTypeConfig(defaultAction).colour,
+        },
+        data: {
+          action: defaultAction,
+          direction: 'one_way',
+          style: 'straight',
+          connectorOffsetX: 0,
+          connectorOffsetY: 0,
+          waypoints: [],
+        },
+      };
 
-    setEdges((current) => {
-      const next = [...current, nextEdge];
-      edgesRef.current = next;
-      persistDebounced(nodesRef.current, next);
-      return next;
-    });
-  }, [defaultAction, persistDebounced, pushHistory, triggerRejectedConnectionFeedback]);
+      setEdges((current) => {
+        const next = [...current, nextEdge];
+        edgesRef.current = next;
+        persistDebounced(nodesRef.current, next);
+        return next;
+      });
+    },
+    [defaultAction, persistDebounced, pushHistory, triggerRejectedConnectionFeedback]
+  );
 
   const onConnectStart: OnConnectStart = useCallback((_event, params) => {
     connectStartRef.current = {
@@ -668,135 +709,153 @@ export const useGraphEditor = ({
     connectStartRef.current = null;
   }, []);
 
-  const onEdgesChange: OnEdgesChange<GraphEditorEdge> = useCallback((changes) => {
-    const hasRemove = changes.some((change) => change.type === 'remove');
-    if (hasRemove) {
-      pushHistory(nodesRef.current, edgesRef.current);
-    }
-    setEdges((current) => {
-      const next = applyEdgeChanges<GraphEditorEdge>(changes, current);
-      edgesRef.current = next;
+  const onEdgesChange: OnEdgesChange<GraphEditorEdge> = useCallback(
+    (changes) => {
+      const hasRemove = changes.some((change) => change.type === 'remove');
       if (hasRemove) {
-        persistDebounced(nodesRef.current, next);
+        pushHistory(nodesRef.current, edgesRef.current);
       }
-      return next;
-    });
-  }, [persistDebounced, pushHistory]);
-
-  const updateEdge = useCallback((edgeId: string, patch: Partial<GraphEditorEdgeData>) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    setEdges((current) => {
-      const next = current.map((edge) => {
-        if (edge.id !== edgeId) return edge;
-        const nextData: GraphEditorEdgeData = {
-          action: edge.data.action,
-          direction: edge.data.direction,
-          style: edge.data.style,
-          connectorOffsetX: edge.data.connectorOffsetX ?? 0,
-          connectorOffsetY: edge.data.connectorOffsetY ?? 0,
-          waypoints: edge.data.waypoints ?? [],
-          ...(edge.data.onInspect ? { onInspect: edge.data.onInspect } : {}),
-          ...(edge.data.onDelete ? { onDelete: edge.data.onDelete } : {}),
-          ...patch,
-        };
-        const actionType = getActionTypeConfig(nextData.action);
-        const baseEdge = {
-          ...edge,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: actionType.colour,
-          },
-          data: nextData,
-        };
-        return nextData.direction === 'two_way'
-          ? {
-              ...baseEdge,
-              markerStart: {
-                type: MarkerType.ArrowClosed,
-                color: actionType.colour,
-              },
-            }
-          : baseEdge;
+      setEdges((current) => {
+        const next = applyEdgeChanges<GraphEditorEdge>(changes, current);
+        edgesRef.current = next;
+        if (hasRemove) {
+          persistDebounced(nodesRef.current, next);
+        }
+        return next;
       });
-      edgesRef.current = next;
-      persistDebounced(nodesRef.current, next);
-      return next;
-    });
-  }, [persistDebounced, pushHistory]);
+    },
+    [persistDebounced, pushHistory]
+  );
 
-  const previewEdgeOffset = useCallback((edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => {
-    setEdges((current) => {
-      const next = current.map((edge) => {
-        if (edge.id !== edgeId) return edge;
-        return {
-          ...edge,
-          data: {
-            ...edge.data,
-            connectorOffsetX,
-            connectorOffsetY,
-          },
-        };
+  const updateEdge = useCallback(
+    (edgeId: string, patch: Partial<GraphEditorEdgeData>) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      setEdges((current) => {
+        const next = current.map((edge) => {
+          if (edge.id !== edgeId) return edge;
+          const nextData: GraphEditorEdgeData = {
+            action: edge.data.action,
+            direction: edge.data.direction,
+            style: edge.data.style,
+            connectorOffsetX: edge.data.connectorOffsetX ?? 0,
+            connectorOffsetY: edge.data.connectorOffsetY ?? 0,
+            waypoints: edge.data.waypoints ?? [],
+            ...(edge.data.onInspect ? { onInspect: edge.data.onInspect } : {}),
+            ...(edge.data.onDelete ? { onDelete: edge.data.onDelete } : {}),
+            ...patch,
+          };
+          const actionType = getActionTypeConfig(nextData.action);
+          const baseEdge = {
+            ...edge,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: actionType.colour,
+            },
+            data: nextData,
+          };
+          return nextData.direction === 'two_way'
+            ? {
+                ...baseEdge,
+                markerStart: {
+                  type: MarkerType.ArrowClosed,
+                  color: actionType.colour,
+                },
+              }
+            : baseEdge;
+        });
+        edgesRef.current = next;
+        persistDebounced(nodesRef.current, next);
+        return next;
       });
-      edgesRef.current = next;
-      return next;
-    });
-  }, []);
+    },
+    [persistDebounced, pushHistory]
+  );
 
-  const commitEdgeOffset = useCallback((edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    setEdges((current) => {
-      const next = current.map((edge) => {
-        if (edge.id !== edgeId) return edge;
-        return {
-          ...edge,
-          data: {
-            ...edge.data,
-            connectorOffsetX,
-            connectorOffsetY,
-          },
-        };
+  const previewEdgeOffset = useCallback(
+    (edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => {
+      setEdges((current) => {
+        const next = current.map((edge) => {
+          if (edge.id !== edgeId) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              connectorOffsetX,
+              connectorOffsetY,
+            },
+          };
+        });
+        edgesRef.current = next;
+        return next;
       });
-      edgesRef.current = next;
-      persistDebounced(nodesRef.current, next);
-      return next;
-    });
-  }, [persistDebounced, pushHistory]);
+    },
+    []
+  );
 
-  const previewEdgeWaypoints = useCallback((edgeId: string, waypoints: StateTransitionWaypoint[]) => {
-    setEdges((current) => {
-      const next = current.map((edge) => {
-        if (edge.id !== edgeId) return edge;
-        return {
-          ...edge,
-          data: {
-            ...edge.data,
-            waypoints,
-          },
-        };
+  const commitEdgeOffset = useCallback(
+    (edgeId: string, connectorOffsetX: number, connectorOffsetY: number) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      setEdges((current) => {
+        const next = current.map((edge) => {
+          if (edge.id !== edgeId) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              connectorOffsetX,
+              connectorOffsetY,
+            },
+          };
+        });
+        edgesRef.current = next;
+        persistDebounced(nodesRef.current, next);
+        return next;
       });
-      edgesRef.current = next;
-      return next;
-    });
-  }, []);
+    },
+    [persistDebounced, pushHistory]
+  );
 
-  const commitEdgeWaypoints = useCallback((edgeId: string, waypoints: StateTransitionWaypoint[]) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    setEdges((current) => {
-      const next = current.map((edge) => {
-        if (edge.id !== edgeId) return edge;
-        return {
-          ...edge,
-          data: {
-            ...edge.data,
-            waypoints,
-          },
-        };
+  const previewEdgeWaypoints = useCallback(
+    (edgeId: string, waypoints: StateTransitionWaypoint[]) => {
+      setEdges((current) => {
+        const next = current.map((edge) => {
+          if (edge.id !== edgeId) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              waypoints,
+            },
+          };
+        });
+        edgesRef.current = next;
+        return next;
       });
-      edgesRef.current = next;
-      persistDebounced(nodesRef.current, next);
-      return next;
-    });
-  }, [persistDebounced, pushHistory]);
+    },
+    []
+  );
+
+  const commitEdgeWaypoints = useCallback(
+    (edgeId: string, waypoints: StateTransitionWaypoint[]) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      setEdges((current) => {
+        const next = current.map((edge) => {
+          if (edge.id !== edgeId) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              waypoints,
+            },
+          };
+        });
+        edgesRef.current = next;
+        persistDebounced(nodesRef.current, next);
+        return next;
+      });
+    },
+    [persistDebounced, pushHistory]
+  );
 
   const selectEdge = useCallback((edgeId: string | null) => {
     setSelectedEdgeId(edgeId);
@@ -804,21 +863,27 @@ export const useGraphEditor = ({
 
   // Sprint 172 — update a single column node's data (workflowPhases/phaseConfig)
   // and mark the graph dirty so the save button activates.
-  const setNodeData = useCallback((nodeId: string, dataPatch: Partial<GraphEditorNodeData>) => {
-    setNodes((current) => {
-      const next = current.map((node) =>
-        node.id === nodeId ? { ...node, data: { ...node.data, ...dataPatch } } : node,
-      );
-      nodesRef.current = next;
-      persistDebounced(next, edgesRef.current);
-      return next;
-    });
-  }, [persistDebounced]);
+  const setNodeData = useCallback(
+    (nodeId: string, dataPatch: Partial<GraphEditorNodeData>) => {
+      setNodes((current) => {
+        const next = current.map((node) =>
+          node.id === nodeId ? { ...node, data: { ...node.data, ...dataPatch } } : node
+        );
+        nodesRef.current = next;
+        persistDebounced(next, edgesRef.current);
+        return next;
+      });
+    },
+    [persistDebounced]
+  );
 
-  const onSelectionChange = useCallback((selection: { nodes: GraphEditorNode[]; edges: GraphEditorEdge[] }) => {
-    setSelectedNodeIds(selection.nodes.map((node) => node.id));
-    setSelectedEdgeIds(selection.edges.map((edge) => edge.id));
-  }, []);
+  const onSelectionChange = useCallback(
+    (selection: { nodes: GraphEditorNode[]; edges: GraphEditorEdge[] }) => {
+      setSelectedNodeIds(selection.nodes.map((node) => node.id));
+      setSelectedEdgeIds(selection.edges.map((edge) => edge.id));
+    },
+    []
+  );
 
   const clearSelection = useCallback(() => {
     setNodes((current) => current.map((node) => ({ ...node, selected: false })));
@@ -854,84 +919,106 @@ export const useGraphEditor = ({
     isApplyingUndoRef.current = false;
   }, [persistDebounced]);
 
-  const addStickyNoteAt = useCallback((x: number, y: number) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    const noteId = typeof globalThis.crypto.randomUUID === 'function'
-      ? globalThis.crypto.randomUUID()
-      : `note-${String(Date.now())}`;
-    const nextNode = createStickyNoteGraphNode({ id: noteId, x, y });
-    const nextNodes = [...nodesRef.current, nextNode];
-    nodesRef.current = nextNodes;
-    setNodes(nextNodes);
-    persistDebounced(nextNodes, edgesRef.current);
-  }, [persistDebounced, pushHistory]);
+  const addStickyNoteAt = useCallback(
+    (x: number, y: number) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      const noteId =
+        typeof globalThis.crypto.randomUUID === 'function'
+          ? globalThis.crypto.randomUUID()
+          : `note-${String(Date.now())}`;
+      const nextNode = createStickyNoteGraphNode({ id: noteId, x, y });
+      const nextNodes = [...nodesRef.current, nextNode];
+      nodesRef.current = nextNodes;
+      setNodes(nextNodes);
+      persistDebounced(nextNodes, edgesRef.current);
+    },
+    [persistDebounced, pushHistory]
+  );
 
-  const addColumnNode = useCallback((list: { id: string; title: string }, x: number, y: number) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    const nextNodes = [
-      ...nodesRef.current.filter((node) => node.id !== list.id),
-      createColumnGraphNode({ id: list.id, title: list.title, x, y }),
-    ];
-    nodesRef.current = nextNodes;
-    setNodes(nextNodes);
-    persistDebounced(nextNodes, edgesRef.current);
-  }, [persistDebounced, pushHistory]);
+  const addColumnNode = useCallback(
+    (list: { id: string; title: string }, x: number, y: number) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      const nextNodes = [
+        ...nodesRef.current.filter((node) => node.id !== list.id),
+        createColumnGraphNode({ id: list.id, title: list.title, x, y }),
+      ];
+      nodesRef.current = nextNodes;
+      setNodes(nextNodes);
+      persistDebounced(nextNodes, edgesRef.current);
+    },
+    [persistDebounced, pushHistory]
+  );
 
-  const applyRemoteGraph = useCallback((remoteGraph: StateTransitionGraph) => {
-    if (saveTimeoutRef.current !== null) {
-      window.clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = null;
-    }
+  const applyRemoteGraph = useCallback(
+    (remoteGraph: StateTransitionGraph) => {
+      if (saveTimeoutRef.current !== null) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
 
-    const localGraph = buildGraph(nodesRef.current, edgesRef.current);
-    const { mergedGraph } = resolveRemoteMerge({
-      localGraph,
-      remoteGraph,
-      recentLocalNodeIds: consumeRecentLocalNodeIds?.() ?? new Set<string>(),
-    });
+      const localGraph = buildGraph(nodesRef.current, edgesRef.current);
+      const { mergedGraph } = resolveRemoteMerge({
+        localGraph,
+        remoteGraph,
+        recentLocalNodeIds: consumeRecentLocalNodeIds?.() ?? new Set<string>(),
+      });
 
-    const nextNodes = toReactFlowNodes(lists, mergedGraph);
-    const nextEdges = toReactFlowEdges(mergedGraph);
+      const nextNodes = toReactFlowNodes(lists, mergedGraph);
+      const nextEdges = toReactFlowEdges(mergedGraph);
 
-    graphRef.current = mergedGraph;
-    nodesRef.current = nextNodes;
-    edgesRef.current = nextEdges;
-    setNodes(nextNodes);
-    setEdges(nextEdges);
-    setIsDirty(false);
-    setIsSaving(false);
-    setSaveError(null);
-    historyRef.current = [];
-    setSelectedNodeIds((current) => current.filter((nodeId) => nextNodes.some((node) => node.id === nodeId)));
-    setSelectedEdgeIds((current) => current.filter((edgeId) => nextEdges.some((edge) => edge.id === edgeId)));
-    setSelectedEdgeId((current) => (
-      current && nextEdges.some((edge) => edge.id === current) ? current : null
-    ));
-  }, [buildGraph, consumeRecentLocalNodeIds, lists]);
+      graphRef.current = mergedGraph;
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      setNodes(nextNodes);
+      setEdges(nextEdges);
+      setIsDirty(false);
+      setIsSaving(false);
+      setSaveError(null);
+      historyRef.current = [];
+      setSelectedNodeIds((current) =>
+        current.filter((nodeId) => nextNodes.some((node) => node.id === nodeId))
+      );
+      setSelectedEdgeIds((current) =>
+        current.filter((edgeId) => nextEdges.some((edge) => edge.id === edgeId))
+      );
+      setSelectedEdgeId((current) =>
+        current && nextEdges.some((edge) => edge.id === current) ? current : null
+      );
+    },
+    [buildGraph, consumeRecentLocalNodeIds, lists]
+  );
 
-  const startNoteEdit = useCallback((nodeId: string) => {
-    pushHistory(nodesRef.current, edgesRef.current);
-    setNodes((current) => current.map((node) => (
-      node.id === nodeId ? { ...node, data: { ...node.data, isEditing: true } } : node
-    )));
-  }, [pushHistory]);
+  const startNoteEdit = useCallback(
+    (nodeId: string) => {
+      pushHistory(nodesRef.current, edgesRef.current);
+      setNodes((current) =>
+        current.map((node) =>
+          node.id === nodeId ? { ...node, data: { ...node.data, isEditing: true } } : node
+        )
+      );
+    },
+    [pushHistory]
+  );
 
-  const finishNoteEdit = useCallback((nodeId: string) => {
-    setNodes((current) => {
-      const next = current.map((node) => (
-        node.id === nodeId ? { ...node, data: { ...node.data, isEditing: false } } : node
-      ));
-      nodesRef.current = next;
-      persistDebounced(next, edgesRef.current);
-      return next;
-    });
-  }, [persistDebounced]);
+  const finishNoteEdit = useCallback(
+    (nodeId: string) => {
+      setNodes((current) => {
+        const next = current.map((node) =>
+          node.id === nodeId ? { ...node, data: { ...node.data, isEditing: false } } : node
+        );
+        nodesRef.current = next;
+        persistDebounced(next, edgesRef.current);
+        return next;
+      });
+    },
+    [persistDebounced]
+  );
 
   const updateNoteContent = useCallback((nodeId: string, content: string) => {
     setNodes((current) => {
-      const next = current.map((node) => (
+      const next = current.map((node) =>
         node.id === nodeId ? { ...node, data: { ...node.data, noteContent: content } } : node
-      ));
+      );
       nodesRef.current = next;
       return next;
     });
@@ -943,43 +1030,44 @@ export const useGraphEditor = ({
 
   const selectedEdge = useMemo(
     () => edges.find((edge) => edge.id === selectedEdgeId) ?? null,
-    [edges, selectedEdgeId],
+    [edges, selectedEdgeId]
   );
 
   const selectedNodes = useMemo(
     () => nodes.filter((node) => selectedNodeIds.includes(node.id)),
-    [nodes, selectedNodeIds],
+    [nodes, selectedNodeIds]
   );
 
   const selectedEdges = useMemo(
     () => edges.filter((edge) => selectedEdgeIds.includes(edge.id)),
-    [edges, selectedEdgeIds],
+    [edges, selectedEdgeIds]
   );
 
   const renderedNodes = useMemo(
-    () => nodes.map((node) => {
-      const withHandlers = isStickyNoteNode(node)
-        ? {
-            ...node,
-            data: {
-              ...node.data,
-              onStartNoteEdit: startNoteEdit,
-              onFinishNoteEdit: finishNoteEdit,
-              onNoteContentChange: updateNoteContent,
-              onDeleteNode: (nodeId: string) => {
-                deleteElementsByIds({ nodeIds: [nodeId] });
+    () =>
+      nodes.map((node) => {
+        const withHandlers = isStickyNoteNode(node)
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                onStartNoteEdit: startNoteEdit,
+                onFinishNoteEdit: finishNoteEdit,
+                onNoteContentChange: updateNoteContent,
+                onDeleteNode: (nodeId: string) => {
+                  deleteElementsByIds({ nodeIds: [nodeId] });
+                },
               },
-            },
-          }
-        : node;
-      if (withHandlers.id === rejectedNodeId) {
-        return { ...withHandlers, className: 'animate-state-transition-shake' };
-      }
-      const { className, ...rest } = withHandlers;
-      void className;
-      return rest;
-    }),
-    [deleteElementsByIds, finishNoteEdit, nodes, rejectedNodeId, startNoteEdit, updateNoteContent],
+            }
+          : node;
+        if (withHandlers.id === rejectedNodeId) {
+          return { ...withHandlers, className: 'animate-state-transition-shake' };
+        }
+        const { className, ...rest } = withHandlers;
+        void className;
+        return rest;
+      }),
+    [deleteElementsByIds, finishNoteEdit, nodes, rejectedNodeId, startNoteEdit, updateNoteContent]
   );
 
   const currentGraph = useMemo(() => buildGraph(nodes, edges), [buildGraph, edges, nodes]);

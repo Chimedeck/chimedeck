@@ -65,15 +65,21 @@ describe('parseInternalCardUrl', () => {
   });
 
   test('parses short card route with slug', () => {
-    expect(parseInternalCardUrl(`${appOrigin}/c/Ab12Cd34/some-card-title`)).toEqual({ cardId: 'Ab12Cd34' });
+    expect(parseInternalCardUrl(`${appOrigin}/c/Ab12Cd34/some-card-title`)).toEqual({
+      cardId: 'Ab12Cd34',
+    });
   });
 
   test('parses legacy /boards/:boardId/cards/:cardId route', () => {
-    expect(parseInternalCardUrl(`${appOrigin}/boards/board-1/cards/card-22`)).toEqual({ cardId: 'card-22' });
+    expect(parseInternalCardUrl(`${appOrigin}/boards/board-1/cards/card-22`)).toEqual({
+      cardId: 'card-22',
+    });
   });
 
   test('parses board route with ?card= query', () => {
-    expect(parseInternalCardUrl(`${appOrigin}/b/board-1?card=card-99`)).toEqual({ cardId: 'card-99' });
+    expect(parseInternalCardUrl(`${appOrigin}/b/board-1?card=card-99`)).toEqual({
+      cardId: 'card-99',
+    });
   });
 
   test('returns null for non-card URLs', () => {
@@ -82,6 +88,10 @@ describe('parseInternalCardUrl', () => {
   });
 
   test('treats Trello card URLs as external', () => {
-    expect(parseInternalCardUrl('https://trello.com/c/AzdUEXeY/211-create-branding-promo-code-for-discount-in-config-listing')).toBeNull();
+    expect(
+      parseInternalCardUrl(
+        'https://trello.com/c/AzdUEXeY/211-create-branding-promo-code-for-discount-in-config-listing'
+      )
+    ).toBeNull();
   });
 });

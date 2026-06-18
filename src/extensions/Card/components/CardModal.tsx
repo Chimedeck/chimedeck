@@ -67,9 +67,18 @@ interface Props {
   onItemRename: (checklistId: string, itemId: string, title: string) => Promise<void>;
   onItemDelete: (checklistId: string, itemId: string) => Promise<void>;
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
-  onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
+  onItemDueDateChange: (
+    checklistId: string,
+    itemId: string,
+    dueDate: string | null
+  ) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
-  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
+  onItemReorder: (
+    sourceChecklistId: string,
+    itemId: string,
+    position: string,
+    targetChecklistId?: string
+  ) => Promise<void>;
   onLabelAttach: (labelId: string) => Promise<void>;
   onLabelDetach: (labelId: string) => Promise<void>;
   onLabelCreate: (name: string, color: string) => Promise<void>;
@@ -216,18 +225,26 @@ const CardModal = ({
   const [cardAttachments, setCardAttachments] = useState<Attachment[]>([]);
   const [attachmentRefreshSignal, setAttachmentRefreshSignal] = useState(0);
 
-  const syncCardAttachmentState = useCallback((attachments: Attachment[]) => {
-    setCardAttachments(attachments);
-    const fileCount = attachments.filter((entry) => entry.referenced_card_id == null).length;
-    const linkedCardCount = attachments.filter((entry) => entry.referenced_card_id != null).length;
-    onAttachmentCountChange?.({ fileCount, linkedCardCount });
-  }, [onAttachmentCountChange]);
+  const syncCardAttachmentState = useCallback(
+    (attachments: Attachment[]) => {
+      setCardAttachments(attachments);
+      const fileCount = attachments.filter((entry) => entry.referenced_card_id == null).length;
+      const linkedCardCount = attachments.filter(
+        (entry) => entry.referenced_card_id != null
+      ).length;
+      onAttachmentCountChange?.({ fileCount, linkedCardCount });
+    },
+    [onAttachmentCountChange]
+  );
 
-  const handleEditorAttachmentsChange = useCallback((attachments: Attachment[]) => {
-    syncCardAttachmentState(attachments);
-    // [why] editor paste/file uploads happen outside AttachmentPanel; trigger a panel refresh.
-    setAttachmentRefreshSignal((value) => value + 1);
-  }, [syncCardAttachmentState]);
+  const handleEditorAttachmentsChange = useCallback(
+    (attachments: Attachment[]) => {
+      syncCardAttachmentState(attachments);
+      // [why] editor paste/file uploads happen outside AttachmentPanel; trigger a panel refresh.
+      setAttachmentRefreshSignal((value) => value + 1);
+    },
+    [syncCardAttachmentState]
+  );
   const { uploads: coverUploads, upload: uploadCover } = useAttachmentUpload({
     cardId: card.id,
     onSuccess: (attachment) => {
@@ -239,8 +256,11 @@ const CardModal = ({
     },
   });
 
-  const coverUploading = coverUploads.some((entry) =>
-    entry.phase === 'requesting-url' || entry.phase === 'uploading' || entry.phase === 'confirming',
+  const coverUploading = coverUploads.some(
+    (entry) =>
+      entry.phase === 'requesting-url' ||
+      entry.phase === 'uploading' ||
+      entry.phase === 'confirming'
   );
 
   useEffect(() => {
@@ -292,7 +312,12 @@ const CardModal = ({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <Dialog.Portal>
         {/* Overlay */}
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
@@ -315,7 +340,10 @@ const CardModal = ({
         >
           {/* Visually-hidden title for screen-reader accessibility (Radix requirement) */}
           <Dialog.Title className="sr-only">Card: {card.title}</Dialog.Title>
-          <div className="bg-bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]" data-card-modal-content="true">
+          <div
+            className="bg-bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-5xl mx-auto flex flex-col max-h-[calc(100vh-5rem)]"
+            data-card-modal-content="true"
+          >
             <input
               ref={coverInputRef}
               type="file"
@@ -327,42 +355,41 @@ const CardModal = ({
             {hasCover && (
               <div
                 className={`w-full overflow-hidden rounded-t-2xl ${(card.cover_size ?? 'SMALL') === 'FULL' ? 'h-44' : 'h-28'}`}
-                style={card.cover_image_url
-                  ? undefined
-                  : { backgroundColor: card.cover_color ?? '#334155' }}
+                style={
+                  card.cover_image_url
+                    ? undefined
+                    : { backgroundColor: card.cover_color ?? '#334155' }
+                }
               >
-                {card.cover_image_url
-                  ? (
-                    <img
-                      src={card.cover_image_url}
-                      alt="Card cover"
-                      className="h-full w-full object-contain"
-                      loading="eager"
-                      draggable={false}
-                    />
-                  )
-                  : <span className="sr-only">Card cover color</span>}
+                {card.cover_image_url ? (
+                  <img
+                    src={card.cover_image_url}
+                    alt="Card cover"
+                    className="h-full w-full object-contain"
+                    loading="eager"
+                    draggable={false}
+                  />
+                ) : (
+                  <span className="sr-only">Card cover color</span>
+                )}
               </div>
             )}
 
             {/* Header */}
             <div className="flex items-start gap-2 p-5 pb-2">
               <div className="flex-1 min-w-0">
-                <CardTitle
-                  title={card.title}
-                  onSave={onTitleSave}
-                  disabled={isReadOnly}
-                />
+                <CardTitle title={card.title} onSave={onTitleSave} disabled={isReadOnly} />
                 <p className="mt-1 text-xs text-subtle px-2">
-                  in list <span className="text-link font-medium">{listTitle}</span>{' '}
-                  · {boardTitle}
+                  in list <span className="text-link font-medium">{listTitle}</span> · {boardTitle}
                 </p>
               </div>
               <div className="relative" ref={coverMenuRef}>
                 <button
                   type="button"
                   className="rounded-lg px-2.5 py-2 text-sm text-muted hover:bg-bg-overlay hover:text-base transition-colors disabled:opacity-40"
-                  onClick={() => { setCoverMenuOpen((openState) => !openState); }}
+                  onClick={() => {
+                    setCoverMenuOpen((openState) => !openState);
+                  }}
                   disabled={!canEditCover}
                 >
                   <span className="inline-flex items-center gap-1.5">
@@ -379,10 +406,14 @@ const CardModal = ({
                     <div className="mb-3 grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => { onCoverSizeChange('FULL'); }}
-                        className={`rounded-md border p-1.5 text-left text-xs transition-colors ${selectedCoverSize === 'FULL'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'border-border text-muted hover:bg-bg-overlay'}`}
+                        onClick={() => {
+                          onCoverSizeChange('FULL');
+                        }}
+                        className={`rounded-md border p-1.5 text-left text-xs transition-colors ${
+                          selectedCoverSize === 'FULL'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            : 'border-border text-muted hover:bg-bg-overlay'
+                        }`}
                         aria-label="Show cover image above card"
                       >
                         <div className="h-12 w-full overflow-hidden rounded">
@@ -395,13 +426,20 @@ const CardModal = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => { onCoverSizeChange('SMALL'); }}
-                        className={`rounded-md border p-1.5 text-left text-xs transition-colors ${selectedCoverSize === 'SMALL'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'border-border text-muted hover:bg-bg-overlay'}`}
+                        onClick={() => {
+                          onCoverSizeChange('SMALL');
+                        }}
+                        className={`rounded-md border p-1.5 text-left text-xs transition-colors ${
+                          selectedCoverSize === 'SMALL'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            : 'border-border text-muted hover:bg-bg-overlay'
+                        }`}
                         aria-label="Show card content on image background"
                       >
-                        <div className="h-12 w-full overflow-hidden rounded px-1.5 py-1" style={previewSurfaceStyle}>
+                        <div
+                          className="h-12 w-full overflow-hidden rounded px-1.5 py-1"
+                          style={previewSurfaceStyle}
+                        >
                           <div className="h-full w-full rounded bg-black/30 p-1 flex items-end">
                             <div>
                               <div className="h-1 w-10 rounded bg-white/70" />
@@ -420,7 +458,9 @@ const CardModal = ({
                         <button
                           key={color}
                           type="button"
-                          onClick={() => { onCoverColorChange(color); }}
+                          onClick={() => {
+                            onCoverColorChange(color);
+                          }}
                           className={`h-7 w-full rounded ${card.cover_color === color ? 'ring-2 ring-blue-500 ring-offset-1 ring-offset-white dark:ring-offset-slate-900' : ''}`}
                           style={{ backgroundColor: color }}
                           aria-label={`Set card cover color ${color}`}
@@ -512,11 +552,7 @@ const CardModal = ({
                       disabled={isReadOnly}
                     />
 
-                    <CustomFieldsSection
-                      boardId={boardId}
-                      cardId={card.id}
-                      disabled={isReadOnly}
-                    />
+                    <CustomFieldsSection boardId={boardId} cardId={card.id} disabled={isReadOnly} />
 
                     <CardChecklist
                       checklists={checklists}
@@ -537,11 +573,7 @@ const CardModal = ({
                       attachments={cardAttachments}
                     />
 
-                    <CardPluginSection
-                      cardId={card.id}
-                      listId={card.list_id}
-                      boardId={boardId}
-                    />
+                    <CardPluginSection cardId={card.id} listId={card.list_id} boardId={boardId} />
 
                     <AttachmentPanel
                       cardId={card.id}
@@ -606,11 +638,7 @@ const CardModal = ({
                     disabled={isReadOnly}
                   />
 
-                  <CustomFieldsSection
-                    boardId={boardId}
-                    cardId={card.id}
-                    disabled={isReadOnly}
-                  />
+                  <CustomFieldsSection boardId={boardId} cardId={card.id} disabled={isReadOnly} />
 
                   <CardChecklist
                     checklists={checklists}
@@ -631,11 +659,7 @@ const CardModal = ({
                     attachments={cardAttachments}
                   />
 
-                  <CardPluginSection
-                    cardId={card.id}
-                    listId={card.list_id}
-                    boardId={boardId}
-                  />
+                  <CardPluginSection cardId={card.id} listId={card.list_id} boardId={boardId} />
 
                   <AttachmentPanel
                     cardId={card.id}
@@ -675,7 +699,9 @@ const CardModal = ({
               disabled={isReadOnly}
               activityVisible={activityVisible}
               innerCardChatEnabled={innerCardChatEnabled}
-              onToggleActivity={() => { setActivityVisible((v) => !v); }}
+              onToggleActivity={() => {
+                setActivityVisible((v) => !v);
+              }}
               onArchive={onArchive}
               onDelete={onDelete}
               onCopyLink={onCopyLink}

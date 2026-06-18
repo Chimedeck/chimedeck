@@ -442,7 +442,9 @@ async function runToolUseIteration(
       try {
         const args = JSON.parse(tc.function.arguments) as { path?: string };
         if (args.path) documentPaths.push(args.path);
-      } catch { /* ignore malformed JSON — the tool executor will catch it */ }
+      } catch {
+        /* ignore malformed JSON — the tool executor will catch it */
+      }
     }
   }
 
@@ -600,7 +602,10 @@ export async function assistBoardChat({
   // Only record when there are actual document proposals (propose_github_document)
   // — card creation doesn't touch the local git clone, and users can resume
   // older chats that may have had card-only action cards.
-  if (env.MULTI_INSTANCE_HANDLING_ENABLED && allActionCards.some((c) => c.toolName === 'propose_github_document')) {
+  if (
+    env.MULTI_INSTANCE_HANDLING_ENABLED &&
+    allActionCards.some((c) => c.toolName === 'propose_github_document')
+  ) {
     recordSessionInstance(sessionId, request);
   }
 

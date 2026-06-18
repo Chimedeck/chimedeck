@@ -20,7 +20,7 @@ export const fetchViewPreference = createAppAsyncThunk(
   async ({ boardId }: { boardId: string }) => {
     const res = await getViewPreference({ boardId });
     return res.data.viewType;
-  },
+  }
 );
 
 export const saveViewPreference = createAppAsyncThunk(
@@ -28,7 +28,7 @@ export const saveViewPreference = createAppAsyncThunk(
   async ({ boardId, viewType }: { boardId: string; viewType: ViewType }) => {
     const res = await putViewPreference({ boardId, viewType });
     return res.data.viewType;
-  },
+  }
 );
 
 // ── Slice ───────────────────────────────────────────────────────────────────

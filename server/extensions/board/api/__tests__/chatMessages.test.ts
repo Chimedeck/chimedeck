@@ -10,7 +10,12 @@ let board: BoardRow;
 let authenticated = true;
 let callerRole: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST' = 'MEMBER';
 let guestAccessError: Response | null = null;
-let writeCalls: Array<{ boardId: string; authorId?: string | null; content: string; isAssistant?: boolean }> = [];
+let writeCalls: Array<{
+  boardId: string;
+  authorId?: string | null;
+  content: string;
+  isAssistant?: boolean;
+}> = [];
 
 const chatMessagesModule = await import('../chatMessages/create');
 const { handleCreateChatMessage, boardChatApiDeps } = chatMessagesModule;
@@ -24,28 +29,42 @@ beforeEach(() => {
 
   boardChatApiDeps.authenticate = async (req: Request & { currentUser?: { id: string } }) => {
     if (!authenticated) {
-      return Response.json({ name: 'unauthorized', data: { message: 'Authentication required' } }, { status: 401 });
+      return Response.json(
+        { name: 'unauthorized', data: { message: 'Authentication required' } },
+        { status: 401 }
+      );
     }
     req.currentUser = { id: 'user-1' };
     return null;
   };
-  boardChatApiDeps.requireBoardAccess = async (req: Request & { board?: BoardRow }, boardId: string) => {
+  boardChatApiDeps.requireBoardAccess = async (
+    req: Request & { board?: BoardRow },
+    boardId: string
+  ) => {
     if (board.id !== boardId) {
-      return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
+      return Response.json(
+        { error: { code: 'board-not-found', message: 'Board not found' } },
+        { status: 404 }
+      );
     }
     req.board = board;
     return null;
   };
   boardChatApiDeps.requireWorkspaceMembership = async (
     req: Request & { callerRole?: string; workspaceId?: string },
-    workspaceId: string,
+    workspaceId: string
   ) => {
     req.workspaceId = workspaceId;
     req.callerRole = callerRole;
     return null;
   };
   boardChatApiDeps.requireGuestCanUseBoardChat = async () => guestAccessError;
-  boardChatApiDeps.writeBoardChatMessage = async (input: { boardId: string; authorId?: string | null; content: string; isAssistant?: boolean }) => {
+  boardChatApiDeps.writeBoardChatMessage = async (input: {
+    boardId: string;
+    authorId?: string | null;
+    content: string;
+    isAssistant?: boolean;
+  }) => {
     writeCalls.push(input);
     return {
       status: 201,
@@ -81,7 +100,7 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: '  hello chat  ' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(201);
@@ -103,7 +122,7 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
         headers: { 'Content-Type': 'application/json' },
         body: '{',
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);
@@ -116,7 +135,7 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: '   ' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(400);
@@ -125,8 +144,11 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
   it('rejects guests when chat use is denied', async () => {
     callerRole = 'GUEST';
     guestAccessError = Response.json(
-      { name: 'guest-chat-use-denied', data: { message: 'Guest does not have permission to send board chat messages' } },
-      { status: 403 },
+      {
+        name: 'guest-chat-use-denied',
+        data: { message: 'Guest does not have permission to send board chat messages' },
+      },
+      { status: 403 }
     );
 
     const response = await handleCreateChatMessage(
@@ -135,7 +157,7 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: 'hello' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(403);
@@ -151,7 +173,7 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: 'hello' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(403);
@@ -167,7 +189,7 @@ describe('POST /api/v1/boards/:boardId/chat/messages', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: 'hello' }),
       }),
-      'board-1',
+      'board-1'
     );
 
     expect(response.status).toBe(401);

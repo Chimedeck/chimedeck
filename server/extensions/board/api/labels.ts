@@ -28,9 +28,7 @@ export async function handleGetBoardLabels(req: Request, boardId: string): Promi
     if (membershipError) return membershipError;
   }
 
-  const labels = await db('labels')
-    .where({ board_id: board.id })
-    .orderBy('name', 'asc');
+  const labels = await db('labels').where({ board_id: board.id }).orderBy('name', 'asc');
 
   return Response.json({ data: labels });
 }

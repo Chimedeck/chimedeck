@@ -50,12 +50,14 @@ export async function dispatchWebhook({
         signal: AbortSignal.timeout(10_000),
       });
 
-      await knex('webhook_deliveries').where({ id: deliveryId }).update({
-        status: res.ok ? 'delivered' : 'failed',
-        http_status: res.status,
-        response_body: (await res.text()).slice(0, 2000),
-        delivered_at: new Date(),
-      });
+      await knex('webhook_deliveries')
+        .where({ id: deliveryId })
+        .update({
+          status: res.ok ? 'delivered' : 'failed',
+          http_status: res.status,
+          response_body: (await res.text()).slice(0, 2000),
+          delivered_at: new Date(),
+        });
     } catch {
       // [why] silently update status to failed — delivery errors must not propagate to callers.
       try {

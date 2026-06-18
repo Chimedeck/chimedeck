@@ -32,7 +32,7 @@ export function findBlockingWorkspaceForCreate(args: {
   const maxWorkspaces = SUBSCRIPTION_TIERS[tierName].maxWorkspaces;
 
   if (maxWorkspaces === 'unlimited') return null;
-  if (count < (maxWorkspaces)) return null;
+  if (count < maxWorkspaces) return null;
 
   return args.workspaceIds[0] ?? null;
 }
@@ -43,9 +43,7 @@ async function resolveBlockingWorkspaceForCreate(userId: string): Promise<string
   const rows = await db('workspaces as w')
     .where('w.owner_id', userId)
     .orderBy('w.created_at', 'asc')
-    .select<{ workspaceId: string }[]>(
-      'w.id as workspaceId',
-    );
+    .select<{ workspaceId: string }[]>('w.id as workspaceId');
 
   const tier = await getCurrentTierForUser(userId);
   return findBlockingWorkspaceForCreate({
@@ -66,14 +64,14 @@ export async function handleCreateWorkspace(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim() === '') {
     return Response.json(
       { error: { code: 'bad-request', message: 'name is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -90,7 +88,7 @@ export async function handleCreateWorkspace(req: Request): Promise<Response> {
           },
         },
       },
-      { status: 402 },
+      { status: 402 }
     );
   }
 
@@ -114,12 +112,15 @@ export async function handleCreateWorkspace(req: Request): Promise<Response> {
 
   const workspace = await db('workspaces').where({ id }).first();
 
-  return Response.json({
-    data: {
-      id: workspace.id,
-      name: workspace.name,
-      ownerId: workspace.owner_id,
-      createdAt: workspace.created_at,
+  return Response.json(
+    {
+      data: {
+        id: workspace.id,
+        name: workspace.name,
+        ownerId: workspace.owner_id,
+        createdAt: workspace.created_at,
+      },
     },
-  }, { status: 201 });
+    { status: 201 }
+  );
 }

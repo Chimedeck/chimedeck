@@ -63,17 +63,19 @@ vi.mock('~/common/api/client', () => ({
   },
 }));
 
-const makeSession = (overrides: Partial<{
-  id: string;
-  card_id: string;
-  workspace_id: string;
-  created_by: string;
-  status: 'ACTIVE_REFINEMENT' | 'PAUSED' | 'READY_FOR_REVIEW';
-  quality_score: number | null;
-  last_actor_at: string;
-  created_at: string;
-  updated_at: string;
-}> = {}) => ({
+const makeSession = (
+  overrides: Partial<{
+    id: string;
+    card_id: string;
+    workspace_id: string;
+    created_by: string;
+    status: 'ACTIVE_REFINEMENT' | 'PAUSED' | 'READY_FOR_REVIEW';
+    quality_score: number | null;
+    last_actor_at: string;
+    created_at: string;
+    updated_at: string;
+  }> = {}
+) => ({
   id: 'sess-1',
   card_id: 'card-1',
   workspace_id: 'ws-1',
@@ -92,7 +94,11 @@ describe('CardChatDrawer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useCardChatHistoryModule.useCardChatHistory as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue({
+    (
+      useCardChatHistoryModule.useCardChatHistory as unknown as {
+        mockReturnValue: (v: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [],
       state: 'loading',
       isLoading: true,
@@ -102,24 +108,24 @@ describe('CardChatDrawer', () => {
   });
 
   it('renders the drawer with header and title', () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText('AI Assist')).toBeInTheDocument();
     expect(screen.getByLabelText('Close card chat')).toBeInTheDocument();
   });
 
   it('displays loading state when history is loading', () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText('Loading messages…')).toBeInTheDocument();
   });
 
   it('displays empty state when there are no messages', () => {
-    (useCardChatHistoryModule.useCardChatHistory as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue({
+    (
+      useCardChatHistoryModule.useCardChatHistory as unknown as {
+        mockReturnValue: (v: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [],
       state: 'empty',
       isLoading: false,
@@ -127,15 +133,17 @@ describe('CardChatDrawer', () => {
       error: undefined,
     });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText(/Start the conversation/)).toBeInTheDocument();
   });
 
   it('displays error state when history fetch fails', () => {
-    (useCardChatHistoryModule.useCardChatHistory as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue({
+    (
+      useCardChatHistoryModule.useCardChatHistory as unknown as {
+        mockReturnValue: (v: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [],
       state: 'error',
       isLoading: false,
@@ -143,18 +151,38 @@ describe('CardChatDrawer', () => {
       error: 'Failed to load chat messages',
     });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText('Failed to load chat messages')).toBeInTheDocument();
   });
 
   it('renders chat messages with correct styling', () => {
-    (useCardChatHistoryModule.useCardChatHistory as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue({
+    (
+      useCardChatHistoryModule.useCardChatHistory as unknown as {
+        mockReturnValue: (v: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [
-        { id: 'm1', sessionId: 'sess-1', role: 'user', content: 'Hello AI', authorId: 'user-1', authorName: 'User', avatar: null, createdAt: new Date().toISOString() },
-        { id: 'm2', sessionId: 'sess-1', role: 'assistant', content: 'Hello! How can I help refine your requirements?', authorId: null, authorName: null, avatar: null, createdAt: new Date().toISOString() },
+        {
+          id: 'm1',
+          sessionId: 'sess-1',
+          role: 'user',
+          content: 'Hello AI',
+          authorId: 'user-1',
+          authorName: 'User',
+          avatar: null,
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'm2',
+          sessionId: 'sess-1',
+          role: 'assistant',
+          content: 'Hello! How can I help refine your requirements?',
+          authorId: null,
+          authorName: null,
+          avatar: null,
+          createdAt: new Date().toISOString(),
+        },
       ],
       state: 'loaded',
       isLoading: false,
@@ -162,9 +190,7 @@ describe('CardChatDrawer', () => {
       error: undefined,
     });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText('Hello AI')).toBeInTheDocument();
     expect(screen.getByText('Hello! How can I help refine your requirements?')).toBeInTheDocument();
@@ -175,18 +201,14 @@ describe('CardChatDrawer', () => {
   });
 
   it('displays quality score meter', () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText('Quality')).toBeInTheDocument();
     expect(screen.getByText('75')).toBeInTheDocument();
   });
 
   it('displays refinement status badge', () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     expect(screen.getByText('REFINING')).toBeInTheDocument();
   });
@@ -194,9 +216,7 @@ describe('CardChatDrawer', () => {
   it('displays READY status badge when session is ready for review', () => {
     const readySession = makeSession({ status: 'READY_FOR_REVIEW', quality_score: 95 });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={readySession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={readySession} onClose={mockOnClose} />);
 
     expect(screen.getByText('READY')).toBeInTheDocument();
   });
@@ -204,9 +224,7 @@ describe('CardChatDrawer', () => {
   it('shows paused state warning and disables composer', () => {
     const pausedSession = makeSession({ status: 'PAUSED' });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={pausedSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={pausedSession} onClose={mockOnClose} />);
 
     expect(screen.getByText(/Session is paused/)).toBeInTheDocument();
     const input = screen.getByPlaceholderText('Session is not active');
@@ -216,17 +234,13 @@ describe('CardChatDrawer', () => {
   it('shows ready-for-review message when session is ready', () => {
     const readySession = makeSession({ status: 'READY_FOR_REVIEW', quality_score: 95 });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={readySession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={readySession} onClose={mockOnClose} />);
 
     expect(screen.getByText(/Requirements are ready for review/)).toBeInTheDocument();
   });
 
   it('auto-pauses active session when drawer closes', () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     const closeButton = screen.getByLabelText('Close card chat');
     fireEvent.click(closeButton);
@@ -235,7 +249,7 @@ describe('CardChatDrawer', () => {
       expect.objectContaining({
         cardId: 'card-1',
         sessionId: 'sess-1',
-      }),
+      })
     );
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
@@ -243,9 +257,7 @@ describe('CardChatDrawer', () => {
   it('does not pause session if session is not active', () => {
     const pausedSession = makeSession({ status: 'PAUSED' });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={pausedSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={pausedSession} onClose={mockOnClose} />);
 
     fireEvent.keyDown(document, { key: 'Escape' });
 
@@ -255,7 +267,7 @@ describe('CardChatDrawer', () => {
 
   it('closes drawer when backdrop is clicked', () => {
     const { container } = render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
+      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />
     );
 
     const backdrop = container.querySelector('[aria-label="Close card chat drawer"]');
@@ -266,9 +278,7 @@ describe('CardChatDrawer', () => {
   });
 
   it('closes drawer on Escape key', async () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     fireEvent.keyDown(document, { key: 'Escape' });
 
@@ -278,7 +288,11 @@ describe('CardChatDrawer', () => {
   });
 
   it('sends a message and clears composer on success', async () => {
-    (useCardChatHistoryModule.useCardChatHistory as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue({
+    (
+      useCardChatHistoryModule.useCardChatHistory as unknown as {
+        mockReturnValue: (v: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [],
       state: 'empty',
       isLoading: false,
@@ -286,9 +300,7 @@ describe('CardChatDrawer', () => {
       error: undefined,
     });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     const input = screen.getByPlaceholderText('Describe what you want to build…');
     fireEvent.change(input, { target: { value: 'Build a login page' } });
@@ -300,7 +312,7 @@ describe('CardChatDrawer', () => {
           cardId: 'card-1',
           sessionId: 'sess-1',
           content: 'Build a login page',
-        }),
+        })
       );
     });
 
@@ -308,11 +320,13 @@ describe('CardChatDrawer', () => {
   });
 
   it('shows send error when message creation fails', async () => {
-    (cardChatApiModule.createCardChatMessage as unknown as { mockRejectedValueOnce: (e: Error) => void }).mockRejectedValueOnce(new Error('boom'));
+    (
+      cardChatApiModule.createCardChatMessage as unknown as {
+        mockRejectedValueOnce: (e: Error) => void;
+      }
+    ).mockRejectedValueOnce(new Error('boom'));
 
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     const input = screen.getByPlaceholderText('Describe what you want to build…');
     fireEvent.change(input, { target: { value: 'test' } });
@@ -324,16 +338,18 @@ describe('CardChatDrawer', () => {
   });
 
   it('disables send when composer is empty', () => {
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     const sendButton = screen.getByText('Send');
     expect(sendButton.disabled).toBe(true);
   });
 
   it('sends message on Enter key', async () => {
-    (useCardChatHistoryModule.useCardChatHistory as unknown as { mockReturnValue: (v: unknown) => void }).mockReturnValue({
+    (
+      useCardChatHistoryModule.useCardChatHistory as unknown as {
+        mockReturnValue: (v: unknown) => void;
+      }
+    ).mockReturnValue({
       messages: [],
       state: 'empty',
       isLoading: false,
@@ -341,9 +357,7 @@ describe('CardChatDrawer', () => {
       error: undefined,
     });
 
-    render(
-      <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-    );
+    render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
     const input = screen.getByPlaceholderText('Describe what you want to build…');
     fireEvent.change(input, { target: { value: 'test' } });
@@ -356,9 +370,7 @@ describe('CardChatDrawer', () => {
 
   describe('Refine button', () => {
     it('shows refine button when session is ACTIVE_REFINEMENT', () => {
-      render(
-        <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
       expect(screen.getByText('Refine')).toBeInTheDocument();
     });
@@ -366,9 +378,7 @@ describe('CardChatDrawer', () => {
     it('hides refine button when session is PAUSED', () => {
       const pausedSession = makeSession({ status: 'PAUSED' });
 
-      render(
-        <CardChatDrawer cardId="card-1" session={pausedSession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={pausedSession} onClose={mockOnClose} />);
 
       expect(screen.queryByText('Refine')).not.toBeInTheDocument();
     });
@@ -376,22 +386,20 @@ describe('CardChatDrawer', () => {
     it('hides refine button when session is READY_FOR_REVIEW', () => {
       const readySession = makeSession({ status: 'READY_FOR_REVIEW', quality_score: 95 });
 
-      render(
-        <CardChatDrawer cardId="card-1" session={readySession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={readySession} onClose={mockOnClose} />);
 
       expect(screen.queryByText('Refine')).not.toBeInTheDocument();
     });
 
     it('disables refine button while refinement is in progress', async () => {
       // [why] Make the mock never resolve so we can assert the loading state
-      (cardChatApiModule.refineCardChat as unknown as { mockImplementation: (fn: () => Promise<never>) => void }).mockImplementation(
-        () => new Promise(() => {}),
-      );
+      (
+        cardChatApiModule.refineCardChat as unknown as {
+          mockImplementation: (fn: () => Promise<never>) => void;
+        }
+      ).mockImplementation(() => new Promise(() => {}));
 
-      render(
-        <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
       const refineButton = screen.getByText('Refine');
       fireEvent.click(refineButton);
@@ -410,9 +418,7 @@ describe('CardChatDrawer', () => {
     });
 
     it('updates quality score meter after refine completes', async () => {
-      render(
-        <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
       // Initial score is 75 from the active session
       expect(screen.getByText('75')).toBeInTheDocument();
@@ -427,9 +433,7 @@ describe('CardChatDrawer', () => {
     });
 
     it('updates status badge to READY after refinement completes', async () => {
-      render(
-        <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
       // Initially REFINING
       expect(screen.getByText('REFINING')).toBeInTheDocument();
@@ -444,13 +448,11 @@ describe('CardChatDrawer', () => {
     });
 
     it('shows refine error when refinement fails', async () => {
-      (cardChatApiModule.refineCardChat as unknown as { mockRejectedValueOnce: (e: Error) => void }).mockRejectedValueOnce(
-        new Error('Refinement failed'),
-      );
+      (
+        cardChatApiModule.refineCardChat as unknown as { mockRejectedValueOnce: (e: Error) => void }
+      ).mockRejectedValueOnce(new Error('Refinement failed'));
 
-      render(
-        <CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />,
-      );
+      render(<CardChatDrawer cardId="card-1" session={activeSession} onClose={mockOnClose} />);
 
       const refineButton = screen.getByText('Refine');
       fireEvent.click(refineButton);

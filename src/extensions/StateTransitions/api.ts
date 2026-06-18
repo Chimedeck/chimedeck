@@ -140,7 +140,8 @@ export const stateTransitionsApi = createApi({
     credentials: 'include',
     // [why] Keep auth behavior consistent with other RTK query slices.
     prepareHeaders(headers, { getState }) {
-      const token = (getState() as { auth: { accessToken: string | null } }).auth.accessToken ?? null;
+      const token =
+        (getState() as { auth: { accessToken: string | null } }).auth.accessToken ?? null;
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
@@ -159,14 +160,19 @@ export const stateTransitionsApi = createApi({
       transformResponse: (response: StateTransitionRulesResponse) => response.data,
       providesTags: (_result, _error, boardId) => [{ type: 'StateTransitions', id: boardId }],
     }),
-    putStateTransitions: builder.mutation<StateTransitionsResponse['data'], PutStateTransitionsInput>({
+    putStateTransitions: builder.mutation<
+      StateTransitionsResponse['data'],
+      PutStateTransitionsInput
+    >({
       query: ({ boardId, ...payload }) => ({
         url: `/boards/${boardId}/state-transitions`,
         method: 'PUT',
         body: payload,
       }),
       transformResponse: (response: StateTransitionsResponse) => response.data,
-      invalidatesTags: (_result, _error, { boardId }) => [{ type: 'StateTransitions', id: boardId }],
+      invalidatesTags: (_result, _error, { boardId }) => [
+        { type: 'StateTransitions', id: boardId },
+      ],
     }),
     createBoardList: builder.mutation<BoardListResponse['data'], CreateBoardListInput>({
       query: ({ boardId, title, afterId }) => ({
@@ -176,26 +182,24 @@ export const stateTransitionsApi = createApi({
       }),
       transformResponse: (response: BoardListResponse) => response.data,
     }),
-    copyStateTransitions: builder.mutation<CopyStateTransitionsResponse, CopyStateTransitionsInput>({
-      query: ({ boardId, targetBoardId, copyEnabled }) => ({
-        url: `/boards/${boardId}/state-transitions/copy`,
-        method: 'POST',
-        body: { targetBoardId, copyEnabled },
-      }),
-      invalidatesTags: (_result, _error, { boardId, targetBoardId }) => [
-        { type: 'StateTransitions', id: boardId },
-        { type: 'StateTransitions', id: targetBoardId },
-      ],
-    }),
+    copyStateTransitions: builder.mutation<CopyStateTransitionsResponse, CopyStateTransitionsInput>(
+      {
+        query: ({ boardId, targetBoardId, copyEnabled }) => ({
+          url: `/boards/${boardId}/state-transitions/copy`,
+          method: 'POST',
+          body: { targetBoardId, copyEnabled },
+        }),
+        invalidatesTags: (_result, _error, { boardId, targetBoardId }) => [
+          { type: 'StateTransitions', id: boardId },
+          { type: 'StateTransitions', id: targetBoardId },
+        ],
+      }
+    ),
   }),
 });
 
 export function invalidateStateTransitionsBoardCache(dispatch: AppDispatch, boardId: string): void {
-  dispatch(
-    stateTransitionsApi.util.invalidateTags([
-      { type: 'StateTransitions', id: boardId },
-    ]),
-  );
+  dispatch(stateTransitionsApi.util.invalidateTags([{ type: 'StateTransitions', id: boardId }]));
 }
 
 export const {

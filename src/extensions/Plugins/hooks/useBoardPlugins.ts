@@ -41,7 +41,7 @@ export function useBoardPlugins({ boardId }: { boardId: string }) {
         return { error: (result.payload as string) ?? 'enable-plugin-failed' };
       }
     },
-    [dispatch, boardId],
+    [dispatch, boardId]
   );
 
   const disablePlugin = useCallback(
@@ -49,15 +49,23 @@ export function useBoardPlugins({ boardId }: { boardId: string }) {
       // Optimistic update before API call
       dispatch(optimisticDisable({ pluginId: boardPlugin.plugin.id }));
       const result = await dispatch(
-        disablePluginThunk({ boardId, pluginId: boardPlugin.plugin.id }),
+        disablePluginThunk({ boardId, pluginId: boardPlugin.plugin.id })
       );
       if (disablePluginThunk.rejected.match(result)) {
         // Rollback on failure
         dispatch(rollbackDisable({ boardPlugin }));
       }
     },
-    [dispatch, boardId],
+    [dispatch, boardId]
   );
 
-  return { boardPlugins, availablePlugins, status, error, loadPlugins, enablePlugin, disablePlugin };
+  return {
+    boardPlugins,
+    availablePlugins,
+    status,
+    error,
+    loadPlugins,
+    enablePlugin,
+    disablePlugin,
+  };
 }

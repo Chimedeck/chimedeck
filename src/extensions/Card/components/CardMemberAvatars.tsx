@@ -57,7 +57,11 @@ function CardMemberAvatarsComponent({
             }}
           >
             {member.avatar_url ? (
-              <img src={member.avatar_url} alt={member.name ?? member.email} className="h-full w-full object-cover" />
+              <img
+                src={member.avatar_url}
+                alt={member.name ?? member.email}
+                className="h-full w-full object-cover"
+              />
             ) : (
               initials
             )}
@@ -85,7 +89,9 @@ function CardMemberAvatarsComponent({
                 },
               }
             : {})}
-          onClose={() => { setActiveMember(null); }}
+          onClose={() => {
+            setActiveMember(null);
+          }}
           anchorRef={anchorRef as React.RefObject<HTMLElement>}
         />
       )}
@@ -93,29 +99,26 @@ function CardMemberAvatarsComponent({
   );
 }
 
-export const CardMemberAvatars = memo(
-  CardMemberAvatarsComponent,
-  (prev, next) => {
-    if (prev === next) return true;
-    if (prev.cardId !== next.cardId) return false;
-    if (prev.currentUserId !== next.currentUserId) return false;
-    if (prev.maxVisible !== next.maxVisible) return false;
-    if (prev.onRemoveMember !== next.onRemoveMember) return false;
-    if (prev.members === next.members) return true;
-    if (prev.members.length !== next.members.length) return false;
+export const CardMemberAvatars = memo(CardMemberAvatarsComponent, (prev, next) => {
+  if (prev === next) return true;
+  if (prev.cardId !== next.cardId) return false;
+  if (prev.currentUserId !== next.currentUserId) return false;
+  if (prev.maxVisible !== next.maxVisible) return false;
+  if (prev.onRemoveMember !== next.onRemoveMember) return false;
+  if (prev.members === next.members) return true;
+  if (prev.members.length !== next.members.length) return false;
 
-    for (let i = 0; i < prev.members.length; i += 1) {
-      const prevMember = prev.members[i];
-      const nextMember = next.members[i];
-      if (
-        prevMember.id !== nextMember.id
-        || prevMember.name !== nextMember.name
-        || prevMember.email !== nextMember.email
-        || prevMember.avatar_url !== nextMember.avatar_url
-      ) {
-        return false;
-      }
+  for (let i = 0; i < prev.members.length; i += 1) {
+    const prevMember = prev.members[i];
+    const nextMember = next.members[i];
+    if (
+      prevMember.id !== nextMember.id ||
+      prevMember.name !== nextMember.name ||
+      prevMember.email !== nextMember.email ||
+      prevMember.avatar_url !== nextMember.avatar_url
+    ) {
+      return false;
     }
-    return true;
-  },
-);
+  }
+  return true;
+});

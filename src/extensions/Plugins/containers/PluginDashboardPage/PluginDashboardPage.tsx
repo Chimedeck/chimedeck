@@ -57,8 +57,15 @@ const PluginDashboardPage = () => {
   const currentUser = useAppSelector(selectAuthUser);
   const isAdmin = isPlatformAdmin(currentUser?.email);
 
-  const { boardPlugins, availablePlugins, status, error, loadPlugins, enablePlugin: enablePluginRaw, disablePlugin } =
-    useBoardPlugins({ boardId: boardId ?? '' });
+  const {
+    boardPlugins,
+    availablePlugins,
+    status,
+    error,
+    loadPlugins,
+    enablePlugin: enablePluginRaw,
+    disablePlugin,
+  } = useBoardPlugins({ boardId: boardId ?? '' });
 
   const [settingsModal, setSettingsModal] = useState<PluginModalState>(defaultSettingsModal);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -75,14 +82,18 @@ const PluginDashboardPage = () => {
     async (plugin: Parameters<typeof enablePluginRaw>[0]) => {
       const result = await enablePluginRaw(plugin);
       if (result?.error) {
-        if (result.error === 'not-board-member' || result.error === 'not-board-admin' || result.error.includes('403')) {
+        if (
+          result.error === 'not-board-member' ||
+          result.error === 'not-board-admin' ||
+          result.error.includes('403')
+        ) {
           addToast(translations['plugins.dashboard.toast.noPermissionEnable'], 'error');
         } else {
           addToast(translations['plugins.dashboard.toast.failedEnable'], 'error');
         }
       }
     },
-    [enablePluginRaw, addToast],
+    [enablePluginRaw, addToast]
   );
 
   const dismissToast = useCallback((id: string) => {
@@ -110,7 +121,12 @@ const PluginDashboardPage = () => {
   // If the API returns a 403-style error for a non-member, redirect back to board.
   // Board members (MEMBER+) get no error and stay on the page normally.
   useEffect(() => {
-    if (error && (error.includes('not-board-member') || error.includes('not-board-admin') || error.includes('403'))) {
+    if (
+      error &&
+      (error.includes('not-board-member') ||
+        error.includes('not-board-admin') ||
+        error.includes('403'))
+    ) {
       if (boardId) navigate(boardPath({ id: boardId }));
     }
   }, [error, boardId, navigate]);
@@ -131,35 +147,41 @@ const PluginDashboardPage = () => {
     }
   }, [updateStatus, addToast, dispatch]);
 
-  const handleSettings = useCallback((bp: BoardPlugin) => {
-    let settingsUrl = bp.plugin.connectorUrl;
-    try {
-      const u = new URL(bp.plugin.connectorUrl);
-      u.searchParams.set('context', 'show-settings');
-      u.searchParams.set('boardId', boardId ?? '');
-      u.searchParams.set('pluginId', bp.plugin.id);
-      settingsUrl = u.toString();
-    } catch {
-      // fallback: use connectorUrl as-is
-    }
-    setSettingsModal({
-      open: true,
-      url: settingsUrl,
-      title: `${bp.plugin.name} Settings`,
-      fullscreen: false,
-      pluginId: bp.plugin.id,
-      boardPlugin: bp,
-      boardId: boardId ?? '',
-    });
-  }, [boardId]);
+  const handleSettings = useCallback(
+    (bp: BoardPlugin) => {
+      let settingsUrl = bp.plugin.connectorUrl;
+      try {
+        const u = new URL(bp.plugin.connectorUrl);
+        u.searchParams.set('context', 'show-settings');
+        u.searchParams.set('boardId', boardId ?? '');
+        u.searchParams.set('pluginId', bp.plugin.id);
+        settingsUrl = u.toString();
+      } catch {
+        // fallback: use connectorUrl as-is
+      }
+      setSettingsModal({
+        open: true,
+        url: settingsUrl,
+        title: `${bp.plugin.name} Settings`,
+        fullscreen: false,
+        pluginId: bp.plugin.id,
+        boardPlugin: bp,
+        boardId: boardId ?? '',
+      });
+    },
+    [boardId]
+  );
 
   const handleCloseSettings = useCallback(() => {
     setSettingsModal((m) => ({ ...m, open: false }));
   }, []);
 
-  const handleRegisterSubmit = useCallback((body: RegisterPluginBody) => {
-    dispatch(registerPluginThunk(body));
-  }, [dispatch]);
+  const handleRegisterSubmit = useCallback(
+    (body: RegisterPluginBody) => {
+      dispatch(registerPluginThunk(body));
+    },
+    [dispatch]
+  );
 
   const handleRegisterClose = useCallback(() => {
     setRegisterOpen(false);
@@ -176,39 +198,51 @@ const PluginDashboardPage = () => {
     }
   }, [dispatch, boardId, searchQuery, selectedCategory]);
 
-  const handleEditOpen = useCallback((plugin: Plugin) => {
-    dispatch(clearUpdateState());
-    setEditPlugin(plugin);
-  }, [dispatch]);
+  const handleEditOpen = useCallback(
+    (plugin: Plugin) => {
+      dispatch(clearUpdateState());
+      setEditPlugin(plugin);
+    },
+    [dispatch]
+  );
 
   const handleEditClose = useCallback(() => {
     setEditPlugin(null);
     dispatch(clearUpdateState());
   }, [dispatch]);
 
-  const handleEditSubmit = useCallback((pluginId: string, body: UpdatePluginBody) => {
-    dispatch(updatePluginThunk({ pluginId, body }));
-  }, [dispatch]);
+  const handleEditSubmit = useCallback(
+    (pluginId: string, body: UpdatePluginBody) => {
+      dispatch(updatePluginThunk({ pluginId, body }));
+    },
+    [dispatch]
+  );
 
-  const handleSearchChange = useCallback((q: string) => {
-    dispatch(setSearchQuery(q));
-    if (boardId) {
-      const params: { boardId: string; q?: string; category?: string | null } = { boardId };
-      if (q) params.q = q;
-      if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchDiscoverablePluginsThunk(params));
-    }
-  }, [dispatch, boardId, selectedCategory]);
+  const handleSearchChange = useCallback(
+    (q: string) => {
+      dispatch(setSearchQuery(q));
+      if (boardId) {
+        const params: { boardId: string; q?: string; category?: string | null } = { boardId };
+        if (q) params.q = q;
+        if (selectedCategory) params.category = selectedCategory;
+        dispatch(fetchDiscoverablePluginsThunk(params));
+      }
+    },
+    [dispatch, boardId, selectedCategory]
+  );
 
-  const handleCategoryChange = useCallback((category: string | null) => {
-    dispatch(setSelectedCategory(category));
-    if (boardId) {
-      const params: { boardId: string; q?: string; category?: string | null } = { boardId };
-      if (searchQuery) params.q = searchQuery;
-      if (category) params.category = category;
-      dispatch(fetchDiscoverablePluginsThunk(params));
-    }
-  }, [dispatch, boardId, searchQuery]);
+  const handleCategoryChange = useCallback(
+    (category: string | null) => {
+      dispatch(setSelectedCategory(category));
+      if (boardId) {
+        const params: { boardId: string; q?: string; category?: string | null } = { boardId };
+        if (searchQuery) params.q = searchQuery;
+        if (category) params.category = category;
+        dispatch(fetchDiscoverablePluginsThunk(params));
+      }
+    },
+    [dispatch, boardId, searchQuery]
+  );
 
   const handleClearSearch = useCallback(() => {
     dispatch(clearSearch());
@@ -231,7 +265,9 @@ const PluginDashboardPage = () => {
         </div>
         {isAdmin ? (
           <button
-            onClick={() => { setRegisterOpen(true); }}
+            onClick={() => {
+              setRegisterOpen(true);
+            }}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2" // [theme-exception] text-white on bg-blue-600 button
           >
             {translations['plugins.dashboard.registerPlugin']}
@@ -260,7 +296,9 @@ const PluginDashboardPage = () => {
             {boardPlugins.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-muted">
                 <PuzzlePieceIcon className="h-8 w-8 text-muted" aria-hidden="true" />
-                <p className="text-sm text-center">{translations['plugins.dashboard.enabled.empty']}</p>
+                <p className="text-sm text-center">
+                  {translations['plugins.dashboard.enabled.empty']}
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -309,11 +347,7 @@ const PluginDashboardPage = () => {
             ) : (
               <div className="space-y-2">
                 {availablePlugins.map((plugin) => (
-                  <DiscoverPluginRow
-                    key={plugin.id}
-                    plugin={plugin}
-                    onEnable={enablePlugin}
-                  />
+                  <DiscoverPluginRow key={plugin.id} plugin={plugin} onEnable={enablePlugin} />
                 ))}
               </div>
             )}
@@ -334,9 +368,7 @@ const PluginDashboardPage = () => {
       />
 
       {/* API Key reveal — shown once after successful registration */}
-      {newApiKey && (
-        <ApiKeyRevealModal apiKey={newApiKey} onClose={handleApiKeyDismiss} />
-      )}
+      {newApiKey && <ApiKeyRevealModal apiKey={newApiKey} onClose={handleApiKeyDismiss} />}
 
       {/* Edit Plugin modal — platform admins only */}
       <EditPluginModal
@@ -355,4 +387,3 @@ const PluginDashboardPage = () => {
 };
 
 export default PluginDashboardPage;
-

@@ -8,15 +8,17 @@ import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/
 import { automationConfig } from '../config';
 import { executeAutomation } from '../engine/executor';
 import { writeRunLog } from '../engine/logger';
-import type { AutomationRow, AutomationActionRow, AutomationEvent, EvaluationContext } from '../common/types';
+import type {
+  AutomationRow,
+  AutomationActionRow,
+  AutomationEvent,
+  EvaluationContext,
+} from '../common/types';
 
 const MAX_CARDS_PER_RUN = 50;
 
 /** Resolves targetScope config to a list of cardIds on the board. */
-async function resolveScope(
-  boardId: string,
-  config: Record<string, unknown>,
-): Promise<string[]> {
+async function resolveScope(boardId: string, config: Record<string, unknown>): Promise<string[]> {
   const scope = config.targetScope as string | undefined;
 
   // Base query: cards that belong to active (non-archived) lists on this board.
@@ -35,14 +37,18 @@ async function resolveScope(
     if (Array.isArray(config.labelIds) && (config.labelIds as string[]).length > 0) {
       const labelIds = config.labelIds as string[];
       query = query.whereExists(
-        db('card_labels').whereRaw('card_labels.card_id = cards.id').whereIn('card_labels.label_id', labelIds),
+        db('card_labels')
+          .whereRaw('card_labels.card_id = cards.id')
+          .whereIn('card_labels.label_id', labelIds)
       );
     }
     // Member filter
     if (Array.isArray(config.memberIds) && (config.memberIds as string[]).length > 0) {
       const memberIds = config.memberIds as string[];
       query = query.whereExists(
-        db('card_members').whereRaw('card_members.card_id = cards.id').whereIn('card_members.user_id', memberIds),
+        db('card_members')
+          .whereRaw('card_members.card_id = cards.id')
+          .whereIn('card_members.user_id', memberIds)
       );
     }
   }
@@ -55,7 +61,7 @@ async function resolveScope(
 export async function handleRunBoardButton(
   req: Request,
   boardId: string,
-  automationId: string,
+  automationId: string
 ): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -80,7 +86,12 @@ export async function handleRunBoardButton(
 
   // Load the BOARD_BUTTON automation.
   const automation = await db('automations')
-    .where({ id: automationId, board_id: boardId, automation_type: 'BOARD_BUTTON', is_enabled: true })
+    .where({
+      id: automationId,
+      board_id: boardId,
+      automation_type: 'BOARD_BUTTON',
+      is_enabled: true,
+    })
     .first<AutomationRow>();
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
@@ -139,14 +150,19 @@ export async function handleRunBoardButton(
       evalContext,
       status: result.status,
       errorMessage: result.errorMessage,
-      context: { eventType: 'BOARD_BUTTON', cardId, automationId, triggeredBy: currentUser.id, batchRunLogId },
+      context: {
+        eventType: 'BOARD_BUTTON',
+        cardId,
+        automationId,
+        triggeredBy: currentUser.id,
+        batchRunLogId,
+      },
     }).catch(() => {
       // Logging failures must not surface to the caller.
     });
   }
 
-  const overallStatus =
-    failCount === 0 ? 'SUCCESS' : successCount === 0 ? 'FAILED' : 'PARTIAL';
+  const overallStatus = failCount === 0 ? 'SUCCESS' : successCount === 0 ? 'FAILED' : 'PARTIAL';
 
   return Response.json({
     data: {

@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/chat/refine
 // Sprint 171 — run the BA persona goal loop for one refinement turn.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { runGoalLoop } from '../../mods/baPersona/goalLoop';
 
 export const cardChatRefineApiDeps = {
@@ -19,7 +22,7 @@ export async function handleRefineCardChat(req: Request, cardId: string): Promis
 
   const membershipError = await cardChatRefineApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -29,14 +32,14 @@ export async function handleRefineCardChat(req: Request, cardId: string): Promis
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.sessionId !== 'string' || body.sessionId === '') {
     return Response.json(
       { name: 'missing-session-id', data: { message: 'sessionId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -44,7 +47,7 @@ export async function handleRefineCardChat(req: Request, cardId: string): Promis
   if (!card) {
     return Response.json(
       { name: 'unauthorized', data: { message: 'Authentication required' } },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -58,8 +61,11 @@ export async function handleRefineCardChat(req: Request, cardId: string): Promis
 
     if (result.status !== 200 || !result.data) {
       return Response.json(
-        { name: result.name ?? 'refinement-failed', data: { message: result.message ?? 'Refinement failed' } },
-        { status: result.status },
+        {
+          name: result.name ?? 'refinement-failed',
+          data: { message: result.message ?? 'Refinement failed' },
+        },
+        { status: result.status }
       );
     }
 
@@ -72,13 +78,16 @@ export async function handleRefineCardChat(req: Request, cardId: string): Promis
           loopComplete: result.data.loopComplete,
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
-    console.error('[cardChat/refine] Unexpected error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      '[cardChat/refine] Unexpected error:',
+      error instanceof Error ? error.message : String(error)
+    );
     return Response.json(
       { name: 'internal-error', data: { message: 'Refinement failed unexpectedly' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

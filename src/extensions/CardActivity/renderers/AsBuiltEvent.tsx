@@ -19,20 +19,24 @@ interface AsBuiltEventProps {
   onEdit?: (runId: string) => void | Promise<void>;
 }
 
-function filesFromPayload(payload: Record<string, unknown>): Array<{ path: string; status: 'added' | 'modified' | 'deleted' }> {
+function filesFromPayload(
+  payload: Record<string, unknown>
+): Array<{ path: string; status: 'added' | 'modified' | 'deleted' }> {
   const files = payload.changedFiles;
   if (!Array.isArray(files)) return [];
   return files.filter(
     (f): f is { path: string; status: 'added' | 'modified' | 'deleted' } =>
-      typeof f === 'object' && f !== null &&
+      typeof f === 'object' &&
+      f !== null &&
       typeof (f as { path?: unknown }).path === 'string' &&
-      ['added', 'modified', 'deleted'].includes((f as { status?: string }).status ?? ''),
+      ['added', 'modified', 'deleted'].includes((f as { status?: string }).status ?? '')
   );
 }
 
 function commitLinksFromPayload(payload: Record<string, unknown>): SprintArtifactLink[] {
   const links: SprintArtifactLink[] = [];
-  const hash = typeof payload.commitHash === 'string' && payload.commitHash ? payload.commitHash : null;
+  const hash =
+    typeof payload.commitHash === 'string' && payload.commitHash ? payload.commitHash : null;
   if (hash) {
     links.push({ label: `Commit ${hash.slice(0, 7)}`, url: `#commit-${hash}`, type: 'commit' });
   }
@@ -67,9 +71,8 @@ export default function AsBuiltEvent({
   const links = commitLinksFromPayload(payload);
   // [why] As-built sync defaults to not requiring human approval —
   // it's a documentation sync that auto-commits.
-  const requiresHumanApproval = typeof payload.requiresHumanApproval === 'boolean'
-    ? payload.requiresHumanApproval
-    : false;
+  const requiresHumanApproval =
+    typeof payload.requiresHumanApproval === 'boolean' ? payload.requiresHumanApproval : false;
 
   const isCompleted = action === 'as_built_sync_completed';
   const isFailed = action === 'as_built_sync_failed';

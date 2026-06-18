@@ -15,7 +15,7 @@ export function initHeartbeat(ws: ServerWebSocket<WsData>): void {
 }
 
 export function startHeartbeatLoop(
-  getActiveSockets: () => Iterable<ServerWebSocket<WsData>>,
+  getActiveSockets: () => Iterable<ServerWebSocket<WsData>>
 ): void {
   setInterval(() => {
     const now = Date.now();

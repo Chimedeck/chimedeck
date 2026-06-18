@@ -18,13 +18,13 @@ export const deleteBoardOptimisticThunk = createAppAsyncThunk(
   'boards/deleteOptimistic',
   async (
     { boardId, confirm }: { boardId: string; confirm?: boolean },
-    { extra },
+    { extra }
   ): Promise<string> => {
     const { api } = extra as { api: DeleteApi };
     // Pass confirm only when explicitly true to satisfy exactOptionalPropertyTypes.
     await deleteBoard({ api, boardId, ...(confirm ? { confirm } : {}) });
     return boardId;
-  },
+  }
 );
 
 // Re-export for type-safe error handling in the UI (e.g. 409 Conflict handling).

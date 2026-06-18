@@ -41,7 +41,13 @@ export default function WebhooksRegisterPage() {
             {translations['WebhooksRegisterPage.description']}
           </p>
         </div>
-        <Button variant="primary" size="md" onClick={() => { setShowRegisterModal(true); }}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => {
+            setShowRegisterModal(true);
+          }}
+        >
           {translations['WebhooksRegisterPage.registerButton']}
         </Button>
       </div>
@@ -65,7 +71,9 @@ export default function WebhooksRegisterPage() {
       {showRegisterModal && (
         <RegisterWebhookModal
           workspaceId={workspaceId}
-          onClose={() => { setShowRegisterModal(false); }}
+          onClose={() => {
+            setShowRegisterModal(false);
+          }}
           onCreated={handleCreated}
         />
       )}
@@ -73,21 +81,27 @@ export default function WebhooksRegisterPage() {
       {createdWebhook && (
         <WebhookCreatedModal
           signingSecret={createdWebhook.data.signingSecret}
-          onClose={() => { setCreatedWebhook(null); }}
+          onClose={() => {
+            setCreatedWebhook(null);
+          }}
         />
       )}
 
       {editingWebhook && (
         <EditWebhookModal
           webhook={editingWebhook}
-          onClose={() => { setEditingWebhook(null); }}
+          onClose={() => {
+            setEditingWebhook(null);
+          }}
         />
       )}
 
       {deletingWebhook && (
         <DeleteWebhookDialog
           webhook={deletingWebhook}
-          onClose={() => { setDeletingWebhook(null); }}
+          onClose={() => {
+            setDeletingWebhook(null);
+          }}
         />
       )}
 
@@ -127,12 +141,7 @@ function WebhooksTable({
         </thead>
         <tbody>
           {webhooks.map((webhook) => (
-            <WebhookRow
-              key={webhook.id}
-              webhook={webhook}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
+            <WebhookRow key={webhook.id} webhook={webhook} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </tbody>
       </table>
@@ -159,9 +168,7 @@ function WebhookRow({
       <td className="px-4 py-3">
         <span
           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-            webhook.isActive
-              ? 'bg-success/10 text-success'
-              : 'bg-bg-overlay text-muted'
+            webhook.isActive ? 'bg-success/10 text-success' : 'bg-bg-overlay text-muted'
           }`}
         >
           {webhook.isActive
@@ -170,13 +177,22 @@ function WebhookRow({
         </span>
       </td>
       <td className="px-4 py-3 text-right">
-        <Button variant="ghost" size="sm" onClick={() => { onEdit(webhook); }} data-testid={`edit-webhook-${webhook.id}`}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            onEdit(webhook);
+          }}
+          data-testid={`edit-webhook-${webhook.id}`}
+        >
           {translations['WebhooksRegisterPage.editButton']}
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => { onDelete(webhook); }}
+          onClick={() => {
+            onDelete(webhook);
+          }}
           className="!text-danger hover:!bg-red-900/30 hover:!text-red-300"
           data-testid={`delete-webhook-${webhook.id}`}
         >

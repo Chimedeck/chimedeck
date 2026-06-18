@@ -18,15 +18,17 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-function mockGraphData(nodes: Array<{
-  id: string;
-  listId: string;
-  label: string;
-  positionX: number;
-  positionY: number;
-  workflowPhases?: string[];
-  phaseConfig?: Record<string, unknown>;
-}>): unknown {
+function mockGraphData(
+  nodes: Array<{
+    id: string;
+    listId: string;
+    label: string;
+    positionX: number;
+    positionY: number;
+    workflowPhases?: string[];
+    phaseConfig?: Record<string, unknown>;
+  }>
+): unknown {
   return {
     nodes,
     edges: [],
@@ -41,7 +43,14 @@ describe('phaseResolver', () => {
         first: vi.fn().mockResolvedValue({
           board_id: 'board-1',
           graph_data: mockGraphData([
-            { id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 100, positionY: 80, workflowPhases: ['NEW_DRAFT', 'SYNC_DOCUMENT'] },
+            {
+              id: 'list-1',
+              listId: 'list-1',
+              label: 'Todo',
+              positionX: 100,
+              positionY: 80,
+              workflowPhases: ['NEW_DRAFT', 'SYNC_DOCUMENT'],
+            },
           ]),
         }),
       }),
@@ -74,7 +83,14 @@ describe('phaseResolver', () => {
           board_id: 'board-1',
           graph_data: mockGraphData([
             { id: 'list-1', listId: 'list-1', label: 'Todo', positionX: 100, positionY: 80 },
-            { id: 'list-2', listId: 'list-2', label: 'In Progress', positionX: 340, positionY: 80, workflowPhases: ['READY_FOR_DEV'] },
+            {
+              id: 'list-2',
+              listId: 'list-2',
+              label: 'In Progress',
+              positionX: 340,
+              positionY: 80,
+              workflowPhases: ['READY_FOR_DEV'],
+            },
           ]),
         }),
       }),

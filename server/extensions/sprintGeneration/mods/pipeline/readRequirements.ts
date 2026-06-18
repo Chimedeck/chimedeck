@@ -73,16 +73,26 @@ function parseRequirementPacket({
   sessionId: string;
 }): RequirementPacket {
   const businessValue = extractSection(cardDescription, 'Business Value', 'EARS Requirements');
-  const earsRequirements = extractListItems(cardDescription, 'EARS Requirements', 'Acceptance Criteria');
-  const acceptanceCriteria = extractListItems(cardDescription, 'Acceptance Criteria', 'Constraints');
+  const earsRequirements = extractListItems(
+    cardDescription,
+    'EARS Requirements',
+    'Acceptance Criteria'
+  );
+  const acceptanceCriteria = extractListItems(
+    cardDescription,
+    'Acceptance Criteria',
+    'Constraints'
+  );
   const constraints = extractListItems(cardDescription, 'Constraints', '');
 
   return {
     cardTitle,
     cardDescription,
-    businessValue: businessValue || cardDescription.split('## AI-Refined Requirements')[0]?.trim() || '',
+    businessValue:
+      businessValue || cardDescription.split('## AI-Refined Requirements')[0]?.trim() || '',
     earsRequirements: earsRequirements.length > 0 ? earsRequirements : [cardDescription],
-    acceptanceCriteria: acceptanceCriteria.length > 0 ? acceptanceCriteria : ['Verify the requirement is met'],
+    acceptanceCriteria:
+      acceptanceCriteria.length > 0 ? acceptanceCriteria : ['Verify the requirement is met'],
     constraints: constraints.length > 0 ? constraints : ['No explicit constraints documented'],
     qualityScore,
     sessionId,
@@ -134,7 +144,9 @@ async function fetchContextSnapshot(cardId: string): Promise<ContextSnapshotSumm
     snapshotId: snapshot.id as string,
     totalChunks: snapshot.total_chunks as number,
     sourceCounts: {},
-    focusPaths: snapshot.focus_paths ? (JSON.parse(snapshot.focus_paths as string) as string[]) : [],
+    focusPaths: snapshot.focus_paths
+      ? (JSON.parse(snapshot.focus_paths as string) as string[])
+      : [],
   };
 }
 
@@ -151,7 +163,8 @@ export async function readRequirements({
     return {
       status: 422,
       name: 'no-refined-requirements',
-      message: 'No READY_FOR_REVIEW chat session found for this card. Run the AI refinement loop first.',
+      message:
+        'No READY_FOR_REVIEW chat session found for this card. Run the AI refinement loop first.',
     };
   }
 

@@ -3,7 +3,9 @@
 import { env } from './env';
 
 export const platformAdminEmails: readonly string[] = env.PLATFORM_ADMIN_EMAILS
-  ? env.PLATFORM_ADMIN_EMAILS.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+  ? env.PLATFORM_ADMIN_EMAILS.split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean)
   : [];
 
 export function isPlatformAdmin(email: string): boolean {

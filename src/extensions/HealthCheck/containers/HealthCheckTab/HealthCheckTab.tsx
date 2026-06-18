@@ -86,7 +86,7 @@ export function HealthCheckTab({ boardId }: Props) {
     (healthCheckId: string) => {
       dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
     },
-    [dispatch, boardId],
+    [dispatch, boardId]
   );
 
   const isEmpty = entries.length === 0;
@@ -99,8 +99,7 @@ export function HealthCheckTab({ boardId }: Props) {
         <div>
           <h2 className="text-base font-semibold text-base">Health Check</h2>
           <p className="text-xs text-muted mt-0.5">
-            Last checked:{' '}
-            <span className="text-subtle">{formatLastChecked(lastCheckedAt)}</span>
+            Last checked: <span className="text-subtle">{formatLastChecked(lastCheckedAt)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -133,7 +132,9 @@ export function HealthCheckTab({ boardId }: Props) {
             type="button"
             variant="primary"
             size="sm"
-            onClick={() => { setAddModalOpen(true); }}
+            onClick={() => {
+              setAddModalOpen(true);
+            }}
             className="flex items-center gap-1.5"
             aria-label={translations['HealthCheckTab.addServiceAria']}
           >
@@ -150,9 +151,7 @@ export function HealthCheckTab({ boardId }: Props) {
           <span className="flex-shrink-0 w-40 text-xs font-medium text-muted uppercase tracking-wide">
             Name
           </span>
-          <span className="flex-1 text-xs font-medium text-muted uppercase tracking-wide">
-            URL
-          </span>
+          <span className="flex-1 text-xs font-medium text-muted uppercase tracking-wide">URL</span>
           <span className="flex-shrink-0 w-24 text-right text-xs font-medium text-muted uppercase tracking-wide">
             Response
           </span>
@@ -165,13 +164,21 @@ export function HealthCheckTab({ boardId }: Props) {
       )}
 
       {/* Content area */}
-      <div className="flex-1 overflow-y-auto" role="table" aria-label={translations['HealthCheckTab.servicesTableAria']}>
+      <div
+        className="flex-1 overflow-y-auto"
+        role="table"
+        aria-label={translations['HealthCheckTab.servicesTableAria']}
+      >
         {isLoading && entries.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <Spinner className="h-6 w-6" />
           </div>
         ) : isEmpty ? (
-          <HealthCheckEmptyState onAddService={() => { setAddModalOpen(true); }} />
+          <HealthCheckEmptyState
+            onAddService={() => {
+              setAddModalOpen(true);
+            }}
+          />
         ) : (
           <div role="rowgroup">
             {entries.map((entry) => (
@@ -190,7 +197,9 @@ export function HealthCheckTab({ boardId }: Props) {
       <AddServiceModal
         boardId={boardId}
         isOpen={addModalOpen}
-        onClose={() => { setAddModalOpen(false); }}
+        onClose={() => {
+          setAddModalOpen(false);
+        }}
       />
     </div>
   );

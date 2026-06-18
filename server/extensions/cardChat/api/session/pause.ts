@@ -1,7 +1,10 @@
 // POST /api/v1/cards/:cardId/chat/session/pause
 // Sprint 171 — pause a card-chat session.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { requireWorkspaceMembership, type WorkspaceScopedRequest } from '../../../../middlewares/permissionManager';
+import {
+  requireWorkspaceMembership,
+  type WorkspaceScopedRequest,
+} from '../../../../middlewares/permissionManager';
 import { pauseSession } from '../../mods/session/lifecycle';
 import { emitCardChatActivity } from '../../mods/activities';
 
@@ -21,7 +24,7 @@ export async function handlePauseCardChatSession(req: Request, cardId: string): 
 
   const membershipError = await cardChatSessionPauseApiDeps.requireWorkspaceMembership(
     workspaceReq,
-    workspaceReq.workspaceId ?? '',
+    workspaceReq.workspaceId ?? ''
   );
   if (membershipError) return membershipError;
 
@@ -31,14 +34,14 @@ export async function handlePauseCardChatSession(req: Request, cardId: string): 
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.sessionId !== 'string' || body.sessionId === '') {
     return Response.json(
       { name: 'missing-session-id', data: { message: 'sessionId is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

@@ -42,14 +42,17 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (body.amount === undefined && body.currency === undefined && body.label === undefined) {
     return Response.json(
-      { name: 'bad-request', data: { message: 'At least one of amount, currency, or label must be provided' } },
-      { status: 400 },
+      {
+        name: 'bad-request',
+        data: { message: 'At least one of amount, currency, or label must be provided' },
+      },
+      { status: 400 }
     );
   }
 
@@ -64,13 +67,13 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
       if (typeof body.amount !== 'number' || Number.isNaN(body.amount)) {
         return Response.json(
           { name: 'bad-request', data: { message: 'amount must be a number or null' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
       if (body.amount < 0) {
         return Response.json(
           { name: 'bad-request', data: { message: 'amount must be non-negative' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
       updates.amount = body.amount;
@@ -83,8 +86,11 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
     } else {
       if (typeof body.currency !== 'string' || !CURRENCY_RE.test(body.currency)) {
         return Response.json(
-          { name: 'bad-request', data: { message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' } },
-          { status: 400 },
+          {
+            name: 'bad-request',
+            data: { message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' },
+          },
+          { status: 400 }
         );
       }
       updates.currency = body.currency;
@@ -98,13 +104,13 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
       if (typeof body.label !== 'string' || body.label.trim() === '') {
         return Response.json(
           { name: 'bad-request', data: { message: 'label must be a non-empty string or null' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
       if (body.label.trim().length > 100) {
         return Response.json(
           { name: 'bad-request', data: { message: 'label must be ≤ 100 characters' } },
-          { status: 400 },
+          { status: 400 }
         );
       }
       updates.money_label = body.label.trim();
@@ -123,7 +129,12 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
     .where({ id: cardId })
     .update(updates, ['id', 'amount', 'currency', 'money_label']);
 
-  const row = rows[0] as { id: string; amount: number | null; currency: string | null; money_label: string | null };
+  const row = rows[0] as {
+    id: string;
+    amount: number | null;
+    currency: string | null;
+    money_label: string | null;
+  };
 
   const actorId = (req as AuthenticatedRequest).currentUser!.id;
 
@@ -132,7 +143,9 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
     boardId: board.id,
     entityId: cardId,
     actorId,
-    payload: { card: { id: row.id, amount: row.amount, currency: row.currency, label: row.money_label } },
+    payload: {
+      card: { id: row.id, amount: row.amount, currency: row.currency, label: row.money_label },
+    },
   });
 
   await writeActivity({

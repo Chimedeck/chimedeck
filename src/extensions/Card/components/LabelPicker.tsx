@@ -31,7 +31,9 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
         type="button"
         variant="secondary"
         className="px-2 py-1 text-sm"
-        onClick={() => { setOpen((v) => !v); }}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}

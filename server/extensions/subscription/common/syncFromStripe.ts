@@ -8,10 +8,7 @@ import {
 } from './subscriptionRepo';
 import { db } from '../../../common/db';
 import { mapStripePriceIdToTier } from './priceTierMap';
-import type {
-  SubscriptionStatus,
-  SubscriptionTier,
-} from './types';
+import type { SubscriptionStatus, SubscriptionTier } from './types';
 
 interface StripeSubscriptionObject {
   id: string;
@@ -56,7 +53,10 @@ function isStripeSubscriptionObject(value: unknown): value is StripeSubscription
   return typeof candidate.id === 'string' && typeof candidate.customer === 'string';
 }
 
-function mapStripeStatusToInternal(status: string | undefined, eventType: string): SubscriptionStatus {
+function mapStripeStatusToInternal(
+  status: string | undefined,
+  eventType: string
+): SubscriptionStatus {
   if (eventType === 'customer.subscription.deleted') return 'canceled';
 
   if (
@@ -74,7 +74,10 @@ function mapStripeStatusToInternal(status: string | undefined, eventType: string
   return 'active';
 }
 
-function toPeriodEndIsoString(periodEndUnixSeconds: number | undefined, eventType: string): string | null {
+function toPeriodEndIsoString(
+  periodEndUnixSeconds: number | undefined,
+  eventType: string
+): string | null {
   if (eventType === 'customer.subscription.deleted') return null;
   if (typeof periodEndUnixSeconds !== 'number') return null;
   return new Date(periodEndUnixSeconds * 1000).toISOString();
@@ -85,7 +88,9 @@ function getUserIdFromMetadata(metadata: Record<string, unknown> | undefined): s
   return typeof userId === 'string' && userId.trim() ? userId : null;
 }
 
-async function getUserIdFromWorkspaceMetadata(metadata: Record<string, unknown> | undefined): Promise<string | null> {
+async function getUserIdFromWorkspaceMetadata(
+  metadata: Record<string, unknown> | undefined
+): Promise<string | null> {
   const workspaceId = metadata?.workspaceId ?? metadata?.workspace_id;
   if (typeof workspaceId !== 'string' || !workspaceId.trim()) return null;
 
@@ -178,7 +183,10 @@ export async function syncSubscriptionFromStripeEvent({
   }
 
   const stripePriceId = getPriceId(subscription);
-  const tier = event.type === 'customer.subscription.deleted' ? 'tier_1' : mapStripePriceIdToTier(stripePriceId);
+  const tier =
+    event.type === 'customer.subscription.deleted'
+      ? 'tier_1'
+      : mapStripePriceIdToTier(stripePriceId);
   const status = mapStripeStatusToInternal(subscription.status, event.type);
   const stripeCurrentPeriodEnd = toPeriodEndIsoString(subscription.current_period_end, event.type);
 

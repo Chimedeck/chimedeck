@@ -1,18 +1,22 @@
 // PUT /api/v1/boards/:boardId/github/specs/file
 // Delta-save a single markdown file into the checked-out specs repository.
-import { authenticate, type AuthenticatedRequest } from '../../../../auth/middlewares/authentication';
+import {
+  authenticate,
+  type AuthenticatedRequest,
+} from '../../../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
   requireRole,
   type WorkspaceScopedRequest,
 } from '../../../../../middlewares/permissionManager';
-import { requireBoardAccess, type BoardScopedRequest } from '../../../middlewares/requireBoardAccess';
+import {
+  requireBoardAccess,
+  type BoardScopedRequest,
+} from '../../../middlewares/requireBoardAccess';
 import { guestDeniedError } from '../../../mods/guestPermissions';
 import { downloadRepositoryFromProjectUrl } from '../../../mods/githubRepository/downloadRepositoryFromProjectUrl';
 import { writeSpecsFile } from '../../../mods/specs/write';
-import {
-  invalidateSpecsCachesForBoard,
-} from '../../../mods/specs/cache';
+import { invalidateSpecsCachesForBoard } from '../../../mods/specs/cache';
 import type { PutSpecsFileBody } from '../../../types';
 
 export const specsFileWriteDeps = {
@@ -32,12 +36,10 @@ function requireSpecsWriteAccess(req: WorkspaceScopedRequest): Response | null {
     }
     return Response.json(
       {
-        name: req.guestType === 'VIEWER'
-          ? guestDeniedError('VIEWER')
-          : 'guest-role-no-org-access',
+        name: req.guestType === 'VIEWER' ? guestDeniedError('VIEWER') : 'guest-role-no-org-access',
         data: { message: 'Guest does not have permission to edit board specs' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -49,32 +51,39 @@ function mapWriteError(err: unknown): Response {
   if (message === 'stale-specs-file-precondition') {
     return Response.json(
       { name: message, data: { message: 'The file changed on the server. Reload and try again.' } },
-      { status: 412 },
+      { status: 412 }
     );
   }
   if (message === 'missing-specs-file-precondition') {
     return Response.json(
-      { name: message, data: { message: 'If-Match header is required when updating an existing file.' } },
-      { status: 412 },
+      {
+        name: message,
+        data: { message: 'If-Match header is required when updating an existing file.' },
+      },
+      { status: 412 }
     );
   }
 
   if (
-    message === 'specs-file-must-be-markdown'
-    || message === 'path-must-be-relative'
-    || message === 'path-contains-null-byte'
-    || message === 'path-traversal-detected'
+    message === 'specs-file-must-be-markdown' ||
+    message === 'path-must-be-relative' ||
+    message === 'path-contains-null-byte' ||
+    message === 'path-traversal-detected'
   ) {
     return Response.json(
       { name: message, data: { message: 'Only specs markdown files can be saved' } },
-      { status: message === 'path-must-be-relative' || message === 'path-contains-null-byte' || message === 'path-traversal-detected' ? 400 : 422 },
+      {
+        status:
+          message === 'path-must-be-relative' ||
+          message === 'path-contains-null-byte' ||
+          message === 'path-traversal-detected'
+            ? 400
+            : 422,
+      }
     );
   }
 
-  return Response.json(
-    { name: 'specs-save-failed', data: { message } },
-    { status: 502 },
-  );
+  return Response.json({ name: 'specs-save-failed', data: { message } }, { status: 502 });
 }
 
 export async function handlePutSpecsFile(req: Request, boardId: string): Promise<Response> {
@@ -88,7 +97,7 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
   const workspaceReq = req as WorkspaceScopedRequest;
   const membershipError = await specsFileWriteDeps.requireWorkspaceMembership(
     workspaceReq,
-    boardReq.board!.workspace_id,
+    boardReq.board!.workspace_id
   );
   if (membershipError) return membershipError;
 
@@ -102,7 +111,7 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
         name: 'specs-not-configured',
         data: { message: 'You must configure your Github documentation respository first' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -112,14 +121,14 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (typeof body.path !== 'string' || typeof body.content !== 'string') {
     return Response.json(
       { name: 'invalid-field-type', data: { message: 'path and content are required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -136,7 +145,7 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
         name: 'specs-load-failed',
         data: { message: 'Our app do not have access to this respository' },
       },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -167,7 +176,7 @@ export async function handlePutSpecsFile(req: Request, boardId: string): Promise
       {
         status: saved.created ? 201 : 200,
         headers: { ETag: `"${saved.etag}"` },
-      },
+      }
     );
   } catch (err) {
     return mapWriteError(err);

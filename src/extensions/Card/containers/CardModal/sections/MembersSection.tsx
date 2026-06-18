@@ -54,7 +54,9 @@ export const MembersSection = ({
           <button
             type="button"
             className="rounded border border-border bg-bg-surface px-2 py-0.5 text-xs text-muted hover:bg-bg-overlay"
-            onClick={() => { setShowModal(true); }}
+            onClick={() => {
+              setShowModal(true);
+            }}
           >
             Assign
           </button>
@@ -66,7 +68,9 @@ export const MembersSection = ({
           assignedMembers={assignedMembers}
           onAssign={onAssign}
           onRemove={onRemove}
-          onClose={() => { setShowModal(false); }}
+          onClose={() => {
+            setShowModal(false);
+          }}
         />
       )}
     </section>

@@ -6,7 +6,10 @@ import { s3Client, s3Config } from '../../../attachment/common/config/s3';
 import { env } from '../../../../config/env';
 import { resizeAvatar, avatarExtension, isValidAvatarFile } from '../../../../mods/imageProcessor';
 import { deleteObject } from '../../../attachment/mods/s3/deleteObject';
-import { extractS3KeyFromAvatarUrl, buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl';
+import {
+  extractS3KeyFromAvatarUrl,
+  buildAvatarProxyUrl,
+} from '../../../../common/avatar/resolveAvatarUrl';
 
 export async function handleUploadAvatar(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -20,7 +23,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       { error: { code: 'bad-request', message: 'Expected multipart/form-data' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -28,7 +31,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
   if (!(file instanceof File)) {
     return Response.json(
       { error: { code: 'bad-request', message: 'Missing avatar field' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -41,7 +44,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
         name: 'invalid-avatar-file',
         data: { message: 'File must be an image (JPEG, PNG, WebP, GIF) under 5 MB' },
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -70,7 +73,7 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
       Key: s3Key,
       Body: resized,
       ContentType: mimeType === 'image/webp' ? 'image/webp' : 'image/jpeg',
-    }),
+    })
   );
 
   // Build public URL — use S3_ENDPOINT if set (LocalStack), otherwise standard AWS URL
@@ -85,7 +88,10 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
     .returning('*');
 
   // [why] Return stable proxy path — never expose short-lived presigned S3 URLs to the client.
-  const proxyAvatarUrl = buildAvatarProxyUrl({ userId: user.id, avatarUrl: user.avatar_url ?? null });
+  const proxyAvatarUrl = buildAvatarProxyUrl({
+    userId: user.id,
+    avatarUrl: user.avatar_url ?? null,
+  });
 
   return Response.json({ data: { avatar_url: proxyAvatarUrl } });
 }

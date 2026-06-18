@@ -23,14 +23,14 @@ export function decodeKey(raw: string, varName: string): string {
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleaned)) {
     throw new Error(
       `${varName} contains invalid base64 characters. ` +
-        `Expected a base64-encoded PEM (or raw PEM starting with "-----BEGIN").`,
+        `Expected a base64-encoded PEM (or raw PEM starting with "-----BEGIN").`
     );
   }
   const decoded = Buffer.from(cleaned, 'base64').toString('utf-8');
   if (!decoded.startsWith('-----BEGIN')) {
     throw new Error(
       `${varName} decoded value does not look like a PEM block. ` +
-        `Expected base64-encoded PEM that starts with "-----BEGIN" after decoding.`,
+        `Expected base64-encoded PEM that starts with "-----BEGIN" after decoding.`
     );
   }
   return decoded;

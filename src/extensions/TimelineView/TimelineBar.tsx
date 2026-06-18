@@ -78,7 +78,10 @@ const TimelineBar = ({
       {/* Left resize handle — changes start_date */}
       <div
         data-testid={`timeline-bar-resize-left-${card.id}`}
-        onMouseDown={(e) => { e.stopPropagation(); onResizeLeftStart(card.id, e); }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onResizeLeftStart(card.id, e);
+        }}
         className="flex h-full shrink-0 cursor-ew-resize items-center justify-center hover:bg-black/20"
         style={{ width: HANDLE_WIDTH }}
         aria-label={translations['TimelineView.ariaResizeStart']}
@@ -88,8 +91,12 @@ const TimelineBar = ({
 
       {/* Bar body — drag to move both dates */}
       <div
-        onMouseDown={(e) => { onMoveStart(card.id, e); }}
-        onClick={() => { onCardClick(card.id); }}
+        onMouseDown={(e) => {
+          onMoveStart(card.id, e);
+        }}
+        onClick={() => {
+          onCardClick(card.id);
+        }}
         className="flex flex-1 cursor-grab items-center overflow-hidden px-1"
         role="button"
         tabIndex={0}
@@ -101,7 +108,10 @@ const TimelineBar = ({
       {/* Right resize handle — changes due_date */}
       <div
         data-testid={`timeline-bar-resize-right-${card.id}`}
-        onMouseDown={(e) => { e.stopPropagation(); onResizeRightStart(card.id, e); }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onResizeRightStart(card.id, e);
+        }}
         className="flex h-full shrink-0 cursor-ew-resize items-center justify-center hover:bg-black/20"
         style={{ width: HANDLE_WIDTH }}
         aria-label={translations['TimelineView.ariaResizeDue']}

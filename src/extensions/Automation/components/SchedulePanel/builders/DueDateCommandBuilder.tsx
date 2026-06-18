@@ -51,22 +51,21 @@ const DueDateCommandBuilder: FC<Props> = ({
 
   // Step 1 — when config
   const [triggerMoment, setTriggerMoment] = useState<TriggerMoment>(
-    merged.triggerMoment ?? 'before',
+    merged.triggerMoment ?? 'before'
   );
   const [offsetValue, setOffsetValue] = useState<number>(merged.offsetValue ?? 2);
   const [offsetUnit, setOffsetUnit] = useState<'days' | 'hours'>(merged.offsetUnit ?? 'days');
 
   // Step 2 — actions + name
   const [actions, setActions] = useState<ActionItemData[]>(
-    existing?.actions.map((a) => ({
+    (existing?.actions.map((a) => ({
       id: a.id,
       actionType: a.actionType,
       label: a.actionType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
       config: a.config,
-    })) ??
-      initialConfig
-        ? []
-        : [],
+    })) ?? initialConfig)
+      ? []
+      : []
   );
   const [nameOverride, setNameOverride] = useState<string | null>(existing?.name ?? null);
 
@@ -80,14 +79,13 @@ const DueDateCommandBuilder: FC<Props> = ({
       triggerMoment,
       ...(triggerMoment !== 'on' ? { offsetValue, offsetUnit } : {}),
     }),
-    [triggerMoment, offsetValue, offsetUnit],
+    [triggerMoment, offsetValue, offsetUnit]
   );
 
   const autoSummary = dueDateSummary(dueDateConfig);
   const commandName = nameOverride !== null ? nameOverride : autoSummary;
 
-  const canProceedStep1 =
-    triggerMoment === 'on' || (offsetValue >= 1 && offsetValue <= 30);
+  const canProceedStep1 = triggerMoment === 'on' || (offsetValue >= 1 && offsetValue <= 30);
   const canSave = commandName.trim().length > 0 && actions.length > 0;
 
   const handleSave = async () => {
@@ -144,14 +142,23 @@ const DueDateCommandBuilder: FC<Props> = ({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
       role="dialog"
       aria-modal="true"
-      aria-label={existing ? translations['automation.dueDateBuilder.ariaLabelEdit'] : translations['automation.dueDateBuilder.ariaLabelNew']}
+      aria-label={
+        existing
+          ? translations['automation.dueDateBuilder.ariaLabelEdit']
+          : translations['automation.dueDateBuilder.ariaLabelNew']
+      }
     >
       <div className="bg-bg-base border border-border rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-border px-5 py-4">
-          <ExclamationCircleIcon className="h-5 w-5 text-amber-400 flex-shrink-0" aria-hidden="true" />
+          <ExclamationCircleIcon
+            className="h-5 w-5 text-amber-400 flex-shrink-0"
+            aria-hidden="true"
+          />
           <h2 className="flex-1 text-base font-semibold text-base">
-            {existing ? translations['automation.dueDateBuilder.titleEdit'] : translations['automation.dueDateBuilder.titleNew']}
+            {existing
+              ? translations['automation.dueDateBuilder.titleEdit']
+              : translations['automation.dueDateBuilder.titleNew']}
           </h2>
           <Button
             variant="ghost"
@@ -173,14 +180,16 @@ const DueDateCommandBuilder: FC<Props> = ({
                   step === n
                     ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
                     : step > n
-                    ? 'bg-success text-white' // [theme-exception] text-white on completed success step
-                    : 'bg-bg-overlay text-muted'
+                      ? 'bg-success text-white' // [theme-exception] text-white on completed success step
+                      : 'bg-bg-overlay text-muted'
                 }`}
               >
                 {n}
               </div>
               <span className={`text-xs ${step === n ? 'text-subtle' : 'text-muted'}`}>
-                {n === 1 ? translations['automation.dueDateBuilder.stepWhen'] : translations['automation.dueDateBuilder.stepActionsAndSave']}
+                {n === 1
+                  ? translations['automation.dueDateBuilder.stepWhen']
+                  : translations['automation.dueDateBuilder.stepActionsAndSave']}
               </span>
               {n < 2 && <span className="mx-1 text-muted text-xs">›</span>}
             </div>
@@ -200,20 +209,35 @@ const DueDateCommandBuilder: FC<Props> = ({
                 <div className="grid grid-cols-3 gap-1.5">
                   {(
                     [
-                      { value: 'before', label: translations['automation.dueDateBuilder.timingBefore'], Icon: BellAlertIcon },
-                      { value: 'on', label: translations['automation.dueDateBuilder.timingOnDay'], Icon: ExclamationCircleIcon },
-                      { value: 'after', label: translations['automation.dueDateBuilder.timingAfter'], Icon: BellSlashIcon },
+                      {
+                        value: 'before',
+                        label: translations['automation.dueDateBuilder.timingBefore'],
+                        Icon: BellAlertIcon,
+                      },
+                      {
+                        value: 'on',
+                        label: translations['automation.dueDateBuilder.timingOnDay'],
+                        Icon: ExclamationCircleIcon,
+                      },
+                      {
+                        value: 'after',
+                        label: translations['automation.dueDateBuilder.timingAfter'],
+                        Icon: BellSlashIcon,
+                      },
                     ] as const
                   ).map(({ value, label, Icon }) => (
                     <button
                       key={value}
                       type="button"
-                      onClick={() => { setTriggerMoment(value as TriggerMoment); }}
+                      onClick={() => {
+                        setTriggerMoment(value as TriggerMoment);
+                      }}
                       className={`flex flex-col items-center gap-1 rounded-md py-2.5 px-2 text-xs font-medium transition-colors ${
                         triggerMoment === value
                           ? 'bg-primary text-white' // [theme-exception]: text-white on active-state primary button
                           : 'bg-bg-surface text-subtle hover:bg-bg-overlay'
-                      }`}>
+                      }`}
+                    >
                       <Icon className="h-4 w-4" aria-hidden="true" />
                       {label}
                     </button>
@@ -245,7 +269,9 @@ const DueDateCommandBuilder: FC<Props> = ({
                         <button
                           key={u}
                           type="button"
-                          onClick={() => { setOffsetUnit(u); }}
+                          onClick={() => {
+                            setOffsetUnit(u);
+                          }}
                           className={`rounded-md px-3 py-2 text-xs font-medium capitalize transition-colors ${
                             offsetUnit === u
                               ? 'bg-primary text-white' // [theme-exception] text-white on active-state primary button
@@ -258,14 +284,17 @@ const DueDateCommandBuilder: FC<Props> = ({
                     </div>
                   </div>
                   {(offsetValue < 1 || offsetValue > 30) && (
-                    <p className="text-xs text-danger">{translations['automation.dueDateBuilder.offsetError']}</p>
+                    <p className="text-xs text-danger">
+                      {translations['automation.dueDateBuilder.offsetError']}
+                    </p>
                   )}
                 </div>
               )}
 
               {/* Live preview */}
               <p className="text-xs text-muted italic">
-                {translations['automation.dueDateBuilder.triggerLabel']}: <span className="text-subtle">{autoSummary}</span>
+                {translations['automation.dueDateBuilder.triggerLabel']}:{' '}
+                <span className="text-subtle">{autoSummary}</span>
               </p>
             </>
           )}
@@ -280,13 +309,17 @@ const DueDateCommandBuilder: FC<Props> = ({
                 </p>
                 <ActionList actions={actions} onChange={setActions} />
                 {actions.length === 0 && (
-                  <p className="text-xs text-amber-400">{translations['automation.dueDateBuilder.actionsWarning']}</p>
+                  <p className="text-xs text-amber-400">
+                    {translations['automation.dueDateBuilder.actionsWarning']}
+                  </p>
                 )}
               </div>
 
               {/* Schedule summary */}
               <div className="rounded-md bg-bg-surface border border-border px-3 py-2 text-sm text-subtle">
-                <span className="text-xs text-muted block mb-1">{translations['automation.dueDateBuilder.triggerSummaryLabel']}</span>
+                <span className="text-xs text-muted block mb-1">
+                  {translations['automation.dueDateBuilder.triggerSummaryLabel']}
+                </span>
                 {autoSummary}
               </div>
 
@@ -302,7 +335,9 @@ const DueDateCommandBuilder: FC<Props> = ({
                   id="due-date-name"
                   type="text"
                   value={commandName}
-                  onChange={(e) => { setNameOverride(e.target.value); }}
+                  onChange={(e) => {
+                    setNameOverride(e.target.value);
+                  }}
                   maxLength={120}
                   className="rounded-md bg-bg-overlay border border-border px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={translations['automation.dueDateBuilder.commandNamePlaceholder']}
@@ -326,7 +361,13 @@ const DueDateCommandBuilder: FC<Props> = ({
           <Button
             variant="secondary"
             type="button"
-            onClick={step === 1 ? onClose : () => { setStep(1); }}
+            onClick={
+              step === 1
+                ? onClose
+                : () => {
+                    setStep(1);
+                  }
+            }
             className="flex items-center gap-1"
           >
             {step === 1 ? (
@@ -344,7 +385,9 @@ const DueDateCommandBuilder: FC<Props> = ({
               variant="primary"
               type="button"
               disabled={!canProceedStep1}
-              onClick={() => { setStep(2); }}
+              onClick={() => {
+                setStep(2);
+              }}
             >
               {translations['automation.dueDateBuilder.next']}
             </Button>
@@ -355,7 +398,11 @@ const DueDateCommandBuilder: FC<Props> = ({
               disabled={!canSave || saving}
               onClick={handleSave}
             >
-              {saving ? translations['automation.dueDateBuilder.saving'] : existing ? translations['automation.dueDateBuilder.saveChanges'] : translations['automation.dueDateBuilder.create']}
+              {saving
+                ? translations['automation.dueDateBuilder.saving']
+                : existing
+                  ? translations['automation.dueDateBuilder.saveChanges']
+                  : translations['automation.dueDateBuilder.create']}
             </Button>
           )}
         </div>

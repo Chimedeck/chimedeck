@@ -13,7 +13,7 @@ export async function handleFollowBoard(req: Request, boardId: string): Promise<
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -36,7 +36,7 @@ export async function handleUnfollowBoard(req: Request, boardId: string): Promis
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
-      { status: 404 },
+      { status: 404 }
     );
   }
 

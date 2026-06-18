@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { planFileScope } from '../index';
 import type { ContextChunk, DuplicateCard, ImpactAnalysisResult } from '../../../types';
 
-function makeChunk(sourcePath: string, confidence: number, source: 'docs' | 'code' = 'docs'): ContextChunk {
+function makeChunk(
+  sourcePath: string,
+  confidence: number,
+  source: 'docs' | 'code' = 'docs'
+): ContextChunk {
   return { source, sourcePath, content: 'test content', confidence };
 }
 
@@ -37,7 +41,7 @@ describe('planFileScope', () => {
       intent: 'test',
     });
 
-    const sprintEntry = result.files.find(f => f.filePath === 'specs/sprints/sprint-1.md');
+    const sprintEntry = result.files.find((f) => f.filePath === 'specs/sprints/sprint-1.md');
     expect(sprintEntry).toBeDefined();
     expect(sprintEntry!.decision).toBe('edit');
   });
@@ -50,7 +54,7 @@ describe('planFileScope', () => {
       intent: 'test',
     });
 
-    const archEntry = result.files.find(f => f.filePath === 'specs/architecture/architecture.md');
+    const archEntry = result.files.find((f) => f.filePath === 'specs/architecture/architecture.md');
     expect(archEntry).toBeDefined();
     expect(archEntry!.decision).toBe('no-change');
   });
@@ -63,7 +67,7 @@ describe('planFileScope', () => {
       intent: 'Build authentication',
     });
 
-    const createEntry = result.files.find(f => f.filePath === 'specs/architecture/new-auth.md');
+    const createEntry = result.files.find((f) => f.filePath === 'specs/architecture/new-auth.md');
     expect(createEntry).toBeDefined();
     expect(createEntry!.decision).toBe('create');
     expect(createEntry!.contentHint).toBeDefined();
@@ -71,21 +75,24 @@ describe('planFileScope', () => {
 
   it('sorts creates before edits', () => {
     const result = planFileScope({
-      chunks: [
-        makeChunk('specs/sprints/sprint-1.md', 0.9),
-      ],
+      chunks: [makeChunk('specs/sprints/sprint-1.md', 0.9)],
       duplicateCards: [],
       impact: {
         likelyImpactedFiles: [
-          { filePath: 'specs/request_changelog/new-file.md', impactScore: 0.9, reason: 'New', matchedEntities: ['test'] },
+          {
+            filePath: 'specs/request_changelog/new-file.md',
+            impactScore: 0.9,
+            reason: 'New',
+            matchedEntities: ['test'],
+          },
         ],
         overallOverlapScore: 0.5,
       },
       intent: 'test',
     });
 
-    const createIndex = result.files.findIndex(f => f.decision === 'create');
-    const editIndex = result.files.findIndex(f => f.decision === 'edit');
+    const createIndex = result.files.findIndex((f) => f.decision === 'create');
+    const editIndex = result.files.findIndex((f) => f.decision === 'edit');
     expect(createIndex).toBeLessThan(editIndex);
   });
 

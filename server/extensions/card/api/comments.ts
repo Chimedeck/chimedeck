@@ -42,7 +42,7 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   } catch {
     return Response.json(
       { name: 'bad-request', data: { message: 'Invalid JSON body' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -51,14 +51,14 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
   if (!rawText || typeof rawText !== 'string' || rawText.trim() === '') {
     return Response.json(
       { name: 'bad-request', data: { message: 'content is required' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (rawText.trim().length > 50000) {
     return Response.json(
       { name: 'bad-request', data: { message: 'content must be ≤ 50 000 characters' } },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -106,7 +106,10 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
     });
   });
 
-  const author = await db('users').where({ id: actorId }).select('name', 'email', 'avatar_url').first();
+  const author = await db('users')
+    .where({ id: actorId })
+    .select('name', 'email', 'avatar_url')
+    .first();
 
   const rawPreview = content.replaceAll(/<[^>]+>/g, '');
   const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
@@ -142,9 +145,12 @@ export async function handleCreateCardComment(req: Request, cardId: string): Pro
         updated_at: now,
         author_name: author?.name ?? author?.email ?? null,
         author_email: author?.email ?? null,
-        author_avatar_url: buildAvatarProxyUrl({ userId: actorId, avatarUrl: author?.avatar_url ?? null }),
+        author_avatar_url: buildAvatarProxyUrl({
+          userId: actorId,
+          avatarUrl: author?.avatar_url ?? null,
+        }),
       },
     },
-    { status: 201 },
+    { status: 201 }
   );
 }

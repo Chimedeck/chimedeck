@@ -28,9 +28,7 @@ describe('rankResults', () => {
       docs: [
         { source: 'docs', sourcePath: 'specs/a.md', content: duplicateContent, relevance: 0.9 },
       ],
-      code: [
-        { source: 'code', sourcePath: 'src/a.ts', content: duplicateContent, relevance: 0.7 },
-      ],
+      code: [{ source: 'code', sourcePath: 'src/a.ts', content: duplicateContent, relevance: 0.7 }],
       cards: [],
       git: [],
     };
@@ -65,15 +63,9 @@ describe('rankResults', () => {
 
   it('maintains source attribution after ranking', () => {
     const results: Record<ContextSource, SearchConnectorResult[]> = {
-      docs: [
-        { source: 'docs', sourcePath: 'specs/a.md', content: 'Doc content', relevance: 0.5 },
-      ],
-      code: [
-        { source: 'code', sourcePath: 'src/b.ts', content: 'Code content', relevance: 0.8 },
-      ],
-      cards: [
-        { source: 'cards', sourcePath: 'card-1', content: 'Card content', relevance: 0.3 },
-      ],
+      docs: [{ source: 'docs', sourcePath: 'specs/a.md', content: 'Doc content', relevance: 0.5 }],
+      code: [{ source: 'code', sourcePath: 'src/b.ts', content: 'Code content', relevance: 0.8 }],
+      cards: [{ source: 'cards', sourcePath: 'card-1', content: 'Card content', relevance: 0.3 }],
       git: [],
     };
 
@@ -85,7 +77,7 @@ describe('rankResults', () => {
     expect(sourceCounts.cards).toBe(1);
 
     // [why] Sources should remain correctly attributed after ranking.
-    const sources = chunks.map(c => c.source);
+    const sources = chunks.map((c) => c.source);
     expect(sources).toContain('docs');
     expect(sources).toContain('code');
     expect(sources).toContain('cards');

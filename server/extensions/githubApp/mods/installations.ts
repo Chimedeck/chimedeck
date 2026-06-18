@@ -70,7 +70,8 @@ export async function upsertInstallation({
   if (accountType !== undefined) updates.account_type = accountType;
   if (repositories !== undefined) updates.repositories = JSON.stringify(repositories);
   if (suspended !== undefined) updates.suspended = suspended;
-  if (webhookSecretEncrypted !== undefined) updates.webhook_secret_encrypted = webhookSecretEncrypted;
+  if (webhookSecretEncrypted !== undefined)
+    updates.webhook_secret_encrypted = webhookSecretEncrypted;
   if (workspaceId !== undefined) updates.workspace_id = workspaceId;
 
   // SQLite (used in some test envs) does not support ON CONFLICT … DO UPDATE.
@@ -80,9 +81,7 @@ export async function upsertInstallation({
     .first();
 
   if (existing) {
-    await db('github_app_installations')
-      .where({ installation_id: installationId })
-      .update(updates);
+    await db('github_app_installations').where({ installation_id: installationId }).update(updates);
   } else {
     await db('github_app_installations').insert({
       installation_id: installationId,
@@ -103,7 +102,5 @@ export async function deleteInstallation({
 }: {
   installationId: string;
 }): Promise<void> {
-  await db('github_app_installations')
-    .where({ installation_id: installationId })
-    .delete();
+  await db('github_app_installations').where({ installation_id: installationId }).delete();
 }

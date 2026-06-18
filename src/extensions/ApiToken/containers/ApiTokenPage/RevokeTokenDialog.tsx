@@ -20,20 +20,10 @@ export default function RevokeTokenDialog({ tokenName, onConfirm, onCancel, isLo
         </h2>
         <p className="mb-6 text-sm text-subtle">{body}</p>
         <div className="flex justify-end gap-3">
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={onCancel}
-            disabled={isLoading}
-          >
+          <Button variant="ghost" size="md" onClick={onCancel} disabled={isLoading}>
             {translations['RevokeTokenDialog.cancel']}
           </Button>
-          <Button
-            variant="danger"
-            size="md"
-            onClick={onConfirm}
-            disabled={isLoading}
-          >
+          <Button variant="danger" size="md" onClick={onConfirm} disabled={isLoading}>
             {translations['RevokeTokenDialog.confirm']}
           </Button>
         </div>
