@@ -110,6 +110,7 @@ const BoardChatDrawer = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [aiTyping, setAiTyping] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [actionCards, setActionCards] = useState<BoardChatAssistActionCard[]>([]);
   const [committingCards, setCommittingCards] = useState<Set<string>>(new Set());
   const [commitError, setCommitError] = useState<string | null>(null);
@@ -166,7 +167,7 @@ const BoardChatDrawer = ({
         if (cancelled) return;
         setPermissions({ guest_can_view: false, guest_can_use: false });
         setPermissionsState('error');
-        setPermissionsError(translations['BoardChat.drawer.updatePermissionsError']);
+        setPermissionsError(translations['BoardChat.drawer.updatePermissionsError'] as string);
       });
 
     return () => {
@@ -291,6 +292,7 @@ const BoardChatDrawer = ({
   const triggerAiAssist = async (prompt: string, sessionId: string): Promise<void> => {
     setAiResponse(null);
     setActionCards([]);
+    setAiError(null);
     setAiTyping(true);
     try {
       const res = await requestBoardChatAssist({
@@ -311,9 +313,22 @@ const BoardChatDrawer = ({
       if (cards.length > 0 && onDocsChanged) {
         onDocsChanged();
       }
-    } catch {
+    } catch (err) {
       setAiResponse(null);
       setActionCards([]);
+      // [why] Extract the server's structured error message so the user sees
+      // a meaningful explanation instead of a generic "something went wrong".
+      const axiosErr = err as { response?: { status?: number; data?: unknown } };
+      if (axiosErr.response?.data) {
+        const data = axiosErr.response.data as {
+          error?: { code?: string; message?: string };
+        };
+        if (data.error?.message) {
+          setAiError(data.error.message);
+          return;
+        }
+      }
+      setAiError(translations['BoardChat.drawer.aiErrorFallback'] as string);
     } finally {
       setAiTyping(false);
       // [why] AI response is now persisted server-side in assistBoardChat.
@@ -772,6 +787,27 @@ const BoardChatDrawer = ({
                         <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
                       </div>
                     )}
+                  </div>
+                </div>
+              </li>
+            </ul>
+          )}
+
+          {/* [why] AI error displayed as a standalone chat message so the user
+              sees a clear explanation when the assist request fails, instead of
+              the typing indicator just disappearing with no feedback. */}
+          {!aiTyping && aiError && (
+            <ul className="space-y-3">
+              <li className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+                <div className="flex gap-2">
+                  <div className="h-6 w-6 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-white">!</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                      {translations['BoardChat.drawer.aiErrorTitle']}
+                    </p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">{aiError}</p>
                   </div>
                 </div>
               </li>

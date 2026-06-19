@@ -45,5 +45,7 @@
   "BoardChat.drawer.runningTools": "Running: {tools}",
   "BoardChat.drawer.creatingDoc": "Creating {path}",
   "BoardChat.button.ariaLabel": "Board chat",
-  "BoardChat.button.title": "Open board chat"
+  "BoardChat.button.title": "Open board chat",
+  "BoardChat.drawer.aiErrorTitle": "AI Assist Error",
+  "BoardChat.drawer.aiErrorFallback": "AI assist request failed. Please try again."
 }

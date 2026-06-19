@@ -8,6 +8,7 @@ import type {
   BoardChatAssistOutput,
   BoardChatAssistToolCall,
   BoardChatAssistActionCard,
+  BoardChatAssistContentPart,
 } from '../../../types';
 import { CREATE_BOARD_CARD_TOOL, createBoardCard } from './createBoardCard';
 import { SEARCH_CARDS_TOOL, searchCards } from './searchCards';
@@ -171,6 +172,10 @@ interface ToolCallResult {
   message?: string;
   actionCard?: BoardChatAssistActionCard;
   error?: BoardChatAssistOutput;
+  // [why] Multimodal content parts (images, text files) from card attachments.
+  // Carried alongside the message so the tool loop can inject them as a
+  // follow-up user message for vision-capable providers.
+  contentParts?: BoardChatAssistContentPart[];
 }
 
 // [why] Handle a single tool call. Search, create_board_card, read/list/delete
@@ -205,6 +210,7 @@ async function executeOneToolCall(
       return output;
     }
     if (result.data?.message) output.message = result.data.message;
+    if (result.data?.contentParts) output.contentParts = result.data.contentParts;
     return output;
   }
 
@@ -489,6 +495,23 @@ async function runToolUseIteration(
 
   // Feed tool results back into conversation for the next iteration
   conversation.push(...buildToolResultMessages(results, data.toolCalls));
+
+  // [why] Inject multimodal content parts (images, text files from card
+  // attachments) as a follow-up user message. Tool result messages only
+  // accept string content — vision models expect images in user messages.
+  // This lets Ollama and OpenAI-compatible vision models "see" attachments.
+  const allContentParts: BoardChatAssistContentPart[] = [];
+  for (const result of results) {
+    if (result.contentParts && result.contentParts.length > 0) {
+      allContentParts.push(...result.contentParts);
+    }
+  }
+  if (allContentParts.length > 0) {
+    conversation.push({
+      role: 'user',
+      content: allContentParts,
+    });
+  }
 
   const allErrors = results.filter((r) => r.error);
   const error = allErrors.length === results.length ? allErrors[0]?.error : undefined;

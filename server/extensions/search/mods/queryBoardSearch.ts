@@ -13,7 +13,13 @@ export interface BoardSearchResult {
   id: string;
   short_id?: string;
   title: string;
+  description?: string | null;
   listId?: string;
+  due_date?: string | null;
+  start_date?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  archived?: boolean;
   rank: number;
 }
 
@@ -64,7 +70,18 @@ export async function queryBoardSearch({
     // Sort by updated_at descending so the most recent cards appear first.
     const cards = await db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
-      .select('cards.id', 'cards.short_id', 'cards.title', 'cards.list_id')
+      .select(
+        'cards.id',
+        'cards.short_id',
+        'cards.title',
+        'cards.description',
+        'cards.list_id',
+        'cards.due_date',
+        'cards.start_date',
+        'cards.created_at',
+        'cards.updated_at',
+        'cards.archived'
+      )
       .where('lists.board_id', boardId)
       .where('cards.archived', false)
       .orderBy('cards.updated_at', 'desc')
@@ -76,7 +93,13 @@ export async function queryBoardSearch({
         id: row.id,
         short_id: row.short_id,
         title: row.title,
+        description: row.description,
         listId: row.list_id,
+        due_date: row.due_date,
+        start_date: row.start_date,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        archived: row.archived,
         rank: 0,
       });
     }
@@ -92,7 +115,9 @@ export async function queryBoardSearch({
     .join('lists', 'cards.list_id', 'lists.id')
     .select(
       db.raw(
-        `cards.id, cards.short_id, cards.title, cards.list_id, 'card' as type,
+        `cards.id, cards.short_id, cards.title, cards.description, cards.list_id,
+        cards.due_date, cards.start_date, cards.created_at, cards.updated_at, cards.archived,
+        'card' as type,
         ts_rank_cd(cards.search_vector, to_tsquery('english', ?)) AS rank`,
         [tsquery]
       )
@@ -109,7 +134,13 @@ export async function queryBoardSearch({
       id: row.id,
       short_id: row.short_id,
       title: row.title,
+      description: row.description,
       listId: row.list_id,
+      due_date: row.due_date,
+      start_date: row.start_date,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      archived: row.archived,
       rank: Number(row.rank),
     });
   }

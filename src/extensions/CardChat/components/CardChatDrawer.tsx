@@ -107,6 +107,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
 
   // ── Sprint 208 — AI assist state ───────────────────────────────────────
   const [aiTyping, setAiTyping] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [aiProgress, setAiProgress] = useState<{
     phase: 'thinking' | 'executing_tools' | 'done';
     toolNames?: string[] | undefined;
@@ -275,6 +276,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
     setActionCards([]);
     setDismissedCards(new Set());
     setCommitError(null);
+    setAiError(null);
     setAiTyping(true);
     try {
       const res = await requestCardChatAssist({
@@ -287,10 +289,26 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
       if (res.data.actionCards && res.data.actionCards.length > 0) {
         setActionCards(res.data.actionCards);
       }
-    } catch {
+    } catch (err) {
       setActionCards([]);
-      // [why] Re-throw so handleSendMessage can fall back to simple message creation.
-      throw new Error('AI assist failed');
+      // [why] Extract the server's structured error message so the user sees
+      // a meaningful explanation instead of a generic "something went wrong".
+      const axiosErr = err as { response?: { status?: number; data?: unknown } };
+      if (axiosErr.response?.data) {
+        const data = axiosErr.response.data as {
+          error?: { code?: string; message?: string };
+        };
+        if (data.error?.message) {
+          setAiError(data.error.message);
+        } else {
+          setAiError(translations['CardChat.drawer.aiErrorFallback'] as string);
+        }
+      } else {
+        setAiError(translations['CardChat.drawer.aiErrorFallback'] as string);
+      }
+      // [why] Re-throw so handleSendMessage can fall back to simple message creation
+      // when the assist endpoint fails.
+      throw err;
     } finally {
       setAiTyping(false);
       setRefreshKey((current) => current + 1);
@@ -674,6 +692,25 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
                       <span className="h-1.5 w-1.5 rounded-full bg-muted animate-bounce [animation-delay:300ms]" />
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* [why] AI error displayed as a standalone chat message so the user
+              sees a clear explanation when the assist request fails, instead of
+              the typing indicator just disappearing with no feedback. */}
+          {!aiTyping && aiError && (
+            <div className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+              <div className="flex gap-2">
+                <div className="h-6 w-6 rounded-full bg-red-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[10px] font-bold text-white">!</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                    {translations['CardChat.drawer.aiErrorTitle']}
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{aiError}</p>
                 </div>
               </div>
             </div>

@@ -149,9 +149,29 @@ export async function handleCreateChatAssist(req: Request, boardId: string): Pro
     actorId: (req as AuthenticatedRequest).currentUser!.id,
     board,
   };
-  const result = await boardChatAssistApiDeps.assistBoardChat(assistInput);
+
+  let result: Awaited<ReturnType<typeof boardChatAssistApiDeps.assistBoardChat>>;
+  try {
+    result = await boardChatAssistApiDeps.assistBoardChat(assistInput);
+  } catch (err) {
+    // [why] Catch thrown exceptions (e.g. DB failures, provider timeouts) so
+    // the client always gets a structured error response instead of a silent hang.
+    console.error(
+      `[chat/assist] Unhandled exception: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return Response.json(
+      {
+        error: {
+          code: 'board-chat-assist-failed',
+          message: 'Board chat assist request failed due to an internal error',
+        },
+      },
+      { status: 500 }
+    );
+  }
 
   if (result.status !== 200) {
+    console.log(`==debug - result:`, result);
     if (result.status >= 500) {
       console.error(
         `[chat/assist] 5xx from assist handler: status=${String(result.status)} name=${result.name ?? ''} message=${result.message ?? ''}`

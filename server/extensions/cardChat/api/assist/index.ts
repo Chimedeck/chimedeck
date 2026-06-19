@@ -176,21 +176,21 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
-      { name: 'invalid-request-body', data: { message: 'Request body must be JSON' } },
+      { error: { code: 'invalid-request-body', message: 'Request body must be JSON' } },
       { status: 400 }
     );
   }
 
   if (typeof body.sessionId !== 'string' || body.sessionId === '') {
     return Response.json(
-      { name: 'missing-session-id', data: { message: 'sessionId is required' } },
+      { error: { code: 'missing-session-id', message: 'sessionId is required' } },
       { status: 400 }
     );
   }
 
   if (typeof body.prompt !== 'string' || body.prompt.trim() === '') {
     return Response.json(
-      { name: 'missing-prompt', data: { message: 'prompt is required' } },
+      { error: { code: 'missing-prompt', message: 'prompt is required' } },
       { status: 400 }
     );
   }
@@ -200,202 +200,222 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
   const userId = authReq.currentUser!.id;
   const workspaceId = workspaceReq.workspaceId ?? '';
 
-  // Fetch card context
-  const cardRow = (await cardChatAssistDeps
-    .db('cards')
-    .where({ id: cardId })
-    .select('id', 'title', 'description')
-    .first()) as { id: string; title: string; description: string | null } | undefined;
-  const cardTitle = cardRow?.title ?? 'Untitled';
-  const cardDescription = cardRow?.description ?? null;
+  // [why] Wrap the entire assist logic in try/catch so thrown exceptions
+  // (DB failures, provider timeouts) return a structured error to the client
+  // instead of silently hanging.
+  try {
+    // Fetch card context
+    const cardRow = (await cardChatAssistDeps
+      .db('cards')
+      .where({ id: cardId })
+      .select('id', 'title', 'description')
+      .first()) as { id: string; title: string; description: string | null } | undefined;
+    const cardTitle = cardRow?.title ?? 'Untitled';
+    const cardDescription = cardRow?.description ?? null;
 
-  // Fetch conversation history
-  const recentMessages = (await cardChatAssistDeps
-    .db('card_chat_messages')
-    .where({ session_id: sessionId })
-    .orderBy('created_at', 'asc')
-    .select('*')) as CardChatMessage[];
+    // Fetch conversation history
+    const recentMessages = (await cardChatAssistDeps
+      .db('card_chat_messages')
+      .where({ session_id: sessionId })
+      .orderBy('created_at', 'asc')
+      .select('*')) as CardChatMessage[];
 
-  // Get board_id for broadcasting
-  const boardId = await getBoardIdForCard(cardId);
+    // Get board_id for broadcasting
+    const boardId = await getBoardIdForCard(cardId);
 
-  // Build conversation for the LLM
-  const systemPrompt = buildAssistSystemPrompt(cardTitle, cardDescription);
-  const tools = buildAssistTools();
+    // Build conversation for the LLM
+    const systemPrompt = buildAssistSystemPrompt(cardTitle, cardDescription);
+    const tools = buildAssistTools();
 
-  const conversation: CardChatProviderMessage[] = [{ role: 'system', content: systemPrompt }];
+    const conversation: CardChatProviderMessage[] = [{ role: 'system', content: systemPrompt }];
 
-  // Add conversation history (skip tool/system marker messages)
-  for (const msg of recentMessages) {
-    if (msg.role === 'tool') continue;
-    if (msg.role === 'system' && msg.content === 'PROPOSE_DESCRIPTION') continue;
-    conversation.push({ role: msg.role, content: msg.content });
-  }
-
-  // Add the user's prompt
-  conversation.push({ role: 'user', content: prompt });
-
-  // Persist the user message
-  const userMessage = await cardChatAssistDeps.writeCardChatMessage({
-    sessionId,
-    cardId,
-    authorId: userId,
-    role: 'user',
-    content: prompt,
-  });
-
-  // Multi-turn tool-use loop
-  const allActionCards: CardChatAssistActionCard[] = [];
-  let finalMessage: string | null = null;
-
-  for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-    // Broadcast thinking phase
-    if (boardId) {
-      cardChatAssistDeps.broadcastCardChatProgress(boardId, {
-        sessionId,
-        cardId,
-        phase: 'thinking',
-      });
+    // Add conversation history (skip tool/system marker messages)
+    for (const msg of recentMessages) {
+      if (msg.role === 'tool') continue;
+      if (msg.role === 'system' && msg.content === 'PROPOSE_DESCRIPTION') continue;
+      conversation.push({ role: msg.role, content: msg.content });
     }
 
-    const completion = await cardChatAssistDeps.requestCardChatCompletion({
-      messages: conversation,
-      tools,
+    // Add the user's prompt
+    conversation.push({ role: 'user', content: prompt });
+
+    // Persist the user message
+    const userMessage = await cardChatAssistDeps.writeCardChatMessage({
+      sessionId,
+      cardId,
+      authorId: userId,
+      role: 'user',
+      content: prompt,
     });
 
-    if (completion.status !== 200 || !completion.data) {
-      // Broadcast done on error
+    // Multi-turn tool-use loop
+    const allActionCards: CardChatAssistActionCard[] = [];
+    let finalMessage: string | null = null;
+
+    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+      // Broadcast thinking phase
       if (boardId) {
         cardChatAssistDeps.broadcastCardChatProgress(boardId, {
           sessionId,
           cardId,
-          phase: 'done',
-        });
-      }
-      return Response.json(
-        { name: 'assist-failed', data: { message: 'AI assist request failed' } },
-        { status: 502 }
-      );
-    }
-
-    const data = completion.data;
-    const toolCalls: ToolCall[] | undefined = data.toolCalls as ToolCall[] | undefined;
-
-    // No tool calls — AI is done, return the message
-    if (!toolCalls || toolCalls.length === 0) {
-      finalMessage = data.message ?? null;
-
-      // Persist the assistant message
-      if (finalMessage) {
-        await cardChatAssistDeps.writeCardChatMessage({
-          sessionId,
-          cardId,
-          authorId: userId,
-          role: 'assistant',
-          content: finalMessage,
+          phase: 'thinking',
         });
       }
 
+      const completion = await cardChatAssistDeps.requestCardChatCompletion({
+        messages: conversation,
+        tools,
+      });
+
+      if (completion.status !== 200 || !completion.data) {
+        // Broadcast done on error
+        if (boardId) {
+          cardChatAssistDeps.broadcastCardChatProgress(boardId, {
+            sessionId,
+            cardId,
+            phase: 'done',
+          });
+        }
+        return Response.json(
+          { error: { code: 'assist-failed', message: 'AI assist request failed' } },
+          { status: 502 }
+        );
+      }
+
+      const data = completion.data;
+      const toolCalls: ToolCall[] | undefined = data.toolCalls as ToolCall[] | undefined;
+
+      // No tool calls — AI is done, return the message
+      if (!toolCalls || toolCalls.length === 0) {
+        finalMessage = data.message ?? null;
+
+        // Persist the assistant message
+        if (finalMessage) {
+          await cardChatAssistDeps.writeCardChatMessage({
+            sessionId,
+            cardId,
+            authorId: userId,
+            role: 'assistant',
+            content: finalMessage,
+          });
+        }
+
+        if (boardId) {
+          cardChatAssistDeps.broadcastCardChatProgress(boardId, {
+            sessionId,
+            cardId,
+            phase: 'done',
+            actionCards: allActionCards,
+          });
+        }
+        break;
+      }
+
+      const safeToolCalls: ToolCall[] = toolCalls;
+
+      // Broadcast executing_tools phase
+      const toolNames = safeToolCalls.map((tc) => tc.function.name);
       if (boardId) {
         cardChatAssistDeps.broadcastCardChatProgress(boardId, {
           sessionId,
           cardId,
-          phase: 'done',
-          actionCards: allActionCards,
+          phase: 'executing_tools',
+          toolNames,
         });
       }
-      break;
-    }
 
-    const safeToolCalls: ToolCall[] = toolCalls;
-
-    // Broadcast executing_tools phase
-    const toolNames = safeToolCalls.map((tc) => tc.function.name);
-    if (boardId) {
-      cardChatAssistDeps.broadcastCardChatProgress(boardId, {
-        sessionId,
-        cardId,
-        phase: 'executing_tools',
-        toolNames,
-      });
-    }
-
-    // Add assistant message with tool calls to conversation
-    conversation.push({
-      role: 'assistant',
-      content: data.message ?? '',
-      toolCalls: safeToolCalls.map((tc) => ({
-        id: tc.id,
-        type: 'function' as const,
-        function: { name: tc.function.name, arguments: tc.function.arguments },
-      })),
-    });
-
-    // Execute all tool calls
-    const executedToolCalls = await Promise.all(
-      safeToolCalls.map(async (tc) => ({
-        tc,
-        result: await executeToolCall(tc, cardId, workspaceId, sessionId),
-      }))
-    );
-
-    // Collect action cards and add tool results to conversation
-    let firstSuggestionGenerated = false;
-    for (const executed of executedToolCalls) {
-      const { tc, result } = executed;
-
-      if (result.actionCard && allActionCards.length === 0) {
-        allActionCards.push(result.actionCard);
-        firstSuggestionGenerated = true;
-      }
-
+      // Add assistant message with tool calls to conversation
       conversation.push({
-        role: 'tool',
-        content: result.message ?? 'Tool executed successfully',
-        toolCallId: tc.id,
+        role: 'assistant',
+        content: data.message ?? '',
+        toolCalls: safeToolCalls.map((tc) => ({
+          id: tc.id,
+          type: 'function' as const,
+          function: { name: tc.function.name, arguments: tc.function.arguments },
+        })),
       });
-    }
 
-    // Broadcast action cards as they arrive
-    if (boardId && allActionCards.length > 0) {
-      cardChatAssistDeps.broadcastCardChatProgress(boardId, {
-        sessionId,
-        cardId,
-        phase: 'executing_tools',
-        toolNames,
-        actionCards: allActionCards,
-      });
-    }
+      // Execute all tool calls
+      const executedToolCalls = await Promise.all(
+        safeToolCalls.map(async (tc) => ({
+          tc,
+          result: await executeToolCall(tc, cardId, workspaceId, sessionId),
+        }))
+      );
 
-    // [why] Card AI should present one suggestion at a time.
-    // As soon as we produce the first description proposal, end this assist run.
-    if (firstSuggestionGenerated) {
-      if (boardId) {
+      // Collect action cards and add tool results to conversation
+      let firstSuggestionGenerated = false;
+      for (const executed of executedToolCalls) {
+        const { tc, result } = executed;
+
+        if (result.actionCard && allActionCards.length === 0) {
+          allActionCards.push(result.actionCard);
+          firstSuggestionGenerated = true;
+        }
+
+        conversation.push({
+          role: 'tool',
+          content: result.message ?? 'Tool executed successfully',
+          toolCallId: tc.id,
+        });
+      }
+
+      // Broadcast action cards as they arrive
+      if (boardId && allActionCards.length > 0) {
         cardChatAssistDeps.broadcastCardChatProgress(boardId, {
           sessionId,
           cardId,
-          phase: 'done',
+          phase: 'executing_tools',
+          toolNames,
           actionCards: allActionCards,
         });
       }
-      break;
+
+      // [why] Card AI should present one suggestion at a time.
+      // As soon as we produce the first description proposal, end this assist run.
+      if (firstSuggestionGenerated) {
+        if (boardId) {
+          cardChatAssistDeps.broadcastCardChatProgress(boardId, {
+            sessionId,
+            cardId,
+            phase: 'done',
+            actionCards: allActionCards,
+          });
+        }
+        break;
+      }
     }
-  }
 
-  // If loop exhausted without final message, use the last assistant content
-  if (!finalMessage) {
-    const lastAssistant = [...conversation].reverse().find((m) => m.role === 'assistant');
-    finalMessage = lastAssistant?.content ?? 'I processed your request.';
-  }
+    // If loop exhausted without final message, use the last assistant content
+    if (!finalMessage) {
+      const lastAssistant = [...conversation].reverse().find((m) => m.role === 'assistant');
+      finalMessage = lastAssistant?.content ?? 'I processed your request.';
+    }
 
-  return Response.json(
-    {
-      data: {
-        userMessage: userMessage.data.message,
-        message: finalMessage,
-        actionCards: allActionCards,
+    return Response.json(
+      {
+        data: {
+          userMessage: userMessage.data.message,
+          message: finalMessage,
+          actionCards: allActionCards,
+        },
       },
-    },
-    { status: 200 }
-  );
+      { status: 200 }
+    );
+  } catch (err) {
+    // [why] Catch thrown exceptions (e.g. DB failures, provider timeouts) so
+    // the client always gets a structured error response instead of a silent hang.
+    console.error(
+      `[card-chat/assist] Unhandled exception: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return Response.json(
+      {
+        error: {
+          code: 'card-chat-assist-failed',
+          message: 'Card chat assist request failed due to an internal error',
+        },
+      },
+      { status: 500 }
+    );
+  }
 }

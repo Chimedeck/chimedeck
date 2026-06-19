@@ -50,5 +50,7 @@
   "CardChat.drawer.thinking": "Thinking…",
   "CardChat.drawer.executingTools": "Executing tools…",
   "CardChat.drawer.runningTools": "Running: {tools}",
-  "CardChat.aiAssistButton": "AI Assist"
+  "CardChat.aiAssistButton": "AI Assist",
+  "CardChat.drawer.aiErrorTitle": "AI Assist Error",
+  "CardChat.drawer.aiErrorFallback": "AI assist request failed. Please try again."
 }

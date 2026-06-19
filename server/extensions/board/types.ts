@@ -195,13 +195,22 @@ export interface BoardChatAssistMessage {
   role: BoardChatAssistRole;
   // [why] Nullable because assistant messages that contain only tool calls
   // may have null content from some providers (OpenAI, Ollama).
-  content: string | null;
+  // [why] ContentParts array enables multimodal messages (images, text files)
+  // for vision-capable providers like Ollama and OpenAI-compatible APIs.
+  content: string | null | BoardChatAssistContentPart[];
   toolCallId?: string;
   name?: string;
   // [why] Carried on assistant messages so the loop can feed tool calls
   // back as tool-result messages on the next turn.
   toolCalls?: BoardChatAssistToolCall[];
 }
+
+// [why] OpenAI-compatible multimodal content parts. image_url uses data: URIs
+// with base64-encoded image data so no external URL fetching is needed.
+// text parts carry file contents for txt/csv/md attachments.
+export type BoardChatAssistContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'auto' | 'low' | 'high' } };
 
 export interface BoardChatAssistInput {
   boardId: string;
@@ -225,6 +234,10 @@ export interface BoardChatAssistOutput {
     // [why] Multi-proposal support: when the AI proposes several documents
     // in one turn, each gets its own action card returned here.
     actionCards?: BoardChatAssistActionCard[];
+    // [why] Multimodal content parts (images, text files) from card attachments.
+    // Carried alongside the message so the tool-result message can include
+    // base64-encoded images for vision-capable providers.
+    contentParts?: BoardChatAssistContentPart[];
   };
   name?: string;
   message?: string;
