@@ -160,6 +160,9 @@ interface AttachmentRow {
   size_bytes: number | null;
   type: 'FILE' | 'URL';
   url: string | null;
+  // [why] Needed to sort attachments by recency so we pick the 3 latest
+  // readable files when a card has more than 3 attachments.
+  created_at: string;
 }
 
 // [why] MIME types that can be read as text and included inline for the AI.
@@ -224,8 +227,35 @@ async function fetchCardAttachments(cardId: string): Promise<AttachmentRow[]> {
       's3_key',
       'size_bytes',
       'type',
-      'url'
+      'url',
+      'created_at'
     )) as AttachmentRow[];
+}
+
+// [why] Fetch attachment names for multiple cards in one query. Returns a
+// map of card_id → array of attachment display names (alias or name). Used by
+// keyword search to list specific file names so the AI can ask the user which
+// files they want to read.
+async function fetchAttachmentNames(cardIds: string[]): Promise<Record<string, string[]>> {
+  if (cardIds.length === 0) return {};
+  const rows = (await searchCardsDeps
+    .db('attachments')
+    .whereIn('card_id', cardIds)
+    .where('status', 'READY')
+    .where('type', 'FILE')
+    .whereNotNull('s3_key')
+    .select('card_id', 'name', 'alias')) as Array<{
+    card_id: string;
+    name: string;
+    alias: string | null;
+  }>;
+  const result: Record<string, string[]> = {};
+  for (const row of rows) {
+    const displayName = row.alias ?? row.name;
+    const arr = (result[row.card_id] ??= []);
+    arr.push(displayName);
+  }
+  return result;
 }
 
 // [why] Read an S3 object and return its body as a Uint8Array.
@@ -252,61 +282,105 @@ function toDataUri(bytes: Uint8Array, mimeType: string): string {
   return `data:${mimeType};base64,${base64}`;
 }
 
+// [why] Determine if an attachment can be processed (read as text, sent as
+// image, or rendered as PDF). Used to identify "readable" files for the
+// 3-file default cap and to sort readable files ahead of unreadable ones.
+function isReadableAttachment(att: AttachmentRow): boolean {
+  const mimeType = att.content_type ?? att.mime_type ?? 'application/octet-stream';
+  return (
+    TEXT_MIME_TYPES.has(mimeType) || IMAGE_MIME_TYPES.has(mimeType) || mimeType === PDF_MIME_TYPE
+  );
+}
+
+// [why] Determine why an attachment was skipped by processOneAttachment.
+// Extracted to keep buildAttachmentContentParts below cognitive complexity limit.
+function skippedReason(att: AttachmentRow, mimeType: string, size: number): string {
+  if (size > MAX_ATTACHMENT_BYTES) {
+    return `too large: ${String(size)} bytes`;
+  }
+  if (!att.s3_key) {
+    return 'no S3 key';
+  }
+  if (size > MAX_TEXT_ATTACHMENT_BYTES && TEXT_MIME_TYPES.has(mimeType)) {
+    return `text too large: ${String(size)} bytes`;
+  }
+  return `unsupported type: ${mimeType}`;
+}
+
+// [why] Process a single attachment: read from S3, convert to content part.
+// Returns the content part or null if the attachment was skipped.
+async function processOneAttachment(
+  att: AttachmentRow,
+  displayName: string,
+  mimeType: string,
+  size: number
+): Promise<BoardChatAssistContentPart | null> {
+  if (size > MAX_ATTACHMENT_BYTES) return null;
+  if (!att.s3_key) return null;
+
+  const bytes = await readS3Object(att.s3_key);
+  if (!bytes) return null;
+
+  if (IMAGE_MIME_TYPES.has(mimeType) || mimeType === PDF_MIME_TYPE) {
+    const dataUri = toDataUri(bytes, mimeType);
+    return {
+      type: 'image_url',
+      image_url: { url: dataUri, detail: 'auto' },
+    };
+  }
+
+  if (TEXT_MIME_TYPES.has(mimeType)) {
+    if (size > MAX_TEXT_ATTACHMENT_BYTES) return null;
+    const text = new TextDecoder().decode(bytes);
+    return {
+      type: 'text',
+      text: `[Attachment: ${displayName}]\n${text}`,
+    };
+  }
+
+  return null;
+}
+
 // [why] Build content parts for card attachments. Images and PDFs become
 // image_url parts (base64 data URIs). Text files become text parts.
 // Other file types are skipped with a note in the message.
+// maxParts caps how many attachments to process (default: no cap).
+// Returns allNames for the caller to list when some files were skipped.
 async function buildAttachmentContentParts(
-  attachments: AttachmentRow[]
-): Promise<{ contentParts: BoardChatAssistContentPart[]; skippedNames: string[] }> {
+  attachments: AttachmentRow[],
+  maxParts?: number
+): Promise<{
+  contentParts: BoardChatAssistContentPart[];
+  skippedNames: string[];
+  allNames: string[];
+}> {
   const contentParts: BoardChatAssistContentPart[] = [];
   const skippedNames: string[] = [];
+  const allNames: string[] = [];
+  const limit = typeof maxParts === 'number' ? maxParts : Infinity;
+  let processed = 0;
 
   for (const att of attachments) {
     const displayName = att.alias ?? att.name;
+    allNames.push(displayName);
     const mimeType = att.content_type ?? att.mime_type ?? 'application/octet-stream';
     const size = att.size_bytes ?? 0;
 
-    if (size > MAX_ATTACHMENT_BYTES) {
-      skippedNames.push(`${displayName} (too large: ${String(size)} bytes)`);
+    if (processed >= limit) {
+      skippedNames.push(`${displayName} (skipped: limit of ${String(limit)} files reached)`);
       continue;
     }
 
-    if (!att.s3_key) {
-      skippedNames.push(`${displayName} (no S3 key)`);
-      continue;
-    }
-
-    const bytes = await readS3Object(att.s3_key);
-    if (!bytes) {
-      skippedNames.push(`${displayName} (failed to read from storage)`);
-      continue;
-    }
-
-    if (IMAGE_MIME_TYPES.has(mimeType) || mimeType === PDF_MIME_TYPE) {
-      // [why] PDFs are sent as image_url parts — Ollama vision models render
-      // the first page. OpenAI-compatible APIs may handle PDFs differently
-      // but the base64 data URI format is universally accepted.
-      const dataUri = toDataUri(bytes, mimeType);
-      contentParts.push({
-        type: 'image_url',
-        image_url: { url: dataUri, detail: 'auto' },
-      });
-    } else if (TEXT_MIME_TYPES.has(mimeType)) {
-      if (size > MAX_TEXT_ATTACHMENT_BYTES) {
-        skippedNames.push(`${displayName} (text too large: ${String(size)} bytes)`);
-        continue;
-      }
-      const text = new TextDecoder().decode(bytes);
-      contentParts.push({
-        type: 'text',
-        text: `[Attachment: ${displayName}]\n${text}`,
-      });
+    const part = await processOneAttachment(att, displayName, mimeType, size);
+    if (part) {
+      contentParts.push(part);
+      processed++;
     } else {
-      skippedNames.push(`${displayName} (unsupported type: ${mimeType})`);
+      skippedNames.push(`${displayName} (${skippedReason(att, mimeType, size)})`);
     }
   }
 
-  return { contentParts, skippedNames };
+  return { contentParts, skippedNames, allNames };
 }
 
 // [why] Fetch checklists and their items for a card. Returns grouped data
@@ -494,16 +568,46 @@ async function lookupCardById(query: string, boardId: string): Promise<CardByIdR
   ]);
 
   // [why] Build attachment content parts for vision-capable models.
-  // This runs in parallel with the detail formatting.
+  // When there are more than 3 attachments, only process the 3 latest
+  // readable files by default and list all names so the AI can ask the
+  // user which specific files they want to include.
   let contentParts: BoardChatAssistContentPart[] | undefined;
   let attachmentNote = '';
   if (attachments.length > 0) {
-    const { contentParts: parts, skippedNames } = await buildAttachmentContentParts(attachments);
+    // [why] Sort: readable files first, then by recency (newest first).
+    // This ensures the 3-file cap picks the most useful and recent files.
+    const sorted = [...attachments].sort((a, b) => {
+      const aReadable = isReadableAttachment(a);
+      const bReadable = isReadableAttachment(b);
+      if (aReadable && !bReadable) return -1;
+      if (!aReadable && bReadable) return 1;
+      // Both readable or both unreadable — sort by recency, newest first
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    const maxParts = attachments.length > 3 ? 3 : undefined;
+    const {
+      contentParts: parts,
+      skippedNames,
+      allNames,
+    } = await buildAttachmentContentParts(sorted, maxParts);
     if (parts.length > 0) contentParts = parts;
-    const names = attachments.map((a) => a.alias ?? a.name);
-    attachmentNote = '\n  - Attachments: ' + names.join(', ');
+
+    const namesList = allNames.join(', ');
+    attachmentNote = '\n  - Attachments (' + String(allNames.length) + ' files): ' + namesList;
     if (skippedNames.length > 0) {
       attachmentNote += '\n    (skipped: ' + skippedNames.join(', ') + ')';
+    }
+
+    // [why] When there are more than 3 attachments, prompt the AI to ask
+    // the user which files they want to read. The AI should list all file
+    // names and let the user choose specific files or all files before
+    // calling read_attachments with the card ID and chosen file names.
+    if (attachments.length > 3) {
+      attachmentNote +=
+        '\n  - ⚠️ This card has more than 3 attachments. Only the 3 latest readable files were processed. ' +
+        'Ask the user which specific files they want to read (by name), or whether they want all files. ' +
+        'When the user responds, call read_attachments with the card_id and the file_names they chose.';
     }
   }
 
@@ -551,6 +655,13 @@ export async function searchCards(input: SearchCardsInput): Promise<BoardChatAss
   }
 
   const cards = searchResult.data.filter((hit) => hit.type === 'card');
+
+  // [why] Fetch attachment names for all matching cards in one query so the
+  // AI can list specific file names and ask the user which ones they want to
+  // read. This is a lightweight query — no S3 fetching.
+  const attachmentNames =
+    cards.length > 0 ? await fetchAttachmentNames(cards.map((c) => c.id)) : {};
+
   const resultsText =
     cards.length > 0
       ? cards
@@ -570,16 +681,39 @@ export async function searchCards(input: SearchCardsInput): Promise<BoardChatAss
             }
             if (c.due_date) parts.push(`  - Due: ${c.due_date}`);
             if (c.start_date) parts.push(`  - Start: ${c.start_date}`);
+            const names = attachmentNames[c.id];
+            if (names && names.length > 0) {
+              parts.push(`  - Attachments (${String(names.length)} files): ${names.join(', ')}`);
+            }
             return parts.join('\n');
           })
           .join('\n')
       : 'No matching cards found on this board.';
 
+  // [why] When any card in the results has attachments, add a note prompting
+  // the AI to ask the user which specific files they want to read. The AI
+  // should list the file names and let the user choose before calling
+  // read_attachments with the card ID and chosen file names.
+  const cardsWithAttachments = cards.filter((c) => (attachmentNames[c.id]?.length ?? 0) > 0);
+  const attachmentPrompt =
+    cardsWithAttachments.length > 0
+      ? '\n\nSome of these cards have file attachments. Ask the user which ' +
+        'specific files they want to read (by name), or whether they want all files. ' +
+        'When the user responds, call read_attachments with the card_id and the file_names they chose. ' +
+        'Here are the cards with attachments and their file names:\n' +
+        cardsWithAttachments
+          .map((c) => {
+            const names = attachmentNames[c.id] ?? [];
+            return `  - "${c.title}": ${names.join(', ')}`;
+          })
+          .join('\n')
+      : '';
+
   return {
     status: 200,
     data: {
       model: input.model,
-      message: `Card search results for "${normalized.query}":\n${resultsText}`,
+      message: `Card search results for "${normalized.query}":\n${resultsText}${attachmentPrompt}`,
       ...(input.usage ? { usage: input.usage } : {}),
       toolCalls: [input.toolCall],
     },

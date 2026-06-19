@@ -19,6 +19,7 @@ import { DELETE_SPECS_FILE_TOOL, deleteSpecsFileTool } from './deleteSpecsFile';
 import { requestBoardChatAssistCompletion } from './provider';
 import { recordSessionInstance } from './multiInstanceSessionTracker';
 import { env } from '../../../../../config/env';
+import { READ_ATTACHMENTS_TOOL, readAttachments } from './readAttachments';
 
 const DEFAULT_CONTEXT_LIMIT = 12;
 const MAX_CONTEXT_LIMIT = 50;
@@ -26,6 +27,7 @@ const MAX_CONTEXT_LIMIT = 50;
 interface ContextMessageRow {
   content: string;
   author_name: string | null;
+  is_assistant: boolean;
 }
 
 // [why] All tools the assistant can invoke, registered in one place so the
@@ -33,6 +35,7 @@ interface ContextMessageRow {
 const ALL_TOOLS = [
   CREATE_BOARD_CARD_TOOL,
   SEARCH_CARDS_TOOL,
+  READ_ATTACHMENTS_TOOL,
   READ_SPECS_FILE_TOOL,
   LIST_SPECS_FILES_TOOL,
   DELETE_SPECS_FILE_TOOL,
@@ -75,6 +78,7 @@ function buildAssistMessages({
       content: [
         'You have access to the following tools:',
         '- search_cards: search for existing cards on this board by keyword. Use this FIRST when the user asks about existing work, card status, or "what do we have" questions to avoid creating duplicates. Use the retrieved data to explain the card\'s purpose, status, and business value to the user.',
+        '- read_attachments: read specific file attachments from a card. Use this when the user asks to read particular files from a card that has attachments. Provide the card_id and optionally a list of file_names. If file_names is omitted, all readable files are fetched. When a card has more than 3 attachments, search_cards only processes 3 — use read_attachments to fetch the remaining files the user wants.',
         '- create_board_card: create a new card on the board. Use this when the user explicitly wants to track a task, idea, or action item.',
         "- read_specs_file: read the contents of a markdown documentation file from the board's GitHub repository. Use this to inspect existing specs before proposing edits. The file must be under specs/ and end with .md.",
         "- list_specs_files: list all markdown documentation files under specs/ in the board's GitHub repository. Use this to discover what documentation already exists before proposing changes.",
@@ -96,14 +100,16 @@ function buildAssistMessages({
   ];
 
   if (contextRows.length > 0) {
-    const contextLines = contextRows.map((row) => {
-      const authorName = row.author_name?.trim() || 'Unknown user';
-      return `- ${authorName}: ${row.content}`;
-    });
-    messages.push({
-      role: 'system',
-      content: `Recent board chat context:\n${contextLines.join('\n')}`,
-    });
+    // [why] Inject previous messages with their proper roles (user/assistant)
+    // so the AI sees them as actual conversation history, not just background
+    // context. This enables the AI to resolve anaphoric references like
+    // "in there" → "the card we were discussing" across turns.
+    for (const row of contextRows) {
+      messages.push({
+        role: row.is_assistant ? 'assistant' : 'user',
+        content: row.content,
+      });
+    }
   }
 
   messages.push({
@@ -126,13 +132,9 @@ export const boardChatAssistDeps = {
     let query = db('board_chat_messages as m')
       .leftJoin('users as u', 'm.author_id', 'u.id')
       .where('m.board_id', boardId)
-      // [why] Exclude assistant messages from context — feeding the AI's own
-      // previous responses back creates a self-reinforcing loop where the model
-      // repeats "let me check first" instead of calling propose_github_document.
-      .where('m.is_assistant', false)
       .orderBy('m.created_at', 'desc')
       .limit(limit)
-      .select('m.content', db.raw('COALESCE(u.name, u.email) as author_name'));
+      .select('m.content', 'm.is_assistant', db.raw('COALESCE(u.name, u.email) as author_name'));
     // [why] Scope to the active session so context doesn't bleed across sessions.
     if (threadId) {
       query = query.where('m.thread_id', threadId);
@@ -143,6 +145,7 @@ export const boardChatAssistDeps = {
   requestBoardChatAssistCompletion,
   createBoardCard,
   searchCards,
+  readAttachments,
   readSpecsFileTool,
   listSpecsFilesTool,
   deleteSpecsFileTool,
@@ -189,6 +192,7 @@ async function executeOneToolCall(
   deps: {
     createBoardCard: typeof createBoardCard;
     searchCards: typeof searchCards;
+    readAttachments: typeof readAttachments;
     readSpecsFileTool: typeof readSpecsFileTool;
     listSpecsFilesTool: typeof listSpecsFilesTool;
     deleteSpecsFileTool: typeof deleteSpecsFileTool;
@@ -200,6 +204,22 @@ async function executeOneToolCall(
 
   if (toolName === 'search_cards') {
     const result = await deps.searchCards({
+      boardId: ctx.boardId,
+      toolCall,
+      model,
+      ...maybeUsage(usage),
+    });
+    if (result.status !== 200) {
+      output.error = result;
+      return output;
+    }
+    if (result.data?.message) output.message = result.data.message;
+    if (result.data?.contentParts) output.contentParts = result.data.contentParts;
+    return output;
+  }
+
+  if (toolName === 'read_attachments') {
+    const result = await deps.readAttachments({
       boardId: ctx.boardId,
       toolCall,
       model,
@@ -500,6 +520,8 @@ async function runToolUseIteration(
   // attachments) as a follow-up user message. Tool result messages only
   // accept string content — vision models expect images in user messages.
   // This lets Ollama and OpenAI-compatible vision models "see" attachments.
+  // [why] Sanitize content parts for the active model — text-only models
+  // like deepseek-r1 reject image_url parts with "invalid image input".
   const allContentParts: BoardChatAssistContentPart[] = [];
   for (const result of results) {
     if (result.contentParts && result.contentParts.length > 0) {
@@ -507,9 +529,10 @@ async function runToolUseIteration(
     }
   }
   if (allContentParts.length > 0) {
+    const safeParts = sanitizeContentPartsForModel(allContentParts, modelRef.value);
     conversation.push({
       role: 'user',
-      content: allContentParts,
+      content: safeParts,
     });
   }
 
@@ -539,6 +562,93 @@ function buildToolResultMessages(
     });
   }
   return messages;
+}
+
+// [why] Detect whether the active model supports vision (image_url content parts).
+// Text-only models like deepseek-r1 reject multimodal messages with
+// "invalid image input". Vision models accept base64 data URIs.
+// Patterns cover common Ollama vision models and OpenAI vision-capable models.
+// [why] Also check for vision-related keywords in the model name as a
+// catch-all fallback — many new vision models (e.g. kimi-k2.7-code:cloud,
+// granite3.2-vision) may not match the explicit pattern list yet.
+function isVisionModel(model: string): boolean {
+  const visionPatterns = [
+    /llava/i,
+    /bakllava/i,
+    /gemma.*3/i,
+    /minicpm-v/i,
+    /llama.*vision/i,
+    /moondream/i,
+    /gpt-4o/i,
+    /gpt-4.*turbo/i,
+    /gpt-4.*vision/i,
+    /claude.*3/i,
+    /claude.*3\.5/i,
+    /pixtral/i,
+    /phi.*vision/i,
+    /qwen.*vl/i,
+    /qwen2.*vl/i,
+    /kimi/i,
+    /granite.*vision/i,
+    /cogvlm/i,
+    /fuyu/i,
+    /idefics/i,
+    /paligemma/i,
+    /internvl/i,
+    /ovis/i,
+  ];
+  if (visionPatterns.some((p) => p.test(model))) return true;
+
+  // [why] Keyword fallback — many vision models include these terms in their
+  // name. This catches models not yet in the explicit pattern list above.
+  const visionKeywords = /\b(vision|vl|multimodal|image|visual|ocr)\b/i;
+  return visionKeywords.test(model);
+}
+
+// [why] Convert image_url content parts to text descriptions for text-only
+// models. Preserves text parts unchanged. This prevents "invalid image input"
+// errors from providers like deepseek-r1 that don't support vision.
+function sanitizeContentPartsForModel(
+  parts: BoardChatAssistContentPart[],
+  model: string
+): BoardChatAssistContentPart[] {
+  if (isVisionModel(model)) return parts;
+
+  // [why] Log when images are being stripped so operators can see that their
+  // model isn't being detected as vision-capable. This helps diagnose
+  // "images not reaching the AI" issues.
+  const imageCount = parts.filter((p) => p.type === 'image_url').length;
+  if (imageCount > 0) {
+    console.warn(
+      `[chat/assist] Stripping ${String(imageCount)} image attachment(s) — ` +
+        `model "${model}" was not detected as vision-capable. ` +
+        `If this model supports vision, add it to the isVisionModel pattern list ` +
+        `or ensure the model name includes a vision keyword (vision, vl, multimodal, image, visual, ocr).`
+    );
+  }
+
+  const sanitized: BoardChatAssistContentPart[] = [];
+  const mimeRe = /^data:(image\/\w+);/;
+  for (const part of parts) {
+    if (part.type === 'image_url') {
+      // [why] Extract MIME type from the data URI for a descriptive label.
+      // The AI can still reason about the attachment's existence even if it
+      // can't "see" the image.
+      const url = part.image_url.url;
+      let label = 'image';
+      const mimeMatch = mimeRe.exec(url);
+      if (mimeMatch?.[1]) {
+        label = `${mimeMatch[1]} file`;
+      }
+      sanitized.push({
+        type: 'text',
+        text: `[Attachment: ${label}]`,
+      });
+    } else {
+      sanitized.push(part);
+    }
+  }
+  return sanitized;
 }
 
 export async function assistBoardChat({
