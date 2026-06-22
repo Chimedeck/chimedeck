@@ -61,7 +61,6 @@ import { selectInnerCardChatEnabled } from '~/slices/featureFlagsSlice';
 import { HIGH_SENTINEL, betweenPositions } from '../../utils/position';
 import {
   startCardChatSession,
-  getCardChatSession,
   type CardChatSession,
 } from '../../../CardChat/api';
 import { canBoardGuestWrite } from '../../../Board/mods/guestPermissions';
@@ -287,24 +286,12 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   }, []);
 
   // ── Card Chat / AI Assist ──────────────────────────────────────────────
-  // [why] Sprint 208 — reuse existing sessions instead of always creating
-  // new ones. If a PAUSED or ACTIVE_REFINEMENT session exists, resume it.
-  // Otherwise, create a fresh session.
+  // [why] Always create a fresh session when the user opens the chat so each
+  // conversation starts clean with no stale context from previous sessions.
   const handleChatStart = useCallback(async () => {
     if (!cardId || chatStarting) return;
     setChatStarting(true);
     try {
-      // [why] Check for an existing session first — reuse if available.
-      const existing = await getCardChatSession({
-        api: apiClient as { get: <T>(url: string) => Promise<T> },
-        cardId,
-      });
-      if (existing.data?.session) {
-        setChatSession(existing.data.session);
-        setChatDrawerOpen(true);
-        return;
-      }
-      // [why] No existing session — create a new one.
       const { data: session } = await startCardChatSession({
         api: apiClient as { post: <T>(url: string, data?: unknown) => Promise<T> },
         cardId,
