@@ -1,7 +1,7 @@
 // POST /api/v1/cards/:cardId/chat/assist
 // Sprint 208 — AI assist for card chat with tool-use loop.
 // The AI can call write_card_description to propose a description update,
-// which appears as an action card for user confirmation.
+// and read_attachments to read files attached to the card.
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
@@ -14,7 +14,14 @@ import {
   broadcastCardChatProgress,
   type CardChatAssistActionCard,
 } from '../../mods/realtime/broadcast';
-import type { CardChatMessage, CardChatProviderMessage } from '../../types';
+import { readAttachments, READ_ATTACHMENTS_TOOL } from '../../mods/assist/readAttachments';
+import type {
+  CardChatMessage,
+  CardChatProviderMessage,
+  CardChatAssistContentPart,
+  CardChatAssistOutput,
+  CardChatAssistToolDefinition,
+} from '../../types';
 
 const MAX_TOOL_ITERATIONS = 4;
 
@@ -30,6 +37,10 @@ interface ToolCall {
 interface AssistToolResult {
   message?: string;
   actionCard?: CardChatAssistActionCard;
+  // [why] Multimodal content parts (images, text files) from card attachments.
+  // Carried alongside the message so the tool loop can inject them as a
+  // follow-up user message for vision-capable providers.
+  contentParts?: CardChatAssistContentPart[] | undefined;
 }
 
 export const cardChatAssistDeps = {
@@ -54,8 +65,9 @@ function buildAssistSystemPrompt(cardTitle: string, cardDescription: string | nu
     `Current card title: "${cardTitle}"`,
     `Current card description: "${descSnippet}"`,
     '',
-    'You have access to the following tool:',
+    'You have access to the following tools:',
     '- write_card_description: Propose an updated card description based on the conversation. The proposal will be shown to the user for confirmation before being applied. Use this when the user asks you to write, update, or improve the card description, or when the conversation has produced enough detail to synthesize a clear description.',
+    '- read_attachments: Read file attachments from the current card. Use this when the user asks to read files attached to the card, or when you need to understand the contents of attached files to better answer the user\'s questions. Provide the card_id and optionally a list of file_names. If file_names is omitted, the 3 latest readable files are fetched automatically.',
     '',
     'Guidelines:',
     '- When the user asks you to "write to the card" or "update the description", call write_card_description with a well-structured Markdown description.',
@@ -66,6 +78,7 @@ function buildAssistSystemPrompt(cardTitle: string, cardDescription: string | nu
     '"IMPORTANT NOTE:" for edge cases, data persistence rules, out-of-scope items, and testing parameters.',
     'And "BREAKDOWN:" for a bulleted technical task list including function/variable suggestions, ending with Desktop and Mobile testing.',
     'Be specific and actionable. Use only information from the conversation, and format using Markdown (bolding, bullet points, and sparse emojis for highlights).',
+    '- If the user asks about files or attachments on the card, call read_attachments to fetch them. After reading, incorporate the file contents into your response.',
     '- If the user just wants to chat or ask questions, respond conversationally without calling tools.',
     '- Keep conversational responses under 200 words.',
   ].join('\n');
@@ -74,7 +87,7 @@ function buildAssistSystemPrompt(cardTitle: string, cardDescription: string | nu
 /**
  * Build the tool definitions for the LLM.
  */
-function buildAssistTools() {
+function buildAssistTools(): CardChatAssistToolDefinition[] {
   return [
     {
       type: 'function' as const,
@@ -83,7 +96,7 @@ function buildAssistTools() {
         description:
           'Propose an updated card description based on the conversation. The proposal will be shown to the user for confirmation before being applied to the card.',
         parameters: {
-          type: 'object',
+          type: 'object' as const,
           properties: {
             description: {
               type: 'string',
@@ -99,6 +112,7 @@ function buildAssistTools() {
         },
       },
     },
+    READ_ATTACHMENTS_TOOL,
   ];
 }
 
@@ -109,7 +123,9 @@ async function executeToolCall(
   toolCall: ToolCall,
   cardId: string,
   workspaceId: string,
-  sessionId: string
+  sessionId: string,
+  model: string,
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
 ): Promise<AssistToolResult> {
   if (toolCall.function.name === 'write_card_description') {
     let args: { description?: string; summary?: string };
@@ -139,6 +155,28 @@ async function executeToolCall(
     return {
       message: `Proposed description update for the card.`,
       actionCard,
+    };
+  }
+
+  if (toolCall.function.name === 'read_attachments') {
+    const result: CardChatAssistOutput = await readAttachments({
+      cardId,
+      toolCall: {
+        id: toolCall.id,
+        type: 'function',
+        function: { name: toolCall.function.name, arguments: toolCall.function.arguments },
+      },
+      model,
+      ...(usage ? { usage } : {}),
+    });
+
+    if (result.status !== 200) {
+      return { message: result.message ?? 'Failed to read attachments' };
+    }
+
+    return {
+      message: result.data?.message ?? 'Attachments read successfully',
+      contentParts: result.data?.contentParts,
     };
   }
 
@@ -251,6 +289,9 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
     // Multi-turn tool-use loop
     const allActionCards: CardChatAssistActionCard[] = [];
     let finalMessage: string | null = null;
+    // [why] Track the model name across iterations so we can sanitize
+    // content parts (images → text) for text-only models.
+    let modelRef: string | null = null;
 
     for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
       // Broadcast thinking phase
@@ -268,6 +309,11 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
       });
 
       if (completion.status !== 200 || !completion.data) {
+        // [why] Log the specific provider error so server logs show WHY the
+        // AI request failed — not just the generic "assist-failed" code.
+        console.error(
+          `[card-chat/assist] Provider error: name=${completion.name ?? '(none)'}, status=${String(completion.status)}, message=${completion.message ?? '(none)'}`
+        );
         // Broadcast done on error
         if (boardId) {
           cardChatAssistDeps.broadcastCardChatProgress(boardId, {
@@ -283,6 +329,9 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
       }
 
       const data = completion.data;
+      // [why] Capture the model name from the first completion so we can
+      // sanitize content parts for text-only models.
+      if (!modelRef) modelRef = data.model;
       const toolCalls: ToolCall[] | undefined = data.toolCalls as ToolCall[] | undefined;
 
       // No tool calls — AI is done, return the message
@@ -339,7 +388,14 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
       const executedToolCalls = await Promise.all(
         safeToolCalls.map(async (tc) => ({
           tc,
-          result: await executeToolCall(tc, cardId, workspaceId, sessionId),
+          result: await executeToolCall(
+            tc,
+            cardId,
+            workspaceId,
+            sessionId,
+            modelRef ?? data.model,
+            data.usage
+          ),
         }))
       );
 
@@ -357,6 +413,26 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
           role: 'tool',
           content: result.message ?? 'Tool executed successfully',
           toolCallId: tc.id,
+        });
+      }
+
+      // [why] Inject multimodal content parts (images, text files from card
+      // attachments) as a follow-up user message. Tool result messages only
+      // accept string content — vision models expect images in user messages.
+      // This lets Ollama and OpenAI-compatible vision models "see" attachments.
+      // [why] Sanitize content parts for the active model — text-only models
+      // like deepseek-r1 reject image_url parts with "invalid image input".
+      const allContentParts: CardChatAssistContentPart[] = [];
+      for (const executed of executedToolCalls) {
+        if (executed.result.contentParts && executed.result.contentParts.length > 0) {
+          allContentParts.push(...executed.result.contentParts);
+        }
+      }
+      if (allContentParts.length > 0) {
+        const safeParts = sanitizeContentPartsForModel(allContentParts, modelRef ?? data.model);
+        conversation.push({
+          role: 'user',
+          content: safeParts,
         });
       }
 
@@ -389,7 +465,10 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
     // If loop exhausted without final message, use the last assistant content
     if (!finalMessage) {
       const lastAssistant = [...conversation].reverse().find((m) => m.role === 'assistant');
-      finalMessage = lastAssistant?.content ?? 'I processed your request.';
+      // [why] content can be string | null | ContentPart[] — extract string.
+      const rawContent = lastAssistant?.content;
+      finalMessage =
+        typeof rawContent === 'string' ? rawContent : 'I processed your request.';
     }
 
     return Response.json(
@@ -418,4 +497,90 @@ export async function handleCardChatAssist(req: Request, cardId: string): Promis
       { status: 500 }
     );
   }
+}
+
+// [why] Detect whether the active model supports vision (image_url content parts).
+// Text-only models like deepseek-r1 reject multimodal messages with
+// "invalid image input". Vision models accept base64 data URIs.
+// Patterns cover common Ollama vision models and OpenAI vision-capable models.
+// [why] Also check for vision-related keywords in the model name as a
+// catch-all fallback — many new vision models may not match the explicit
+// pattern list yet.
+function isVisionModel(model: string): boolean {
+  const visionPatterns = [
+    /llava/i,
+    /bakllava/i,
+    /gemma.*3/i,
+    /minicpm-v/i,
+    /llama.*vision/i,
+    /moondream/i,
+    /gpt-4o/i,
+    /gpt-4.*turbo/i,
+    /gpt-4.*vision/i,
+    /claude.*3/i,
+    /claude.*3\.5/i,
+    /pixtral/i,
+    /phi.*vision/i,
+    /qwen.*vl/i,
+    /qwen2.*vl/i,
+    /kimi/i,
+    /granite.*vision/i,
+    /cogvlm/i,
+    /fuyu/i,
+    /idefics/i,
+    /paligemma/i,
+    /internvl/i,
+    /ovis/i,
+  ];
+  if (visionPatterns.some((p) => p.test(model))) return true;
+
+  // [why] Keyword fallback — many vision models include these terms in their
+  // name. This catches models not yet in the explicit pattern list above.
+  const visionKeywords = /\b(vision|vl|multimodal|image|visual|ocr)\b/i;
+  return visionKeywords.test(model);
+}
+
+// [why] Convert image_url content parts to text descriptions for text-only
+// models. Preserves text parts unchanged. This prevents "invalid image input"
+// errors from providers like deepseek-r1 that don't support vision.
+function sanitizeContentPartsForModel(
+  parts: CardChatAssistContentPart[],
+  model: string
+): CardChatAssistContentPart[] {
+  if (isVisionModel(model)) return parts;
+
+  // [why] Log when images are being stripped so operators can see that their
+  // model isn't being detected as vision-capable.
+  const imageCount = parts.filter((p) => p.type === 'image_url').length;
+  if (imageCount > 0) {
+    console.warn(
+      `[card-chat/assist] Stripping ${String(imageCount)} image attachment(s) — ` +
+        `model "${model}" was not detected as vision-capable. ` +
+        `If this model supports vision, add it to the isVisionModel pattern list ` +
+        `or ensure the model name includes a vision keyword (vision, vl, multimodal, image, visual, ocr).`
+    );
+  }
+
+  const sanitized: CardChatAssistContentPart[] = [];
+  const mimeRe = /^data:(image\/\w+);/;
+  for (const part of parts) {
+    if (part.type === 'image_url') {
+      // [why] Extract MIME type from the data URI for a descriptive label.
+      // The AI can still reason about the attachment's existence even if it
+      // can't "see" the image.
+      const url = part.image_url.url;
+      let label = 'image';
+      const mimeMatch = mimeRe.exec(url);
+      if (mimeMatch?.[1]) {
+        label = `${mimeMatch[1]} file`;
+      }
+      sanitized.push({
+        type: 'text',
+        text: `[Attachment: ${label}]`,
+      });
+    } else {
+      sanitized.push(part);
+    }
+  }
+  return sanitized;
 }

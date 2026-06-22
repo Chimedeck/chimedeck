@@ -118,6 +118,11 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
   const [commitError, setCommitError] = useState<string | null>(null);
   const [dismissedCards, setDismissedCards] = useState<Set<string>>(new Set());
 
+  // [why] Optimistically render the user's message immediately while the AI
+  // is thinking, so the user sees their message right away instead of waiting
+  // for the server to persist it and the next re-fetch to pick it up.
+  const [optimisticUserMessage, setOptimisticUserMessage] = useState<string | null>(null);
+
   const historyEndRef = useRef<HTMLDivElement>(null);
 
   // [why] Sync session from props when it changes externally (e.g. session resumes).
@@ -263,12 +268,13 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
     if (!target) return;
     setCurrentSession(target);
     setRefreshKey((k) => k + 1);
-    // [why] Clear action cards and AI state when switching sessions.
+    // [why] Clear action cards, AI state, and optimistic message when switching sessions.
     setActionCards([]);
     setDismissedCards(new Set());
     setCommitError(null);
     setAiTyping(false);
     setAiProgress(null);
+    setOptimisticUserMessage(null);
   };
 
   // ── Sprint 208 — AI assist with tool-use ───────────────────────────────
@@ -320,9 +326,18 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
     const trimmed = composerText.trim();
     if (!trimmed || sendingMessage || currentSession.status !== 'ACTIVE_REFINEMENT') return;
 
-    setSendError(translations['CardChat.drawer.sendError']);
+    setSendError(null);
     setSendingMessage(true);
     setComposerText('');
+    // [why] Show the user's message immediately via optimistic rendering so
+    // the user sees their message while the AI is thinking, instead of waiting
+    // for the server to persist it and the next re-fetch to pick it up.
+    setOptimisticUserMessage(trimmed);
+    // [why] Increment refreshKey BEFORE the assist call so the user message
+    // appears immediately. The server persists the user message to DB before
+    // calling the AI, so the fetch triggered by this refreshKey change will
+    // find the message while the AI is still thinking.
+    setRefreshKey((current) => current + 1);
     try {
       // [why] Use the assist endpoint so the AI can call tools (e.g. write_card_description)
       // and we get real-time progress streaming. Falls back to simple message if assist fails.
@@ -338,7 +353,7 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
         });
         setRefreshKey((current) => current + 1);
       } catch {
-        setSendError('Failed to send message');
+        setSendError(translations['CardChat.drawer.sendError'] as string);
       }
     } finally {
       setSendingMessage(false);
@@ -654,6 +669,22 @@ const CardChatDrawer = ({ cardId, boardId, session, onClose, onDescriptionSave }
               )}
             </div>
           ))}
+
+          {/* [why] Optimistic user message — rendered immediately while the AI
+              is thinking, before the server has persisted it and the re-fetch
+              has picked it up. Only shown when the real message hasn't arrived
+              yet to avoid a duplicate flash. */}
+          {optimisticUserMessage &&
+            !messages.some((m) => m.role === 'user' && m.content === optimisticUserMessage) && (
+              <div className="flex flex-col items-end">
+                <div className="max-w-[85%] rounded-xl px-3 py-2 text-sm bg-blue-600 text-white">
+                  <span className="whitespace-pre-wrap break-words">{optimisticUserMessage}</span>
+                </div>
+                <span className="mt-1 text-[10px] text-muted px-1">
+                  {translations['CardChat.drawer.youBadge']}
+                </span>
+              </div>
+            )}
 
           {/* Sprint 208 — AI typing / progress indicator */}
           {aiTyping && (

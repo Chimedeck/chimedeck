@@ -13,6 +13,7 @@
   "CardChat.drawer.loadErrorFallback": "Failed to load messages",
   "CardChat.drawer.emptyState": "Start the conversation — describe what you want to build.",
   "CardChat.drawer.aiBadge": "AI",
+  "CardChat.drawer.youBadge": "You",
   "CardChat.drawer.commitErrorTitle": "Commit Error",
   "CardChat.drawer.cardAiLabel": "Card AI",
   "CardChat.drawer.viewProposedDescription": "View proposed description",

@@ -146,11 +146,69 @@ export interface CardChatActivityInput {
   payload?: Record<string, unknown>;
 }
 
+// ── Sprint 208 — AI Assist tool-use types ──
+
+export interface CardChatAssistToolParameters {
+  type: 'object';
+  properties: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
+export interface CardChatAssistToolDefinition {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: CardChatAssistToolParameters;
+  };
+}
+
+export interface CardChatAssistToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+// [why] OpenAI-compatible multimodal content parts. image_url uses data: URIs
+// with base64-encoded image data so no external URL fetching is needed.
+// text parts carry file contents for txt/csv/md attachments.
+export type CardChatAssistContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string; detail?: 'auto' | 'low' | 'high' } };
+
+export interface CardChatAssistOutput {
+  status: number;
+  data?: {
+    message?: string;
+    model: string;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
+    toolCalls?: CardChatAssistToolCall[];
+    // [why] Multimodal content parts (images, text files) from card attachments.
+    // Carried alongside the message so the tool-result message can include
+    // base64-encoded images for vision-capable providers.
+    contentParts?: CardChatAssistContentPart[];
+  };
+  name?: string;
+  message?: string;
+}
+
 // ── AI Provider (reuses board-chat assist provider config) ──
 
 export interface CardChatProviderMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
+  // [why] Nullable because assistant messages that contain only tool calls
+  // may have null content from some providers (OpenAI, Ollama).
+  // [why] ContentParts array enables multimodal messages (images, text files)
+  // for vision-capable providers like Ollama and OpenAI-compatible APIs.
+  content: string | null | CardChatAssistContentPart[];
   toolCalls?: Array<{
     id: string;
     type: 'function';
@@ -161,14 +219,7 @@ export interface CardChatProviderMessage {
 
 export interface CardChatProviderInput {
   messages: CardChatProviderMessage[];
-  tools?: Array<{
-    type: 'function';
-    function: {
-      name: string;
-      description: string;
-      parameters: Record<string, unknown>;
-    };
-  }>;
+  tools?: CardChatAssistToolDefinition[];
 }
 
 export interface CardChatProviderOutput {

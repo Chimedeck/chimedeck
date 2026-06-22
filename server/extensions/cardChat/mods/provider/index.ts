@@ -50,7 +50,11 @@ export async function requestCardChatCompletion({
   let config: { model: string; baseUrl: string; apiKey: string };
   try {
     config = cardChatProviderDeps.getConfig();
-  } catch {
+  } catch (err) {
+    console.error(
+      '[cardChat/provider] Config error:',
+      err instanceof Error ? err.message : String(err)
+    );
     return {
       status: 500,
       name: 'assist-provider-not-configured',
@@ -141,6 +145,7 @@ export async function requestCardChatCompletion({
   try {
     payload = (await response.json()) as typeof payload;
   } catch {
+    console.error('[cardChat/provider] Failed to parse response JSON');
     return {
       status: 502,
       name: 'assist-provider-response-invalid',
@@ -186,6 +191,7 @@ export async function requestCardChatCompletion({
   // [why] Tool calls without a text message are valid — the LLM is
   // responding with actions rather than text.
   if (!message && !toolCalls) {
+    console.error('[cardChat/provider] Response has no message and no tool calls');
     return {
       status: 502,
       name: 'assist-provider-response-invalid',
