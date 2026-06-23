@@ -187,10 +187,20 @@ const notificationSlice = createSlice({
       .addCase(fetchNotificationsThunk.fulfilled, (state, action) => {
         state.status = 'idle';
         const filteredNotifications = action.payload.data.filter(shouldIncludeNotification);
-        state.notifications = filteredNotifications;
-        state.unreadCount = filteredNotifications.filter((n) => !n.read).length;
-        state.hasMore = action.payload.metadata.hasMore;
-        state.cursor = action.payload.metadata.cursor;
+        const existingIds = new Set(state.notifications.map((n) => n.id));
+        const newOnes = filteredNotifications.filter((n) => !existingIds.has(n.id));
+        // [why] Merge instead of replace — polling refreshes must not wipe
+        // pages accumulated via "Load more". Prepend new items, keep existing.
+        state.notifications = [...newOnes, ...state.notifications];
+        state.unreadCount = state.notifications.filter((n) => !n.read).length;
+        // [why] Only seed cursor/hasMore on initial load. Overwriting them
+        // after load-more resets pagination state and causes the next
+        // "Load more" to re-fetch already-loaded pages (silent no-op).
+        const isInitialLoad = state.cursor === null;
+        if (isInitialLoad) {
+          state.hasMore = action.payload.metadata.hasMore;
+          state.cursor = action.payload.metadata.cursor;
+        }
       })
       .addCase(fetchNotificationsThunk.rejected, (state) => {
         state.status = 'error';
