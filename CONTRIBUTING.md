@@ -22,6 +22,7 @@ This project is developed primarily through an **AI agent loop** — a phased, m
   - [Numbering and naming](#numbering-and-naming)
   - [Registering in the sprint plan](#registering-in-the-sprint-plan)
 - [Changelog Format](#changelog-format)
+- [Pull-request review](#pull-request-review)
 - [Manual (Human) Contributions](#manual-human-contributions)
 - [Commit Conventions](#commit-conventions)
 - [Coding Conventions Reference](#coding-conventions-reference)
@@ -331,6 +332,14 @@ Rules:
 - No preamble, no code fences wrapping the whole file — output only the four sections.
 - The automated agent writes this file; humans must follow the same format for manual iterations.
 - Skip the changelog only for trivial edits (typo fixes, comment corrections, README tweaks). If in doubt, write one.
+
+---
+
+## Pull-request review
+
+Every feature pull request is reviewed against [the PR review checklist](docs/PR-REVIEW-CHECKLIST.md). The author completes `.github/pull_request_template.md`; reviewers record exactly one outcome: **APPROVE**, **REQUEST CHANGES**, or **BLOCKED**.
+
+A focused pass does not make a failing full gate green; record known baseline failures honestly with linked evidence.
 
 ---
 
