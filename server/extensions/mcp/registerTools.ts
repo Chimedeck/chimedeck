@@ -2,6 +2,8 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerMoveCard } from './tools/moveCard';
 import { registerWriteComment } from './tools/writeComment';
 import { registerCreateCard } from './tools/createCard';
+import { registerCreateBoard } from './tools/createBoard';
+import { registerCreateList } from './tools/createList';
 import { registerEditDescription } from './tools/editDescription';
 import { registerSetCardPrice } from './tools/setCardPrice';
 import { registerInviteToBoard } from './tools/inviteToBoard';
@@ -19,6 +21,8 @@ export function registerMcpTools(server: McpServer, token: string): void {
   registerMoveCard(server, token);
   registerWriteComment(server, token);
   registerCreateCard(server, token);
+  registerCreateBoard(server, token);
+  registerCreateList(server, token);
   registerEditDescription(server, token);
   registerSetCardPrice(server, token);
   registerInviteToBoard(server, token);
