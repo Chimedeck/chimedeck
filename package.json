@@ -47,6 +47,7 @@
     "test:unit": "bun test tests/integration",
     "test:e2e": "playwright test --project=e2e",
     "test:mcp": "bash run-all-tests-full.sh",
+    "test:deploy": "bash scripts/test-deploy-on-instance.sh",
     "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
     "clean": "rm -rf dist .vite node_modules/.cache"
   },
