@@ -218,6 +218,23 @@ docker compose -f docker-compose.prod.yml --profile redis up -d
 docker compose -f docker-compose.prod.yml --profile local-db --profile local-s3 --profile redis up -d
 ```
 
+### Managed-service EC2 rollout
+
+For an EC2 fleet behind a load balancer, run `scripts/deploy-on-instance.sh` **one host at a time** through a controlled remote-execution channel such as SSM. It uses managed services by default; it does not start local Postgres, LocalStack or Redis.
+
+```bash
+IMAGE_URL=<account>.dkr.ecr.<region>.amazonaws.com/chimedeck-app:<immutable-tag> \
+AWS_REGION=<region> \
+COMPOSE_FILE=docker-compose.prod.yml \
+RUN_MIGRATIONS=false \
+bash scripts/deploy-on-instance.sh
+```
+
+- The script logs in to the registry host derived from `IMAGE_URL`, pulls and force-recreates only the app container, then requires consecutive local `/health` successes.
+- `RUN_MIGRATIONS=true` runs `bun run db:migrate:safe` before rollout. Run that phase once, not once per host.
+- Trello seeding is rejected by the deployment script. Run `bun run db:seed:trello` only as an explicitly approved one-off operation.
+- If the new image fails health checks, the script restores the prior image and exits non-zero. Verify load-balancer target health before moving to the next host.
+
 > The app connects to **AWS RDS** via `DATABASE_URL` and to **AWS S3** via `S3_BUCKET` / `AWS_*` credentials — no database or S3 container runs on the host.
 
 ### Environment

@@ -1,92 +1,83 @@
 #!/usr/bin/env bash
-# Deploy script for chimedeck — runs on the host machine alongside docker-compose.chimedeck.prod.yml
-# Required env vars:
-#   IMAGE_URL        — full image URI, e.g. 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/chimedeck-app:abc1234
-#   AWS_REGION       — AWS region for ECR login (default: ap-southeast-1)
-# Optional env vars:
-#   COMPOSE_PROFILES — comma-separated list of profiles to activate (default: local-db,local-s3,redis)
-#                      local-db  → start internal Postgres instead of AWS RDS
-#                      local-s3  → start LocalStack instead of AWS S3
-#                      redis     → start Redis sidecar
-#                      e.g. COMPOSE_PROFILES="" to use all external AWS services
+# Managed-service EC2 rollout. Run one host at a time behind a load balancer.
+set -euo pipefail
 
-COMPOSE_FILE=docker-compose.chimedeck.prod.yml
-AWS_REGION=${AWS_REGION:-ap-southeast-1}
-export COMPOSE_PROFILES=${COMPOSE_PROFILES:-local-db}
+COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.prod.yml}
+AWS_REGION=${AWS_REGION:-us-east-1}
+MAIN_CONTAINER_NAME=${MAIN_CONTAINER_NAME:-chimedeck-prod}
+MAIN_APP_PORT=${MAIN_APP_PORT:-3000}
+HEALTH_ATTEMPTS=${HEALTH_ATTEMPTS:-60}
+HEALTH_CONSECUTIVE_SUCCESSES=${HEALTH_CONSECUTIVE_SUCCESSES:-5}
+RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
 
-# Main deployment config
-MAIN_CONTAINER_NAME=chimedeck-prod
-MAIN_APP_PORT=6402
-
-# Fallback deployment config
-FALLBACK_CONTAINER_NAME=chimedeck-prod-fallback
-FALLBACK_APP_PORT=6412
-
-echo "Begin deploy process"
-set -e
-SECONDS=0
-
-if [[ -z "${IMAGE_URL}" ]]; then
-  echo "ERROR: IMAGE_URL is not set" >&2
+if [[ -z "${IMAGE_URL:-}" || "$IMAGE_URL" != */* ]]; then
+  echo "ERROR: IMAGE_URL must be a fully qualified image URI" >&2
+  exit 1
+fi
+if [[ "$RUN_MIGRATIONS" != "true" && "$RUN_MIGRATIONS" != "false" ]]; then
+  echo "ERROR: RUN_MIGRATIONS must be true or false" >&2
+  exit 1
+fi
+if [[ "${SEED_TRELLO:-false}" != "false" ]]; then
+  echo "ERROR: deployment never runs Trello seeding; run the one-off seed separately" >&2
   exit 1
 fi
 
-echo "Authenticating with ECR"
-# Extract registry host (everything before the first /)
-ECR_REGISTRY=$(echo "${IMAGE_URL}" | cut -d'/' -f1)
-aws ecr get-login-password --region "${AWS_REGION}" \
-  | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+ECR_REGISTRY=${IMAGE_URL%%/*}
+PREVIOUS_IMAGE=$(docker inspect --format '{{.Config.Image}}' "$MAIN_CONTAINER_NAME" 2>/dev/null || true)
 
-echo "Pulling new image: ${IMAGE_URL}"
-CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
-  docker compose -f "${COMPOSE_FILE}" pull app
+compose() {
+  CONTAINER_NAME="$MAIN_CONTAINER_NAME" APP_PORT="$MAIN_APP_PORT" \
+    SEED_TRELLO=false IMAGE_URL="$1" \
+    docker compose -f "$COMPOSE_FILE" "${@:2}"
+}
 
-echo "Ensuring infra services (postgres, localstack or redis) are running"
-# Only starts services whose profile is active in COMPOSE_PROFILES.
-# If COMPOSE_PROFILES is unset (using AWS RDS/S3), no infra containers are started.
-if [[ -n "${COMPOSE_PROFILES}" ]]; then
-  CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} IMAGE_URL="${IMAGE_URL}" \
-  POSTGRES_USER=chimedeck POSTGRES_PASSWORD=chimedeck POSTGRES_DB=chimedeck_dev \
-    docker compose -f "${COMPOSE_FILE}" up -d --no-recreate --no-deps
-else
-  echo "No local infra profiles active — using external AWS services"
+wait_for_health() {
+  local attempt=0 consecutive=0 status
+  while (( attempt < HEALTH_ATTEMPTS )); do
+    attempt=$((attempt + 1))
+    status=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${MAIN_APP_PORT}/health" 2>/dev/null || true)
+    if [[ "$status" == "200" ]]; then
+      consecutive=$((consecutive + 1))
+      if (( consecutive >= HEALTH_CONSECUTIVE_SUCCESSES )); then
+        echo "Health check passed after ${attempt} attempt(s)"
+        return 0
+      fi
+    else
+      consecutive=0
+    fi
+    sleep 2
+  done
+  echo "ERROR: health check did not stabilise" >&2
+  return 1
+}
+
+rollback() {
+  if [[ -z "$PREVIOUS_IMAGE" || "$PREVIOUS_IMAGE" == "$IMAGE_URL" ]]; then
+    echo "No distinct previous image is available for rollback" >&2
+    return 0
+  fi
+  echo "Rolling back to ${PREVIOUS_IMAGE}" >&2
+  compose "$PREVIOUS_IMAGE" up -d --no-deps --force-recreate app
+  wait_for_health || echo "ERROR: rollback image did not become healthy" >&2
+}
+
+printf 'Deploying image: %s\n' "$IMAGE_URL"
+printf 'Authenticating with ECR registry: %s\n' "$ECR_REGISTRY"
+aws ecr get-login-password --region "$AWS_REGION" \
+  | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+if [[ "$RUN_MIGRATIONS" == "true" ]]; then
+  echo "Running explicit migration phase"
+  compose "$IMAGE_URL" run --rm app bun run db:migrate:safe
 fi
 
-echo "Raising fallback container"
-docker container rm ${FALLBACK_CONTAINER_NAME} -f || echo "No fallback container found"
-CONTAINER_NAME=${FALLBACK_CONTAINER_NAME} APP_PORT=${FALLBACK_APP_PORT} SEED_TRELLO=false IMAGE_URL="${IMAGE_URL}" \
-  docker compose -f "${COMPOSE_FILE}" up -d --no-deps app
+compose "$IMAGE_URL" pull app
+compose "$IMAGE_URL" up -d --no-deps --force-recreate app
 
-echo "Waiting for fallback container to set up itself"
-sleep 5
+if ! wait_for_health; then
+  rollback
+  exit 1
+fi
 
-echo "____________________"
-echo "Working on NGINX to use fallback server"
-sudo rm -f /etc/nginx/conf.d/main-chimedeck.conf
-sudo cp ./fallback-chimedeck.conf /etc/nginx/conf.d/
-sudo systemctl restart nginx
-echo "____________________"
-
-echo "Starting main containers with new image"
-CONTAINER_NAME=${MAIN_CONTAINER_NAME} APP_PORT=${MAIN_APP_PORT} SEED_TRELLO=true IMAGE_URL="${IMAGE_URL}" \
-  docker compose -f "${COMPOSE_FILE}" up -d --no-deps --remove-orphans app
-
-echo "Deployed successfully!"
-duration=$SECONDS
-echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds deploy time."
-
-echo "Waiting for main container to set up itself"
-sleep 5
-
-echo "____________________"
-echo "Switch NGINX to use main server"
-sudo rm -f /etc/nginx/conf.d/fallback-chimedeck.conf
-sudo cp ./main-chimedeck.conf /etc/nginx/conf.d/
-sudo systemctl restart nginx
-echo "____________________"
-
-echo "Closing fallback container"
-docker container rm "${FALLBACK_CONTAINER_NAME}" -f || echo "No fallback container to remove"
-
-echo "Pruning dangling images"
-docker image prune -f
+echo "Deployment completed successfully"
