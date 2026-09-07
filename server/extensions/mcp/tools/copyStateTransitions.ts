@@ -3,13 +3,15 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerCopyStateTransitions(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'copy_state_transitions',
-    'Copy state transition graph from one board to another.',
     {
+      description: 'Copy state transition graph from one board to another.',
+      inputSchema: {
       boardId: z.string().describe('ID of the source board'),
       targetBoardId: z.string().describe('ID of the target board'),
       copyEnabled: z.boolean().optional().describe('Copy enabled flag from source board when true'),
+      },
     },
     async ({ boardId, targetBoardId, copyEnabled }) => {
       const body: Record<string, unknown> = { targetBoardId };
