@@ -12,12 +12,40 @@ import { deleteObject } from '../mods/s3/deleteObject';
 import { publisher } from '../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
+import { getS3KeysForDeletion } from './deleteKeys';
+
+interface AttachmentRow {
+  id: string;
+  card_id: string;
+  uploaded_by: string;
+  type: 'FILE' | 'URL';
+  s3_key: string | null;
+  thumbnail_key: string | null;
+  name: string;
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+  title: string | null;
+  cover_attachment_id: string | null;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
 
 export async function handleDeleteAttachment(req: Request, attachmentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const attachment = await db('attachments').where({ id: attachmentId }).first();
+  const attachment = await db<AttachmentRow>('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
     return Response.json(
       { error: { code: 'attachment-not-found', message: 'Attachment not found' } },
@@ -25,9 +53,9 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
     );
   }
 
-  const card = await db('cards').where({ id: attachment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const card = await db<CardRow>('cards').where({ id: attachment.card_id }).first();
+  const list = card ? await db<ListRow>('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
@@ -36,7 +64,12 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actor = (req as AuthenticatedRequest).currentUser;
+  if (!actor) {
+    return Response.json({ error: { code: 'unauthorized', message: 'Authentication required' } }, { status: 401 });
+  }
+
+  const actorId = actor.id;
   const isOwner = attachment.uploaded_by === actorId;
   const isAdmin = scopedReq.callerRole ? hasRole(scopedReq.callerRole, 'ADMIN') : false;
 
@@ -48,17 +81,11 @@ export async function handleDeleteAttachment(req: Request, attachmentId: string)
   }
 
   // Delete S3 objects for FILE attachments (best-effort; continue even on failure)
-  if (attachment.type === 'FILE') {
-    const keysToDelete = [attachment.s3_key, attachment.thumbnail_key].filter(
-      (key): key is string => typeof key === 'string' && key.length > 0,
-    );
-
-    for (const s3Key of keysToDelete) {
-      try {
-        await deleteObject({ s3Key });
-      } catch {
-        // Log in production; do not block the delete
-      }
+  for (const s3Key of getS3KeysForDeletion(attachment)) {
+    try {
+      await deleteObject({ s3Key });
+    } catch {
+      // Log in production; do not block the delete
     }
   }
 
