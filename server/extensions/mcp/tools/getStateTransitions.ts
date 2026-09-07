@@ -3,11 +3,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerGetStateTransitions(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'get_state_transitions',
-    'Get state transition graph and enabled flag for a board.',
     {
+      description: 'Get state transition graph and enabled flag for a board.',
+      inputSchema: {
       boardId: z.string().describe('ID of the board'),
+      },
     },
     async ({ boardId }) => {
       const result = await apiCall<{ data: unknown }>({
