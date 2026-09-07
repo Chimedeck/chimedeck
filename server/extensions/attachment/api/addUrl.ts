@@ -14,6 +14,7 @@ import { writeActivity } from '../../activity/mods/write';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 import { env } from '../../../config/env';
+import { ReferencedCardError } from './referencedCardError';
 
 // Private/internal IP ranges that must not be targeted (SSRF prevention).
 const FORBIDDEN_RANGES = [
@@ -32,6 +33,35 @@ const FORBIDDEN_RANGES = [
 interface AddUrlBody {
   name?: string;
   url?: string;
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+  title: string | null;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface AttachmentRow {
+  id: string;
+  short_id: string;
+  card_id: string;
+  uploaded_by: string;
+  name: string;
+  type: 'URL';
+  url: string;
+  status: 'READY';
+  referenced_card_id: string | null;
+  created_at: string;
 }
 
 export function isForbiddenUrl(rawUrl: string): boolean {
@@ -111,15 +141,17 @@ export function parseInternalCardUrl(rawUrl: string, requestUrl?: string): { car
   }
 }
 
-async function resolveTargetCard(cardId: string) {
+async function resolveTargetCard(
+  cardId: string,
+): Promise<{ resolvedCardId: string; card: CardRow; board: BoardRow } | null> {
   const resolvedCardId = await resolveCardId(cardId);
   if (!resolvedCardId) return null;
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) return null;
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) return null;
 
   return { resolvedCardId, card, board };
@@ -135,31 +167,32 @@ async function resolveReferencedCard(
 
   const resolvedReferencedCardId = await resolveCardId(internalCard.cardId);
   const referencedCard = resolvedReferencedCardId
-    ? await db('cards').where({ id: resolvedReferencedCardId }).first()
+    ? await db<CardRow>('cards').where({ id: resolvedReferencedCardId }).first()
     : null;
 
   if (!referencedCard) {
-    throw new Response(
-      JSON.stringify({ name: 'referenced-card-not-found', data: { message: 'The linked card was not found' } }),
-      { status: 404, headers: { 'content-type': 'application/json' } },
+    throw new ReferencedCardError(
+      'referenced-card-not-found',
+      'The linked card was not found',
+      404,
     );
   }
 
-  const refList = await db('lists').where({ id: referencedCard.list_id }).first();
-  const refBoard = refList ? await db('boards').where({ id: refList.board_id }).first() : null;
+  const refList = await db<ListRow>('lists').where({ id: referencedCard.list_id }).first();
+  const refBoard = refList
+    ? await db<BoardRow>('boards').where({ id: refList.board_id }).first()
+    : null;
   if (refBoard?.workspace_id !== workspaceId) {
-    throw new Response(
-      JSON.stringify({
-        name: 'referenced-card-not-in-workspace',
-        data: { message: 'The linked card is not in the same workspace' },
-      }),
-      { status: 400, headers: { 'content-type': 'application/json' } },
+    throw new ReferencedCardError(
+      'referenced-card-not-in-workspace',
+      'The linked card is not in the same workspace',
+      400,
     );
   }
 
   return {
-    id: referencedCard.id as string,
-    title: (referencedCard.title as string | null | undefined) ?? null,
+    id: referencedCard.id,
+    title: referencedCard.title,
   };
 }
 
@@ -204,16 +237,21 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
   let referencedCard: { id: string; title: string | null } | null = null;
   try {
     referencedCard = await resolveReferencedCard(body.url, board.workspace_id, req.url);
-  } catch (err) {
-    if (err instanceof Response) return err;
+  } catch (err: unknown) {
+    if (err instanceof ReferencedCardError) return err.response;
     throw err;
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actor = (req as AuthenticatedRequest).currentUser;
+  if (!actor) {
+    return Response.json({ error: { code: 'unauthorized', message: 'Authentication required' } }, { status: 401 });
+  }
+
+  const actorId = actor.id;
   const attachmentId = randomUUID();
   const shortId = await generateUniqueShortId('attachments');
 
-  await db('attachments').insert({
+  await db<AttachmentRow>('attachments').insert({
     id: attachmentId,
     short_id: shortId,
     card_id: resolvedCardId,
@@ -226,7 +264,7 @@ export async function handleAddUrl(req: Request, cardId: string): Promise<Respon
     created_at: new Date().toISOString(),
   });
 
-  const attachment = await db('attachments').where({ id: attachmentId }).first();
+  const attachment = await db<AttachmentRow>('attachments').where({ id: attachmentId }).first();
   const activityAction = referencedCard ? 'card_link_attached' : 'attachment_added';
 
   await dispatchEvent({
