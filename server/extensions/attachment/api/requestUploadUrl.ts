@@ -14,6 +14,43 @@ import { s3Config } from '../common/config/s3';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../config/allowedTypes';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { buildUploadS3Key } from './uploadKey';
+
+interface UploadRequestBody {
+  filename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface PendingAttachmentRow {
+  id: string;
+  short_id: string;
+  card_id: string;
+  uploaded_by: string;
+  name: string;
+  type: 'FILE';
+  s3_key: string;
+  s3_bucket: string;
+  mime_type: string;
+  size_bytes: number;
+  status: 'PENDING';
+  created_at: string;
+}
 
 export async function handleRequestUploadUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -26,9 +63,9 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
 
   // Parse and validate body early — before any DB lookup so validation errors
   // are returned cheaply without hitting the database.
-  let body: { filename?: string; mimeType?: string; sizeBytes?: number };
+  let body: UploadRequestBody;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as UploadRequestBody;
   } catch {
     return Response.json({ error: { code: 'bad-request', message: 'Invalid JSON body' } }, { status: 400 });
   }
@@ -53,13 +90,13 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ error: { code: 'card-not-found', message: 'Card not found' } }, { status: 404 });
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ error: { code: 'board-not-found', message: 'Board not found' } }, { status: 404 });
   }
@@ -70,12 +107,17 @@ export async function handleRequestUploadUrl(req: Request, cardId: string): Prom
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, board.id);
   if (roleError) return roleError;
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actor = (req as AuthenticatedRequest).currentUser;
+  if (!actor) {
+    return Response.json({ error: { code: 'unauthorized', message: 'Authentication required' } }, { status: 401 });
+  }
+
+  const actorId = actor.id;
   const attachmentId = randomUUID();
   const shortId = await generateUniqueShortId('attachments');
-  const s3Key = `attachments/${resolvedCardId}/${attachmentId}/${body.filename}`;
+  const s3Key = buildUploadS3Key(resolvedCardId, attachmentId, body.filename);
 
-  await db('attachments').insert({
+  await db<PendingAttachmentRow>('attachments').insert({
     id: attachmentId,
     short_id: shortId,
     card_id: resolvedCardId,
