@@ -4,10 +4,24 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
+const typeCheckedFiles = [
+  'src/**/*.{ts,tsx}',
+  'server/**/*.ts',
+  'vite.config.ts',
+  'tailwind.config.ts',
+];
+
+const strictTypeCheckedFiles = tseslint.configs.strictTypeChecked.map((config) => ({
+  ...config,
+  files: typeCheckedFiles,
+}));
+
 export default tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.recommended,
+  ...strictTypeCheckedFiles,
   {
+    files: typeCheckedFiles,
     languageOptions: {
       parserOptions: {
         project: true,
