@@ -3,14 +3,16 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerSearchBoard(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'search_board',
-    'Full-text search over cards and lists scoped to a single board.',
     {
+      description: 'Full-text search over cards and lists scoped to a single board.',
+      inputSchema: {
       boardId: z.string().describe('ID of the board to search within'),
       query: z.string().optional().describe('Full-text search query'),
       q: z.string().optional().describe('Deprecated alias for full-text search query'),
       limit: z.number().optional().describe('Maximum number of results to return'),
+      },
     },
     async ({ boardId, query, q, limit }) => {
       const resolvedQuery = query ?? q;
