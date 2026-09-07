@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const apiCallMock = mock();
 
-mock.module('../apiClient', () => ({
+void mock.module('../apiClient', () => ({
   apiCall: apiCallMock,
 }));
 
@@ -16,9 +16,13 @@ let toolDescription = '';
 let handler: ToolHandler | undefined;
 
 const server = {
-  tool: (name: string, description: string, _schema: unknown, registeredHandler: ToolHandler) => {
+  registerTool: (
+    name: string,
+    config: { description: string; inputSchema: unknown },
+    registeredHandler: ToolHandler
+  ) => {
     toolName = name;
-    toolDescription = description;
+    toolDescription = config.description;
     handler = registeredHandler;
   },
 };
@@ -42,7 +46,10 @@ describe('registerCreateList', () => {
     expect(toolDescription).toContain('list');
     expect(handler).toBeDefined();
 
-    const result = await handler!({ boardId: 'board-1', title: 'Backlog' });
+    const registeredHandler = handler;
+    if (!registeredHandler) throw new Error('create_list handler was not registered');
+
+    const result = await registeredHandler({ boardId: 'board-1', title: 'Backlog' });
 
     expect(apiCallMock).toHaveBeenCalledWith({
       method: 'POST',
@@ -61,7 +68,10 @@ describe('registerCreateList', () => {
     apiCallMock.mockResolvedValue({ error: { name: 'forbidden' } });
     registerCreateList(server as never, 'token-1');
 
-    const result = await handler!({ boardId: 'board-1', title: 'Backlog' });
+    const registeredHandler = handler;
+    if (!registeredHandler) throw new Error('create_list handler was not registered');
+
+    const result = await registeredHandler({ boardId: 'board-1', title: 'Backlog' });
 
     expect(result).toEqual({
       content: [{ type: 'text', text: 'Error: forbidden' }],
