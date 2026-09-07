@@ -8,7 +8,7 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { s3Client, s3Config } from '../../common/config/s3';
+import { s3ServerClient, s3Config } from '../../common/config/s3';
 import { enqueueScan } from '../../mods/virusScan/enqueue';
 import { publisher } from '../../../../mods/pubsub/publisher';
 import { writeEvent } from '../../../../mods/events/write';
@@ -94,7 +94,7 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   }
 
   try {
-    await s3Client.send(
+    await s3ServerClient.send(
       new CompleteMultipartUploadCommand({
         Bucket: s3Config.bucket,
         Key: body.key,

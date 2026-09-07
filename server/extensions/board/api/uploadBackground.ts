@@ -9,7 +9,7 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/requireBoardWritable';
-import { s3Client, s3Config } from '../../attachment/common/config/s3';
+import { s3ServerClient, s3Config } from '../../attachment/common/config/s3';
 import { deleteObject } from '../../attachment/mods/s3/deleteObject';
 import { env } from '../../../config/env';
 import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
@@ -107,7 +107,8 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   }
 
   const rawBuffer = Buffer.from(await file.arrayBuffer());
-  await s3Client.send(
+  // Direct server-side PUT — uses the internal endpoint client.
+  await s3ServerClient.send(
     new PutObjectCommand({
       Bucket: s3Config.bucket,
       Key: s3Key,

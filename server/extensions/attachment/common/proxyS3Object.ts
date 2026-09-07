@@ -1,5 +1,5 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client, s3Config } from './config/s3';
+import { s3ServerClient, s3Config } from './config/s3';
 
 function toReadableStream(body: unknown): ReadableStream<Uint8Array> | null {
   if (!body) return null;
@@ -42,7 +42,7 @@ export async function proxyS3Object({
   fallbackFilename?: string | null;
   contentDisposition?: 'inline' | 'attachment';
 }): Promise<Response> {
-  const result = await s3Client.send(
+  const result = await s3ServerClient.send(
     new GetObjectCommand({
       Bucket: s3Config.bucket,
       Key: s3Key,

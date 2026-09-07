@@ -10,7 +10,7 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { s3Client, s3Config } from '../../common/config/s3';
+import { s3ServerClient, s3Config } from '../../common/config/s3';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '../../config/allowedTypes';
 import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../../common/ids/shortId';
@@ -79,7 +79,7 @@ export async function handleMultipartStart(req: Request, cardId: string): Promis
 
   let uploadId: string;
   try {
-    const result = await s3Client.send(createCmd);
+    const result = await s3ServerClient.send(createCmd);
     if (!result.UploadId) throw new Error('S3 did not return an UploadId');
     uploadId = result.UploadId;
   } catch (err: unknown) {
