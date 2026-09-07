@@ -3,11 +3,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { apiCall } from '../apiClient';
 
 export function registerGetCard(server: McpServer, token: string): void {
-  server.tool(
+  server.registerTool(
     'get_card',
-    'Retrieve the full details of a single card by its ID.',
     {
-      cardId: z.string().describe('ID of the card to retrieve'),
+      description: 'Retrieve the full details of a single card by its ID.',
+      inputSchema: {
+        cardId: z.string().describe('ID of the card to retrieve'),
+      },
     },
     async ({ cardId }) => {
       const result = await apiCall<{ data: unknown }>({
