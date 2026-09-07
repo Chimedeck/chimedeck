@@ -14,31 +14,18 @@ import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
 import { dispatchWebhook } from '../../webhooks/mods/dispatch';
+import { buildMentionWebhookPayload, type MentionWebhookPayload } from './mentionWebhookContext';
 import type { Knex } from 'knex';
 
 // [why] extracted to keep createNotificationsForMentions within the cognitive complexity limit.
-async function fireMentionWebhooks({
-  boardId,
-  cardId,
-  sourceType,
-  sourceId,
-  actorId,
-  recipients,
-}: {
-  boardId: string;
-  cardId: string | null;
-  sourceType: string;
-  sourceId: string;
-  actorId: string;
-  recipients: string[];
-}): Promise<void> {
+async function fireMentionWebhooks({ payload }: { payload: MentionWebhookPayload }): Promise<void> {
   const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType: 'mention' });
   for (const wh of webhooks) {
     dispatchWebhook({
       endpoint: wh.endpoint_url,
       signingSecret: wh.signing_secret,
       eventType: 'mention',
-      payload: { boardId, cardId, sourceType, sourceId, actorId, mentionedUserIds: recipients },
+      payload,
       webhookId: wh.id,
       knex: db,
     });
@@ -205,7 +192,23 @@ export async function createNotificationsForMentions({
   // Fire-and-forget mention webhook — dispatched once per mention event (not per recipient).
   // [why] webhook subscribers receive the full mention context rather than a per-user notification.
   if (env.WEBHOOKS_ENABLED) {
-    fireMentionWebhooks({ boardId, cardId, sourceType, sourceId, actorId, recipients }).catch(() => {
+    // [why] enrich the mention webhook with stable, backward-compatible context
+    //       built from data already fetched above — no extra DB round-trips.
+    const payload = buildMentionWebhookPayload({
+      boardId,
+      cardId,
+      sourceType,
+      sourceId,
+      actorId,
+      recipients,
+      cardTitle,
+      boardName,
+      sourceText,
+      actor: actorPayload as Record<string, unknown>,
+    });
+    fireMentionWebhooks({
+      payload,
+    }).catch(() => {
       // Webhook errors must never propagate to the caller.
     });
   }
