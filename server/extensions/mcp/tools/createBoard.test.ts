@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, mock, test } from 'bun:test';
 
 const apiCallMock = mock();
 
-mock.module('../apiClient', () => ({
+void mock.module('../apiClient', () => ({
   apiCall: apiCallMock,
 }));
 
@@ -21,7 +21,11 @@ let toolName = '';
 let handler: ToolHandler | undefined;
 
 const server = {
-  tool: (name: string, _description: string, _schema: unknown, registeredHandler: ToolHandler) => {
+  registerTool: (
+    name: string,
+    _config: { description: string; inputSchema: unknown },
+    registeredHandler: ToolHandler
+  ) => {
     toolName = name;
     handler = registeredHandler;
   },
@@ -44,7 +48,10 @@ describe('registerCreateBoard', () => {
     expect(toolName).toBe('create_board');
     expect(handler).toBeDefined();
 
-    const result = await handler!({
+    const registeredHandler = handler;
+    if (!registeredHandler) throw new Error('create_board handler was not registered');
+
+    const result = await registeredHandler({
       workspaceId: 'workspace-1',
       title: 'Demo board',
       visibility: 'WORKSPACE',
@@ -74,7 +81,10 @@ describe('registerCreateBoard', () => {
     apiCallMock.mockResolvedValue({ error: { name: 'forbidden' } });
     registerCreateBoard(server as never, 'token-1');
 
-    const result = await handler!({ workspaceId: 'workspace-1', title: 'Demo board' });
+    const registeredHandler = handler;
+    if (!registeredHandler) throw new Error('create_board handler was not registered');
+
+    const result = await registeredHandler({ workspaceId: 'workspace-1', title: 'Demo board' });
 
     expect(result).toEqual({
       content: [{ type: 'text', text: 'Error: forbidden' }],
