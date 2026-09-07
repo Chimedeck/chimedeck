@@ -12,22 +12,26 @@ interface TopBarProps {
   onOpenDrawer: () => void;
   /** Whether the mobile drawer is currently open — drives aria-expanded. */
   drawerOpen: boolean;
+  /** Hide the mobile drawer toggle when the page owns its own navigation. */
+  showDrawerToggle?: boolean;
 }
 
-export default function TopBar({ onOpenDrawer, drawerOpen }: TopBarProps) {
+export default function TopBar({ onOpenDrawer, drawerOpen, showDrawerToggle = true }: Readonly<TopBarProps>) {
   return (
     <>
       {/* Mobile topbar — hamburger + brand + actions */}
       <div className="flex h-14 shrink-0 items-center border-b border-border bg-bg-surface px-4 md:hidden">
-        <IconButton
-          onClick={onOpenDrawer}
-          icon={<Bars3Icon className="h-5 w-5" aria-hidden="true" />}
-          aria-label={translations['Layout.openSidebarAriaLabel']}
-          aria-expanded={drawerOpen}
-          aria-controls="mobile-sidebar"
-          data-testid="mobile-sidebar-toggle"
-          className="mr-3 text-muted hover:bg-bg-overlay hover:text-base"
-        />
+        {showDrawerToggle ? (
+          <IconButton
+            onClick={onOpenDrawer}
+            icon={<Bars3Icon className="h-5 w-5" aria-hidden="true" />}
+            aria-label={translations['Layout.openSidebarAriaLabel']}
+            aria-expanded={drawerOpen}
+            aria-controls="mobile-sidebar"
+            data-testid="mobile-sidebar-toggle"
+            className="mr-3 text-muted hover:bg-bg-overlay hover:text-base"
+          />
+        ) : null}
         <span className="text-base font-bold">{translations['App.name']}</span>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />

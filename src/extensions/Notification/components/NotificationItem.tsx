@@ -6,7 +6,11 @@ import { useAppDispatch } from '~/hooks/useAppDispatch';
 import { useAppSelector } from '~/hooks/useAppSelector';
 import { selectCurrentUser } from '~/slices/authSlice';
 import CommentReactions from '~/extensions/Comment/components/CommentReactions';
-import { markReadThunk, deleteNotificationThunk, notificationSliceActions } from '../slices/notificationSlice';
+import {
+  markReadThunk,
+  deleteNotificationThunk,
+  notificationSliceActions,
+} from '../slices/notificationSlice';
 import { notificationApi, type Notification, type NotificationCommentReaction } from '../api';
 import translations from '../translations/en.json';
 
@@ -81,16 +85,30 @@ function buildActionCopy(notification: Notification, currentUserId: string | nul
 function extractCommentPreview(content: string | null | undefined): string | null {
   if (!content) return null;
 
-  const plainText = content
-    .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, ' ') // markdown image syntax
-    .replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1') // markdown links -> link text
-    .replaceAll(/[>#*_`~]/g, ' ')
-    .replaceAll(/\s+/g, ' ')
-    .trim();
+  const lines = content
+    .replaceAll(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => {
+      return line
+        .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, ' ') // markdown image syntax
+        .replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1') // markdown links -> link text
+        .replaceAll(/[>#*_`~]/g, ' ')
+        .replaceAll(/\s+/g, ' ')
+        .trim();
+    })
+    .filter(Boolean);
 
-  if (!plainText) return null;
-  if (plainText.length <= 160) return plainText;
-  return `${plainText.slice(0, 159).trimEnd()}…`;
+  if (lines.length === 0) return null;
+
+  const isTruncated = lines.length > 3;
+  const previewLines = lines.slice(0, 3);
+
+  if (isTruncated) {
+    const lastLine = previewLines[2] ?? '';
+    previewLines[2] = lastLine ? `${lastLine}...` : '...';
+  }
+
+  return previewLines.join('\n');
 }
 
 function actorDisplayName(notification: Notification): string {
@@ -204,6 +222,8 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
   const currentUser = useAppSelector(selectCurrentUser);
   const notificationsInStack = stackedNotifications ?? [notification];
   const primaryNotification = notificationsInStack[0] ?? notification;
+  const hasUnreadInStack = notificationsInStack.some((entry) => !entry.read);
+  const allReadInStack = notificationsInStack.every((entry) => entry.read);
 
   const handleClick = (entry: Notification) => {
     if (!entry.read) {
@@ -215,6 +235,30 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
   const handleDelete = (entry: Notification, e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     void dispatch(deleteNotificationThunk({ id: entry.id }));
+  };
+
+  const handleToggleGroupReadState = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+
+    if (hasUnreadInStack) {
+      notificationsInStack.forEach((entry) => {
+        if (!entry.read) {
+          void dispatch(markReadThunk({ id: entry.id }));
+        }
+      });
+      return;
+    }
+
+    if (allReadInStack) {
+      notificationsInStack.forEach((entry) => {
+        if (entry.read) {
+          dispatch({
+            type: 'notifications/setNotificationReadState',
+            payload: { id: entry.id, read: false },
+          });
+        }
+      });
+    }
   };
 
   const canReactToComment = (entry: Notification) => Boolean(entry.source_id)
@@ -275,7 +319,9 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
   };
 
   const cardTitle = primaryNotification.card_title ?? 'Untitled card';
-  const locationLabel = [primaryNotification.board_title, primaryNotification.list_title]
+  const hasCardContext = Boolean(primaryNotification.card_id || primaryNotification.card_title);
+  const boardTag = primaryNotification.board_title ?? null;
+  const fallbackLocationLabel = [primaryNotification.board_title, primaryNotification.list_title]
     .filter((value): value is string => Boolean(value))
     .join(': ');
 
@@ -285,7 +331,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
     >
       <div className="px-3 py-3">
         <div className="space-y-2">
-          <div className="min-w-0">
+          <div className="min-w-0 flex items-start justify-between gap-2">
             <div className="min-w-0">
               <button
                 type="button"
@@ -297,10 +343,33 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
               >
                 <p className="truncate text-sm font-semibold text-base">{cardTitle}</p>
               </button>
-              {locationLabel && (
-                <p className="mt-1 text-xs text-muted">{locationLabel}</p>
+              {hasCardContext ? (
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {boardTag && (
+                    <span className="inline-flex rounded-md border border-border bg-bg-overlay px-2 py-0.5 text-[11px] text-muted">
+                      {boardTag}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                fallbackLocationLabel && (
+                  <p className="mt-1 text-xs text-muted">{fallbackLocationLabel}</p>
+                )
               )}
             </div>
+
+            <button
+              type="button"
+              className="shrink-0 rounded-md border border-border bg-bg-overlay px-2 py-1 text-xs text-subtle hover:bg-bg-sunken hover:text-base transition-colors"
+              onClick={handleToggleGroupReadState}
+              aria-label={hasUnreadInStack
+                ? 'Mark this notification group as read'
+                : 'Mark this notification group as unread'}
+            >
+              {hasUnreadInStack
+                ? 'Mark read'
+                : 'Mark unread'}
+            </button>
           </div>
 
           <div className="space-y-1.5">
@@ -355,7 +424,7 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                       <p className="mt-0.5 text-sm text-subtle">{activityCopy}</p>
 
                       {commentPreview && (
-                        <p className="mt-1.5 rounded-md border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle leading-relaxed">
+                        <p className="mt-1.5 rounded-md border border-border bg-bg-surface px-2 py-1.5 text-xs text-subtle leading-relaxed break-words whitespace-pre-line">
                           {commentPreview}
                         </p>
                       )}
@@ -370,10 +439,10 @@ const NotificationItem: FC<Props> = ({ notification, stackedNotifications, onNav
                           <CommentReactions
                             reactions={commentReactions}
                             onAdd={(emoji) => {
-                              void handleAddReaction(entry, emoji);
+                              return handleAddReaction(entry, emoji);
                             }}
                             onRemove={(emoji) => {
-                              void handleRemoveReaction(entry, emoji);
+                              return handleRemoveReaction(entry, emoji);
                             }}
                           />
                         </div>

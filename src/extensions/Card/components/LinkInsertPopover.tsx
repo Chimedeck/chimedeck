@@ -4,7 +4,12 @@
 // Cancel / Insert buttons.
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Editor } from '@tiptap/react';
+import { getMarkRange } from '@tiptap/core';
 import Button from '../../../common/components/Button';
+import { fetchLinkPreview } from '~/extensions/Attachments/api';
+import { getInlineTitleFromUrl, normalizeHttpUrlInput } from '~/common/utils/urlDisplayText';
+
+const LINK_CLASS_BUTTON = 'cd-link-button';
 
 interface Props {
   editor: Editor | null;
@@ -13,13 +18,29 @@ interface Props {
 
 function getSelectionText(editor: Editor): string {
   const { from, to } = editor.state.selection;
-  if (from === to) return '';
-  return editor.state.doc.textBetween(from, to, ' ');
+  if (from !== to) return editor.state.doc.textBetween(from, to, ' ');
+
+  if (!editor.isActive('link')) return '';
+  const linkType = editor.state.schema.marks.link;
+  const range = getMarkRange(editor.state.selection.$from, linkType);
+  if (!range) return '';
+  return editor.state.doc.textBetween(range.from, range.to, ' ');
 }
 
 function getActiveLinkHref(editor: Editor): string {
   if (!editor.isActive('link')) return '';
   return (editor.getAttributes('link')['href'] as string | undefined) ?? '';
+}
+
+async function resolveInlineLabel(href: string): Promise<string> {
+  const fallback = getInlineTitleFromUrl(href);
+  try {
+    const preview = await fetchLinkPreview({ url: href });
+    const title = preview.data.title.trim();
+    return title || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 const LinkInsertPopover = ({ editor, onClose }: Props) => {
@@ -50,21 +71,54 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
     };
   }, [onClose]);
 
-  const handleInsert = useCallback(() => {
+  const handleInsert = useCallback(async () => {
     if (!editor || !url.trim()) return;
 
-    const href = url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`;
+    const href = normalizeHttpUrlInput(url) ?? url.trim();
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
     const isInsideLink = editor.isActive('link');
+    const nextDisplayText = displayText.trim();
+
+    // [why] Editing a link via toolbar should be able to update both href and
+    // displayed label. For cursor-inside-link edits, replace the full link text.
+    if (nextDisplayText && (hasSelection || isInsideLink)) {
+      let replaceFrom = from;
+      let replaceTo = to;
+
+      if (!hasSelection && isInsideLink) {
+        const linkType = editor.state.schema.marks.link;
+        const range = getMarkRange(editor.state.selection.$from, linkType);
+        if (range) {
+          replaceFrom = range.from;
+          replaceTo = range.to;
+        }
+      }
+
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(
+          { from: replaceFrom, to: replaceTo },
+          {
+            type: 'text',
+            text: nextDisplayText,
+            marks: [{ type: 'link', attrs: { href, target: '_blank', class: LINK_CLASS_BUTTON } }],
+          },
+        )
+        .run();
+
+      onClose();
+      return;
+    }
 
     if (hasSelection) {
       // Apply link mark to existing selection
-      editor.chain().focus().setLink({ href, target: '_blank' }).run();
+      editor.chain().focus().setLink({ href, target: '_blank', class: LINK_CLASS_BUTTON }).run();
     } else if (isInsideLink) {
       // Update the active link mark when cursor is inside an existing link.
-      editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank' }).run();
-    } else if (displayText.trim()) {
+      editor.chain().focus().extendMarkRange('link').setLink({ href, target: '_blank', class: LINK_CLASS_BUTTON }).run();
+    } else if (nextDisplayText) {
       // Insert new text node with link mark
       editor
         .chain()
@@ -72,22 +126,24 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
         .insertContent([
           {
             type: 'text',
-            text: displayText.trim(),
-            marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+            text: nextDisplayText,
+            marks: [{ type: 'link', attrs: { href, target: '_blank', class: LINK_CLASS_BUTTON } }],
           },
           { type: 'text', text: ' ' },
         ])
         .run();
     } else {
-      // Insert bare URL as linked text
+      // [why] Prefer server-side page metadata title (same source as browser tab title)
+      // and fall back to URL-derived label when metadata isn't available.
+      const inlineTitle = await resolveInlineLabel(href);
       editor
         .chain()
         .focus()
         .insertContent([
           {
             type: 'text',
-            text: href,
-            marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+            text: inlineTitle,
+            marks: [{ type: 'link', attrs: { href, target: '_blank', class: LINK_CLASS_BUTTON } }],
           },
           { type: 'text', text: ' ' },
         ])
@@ -114,7 +170,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleInsert();
+      void handleInsert();
     }
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -187,7 +243,7 @@ const LinkInsertPopover = ({ editor, onClose }: Props) => {
           <Button
             type="button"
             variant="primary"
-            onMouseDown={(e) => { e.preventDefault(); handleInsert(); }}
+            onMouseDown={(e) => { e.preventDefault(); void handleInsert(); }}
             disabled={!url.trim()}
             className="px-3 py-1.5 text-sm"
           >

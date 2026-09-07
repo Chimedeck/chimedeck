@@ -1,6 +1,7 @@
 // BoardCanvas — DndContext wrapper and horizontally scrollable kanban canvas.
 // Handles card and list drag-and-drop with optimistic updates and rollback on failure.
 import { useState, useCallback, useRef, useEffect, startTransition } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   DragOverlay,
@@ -36,6 +37,12 @@ import {
   getAdjustedPointerY,
   shouldRecomputeFromPointerDestination,
 } from './dragPlacementUtils';
+import StateTransitionErrorPopup from '~/extensions/StateTransitions/components/StateTransitionErrorPopup';
+import { extractStateTransitionRejectionFromError } from '~/extensions/StateTransitions/components/KanbanCard';
+import { useStateTransitionGuard } from '~/extensions/StateTransitions/hooks/useStateTransitionGuard';
+import TransitionsActiveBanner from '~/extensions/StateTransitions/components/TransitionsActiveBanner';
+import { useTransitionsBanner } from '~/extensions/StateTransitions/hooks/useTransitionsBanner';
+import { stateTransitionsEditorPath } from '~/common/routing/shortUrls';
 
 interface DragPlaceholder {
   listId: string;
@@ -57,6 +64,22 @@ interface PointerListResolutionCache {
   y: number | null;
   horizontalScrollDelta: number;
   listId: string | null;
+}
+
+function getCollapsedListsStorageKey(boardId: string, userId: string): string {
+  const safeUserId = userId.trim().length > 0 ? userId.trim() : 'anonymous';
+  return `board-collapsed-lists:${boardId}:${safeUserId}`;
+}
+
+function parseCollapsedListIds(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
+  } catch {
+    return [];
+  }
 }
 
 function isSamePlaceholder(a: DragPlaceholder | null | undefined, b: DragPlaceholder): boolean {
@@ -110,6 +133,8 @@ interface Props {
   /** Pre-fetched custom field values for all cards on this board, keyed by cardId.
    *  null = batch not yet loaded (don't pass per-card values to tiles). */
   customFieldValuesMap?: Record<string, CustomFieldValue[]> | null;
+  /** Unread notification counts keyed by card id for card-front bell badges. */
+  unreadNotificationCountByCardId?: Record<string, number>;
   /** True when the board has a background image — columns render solid, headers get frosted-glass. */
   hasBackground?: boolean;
   /** When true, lists whose filtered card count is 0 are hidden from the board. */
@@ -529,12 +554,32 @@ const BoardCanvas = ({
   isViewerGuest = false,
   collapseEmptyLists = false,
   customFieldValuesMap,
+  unreadNotificationCountByCardId,
 }: Props) => {
+  const navigate = useNavigate();
   // WHY: use one consistent drag-preview model across all boards so users
   // always see the same card-sized drop placeholder regardless of board size.
   const disableLiveDragPreview = true;
   const [labelsExpanded, onToggleLabels] = useCardLabelExpanded(boardId);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [forbiddenDropListId, setForbiddenDropListId] = useState<string | null>(null);
+  const [stateTransitionRejection, setStateTransitionRejection] = useState<{
+    fromListId: string;
+    fromListName: string;
+    toListId: string;
+    toListName: string;
+    allowedNextStates: Array<{ id: string; name: string }>;
+  } | null>(null);
+  const stateTransitionGuard = useStateTransitionGuard(boardId);
+  const transitionsBanner = useTransitionsBanner({
+    boardId,
+    enabled: stateTransitionGuard.isEnforcementActive,
+  });
+  const collapsedListsStorageKey = getCollapsedListsStorageKey(boardId, currentUserId);
+  const [collapsedListIds, setCollapsedListIds] = useState<string[]>(() => {
+    if (!globalThis.window) return [];
+    return parseCollapsedListIds(globalThis.window.localStorage.getItem(collapsedListsStorageKey));
+  });
   const [dragPlaceholder, setDragPlaceholder] = useState<DragPlaceholder | null>(null);
   const dragPlaceholderRafRef = useRef<number | null>(null);
   const pendingDragPlaceholderRef = useRef<DragPlaceholder | null>(null);
@@ -582,12 +627,50 @@ const BoardCanvas = ({
   useEffect(() => { cardsByListRef.current = cardsByList; }, [cardsByList]);
   const cardsRef = useRef(cards);
   useEffect(() => { cardsRef.current = cards; }, [cards]);
+
+  const openStateTransitionsEditorRoute = useCallback(() => {
+    navigate(stateTransitionsEditorPath({ id: boardId, title: boardTitle ?? null }));
+  }, [boardId, boardTitle, navigate]);
   const listsRef = useRef(lists);
   useEffect(() => { listsRef.current = lists; }, [lists]);
   // WHY: keep a ref copy of disableLiveDragPreview so the pointermove handler
   // (empty deps array) does not close over a stale value.
   const disableLiveDragPreviewRef = useRef(disableLiveDragPreview);
   useEffect(() => { disableLiveDragPreviewRef.current = disableLiveDragPreview; }, [disableLiveDragPreview]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    setCollapsedListIds(parseCollapsedListIds(globalThis.window.localStorage.getItem(collapsedListsStorageKey)));
+  }, [collapsedListsStorageKey]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    const next = collapsedListIds.filter((listId) => listOrder.includes(listId));
+    if (next.length === collapsedListIds.length) return;
+    setCollapsedListIds(next);
+  }, [collapsedListIds, listOrder]);
+
+  useEffect(() => {
+    if (!globalThis.window) return;
+    globalThis.window.localStorage.setItem(collapsedListsStorageKey, JSON.stringify(collapsedListIds));
+  }, [collapsedListIds, collapsedListsStorageKey]);
+
+  useEffect(() => {
+    if (!globalThis.window) return undefined;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== collapsedListsStorageKey) return;
+      setCollapsedListIds(parseCollapsedListIds(event.newValue));
+    };
+    globalThis.window.addEventListener('storage', handleStorage);
+    return () => globalThis.window.removeEventListener('storage', handleStorage);
+  }, [collapsedListsStorageKey]);
+
+  const handleToggleListCollapsed = useCallback((listId: string) => {
+    setCollapsedListIds((prev) => {
+      if (prev.includes(listId)) return prev.filter((id) => id !== listId);
+      return [...prev, listId];
+    });
+  }, []);
 
   const getDragScrollDelta = useCallback((): number => {
     const scroller = boardScrollerRef.current;
@@ -640,6 +723,22 @@ const BoardCanvas = ({
     if (nextScrollTop !== scroller.scrollTop) {
       scroller.scrollTop = nextScrollTop;
     }
+  }, []);
+
+  const scrollListByWheelDelta = useCallback((listId: string | null, deltaY: number): boolean => {
+    if (!listId || !Number.isFinite(deltaY) || Math.abs(deltaY) < 0.01) return false;
+
+    const scroller = getListScrollContainer(listId);
+    if (!scroller) return false;
+
+    const maxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    if (maxScrollTop === 0) return false;
+
+    const nextScrollTop = Math.max(0, Math.min(maxScrollTop, scroller.scrollTop + deltaY));
+    if (nextScrollTop === scroller.scrollTop) return false;
+
+    scroller.scrollTop = nextScrollTop;
+    return true;
   }, []);
 
   const resolvePointerListId = useCallback(
@@ -833,6 +932,93 @@ const BoardCanvas = ({
     resolvePointerListId,
   ]);
 
+  useEffect(() => {
+    const handler = (e: WheelEvent) => {
+      const activeId = dragActiveIdRef.current;
+      const fromListId = fromListIdRef.current;
+      if (!activeId || !fromListId || !disableLiveDragPreviewRef.current) return;
+
+      const pointerX = livePointerXRef.current;
+      const pointerY = livePointerYRef.current;
+      const pointerListId =
+        livePointerListIdRef.current
+        ?? resolvePointerListId(
+          pointerX,
+          pointerY,
+        );
+      const targetListId = pointerListId ?? fromListId;
+      const scrolled = scrollListByWheelDelta(targetListId, e.deltaY);
+      if (!scrolled) return;
+
+      // WHY: keep drag smooth while wheel-scrolling a column; avoid page-level
+      // scroll taking over and immediately re-evaluate placeholder from pointer.
+      e.preventDefault();
+
+      const resolvedPointerListId = resolvePointerListId(pointerX, pointerY);
+      livePointerListIdRef.current = resolvedPointerListId;
+      const placeholderListId = dragPlaceholderRef.current?.listId ?? null;
+
+      if (resolvedPointerListId && resolvedPointerListId !== fromListId) {
+        const targetCards = getCardsWithoutActive(cardsByListRef.current, resolvedPointerListId, activeId);
+        const insertIndex = getInsertIndexFromPointerY(
+          targetCards,
+          pointerY,
+          undefined,
+          dragCardElementsByIdRef.current,
+        );
+        const prevPlaceholder = dragPlaceholderRef.current;
+        const height = prevPlaceholder?.height ?? 72;
+        if (prevPlaceholder?.listId !== resolvedPointerListId || prevPlaceholder.index !== insertIndex) {
+          queueDragPlaceholder({ listId: resolvedPointerListId, index: insertIndex, height });
+        }
+        return;
+      }
+
+      if (!resolvedPointerListId && placeholderListId && placeholderListId !== fromListId) return;
+
+      const sourceCards = cardsByListRef.current[fromListId] ?? [];
+      const targetCardsLength = Math.max(0, sourceCards.length - 1);
+      const adjustedPointerY = getAdjustedPointerY({
+        pointerY,
+        verticalScrollDelta: getDragSourceVerticalScrollDelta(),
+      });
+      if (adjustedPointerY == null) return;
+
+      let insertIndex = 0;
+      const sortedMids = dragStartCardMidsSortedRef.current;
+      if (sortedMids.length > 0) {
+        insertIndex = Math.max(0, Math.min(getInsertIndexFromSortedMids(sortedMids, adjustedPointerY), targetCardsLength));
+      } else {
+        const mids = dragStartCardMidsRef.current;
+        for (const cardId of sourceCards) {
+          if (cardId === activeId) continue;
+          const mid = mids[cardId];
+          if (mid != null && adjustedPointerY >= mid - DRAG_MIDPOINT_TOLERANCE_PX) {
+            insertIndex += 1;
+          } else {
+            break;
+          }
+        }
+      }
+
+      const prevPlaceholder = dragPlaceholderRef.current;
+      if (prevPlaceholder?.listId !== fromListId || prevPlaceholder.index !== insertIndex) {
+        const height = prevPlaceholder?.height ?? 72;
+        queueDragPlaceholder({ listId: fromListId, index: insertIndex, height });
+      }
+    };
+
+    globalThis.addEventListener('wheel', handler, { passive: false });
+    return () => {
+      globalThis.removeEventListener('wheel', handler);
+    };
+  }, [
+    getDragSourceVerticalScrollDelta,
+    queueDragPlaceholder,
+    resolvePointerListId,
+    scrollListByWheelDelta,
+  ]);
+
   // WHY: track card ordering locally during drag instead of dispatching to Redux
   // on every onDragOver. Dispatching applyOptimisticCardMove each frame causes
   // DnD-kit to re-fire onDragOver after the re-render (with shifted indices),
@@ -897,6 +1083,7 @@ const BoardCanvas = ({
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
+      setForbiddenDropListId(null);
       const id = String(event.active.id);
       const currentCards = cardsRef.current;
       const currentCardsByList = cardsByListRef.current;
@@ -1010,7 +1197,12 @@ const BoardCanvas = ({
           );
 
         if (!over) {
-          if (!pointerListId || !currentLists[pointerListId] || pointerListId === sourceListId) return;
+          if (!pointerListId || !currentLists[pointerListId] || pointerListId === sourceListId) {
+            setForbiddenDropListId(null);
+            return;
+          }
+          const isForbiddenMove = !stateTransitionGuard.canMove(sourceListId, pointerListId);
+          setForbiddenDropListId(isForbiddenMove ? pointerListId : null);
           const targetCards = getCardsWithoutActive(currentCardsByList, pointerListId, activeId);
           const insertIndex = getInsertIndexFromPointerY(
             targetCards,
@@ -1038,6 +1230,9 @@ const BoardCanvas = ({
           toListId = cardToList[overId] ?? findListForCard(overId, currentCardsByList) ?? sourceListId;
         }
 
+        const isForbiddenMove = !stateTransitionGuard.canMove(sourceListId, toListId);
+        setForbiddenDropListId(isForbiddenMove ? toListId : null);
+
         // WHY: same-list position is handled in real-time by the pointermove
         // handler (using pre-drag card midpoint snapshots). Only handle
         // cross-list transitions here, where DnD Kit's over.id change is the
@@ -1061,7 +1256,10 @@ const BoardCanvas = ({
         return;
       }
 
-      if (!over) return;
+      if (!over) {
+        setForbiddenDropListId(null);
+        return;
+      }
 
       const overId = String(over.id);
 
@@ -1080,6 +1278,8 @@ const BoardCanvas = ({
         if (!currentLists[overId]) {
           toListId = cardToList[overId] ?? findListForCard(overId, prev) ?? fromListId;
         }
+        const isForbiddenMove = !stateTransitionGuard.canMove(fromListId, toListId);
+        setForbiddenDropListId(isForbiddenMove ? toListId : null);
         if (fromListId === toListId && activeId === overId) return prev;
 
         const toCards = prev[toListId] ?? [];
@@ -1132,7 +1332,7 @@ const BoardCanvas = ({
         return next;
       });
     },
-    [disableLiveDragPreview, queueDragPlaceholder, resolvePointerListId],
+    [disableLiveDragPreview, queueDragPlaceholder, resolvePointerListId, stateTransitionGuard],
   );
 
   const handleDragEnd = useCallback(
@@ -1145,6 +1345,7 @@ const BoardCanvas = ({
       resetPointerListResolutionCache();
       const { active, over } = event;
       setActiveCardId(null);
+      setForbiddenDropListId(null);
       // WHY: clear dragActiveIdRef so the pointermove handler stops updating
       // the placeholder after the drag is committed.
       dragActiveIdRef.current = null;
@@ -1311,6 +1512,12 @@ const BoardCanvas = ({
         targetPreview.splice(resolvedNewIndex, 0, activeId);
         const afterCardId = resolvedNewIndex > 0 ? (targetPreview[resolvedNewIndex - 1] ?? null) : null;
 
+        if (!stateTransitionGuard.canMove(fromListId, resolvedToListId)) {
+          setStateTransitionRejection(stateTransitionGuard.getRejectionReason(fromListId, resolvedToListId));
+          onDragRollback();
+          return;
+        }
+
         // Apply the final position to Redux in a single dispatch (moved here
         // from onDragOver — see handleDragOver comment for why)
         onDragStart();
@@ -1328,12 +1535,25 @@ const BoardCanvas = ({
             toListId: resolvedToListId,
             afterCardId,
           });
-        } catch {
+        } catch (error) {
+          const fallbackRejection = stateTransitionGuard.getRejectionReason(fromListId, resolvedToListId);
+          const parsedRejection = extractStateTransitionRejectionFromError({
+            error,
+            fallback: {
+              fromListId,
+              fromListName: fallbackRejection.fromListName,
+              toListId: resolvedToListId,
+              toListName: fallbackRejection.toListName,
+            },
+          });
+          if (parsedRejection) {
+            setStateTransitionRejection(parsedRejection);
+          }
           onDragRollback();
         }
       }
     },
-    [disableLiveDragPreview, flushQueuedDragPlaceholder, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder, onDragStart, resetPointerListResolutionCache, resetQueuedDragPlaceholder, resolvePointerListId],
+    [disableLiveDragPreview, flushQueuedDragPlaceholder, listOrder, onCardMove, onDragCommit, onDragRollback, onListReorder, onDragStart, resetPointerListResolutionCache, resetQueuedDragPlaceholder, resolvePointerListId, stateTransitionGuard],
   );
 
   const activeCard = activeCardId ? cards[activeCardId] : null;
@@ -1361,6 +1581,14 @@ const BoardCanvas = ({
         listOrder={listOrder}
         isDragActive={activeCardId !== null}
       />
+      {transitionsBanner.isVisible && (
+        <TransitionsActiveBanner
+          onViewRules={() => {
+            openStateTransitionsEditorRoute();
+          }}
+          onDismiss={transitionsBanner.dismiss}
+        />
+      )}
       <SortableContext items={listOrder} strategy={horizontalListSortingStrategy}>
         <div
           ref={boardScrollerRef}
@@ -1373,6 +1601,7 @@ const BoardCanvas = ({
             if (!list) return null;
             // [why] hide lists with 0 visible cards when the collapse toggle is active
             if (collapseEmptyLists && (effectiveCardsByList[listId]?.length ?? 0) === 0) return null;
+            const isCollapsed = collapsedListIds.includes(listId);
             return (
               <SortableListColumn
                 key={listId}
@@ -1394,10 +1623,13 @@ const BoardCanvas = ({
                 onChangeListColor={onChangeListColor}
                 onSortBy={onSortList}
                 onAddCard={onAddCard}
+                isCollapsed={isCollapsed}
+                onToggleCollapsed={handleToggleListCollapsed}
                 labelsExpanded={labelsExpanded}
                 onToggleLabels={onToggleLabels}
                 {...(onCardClick ? { onCardClick } : {})}
                 {...(customFieldValuesMap ? { customFieldValuesMap } : {})}
+                {...(unreadNotificationCountByCardId ? { unreadNotificationCountByCardId } : {})}
                 isViewerGuest={isViewerGuest}
                 hasBackground={hasBackground}
                 // WHY: only the placeholder list needs active drag card id.
@@ -1405,6 +1637,8 @@ const BoardCanvas = ({
                 activeDragCardId={dragPlaceholder?.listId === listId ? activeCardId : null}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderIndex: dragPlaceholder.index } : {})}
                 {...(dragPlaceholder?.listId === listId ? { dragPlaceholderHeight: dragPlaceholder.height } : {})}
+                isForbiddenDropTarget={activeCardId !== null && forbiddenDropListId === listId}
+                showLockedTransitionIndicator={stateTransitionGuard.isListLocked(listId)}
               />
             );
           })}
@@ -1421,9 +1655,20 @@ const BoardCanvas = ({
             currentUserId={currentUserId}
             labelsExpanded={labelsExpanded}
             onToggleLabels={onToggleLabels}
+            unreadNotificationCount={unreadNotificationCountByCardId?.[activeCard.id] ?? 0}
           />
         )}
       </DragOverlay>
+      <StateTransitionErrorPopup
+        open={stateTransitionRejection !== null}
+        rejection={stateTransitionRejection}
+        onClose={() => {
+          setStateTransitionRejection(null);
+        }}
+        onViewRules={() => {
+          openStateTransitionsEditorRoute();
+        }}
+      />
     </DndContext>
   );
 };

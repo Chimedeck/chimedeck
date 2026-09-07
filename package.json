@@ -46,6 +46,7 @@
     "test:unit": "bun test tests/integration",
     "test:e2e": "playwright test --project=e2e",
     "test:mcp": "bash run-all-tests-full.sh",
+    "test:deploy": "bash scripts/test-deploy-on-instance.sh",
     "test:load": "k6 run tests/load/board-load.js && k6 run tests/load/drag-latency.js && k6 run tests/load/ws-broadcast.js",
     "clean": "rm -rf dist .vite node_modules/.cache"
   },
@@ -84,6 +85,7 @@
     "@types/marked": "^6.0.0",
     "@types/sanitize-html": "^2.16.1",
     "@vitejs/plugin-react": "^6.0.1",
+    "@xyflow/react": "^12.10.2",
     "axios": "^1",
     "class-variance-authority": "^0.7",
     "clsx": "^2",

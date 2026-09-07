@@ -1,12 +1,20 @@
-import axios from 'axios';
-import { shouldAttachAccessToken } from './requestPolicy';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { shouldAttachAccessToken, shouldAttemptAuthRecovery } from './requestPolicy';
 
 // Token getter is set lazily from main.tsx after the store is created.
 // This avoids a circular dependency between the API client and the Redux store.
 let tokenGetter: (() => string | null) | null = null;
+let clearAuthCallback: (() => void) | null = null;
+let refreshRequestPromise: Promise<unknown> | null = null;
+let didHandleSessionExpiry = false;
 
 export const setTokenGetter = (fn: () => string | null) => {
   tokenGetter = fn;
+};
+
+// clearAuth callback is set lazily from main.tsx to avoid circular deps with store.
+export const setClearAuthCallback = (fn: () => void) => {
+  clearAuthCallback = fn;
 };
 
 // Single axios instance used by all extension API modules.
@@ -31,7 +39,76 @@ apiClient.interceptors.request.use((config) => {
 
 // Auto-unwrap axios response so callers receive the HTTP response body directly.
 // This matches the declared API function signatures: Promise<T> not Promise<AxiosResponse<T>>.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-apiClient.interceptors.response.use((response) => response.data as any);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+apiClient.interceptors.response.use((response) => response.data);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: unknown) => {
+    if (!isAxiosErrorLike(error)) {
+      throw toError(error);
+    }
+
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    const shouldRecover = isExpiredAccessTokenError(error);
+
+    if (
+      !shouldRecover
+      || !originalRequest
+      || originalRequest._retry
+      || !shouldAttemptAuthRecovery({ url: originalRequest.url, method: originalRequest.method })
+    ) {
+      throw toError(error);
+    }
+
+    originalRequest._retry = true;
+
+    try {
+      refreshRequestPromise ??= apiClient
+        .post('/auth/refresh')
+        .finally(clearRefreshRequestPromise);
+
+      await refreshRequestPromise;
+      return await apiClient(originalRequest);
+    } catch {
+      if (!didHandleSessionExpiry) {
+        didHandleSessionExpiry = true;
+        clearAuthCallback?.();
+        globalThis.location.href = '/login?reason=session_expired';
+      }
+
+      throw toError(error);
+    }
+  },
+);
+
+function isAxiosErrorLike(
+  err: unknown
+): err is { response?: { status?: number; data?: unknown }; config?: unknown } {
+  return typeof err === 'object' && err !== null && 'config' in err;
+}
+
+function toError(err: unknown): Error {
+  return err instanceof Error ? err : new Error(String(err));
+}
+
+function clearRefreshRequestPromise() {
+  refreshRequestPromise = null;
+}
+
+function isExpiredAccessTokenError(err: {
+  response?: { data?: unknown };
+}): boolean {
+  const message = getApiErrorMessage(err.response?.data);
+  return message === 'Invalid or expired access token';
+}
+
+function getApiErrorMessage(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const maybeError = (data as { error?: unknown }).error;
+  if (!maybeError || typeof maybeError !== 'object') return null;
+  const message = (maybeError as { message?: unknown }).message;
+  return typeof message === 'string' ? message : null;
+}
 
 export default apiClient;

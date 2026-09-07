@@ -29,6 +29,7 @@ interface WorkspacePageState {
   workspaces: Workspace[];
   currentWorkspace: Workspace | null;
   members: WorkspaceMember[];
+  membersWorkspaceId: string | null;
 
   fetchWorkspacesInProgress: boolean;
   fetchWorkspacesError: SerializedError | null;
@@ -63,6 +64,7 @@ const initialState: WorkspacePageState = {
   workspaces: [],
   currentWorkspace: null,
   members: [],
+  membersWorkspaceId: null,
 
   fetchWorkspacesInProgress: false,
   fetchWorkspacesError: null,
@@ -269,6 +271,7 @@ const WorkspacePageSlice = createSlice({
         state.fetchWorkspaceInProgress = false;
         state.currentWorkspace = action.payload.workspace;
         state.members = action.payload.members;
+        state.membersWorkspaceId = action.payload.workspace.id;
       })
       .addCase(fetchWorkspace.rejected, (state, action) => {
         state.fetchWorkspaceInProgress = false;
@@ -284,6 +287,7 @@ const WorkspacePageSlice = createSlice({
       .addCase(fetchWorkspaceMembersThunk.fulfilled, (state, action) => {
         state.fetchMembersInProgress = false;
         state.members = action.payload;
+        state.membersWorkspaceId = action.meta.arg.workspaceId;
       })
       .addCase(fetchWorkspaceMembersThunk.rejected, (state, action) => {
         state.fetchMembersInProgress = false;
@@ -338,6 +342,7 @@ const WorkspacePageSlice = createSlice({
         if (state.currentWorkspace?.id === deleted.id) {
           state.currentWorkspace = null;
           state.members = [];
+          state.membersWorkspaceId = null;
         }
       })
       .addCase(deleteWorkspaceThunk.rejected, (state, action) => {
@@ -427,6 +432,11 @@ export const membersSelector = createSelector(
   (s) => s.members
 );
 
+export const membersWorkspaceIdSelector = createSelector(
+  workspacePageState,
+  (s) => s.membersWorkspaceId
+);
+
 export const fetchWorkspacesInProgressSelector = createSelector(
   workspacePageState,
   (s) => s.fetchWorkspacesInProgress
@@ -440,6 +450,11 @@ export const fetchWorkspaceInProgressSelector = createSelector(
 export const fetchWorkspaceErrorSelector = createSelector(
   workspacePageState,
   (s) => s.fetchWorkspaceError
+);
+
+export const fetchMembersInProgressSelector = createSelector(
+  workspacePageState,
+  (s) => s.fetchMembersInProgress
 );
 
 export const inviteInProgressSelector = createSelector(

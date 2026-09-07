@@ -17,6 +17,7 @@ import { ExternalLinkPreview } from './ExternalLinkPreview';
 import { PasteListener } from './PasteListener';
 import type { Attachment, CardPreview } from '../types';
 import translations from '../translations/en.json';
+import config from '~/config';
 
 interface Props {
   cardId: string;
@@ -180,6 +181,22 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
     [loadAttachments],
   );
 
+  // Edit external-link URL — optimistic URL update, then refresh to sync referenced-card metadata.
+  const handleUpdateUrl = useCallback(
+    async (id: string, url: string) => {
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, view_url: url, external_url: url } : a)),
+      );
+      try {
+        await patchAttachment({ attachmentId: id, url });
+        void loadAttachments();
+      } catch {
+        void loadAttachments();
+      }
+    },
+    [loadAttachments],
+  );
+
   // Insert markdown link into the active comment editor — no network call
   const handleInsertComment = useCallback(
     (markdown: string) => {
@@ -210,8 +227,22 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
   const parseInternalCardUrl = (url: string): { cardId: string } | null => {
     try {
       const parsed = new URL(url);
-      // [why] Only URLs on this origin are internal — guard against cross-site links.
-      if (parsed.origin !== globalThis.location.origin) return null;
+      const configuredAppOrigin = (() => {
+        try {
+          return config.appUrl ? new URL(config.appUrl).origin : globalThis.location.origin;
+        } catch {
+          return globalThis.location.origin;
+        }
+      })();
+
+      // [why] Only URLs from this ChimeDeck app domain are internal.
+      // External domains (e.g. trello.com) must remain plain URL attachments.
+      const parsedHost = new URL(parsed.origin).hostname;
+      const appHost = new URL(configuredAppOrigin).hostname;
+      const isLocalMatch =
+        (parsedHost === 'localhost' || parsedHost === '127.0.0.1')
+        && (appHost === 'localhost' || appHost === '127.0.0.1');
+      if (parsed.origin !== configuredAppOrigin && !isLocalMatch) return null;
 
       const pathname = parsed.pathname.replace(/\/+$/, '');
 
@@ -457,6 +488,8 @@ export function AttachmentPanel({ cardId, canWrite = true, insertMarkdownRef, on
                 attachment={attachment}
                 canWrite={canWrite}
                 onDelete={handleDelete}
+                onRename={(id: string, alias: string) => { void handleRename(id, alias); }}
+                onUpdateUrl={(id: string, url: string) => { void handleUpdateUrl(id, url); }}
               />
             ))}
           </div>

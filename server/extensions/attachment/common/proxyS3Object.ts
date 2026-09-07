@@ -35,10 +35,12 @@ export async function proxyS3Object({
   s3Key,
   fallbackContentType,
   fallbackFilename,
+  contentDisposition = 'inline',
 }: {
   s3Key: string;
   fallbackContentType?: string | null;
   fallbackFilename?: string | null;
+  contentDisposition?: 'inline' | 'attachment';
 }): Promise<Response> {
   const result = await s3Client.send(
     new GetObjectCommand({
@@ -63,7 +65,7 @@ export async function proxyS3Object({
   const rawFilename = fallbackFilename?.trim();
   if (rawFilename) {
     const escapedFilename = rawFilename.replaceAll('"', '');
-    headers.set('Content-Disposition', `inline; filename="${escapedFilename}"`);
+    headers.set('Content-Disposition', `${contentDisposition}; filename="${escapedFilename}"`);
   }
 
   return new Response(stream, { status: 200, headers });

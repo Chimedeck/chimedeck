@@ -31,7 +31,9 @@ import { ensureBucketExists } from './extensions/attachment/common/config/s3';
 import { pluginsRouter } from './extensions/plugins/api/index';
 import { pluginsConfig } from './extensions/plugins/config/index';
 import { env } from './config/env';
+import { featureFlags } from './config/featureFlags';
 import { boardViewRouter } from './extensions/boardView/api/index';
+import { stateTransitionsRouter } from './extensions/stateTransitions/api/index';
 import { customFieldsRouter } from './extensions/customFields/index';
 import { automationRouter } from './extensions/automation/api/index';
 import { offlineDraftsRouter } from './extensions/offlineDrafts/api/index';
@@ -39,6 +41,7 @@ import { apiTokenRouter } from './extensions/apiToken/api/index';
 import { webhooksRouter } from './extensions/webhooks/api/index';
 import { mcpHttpHandler } from './extensions/mcp/http/index';
 import { healthCheckExtensionRouter } from './extensions/healthCheck/index';
+import { trelloCompatRouter } from './extensions/trelloCompat';
 // Register all automation trigger handlers at startup.
 import './extensions/automation/engine/triggers/index';
 import { startAutomationScheduler } from './extensions/automation/scheduler/index';
@@ -70,9 +73,41 @@ async function serveStatic(filePath: string): Promise<Response | null> {
   return new Response(file);
 }
 
+async function serveOpenApiSpec(specFileName: string, notFoundMessage: string): Promise<Response> {
+  const candidatePaths = [
+    // Runtime in source checkout (local/dev or non-container execution).
+    `${import.meta.dir}/../public/api-docs/${specFileName}`,
+    // Runtime in production image where Vite outputs static assets to dist/.
+    `${import.meta.dir}/../dist/api-docs/${specFileName}`,
+  ];
+
+  for (const filePath of candidatePaths) {
+    const file = Bun.file(filePath);
+    if (await file.exists()) {
+      return new Response(file, { headers: { 'Content-Type': 'application/yaml; charset=utf-8' } });
+    }
+  }
+
+  return Response.json(
+    { error: { code: 'not-found', message: notFoundMessage } },
+    { status: 404 }
+  );
+}
+
 async function router(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
+
+  if (path === '/api-docs/native-openapi.yaml' && req.method === 'GET') {
+    return serveOpenApiSpec('native-openapi.yaml', 'Native OpenAPI spec not found');
+  }
+
+  if (path === '/api-docs/trello-openapi.yaml' && req.method === 'GET') {
+    return serveOpenApiSpec('trello-openapi.yaml', 'Trello OpenAPI spec not found');
+  }
+
+
+
 
   if (path === '/health' && req.method === 'GET') {
     return Response.json({ status: 'ok' });
@@ -91,6 +126,7 @@ async function router(req: Request): Promise<Response> {
         notificationPreferencesEnabled,
         emailNotificationsEnabled,
         emailVerificationEnabled,
+        stateTransitionsEnabled: featureFlags.STATE_TRANSITIONS_ENABLED,
       },
     });
   }
@@ -113,6 +149,9 @@ async function router(req: Request): Promise<Response> {
 
   const boardViewResponse = await boardViewRouter(req, path);
   if (boardViewResponse) return boardViewResponse;
+
+  const stateTransitionsResponse = await stateTransitionsRouter(req, path);
+  if (stateTransitionsResponse) return stateTransitionsResponse;
 
   const customFieldsResponse = await customFieldsRouter(req, path);
   if (customFieldsResponse) return customFieldsResponse;
@@ -161,6 +200,9 @@ async function router(req: Request): Promise<Response> {
 
   const healthCheckResponse = await healthCheckExtensionRouter(req, path);
   if (healthCheckResponse) return healthCheckResponse;
+
+  const trelloCompatResponse = await trelloCompatRouter(req, path);
+  if (trelloCompatResponse) return trelloCompatResponse;
 
   const mcpResponse = await mcpHttpHandler(req);
   if (mcpResponse) return mcpResponse;
@@ -240,6 +282,9 @@ Bun.serve({
 
     const headers = new Headers(res.headers);
     const pluginOrigins = await getCachedPluginOrigins();
+    const path = new URL(req.url).pathname;
+    const isAttachmentViewPath = /^\/api\/v1\/attachments\/[^/]+\/view$/.test(path);
+    const isDeveloperApiDocsPath = /^\/developer\/api-docs(?:\/.*)?$/.test(path);
 
     // S3 origin for avatar/attachment images — LocalStack uses S3_ENDPOINT directly,
     // production uses the virtual-hosted bucket URL.
@@ -251,6 +296,9 @@ Bun.serve({
       extraFrameSrc: pluginOrigins.frameSrc,
       extraConnectSrc: [s3ImgOrigin, 'https://sentry.jhorizon.io', ...pluginOrigins.connectSrc],
       extraImgSrc: [s3ImgOrigin, 'https://chimedeck.jhorizon.io'],
+      extraStyleSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
+      extraScriptSrc: isDeveloperApiDocsPath ? ['https://unpkg.com'] : [],
+      frameAncestors: isAttachmentViewPath ? "'self'" : "'none'",
     });
     const response = new Response(res.body, {
       status: res.status,

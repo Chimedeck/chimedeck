@@ -82,6 +82,12 @@ Reload Cursor after saving the file.
 
 The server exits immediately with a clear error message if `CHIMEDECK_TOKEN` is not set.
 
+## Tool overview
+
+`create_board` creates a board in a workspace; `create_list` creates a list on a board; and `create_card` creates a card in a list. These primitives remain separate so callers retain explicit, auditable control over bootstrap steps. See [Available Tools](#available-tools) for the complete endpoint catalogue and parameter reference.
+
+List creation honours the board's existing writable-member permission checks. Agents should create workflow lists only on an explicitly scoped board.
+
 ---
 
 ## Run Manually (for testing)
@@ -222,6 +228,8 @@ Returns `204 No Content` on success.
 |---|---|---|
 | `move_card` | Move a card to a different list, optionally after a specific card | `PATCH /api/v1/cards/:cardId/move` |
 | `write_comment` | Post a comment on a card | `POST /api/v1/cards/:cardId/comments` |
+| `create_board` | Create a board in a workspace | `POST /api/v1/workspaces/:workspaceId/boards` |
+| `create_list` | Create a list on a board | `POST /api/v1/boards/:boardId/lists` |
 | `create_card` | Create a new card in a list | `POST /api/v1/lists/:listId/cards` |
 | `edit_card_description` | Update the description of a card | `PATCH /api/v1/cards/:cardId/description` |
 | `set_card_price` | Set or clear the price on a card | `PATCH /api/v1/cards/:cardId/money` |
@@ -229,6 +237,10 @@ Returns `204 No Content` on success.
 | `search_cards` | Full-text search over cards within a workspace | `GET /api/v1/workspaces/:workspaceId/search` |
 | `search_board` | Full-text search over cards and lists scoped to a single board | `GET /api/v1/boards/:boardId/search` |
 | `get_card` | Retrieve the full details of a single card by its ID | `GET /api/v1/cards/:cardId` |
+| `get_state_transitions` | Retrieve state transition graph and enabled flag for a board | `GET /api/v1/boards/:boardId/state-transitions` |
+| `set_state_transitions` | Update state transition graph and/or enabled flag for a board | `PUT /api/v1/boards/:boardId/state-transitions` |
+| `get_state_transition_rules` | Retrieve enforceable state-transition rules for a board | `GET /api/v1/boards/:boardId/state-transitions/rules` |
+| `copy_state_transitions` | Copy state transition graph from one board to another | `POST /api/v1/boards/:boardId/state-transitions/copy` |
 
 ### Tool Parameters
 
@@ -246,6 +258,28 @@ Returns `204 No Content` on success.
 | `cardId` | string | ✅ | ID of the card to comment on |
 | `content` | string | ✅ | Comment body text |
 | `text` | string | No | Deprecated alias for `content` |
+
+#### `create_board`
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `workspaceId` | string | ✅ | ID of the workspace to create the board in |
+| `title` | string | ✅ | Board title |
+| `visibility` | `PRIVATE` \| `WORKSPACE` \| `PUBLIC` | No | Defaults to `PRIVATE` |
+| `description` | string | No | Optional board description |
+| `background` | string | No | Optional board background value |
+
+The existing board API enforces workspace membership and makes the caller a board admin on success.
+
+#### `create_list`
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board to create the list on |
+| `title` | string | ✅ | List title |
+| `afterId` | string \| null | No | Optional list ID after which to insert; omit to append |
+
+The existing list API enforces board writable-member permission checks.
 
 #### `create_card`
 | Parameter | Type | Required | Description |
@@ -297,3 +331,29 @@ Returns `204 No Content` on success.
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `cardId` | string | ✅ | ID of the card to retrieve |
+
+#### `get_state_transitions`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board |
+
+#### `set_state_transitions`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board |
+| `enabled` | boolean | No | Enable or disable state transition enforcement |
+| `graph` | object | No | State transition graph payload |
+
+At least one of `enabled` or `graph` must be provided.
+
+#### `get_state_transition_rules`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | ID of the board |
+
+#### `copy_state_transitions`
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `boardId` | string | ✅ | Source board ID |
+| `targetBoardId` | string | ✅ | Target board ID |
+| `copyEnabled` | boolean | No | Copy source board's `enabled` flag when `true` |

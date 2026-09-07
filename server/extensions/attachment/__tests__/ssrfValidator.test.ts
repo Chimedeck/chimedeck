@@ -1,6 +1,9 @@
 // Unit tests for the SSRF URL validator (isForbiddenUrl).
 import { describe, expect, test } from 'bun:test';
 import { isForbiddenUrl, parseInternalCardUrl } from '../api/addUrl';
+import { env } from '../../../config/env';
+
+const appOrigin = new URL(env.APP_URL || 'http://localhost:3000').origin;
 
 describe('isForbiddenUrl', () => {
   test('allows a normal public URL', () => {
@@ -58,23 +61,27 @@ describe('isForbiddenUrl', () => {
 
 describe('parseInternalCardUrl', () => {
   test('parses short card route /c/:cardId', () => {
-    expect(parseInternalCardUrl('https://app.example.com/c/Ab12Cd34')).toEqual({ cardId: 'Ab12Cd34' });
+    expect(parseInternalCardUrl(`${appOrigin}/c/Ab12Cd34`)).toEqual({ cardId: 'Ab12Cd34' });
   });
 
   test('parses short card route with slug', () => {
-    expect(parseInternalCardUrl('https://app.example.com/c/Ab12Cd34/some-card-title')).toEqual({ cardId: 'Ab12Cd34' });
+    expect(parseInternalCardUrl(`${appOrigin}/c/Ab12Cd34/some-card-title`)).toEqual({ cardId: 'Ab12Cd34' });
   });
 
   test('parses legacy /boards/:boardId/cards/:cardId route', () => {
-    expect(parseInternalCardUrl('https://app.example.com/boards/board-1/cards/card-22')).toEqual({ cardId: 'card-22' });
+    expect(parseInternalCardUrl(`${appOrigin}/boards/board-1/cards/card-22`)).toEqual({ cardId: 'card-22' });
   });
 
   test('parses board route with ?card= query', () => {
-    expect(parseInternalCardUrl('https://app.example.com/b/board-1?card=card-99')).toEqual({ cardId: 'card-99' });
+    expect(parseInternalCardUrl(`${appOrigin}/b/board-1?card=card-99`)).toEqual({ cardId: 'card-99' });
   });
 
   test('returns null for non-card URLs', () => {
-    expect(parseInternalCardUrl('https://app.example.com/b/board-1')).toBeNull();
-    expect(parseInternalCardUrl('https://app.example.com/somewhere-else')).toBeNull();
+    expect(parseInternalCardUrl(`${appOrigin}/b/board-1`)).toBeNull();
+    expect(parseInternalCardUrl(`${appOrigin}/somewhere-else`)).toBeNull();
+  });
+
+  test('treats Trello card URLs as external', () => {
+    expect(parseInternalCardUrl('https://trello.com/c/AzdUEXeY/211-create-branding-promo-code-for-discount-in-config-listing')).toBeNull();
   });
 });

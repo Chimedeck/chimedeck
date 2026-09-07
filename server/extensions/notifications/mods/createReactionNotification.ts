@@ -26,8 +26,8 @@ export async function createReactionNotification({
     // Load comment author — we notify them about the reaction
     const comment = await db('comments')
       .where({ id: commentId })
-      .select('user_id')
-      .first() as { user_id: string } | undefined;
+      .select('user_id', 'content')
+      .first() as { user_id: string; content: string | null } | undefined;
     if (!comment) return;
 
     const recipientId: string = comment.user_id;
@@ -77,21 +77,51 @@ export async function createReactionNotification({
       .first() as { title: string } | undefined;
     const now = new Date().toISOString();
 
-    const [inserted] = await db('notifications').insert(
-      {
-        user_id: recipientId,
-        type: 'comment_reaction',
-        source_type: 'comment',
-        source_id: commentId,
-        card_id: cardId,
-        board_id: boardId,
-        emoji,
-        actor_id: actorId,
-        read: false,
-        created_at: now,
-      },
-      ['*'],
-    ) as [Record<string, unknown>];
+    const nextNotificationRow = {
+      user_id: recipientId,
+      type: 'comment_reaction',
+      source_type: 'comment',
+      source_id: commentId,
+      card_id: cardId,
+      board_id: boardId,
+      emoji,
+      actor_id: actorId,
+      read: false,
+      created_at: now,
+    };
+
+    let inserted: Record<string, unknown> | undefined;
+    try {
+      [inserted] = await db('notifications').insert(nextNotificationRow, ['*']) as [Record<string, unknown>];
+    } catch (error) {
+      const dbError = error as { code?: string };
+      if (dbError.code !== '23505') {
+        throw error;
+      }
+
+      // [why] Some environments dedupe by (user_id, source_type, source_id, type).
+      // Refresh the existing row so the notification surfaces again as unread.
+      [inserted] = await db('notifications')
+        .where({
+          user_id: recipientId,
+          source_type: 'comment',
+          source_id: commentId,
+          type: 'comment_reaction',
+        })
+        .update(
+          {
+            card_id: cardId,
+            board_id: boardId,
+            emoji,
+            actor_id: actorId,
+            read: false,
+            created_at: now,
+          },
+          ['*'],
+        ) as [Record<string, unknown>];
+    }
+
+    if (!inserted) return;
 
     await publishToUser(recipientId, {
       type: 'notification_created',
@@ -103,6 +133,7 @@ export async function createReactionNotification({
           card_title: card?.title ?? null,
           board_title: board?.title ?? null,
           list_title: null,
+          comment_content: comment.content ?? null,
           actor: actorPayload,
           // Pass emoji in the notification payload so the copy can say "X reacted 👍"
           emoji,

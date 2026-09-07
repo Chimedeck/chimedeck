@@ -1,6 +1,7 @@
 // Notification API router.
 import { handleListNotifications } from './list';
 import { handleMarkRead } from './markRead';
+import { handleMarkUnread } from './markUnread';
 import { handleMarkAllRead } from './markAllRead';
 import { handleDeleteNotification } from './delete';
 import { handleDeleteAllNotifications } from './deleteAll';
@@ -9,7 +10,7 @@ import { boardPreferenceRouter } from './boardPreference';
 import { globalPreferenceRouter } from './globalPreference';
 import { boardTypePreferencesRouter } from './boardTypePreferences';
 
-export async function notificationsRouter(req: Request, pathname: string): Promise<Response | null> {
+async function resolvePreferenceRouters(req: Request, pathname: string): Promise<Response | null> {
   // /api/v1/user/notification-settings — GET and PATCH
   const globalPrefResponse = await globalPreferenceRouter(req, pathname);
   if (globalPrefResponse !== null) return globalPrefResponse;
@@ -23,7 +24,11 @@ export async function notificationsRouter(req: Request, pathname: string): Promi
   if (boardPrefResponse !== null) return boardPrefResponse;
 
   // /api/v1/notifications/preferences — GET and PATCH
-  const preferencesResponse = await preferencesRouter(req, pathname);
+  return preferencesRouter(req, pathname);
+}
+
+export async function notificationsRouter(req: Request, pathname: string): Promise<Response | null> {
+  const preferencesResponse = await resolvePreferenceRouters(req, pathname);
   if (preferencesResponse !== null) return preferencesResponse;
 
   // GET /api/v1/notifications
@@ -36,10 +41,14 @@ export async function notificationsRouter(req: Request, pathname: string): Promi
     return handleMarkAllRead(req);
   }
 
-  // PATCH /api/v1/notifications/:id/read
-  const markReadMatch = pathname.match(/^\/api\/v1\/notifications\/([^/]+)\/read$/);
-  if (markReadMatch && req.method === 'PATCH') {
-    return handleMarkRead(req, markReadMatch[1] as string);
+  // PATCH /api/v1/notifications/:id/read|unread
+  const markStateMatch = pathname.match(/^\/api\/v1\/notifications\/([^/]+)\/(read|unread)$/);
+  if (markStateMatch && req.method === 'PATCH') {
+    const notificationId = markStateMatch[1] as string;
+    const action = markStateMatch[2] as 'read' | 'unread';
+    return action === 'read'
+      ? handleMarkRead(req, notificationId)
+      : handleMarkUnread(req, notificationId);
   }
 
   // DELETE /api/v1/notifications — clear all notifications for current user

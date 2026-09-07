@@ -29,6 +29,7 @@ export default function AppShell() {
   const token = useAppSelector(selectAuthToken) ?? '';
   // Ref for the mobile drawer panel — used by the focus trap
   const drawerRef = useRef<HTMLDivElement>(null);
+  const isApiDocsRoute = location.pathname.startsWith('/developer/api-docs');
 
   // Load workspace list, user profile, and client feature flags once when the shell mounts
   useEffect(() => {
@@ -126,42 +127,50 @@ export default function AppShell() {
   return (
     <div className="flex h-screen overflow-hidden bg-bg-base">
       {/* Desktop sidebar — always visible on md+ */}
-      <div className="hidden md:flex md:shrink-0">
-        <Sidebar />
-      </div>
+      {isApiDocsRoute ? null : (
+        <div className="hidden md:flex md:shrink-0">
+          <Sidebar />
+        </div>
+      )}
 
       {/* Mobile sidebar overlay — always rendered to allow CSS transitions */}
-      <div
-        className="fixed inset-0 z-30 md:hidden"
-        aria-hidden={!sidebarOpen}
-        style={{ pointerEvents: sidebarOpen ? 'auto' : 'none' }}
-      >
-        {/* Backdrop */}
+      {isApiDocsRoute ? null : (
         <div
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-            sidebarOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setSidebarOpen(false)}
-          data-testid="mobile-sidebar-backdrop"
-        />
-        {/* Drawer panel — slides in from the left */}
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={translations['Layout.mobileDrawerAriaLabel']}
-          id="mobile-sidebar"
-          ref={drawerRef}
-          className={`relative z-40 flex h-full transition-transform duration-300 ease-in-out ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+          className="fixed inset-0 z-30 md:hidden"
+          aria-hidden={!sidebarOpen}
+          style={{ pointerEvents: sidebarOpen ? 'auto' : 'none' }}
         >
-          <Sidebar onClose={() => setSidebarOpen(false)} />
+          {/* Backdrop */}
+          <div
+            className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+              sidebarOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => setSidebarOpen(false)}
+            data-testid="mobile-sidebar-backdrop"
+          />
+          {/* Drawer panel — slides in from the left */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={translations['Layout.mobileDrawerAriaLabel']}
+            id="mobile-sidebar"
+            ref={drawerRef}
+            className={`relative z-40 flex h-full transition-transform duration-300 ease-in-out ${
+              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            <Sidebar onClose={() => setSidebarOpen(false)} />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main content — min-w-0 prevents flex children overflowing on narrow viewports */}
       <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
-        <TopBar onOpenDrawer={() => setSidebarOpen(true)} drawerOpen={sidebarOpen} />
+        <TopBar
+          onOpenDrawer={() => setSidebarOpen(true)}
+          drawerOpen={sidebarOpen}
+          showDrawerToggle={!isApiDocsRoute}
+        />
 
         <main className="flex-1 overflow-auto">
           <Outlet />

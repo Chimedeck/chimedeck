@@ -205,6 +205,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
+  const previousDueDate = ((existingCard as { due_date?: string | null } | undefined)?.due_date ?? null) as string | null;
   const descriptionChanged =
     body.description !== undefined &&
     ((updates.description ?? null) !== ((existingCard as { description?: string | null } | undefined)?.description ?? null));
@@ -243,6 +244,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
 
   const cardRow = updated[0] as Record<string, unknown>;
   const cardWithCover = await resolveCoverImageUrl(updated[0] as { id: string; cover_attachment_id?: string | null });
+  const nextDueDate = (cardRow.due_date ?? null) as string | null;
+  const dueDateChanged = body.due_date !== undefined && previousDueDate !== nextDueDate;
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
   await dispatchEvent({ type: 'card.updated', boardId: board.id, entityId: cardId, actorId, payload: { card: cardWithCover } });
@@ -278,6 +281,31 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       action: 'card.description.updated',
       actorId,
       payload: { cardId, cardTitle: (cardRow.title as string) ?? '' },
+    });
+    publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
+  }
+
+  // Emit activity event when due date changes (set vs changed vs cleared)
+  if (dueDateChanged) {
+    let dueDateAction: 'card.due_date.cleared' | 'card.due_date.set' | 'card.due_date.changed' = 'card.due_date.changed';
+    if (nextDueDate === null) {
+      dueDateAction = 'card.due_date.cleared';
+    } else if (previousDueDate === null) {
+      dueDateAction = 'card.due_date.set';
+    }
+
+    const activity = await writeActivity({
+      entityType: 'card',
+      entityId: cardId,
+      boardId: board.id,
+      action: dueDateAction,
+      actorId,
+      payload: {
+        cardId,
+        cardTitle: (cardRow.title as string) ?? '',
+        dueDate: nextDueDate,
+        previousDueDate,
+      },
     });
     publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
   }

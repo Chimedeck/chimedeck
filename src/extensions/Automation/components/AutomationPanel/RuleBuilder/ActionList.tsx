@@ -34,12 +34,40 @@ interface Props {
 const ActionList = ({ actions, onChange, boardId }: Props) => {
   const [showPicker, setShowPicker] = useState(false);
   const [workspaceBoards, setWorkspaceBoards] = useState<{ id: string; title: string }[]>([]);
+  const [customFieldsById, setCustomFieldsById] = useState<Record<string, { name: string; field_type: string; options: Array<{ id: string; label: string }> }>>({});
 
   useEffect(() => {
     apiClient
       .get(`/boards/${boardId}/workspace/boards`)
       .then((res: any) => setWorkspaceBoards(res.data ?? []))
       .catch(() => {});
+  }, [boardId]);
+
+  useEffect(() => {
+    apiClient
+      .get(`/boards/${boardId}/custom-fields`)
+      .then((res: any) => {
+        const rows = (res?.data ?? []) as Array<Record<string, unknown>>;
+        const map: Record<string, { name: string; field_type: string; options: Array<{ id: string; label: string }> }> = {};
+        for (const row of rows) {
+          if (typeof row.id !== 'string') continue;
+
+          let options: Array<{ id: string; label: string }> = [];
+          if (Array.isArray(row.options)) {
+            options = (row.options as Array<Record<string, unknown>>)
+              .filter((opt) => typeof opt.id === 'string' && typeof opt.label === 'string')
+              .map((opt) => ({ id: opt.id as string, label: opt.label as string }));
+          }
+
+          map[row.id] = {
+            name: typeof row.name === 'string' ? row.name : row.id,
+            field_type: typeof row.field_type === 'string' ? row.field_type : '',
+            options,
+          };
+        }
+        setCustomFieldsById(map);
+      })
+      .catch(() => setCustomFieldsById({}));
   }, [boardId]);
   // Track which action is being configured (by local id).
   const [configuringId, setConfiguringId] = useState<string | null>(null);
@@ -105,6 +133,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
                   onDelete={() => handleDelete(action.id)}
                   onConfigChange={(cfg) => handleConfigChange(action.id, cfg)}
                   workspaceBoards={workspaceBoards}
+                  customFieldsById={customFieldsById}
                 />
                 {/* Inline config panel — toggle by clicking the item label */}
                 {(() => {

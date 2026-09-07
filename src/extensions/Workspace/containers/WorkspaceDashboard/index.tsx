@@ -48,7 +48,12 @@ const WorkspaceDashboard = () => {
 
   const handleCreate = (title: string) => {
     if (!workspaceId) return;
-    dispatch(createBoardThunk({ workspaceId, title }));
+    void dispatch(createBoardThunk({ workspaceId, title }))
+      .unwrap()
+      // [why] Revalidate server data after create so board visibility/list state
+      // stays correct even when there are overlapping in-flight fetches.
+      .then(() => dispatch(fetchBoardsThunk({ workspaceId })))
+      .catch(() => undefined);
     setShowCreateModal(false);
   };
 

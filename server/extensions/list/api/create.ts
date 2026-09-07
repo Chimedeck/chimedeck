@@ -1,11 +1,12 @@
-// POST /api/v1/boards/:boardId/lists — create a new list; min role: MEMBER.
+// POST /api/v1/boards/:boardId/lists — create a new list.
+// Allowed: workspace MEMBER+ and board GUEST with guest_type=MEMBER.
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { writeEvent } from '../../../mods/events/write';
 import {
   requireWorkspaceMembership,
-  requireRole,
+  requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
@@ -28,7 +29,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const roleError = requireRole(scopedReq, 'MEMBER');
+  const roleError = await requireMemberOrBoardGuestMember(scopedReq, canonicalBoardId);
   if (roleError) return roleError;
 
   let body: { title?: string; afterId?: string | null };

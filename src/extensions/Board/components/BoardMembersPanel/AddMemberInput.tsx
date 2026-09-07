@@ -16,9 +16,10 @@ interface Props {
   /** All workspace members (non-guest). Already filtered by caller. */
   candidates: WorkspaceMember[];
   onAdd: (userId: string, role: BoardMemberRole) => Promise<void>;
+  onFocusInput?: () => void;
 }
 
-const AddMemberInput = ({ candidates, onAdd }: Props) => {
+const AddMemberInput = ({ candidates, onAdd, onFocusInput }: Props) => {
   const [query, setQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<BoardMemberRole>('MEMBER');
   const [open, setOpen] = useState(false);
@@ -63,7 +64,10 @@ const AddMemberInput = ({ candidates, onAdd }: Props) => {
             type="text"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-            onFocus={() => setOpen(true)}
+            onFocus={() => {
+              setOpen(true);
+              onFocusInput?.();
+            }}
             placeholder="Search workspace members…"
             disabled={adding}
             className="w-full rounded border border-border bg-bg-overlay px-3 py-1.5 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"

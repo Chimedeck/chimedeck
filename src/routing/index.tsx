@@ -52,6 +52,16 @@ const McpDocsPage = lazy(() =>
     default: m.default,
   }))
 );
+const ApiDocsPage = lazy(() =>
+  import('~/extensions/DeveloperDocs/containers/ApiDocsPage/ApiDocsPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const CliDocsPage = lazy(() =>
+  import('~/extensions/DeveloperDocs/containers/CliDocsPage/CliDocsPage').then((m) => ({
+    default: m.default,
+  }))
+);
 const VerifyEmailPage = lazy(() =>
   import('~/extensions/Auth/containers/VerifyEmailPage/VerifyEmailPage').then((m) => ({
     default: m.default,
@@ -84,6 +94,11 @@ const EditProfilePage = lazy(() =>
 );
 const PluginDashboardPage = lazy(() =>
   import('~/extensions/Plugins/containers/PluginDashboardPage/PluginDashboardPage').then((m) => ({
+    default: m.default,
+  }))
+);
+const StateTransitionsEditorPage = lazy(() =>
+  import('~/extensions/StateTransitions/containers/StateTransitionsEditorPage').then((m) => ({
     default: m.default,
   }))
 );
@@ -154,6 +169,8 @@ export default function AppRouter() {
                 />
               </Route>
               <Route path="/b/:boardId/:slug?" element={<BoardPage />} />
+              <Route path="/b/:boardId/e/state" element={<StateTransitionsEditorPage />} />
+              <Route path="/b/:boardId/:slug/e/state" element={<StateTransitionsEditorPage />} />
               <Route path="/c/:cardId/:slug?" element={<BoardPage />} />
               <Route path="/b/:boardId/settings/plugins" element={<PluginDashboardPage />} />
               <Route path="/plugins" element={<PluginRegistryPage />} />
@@ -163,6 +180,8 @@ export default function AppRouter() {
               <Route path="/profile/edit" element={<EditProfilePage />} />
               <Route path="/developer/plugins" element={<PluginDocsPage />} />
               <Route path="/developer/mcp" element={<McpDocsPage />} />
+              <Route path="/developer/cli" element={<CliDocsPage />} />
+              <Route path="/developer/api-docs" element={<ApiDocsPage />} />
               {/* Design System page — only registered when DESIGN_SYSTEM_ENABLED is true (dev by default). */}
               {config.designSystemEnabled && DesignSystemPage && (
                 <Route path={DESIGN_SYSTEM_PATH} element={<DesignSystemPage />} />

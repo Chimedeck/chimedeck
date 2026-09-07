@@ -3,8 +3,8 @@
 // Supports both "create" (no initialAutomation) and "edit" (with initialAutomation) modes.
 import { useState, useEffect } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import type { Automation, TriggerType } from '../../../types';
-import { createAutomation, updateAutomation, getTriggerTypes } from '../../../api';
+import type { Automation, TriggerType, ActionType } from '../../../types';
+import { createAutomation, updateAutomation, getTriggerTypes, getActionTypes } from '../../../api';
 import TriggerPicker from './TriggerPicker';
 import TriggerConfig from './TriggerConfig';
 import ActionList from './ActionList';
@@ -20,9 +20,19 @@ interface Props {
   onCancel: () => void;
 }
 
+function fallbackActionLabel(actionType: string): string {
+  const spaced = actionType.replace(/[._]/g, ' ');
+  return spaced.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function resolveActionLabel(actionType: string, actionTypes: ActionType[]): string {
+  return actionTypes.find((type) => type.type === actionType)?.label ?? fallbackActionLabel(actionType);
+}
+
 const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) => {
   const [selectedTriggerType, setSelectedTriggerType] = useState<TriggerType | null>(null);
   const [allTriggerTypes, setAllTriggerTypes] = useState<TriggerType[]>([]);
+  const [allActionTypes, setAllActionTypes] = useState<ActionType[]>([]);
   const [triggerConfig, setTriggerConfig] = useState<Record<string, unknown>>(
     initialAutomation?.trigger?.config ?? {}
   );
@@ -31,16 +41,30 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
     getTriggerTypes()
       .then((res) => setAllTriggerTypes(res.data))
       .catch(() => {});
+
+    getActionTypes()
+      .then((res) => setAllActionTypes(res.data))
+      .catch(() => {});
   }, []);
   const [actions, setActions] = useState<ActionItemData[]>(
     initialAutomation?.actions.map((a) => ({
       id: a.id,
       actionType: a.actionType,
-      // Derive a display label from the actionType string when editing.
-      label: a.actionType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      label: fallbackActionLabel(a.actionType),
       config: a.config,
     })) ?? []
   );
+
+  // Replace fallback labels with server-defined labels once action types are loaded.
+  useEffect(() => {
+    if (allActionTypes.length === 0) return;
+    setActions((prev) =>
+      prev.map((action) => ({
+        ...action,
+        label: resolveActionLabel(action.actionType, allActionTypes),
+      }))
+    );
+  }, [allActionTypes]);
   const [ruleName, setRuleName] = useState(initialAutomation?.name ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

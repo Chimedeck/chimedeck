@@ -17,4 +17,11 @@ export const flags = {
   /** Returns a typed variant value (boolean | string | number | object). */
   getValue: <T>(flagKey: string, defaultValue: T, context?: FlagContext): Promise<T> =>
     composite.getValue(flagKey, defaultValue, context),
+
+  /** Trello compat uses a dedicated env var for parity with Trello migration docs. */
+  isTrelloCompatEnabled: async (): Promise<boolean> => {
+    const raw = Bun.env['TRELLO_COMPAT_ENABLED'];
+    if (raw !== undefined) return raw === 'true';
+    return composite.isEnabled('TRELLO_COMPAT_ENABLED');
+  },
 };

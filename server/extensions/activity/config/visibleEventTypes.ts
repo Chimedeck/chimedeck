@@ -10,15 +10,18 @@ export const VISIBLE_EVENT_TYPES: string[] = [
   // Card lifecycle events (sprint 88+)
   'card_created',
   'card_moved',
+  'card_move_blocked',
   'card_member_assigned',
   'card_member_unassigned',
   // System events (sprint 29+)
   'card.member.added',
   'card.member.removed',
   'card.due_date.set',
+  'card.due_date.changed',
   'card.due_date.cleared',
   'card.description.updated',
   'card.money.updated',
+  'card.custom_field.updated',
   'attachment_added',
   'card_link_attached',
   'attachment_removed',

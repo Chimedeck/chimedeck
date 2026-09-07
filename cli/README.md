@@ -303,6 +303,98 @@ chimedeck get-card --card card_abc123 --json | jq '.data.title'
 
 ---
 
+### `get-state-transitions`
+
+Retrieve state transition settings and graph for a board.
+
+```sh
+chimedeck get-state-transitions --board <boardId>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--board` | ✓ | ID of the board |
+
+**Example:**
+
+```sh
+chimedeck get-state-transitions --board board_def456
+chimedeck get-state-transitions --board board_def456 --json | jq '.data.enabled'
+```
+
+---
+
+### `set-state-transitions`
+
+Update state transition `enabled` and/or `graph` for a board.
+
+```sh
+chimedeck set-state-transitions --board <boardId> [--enabled <true|false>] [--graph-json '<json>'] [--graph-file <path>]
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--board` | ✓ | ID of the board |
+| `--enabled` | | Enable or disable state transition enforcement |
+| `--graph-json` | | Graph JSON payload as a string |
+| `--graph-file` | | Path to a JSON file containing graph payload |
+
+At least one of `--enabled`, `--graph-json`, or `--graph-file` is required.
+
+**Examples:**
+
+```sh
+# Turn on enforcement
+chimedeck set-state-transitions --board board_def456 --enabled true
+
+# Replace graph from a file
+chimedeck set-state-transitions --board board_def456 --graph-file ./state-graph.json
+```
+
+---
+
+### `get-state-transition-rules`
+
+Retrieve enforceable state-transition rules for a board.
+
+```sh
+chimedeck get-state-transition-rules --board <boardId>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--board` | ✓ | ID of the board |
+
+**Example:**
+
+```sh
+chimedeck get-state-transition-rules --board board_def456 --json | jq '.data[0]'
+```
+
+---
+
+### `copy-state-transitions`
+
+Copy state transition graph from a source board to a target board.
+
+```sh
+chimedeck copy-state-transitions --board <sourceBoardId> --target-board <targetBoardId> [--copy-enabled <true|false>]
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--board` | ✓ | Source board ID |
+| `--target-board` | ✓ | Target board ID |
+| `--copy-enabled` | | Copy source board's `enabled` flag (default true) |
+
+**Example:**
+
+```sh
+chimedeck copy-state-transitions --board board_source --target-board board_target --copy-enabled true
+```
+
+---
+
 ### `search-cards`
 
 Full-text search over all cards within a workspace.

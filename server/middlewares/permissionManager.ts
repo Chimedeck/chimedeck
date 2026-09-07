@@ -19,6 +19,23 @@ export function roleRank(role: Role): number {
   return ROLE_RANK[role];
 }
 
+// Resolve the most privileged role from a list of raw membership role values.
+// This defends against legacy duplicate membership rows (e.g. GUEST + ADMIN).
+export function resolveHighestRole(roles: readonly string[]): Role | null {
+  let highest: Role | null = null;
+
+  for (const rawRole of roles) {
+    if (!(rawRole in ROLE_RANK)) continue;
+    const role = rawRole as Role;
+
+    if (!highest || roleRank(role) > roleRank(highest)) {
+      highest = role;
+    }
+  }
+
+  return highest;
+}
+
 // Returns true when the caller's role satisfies the minimum required role.
 export function hasRole(callerRole: Role, minRole: Role): boolean {
   return roleRank(callerRole) >= roleRank(minRole);
@@ -27,6 +44,7 @@ export function hasRole(callerRole: Role, minRole: Role): boolean {
 export interface WorkspaceScopedRequest extends AuthenticatedRequest {
   workspaceId?: string;
   callerRole?: Role;
+  guestType?: string;
 }
 
 // Resolves workspaceId from URL params or body, then loads the caller's membership.
@@ -42,11 +60,15 @@ export async function requireWorkspaceMembership(
     );
   }
 
-  const membership = await db('memberships')
+  const memberships = await db('memberships')
     .where({ user_id: req.currentUser.id, workspace_id: workspaceId })
-    .first();
+    .select('role');
 
-  if (!membership) {
+  const resolvedRole = resolveHighestRole(
+    memberships.map((m: { role: string }) => m.role),
+  );
+
+  if (!resolvedRole) {
     return Response.json(
       { error: { code: 'insufficient-role', message: 'You are not a member of this workspace' } },
       { status: 403 },
@@ -54,7 +76,7 @@ export async function requireWorkspaceMembership(
   }
 
   req.workspaceId = workspaceId;
-  req.callerRole = membership.role as Role;
+  req.callerRole = resolvedRole;
   return null;
 }
 
@@ -90,12 +112,15 @@ export async function requireMemberOrBoardGuestMember(
   // Workspace MEMBER / ADMIN / OWNER pass through as before.
   if (hasRole(req.callerRole, 'MEMBER')) return null;
 
-  // GUESTs: allow only those with a MEMBER sub-type on this specific board.
-  if (req.callerRole === 'GUEST' && req.currentUser) {
+  // Board-level guest MEMBER sub-type grants write access on this board.
+  // Prefer request context when available, then verify against DB for robustness.
+  if ((req.guestType ?? '').toUpperCase() === 'MEMBER') return null;
+
+  if (req.currentUser) {
     const guestAccess = await db('board_guest_access')
       .where({ user_id: req.currentUser.id, board_id: boardId })
       .first();
-    if (guestAccess?.guest_type === 'MEMBER') return null;
+    if ((guestAccess?.guest_type as string | undefined)?.toUpperCase() === 'MEMBER') return null;
   }
 
   return Response.json(

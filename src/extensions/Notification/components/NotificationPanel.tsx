@@ -20,9 +20,13 @@ interface Props {
   onNavigate: (notification: Notification) => void;
 }
 
-function isStackableDiscussionNotification(notification: Notification): boolean {
-  if (!notification.card_id) return false;
-  return notification.type === 'card_commented' || notification.type === 'mention';
+function resolveBoardCardTagKey(notification: Notification): string | null {
+  if (!notification.board_id || !notification.card_id) return null;
+  return `board-card:${notification.board_id}:${notification.card_id}`;
+}
+
+function resolveContinuousStackKey(notification: Notification): string | null {
+  return resolveBoardCardTagKey(notification);
 }
 
 function groupContinuousCardDiscussionNotifications(notifications: Notification[]): Notification[][] {
@@ -37,9 +41,11 @@ function groupContinuousCardDiscussionNotifications(notifications: Notification[
         continue;
       }
 
-      const canJoinLastGroup = isStackableDiscussionNotification(notification)
-        && isStackableDiscussionNotification(lastGroupFirst)
-        && notification.card_id === lastGroupFirst.card_id;
+      const notificationKey = resolveContinuousStackKey(notification);
+      const lastGroupKey = resolveContinuousStackKey(lastGroupFirst);
+      const canJoinLastGroup = notificationKey != null
+        && lastGroupKey != null
+        && notificationKey === lastGroupKey;
 
       if (canJoinLastGroup) {
         lastGroup.push(notification);

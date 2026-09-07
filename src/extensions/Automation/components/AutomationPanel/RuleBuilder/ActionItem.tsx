@@ -16,14 +16,52 @@ export interface ActionItemData {
   config: Record<string, unknown>;
 }
 
+type CustomFieldMap = Record<string, { name: string; field_type: string; options: Array<{ id: string; label: string }> }>;
+
+const SIMPLE_FIELD_VALUE_READERS: Record<string, (item: ActionItemData) => string> = {
+  TEXT: (item) => (typeof item.config.valueText === 'string' ? item.config.valueText : ''),
+  NUMBER: (item) => (typeof item.config.valueNumber === 'number' ? String(item.config.valueNumber) : ''),
+  DATE: (item) => (typeof item.config.valueDate === 'string' ? item.config.valueDate.slice(0, 10) : ''),
+  CHECKBOX: (item) => (item.config.valueCheckbox === true ? 'Checked' : 'Unchecked'),
+};
+
+function getCustomFieldValueLabel(item: ActionItemData, field: CustomFieldMap[string] | undefined): string {
+  const fieldType = (typeof item.config.fieldType === 'string' ? item.config.fieldType : field?.field_type) ?? '';
+
+  const simpleReader = SIMPLE_FIELD_VALUE_READERS[fieldType];
+  if (simpleReader) return simpleReader(item);
+
+  if (fieldType === 'DROPDOWN') {
+    const optionId = typeof item.config.valueOptionId === 'string' ? item.config.valueOptionId : '';
+    if (!optionId) return '';
+    return field?.options.find((opt) => opt.id === optionId)?.label ?? optionId;
+  }
+
+  return '';
+}
+
+function getCustomFieldSummary(item: ActionItemData, customFieldsById: CustomFieldMap): string | null {
+  if (item.actionType !== 'card.update_custom_field_value') return null;
+
+  const fieldId = typeof item.config.fieldId === 'string' ? item.config.fieldId : '';
+  if (!fieldId) return null;
+
+  const field = customFieldsById[fieldId];
+  const fieldName = field?.name ?? fieldId;
+  const valueLabel = getCustomFieldValueLabel(item, field);
+
+  return valueLabel ? `${fieldName}: ${valueLabel}` : fieldName;
+}
+
 interface Props {
   item: ActionItemData;
   onDelete: () => void;
   onConfigChange: (config: Record<string, unknown>) => void;
   workspaceBoards?: { id: string; title: string }[];
+  customFieldsById?: CustomFieldMap;
 }
 
-const ActionItem = ({ item, onDelete, workspaceBoards = [] }: Props) => {
+const ActionItem = ({ item, onDelete, workspaceBoards = [], customFieldsById = {} }: Props) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -75,7 +113,7 @@ const ActionItem = ({ item, onDelete, workspaceBoards = [] }: Props) => {
   };
 
   // Show the first config value as a summary hint (skip if empty).
-  const configSummary = Object.entries(item.config)
+  const configSummary = getCustomFieldSummary(item, customFieldsById) ?? Object.entries(item.config)
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => resolveConfigValue(k, v))
     .slice(0, 2)

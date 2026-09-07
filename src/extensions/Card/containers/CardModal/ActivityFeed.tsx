@@ -33,6 +33,10 @@ interface Props {
   onAddReply?: (parentId: string, content: string) => Promise<void>;
   onEditReply?: (commentId: string, content: string) => Promise<void>;
   onDeleteReply?: (commentId: string) => Promise<void>;
+  /** Parent/top-level comment id to reveal from deep-link navigation. */
+  focusedCommentId?: string | null;
+  /** Reply comment id from deep-link navigation. */
+  focusedReplyId?: string | null;
   /** False when the current user is a VIEWER guest — hides the comment input. Defaults to true. */
   canAddComment?: boolean;
   /** Notifies parent when editor-visible attachments change (e.g. pasted image upload). */
@@ -150,12 +154,14 @@ type FeedItem =
 
 /** Relative time helper */
 function relativeTime(iso: string): string {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  const date = new Date(iso);
+  const diff = (Date.now() - date.getTime()) / 1000;
+  const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago · ${time}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago · ${time}`;
+  const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${day}, ${time}`;
 }
 
 const ActivityFeed = ({
@@ -173,6 +179,8 @@ const ActivityFeed = ({
   onAddReply,
   onEditReply,
   onDeleteReply,
+  focusedCommentId = null,
+  focusedReplyId = null,
   canAddComment = true,
   onAttachmentsChange,
   insertMarkdownRef,
@@ -281,6 +289,8 @@ const ActivityFeed = ({
                 {...(onAddReply ? { onAddReply } : {})}
                 {...(onEditReply ? { onEditReply } : {})}
                 {...(onDeleteReply ? { onDeleteReply } : {})}
+                isNotificationTarget={focusedCommentId === item.comment.id}
+                autoExpandReplies={focusedCommentId === item.comment.id && Boolean(focusedReplyId)}
               />
             );
           }

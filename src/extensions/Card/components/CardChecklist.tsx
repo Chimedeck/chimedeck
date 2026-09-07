@@ -121,7 +121,6 @@ interface SortableChecklistRowProps {
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
   onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
-  onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
   disabled?: boolean;
   attachments?: Attachment[];
 }
@@ -142,12 +141,15 @@ const SortableChecklistRow = ({
   onItemAssign,
   onItemDueDateChange,
   onItemConvertToCard,
-  onItemReorder,
   disabled,
   attachments,
 }: SortableChecklistRowProps) => {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: checklist.id,
+    id: `checklist:${checklist.id}`,
+    data: {
+      type: 'checklist',
+      checklistId: checklist.id,
+    },
     ...(disabled === undefined ? {} : { disabled }),
   });
 
@@ -203,7 +205,6 @@ const SortableChecklistRow = ({
             onItemAssign={(itemId, memberId) => onItemAssign(checklist.id, itemId, memberId)}
             onItemDueDateChange={(itemId, dueDate) => onItemDueDateChange(checklist.id, itemId, dueDate)}
             onItemConvertToCard={(itemId) => onItemConvertToCard(checklist.id, itemId)}
-            onItemReorder={(itemId, position) => onItemReorder(checklist.id, itemId, position)}
             boardMembers={boardMembers}
             {...(disabled === undefined ? {} : { disabled })}
             {...(attachments === undefined ? {} : { attachments })}
@@ -228,11 +229,138 @@ interface Props {
   onItemAssign: (checklistId: string, itemId: string, memberId: string | null) => Promise<void>;
   onItemDueDateChange: (checklistId: string, itemId: string, dueDate: string | null) => Promise<void>;
   onItemConvertToCard: (checklistId: string, itemId: string) => Promise<void>;
-  onItemReorder: (checklistId: string, itemId: string, position: string) => Promise<void>;
+  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
   disabled?: boolean;
   /** Attachments for the card — forwarded to checklist items to enable attachment-reference previews. */
   attachments?: Attachment[];
 }
+
+type DragMeta = { type?: string; checklistId?: string; itemId?: string };
+
+const reorderWithinChecklist = ({
+  sourceChecklistId,
+  movedItemId,
+  sourceItems,
+  sourceIndex,
+  overType,
+  targetItemId,
+  onItemReorder,
+}: {
+  sourceChecklistId: string;
+  movedItemId: string;
+  sourceItems: Array<{ id: string; position: string }>;
+  sourceIndex: number;
+  overType?: string;
+  targetItemId: string | null;
+  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
+}): void => {
+  const newIndex = overType === 'checklist-dropzone'
+    ? sourceItems.length - 1
+    : sourceItems.findIndex((item) => item.id === targetItemId);
+  if (newIndex < 0 || newIndex === sourceIndex) return;
+
+  const reordered = arrayMove(sourceItems, sourceIndex, newIndex);
+  const leftPosition = newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
+  const rightPosition = newIndex < reordered.length - 1
+    ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
+    : HIGH_SENTINEL;
+  const position = computePositionBetween(leftPosition, rightPosition);
+  void onItemReorder(sourceChecklistId, movedItemId, position, sourceChecklistId);
+};
+
+const handleChecklistItemDrop = ({
+  orderedChecklists,
+  activeMeta,
+  overMeta,
+  activeId,
+  overType,
+  onItemReorder,
+}: {
+  orderedChecklists: Checklist[];
+  activeMeta: DragMeta;
+  overMeta: DragMeta;
+  activeId: string;
+  overType?: string;
+  onItemReorder: (sourceChecklistId: string, itemId: string, position: string, targetChecklistId?: string) => Promise<void>;
+}): void => {
+  const sourceChecklistId = activeMeta.checklistId;
+  const movedItemId = activeMeta.itemId ?? activeId;
+  const targetChecklistId = overMeta.checklistId;
+  const targetItemId = overType === 'checklist-item' ? (overMeta.itemId ?? null) : null;
+  if (!sourceChecklistId || !movedItemId || !targetChecklistId) return;
+
+  const sourceChecklist = orderedChecklists.find((checklist) => checklist.id === sourceChecklistId);
+  const targetChecklist = orderedChecklists.find((checklist) => checklist.id === targetChecklistId);
+  const sourceItem = sourceChecklist?.items.find((item) => item.id === movedItemId);
+  if (!sourceChecklist || !targetChecklist || !sourceItem) return;
+
+  const sourceItems = [...sourceChecklist.items].sort((left, right) => comparePosition(left.position, right.position));
+  const sourceIndex = sourceItems.findIndex((item) => item.id === movedItemId);
+  if (sourceIndex < 0) return;
+
+  if (sourceChecklistId === targetChecklistId) {
+    reorderWithinChecklist({
+      sourceChecklistId,
+      movedItemId,
+      sourceItems,
+      sourceIndex,
+      overType,
+      targetItemId,
+      onItemReorder,
+    });
+    return;
+  }
+
+  const targetItems = [...targetChecklist.items]
+    .filter((item) => item.id !== movedItemId)
+    .sort((left, right) => comparePosition(left.position, right.position));
+  const insertionIndex = overType === 'checklist-item'
+    ? targetItems.findIndex((item) => item.id === targetItemId)
+    : targetItems.length;
+  const normalizedInsertionIndex = insertionIndex >= 0 ? insertionIndex : targetItems.length;
+
+  const withMoved = [...targetItems];
+  withMoved.splice(normalizedInsertionIndex, 0, sourceItem);
+  const leftPosition = normalizedInsertionIndex > 0
+    ? (withMoved[normalizedInsertionIndex - 1]?.position ?? LOW_SENTINEL)
+    : LOW_SENTINEL;
+  const rightPosition = normalizedInsertionIndex < withMoved.length - 1
+    ? (withMoved[normalizedInsertionIndex + 1]?.position ?? HIGH_SENTINEL)
+    : HIGH_SENTINEL;
+  const position = computePositionBetween(leftPosition, rightPosition);
+  void onItemReorder(sourceChecklistId, movedItemId, position, targetChecklistId);
+};
+
+const handleChecklistDrop = ({
+  orderedChecklists,
+  activeMeta,
+  overMeta,
+  onChecklistReorder,
+}: {
+  orderedChecklists: Checklist[];
+  activeMeta: DragMeta;
+  overMeta: DragMeta;
+  onChecklistReorder: (checklistId: string, position: string) => Promise<void>;
+}): void => {
+  const activeChecklistId = activeMeta.checklistId;
+  const targetChecklistId = overMeta.checklistId;
+  if (!activeChecklistId || !targetChecklistId || activeChecklistId === targetChecklistId) return;
+
+  const oldIndex = orderedChecklists.findIndex((cl) => cl.id === activeChecklistId);
+  const newIndex = orderedChecklists.findIndex((cl) => cl.id === targetChecklistId);
+  if (oldIndex < 0 || newIndex < 0) return;
+
+  const reordered = arrayMove(orderedChecklists, oldIndex, newIndex);
+  const moved = reordered[newIndex];
+  if (!moved) return;
+
+  const leftPosition = newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
+  const rightPosition = newIndex < reordered.length - 1
+    ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
+    : HIGH_SENTINEL;
+  const position = computePositionBetween(leftPosition, rightPosition);
+  void onChecklistReorder(moved.id, position);
+};
 
 const CardChecklist = ({
   checklists,
@@ -294,21 +422,29 @@ const CardChecklist = ({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = orderedChecklists.findIndex((cl) => cl.id === active.id);
-    const newIndex = orderedChecklists.findIndex((cl) => cl.id === over.id);
-    if (oldIndex < 0 || newIndex < 0) return;
+    const activeMeta = (active.data.current as DragMeta | undefined) ?? {};
+    const overMeta = (over.data.current as DragMeta | undefined) ?? {};
 
-    const reordered = arrayMove(orderedChecklists, oldIndex, newIndex);
-    const moved = reordered[newIndex];
-    if (!moved) return;
+    if (activeMeta.type === 'checklist-item') {
+      handleChecklistItemDrop({
+        orderedChecklists,
+        activeMeta,
+        overMeta,
+        activeId: String(active.id),
+        overType: overMeta.type,
+        onItemReorder,
+      });
+      return;
+    }
 
-    const leftPosition = newIndex > 0 ? (reordered[newIndex - 1]?.position ?? LOW_SENTINEL) : LOW_SENTINEL;
-    const rightPosition = newIndex < reordered.length - 1
-      ? (reordered[newIndex + 1]?.position ?? HIGH_SENTINEL)
-      : HIGH_SENTINEL;
-    const position = computePositionBetween(leftPosition, rightPosition);
+    if (activeMeta.type !== 'checklist') return;
 
-    void onChecklistReorder(moved.id, position);
+    handleChecklistDrop({
+      orderedChecklists,
+      activeMeta,
+      overMeta,
+      onChecklistReorder,
+    });
   };
 
   if (checklists.length === 0 && disabled) return null;
@@ -377,7 +513,7 @@ const CardChecklist = ({
         onDragEnd={handleDragEnd}
       >
         <SortableContext
-          items={orderedChecklists.map((cl) => cl.id)}
+          items={orderedChecklists.map((cl) => `checklist:${cl.id}`)}
           strategy={verticalListSortingStrategy}
         >
           <div className="space-y-6">
@@ -399,7 +535,6 @@ const CardChecklist = ({
                 onItemAssign={onItemAssign}
                 onItemDueDateChange={onItemDueDateChange}
                 onItemConvertToCard={onItemConvertToCard}
-                onItemReorder={onItemReorder}
                 {...(disabled === undefined ? {} : { disabled })}
                 {...(attachments === undefined ? {} : { attachments })}
               />

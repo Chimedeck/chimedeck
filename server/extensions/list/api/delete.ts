@@ -9,6 +9,8 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { requireBoardWritable, type BoardScopedRequest } from '../../board/middlewares/requireBoardWritable';
+import { featureFlags } from '../../../config/featureFlags';
+import { syncStateTransitionsOnListDelete } from '../../stateTransitions/hooks/listSync';
 
 export async function handleDeleteList(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -58,6 +60,10 @@ export async function handleDeleteList(req: Request, listId: string): Promise<Re
   }
 
   await db('lists').where({ id: listId }).del();
+
+  if (featureFlags.STATE_TRANSITIONS_ENABLED) {
+    await syncStateTransitionsOnListDelete(list.board_id);
+  }
 
   // Stub event emission.
   await writeEvent({ type: 'list_deleted', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: {} });

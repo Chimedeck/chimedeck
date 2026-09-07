@@ -110,6 +110,53 @@ function addLinkTargetBlank(html: string): string {
   );
 }
 
+function htmlFragmentToMarkdown(html: string): string {
+  if (!html.trim() || typeof globalThis.window === 'undefined') return '';
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
+  const root = doc.body.firstElementChild;
+  if (!root) return '';
+
+  const blockTags = new Set(['P', 'DIV', 'LI', 'UL', 'OL', 'BLOCKQUOTE', 'PRE']);
+
+  const render = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
+    if (!(node instanceof HTMLElement)) return '';
+
+    const children = Array.from(node.childNodes).map(render).join('');
+
+    if (node.tagName === 'A') {
+      const href = node.getAttribute('href')?.trim();
+      const label = children.trim() || href || '';
+      if (!href) return label;
+      return `[${label}](${href})`;
+    }
+    if (node.tagName === 'STRONG' || node.tagName === 'B') return `**${children}**`;
+    if (node.tagName === 'EM' || node.tagName === 'I') return `*${children}*`;
+    if (node.tagName === 'CODE') return `\`${children}\``;
+    if (node.tagName === 'BR') return '\n';
+
+    if (node.tagName === 'LI') {
+      const line = children.trim();
+      return line ? `- ${line}\n` : '';
+    }
+
+    if (blockTags.has(node.tagName)) {
+      const line = children.trim();
+      return line ? `${line}\n` : '';
+    }
+
+    return children;
+  };
+
+  return Array.from(root.childNodes)
+    .map(render)
+    .join('')
+    .replaceAll(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 interface Props {
   item: ChecklistItemType;
   boardMembers: Array<{ id: string; email: string; name: string | null; avatar_url?: string | null }>;
@@ -272,6 +319,29 @@ export const ChecklistItem = ({
     setEditing(false);
   };
 
+  const handleEditPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const html = event.clipboardData.getData('text/html').trim();
+    if (!html) return;
+
+    const markdown = htmlFragmentToMarkdown(html);
+    if (!markdown) return;
+
+    event.preventDefault();
+    const textarea = event.currentTarget;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    const nextTitle = `${title.slice(0, selectionStart)}${markdown}${title.slice(selectionEnd)}`;
+    setTitle(nextTitle);
+
+    requestAnimationFrame(() => {
+      const caret = selectionStart + markdown.length;
+      textarea.selectionStart = caret;
+      textarea.selectionEnd = caret;
+      textarea.style.height = 'auto';
+      textarea.style.height = String(textarea.scrollHeight) + 'px';
+    });
+  };
+
   const handleDueSave = async () => {
     if (!dueDateInput) return;
     const [year, month, day] = dueDateInput.split('-').map(Number);
@@ -328,6 +398,7 @@ export const ChecklistItem = ({
             e.target.style.height = `${e.target.scrollHeight}px`;
           }}
           onBlur={submitRename}
+          onPaste={handleEditPaste}
           // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
           // capture the pointer-down and turn text selection into an item drag.
           onPointerDown={(e) => { e.stopPropagation(); }}

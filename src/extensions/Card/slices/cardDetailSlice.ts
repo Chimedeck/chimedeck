@@ -210,8 +210,12 @@ const cardDetailSlice = createSlice({
 
     // ── Realtime activity events ─────────────────────────────────────────────
     addActivity(state, action: PayloadAction<ActivityData>) {
-      // Only append if this activity belongs to the currently open card.
-      if (state.openCardId !== action.payload.entity_id) return;
+      // [why] URL query may use short_id while realtime payload uses canonical id.
+      // Accept match via openCardId, loaded card id, or loaded card short_id.
+      const eventCardId = action.payload.entity_id;
+      const matchesOpenCard = state.openCardId === eventCardId;
+      const matchesLoadedCard = state.card?.id === eventCardId || state.card?.short_id === eventCardId;
+      if (!matchesOpenCard && !matchesLoadedCard) return;
       // Deduplicate: skip if already present (initial fetch + realtime can both deliver the same row).
       if (state.activities.some((a) => a.id === action.payload.id)) return;
       state.activities.push(action.payload);
@@ -385,6 +389,41 @@ const cardDetailSlice = createSlice({
       const cl = state.checklists.find((c) => c.id === checklistId);
       const item = cl?.items.find((i) => i.id === itemId);
       if (item) Object.assign(item, fields);
+    },
+
+    applyOptimisticChecklistItemMove(
+      state,
+      action: PayloadAction<{
+        mutationId: string;
+        sourceChecklistId: string;
+        targetChecklistId: string;
+        itemId: string;
+        position: string;
+      }>,
+    ) {
+      const { mutationId, sourceChecklistId, targetChecklistId, itemId, position } = action.payload;
+      state.snapshots[mutationId] = snapshot(state);
+
+      if (sourceChecklistId === targetChecklistId) {
+        const checklist = state.checklists.find((value) => value.id === sourceChecklistId);
+        const item = checklist?.items.find((value) => value.id === itemId);
+        if (item) item.position = position;
+        return;
+      }
+
+      const sourceChecklist = state.checklists.find((value) => value.id === sourceChecklistId);
+      const targetChecklist = state.checklists.find((value) => value.id === targetChecklistId);
+      if (!sourceChecklist || !targetChecklist) return;
+
+      const sourceIndex = sourceChecklist.items.findIndex((value) => value.id === itemId);
+      if (sourceIndex < 0) return;
+
+      const [movedItem] = sourceChecklist.items.splice(sourceIndex, 1);
+      if (!movedItem) return;
+
+      movedItem.checklist_id = targetChecklistId;
+      movedItem.position = position;
+      targetChecklist.items.push(movedItem);
     },
 
     // ── Optimistic label assign/unassign ────────────────────────────────────

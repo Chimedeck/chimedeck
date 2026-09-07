@@ -163,6 +163,24 @@
 | [136](./sprint-136.md) | Webhooks: Register UI (`WebhooksRegisterPage`) | `/settings/webhooks` page (mirrors `ApiTokenPage`); register-endpoint modal with event-type checklist; one-time signing-secret reveal modal; edit + delete dialogs; `SignatureVerificationSnippet` JS code guide | ⬜ Needs 135 + 102 |
 | **— Card Cover —** | | | |
 | [137](./sprint-137.md) | Card Cover: Aspect Ratio & GIF Support | Auto 16:9 / 1:1 aspect ratio from image dimensions; `object-contain` rendering; GIF covers skip WebP thumbnail and loop natively; `width`/`height` stored on attachments | ⬜ Needs 90 |
+| **— Trello API Wrapper —** | | | |
+| [142](./sprint-142.md) | Trello Compat: Foundation | `/trello/1/*` compatibility layer backed by ChimeDeck data; `trelloAuth` middleware (accepts `?token=hf_xxx` OR Bearer); Trello response type definitions; entity serializers (member, label, position); `errors.ts` helper; `TRELLO_COMPAT_ENABLED` flag; `GET /trello/1/members/me` | ⬜ Needs 101 |
+| [143](./sprint-143.md) | Trello Compat: Boards | Full `/trello/1/boards/*` surface — CRUD, lists, cards, members, labels, memberships, actions; board serializer; `defaultLists` creation; permission guard | ⬜ Needs 142 |
+| [144](./sprint-144.md) | Trello Compat: Cards | Full `/trello/1/cards/*` surface — CRUD, comments, checklists, checkItems, members, labels, attachments, customFieldItems, board/list sub-resources; card serializer | ⬜ Needs 143 |
+| [145](./sprint-145.md) | Trello Compat: Lists | Full `/trello/1/lists/*` surface — CRUD, archiveAllCards, moveAllCards, board + cards sub-resources; `pos` top/bottom/numeric conversion; list serializer | ⬜ Needs 143 |
+| [146](./sprint-146.md) | Trello Compat: Checklists & Labels | Full `/trello/1/checklists/*` and `/trello/1/labels/*` surfaces — checklist/checkItem CRUD with `idChecklistSource` copy; label CRUD; serializers | ⬜ Needs 144 |
+| [147](./sprint-147.md) | Trello Compat: Members & Organizations | Full `/trello/1/members/*` and `/trello/1/organizations/*` surfaces — member profile + boards/cards/orgs; workspace CRUD + invite by email; org serializer | ⬜ Needs 143 |
+| [148](./sprint-148.md) | Trello Compat: Actions, Search & CustomFields | `/trello/1/actions/*` (comments + activity → Trello action types); `/trello/1/search` + `/trello/1/search/members/`; `/trello/1/customFields/*` with card value upsert — completes full compatibility surface | ⬜ Needs 142 |
+| [149](./sprint-149.md) | Trello Compat: Response Normalization Baseline & Contract Matrix | Adapter-only parity matrix for all implemented `/trello/1/*` endpoints (sprints 142–148); canonical serialization rules; contract-test scaffolding; no Native API changes | ⬜ Needs 148 |
+| [150](./sprint-150.md) | Trello Compat: Actions Response Normalization | Trello Actions parity against Atlassian docs: normalize action payloads, field projection, member/memberCreator/display semantics, reactions list/get/create/delete/summary, action organization/field routes | ⬜ Needs 149 |
+| [151](./sprint-151.md) | Trello Compat: Core Entity Response Normalization | Normalize boards/cards/lists/checklists/labels response shapes and cross-endpoint serializer consistency; apply Trello-style field projection where supported | ⬜ Needs 149 |
+| [152](./sprint-152.md) | Trello Compat: Metadata & Search Response Normalization | Normalize members/organizations/search/customFields responses, envelopes, and Trello-style error semantics for adapter-only routes | ⬜ Needs 149 + 150 + 151 |
+| **— Enforceable State Transitions —** | | | |
+| [153](./sprint-153.md) | State Transitions: DB + Core API | `board_state_transitions` table, graph JSONB schema, GET/PUT graph API, `/rules` endpoint for agents/MCP, `POST /copy` to clone to another board, `STATE_TRANSITIONS_ENABLED` flag, WS broadcast on save | ⬜ Needs 05 + 06 + 07 |
+| [154](./sprint-154.md) | State Transitions: Card Move Enforcement | `validateCardMove` guard wired into card move handler, `422 state-transition-forbidden` response with allowed states payload, in-memory rules cache, activity log on blocked move, Trello-compat error mapping | ⬜ Needs 153 |
+| [155](./sprint-155.md) | State Transitions: Graph Editor Foundation | `bun add @xyflow/react`; Board Settings entry (`ArrowsRightLeftIcon`); full-screen overlay graph editor; column nodes with handles; draggable positions persisted; enable/disable toggle saved server-side | ⬜ Needs 153 + 18 + 19 |
+| [156](./sprint-156.md) | State Transitions: Edges, Toolbar & Real-Time Sync | Drag-to-create edges, `TransitionEdge` component (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), `StickyNoteNode`, real-time WS collaborative editing, undo stack, `config/actionTypes.ts` extensibility stub | ⬜ Needs 155 + 09 + 10 |
+| [157](./sprint-157.md) | State Transitions: Kanban Enforcement UI + Copy to Board | `useStateTransitionGuard` DnD pre-check, `StateTransitionErrorPopup`, forbidden-column drag-over highlight, locked-column icon, Copy to Board modal (cross-workspace), "Transitions Active" banner | ⬜ Needs 154 + 156 |
 
 ---
 
@@ -193,6 +211,8 @@ Feature flags infrastructure (`server/mods/flags/`) is delivered in **sprint 01*
 | `SENTRY_CLIENT_ENABLED` | Sprint 123 | Skip browser-side Sentry SDK initialisation (no client error/performance events sent) |
 | `SENTRY_SERVER_ENABLED` | Sprint 123 | Skip Bun server Sentry SDK initialisation and server-side capture wrappers |
 | `DESIGN_SYSTEM_ENABLED` | Sprint 134 | Expose `/design-system` route in the client (default: `true` in dev, `false` in production) |
+| `TRELLO_COMPAT_ENABLED` | Sprint 142 | Enable the `/trello/1/*` Trello-compatible API layer backed by ChimeDeck data (default: `false`; no Trello credentials required) |
+| `STATE_TRANSITIONS_ENABLED` | Sprint 153 | Enable board-level enforceable state transitions: DB migration, graph API, enforcement guard, and graph editor UI (default: `false`) |
 
 ---
 
@@ -322,7 +342,30 @@ Sprint 94 ──────────── i18n Phase 5: Mention, Notificati
 Sprint 121 ─────────── Email template centralisation: extract HTML to *.html files, Handlebars {{var}} binding, renderTemplate helper
 ──── Monitoring & Error Tracking ────────────────────────────────────────────────────────────────
 Sprint 123 ─────────── Sentry end-to-end monitoring: React runtime errors + route tracing, Bun API error capture, shared release/environment tags, source map upload for deobfuscated stack traces
+──── Enforceable State Transitions ──────────────────────────────────────────────────────────────
+Sprint 153 ─────────── StateTransitionGraph (board_state_transitions table): nodes = lists, edges = allowed_move_to rules, notes = sticky annotations; GET/PUT graph API, /rules endpoint for agents/MCP/CLI, POST /copy cross-board
+Sprint 154 ─────────── Card move enforcement: validateCardMove guard, 422 state-transition-forbidden with allowed states, in-memory rules cache, blocked-move activity log, Trello-compat error mapping
+Sprint 155 ─────────── Graph editor UI foundation: Board Settings entry (ArrowsRightLeftIcon), full-screen ReactFlow canvas overlay, column nodes with handles, draggable positions persisted, enable/disable toggle
+Sprint 156 ─────────── Graph editor full: drag-to-create edges, TransitionEdge (straight/curved, one/two-way), edge inspector, toolbar (Add Column, Arrow type, Add Note), StickyNoteNode, real-time WS collaborative editing, undo stack
+Sprint 157 ─────────── Kanban enforcement UI: DnD pre-move guard, StateTransitionErrorPopup, forbidden-column drag highlight, locked column icon, Copy to Board cross-workspace modal, "Transitions Active" banner
 ```
+
+---
+
+## Security Audit Program (No-Code Documentation Only)
+
+These security sprints are documentation-only and must not include implementation changes.
+
+- NO CODE should be created.
+- ONLY CREATE AUDIT DOCUMENT.
+- Every loophole found must be documented as a separate file under `security/audits/`.
+
+| Sprint | Focus | Deliverables | Status |
+|--------|-------|-------------|--------|
+| [138](./sprint-138.md) | Multi-Tenancy Boundary Mapping | 3 loophole audit files in `security/audits/` | ⬜ Planned |
+| [139](./sprint-139.md) | API Authorization and Privilege Controls | 3 loophole audit files in `security/audits/` | ⬜ Planned |
+| [140](./sprint-140.md) | Realtime and Data Isolation Paths | 3 loophole audit files in `security/audits/` | ⬜ Planned |
+| [141](./sprint-141.md) | Verification, Severity Triage, Final Reporting | Audit summary + severity matrix + validation notes | ⬜ Planned |
 
 ---
 

@@ -32,6 +32,17 @@ function textValue(value: unknown): string {
   return '';
 }
 
+function formatDueDateParts(value: unknown): { dueDate: string; dueTime: string } {
+  if (typeof value !== 'string') return { dueDate: '', dueTime: '' };
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { dueDate: '', dueTime: '' };
+
+  return {
+    dueDate: parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    dueTime: parsed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+  };
+}
+
 function describeAction(
   action: string,
   payload: Record<string, unknown>,
@@ -51,9 +62,12 @@ function describeAction(
   const name = textValue(payload.name);
   const assigneeName = textValue(payload.assigneeName);
   const emoji = textValue(payload.emoji);
+  const fieldName = textValue(payload.fieldName);
+  const newValueDisplay = textValue(payload.newValueDisplay);
   const referencedCardTitle = textValue(payload.referencedCardTitle);
   const linkUrl = textValue(payload.linkUrl);
   const linkTarget = referencedCardTitle || name || linkUrl || 'a link';
+  const { dueDate, dueTime } = formatDueDateParts(payload.dueDate);
 
   const key = `activity.action.${action}` as keyof typeof translations;
   const template = translations[key] ?? translations['activity.action.unknown'];
@@ -72,8 +86,12 @@ function describeAction(
     referencedCardTitle,
     linkUrl,
     linkTarget,
+    fieldName,
+    newValueDisplay,
     assigneeName,
     emoji,
+    dueDate,
+    dueTime,
   });
 }
 

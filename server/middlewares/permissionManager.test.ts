@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { roleRank, hasRole, requireRole } from './permissionManager';
+import { roleRank, hasRole, requireRole, resolveHighestRole } from './permissionManager';
 import type { WorkspaceScopedRequest } from './permissionManager';
 
 describe('roleRank', () => {
@@ -49,6 +49,21 @@ describe('hasRole', () => {
   });
 });
 
+describe('resolveHighestRole', () => {
+  test('returns highest privilege from mixed roles', () => {
+    expect(resolveHighestRole(['GUEST', 'MEMBER', 'ADMIN'])).toBe('ADMIN');
+  });
+
+  test('ignores unknown values while selecting highest role', () => {
+    expect(resolveHighestRole(['UNKNOWN', 'GUEST', 'VIEWER'])).toBe('VIEWER');
+  });
+
+  test('returns null when no valid role exists', () => {
+    expect(resolveHighestRole([])).toBeNull();
+    expect(resolveHighestRole(['UNKNOWN'])).toBeNull();
+  });
+});
+
 describe('requireRole', () => {
   function makeReq(callerRole?: string): WorkspaceScopedRequest {
     return { callerRole } as WorkspaceScopedRequest;
@@ -66,7 +81,7 @@ describe('requireRole', () => {
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
     const body = await result!.json();
-    expect(body.name).toBe('insufficient-role');
+    expect(body.error?.code).toBe('insufficient-role');
   });
 
   test('returns 403 when callerRole is undefined', async () => {
@@ -75,7 +90,7 @@ describe('requireRole', () => {
     expect(result).not.toBeNull();
     expect(result!.status).toBe(403);
     const body = await result!.json();
-    expect(body.name).toBe('insufficient-role');
+    expect(body.error?.code).toBe('insufficient-role');
   });
 
   test('OWNER passes OWNER requirement', () => {

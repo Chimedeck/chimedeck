@@ -41,7 +41,22 @@ export default function NotificationContainer() {
     (notification: Notification) => {
       const n = notification as Notification & { board_short_id?: string | null; card_short_id?: string | null };
       if (notification.board_id && notification.card_id) {
-        navigate(cardPath({ id: notification.card_id, short_id: n.card_short_id ?? undefined }));
+        const params = new URLSearchParams();
+
+        if (notification.type === 'card_commented' && notification.source_id) {
+          if (notification.source_parent_id) {
+            params.set('comment', notification.source_parent_id);
+            params.set('reply', notification.source_id);
+          } else {
+            params.set('comment', notification.source_id);
+          }
+        } else if (notification.source_type === 'comment' && notification.source_id) {
+          params.set('comment', notification.source_id);
+        }
+
+        const cardUrl = cardPath({ id: notification.card_id, short_id: n.card_short_id ?? undefined });
+        const search = params.toString();
+        navigate(search ? `${cardUrl}?${search}` : cardUrl);
       } else if (notification.board_id) {
         navigate(boardPath({ id: notification.board_id, short_id: n.board_short_id ?? undefined }));
       }

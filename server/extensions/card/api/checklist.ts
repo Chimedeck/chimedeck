@@ -1,6 +1,6 @@
 // Card checklist items sub-resource.
 // POST   /api/v1/cards/:id/checklist          — add item; min role MEMBER
-// PATCH  /api/v1/checklist-items/:id          — update title/checked/position; min role MEMBER
+// PATCH  /api/v1/checklist-items/:id          — update title/checked/position/checklist_id; min role MEMBER
 // DELETE /api/v1/checklist-items/:id          — delete item; min role MEMBER
 import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
@@ -24,6 +24,7 @@ interface ChecklistItemPatchBody {
   title?: string;
   checked?: boolean;
   position?: string;
+  checklist_id?: string | null;
   assigned_member_id?: string | null;
   due_date?: string | null;
 }
@@ -150,6 +151,7 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
     title?: string;
     checked?: boolean;
     position?: string;
+    checklist_id?: string | null;
     assigned_member_id?: string | null;
     due_date?: string | null;
   } = {};
@@ -182,6 +184,37 @@ export async function handleUpdateChecklistItem(req: Request, itemId: string): P
       );
     }
     updates.position = body.position;
+  }
+
+  if (body.checklist_id !== undefined) {
+    if (body.checklist_id !== null && typeof body.checklist_id !== 'string') {
+      return Response.json(
+        { error: { code: 'bad-request', message: 'checklist_id must be a string or null' } },
+        { status: 400 },
+      );
+    }
+
+    if (typeof body.checklist_id === 'string') {
+      const targetChecklist = await db('checklists')
+        .where({ id: body.checklist_id })
+        .first();
+
+      if (!targetChecklist) {
+        return Response.json(
+          { error: { code: 'bad-request', message: 'checklist_id must reference an existing checklist' } },
+          { status: 400 },
+        );
+      }
+
+      if (targetChecklist.card_id !== item.card_id) {
+        return Response.json(
+          { error: { code: 'bad-request', message: 'checklist_id must belong to the same card' } },
+          { status: 400 },
+        );
+      }
+    }
+
+    updates.checklist_id = body.checklist_id;
   }
 
   if (body.assigned_member_id !== undefined) {

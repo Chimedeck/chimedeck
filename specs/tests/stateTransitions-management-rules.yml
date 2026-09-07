@@ -1,0 +1,57 @@
+name: state-transitions-management-rules
+description: Verify PUT broadcast and list-sync hooks for state transition graph consistency.
+scope:
+  - PUT /api/v1/boards/:boardId/state-transitions
+  - List rename hook sync
+  - List delete hook sync
+preconditions:
+  - Caller is board ADMIN or OWNER.
+  - STATE_TRANSITIONS_ENABLED=true unless explicitly disabled by a case.
+cases:
+  - id: put-broadcast-event
+    title: Successful PUT emits state_transition_updated
+    setup:
+      - Persist state transition row for board.
+      - Prepare websocket/pubsub observer for board channel.
+    action:
+      - Send PUT with enabled and/or graph changes.
+    expect:
+      status: 200
+      event:
+        type: state_transition_updated
+        board_id: ":boardId"
+        payload:
+          includes:
+            - enabled
+            - graph
+  - id: list-rename-sync
+    title: List rename updates matching node label
+    setup:
+      - Persist graph containing node mapped to renamed list id with stale label.
+      - Rename board list title.
+    action:
+      - Trigger list rename flow.
+    expect:
+      assertions:
+        - graph_data node label for listId is updated to current list title.
+  - id: list-delete-sync
+    title: List delete strips nodes and related edges
+    setup:
+      - Persist graph with node mapped to list that will be deleted.
+      - Persist edges where fromNodeId or toNodeId references that node.
+    action:
+      - Trigger list delete flow.
+    expect:
+      assertions:
+        - deleted list node is removed from graph_data.nodes.
+        - all edges referencing removed node are removed from graph_data.edges.
+  - id: management-feature-flag-off
+    title: State transitions endpoints return not implemented when feature disabled
+    setup:
+      - Set STATE_TRANSITIONS_ENABLED=false.
+    action:
+      - Send PUT /api/v1/boards/:boardId/state-transitions.
+    expect:
+      status: 501
+      body:
+        name: not-implemented

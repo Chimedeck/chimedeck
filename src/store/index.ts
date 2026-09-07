@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { apiClient } from '../common/api/client';
-import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, pluginRegistryReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer, boardNotificationTypePreferencesApi, apiTokenApi, webhooksApi, healthCheckTabReducer } from '../reducers';
+import { authReducer, workspaceShellReducer, boardReducer, boardListPageReducer, boardPageReducer, workspacePageReducer, cardDetailReducer, listReducer, cardsReducer, profileDuckReducer, notificationReducer, pluginDashboardReducer, pluginRegistryReducer, adminInviteReducer, viewPreferenceReducer, notificationPreferencesApi, boardMembersApi, boardGuestsApi, searchReducer, boardNotificationTypePreferencesApi, apiTokenApi, webhooksApi, stateTransitionsApi, healthCheckTabReducer } from '../reducers';
 import { uiReducer } from '../slices/uiSlice';
 import { featureFlagsReducer } from '../slices/featureFlagsSlice';
 import { wsMiddleware } from '../extensions/Realtime/middleware/wsMiddleware';
@@ -40,6 +40,7 @@ export const store = configureStore({
     [boardNotificationTypePreferencesApi.reducerPath]: boardNotificationTypePreferencesApi.reducer,
     [apiTokenApi.reducerPath]: apiTokenApi.reducer,
     [webhooksApi.reducerPath]: webhooksApi.reducer,
+    [stateTransitionsApi.reducerPath]: stateTransitionsApi.reducer,
     search: searchReducer,
     healthCheckTab: healthCheckTabReducer,
   },
@@ -54,7 +55,7 @@ export const store = configureStore({
       // behavior identical while improving local interaction performance.
       serializableCheck: DISABLE_DEEP_CHECKS_IN_DEV ? false : { warnAfter: 128 },
       immutableCheck: DISABLE_DEEP_CHECKS_IN_DEV ? false : { warnAfter: 128 },
-    }).concat(wsMiddleware, notificationPreferencesApi.middleware, boardMembersApi.middleware, boardGuestsApi.middleware, boardNotificationTypePreferencesApi.middleware, apiTokenApi.middleware, webhooksApi.middleware),
+    }).concat(wsMiddleware, notificationPreferencesApi.middleware, boardMembersApi.middleware, boardGuestsApi.middleware, boardNotificationTypePreferencesApi.middleware, apiTokenApi.middleware, webhooksApi.middleware, stateTransitionsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -12,6 +12,8 @@ import { requireCardWritable, type CardScopedRequest } from '../middlewares/requ
 import { between, HIGH_SENTINEL, generatePositions } from '../../list/mods/fractional';
 import { recordConflict } from '../../realtime/mods/conflictHandler';
 import { emitCardMoved } from '../../activity/mods/createActivityEvent';
+import { validateCardMove } from '../../stateTransitions/enforcement';
+import { StateTransitionForbiddenError } from '../../stateTransitions/common/errors';
 
 type MoveBody = { targetListId: string; afterCardId?: string | null };
 
@@ -188,6 +190,36 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   if (listsOrError instanceof Response) return listsOrError;
   const { targetList, sourceList } = listsOrError;
 
+  try {
+    await validateCardMove({
+      boardId: board.id,
+      fromListId: card.list_id,
+      toListId: body.targetListId,
+      cardId,
+      actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system',
+      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+    });
+  } catch (error) {
+    if (error instanceof StateTransitionForbiddenError) {
+      return Response.json(
+        {
+          name: 'state-transition-forbidden',
+          data: {
+            boardId: error.boardId,
+            fromListId: error.fromListId,
+            fromListName: sourceList.title ?? error.fromListName,
+            toListId: error.toListId,
+            toListName: targetList.title ?? error.toListName,
+            allowedNextStates: error.allowedNextStates,
+          },
+        },
+        { status: 422 },
+      );
+    }
+    throw error;
+  }
+
   // For cross-board moves, verify the caller has write access on the target board too.
   const isCrossBoard = sourceList.board_id !== targetList.board_id;
   if (isCrossBoard) {
@@ -214,6 +246,27 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
       { error: { code: 'card-not-found', message: 'afterCardId not found in target list' } },
       { status: 404 },
     );
+  }
+
+  const isSameListMove = card.list_id === body.targetListId;
+  if (isSameListMove) {
+    // [why] Drag/drop can commit even when card stays at the same index.
+    // Treat this as a no-op: skip writes, events, and notifications.
+    const currentListCardIds = await db('cards')
+      .where({ list_id: card.list_id, archived: false })
+      .orderBy('position', 'asc')
+      .select('id');
+    const currentIndex = currentListCardIds.findIndex((entry: { id: string }) => entry.id === cardId);
+    if (currentIndex === insertIndex) {
+      const unchangedCard = await db('cards').where({ id: cardId }).first();
+      if (!unchangedCard) {
+        return Response.json(
+          { error: { code: 'card-not-found', message: 'Card not found after move' } },
+          { status: 404 },
+        );
+      }
+      return Response.json({ data: unchangedCard });
+    }
   }
 
   const left = insertIndex > 0 ? targetCards[insertIndex - 1]?.position ?? '' : '';
@@ -254,22 +307,24 @@ export async function handleMoveCard(req: Request, cardId: string): Promise<Resp
   const fromListId = card.list_id;
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 
-  await Promise.all([
-    dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updatedCard, fromListId, toListId: updatedCard.list_id } }),
-    emitCardMoved({
-      actorId,
-      cardId,
-      cardTitle: updatedCard.title,
-      fromListId,
-      fromListName: sourceList!.title ?? null,
-      toListId: updatedCard.list_id,
-      toListName: targetList.title ?? null,
-      boardId: board.id,
-      workspaceId: board.workspace_id,
-      ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
-      userAgent: req.headers.get('user-agent') ?? null,
-    }),
-  ]);
+  if (fromListId !== updatedCard.list_id) {
+    await Promise.all([
+      dispatchEvent({ type: 'card.moved', boardId: board.id, entityId: cardId, actorId, payload: { card: updatedCard, fromListId, toListId: updatedCard.list_id } }),
+      emitCardMoved({
+        actorId,
+        cardId,
+        cardTitle: updatedCard.title,
+        fromListId,
+        fromListName: sourceList!.title ?? null,
+        toListId: updatedCard.list_id,
+        toListName: targetList.title ?? null,
+        boardId: board.id,
+        workspaceId: board.workspace_id,
+        ipAddress: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? null,
+        userAgent: req.headers.get('user-agent') ?? null,
+      }),
+    ]);
+  }
 
   // Broadcast to the source board so its kanban view removes/moves the card in real time.
   publisher.publish(

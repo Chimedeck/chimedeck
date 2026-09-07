@@ -3,12 +3,21 @@
 //       before any user-supplied string is written to the database.
 import sanitizeHtml from 'sanitize-html';
 
+function decodeAmpersandEntities(input: string): string {
+  return input
+    .replaceAll(/&#0*38;/gi, '&')
+    .replaceAll(/&#x0*26;/gi, '&')
+    .replaceAll('&amp;', '&');
+}
+
 /**
  * Strip ALL HTML tags and attributes from a plain-text field.
  * Use for: card titles, board names/titles, list names, custom field value_text.
  */
 export function sanitizeText(input: string): string {
-  return sanitizeHtml(input, { allowedTags: [], allowedAttributes: {} });
+  // [why] Plain-text fields (e.g. card titles) should keep literal '&'.
+  // URL/query building should remain the only place we percent/HTML-encode it.
+  return decodeAmpersandEntities(sanitizeHtml(input, { allowedTags: [], allowedAttributes: {} }));
 }
 
 /**

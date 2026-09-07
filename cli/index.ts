@@ -16,6 +16,10 @@ import { runInvite } from './commands/invite';
 import { runSearchCards } from './commands/searchCards';
 import { runSearchBoard } from './commands/searchBoard';
 import { runGetCard } from './commands/getCard';
+import { runGetStateTransitions } from './commands/getStateTransitions';
+import { runSetStateTransitions } from './commands/setStateTransitions';
+import { runGetStateTransitionRules } from './commands/getStateTransitionRules';
+import { runCopyStateTransitions } from './commands/copyStateTransitions';
 
 const VERSION = '0.1.0';
 
@@ -42,6 +46,10 @@ Commands:
   search-cards       Full-text search over cards in a workspace
   search-board       Full-text search over cards in a board
   get-card           Get full details of a card
+  get-state-transitions       Get state transition graph for a board
+  set-state-transitions       Update state transition graph/enabled flag for a board
+  get-state-transition-rules  Get state transition rules for a board
+  copy-state-transitions      Copy state transitions to another board
 
 Run 'chimedeck <command> --help' for command-specific usage.
 `.trim();
@@ -101,6 +109,18 @@ async function main() {
       break;
     case 'get-card':
       await runGetCard({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'get-state-transitions':
+      await runGetStateTransitions({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'set-state-transitions':
+      await runSetStateTransitions({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'get-state-transition-rules':
+      await runGetStateTransitionRules({ argv: argv as Record<string, unknown>, config, jsonMode });
+      break;
+    case 'copy-state-transitions':
+      await runCopyStateTransitions({ argv: argv as Record<string, unknown>, config, jsonMode });
       break;
     default:
       console.error(`Unknown command: ${command}\nRun 'chimedeck --help' for usage.`);
