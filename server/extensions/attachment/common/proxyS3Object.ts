@@ -1,4 +1,5 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { buildContentDisposition } from './contentDisposition';
 import { s3ServerClient, s3Config } from './config/s3';
 
 function toReadableStream(body: unknown): ReadableStream<Uint8Array> | null {
@@ -62,10 +63,9 @@ export async function proxyS3Object({
   // Private resources: avoid browser/proxy caching across users.
   headers.set('Cache-Control', 'private, no-store');
 
-  const rawFilename = fallbackFilename?.trim();
-  if (rawFilename) {
-    const escapedFilename = rawFilename.replaceAll('"', '');
-    headers.set('Content-Disposition', `${contentDisposition}; filename="${escapedFilename}"`);
+  const contentDispositionHeader = buildContentDisposition(fallbackFilename, contentDisposition);
+  if (contentDispositionHeader) {
+    headers.set('Content-Disposition', contentDispositionHeader);
   }
 
   return new Response(stream, { status: 200, headers });
