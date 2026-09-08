@@ -19,6 +19,17 @@ import {
 } from '../../api';
 import { deleteBoardOptimisticThunk } from '../../slices/boardsSlice';
 
+type BoardApi = {
+  get: <T>(url: string) => Promise<T>;
+  post: <T>(url: string, data?: unknown) => Promise<T>;
+  patch: <T>(url: string, data?: unknown) => Promise<T>;
+  delete: <T>(url: string, config?: { data?: unknown }) => Promise<T>;
+};
+
+function getBoardApi(extra: unknown): BoardApi {
+  return (extra as { api: BoardApi }).api;
+}
+
 // ---------- State ----------
 
 interface BoardListPageState {
@@ -63,7 +74,7 @@ const initialState: BoardListPageState = {
 export const fetchBoardsThunk = createAppAsyncThunk(
   'boardList/fetch',
   async ({ workspaceId }: { workspaceId: string }, { extra }) => {
-    const res = await listBoards({ api: extra.api, workspaceId });
+    const res = await listBoards({ api: getBoardApi(extra), workspaceId });
     return res.data;
   },
 );
@@ -71,7 +82,7 @@ export const fetchBoardsThunk = createAppAsyncThunk(
 export const createBoardThunk = createAppAsyncThunk(
   'boardList/create',
   async ({ workspaceId, title }: { workspaceId: string; title: string }, { extra }) => {
-    const res = await createBoard({ api: extra.api, workspaceId, title });
+    const res = await createBoard({ api: getBoardApi(extra), workspaceId, title });
     return res.data;
   },
 );
@@ -79,7 +90,7 @@ export const createBoardThunk = createAppAsyncThunk(
 export const archiveBoardThunk = createAppAsyncThunk(
   'boardList/archive',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    const res = await archiveBoard({ api: extra.api, boardId });
+    const res = await archiveBoard({ api: getBoardApi(extra), boardId });
     return res.data;
   },
 );
@@ -87,7 +98,7 @@ export const archiveBoardThunk = createAppAsyncThunk(
 export const deleteBoardThunk = createAppAsyncThunk(
   'boardList/delete',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    await deleteBoard({ api: extra.api, boardId });
+    await deleteBoard({ api: getBoardApi(extra), boardId });
     return boardId;
   },
 );
@@ -95,7 +106,7 @@ export const deleteBoardThunk = createAppAsyncThunk(
 export const duplicateBoardThunk = createAppAsyncThunk(
   'boardList/duplicate',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    const res = await duplicateBoard({ api: extra.api, boardId });
+    const res = await duplicateBoard({ api: getBoardApi(extra), boardId });
     return res.data;
   },
 );
@@ -103,7 +114,7 @@ export const duplicateBoardThunk = createAppAsyncThunk(
 export const starBoardThunk = createAppAsyncThunk(
   'boardList/star',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    await starBoard({ api: extra.api, boardId });
+    await starBoard({ api: getBoardApi(extra), boardId });
     return boardId;
   },
 );
@@ -111,7 +122,7 @@ export const starBoardThunk = createAppAsyncThunk(
 export const unstarBoardThunk = createAppAsyncThunk(
   'boardList/unstar',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    await unstarBoard({ api: extra.api, boardId });
+    await unstarBoard({ api: getBoardApi(extra), boardId });
     return boardId;
   },
 );
