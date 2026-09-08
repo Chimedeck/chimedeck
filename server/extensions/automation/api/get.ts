@@ -2,6 +2,7 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { automationConfig } from '../config';
+import type { AutomationActionRow, AutomationRow, AutomationTriggerRow } from '../common/types';
 import { formatAutomation } from './format';
 
 export async function handleGetAutomation(
@@ -15,20 +16,23 @@ export async function handleGetAutomation(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
+  }
 
   // Automations are private to their creator.
-  const automation = await db('automations')
+  const automation = (await db('automations')
     .where({ id: automationId, board_id: boardId, created_by: currentUser.id })
-    .first();
+    .first()) as AutomationRow | undefined;
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }
 
-  const [trigger, actions] = await Promise.all([
+  const [trigger, actions] = (await Promise.all([
     db('automation_triggers').where({ automation_id: automationId }).first(),
     db('automation_actions').where({ automation_id: automationId }).orderBy('position', 'asc').select('*'),
-  ]);
+  ])) as [AutomationTriggerRow | undefined, AutomationActionRow[]];
 
   return Response.json({ data: formatAutomation(automation, trigger ?? null, actions) });
 }
