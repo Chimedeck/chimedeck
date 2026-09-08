@@ -7,15 +7,20 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & {
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type WorkspaceRow = { id: string; name: string; owner_id: string; created_at: string };
+
 export async function handleListWorkspaces(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const { currentUser } = req as AuthenticatedRequest;
+  const { currentUser } = req as AuthenticatedUserRequest;
 
   const rows = await db('workspaces')
     .join('memberships', 'workspaces.id', 'memberships.workspace_id')
-    .where('memberships.user_id', currentUser!.id)
+    .where('memberships.user_id', currentUser.id)
     .select('workspaces.*', 'memberships.role as caller_role');
 
   // Map DB snake_case to camelCase expected by frontend
@@ -39,7 +44,9 @@ export async function handleGetWorkspace(req: Request, workspaceId: string): Pro
   if (membershipError) return membershipError;
 
   // VIEWER and above may read — requireWorkspaceMembership already confirms membership.
-  const workspace = await db('workspaces').where({ id: workspaceId }).first();
+  const workspace = (await db('workspaces')
+    .where({ id: workspaceId })
+    .first()) as WorkspaceRow | undefined;
 
   if (!workspace) {
     return Response.json(
