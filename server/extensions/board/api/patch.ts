@@ -12,6 +12,12 @@ import { writeEvent } from '../../../mods/events/write';
 import type { MonetizationType, BoardVisibility } from '../types';
 import { sanitizeText, sanitizeRichText } from '../../../common/sanitize';
 
+type ResolvedBoardWritableRequest = BoardScopedRequest & {
+  board: { workspace_id: string };
+};
+
+type UpdatedBoardRow = Record<string, unknown>;
+
 const VALID_MONETIZATION_TYPES: Array<MonetizationType | null> = [null, 'pre-paid', 'pay-to-paid'];
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
@@ -19,11 +25,11 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardScopedReq = req as BoardScopedRequest;
+  const boardScopedReq = req as ResolvedBoardWritableRequest;
   const writableError = await requireBoardWritable(boardScopedReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardScopedReq.board!;
+  const board = boardScopedReq.board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -58,7 +64,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
   }
 
   if ('monetization_type' in body) {
-    if (!VALID_MONETIZATION_TYPES.includes(body.monetization_type as MonetizationType | null)) {
+    if (!VALID_MONETIZATION_TYPES.includes(body.monetization_type)) {
       return Response.json(
         {
           name: 'bad-request',
@@ -95,7 +101,7 @@ export async function handlePatchBoard(req: Request, boardId: string): Promise<R
     );
   }
 
-  const [updated] = await db('boards').where({ id: boardId }).update(updates, ['*']);
+  const [updated] = (await db('boards').where({ id: boardId }).update(updates, ['*'])) as UpdatedBoardRow[];
 
   await writeEvent({
     type: 'board_updated',
