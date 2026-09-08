@@ -175,7 +175,6 @@ export function invalidateRulesCacheForBoard(boardId: string): void {
 export function invalidateRulesCacheFromStateTransitionEvent(
   event: Pick<StateTransitionUpdatedEvent, 'type' | 'board_id'>,
 ): void {
-  if (event.type !== 'state_transition_updated') return;
   invalidateRulesCacheForBoard(event.board_id);
 }
 
