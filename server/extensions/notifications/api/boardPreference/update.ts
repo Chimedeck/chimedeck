@@ -9,6 +9,16 @@ interface PatchBody {
   notifications_enabled?: unknown;
   only_related_to_me?: unknown;
 }
+type ResolvedBoardPreferenceRequest = BoardVisibilityScopedRequest & {
+  board: { id: string };
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type BoardParticipantRow = { user_id: string };
+type BoardNotificationPreferenceRow = {
+  notifications_enabled: boolean;
+  only_related_to_me: boolean | null;
+  updated_at: string | null;
+};
 
 function invalidPreferencePatchResponse({
   name,
@@ -69,13 +79,14 @@ export async function handleUpdateBoardNotificationPreference(
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
-  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
+  const resolvedReq = req as ResolvedBoardPreferenceRequest;
+  const resolvedBoardId = resolvedReq.board.id;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = resolvedReq.currentUser.id;
 
   let body: PatchBody;
   try {
-    body = await req.json();
+    body = await req.json() as PatchBody;
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
@@ -97,10 +108,10 @@ export async function handleUpdateBoardNotificationPreference(
   if (validationError) return validationError;
 
   const now = new Date().toISOString();
-  const existing = await db('board_notification_preferences')
+  const existing = (await db('board_notification_preferences')
     .where({ user_id: userId, board_id: resolvedBoardId })
     .select('notifications_enabled', 'only_related_to_me')
-    .first();
+    .first()) as BoardNotificationPreferenceRow | undefined;
 
   let nextNotificationsEnabled: boolean;
   if (hasNotificationsEnabled) {
@@ -108,14 +119,14 @@ export async function handleUpdateBoardNotificationPreference(
   } else if (existing) {
     nextNotificationsEnabled = existing.notifications_enabled;
   } else {
-    const [boardMember, boardGuest] = await Promise.all([
+    const [boardMember, boardGuest] = (await Promise.all([
       db('board_members')
         .where({ board_id: resolvedBoardId, user_id: userId })
         .first(),
       db('board_guest_access')
         .where({ board_id: resolvedBoardId, user_id: userId })
         .first(),
-    ]);
+    ])) as [BoardParticipantRow | undefined, BoardParticipantRow | undefined];
     nextNotificationsEnabled = !!boardMember || !!boardGuest;
   }
 
@@ -126,10 +137,10 @@ export async function handleUpdateBoardNotificationPreference(
     nextOnlyRelatedToMe = existing.only_related_to_me ?? false;
   }
 
-  let row: Record<string, unknown>;
+  let row: BoardNotificationPreferenceRow;
 
   if (existing) {
-    const [updated] = await db('board_notification_preferences')
+    const [updated] = (await db('board_notification_preferences')
       .where({ user_id: userId, board_id: resolvedBoardId })
       .update(
         {
@@ -138,10 +149,10 @@ export async function handleUpdateBoardNotificationPreference(
           updated_at: now,
         },
         ['notifications_enabled', 'only_related_to_me', 'updated_at'],
-      );
+      )) as [BoardNotificationPreferenceRow];
     row = updated;
   } else {
-    const [inserted] = await db('board_notification_preferences').insert(
+    const [inserted] = (await db('board_notification_preferences').insert(
       {
         id: randomUUID(),
         user_id: userId,
@@ -151,7 +162,7 @@ export async function handleUpdateBoardNotificationPreference(
         updated_at: now,
       },
       ['notifications_enabled', 'only_related_to_me', 'updated_at'],
-    );
+    )) as [BoardNotificationPreferenceRow];
     row = inserted;
   }
 
