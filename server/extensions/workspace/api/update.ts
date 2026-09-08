@@ -7,6 +7,11 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+type WorkspaceRow = {
+  id: string;
+  name: string;
+};
+
 export async function handleUpdateWorkspace(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -35,9 +40,9 @@ export async function handleUpdateWorkspace(req: Request, workspaceId: string): 
     );
   }
 
-  const updated = await db('workspaces')
+  const updated = (await db<WorkspaceRow>('workspaces')
     .where({ id: workspaceId })
-    .update({ name: body.name.trim() }, ['*']);
+    .update({ name: body.name.trim() }, ['*'])) as WorkspaceRow[];
 
   if (!updated.length) {
     return Response.json(
