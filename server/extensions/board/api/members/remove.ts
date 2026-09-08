@@ -10,6 +10,12 @@ import {
 } from '../../../../middlewares/permissionManager';
 import { writeEvent } from '../../../../mods/events/index';
 
+type BoardMemberRow = {
+  board_id: string;
+  user_id: string;
+  role: string;
+};
+
 export async function handleRemoveBoardMember(
   req: Request,
   boardId: string,
@@ -20,7 +26,9 @@ export async function handleRemoveBoardMember(
   const roleError = requireRole(scopedReq as WorkspaceScopedRequest, 'ADMIN');
   if (roleError) return roleError;
 
-  const existing = await db('board_members').where({ board_id: boardId, user_id: userId }).first();
+  const existing = await db<BoardMemberRow>('board_members')
+    .where({ board_id: boardId, user_id: userId })
+    .first();
   if (!existing) {
     return Response.json(
       { name: 'board-member-not-found', data: { message: 'This user is not a member of the board' } },
@@ -50,7 +58,7 @@ export async function handleRemoveBoardMember(
     type: 'board_member_removed',
     boardId,
     entityId: boardId,
-    actorId: (req as AuthenticatedRequest).currentUser!.id,
+    actorId: (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id,
     payload: { userId },
   }).catch(() => {});
 
