@@ -13,12 +13,32 @@ import { validateCardLabelLimit } from '../mods/labels/validate';
 
 interface CardLabelContext { boardId: string; workspaceId: string; }
 
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface LabelRow {
+  id: string;
+  board_id: string;
+}
+
 async function resolveCardLabelContext(cardId: string): Promise<CardLabelContext | null> {
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db<CardRow>('cards').where({ id: cardId }).first();
   if (!card) return null;
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
   if (!list) return null;
-  const board = await db('boards').where({ id: list.board_id }).first();
+  const board = await db<BoardRow>('boards').where({ id: list.board_id }).first();
   if (!board) return null;
   return { boardId: board.id, workspaceId: board.workspace_id };
 }
@@ -27,7 +47,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db<CardRow>('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -36,7 +56,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   }
 
   const boardReq = req as BoardScopedRequest;
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
   if (list) {
     const writableError = await requireBoardWritable(boardReq, list.board_id);
     if (writableError) return writableError;
@@ -74,7 +94,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
     );
   }
 
-  const label = await db('labels').where({ id: body.labelId }).first();
+  const label = await db<LabelRow>('labels').where({ id: body.labelId }).first();
   if (!label) {
     return Response.json(
       { error: { code: 'label-not-found', message: 'Label not found' } },
@@ -90,7 +110,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   }
 
   // Idempotency: already assigned → return 200
-  const existing = await db('card_labels').where({ card_id: cardId, label_id: body.labelId }).first();
+  const existing = await db<Record<string, unknown>>('card_labels').where({ card_id: cardId, label_id: body.labelId }).first();
   if (existing) {
     return Response.json({ data: { card_id: cardId, label_id: body.labelId } });
   }
@@ -98,7 +118,7 @@ export async function handleAttachLabel(req: Request, cardId: string): Promise<R
   const limitError = await validateCardLabelLimit(cardId);
   if (limitError) return limitError;
 
-  await db('card_labels').insert({ card_id: cardId, label_id: body.labelId });
+  await db<Record<string, unknown>>('card_labels').insert({ card_id: cardId, label_id: body.labelId });
   return Response.json({ data: { card_id: cardId, label_id: body.labelId } }, { status: 201 });
 }
 
@@ -110,7 +130,7 @@ export async function handleDetachLabel(
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = await db<CardRow>('cards').where({ id: cardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -133,6 +153,6 @@ export async function handleDetachLabel(
   const roleError = await requireMemberOrBoardGuestMember(scopedReq, detachContext.boardId);
   if (roleError) return roleError;
 
-  await db('card_labels').where({ card_id: cardId, label_id: labelId }).delete();
+  await db<Record<string, unknown>>('card_labels').where({ card_id: cardId, label_id: labelId }).delete();
   return new Response(null, { status: 204 });
 }
