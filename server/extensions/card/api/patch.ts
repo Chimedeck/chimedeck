@@ -19,6 +19,19 @@ import { syncMentions } from '../../../common/mentions/sync';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import { sanitizeRichText } from '../../../common/sanitize';
 
+interface CardRow extends Record<string, unknown> {
+  id: string;
+  title: string;
+  description: string | null;
+  updated_at: string | Date;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+  title: string;
+}
+
 export async function handlePatchCardDescription(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -27,7 +40,7 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
   const writableError = await requireCardWritable(cardReq, cardId);
   if (writableError) return writableError;
 
-  const board = cardReq.board!;
+  const board = (cardReq as CardScopedRequest & { board: BoardRow }).board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -57,7 +70,7 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
     );
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
 
   // [why] Idempotency check for offline replay: if the client provides both an
   //        idempotency_key and a client_updated_at, we compare against the card's
@@ -80,7 +93,7 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
       );
     }
 
-    const current = await db('cards').where({ id: cardId }).first();
+    const current = await db<CardRow>('cards').where({ id: cardId }).first();
     if (current) {
       const serverTs = new Date(current.updated_at);
       // [why] If the server already has a newer (or equal) timestamp, treat the
@@ -97,9 +110,9 @@ export async function handlePatchCardDescription(req: Request, cardId: string): 
     : null;
 
   const updatedRows = await db.transaction(async (trx) => {
-    const rows = await trx('cards')
+    const rows = (await trx<CardRow>('cards')
       .where({ id: cardId })
-      .update({ description: sanitizedDescription, updated_at: new Date().toISOString() }, ['*']);
+      .update({ description: sanitizedDescription, updated_at: new Date().toISOString() }, ['*'])) as CardRow[];
 
     if (rows[0]) {
       const { addedUserIds } = await syncMentions({
