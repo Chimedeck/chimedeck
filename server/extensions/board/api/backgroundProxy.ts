@@ -7,9 +7,13 @@ import { presignGetUrl } from '../../attachment/common/presign';
 import { extractS3KeyFromBackgroundUrl } from '../common/resolveBackgroundUrl';
 
 const PROXY_TTL_SECONDS = 60;
+type BoardBackgroundRow = { id: string; background: string | null };
 
 export async function handleGetBackground(req: Request, boardId: string): Promise<Response> {
-  const board = await db('boards').where({ id: boardId }).select('background').first();
+  const board = await db<BoardBackgroundRow>('boards')
+    .where({ id: boardId })
+    .select('background')
+    .first<BoardBackgroundRow | undefined>();
 
   if (!board?.background) {
     return Response.json({ name: 'background-not-found' }, { status: 404 });
