@@ -21,6 +21,34 @@ interface CompletedPart {
   ETag?: string;
 }
 
+interface MultipartCompleteBody {
+  uploadId?: string;
+  key?: string;
+  parts?: CompletedPart[];
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface PendingAttachmentRow {
+  id: string;
+  card_id: string;
+  s3_key: string;
+  status: 'PENDING';
+}
+
 export async function handleMultipartComplete(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -30,9 +58,9 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  let body: { uploadId?: string; key?: string; parts?: CompletedPart[] };
+  let body: MultipartCompleteBody;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as MultipartCompleteBody;
   } catch {
     return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
   }
@@ -44,13 +72,13 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ name: 'board-not-found', data: {} }, { status: 404 });
   }
@@ -62,7 +90,7 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
   if (roleError) return roleError;
 
   // Verify the S3 key belongs to a pending attachment on this card
-  const attachment = await db('attachments')
+  const attachment = await db<PendingAttachmentRow>('attachments')
     .where({ card_id: resolvedCardId, s3_key: body.key, status: 'PENDING' })
     .first();
   if (!attachment) {
@@ -110,7 +138,12 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
     );
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actor = (req as AuthenticatedRequest).currentUser;
+  if (!actor) {
+    return Response.json({ name: 'unauthorized', data: { message: 'Authentication required' } }, { status: 401 });
+  }
+
+  const actorId = actor.id;
 
   // Enqueue virus scan — fires even when VIRUS_SCAN_ENABLED=false (no-op internally)
   await enqueueScan({ attachmentId: attachment.id });
@@ -130,6 +163,6 @@ export async function handleMultipartComplete(req: Request, cardId: string): Pro
     )
     .catch(() => {});
 
-  const updated = await db('attachments').where({ id: attachment.id }).first();
+  const updated = await db<PendingAttachmentRow>('attachments').where({ id: attachment.id }).first();
   return Response.json({ data: updated }, { status: 200 });
 }

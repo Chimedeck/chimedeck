@@ -14,6 +14,34 @@ import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 
 const PART_URL_TTL_SECONDS = 5 * 60; // 5 minutes — enough for a single-part upload
 
+interface MultipartPartUrlBody {
+  uploadId?: string;
+  key?: string;
+  partNumber?: number;
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface PendingAttachmentRow {
+  id: string;
+  card_id: string;
+  s3_key: string;
+  status: 'PENDING';
+}
+
 export async function handleMultipartPartUrl(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -23,9 +51,9 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  let body: { uploadId?: string; key?: string; partNumber?: number };
+  let body: MultipartPartUrlBody;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as MultipartPartUrlBody;
   } catch {
     return Response.json({ name: 'bad-request', data: { message: 'Invalid JSON body' } }, { status: 400 });
   }
@@ -44,13 +72,13 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json({ name: 'card-not-found', data: { cardId } }, { status: 404 });
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ name: 'board-not-found', data: {} }, { status: 404 });
   }
@@ -62,7 +90,7 @@ export async function handleMultipartPartUrl(req: Request, cardId: string): Prom
   if (roleError) return roleError;
 
   // Verify the S3 key belongs to an attachment on this card (prevents key injection)
-  const attachment = await db('attachments')
+  const attachment = await db<PendingAttachmentRow>('attachments')
     .where({ card_id: resolvedCardId, s3_key: body.key, status: 'PENDING' })
     .first();
   if (!attachment) {
