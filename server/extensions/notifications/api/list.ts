@@ -103,34 +103,6 @@ function buildNotificationItem({
   };
 }
 
-function applyNotificationListFilters({
-  query,
-  unreadOnly,
-  typeFilter,
-  cursor,
-}: {
-  query: ReturnType<typeof db>;
-  unreadOnly: boolean;
-  typeFilter: string | null;
-  cursor: string | null;
-}) {
-  let nextQuery = query;
-
-  if (unreadOnly) {
-    nextQuery = nextQuery.where('notifications.read', false);
-  }
-
-  if (typeFilter) {
-    nextQuery = nextQuery.where('notifications.type', typeFilter);
-  }
-
-  if (cursor) {
-    nextQuery = nextQuery.where('notifications.created_at', '<', cursor);
-  }
-
-  return nextQuery;
-}
-
 function collectCommentSourceIds(rows: Array<Record<string, unknown>>): string[] {
   return Array.from(
     new Set(
@@ -146,7 +118,9 @@ export async function handleListNotifications(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedRequest & {
+    currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+  }).currentUser.id;
   const url = new URL(req.url);
   const unreadOnly = url.searchParams.get('unread') === 'true';
   const limit = Math.min(Number.parseInt(url.searchParams.get('limit') ?? '20', 10), 100);
@@ -208,9 +182,17 @@ export async function handleListNotifications(req: Request): Promise<Response> {
     .orderBy('notifications.created_at', 'desc')
     .limit(limit + 1);
 
-  query = applyNotificationListFilters({ query, unreadOnly, typeFilter, cursor });
+  if (unreadOnly) {
+    query = query.where('notifications.read', false);
+  }
+  if (typeFilter) {
+    query = query.where('notifications.type', typeFilter);
+  }
+  if (cursor) {
+    query = query.where('notifications.created_at', '<', cursor);
+  }
 
-  const rows = await query;
+  const rows = (await query) as Array<Record<string, unknown>>;
   const hasMore = rows.length > limit;
   const visibleRows = rows.slice(0, limit);
 
