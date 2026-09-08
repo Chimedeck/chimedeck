@@ -8,6 +8,12 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 
+type MembershipRow = {
+  user_id: string;
+  workspace_id: string;
+  role: string;
+};
+
 export async function handleRemoveMember(
   req: Request,
   workspaceId: string,
@@ -23,7 +29,7 @@ export async function handleRemoveMember(
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  const targetMembership = await db('memberships')
+  const targetMembership = await db<MembershipRow>('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .first();
 
