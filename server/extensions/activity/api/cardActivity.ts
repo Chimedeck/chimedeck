@@ -3,12 +3,22 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 import { VISIBLE_EVENT_TYPES } from '../config/visibleEventTypes';
 import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
+
+type CardRow = { list_id: string };
+type ListRow = { board_id: string };
+type BoardRow = { workspace_id: string };
+type CardActivityRow = Record<string, unknown> & { actor_id: string };
+type ActorRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+};
 
 export async function handleCardActivity(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
@@ -22,7 +32,7 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = (await db('cards').where({ id: resolvedCardId }).first()) as CardRow | undefined;
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
@@ -30,8 +40,10 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
     );
   }
 
-  const list = await db('lists').where({ id: card.list_id }).first();
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
+  const board = list
+    ? (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined
+    : undefined;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -43,18 +55,20 @@ export async function handleCardActivity(req: Request, cardId: string): Promise<
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const activities = await db('activities')
+  const activities = (await db('activities')
     .where({ entity_id: resolvedCardId })
     .whereIn('action', VISIBLE_EVENT_TYPES)
     // [why] Secondary sort by id ensures deterministic ordering when two events share
     //       the same created_at timestamp (e.g. batch-emitted events or test fixtures).
     .orderBy('created_at', 'desc')
-    .orderBy('id', 'desc');
+    .orderBy('id', 'desc')) as CardActivityRow[];
 
   // Join actor display info so the client never has to resolve IDs separately
   const actorIds = [...new Set(activities.map((a) => a.actor_id))];
   const rawActors = actorIds.length
-    ? await db('users').whereIn('id', actorIds).select('id', 'name', 'email', 'avatar_url')
+    ? (await db('users')
+      .whereIn('id', actorIds)
+      .select('id', 'name', 'email', 'avatar_url')) as ActorRow[]
     : [];
   const actors = buildAvatarProxyUrlsInCollection(rawActors);
   const actorMap = new Map(actors.map((u) => [u.id, u]));
