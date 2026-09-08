@@ -14,6 +14,62 @@ import { resolveCardId } from '../../../common/ids/resolveEntityId';
 
 const MAX_ALIAS_LENGTH = 255;
 
+interface ReferencedCardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ReferencedListRow {
+  id: string;
+  board_id: string;
+}
+
+interface ReferencedBoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface PatchAttachmentRow {
+  id: string;
+  card_id: string;
+  name: string | null;
+  alias: string | null;
+  type: 'URL' | 'FILE';
+  mime_type: string | null;
+  size_bytes: number | null;
+  status: string;
+  external_url: string | null;
+  referenced_card_id: string | null;
+  thumbnail_key: string | null;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+  updated_at: string;
+  url: string | null;
+}
+
+interface PatchCardRow {
+  id: string;
+  list_id: string;
+}
+
+interface PatchListRow {
+  id: string;
+  board_id: string;
+}
+
+interface PatchBoardRow {
+  id: string;
+  workspace_id: string;
+}
+
+interface PatchUpdates {
+  updated_at: string;
+  alias?: string;
+  url?: string;
+  referenced_card_id?: string | null;
+}
+
 function patchError({ name, message, status }: { name: string; message: string; status: number }): Response {
   return Response.json({ name, data: { message } }, { status });
 }
@@ -45,7 +101,7 @@ function validateAlias(alias: unknown): string | Response {
   if (alias.length > MAX_ALIAS_LENGTH) {
     return patchError({
       name: 'alias-too-long',
-      message: `alias must be at most ${MAX_ALIAS_LENGTH} characters`,
+      message: `alias must be at most ${String(MAX_ALIAS_LENGTH)} characters`,
       status: 400,
     });
   }
@@ -98,7 +154,7 @@ async function resolveReferencedCardIdForUrl({
 
   const resolvedReferencedCardId = await resolveCardId(internalCard.cardId);
   const referencedCard = resolvedReferencedCardId
-    ? await db('cards').where({ id: resolvedReferencedCardId }).first()
+    ? await db<ReferencedCardRow>('cards').where({ id: resolvedReferencedCardId }).first()
     : null;
 
   if (!referencedCard) {
@@ -109,8 +165,8 @@ async function resolveReferencedCardIdForUrl({
     });
   }
 
-  const refList = await db('lists').where({ id: referencedCard.list_id }).first();
-  const refBoard = refList ? await db('boards').where({ id: refList.board_id }).first() : null;
+  const refList = await db<ReferencedListRow>('lists').where({ id: referencedCard.list_id }).first();
+  const refBoard = refList ? await db<ReferencedBoardRow>('boards').where({ id: refList.board_id }).first() : null;
   if (refBoard?.workspace_id !== workspaceId) {
     return patchError({
       name: 'referenced-card-not-in-workspace',
@@ -119,7 +175,7 @@ async function resolveReferencedCardIdForUrl({
     });
   }
 
-  return referencedCard.id as string;
+  return referencedCard.id;
 }
 
 async function loadPatchContext({
@@ -130,19 +186,19 @@ async function loadPatchContext({
   attachmentId: string;
 }): Promise<
   | {
-      attachment: Record<string, unknown>;
-      board: Record<string, unknown>;
+      attachment: PatchAttachmentRow;
+      board: PatchBoardRow;
     }
   | Response
 > {
-  const attachment = await db('attachments').where({ id: attachmentId }).first();
+  const attachment = await db<PatchAttachmentRow>('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
     return patchError({ name: 'attachment-not-found', message: 'Attachment not found', status: 404 });
   }
 
-  const card = await db('cards').where({ id: attachment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const card = await db<PatchCardRow>('cards').where({ id: attachment.card_id }).first();
+  const list = card ? await db<PatchListRow>('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db<PatchBoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return patchError({ name: 'board-not-found', message: 'Board not found', status: 404 });
   }
@@ -162,9 +218,9 @@ async function buildPatchUpdates({
 }: {
   req: Request;
   patchBody: unknown;
-  attachment: Record<string, unknown>;
-  board: Record<string, unknown>;
-}): Promise<Record<string, unknown> | Response> {
+  attachment: PatchAttachmentRow;
+  board: PatchBoardRow;
+}): Promise<PatchUpdates | Response> {
   const { aliasProvided, urlProvided, alias, url } = parsePatchBody(patchBody);
 
   if (!aliasProvided && !urlProvided) {
@@ -175,7 +231,7 @@ async function buildPatchUpdates({
     });
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: PatchUpdates = {
     updated_at: new Date().toISOString(),
   };
 
@@ -200,7 +256,7 @@ async function buildPatchUpdates({
     const referencedCardId = await resolveReferencedCardIdForUrl({
       nextUrl,
       reqUrl: req.url,
-      workspaceId: board.workspace_id as string,
+      workspaceId: board.workspace_id,
     });
     if (referencedCardId instanceof Response) return referencedCardId;
 
@@ -230,10 +286,14 @@ export async function handlePatchAttachment(req: Request, attachmentId: string):
   const updates = await buildPatchUpdates({ req, patchBody: body, attachment, board });
   if (updates instanceof Response) return updates;
 
-  const [updated] = await db('attachments')
+  const [updated] = await db<PatchAttachmentRow>('attachments')
     .where({ id: attachmentId })
     .update(updates)
     .returning('*');
+
+  if (!updated) {
+    return patchError({ name: 'attachment-not-found', message: 'Attachment not found', status: 404 });
+  }
 
   const view_url =
     updated.type === 'URL'
