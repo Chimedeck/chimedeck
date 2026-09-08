@@ -14,6 +14,12 @@ import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 const VALID_VISIBILITY: BoardVisibility[] = ['PUBLIC', 'PRIVATE', 'WORKSPACE'];
 
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  title: string;
+};
+
 export async function handleCreateBoard(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -49,7 +55,8 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
     );
   }
 
-  const creatorId = (req as AuthenticatedRequest).currentUser!.id;
+  const creatorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
+  const title = body.title;
   const id = randomUUID();
   const shortId = await generateUniqueShortId('boards');
 
@@ -59,7 +66,7 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
       id,
       short_id: shortId,
       workspace_id: workspaceId,
-      title: sanitizeText(body.title.trim()),
+      title: sanitizeText(title.trim()),
       state: 'ACTIVE',
       visibility: body.visibility ?? 'PRIVATE',
       description: body.description ? sanitizeRichText(body.description.trim()) : null,
@@ -75,7 +82,7 @@ export async function handleCreateBoard(req: Request, workspaceId: string): Prom
     });
   });
 
-  const board = await db('boards').where({ id }).first();
+  const board = await db<BoardRow>('boards').where({ id }).first();
 
   // Stub event emission — replaced by activity log in sprint 10.
   await dispatchEvent({ type: 'board_created', boardId: id, entityId: id, actorId: creatorId, payload: { workspaceId } });
