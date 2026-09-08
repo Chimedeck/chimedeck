@@ -4,16 +4,24 @@
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & {
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type GlobalNotificationSettingRow = {
+  global_notifications_enabled: boolean;
+  updated_at: string | null;
+};
+
 export async function handleGetGlobalNotificationSetting(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
-  const row = await db('user_notification_settings')
+  const row = (await db('user_notification_settings')
     .where({ user_id: userId })
     .select('global_notifications_enabled', 'updated_at')
-    .first();
+    .first()) as GlobalNotificationSettingRow | undefined;
 
   return Response.json({
     data: {
