@@ -16,12 +16,14 @@ import {
 import { randomUUID } from 'crypto';
 import { resolveBoardId } from '../../../common/ids/resolveEntityId';
 
+type BoardRow = { id: string; workspace_id: string; visibility: string };
+
 export async function handleGetBoardLabels(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
 
-  const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const scopedReq = req as BoardVisibilityScopedRequest & { board: BoardRow };
+  const board = scopedReq.board;
 
   if (board.visibility !== 'PUBLIC') {
     const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -47,11 +49,11 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
     );
   }
 
-  const boardReq = req as BoardScopedRequest;
+  const boardReq = req as BoardScopedRequest & { board: BoardRow };
   const accessError = await requireBoardAccess(boardReq, resolvedBoardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board;
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -62,7 +64,7 @@ export async function handleCreateBoardLabel(req: Request, boardId: string): Pro
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  let body: { name: string; color: string };
+  let body: { name: string; color?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
