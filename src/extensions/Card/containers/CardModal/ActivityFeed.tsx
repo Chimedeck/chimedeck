@@ -58,12 +58,12 @@ const AVATAR_COLORS = [
 function avatarColor(userId: string): string {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) hash = Math.trunc(hash * 31 + (userId.codePointAt(i) ?? 0));
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]!;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? 'bg-blue-600';
 }
 function getInitials(name: string | null | undefined, email: string): string {
   const source = name || email || '?';
   const parts = source.split(/[\s@.]/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
+  if (parts.length >= 2) return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
   return source.slice(0, 2).toUpperCase();
 }
 
@@ -81,7 +81,7 @@ function renderSystemEventRow({
   memberMap: Map<string, BoardMember>;
   currentUserId: string;
   attachmentMap: Map<string, { thumbnail_url?: string | null; view_url?: string | null; content_type?: string | null }>;
-}): JSX.Element {
+}): React.JSX.Element {
   const member = memberMap.get(activity.actor_id);
   const displayName =
     activity.actor_name ||
@@ -97,7 +97,7 @@ function renderSystemEventRow({
 
   const attachmentId = typeof activity.payload.attachmentId === 'string' ? activity.payload.attachmentId : null;
   const attachmentInfo = attachmentId ? attachmentMap.get(attachmentId) : null;
-  const showThumbnail = attachmentInfo?.content_type?.startsWith('image/') && (attachmentInfo.thumbnail_url ?? attachmentInfo.view_url);
+  const attachmentUrl = attachmentInfo?.view_url ?? attachmentInfo?.thumbnail_url;
   const actorAvatarUrl = activity.actor_avatar_url ?? null;
 
   const eventContext: ActivityEventContext = {
@@ -130,14 +130,14 @@ function renderSystemEventRow({
           <span>{meta.label}</span>
         </p>
         <p className="mt-0.5 text-xs text-muted">{relativeTime(activity.created_at)}</p>
-        {showThumbnail && (
+        {attachmentInfo?.content_type?.startsWith('image/') && attachmentUrl && (
           <a
-            href={(attachmentInfo!.view_url ?? attachmentInfo!.thumbnail_url)!}
+            href={attachmentUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
             <img
-              src={(attachmentInfo!.thumbnail_url ?? attachmentInfo!.view_url)!}
+              src={attachmentInfo.thumbnail_url ?? attachmentInfo.view_url ?? attachmentUrl}
               alt={typeof activity.payload.name === 'string' ? activity.payload.name : 'attachment'}
               className="mt-1.5 rounded border border-slate-700 max-h-24 max-w-[180px] object-cover hover:opacity-80 transition-opacity"
             />
@@ -158,8 +158,8 @@ function relativeTime(iso: string): string {
   const diff = (Date.now() - date.getTime()) / 1000;
   const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago · ${time}`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago · ${time}`;
+  if (diff < 3600) return `${String(Math.floor(diff / 60))} min ago · ${time}`;
+  if (diff < 86400) return `${String(Math.floor(diff / 3600))} hr ago · ${time}`;
   const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${day}, ${time}`;
 }
