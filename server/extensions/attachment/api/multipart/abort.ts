@@ -8,7 +8,7 @@ import {
   requireMemberOrBoardGuestMember,
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
-import { s3Client, s3Config } from '../../common/config/s3';
+import { s3ServerClient, s3Config } from '../../common/config/s3';
 import { resolveCardId } from '../../../../common/ids/resolveEntityId';
 
 interface CardRow {
@@ -86,7 +86,7 @@ export async function handleMultipartAbort(
 
   // Best-effort: abort the S3 multipart upload (may already be expired or completed)
   try {
-    await s3Client.send(
+    await s3ServerClient.send(
       new AbortMultipartUploadCommand({
         Bucket: s3Config.bucket,
         Key: s3Key,

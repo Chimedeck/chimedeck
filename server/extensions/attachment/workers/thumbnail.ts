@@ -2,9 +2,10 @@
 // Called after virus scan marks an attachment as READY.
 // Stores the thumbnail at thumbnails/<card_id>/<attachment_id>.webp in S3
 // and updates thumbnail_key, width, height columns in the DB.
+// Direct server-side operations — uses the internal endpoint client.
 import sharp from 'sharp';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client, s3Config } from '../common/config/s3';
+import { s3ServerClient, s3Config } from '../common/config/s3';
 import { db } from '../../../common/db';
 
 const THUMBNAIL_MAX_WIDTH = 400;
@@ -29,7 +30,7 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
   if (!attachment.s3_key) return;
 
   // Download original file from S3
-  const getResult = await s3Client.send(
+  const getResult = await s3ServerClient.send(
     new GetObjectCommand({ Bucket: s3Config.bucket, Key: attachment.s3_key }),
   );
 
@@ -63,7 +64,7 @@ export async function generateThumbnail({ attachmentId }: { attachmentId: string
 
   const thumbnailKey = `thumbnails/${attachment.card_id}/${attachmentId}.webp`;
 
-  await s3Client.send(
+  await s3ServerClient.send(
     new PutObjectCommand({
       Bucket: s3Config.bucket,
       Key: thumbnailKey,

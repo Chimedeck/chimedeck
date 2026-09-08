@@ -18,6 +18,11 @@ export const env = {
   // S3 / file storage
   // When FLAG_USE_LOCAL_STORAGE=true, the storage module overrides endpoint/credentials with LocalStack defaults.
   S3_ENDPOINT: Bun.env['S3_ENDPOINT'] ?? '',
+  // Optional endpoint for server-side S3 operations (ensureBucketExists, Head/Delete/Get/Put,
+  // proxy, thumbnails, multipart create/complete/abort). Set this to the direct/internal
+  // address (e.g. http://object-store:9000) so server traffic does not hairpin through
+  // the public proxy in front of S3_ENDPOINT. Falls back to S3_ENDPOINT when unset.
+  S3_INTERNAL_ENDPOINT: Bun.env['S3_INTERNAL_ENDPOINT'] ?? '',
   S3_BUCKET: Bun.env['S3_BUCKET'] ?? 'kanban',
   S3_REGION: Bun.env['S3_REGION'] ?? 'us-east-1',
   // S3-specific credentials — use these to point S3/LocalStack at a different IAM identity

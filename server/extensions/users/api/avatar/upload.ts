@@ -2,7 +2,7 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
-import { s3Client, s3Config } from '../../../attachment/common/config/s3';
+import { s3ServerClient, s3Config } from '../../../attachment/common/config/s3';
 import { env } from '../../../../config/env';
 import { resizeAvatar, avatarExtension, isValidAvatarFile } from '../../../../mods/imageProcessor';
 import { deleteObject } from '../../../attachment/mods/s3/deleteObject';
@@ -64,7 +64,8 @@ export async function handleUploadAvatar(req: Request): Promise<Response> {
     }
   }
 
-  await s3Client.send(
+  // Direct server-side PUT — uses the internal endpoint client.
+  await s3ServerClient.send(
     new PutObjectCommand({
       Bucket: s3Config.bucket,
       Key: s3Key,
