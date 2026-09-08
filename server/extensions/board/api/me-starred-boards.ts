@@ -6,7 +6,7 @@ export async function handleGetMeStarredBoards(req: Request): Promise<Response> 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
 
   const boards = await db('boards as b')
     .join('board_stars as bs', function () {
