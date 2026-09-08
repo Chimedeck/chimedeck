@@ -3,6 +3,9 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { automationConfig } from '../config';
 
+type BoardRow = { workspace_id: string };
+type MembershipRow = { role: string };
+
 export async function handleDeleteAutomation(
   req: Request,
   boardId: string,
@@ -14,25 +17,26 @@ export async function handleDeleteAutomation(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
   if (!board) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
   // Only workspace members with at least MEMBER role can manage automations.
-  const membership = await db('memberships')
+  const membership = (await db('memberships')
     .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
-    .first();
+    .first()) as MembershipRow | undefined;
   if (!membership || !['OWNER', 'ADMIN', 'MEMBER'].includes(membership.role)) {
     return Response.json({ error: { name: 'insufficient-role' } }, { status: 403 });
   }
 
   // Automations are private to their creator — only the creator can delete.
-  const automation = await db('automations')
+  const automation = (await db('automations')
     .where({ id: automationId, board_id: boardId, created_by: currentUser.id })
-    .first();
+    .first()) as Record<string, unknown> | undefined;
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }
