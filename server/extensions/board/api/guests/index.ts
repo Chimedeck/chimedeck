@@ -6,7 +6,6 @@
 export { handleInviteGuestByEmail as handleInviteGuest } from './create';
 export { handleUpdateGuestType } from './updateGuest';
 
-import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import {
@@ -15,117 +14,9 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
-import { writeEvent } from '../../../../mods/events/index';
-import type { GuestType } from '../../types';
+type ResolvedBoardRequest = BoardScopedRequest & { board: { workspace_id: string } };
+type GuestGrantRow = { id: string };
 
-// Legacy userId-based handler kept for internal use.
-async function handleInviteGuestById(req: Request, boardId: string): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
-  if (authError) return authError;
-
-  const boardReq = req as BoardScopedRequest;
-  const accessError = await requireBoardAccess(boardReq, boardId);
-  if (accessError) return accessError;
-
-  const board = boardReq.board!;
-  const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
-  if (membershipError) return membershipError;
-
-  const roleError = requireRole(scopedReq, 'ADMIN');
-  if (roleError) return roleError;
-
-  let body: { userId?: string; guestType?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json(
-      { error: { code: 'invalid-request-body', message: 'Request body must be JSON' } },
-      { status: 400 },
-    );
-  }
-
-  const { userId } = body;
-  if (!userId) {
-    return Response.json(
-      { error: { code: 'missing-user-id', message: 'userId is required' } },
-      { status: 400 },
-    );
-  }
-
-  const rawGuestType = body.guestType;
-  if (rawGuestType !== undefined && rawGuestType !== 'VIEWER' && rawGuestType !== 'MEMBER') {
-    return Response.json(
-      { error: { code: 'invalid-guest-type', message: 'guestType must be VIEWER or MEMBER' } },
-      { status: 400 },
-    );
-  }
-  const guestType: GuestType = (rawGuestType as GuestType | undefined) ?? 'VIEWER';
-
-  const targetUser = await db('users').where({ id: userId }).first();
-  if (!targetUser) {
-    return Response.json(
-      { error: { code: 'user-not-found', message: 'User not found' } },
-      { status: 404 },
-    );
-  }
-
-  // Prevent inviting existing workspace members (OWNER, ADMIN, MEMBER, VIEWER) as guests.
-  const existingMembership = await db('memberships')
-    .where({ user_id: userId, workspace_id: board.workspace_id })
-    .first();
-
-  if (existingMembership && existingMembership.role !== 'GUEST') {
-    return Response.json(
-      { error: { code: 'user-already-workspace-member', message: 'User is already a workspace member with a higher role' } },
-      { status: 409 },
-    );
-  }
-
-  await db.transaction(async (trx) => {
-    // Upsert a GUEST membership so the user is recognised as a workspace participant.
-    if (!existingMembership) {
-      await trx('memberships').insert({
-        user_id: userId,
-        workspace_id: board.workspace_id,
-        role: 'GUEST',
-      });
-    }
-
-    // Grant board-scoped access — idempotent.
-    await trx('board_guest_access')
-      .insert({
-        id: randomUUID(),
-        user_id: userId,
-        board_id: boardId,
-        guest_type: guestType,
-        granted_by: (req as AuthenticatedRequest).currentUser!.id,
-      })
-      .onConflict(['user_id', 'board_id'])
-      .ignore();
-  });
-
-  const grantRow = await db('board_guest_access')
-    .where({ user_id: userId, board_id: boardId })
-    .first();
-
-  // Emit real-time event so board subscribers learn about the new guest member (§8).
-  writeEvent({
-    type: 'member_joined',
-    boardId,
-    entityId: boardId,
-    actorId: (req as AuthenticatedRequest).currentUser!.id,
-    payload: {
-      scope: 'board',
-      userId: targetUser.id,
-      displayName: (targetUser.name as string | undefined) ?? targetUser.email,
-      role: 'GUEST',
-      joinedAt: new Date().toISOString(),
-    },
-  }).catch(() => {});
-
-  return Response.json({ data: grantRow }, { status: 201 });
-}
 
 // DELETE /api/v1/boards/:id/guests/:userId
 // Requires ADMIN+ role. Revokes board-scoped guest access.
@@ -138,11 +29,11 @@ export async function handleRevokeGuest(
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardReq = req as BoardScopedRequest;
+  const boardReq = req as ResolvedBoardRequest;
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board;
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -150,7 +41,9 @@ export async function handleRevokeGuest(
   const roleError = requireRole(scopedReq, 'ADMIN');
   if (roleError) return roleError;
 
-  const grantRow = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first();
+  const grantRow = (await db('board_guest_access')
+    .where({ user_id: userId, board_id: boardId })
+    .first()) as GuestGrantRow | undefined;
   if (!grantRow) {
     return Response.json(
       { error: { code: 'guest-access-not-found', message: 'Guest access record not found' } },
@@ -188,11 +81,11 @@ export async function handleListGuests(req: Request, boardId: string): Promise<R
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardReq = req as BoardScopedRequest;
+  const boardReq = req as ResolvedBoardRequest;
   const accessError = await requireBoardAccess(boardReq, boardId);
   if (accessError) return accessError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board;
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
