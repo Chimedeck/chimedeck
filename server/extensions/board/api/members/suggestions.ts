@@ -10,6 +10,8 @@ import { authenticate, type AuthenticatedRequest } from '../../../auth/middlewar
 import { requireBoardAccess, type BoardScopedRequest } from '../../middlewares/requireBoardAccess';
 import { buildAvatarProxyUrlsInCollection } from '../../../../common/avatar/resolveAvatarUrl';
 
+type BoardSuggestionScope = { id: string; workspace_id: string; visibility: string };
+
 export async function handleGetMemberSuggestions(req: Request, boardId: string): Promise<Response> {
   const authReq = req as AuthenticatedRequest;
   const authError = await authenticate(authReq);
@@ -29,10 +31,10 @@ export async function handleGetMemberSuggestions(req: Request, boardId: string):
   const url = new URL(req.url);
   const q = (url.searchParams.get('q') ?? '').toLowerCase().trim();
 
-  const board = await db('boards')
+  const board = await db<BoardSuggestionScope>('boards')
     .where({ id: boardId })
     .select('workspace_id', 'visibility')
-    .first();
+    .first<BoardSuggestionScope | undefined>();
 
   if (!board) {
     return Response.json(
