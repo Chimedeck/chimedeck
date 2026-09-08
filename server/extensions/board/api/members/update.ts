@@ -9,24 +9,34 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { writeEvent } from '../../../../mods/events/index';
-import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 
 type BoardMemberRole = 'ADMIN' | 'MEMBER';
 const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
+type BoardMemberRow = { board_id: string; user_id: string; role: string };
+type CountRow = { count: string | number };
+type MemberResponseRow = {
+  id: string;
+  email: string;
+  name: string;
+  nickname: string | null;
+  role: string;
+  updated_at: Date | string;
+};
+type BoardMemberUpdateRequest = BoardVisibilityScopedRequest & { currentUser: { id: string } };
 
 export async function handleUpdateBoardMember(
   req: Request,
   boardId: string,
   userId: string,
 ): Promise<Response> {
-  const scopedReq = req as BoardVisibilityScopedRequest;
+  const scopedReq = req as BoardMemberUpdateRequest;
 
   const roleError = requireRole(scopedReq as WorkspaceScopedRequest, 'ADMIN');
   if (roleError) return roleError;
 
   let body: { role?: string };
   try {
-    body = await req.json();
+    body = (await req.json()) as typeof body;
   } catch {
     return Response.json(
       { name: 'invalid-request-body', data: { message: 'Request body must be valid JSON' } },
@@ -43,7 +53,9 @@ export async function handleUpdateBoardMember(
 
   const newRole = body.role as BoardMemberRole;
 
-  const existing = await db('board_members').where({ board_id: boardId, user_id: userId }).first();
+  const existing = await db<BoardMemberRow>('board_members')
+    .where({ board_id: boardId, user_id: userId })
+    .first<BoardMemberRow | undefined>();
   if (!existing) {
     return Response.json(
       { name: 'board-member-not-found', data: { message: 'This user is not a member of the board' } },
@@ -56,9 +68,9 @@ export async function handleUpdateBoardMember(
     const adminCount = await db('board_members')
       .where({ board_id: boardId, role: 'ADMIN' })
       .count('id as count')
-      .first();
+      .first<CountRow | undefined>();
 
-    const count = Number((adminCount as { count: string | number } | undefined)?.count ?? 0);
+    const count = Number(adminCount?.count ?? 0);
     if (count <= 1) {
       return Response.json(
         { name: 'last-board-admin', data: { message: 'Cannot demote the last board admin. Promote another member first.' } },
@@ -71,7 +83,7 @@ export async function handleUpdateBoardMember(
     .where({ board_id: boardId, user_id: userId })
     .update({ role: newRole, updated_at: new Date().toISOString() });
 
-  const member = await db('board_members as bm')
+  const member = await db<MemberResponseRow>('board_members as bm')
     .join('users as u', 'bm.user_id', 'u.id')
     .where({ 'bm.board_id': boardId, 'bm.user_id': userId })
     .select(
@@ -82,13 +94,13 @@ export async function handleUpdateBoardMember(
       'bm.role',
       'bm.updated_at',
     )
-    .first();
+    .first<MemberResponseRow>();
 
   writeEvent({
     type: 'board_member_role_updated',
     boardId,
     entityId: boardId,
-    actorId: (req as AuthenticatedRequest).currentUser!.id,
+    actorId: scopedReq.currentUser.id,
     payload: { userId, role: newRole },
   }).catch(() => {});
 
