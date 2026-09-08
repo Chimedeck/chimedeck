@@ -7,11 +7,36 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 
+type BoardRow = { workspace_id: string };
+
+type BoardPluginJoinRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon_url: string | null;
+  connector_url: string | null;
+  manifest_url: string | null;
+  author: string | null;
+  author_email: string | null;
+  support_email: string | null;
+  categories: unknown;
+  capabilities: unknown;
+  whitelisted_domains: unknown;
+  is_public: boolean;
+  is_active: boolean;
+  created_at: string | Date;
+  updated_at: string | Date;
+  board_plugin_id: string;
+  enabled_at: string | Date;
+  config: unknown;
+};
+
 export async function handleListBoardPlugins(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -24,7 +49,7 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
   if (membershipError) return membershipError;
 
   // Join board_plugins with plugins to return full plugin metadata for active entries only.
-  const rows = await db('board_plugins as bp')
+  const rows = (await db('board_plugins as bp')
     .join('plugins as p', 'p.id', 'bp.plugin_id')
     .where('bp.board_id', boardId)
     .whereNull('bp.disabled_at')
@@ -51,36 +76,36 @@ export async function handleListBoardPlugins(req: Request, boardId: string): Pro
       'bp.id as board_plugin_id',
       'bp.enabled_at',
       'bp.config',
-    );
+    )) as BoardPluginJoinRow[];
 
   // Reshape flat join rows into the BoardPlugin shape the client expects:
   // { id, boardId, plugin: Plugin, enabledAt, disabledAt, config }
-  const boardPlugins = rows.map((r: any) => ({
-    id: r.board_plugin_id,
+  const boardPlugins = rows.map((row) => ({
+    id: row.board_plugin_id,
     boardId: boardId,
     plugin: {
-      id: r.id,
+      id: row.id,
       // api_key is the server-side HMAC secret used to sign plugin tokens — never expose it.
-      name: r.name,
-      slug: r.slug,
-      description: r.description,
-      iconUrl: r.icon_url ?? null,
-      connectorUrl: r.connector_url,
-      manifestUrl: r.manifest_url ?? null,
-      author: r.author ?? null,
-      authorEmail: r.author_email ?? null,
-      supportEmail: r.support_email ?? null,
-      categories: r.categories ?? [],
-      capabilities: Array.isArray(r.capabilities) ? r.capabilities : [],
-      whitelistedDomains: Array.isArray(r.whitelisted_domains) ? r.whitelisted_domains : [],
-      isPublic: r.is_public,
-      isActive: r.is_active,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
+      name: row.name,
+      slug: row.slug,
+      description: row.description,
+      iconUrl: row.icon_url ?? null,
+      connectorUrl: row.connector_url,
+      manifestUrl: row.manifest_url ?? null,
+      author: row.author ?? null,
+      authorEmail: row.author_email ?? null,
+      supportEmail: row.support_email ?? null,
+      categories: row.categories ?? [],
+      capabilities: Array.isArray(row.capabilities) ? row.capabilities : [],
+      whitelistedDomains: Array.isArray(row.whitelisted_domains) ? row.whitelisted_domains : [],
+      isPublic: row.is_public,
+      isActive: row.is_active,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
     },
-    enabledAt: r.enabled_at,
+    enabledAt: row.enabled_at,
     disabledAt: null,
-    config: r.config ?? {},
+    config: row.config ?? {},
   }));
 
   return Response.json({ data: boardPlugins });
