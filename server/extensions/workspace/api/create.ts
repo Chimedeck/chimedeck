@@ -3,11 +3,19 @@ import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & { currentUser: { id: string } };
+type WorkspaceRow = {
+  id: string;
+  name: string;
+  owner_id: string;
+  created_at: Date | string;
+};
+
 export async function handleCreateWorkspace(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const { currentUser } = req as AuthenticatedRequest;
+  const { currentUser } = req as AuthenticatedUserRequest;
 
   let body: { name?: string };
   try {
@@ -33,18 +41,21 @@ export async function handleCreateWorkspace(req: Request): Promise<Response> {
     await trx('workspaces').insert({
       id,
       name,
-      owner_id: currentUser!.id,
+      owner_id: currentUser.id,
     });
 
     // Caller automatically becomes OWNER.
     await trx('memberships').insert({
-      user_id: currentUser!.id,
+      user_id: currentUser.id,
       workspace_id: id,
       role: 'OWNER',
     });
   });
 
-  const workspace = await db('workspaces').where({ id }).first();
+  const workspace = await db<WorkspaceRow>('workspaces').where({ id }).first();
+  if (!workspace) {
+    throw new Error('Created workspace could not be read back');
+  }
 
   return Response.json({
     data: {
