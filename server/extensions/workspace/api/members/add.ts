@@ -14,11 +14,19 @@ import { writeEvent } from '../../../../mods/events/index';
 
 const VALID_ROLES = new Set<Role>(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']);
 
+type WorkspaceMemberRequest = WorkspaceScopedRequest & {
+  callerRole: Role;
+  currentUser: { id: string };
+};
+type UserRow = { id: string; email: string; name: string | null };
+type MembershipRow = { workspace_id: string; user_id: string; role: string };
+type BoardRow = { id: string; workspace_id: string };
+
 export async function handleAddMember(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const scopedReq = req as WorkspaceScopedRequest;
+  const scopedReq = req as WorkspaceMemberRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
   if (membershipError) return membershipError;
 
@@ -45,7 +53,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   const role: Role = (VALID_ROLES.has(body.role as Role) ? body.role : 'MEMBER') as Role;
 
   // Members can only assign roles that are equal to or less privileged than their own.
-  const callerRole = scopedReq.callerRole!;
+  const callerRole = scopedReq.callerRole;
   if (roleRank(role) > roleRank(callerRole)) {
     return Response.json(
       { error: { code: 'role-exceeds-caller-privilege', message: `You cannot assign a role higher than your own (${callerRole})` } },
@@ -55,7 +63,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   const email = body.email.trim().toLowerCase();
 
   // Look up the target user by email
-  const user = await db('users').where({ email }).first();
+  const user = await db<UserRow>('users').where({ email }).first();
   if (!user) {
     return Response.json(
       { error: { code: 'user-not-found', message: `No account found for ${email}. Ask them to sign up first.` } },
@@ -64,7 +72,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
   }
 
   // Check if already a member
-  const existing = await db('memberships')
+  const existing = await db<MembershipRow>('memberships')
     .where({ workspace_id: workspaceId, user_id: user.id })
     .first();
 
@@ -78,7 +86,7 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
           .where({ workspace_id: workspaceId, user_id: user.id })
           .update({ role });
 
-        const boards = await trx('boards')
+        const boards = await trx<BoardRow>('boards')
           .where({ workspace_id: workspaceId })
           .select('id');
 
@@ -118,11 +126,11 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
         type: 'member_joined',
         boardId: null,
         entityId: workspaceId,
-        actorId: (req as AuthenticatedRequest).currentUser!.id,
+        actorId: scopedReq.currentUser.id,
         payload: {
           scope: 'workspace',
           userId: user.id,
-          displayName: (user.name as string | undefined) ?? user.email,
+          displayName: user.name ?? user.email,
           role,
           joinedAt: new Date().toISOString(),
         },
@@ -155,11 +163,11 @@ export async function handleAddMember(req: Request, workspaceId: string): Promis
     type: 'member_joined',
     boardId: null,
     entityId: workspaceId,
-    actorId: (req as AuthenticatedRequest).currentUser!.id,
+    actorId: scopedReq.currentUser.id,
     payload: {
       scope: 'workspace',
       userId: user.id,
-      displayName: (user.name as string | undefined) ?? user.email,
+      displayName: user.name ?? user.email,
       role,
       joinedAt: new Date().toISOString(),
     },
