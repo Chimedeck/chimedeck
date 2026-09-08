@@ -33,10 +33,33 @@ interface CardCustomFieldValueRow {
   value_option_id: string | null;
 }
 
+interface CardRow {
+  id: string;
+  list_id: string;
+  title: string | null;
+}
+
+interface ListRow {
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+  state: string | null;
+}
+
+interface CustomFieldRow {
+  board_id: string;
+  field_type: FieldType;
+  name: string | null;
+  options: unknown;
+}
+
 interface DropdownOption {
   id: string;
   label: string;
-  color?: string;
+  color: string | undefined;
 }
 
 function parseDropdownOptions(options: unknown): DropdownOption[] {
@@ -79,7 +102,7 @@ function formatCustomFieldValueForActivity({
     case 'DROPDOWN': {
       const optionId = String(value);
       const option = parseDropdownOptions(options).find((entry) => entry.id === optionId);
-      return option?.label?.trim() || optionId;
+      return option?.label.trim() || optionId;
     }
     default:
       return String(value);
@@ -96,7 +119,7 @@ function toComparableFieldValue(
     case 'TEXT':
       return row.value_text ?? null;
     case 'NUMBER': {
-      if (row.value_number === null || row.value_number === undefined) return null;
+      if (row.value_number === null) return null;
       const num = Number(row.value_number);
       return Number.isNaN(num) ? null : num;
     }
@@ -116,12 +139,12 @@ function toComparableFieldValue(
 
 async function resolveCardContext(
   cardId: string,
-): Promise<{ card: Record<string, unknown>; board: Record<string, unknown> } | null> {
-  const card = await db('cards').where({ id: cardId }).first();
+): Promise<{ card: CardRow; board: BoardRow } | null> {
+  const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
   if (!card) return null;
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
   if (!list) return null;
-  const board = await db('boards').where({ id: list.board_id }).first();
+  const board = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
   if (!board) return null;
   return { card, board };
 }
@@ -142,11 +165,11 @@ export async function handleListCardFieldValues(req: Request, cardId: string): P
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id as string,
+    ctx.board.workspace_id,
   );
   if (membershipError) return membershipError;
 
-  const values = await db('card_custom_field_values').where({ card_id: cardId });
+  const values = (await db('card_custom_field_values').where({ card_id: cardId })) as CardCustomFieldValueRow[];
   return Response.json({ data: values });
 }
 
@@ -170,11 +193,11 @@ export async function handleGetCardFieldValue(
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id as string,
+    ctx.board.workspace_id,
   );
   if (membershipError) return membershipError;
 
-  const field = await db('custom_fields').where({ id: fieldId }).first();
+  const field = (await db('custom_fields').where({ id: fieldId }).first()) as CustomFieldRow | undefined;
   if (!field) {
     return Response.json(
       { error: { name: 'custom-field-not-found', data: { message: 'Custom field not found' } } },
@@ -182,9 +205,9 @@ export async function handleGetCardFieldValue(
     );
   }
 
-  const value = await db('card_custom_field_values')
+  const value = (await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first();
+    .first()) as CardCustomFieldValueRow | undefined;
 
   if (!value) {
     return Response.json(
@@ -216,18 +239,18 @@ export async function handleUpsertCardFieldValue(
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id as string,
+    ctx.board.workspace_id,
   );
   if (membershipError) return membershipError;
 
-  if ((ctx.board as Record<string, unknown>).state === 'ARCHIVED') {
+  if (ctx.board.state === 'ARCHIVED') {
     return Response.json(
       { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
       { status: 403 },
     );
   }
 
-  const field = await db('custom_fields').where({ id: fieldId }).first();
+  const field = (await db('custom_fields').where({ id: fieldId }).first()) as CustomFieldRow | undefined;
   if (!field) {
     return Response.json(
       { error: { name: 'custom-field-not-found', data: { message: 'Custom field not found' } } },
@@ -236,7 +259,7 @@ export async function handleUpsertCardFieldValue(
   }
 
   // Ensure the field belongs to the same board as the card
-  if (field.board_id !== (ctx.board as Record<string, unknown>).id) {
+  if (field.board_id !== ctx.board.id) {
     return Response.json(
       {
         error: {
@@ -258,15 +281,15 @@ export async function handleUpsertCardFieldValue(
     );
   }
 
-  const fieldType = field.field_type as FieldType;
+  const fieldType = field.field_type;
   const valuePayload = buildValuePayload(fieldType, body);
   if ('error' in valuePayload) {
     return Response.json({ error: valuePayload.error }, { status: 400 });
   }
 
-  const existing = await db('card_custom_field_values')
+  const existing = (await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first();
+    .first()) as CardCustomFieldValueRow | undefined;
 
   if (existing) {
     await db('card_custom_field_values')
@@ -281,23 +304,21 @@ export async function handleUpsertCardFieldValue(
     });
   }
 
-  const saved = await db('card_custom_field_values')
+  const saved = (await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first<CardCustomFieldValueRow>();
+    .first()) as CardCustomFieldValueRow | undefined;
 
   const previousValue = toComparableFieldValue(fieldType, existing);
   const newValue = toComparableFieldValue(fieldType, saved);
-  const cardTitle = typeof (ctx.card as Record<string, unknown>).title === 'string'
-    ? (ctx.card as Record<string, unknown>).title as string
-    : '';
-  const fieldName = typeof field.name === 'string' ? field.name : '';
+  const cardTitle = ctx.card.title ?? '';
+  const fieldName = field.name ?? '';
 
   // [why] This trigger should only fire for actual value transitions, not no-op saves.
   if (previousValue !== newValue && saved) {
     const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
     await dispatchEvent({
       type: 'card.custom_field_value_updated',
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: ctx.board.id,
       entityId: cardId,
       actorId,
       payload: {
@@ -311,7 +332,7 @@ export async function handleUpsertCardFieldValue(
     const activity = await writeActivity({
       entityType: 'card',
       entityId: cardId,
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: ctx.board.id,
       action: 'card.custom_field.updated',
       actorId,
       payload: {
@@ -329,7 +350,7 @@ export async function handleUpsertCardFieldValue(
     });
     publishCardActivityEvent({
       activity,
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: ctx.board.id,
     }).catch(() => {});
   }
 
@@ -356,20 +377,20 @@ export async function handleDeleteCardFieldValue(
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(
     scopedReq,
-    ctx.board.workspace_id as string,
+    ctx.board.workspace_id,
   );
   if (membershipError) return membershipError;
 
-  if ((ctx.board as Record<string, unknown>).state === 'ARCHIVED') {
+  if (ctx.board.state === 'ARCHIVED') {
     return Response.json(
       { error: { code: 'board-is-archived', message: 'This board is archived and cannot be modified.' } },
       { status: 403 },
     );
   }
 
-  const existing = await db('card_custom_field_values')
+  const existing = (await db('card_custom_field_values')
     .where({ card_id: cardId, custom_field_id: fieldId })
-    .first<CardCustomFieldValueRow>();
+    .first()) as CardCustomFieldValueRow | undefined;
 
   if (!existing) {
     return Response.json(
@@ -378,16 +399,12 @@ export async function handleDeleteCardFieldValue(
     );
   }
 
-  const field = await db('custom_fields').where({ id: fieldId }).first();
-  const fieldType = (field?.field_type as FieldType | undefined) ?? null;
-  const cardTitle = typeof (ctx.card as Record<string, unknown>).title === 'string'
-    ? (ctx.card as Record<string, unknown>).title as string
-    : '';
-  const fieldName = field && typeof (field as Record<string, unknown>).name === 'string'
-    ? ((field as Record<string, unknown>).name as string)
-    : '';
+  const field = (await db('custom_fields').where({ id: fieldId }).first()) as CustomFieldRow | undefined;
+  const fieldType = field?.field_type ?? null;
+  const cardTitle = ctx.card.title ?? '';
+  const fieldName = field?.name ?? '';
   const previousValue = fieldType
-    ? toComparableFieldValue(fieldType, existing as CardCustomFieldValueRow)
+    ? toComparableFieldValue(fieldType, existing)
     : null;
 
   await db('card_custom_field_values')
@@ -399,7 +416,7 @@ export async function handleDeleteCardFieldValue(
     const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
     await dispatchEvent({
       type: 'card.custom_field_value_updated',
-      boardId: (ctx.board as Record<string, unknown>).id as string,
+      boardId: ctx.board.id,
       entityId: cardId,
       actorId,
       payload: {
@@ -414,7 +431,7 @@ export async function handleDeleteCardFieldValue(
       const activity = await writeActivity({
         entityType: 'card',
         entityId: cardId,
-        boardId: (ctx.board as Record<string, unknown>).id as string,
+        boardId: ctx.board.id,
         action: 'card.custom_field.updated',
         actorId,
         payload: {
@@ -426,13 +443,13 @@ export async function handleDeleteCardFieldValue(
           newValueDisplay: formatCustomFieldValueForActivity({
             fieldType,
             value: null,
-            options: (field as Record<string, unknown>).options,
+            options: field.options,
           }),
         },
       });
       publishCardActivityEvent({
         activity,
-        boardId: (ctx.board as Record<string, unknown>).id as string,
+        boardId: ctx.board.id,
       }).catch(() => {});
     }
   }
@@ -556,7 +573,10 @@ async function parseBatchCardIds(req: Request): Promise<string[] | Response> {
       );
     }
 
-    return body.cardIds.map((id) => id.trim()).filter(Boolean);
+    return (body.cardIds as unknown[])
+      .filter((id): id is string => typeof id === 'string')
+      .map((id) => id.trim())
+      .filter(Boolean);
   }
 
   return [];
@@ -570,7 +590,7 @@ export async function handleBatchCardFieldValues(req: Request, boardId: string):
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
   if (!board) {
     return Response.json(
       { error: { name: 'board-not-found', data: { message: 'Board not found' } } },
@@ -579,7 +599,7 @@ export async function handleBatchCardFieldValues(req: Request, boardId: string):
   }
 
   const scopedReq = req as WorkspaceScopedRequest;
-  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id as string);
+  const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
   const parsedIds = await parseBatchCardIds(req);
@@ -592,16 +612,17 @@ export async function handleBatchCardFieldValues(req: Request, boardId: string):
 
   // [security] Only return values for cards that actually belong to this board,
   // preventing an authenticated member from probing cards from other boards.
-  const boardCardIds: string[] = await db('cards')
+  const boardCardIds = (await db('cards')
     .join('lists', 'cards.list_id', 'lists.id')
     .where('lists.board_id', boardId)
     .whereIn('cards.id', requestedIds)
-    .pluck('cards.id');
+    .pluck('cards.id'))
+    .filter((id): id is string => typeof id === 'string');
 
   if (boardCardIds.length === 0) {
     return Response.json({ data: [] });
   }
 
-  const values = await db('card_custom_field_values').whereIn('card_id', boardCardIds);
+  const values = (await db('card_custom_field_values').whereIn('card_id', boardCardIds)) as CardCustomFieldValueRow[];
   return Response.json({ data: values });
 }
