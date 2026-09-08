@@ -8,6 +8,8 @@ import { requireWorkspaceMembership } from '../../../middlewares/permissionManag
 import { automationConfig } from '../config';
 import { broadcast } from '../../realtime/mods/rooms/broadcast';
 
+type BoardRow = { workspace_id: string };
+
 export async function handleGetAutomationQuota(req: Request, boardId: string): Promise<Response> {
   if (!automationConfig.enabled) {
     return Response.json({ error: { name: 'feature-disabled' } }, { status: 404 });
@@ -16,7 +18,7 @@ export async function handleGetAutomationQuota(req: Request, boardId: string): P
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
   if (!board) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
@@ -26,8 +28,12 @@ export async function handleGetAutomationQuota(req: Request, boardId: string): P
     board.workspace_id,
   );
   if (membershipError) {
-    const currentUser = (req as AuthenticatedRequest).currentUser!;
-    const guest = await db('board_guests').where({ board_id: boardId, user_id: currentUser.id }).first().catch(() => null);
+    const currentUser = (req as AuthenticatedRequest).currentUser;
+    if (!currentUser) return membershipError;
+    const guest = (await db('board_guests')
+      .where({ board_id: boardId, user_id: currentUser.id })
+      .first()
+      .catch(() => null)) as Record<string, unknown> | null;
     if (!guest) return membershipError;
   }
 
@@ -38,11 +44,11 @@ export async function handleGetAutomationQuota(req: Request, boardId: string): P
   const resetAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 
   // Count runs for all automations on this board within the current calendar month.
-  const [{ count }] = await db('automation_run_log as r')
+  const [{ count }] = (await db('automation_run_log as r')
     .join('automations as a', 'r.automation_id', 'a.id')
     .where('a.board_id', boardId)
     .where('r.ran_at', '>=', monthStart.toISOString())
-    .count('r.id as count');
+    .count('r.id as count')) as [{ count: string | number }];
 
   const usedRuns = parseInt(String(count), 10);
   const maxRuns = automationConfig.monthlyQuota;
