@@ -12,7 +12,7 @@ function toReadableStream(body: unknown): ReadableStream<Uint8Array> | null {
   if (body instanceof ReadableStream) return body as ReadableStream<Uint8Array>;
 
   const asyncIterable = body as AsyncIterable<Uint8Array>;
-  if (typeof asyncIterable?.[Symbol.asyncIterator] !== 'function') return null;
+  if (typeof asyncIterable[Symbol.asyncIterator] !== 'function') return null;
 
   const iterator = asyncIterable[Symbol.asyncIterator]();
   return new ReadableStream<Uint8Array>({
