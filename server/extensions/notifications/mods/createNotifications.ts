@@ -14,6 +14,7 @@ import { dispatchNotificationEmail } from './emailDispatch';
 import { env } from '../../../config/env';
 import { getActiveWebhooksForEvent } from '../../webhooks/mods/registry';
 import { dispatchWebhook } from '../../webhooks/mods/dispatch';
+import { randomUUID } from 'node:crypto';
 import { buildMentionWebhookPayload, type MentionWebhookPayload } from './mentionWebhookContext';
 import type { Knex } from 'knex';
 
@@ -107,7 +108,7 @@ async function notifyMentionedUser({
       read: false,
       created_at: now,
     },
-    ['*'],
+    ['*']
   );
 
   await publishToUser(userId, {
@@ -160,7 +161,7 @@ export async function createNotificationsForMentions({
   // Fetch actor details once for the WS payload (read-only, outside transaction is fine)
   const actor = await db('users')
     .where({ id: actorId })
-    .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+    .select('id', 'nickname', db.raw('COALESCE(name, email) as name'), 'avatar_url')
     .first();
 
   const actorPayload = actor
@@ -205,6 +206,11 @@ export async function createNotificationsForMentions({
       boardName,
       sourceText,
       actor: actorPayload as Record<string, unknown>,
+      // [why] Mint ONE durable id per logical mention emission — NOT per
+      // recipient, and deliberately NOT sourceId (card-description mentions are
+      // 1:N across edits and would false-collapse legitimate repeat mentions
+      // at the receiver's semantic dedupe).
+      eventId: randomUUID(),
     });
     fireMentionWebhooks({
       payload,

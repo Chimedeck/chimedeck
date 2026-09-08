@@ -249,7 +249,13 @@ mock.module('../../../../../server/config/env', () => ({
   },
 }));
 
+// [why] Snapshot the REAL avatar module before overriding: bun's mock.module is
+// process-global, so the override must forward every other export untouched —
+// otherwise later test files in the same process (e.g. the eventId dispatch
+// suite) break on missing named exports (cross-file mock bleed).
+const realAvatarModule = await import('../../../../../server/common/avatar/resolveAvatarUrl');
 mock.module('../../../../../server/common/avatar/resolveAvatarUrl', () => ({
+  ...realAvatarModule,
   buildAvatarProxyUrl: ({ avatarUrl }: { avatarUrl: string | null }) =>
     avatarUrl ? '/api/v1/users/u/avatar' : null,
 }));
@@ -306,6 +312,10 @@ describe('handleCreateComment → card.commented intervention contract', () => {
     expect(payload!.sourcePreview).toBe('Please review');
     expect(payload!.actorName).toBe('Test Actor');
     expect((payload!.actorName as string).includes('@')).toBe(false);
+    // [why] durable producer event identity (ADR chimedeck-whatsapp-dedupe-contract):
+    // the persisted events.id so the receiver can semantically dedupe re-signed retries
+    expect(typeof payload!.eventId).toBe('string');
+    expect((payload!.eventId as string).length).toBeGreaterThan(0);
   });
 
   it('includes the reply target for threaded replies', async () => {

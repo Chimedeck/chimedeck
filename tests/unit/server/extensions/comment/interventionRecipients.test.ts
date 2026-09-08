@@ -191,9 +191,8 @@ describe('buildCommentWebhookPayload', () => {
   });
 
   it('builds sourcePreview with canonical semantics via the shared mention-context helper', async () => {
-    const { buildSourcePreview } = await import(
-      '../../../../../server/extensions/notifications/mods/mentionWebhookContext'
-    );
+    const { buildSourcePreview } =
+      await import('../../../../../server/extensions/notifications/mods/mentionWebhookContext');
 
     // [why] delegation contract: the comment payload preview IS the canonical
     // helper's output for the same input (entity decoding, whitespace collapse,
