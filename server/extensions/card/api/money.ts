@@ -15,6 +15,11 @@ import { requireCardWritable, type CardScopedRequest } from '../middlewares/requ
 // ISO 4217 3-letter uppercase currency code
 const CURRENCY_RE = /^[A-Z]{3}$/;
 
+interface CardCurrencyRow {
+  id: string;
+  currency: string | null;
+}
+
 export async function handlePatchCardMoney(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -23,7 +28,7 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
   const writableError = await requireCardWritable(cardReq, cardId);
   if (writableError) return writableError;
 
-  const board = cardReq.board!;
+  const board = (cardReq as CardScopedRequest & { board: { id: string; workspace_id: string } }).board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -113,7 +118,7 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
 
   // Default currency to USD when amount is set and no currency is stored or provided
   if (updates.amount != null && updates.currency === undefined) {
-    const existing = await db('cards').where({ id: cardId }).select('currency').first();
+    const existing = await db<CardCurrencyRow>('cards').where({ id: cardId }).select('currency').first();
     if (!existing?.currency) {
       updates.currency = 'USD';
     }
@@ -125,7 +130,7 @@ export async function handlePatchCardMoney(req: Request, cardId: string): Promis
 
   const row = rows[0] as { id: string; amount: number | null; currency: string | null; money_label: string | null };
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
 
   await dispatchEvent({
     type: 'card.updated',
