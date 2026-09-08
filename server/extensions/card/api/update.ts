@@ -21,6 +21,29 @@ const CURRENCY_RE = /^[A-Z]{3}$/;
 const HEX_COLOR_RE = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 const CARD_COVER_SIZES = new Set(['SMALL', 'FULL']);
 
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  title: string;
+};
+
+type AttachmentRow = {
+  id: string;
+  card_id: string;
+  type: string;
+  mime_type: string;
+};
+
+type CardRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  currency: string | null;
+  amount: number | null;
+  cover_attachment_id: string | null;
+};
+
 export async function handleUpdateCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -29,7 +52,8 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   const writableError = await requireCardWritable(cardReq, cardId);
   if (writableError) return writableError;
 
-  const board = cardReq.board!;
+  const writableCardReq = cardReq as CardScopedRequest & { board: BoardRow };
+  const board = writableCardReq.board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -59,7 +83,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     );
   }
 
-  const existingCard = await db('cards').where({ id: cardId }).first();
+  const existingCard = await db<CardRow>('cards').where({ id: cardId }).first();
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
@@ -158,7 +182,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         );
       }
 
-      const attachment = await db('attachments')
+      const attachment = await db<AttachmentRow>('attachments')
         .where({ id: body.cover_attachment_id, card_id: cardId, type: 'FILE' })
         .first();
 
@@ -205,14 +229,14 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   }
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
-  const previousDueDate = ((existingCard as { due_date?: string | null } | undefined)?.due_date ?? null) as string | null;
+  const previousDueDate = existingCard?.due_date ?? null;
   const descriptionChanged =
     body.description !== undefined &&
-    ((updates.description ?? null) !== ((existingCard as { description?: string | null } | undefined)?.description ?? null));
+    (updates.description ?? null) !== (existingCard?.description ?? null);
 
   // Wrap card update + mention sync in a single transaction
   const updated = await db.transaction(async (trx) => {
-    const rows = await trx('cards').where({ id: cardId }).update(updates, ['*']);
+    const rows = (await trx<CardRow>('cards').where({ id: cardId }).update(updates, ['*'])) as CardRow[];
 
     // Sync @mentions when description is being saved
     if (body.description !== undefined && rows[0]) {
@@ -234,7 +258,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
         sourceText: rows[0].description ?? '',
         cardId,
         boardId: board.id,
-        cardTitle: rows[0]?.title,
+        cardTitle: rows[0].title,
         boardName: board.title,
       });
     }
@@ -242,9 +266,15 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
     return rows;
   });
 
-  const cardRow = updated[0] as Record<string, unknown>;
-  const cardWithCover = await resolveCoverImageUrl(updated[0] as { id: string; cover_attachment_id?: string | null });
-  const nextDueDate = (cardRow.due_date ?? null) as string | null;
+  const cardRow = updated[0];
+  if (!cardRow) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found after update' } },
+      { status: 404 },
+    );
+  }
+  const cardWithCover = await resolveCoverImageUrl(cardRow);
+  const nextDueDate = cardRow.due_date;
   const dueDateChanged = body.due_date !== undefined && previousDueDate !== nextDueDate;
 
   // Use 'card_updated' to match client useBoardSync handler; send full card object
@@ -253,14 +283,14 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
   // Fire-and-forget board activity notification for card_updated
   const changedFields = Object.keys(updates).filter((k) => k !== 'updated_at');
   dispatchDirectCardNotification({
-    payload: { type: 'card_updated', cardTitle: (cardRow.title as string) ?? '', changedFields },
+    payload: { type: 'card_updated', cardTitle: cardRow.title, changedFields },
     boardId: board.id,
     cardId,
     actorId,
   }).catch(() => {});
 
   // Emit activity event when money fields change
-  if (body.amount !== undefined || (body.currency !== undefined && body.amount !== null)) {
+  if (body.amount !== undefined || body.currency !== undefined) {
     const activity = await writeActivity({
       entityType: 'card',
       entityId: cardId,
@@ -280,7 +310,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       boardId: board.id,
       action: 'card.description.updated',
       actorId,
-      payload: { cardId, cardTitle: (cardRow.title as string) ?? '' },
+      payload: { cardId, cardTitle: cardRow.title },
     });
     publishCardActivityEvent({ activity, boardId: board.id }).catch(() => {});
   }
@@ -302,7 +332,7 @@ export async function handleUpdateCard(req: Request, cardId: string): Promise<Re
       actorId,
       payload: {
         cardId,
-        cardTitle: (cardRow.title as string) ?? '',
+        cardTitle: cardRow.title,
         dueDate: nextDueDate,
         previousDueDate,
       },
