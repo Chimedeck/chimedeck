@@ -10,12 +10,17 @@ import {
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 
+type ResolvedBoardRequest = BoardVisibilityScopedRequest & {
+  board: { workspace_id: string; visibility: string };
+};
+type CommentCursorRow = { id: string; created_at: string };
+
 export async function handleGetBoardComments(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
 
-  const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const scopedReq = req as ResolvedBoardRequest;
+  const board = scopedReq.board;
 
   if (board.visibility !== 'PUBLIC') {
     const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -24,7 +29,7 @@ export async function handleGetBoardComments(req: Request, boardId: string): Pro
 
   const url = new URL(req.url);
   const cursor = url.searchParams.get('cursor') ?? null;
-  const limitParam = parseInt(url.searchParams.get('limit') ?? `${DEFAULT_LIMIT}`, 10);
+  const limitParam = parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10);
   const limit = Math.min(
     isNaN(limitParam) || limitParam < 1 ? DEFAULT_LIMIT : limitParam,
     MAX_LIMIT
@@ -54,7 +59,9 @@ export async function handleGetBoardComments(req: Request, boardId: string): Pro
     );
 
   if (cursor) {
-    const cursorRow = await db('comments').where({ id: cursor }).first();
+    const cursorRow = await db<CommentCursorRow>('comments')
+      .where({ id: cursor })
+      .first<CommentCursorRow | undefined>();
     if (cursorRow) {
       query = query.where(function () {
         this.where('c.created_at', '<', cursorRow.created_at).orWhere(function () {
