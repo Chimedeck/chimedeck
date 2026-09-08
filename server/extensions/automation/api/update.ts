@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import { automationConfig } from '../config';
-import type { AutomationType } from '../common/types';
+import type { AutomationActionRow, AutomationRow, AutomationTriggerRow, AutomationType } from '../common/types';
 import { validateTrigger } from '../engine/triggers/validate';
 // Ensure trigger registry is populated.
 import '../engine/triggers/index';
@@ -16,6 +16,8 @@ const VALID_AUTOMATION_TYPES: AutomationType[] = [
   'SCHEDULED',
   'DUE_DATE',
 ];
+type BoardRow = { workspace_id: string };
+type MembershipRow = { role: string };
 
 interface UpdateAutomationBody {
   name?: unknown;
@@ -45,25 +47,26 @@ export async function handleUpdateAutomation(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
 
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
   if (!board) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
   // Only workspace members with at least MEMBER role can manage automations.
-  const membership = await db('memberships')
+  const membership = (await db('memberships')
     .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
-    .first();
+    .first()) as MembershipRow | undefined;
   if (!membership || !['OWNER', 'ADMIN', 'MEMBER'].includes(membership.role)) {
     return Response.json({ error: { name: 'insufficient-role' } }, { status: 403 });
   }
 
   // Automations are private to their creator — only the creator can update.
-  const automation = await db('automations')
+  const automation = (await db('automations')
     .where({ id: automationId, board_id: boardId, created_by: currentUser.id })
-    .first();
+    .first()) as AutomationRow | undefined;
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }
@@ -146,11 +149,11 @@ export async function handleUpdateAutomation(
     }
   });
 
-  const [updated, trigger, actions] = await Promise.all([
+  const [updated, trigger, actions] = (await Promise.all([
     db('automations').where({ id: automationId }).first(),
     db('automation_triggers').where({ automation_id: automationId }).first(),
     db('automation_actions').where({ automation_id: automationId }).orderBy('position', 'asc').select('*'),
-  ]);
+  ])) as [AutomationRow, AutomationTriggerRow | undefined, AutomationActionRow[]];
 
   return Response.json({ data: formatAutomation(updated, trigger ?? null, actions) });
 }
