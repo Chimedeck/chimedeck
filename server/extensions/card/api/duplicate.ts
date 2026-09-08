@@ -13,6 +13,24 @@ import { between, HIGH_SENTINEL } from '../../list/mods/fractional';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 
+interface CardRow extends Record<string, unknown> {
+  id: string;
+  list_id: string;
+  title: string;
+  description: string | null;
+  position: string;
+  archived: boolean;
+  due_date: string | null;
+  cover_attachment_id: string | null;
+  cover_color: string | null;
+  cover_size: string | null;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
 export async function handleDuplicateCard(req: Request, cardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -21,8 +39,9 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
   const writableError = await requireCardWritable(cardReq, cardId);
   if (writableError) return writableError;
 
-  const card = cardReq.card!;
-  const board = cardReq.board!;
+  const writableCardReq = cardReq as CardScopedRequest & { card: CardRow; board: BoardRow };
+  const card = writableCardReq.card;
+  const board = writableCardReq.board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -32,7 +51,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
   if (roleError) return roleError;
 
   // Insert copy immediately after the source card
-  const cardsAfter = await db('cards')
+  const cardsAfter = await db<CardRow>('cards')
     .where({ list_id: card.list_id, archived: false })
     .where('position', '>', card.position)
     .orderBy('position', 'asc')
@@ -42,7 +61,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
 
   const newId = randomUUID();
   const shortId = await generateUniqueShortId('cards');
-  await db('cards').insert({
+  await db<CardRow>('cards').insert({
     id: newId,
     short_id: shortId,
     list_id: card.list_id,
@@ -56,7 +75,7 @@ export async function handleDuplicateCard(req: Request, cardId: string): Promise
     cover_size: card.cover_size ?? 'SMALL',
   });
 
-  const duplicate = await db('cards').where({ id: newId }).first();
+  const duplicate = await db<CardRow>('cards').where({ id: newId }).first();
   const duplicateWithCover = await resolveCoverImageUrl(duplicate as { id: string; cover_attachment_id?: string | null });
 
   await dispatchEvent({ type: 'card.duplicated', boardId: board.id, entityId: newId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { sourceId: cardId } });
