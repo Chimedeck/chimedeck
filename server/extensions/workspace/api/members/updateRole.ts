@@ -11,6 +11,12 @@ import {
 
 const VALID_ROLES: Role[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'];
 
+type MembershipRow = {
+  user_id: string;
+  workspace_id: string;
+  role: Role;
+};
+
 export async function handleUpdateMemberRole(
   req: Request,
   workspaceId: string,
@@ -43,7 +49,7 @@ export async function handleUpdateMemberRole(
     );
   }
 
-  const targetMembership = await db('memberships')
+  const targetMembership = await db<MembershipRow>('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
     .first();
 
@@ -71,9 +77,9 @@ export async function handleUpdateMemberRole(
     }
   }
 
-  const updated = await db('memberships')
+  const updated = (await db<MembershipRow>('memberships')
     .where({ user_id: userId, workspace_id: workspaceId })
-    .update({ role: newRole }, ['*']);
+    .update({ role: newRole }, ['*'])) as MembershipRow[];
 
   return Response.json({ data: updated[0] });
 }
