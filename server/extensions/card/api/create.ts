@@ -15,11 +15,31 @@ import { emitCardCreated } from '../../activity/mods/createActivityEvent';
 import { resolveCoverImageUrl } from '../../../common/cards/cover';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 
+type ListRow = {
+  id: string;
+  board_id: string;
+  title: string | null;
+};
+
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+};
+
+type CardRow = {
+  id: string;
+  list_id: string;
+  title: string;
+  position: string;
+  archived: boolean;
+  cover_attachment_id: string | null;
+};
+
 export async function handleCreateCard(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db('lists').where({ id: listId }).first();
+  const list = await db<ListRow>('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -31,7 +51,8 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const writableBoardReq = boardReq as BoardScopedRequest & { board: BoardRow };
+  const board = writableBoardReq.board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -75,7 +96,7 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
   }
 
   // Append to end of list
-  const lastCard = await db('cards')
+  const lastCard = await db<CardRow>('cards')
     .where({ list_id: listId, archived: false })
     .orderBy('position', 'desc')
     .first();
@@ -95,8 +116,14 @@ export async function handleCreateCard(req: Request, listId: string): Promise<Re
     start_date: body.start_date ?? null,
   });
 
-  const card = await db('cards').where({ id }).first();
-  const cardWithCover = await resolveCoverImageUrl(card as { id: string; cover_attachment_id?: string | null });
+  const card = await db<CardRow>('cards').where({ id }).first();
+  if (!card) {
+    return Response.json(
+      { error: { code: 'card-not-found', message: 'Card not found after creation' } },
+      { status: 404 },
+    );
+  }
+  const cardWithCover = await resolveCoverImageUrl(card);
 
   const actorId = (req as AuthenticatedRequest).currentUser?.id ?? 'system';
 
