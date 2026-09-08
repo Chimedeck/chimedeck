@@ -10,15 +10,21 @@ import { requireBoardWritable, type BoardScopedRequest } from '../middlewares/re
 import { writeEvent } from '../../../mods/events/write';
 import { sanitizeText } from '../../../common/sanitize';
 
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  title: string;
+};
+
 export async function handleUpdateBoard(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardScopedReq = req as BoardScopedRequest;
+  const boardScopedReq = req as BoardScopedRequest & { board: BoardRow };
   const writableError = await requireBoardWritable(boardScopedReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardScopedReq.board!;
+  const board = boardScopedReq.board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -45,9 +51,9 @@ export async function handleUpdateBoard(req: Request, boardId: string): Promise<
   }
 
   const sanitizedTitle = sanitizeText(body.title.trim());
-  const updated = await db('boards')
+  const updated = (await db<BoardRow>('boards')
     .where({ id: boardId })
-    .update({ title: sanitizedTitle }, ['*']);
+    .update({ title: sanitizedTitle }, ['*'])) as BoardRow[];
 
   // Stub event emission.
   await writeEvent({ type: 'board_renamed', boardId, entityId: boardId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { title: sanitizedTitle } });
