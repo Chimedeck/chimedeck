@@ -13,12 +13,12 @@ export type StateTransitionErrorName =
   | 'state-transition-rules-invalid';
 
 export type StateTransitionErrorResponse = {
-  name: StateTransitionErrorName | string;
+  name: string;
   data?: Record<string, unknown>;
 };
 
 export function stateTransitionError(
-  name: StateTransitionErrorName | string,
+  name: string,
   data?: Record<string, unknown>,
 ): StateTransitionErrorResponse {
   return data ? { name, data } : { name };
