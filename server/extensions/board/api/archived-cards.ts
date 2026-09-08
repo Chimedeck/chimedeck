@@ -7,12 +7,30 @@ import {
   type BoardVisibilityScopedRequest,
 } from '../../../middlewares/boardVisibility';
 
+type ResolvedBoardRequest = BoardVisibilityScopedRequest & {
+  board: { id: string; workspace_id: string; visibility: string };
+};
+
+type ArchivedCardRow = {
+  id: string;
+  list_id: string;
+  title: string;
+  description: string | null;
+  position: string;
+  archived: boolean;
+  start_date: string | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  list_title: string;
+};
+
 export async function handleGetArchivedCards(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
 
-  const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const scopedReq = req as ResolvedBoardRequest;
+  const board = scopedReq.board;
   const resolvedBoardId = board.id;
 
   if (board.visibility !== 'PUBLIC') {
@@ -20,7 +38,7 @@ export async function handleGetArchivedCards(req: Request, boardId: string): Pro
     if (membershipError) return membershipError;
   }
 
-  const cardRows = await db('cards')
+  const cardRows = await db<ArchivedCardRow>('cards')
     .join('lists', 'cards.list_id', 'lists.id')
     .where('lists.board_id', resolvedBoardId)
     .where('cards.archived', true)
@@ -37,9 +55,9 @@ export async function handleGetArchivedCards(req: Request, boardId: string): Pro
       'cards.created_at',
       'cards.updated_at',
       'lists.title as list_title'
-    );
+    ) as ArchivedCardRow[];
 
-  const cardIds = cardRows.map((card) => String(card.id));
+  const cardIds = cardRows.map((card) => card.id);
 
   let labelsByCardId = new Map<string, Array<{ id: string; name: string; color: string }>>();
   if (cardIds.length > 0) {
@@ -60,7 +78,7 @@ export async function handleGetArchivedCards(req: Request, boardId: string): Pro
 
     labelsByCardId = cardLabelRows.reduce(
       (acc, row) => {
-        const cardId = String(row.card_id);
+        const cardId = row.card_id;
         const existing = acc.get(cardId) ?? [];
         existing.push({ id: row.label_id, name: row.label_name, color: row.label_color });
         acc.set(cardId, existing);
@@ -72,7 +90,7 @@ export async function handleGetArchivedCards(req: Request, boardId: string): Pro
 
   const cards = cardRows.map((card) => ({
     ...card,
-    labels: labelsByCardId.get(String(card.id)) ?? [],
+    labels: labelsByCardId.get(card.id) ?? [],
   }));
 
   return Response.json({ data: cards });
