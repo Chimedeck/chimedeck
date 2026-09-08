@@ -18,6 +18,12 @@ import { writeEvent } from '../../../mods/events/write';
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
+type ResolvedBoardWritableRequest = BoardScopedRequest & {
+  board: { workspace_id: string };
+};
+type BoardBackgroundRow = { id: string; background: string | null };
+type UpdatedBoardRow = Record<string, unknown> & { background: string };
+
 function buildPublicUrl(s3Key: string): string {
   const baseUrl = env.S3_ENDPOINT
     ? `${env.S3_ENDPOINT}/${s3Config.bucket}`
@@ -48,11 +54,11 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardScopedReq = req as BoardScopedRequest;
+  const boardScopedReq = req as ResolvedBoardWritableRequest;
   const writableError = await requireBoardWritable(boardScopedReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardScopedReq.board!;
+  const board = boardScopedReq.board;
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -96,7 +102,9 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   const s3Key = `board-backgrounds/${boardId}/background.${ext}`;
 
   // Remove previous background from S3 if it exists
-  const existingBoard = await db('boards').where({ id: boardId }).first();
+  const existingBoard = await db<BoardBackgroundRow>('boards')
+    .where({ id: boardId })
+    .first<BoardBackgroundRow | undefined>();
   if (existingBoard?.background) {
     try {
       const oldKey = extractS3KeyFromUrl(existingBoard.background);
@@ -118,9 +126,9 @@ export async function handleUploadBackground(req: Request, boardId: string): Pro
   );
 
   const backgroundUrl = buildPublicUrl(s3Key);
-  const [updated] = await db('boards')
+  const [updated] = (await db('boards')
     .where({ id: boardId })
-    .update({ background: backgroundUrl }, ['*']);
+    .update({ background: backgroundUrl }, ['*'])) as [UpdatedBoardRow];
 
   await writeEvent({
     type: 'board.background_changed',
