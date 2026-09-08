@@ -31,7 +31,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
       dispatch(boardSliceActions.updateBoardBackground({ background: res.data.background ?? null }));
     } catch (err: unknown) {
       const e = err as { name?: string };
-      setError(e?.name ?? 'upload-failed');
+      setError(e.name ?? 'upload-failed');
     } finally {
       setUploading(false);
       // Reset input so the same file can be re-selected if needed
@@ -47,7 +47,7 @@ const BackgroundPicker = ({ boardId }: Props) => {
       dispatch(boardSliceActions.updateBoardBackground({ background: null }));
     } catch (err: unknown) {
       const e = err as { name?: string };
-      setError(e?.name ?? 'remove-failed');
+      setError(e.name ?? 'remove-failed');
     } finally {
       setRemoving(false);
     }
@@ -86,7 +86,9 @@ const BackgroundPicker = ({ boardId }: Props) => {
           accept="image/jpeg,image/png"
           className="sr-only"
           id="bg-upload-input"
-          onChange={handleFileChange}
+          onChange={(event) => {
+            void handleFileChange(event);
+          }}
           disabled={uploading || removing}
         />
         <label
@@ -101,7 +103,9 @@ const BackgroundPicker = ({ boardId }: Props) => {
 
         {currentBackground && (
           <button
-            onClick={handleRemove}
+            onClick={() => {
+              void handleRemove();
+            }}
             disabled={uploading || removing}
             className="flex items-center gap-1.5 rounded-md border border-red-700 px-3 py-1.5 text-xs text-danger transition-colors hover:bg-red-900/30 disabled:opacity-50"
             aria-label="Remove background"
