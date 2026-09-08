@@ -17,6 +17,9 @@ import { createNotificationsForMentions } from '../../notifications/mods/createN
 import { dispatchDirectCardNotification } from '../../notifications/mods/boardActivityDispatch';
 import { resolveCardId } from '../../../common/ids/resolveEntityId';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
+import { getCardRelatedUserIds } from '../../notifications/mods/relatedCardRecipients';
+import { computeInterventionRecipients } from '../common/interventionRecipients';
+import { buildCommentWebhookPayload } from '../common/commentWebhookPayload';
 
 type CardRow = {
   id: string;
@@ -54,6 +57,11 @@ type CommentWithAuthorRow = CommentRow & {
   author_name: string | null;
   author_email: string | null;
   author_avatar_url: string | null;
+};
+
+type UserRow = {
+  name: string | null;
+  nickname: string | null;
 };
 
 export async function handleCreateComment(req: Request, cardId: string): Promise<Response> {
@@ -142,7 +150,9 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       );
     }
     const normalizedParentId = rawParentId.trim();
-    const parentComment = await db<CommentRow>('comments').where({ id: normalizedParentId }).first();
+    const parentComment = await db<CommentRow>('comments')
+      .where({ id: normalizedParentId })
+      .first();
     if (!parentComment) {
       return Response.json(
         { error: { code: 'comment-not-found', message: 'Parent comment not found' } },
@@ -284,6 +294,24 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
   });
   const commentData = { ...comment, author_avatar_url: authorAvatarUrl };
 
+  // [why] Intervention recipients drive the Duplanet WhatsApp bridge: card assignees,
+  // checklist assignees and the reply target need a targeted alert, but the actor
+  // (no self-notification) and mentioned users (separate mention event) must be
+  // excluded to prevent duplicate or board-wide notifications.
+  const [relatedUserIds, actorRow] = await Promise.all([
+    getCardRelatedUserIds({ cardId: resolvedCardId }),
+    db('users').where({ id: actorId }).select('name', 'nickname').first() as Promise<
+      UserRow | undefined
+    >,
+  ]);
+  const interventionRecipients = computeInterventionRecipients({
+    cardAssigneeIds: Array.from(relatedUserIds),
+    checklistAssigneeIds: [],
+    replyToUserId,
+    actorId,
+    mentionedUserIds,
+  });
+
   // commentPreview strips HTML tags and truncates to 120 chars.
   const rawPreview = trimmedContent.replaceAll(/<[^>]+>/g, '');
   const commentPreview = rawPreview.length > 120 ? rawPreview.slice(0, 117) + '…' : rawPreview;
@@ -294,7 +322,16 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
       boardId: board.id,
       entityId: resolvedCardId,
       actorId,
-      payload: { commentId: id, cardId: resolvedCardId, cardTitle: card.title },
+      payload: buildCommentWebhookPayload({
+        base: { commentId: id, cardId: resolvedCardId, cardTitle: card.title },
+        boardId: board.id,
+        entityId: resolvedCardId,
+        actorId,
+        actor: { nickname: actorRow?.nickname ?? null, name: actorRow?.name ?? null },
+        commentText: trimmedContent,
+        boardTitle: board.title,
+        interventionRecipients,
+      }),
     }),
     writeActivity({
       entityType: 'card',
@@ -314,12 +351,15 @@ export async function handleCreateComment(req: Request, cardId: string): Promise
         JSON.stringify({
           type: 'comment_reply_added',
           payload: { card_id: resolvedCardId, parent_comment_id: parentId, reply: commentData },
-        }),
+        })
       )
       .catch(() => {});
   } else {
     publisher
-      .publish(board.id, JSON.stringify({ type: 'comment_added', payload: { comment: commentData } }))
+      .publish(
+        board.id,
+        JSON.stringify({ type: 'comment_added', payload: { comment: commentData } })
+      )
       .catch(() => {});
   }
 
