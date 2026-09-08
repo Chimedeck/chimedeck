@@ -5,11 +5,16 @@ import { consumeInvite } from '../../mods/invite/consume';
 import { writeEvent } from '../../../../mods/events/index';
 import { db } from '../../../../common/db';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & {
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type UserDisplayNameRow = { name: string | null };
+
 export async function handleAcceptInvite(req: Request, token: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const { currentUser } = req as AuthenticatedRequest;
+  const { currentUser } = req as AuthenticatedUserRequest;
 
   const result = await validateInvite({ token });
 
@@ -26,30 +31,28 @@ export async function handleAcceptInvite(req: Request, token: string): Promise<R
         { status: 410 },
       );
     }
-    if (result.reason === 'invite-already-used') {
-      return Response.json(
-        { error: { code: 'invite-already-used', message: 'Invite has already been used' } },
-        { status: 409 },
-      );
-    }
+    return Response.json(
+      { error: { code: 'invite-already-used', message: 'Invite has already been used' } },
+      { status: 409 },
+    );
   }
 
-  const { invite } = result as Extract<typeof result, { ok: true }>;
+  const { invite } = result;
 
-  await consumeInvite({ invite, userId: currentUser!.id });
+  await consumeInvite({ invite, userId: currentUser.id });
 
   // Emit real-time event so connected clients learn about the new workspace member (§8).
   // Resolve displayName from the users table since the JWT only carries id + email.
-  db('users').where({ id: currentUser!.id }).first().then((user) => {
-    const displayName = (user?.name as string | undefined) ?? currentUser!.email;
+  db('users').where({ id: currentUser.id }).first().then((user) => {
+    const displayName = (user as UserDisplayNameRow | undefined)?.name ?? currentUser.email;
     return writeEvent({
       type: 'member_joined',
       boardId: null,
       entityId: invite.workspace_id,
-      actorId: currentUser!.id,
+      actorId: currentUser.id,
       payload: {
         scope: 'workspace',
-        userId: currentUser!.id,
+        userId: currentUser.id,
         displayName,
         role: invite.role,
         joinedAt: new Date().toISOString(),
