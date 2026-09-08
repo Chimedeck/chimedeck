@@ -19,6 +19,11 @@ interface BoardPageState {
   fetchError: SerializedError | null;
 }
 
+type BoardPageResponse = {
+  data: Board;
+  includes: { lists: List[]; cards: unknown[] };
+};
+
 const initialState: BoardPageState = {
   board: null,
   includes: { lists: [], cards: [] },
@@ -31,7 +36,8 @@ const initialState: BoardPageState = {
 export const fetchBoardThunk = createAppAsyncThunk(
   'boardPage/fetch',
   async ({ boardId }: { boardId: string }, { extra }) => {
-    return getBoard({ api: extra.api, boardId });
+    const { api } = extra as { api: { get: <T>(url: string) => Promise<T> } };
+    return (await getBoard({ api, boardId })) as BoardPageResponse;
   },
 );
 
