@@ -13,8 +13,30 @@ import { sanitizeRichText } from '../../../common/sanitize';
 import { createNotificationsForMentions } from '../../notifications/mods/createNotifications';
 import { buildAvatarProxyUrl } from '../../../common/avatar/resolveAvatarUrl';
 
-async function loadCommentWithAuthor(commentId: string): Promise<Record<string, unknown> | null> {
-  const row = await db('comments')
+type CommentRow = {
+  id: string;
+  card_id: string;
+  user_id: string;
+  content: string;
+  version: number;
+  deleted: boolean;
+  parent_id: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
+type CommentWithAuthorRow = CommentRow & {
+  author_name: string | null;
+  author_email: string | null;
+  author_avatar_url: string | null;
+};
+
+type CardRow = { id: string; list_id: string; title: string };
+type ListRow = { id: string; board_id: string };
+type BoardRow = { id: string; workspace_id: string; state: string; title: string };
+
+async function loadCommentWithAuthor(commentId: string): Promise<CommentWithAuthorRow | null> {
+  const row = (await db<CommentRow>('comments')
     .leftJoin('users', 'comments.user_id', 'users.id')
     .where('comments.id', commentId)
     .select(
@@ -31,23 +53,23 @@ async function loadCommentWithAuthor(commentId: string): Promise<Record<string, 
       'users.email as author_email',
       'users.avatar_url as author_avatar_url',
     )
-    .first();
+    .first()) as CommentWithAuthorRow | undefined;
 
   if (!row) return null;
 
   const avatarUrl = buildAvatarProxyUrl({
-    userId: ((row as Record<string, unknown>).user_id as string) ?? null,
-    avatarUrl: ((row as Record<string, unknown>).author_avatar_url as string | null) ?? null,
+    userId: row.user_id,
+    avatarUrl: row.author_avatar_url,
   });
 
-  return { ...row, author_avatar_url: avatarUrl } as Record<string, unknown>;
+  return { ...row, author_avatar_url: avatarUrl };
 }
 
 export async function handleUpdateComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const comment = await db('comments').where({ id: commentId }).first();
+  const comment = await db<CommentRow>('comments').where({ id: commentId }).first();
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
@@ -62,7 +84,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
     );
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
 
   if (comment.user_id !== actorId) {
     return Response.json(
@@ -71,10 +93,10 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
     );
   }
 
-  const card = await db('cards').where({ id: comment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
-  if (!board) {
+  const card = await db<CardRow>('cards').where({ id: comment.card_id }).first();
+  const list = card ? await db<ListRow>('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
+  if (!card || !board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
       { status: 404 },
@@ -121,7 +143,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
   const newVersion = comment.version + 1;
 
   await db.transaction(async (trx) => {
-    await trx('comments').where({ id: commentId }).update({
+    await trx<CommentRow>('comments').where({ id: commentId }).update({
       content: trimmedContent,
       version: newVersion,
       updated_at: new Date().toISOString(),
@@ -145,7 +167,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       sourceText: trimmedContent,
       cardId: comment.card_id,
       boardId: board.id,
-      cardTitle: card?.title,
+      cardTitle: card.title,
       boardName: board.title,
     });
   });
@@ -158,7 +180,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
       boardId: board.id,
       entityId: comment.card_id,
       actorId,
-      payload: { commentId, version: newVersion, cardId: comment.card_id, cardTitle: card?.title ?? null },
+      payload: { commentId, version: newVersion, cardId: comment.card_id, cardTitle: card.title },
     }),
     writeActivity({
       entityType: 'card',
@@ -170,7 +192,7 @@ export async function handleUpdateComment(req: Request, commentId: string): Prom
         commentId,
         version: newVersion,
         cardId: comment.card_id,
-        cardTitle: card?.title ?? null,
+        cardTitle: card.title,
         before: comment.content,
         after: trimmedContent,
       },
