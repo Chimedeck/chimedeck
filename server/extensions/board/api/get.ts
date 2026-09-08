@@ -12,6 +12,12 @@ import { resolveCoverImageUrls } from '../../../common/cards/cover';
 import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
 import { flags } from '../../../mods/flags';
 
+type ResolvedBoardRequest = BoardVisibilityScopedRequest & {
+  board: { id: string; visibility: string; background: string | null };
+};
+
+type BoardStarRow = { board_id: string; user_id: string };
+
 export async function handleGetBoard(req: Request, boardId: string): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) {
@@ -27,8 +33,8 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
     return visibilityError;
   }
 
-  const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
+  const scopedReq = req as ResolvedBoardRequest;
+  const board = scopedReq.board;
   const resolvedBoardId = board.id;
 
   searchLog.boardAccessChecked({
@@ -148,7 +154,7 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
       .groupBy('list_id');
 
     const totalsByList = Object.fromEntries(
-      totalRows.map((row) => [row.list_id, Number(row.count ?? 0)]),
+      totalRows.map((row) => [row.list_id, Number(row.count)]),
     ) as Record<string, number>;
 
     const rankedCardRows = await db
@@ -191,16 +197,14 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
     return loadCards(initialCardIds);
   })();
 
-  const cardsWithResolvedMembers = await Promise.all(
-    cards.map(async (card) => ({
-      ...card,
-      members: buildAvatarProxyUrlsInCollection(
-        Array.isArray(card.members)
-          ? (card.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
-          : []
-      ),
-    }))
-  );
+  const cardsWithResolvedMembers = cards.map((card) => ({
+    ...card,
+    members: buildAvatarProxyUrlsInCollection(
+      Array.isArray(card.members)
+        ? (card.members as Array<{ avatar_url?: string | null } & Record<string, unknown>>)
+        : []
+    ),
+  }));
 
   const cardsWithResolvedCovers = await resolveCoverImageUrls(
     cardsWithResolvedMembers as unknown as Array<{ id: string; cover_attachment_id?: string | null } & Record<string, unknown>>,
@@ -229,9 +233,9 @@ export async function handleGetBoard(req: Request, boardId: string): Promise<Res
   const currentUserId = (scopedReq.currentUser as { id?: string } | undefined)?.id ?? null;
   let isStarred = false;
   if (currentUserId) {
-    const star = await db('board_stars')
+    const star = await db<BoardStarRow>('board_stars')
       .where({ board_id: resolvedBoardId, user_id: currentUserId })
-      .first();
+      .first<BoardStarRow | undefined>();
     isStarred = !!star;
   }
 
