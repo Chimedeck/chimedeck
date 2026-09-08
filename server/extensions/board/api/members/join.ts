@@ -4,20 +4,34 @@
 // PRIVATE boards are rejected — only admins can add members to those.
 import { randomUUID } from 'node:crypto';
 import { db } from '../../../../common/db';
-import type { AuthenticatedRequest } from '../../../auth/middlewares/authentication';
 import type { BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 import { dispatchEvent } from '../../../../mods/events/dispatch';
 
+type JoinBoardRequest = BoardVisibilityScopedRequest & {
+  board: NonNullable<BoardVisibilityScopedRequest['board']>;
+  currentUser: { id: string };
+};
+type MembershipRow = { user_id: string; workspace_id: string; role: string };
+type BoardMemberRow = { board_id: string; user_id: string };
+type JoinedMemberRow = {
+  id: string;
+  email: string;
+  name: string;
+  nickname: string | null;
+  role: string;
+  created_at: Date | string;
+};
+
 export async function handleJoinBoard(req: Request, boardId: string): Promise<Response> {
-  const scopedReq = req as BoardVisibilityScopedRequest;
-  const board = scopedReq.board!;
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const scopedReq = req as JoinBoardRequest;
+  const board = scopedReq.board;
+  const currentUser = scopedReq.currentUser;
 
   // Verify the caller is a non-GUEST workspace member.
-  const membership = await db('memberships')
+  const membership = await db<MembershipRow>('memberships')
     .where({ user_id: currentUser.id, workspace_id: board.workspace_id })
     .whereNot('role', 'GUEST')
-    .first();
+    .first<MembershipRow | undefined>();
 
   if (!membership) {
     return Response.json(
@@ -38,13 +52,13 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
     );
   }
 
-  const existing = await db('board_members')
+  const existing = await db<BoardMemberRow>('board_members')
     .where({ board_id: boardId, user_id: currentUser.id })
-    .first();
+    .first<BoardMemberRow | undefined>();
 
   if (existing) {
     // Already a member — idempotent, return current membership.
-    const member = await db('board_members as bm')
+    const member = await db<JoinedMemberRow>('board_members as bm')
       .join('users as u', 'bm.user_id', 'u.id')
       .where({ 'bm.board_id': boardId, 'bm.user_id': currentUser.id })
       .select(
@@ -55,7 +69,7 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
         'bm.role',
         'bm.created_at',
       )
-      .first();
+      .first<JoinedMemberRow>();
     return Response.json({ data: member });
   }
 
@@ -67,7 +81,7 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
     role: 'MEMBER',
   });
 
-  const member = await db('board_members as bm')
+  const member = await db<JoinedMemberRow>('board_members as bm')
     .join('users as u', 'bm.user_id', 'u.id')
     .where({ 'bm.board_id': boardId, 'bm.user_id': currentUser.id })
     .select(
@@ -78,7 +92,7 @@ export async function handleJoinBoard(req: Request, boardId: string): Promise<Re
       'bm.role',
       'bm.created_at',
     )
-    .first();
+    .first<JoinedMemberRow>();
 
   dispatchEvent({
     type: 'board_member_added',
