@@ -12,18 +12,20 @@ import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 import {
   requireWorkspaceMembership,
-  requireRole,
   hasRole,
   type WorkspaceScopedRequest,
   type Role,
 } from '../../../middlewares/permissionManager';
 import { resolveBackgroundUrl } from '../common/resolveBackgroundUrl';
 
+type AuthenticatedUserRequest = AuthenticatedRequest & { currentUser: { id: string } };
+type BoardListRow = Record<string, unknown> & { id: string; background: string | null };
+
 export async function handleListBoards(req: Request, workspaceId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, workspaceId);
@@ -32,7 +34,7 @@ export async function handleListBoards(req: Request, workspaceId: string): Promi
   // All roles (including GUEST) may call this endpoint; visibility filtering is applied below.
   const callerRole = scopedReq.callerRole as Role;
 
-  let boards: Array<Record<string, unknown>>;
+  let boards: BoardListRow[];
 
   if (callerRole === 'GUEST') {
     // GUESTs only see boards they have been explicitly granted access to.
@@ -45,7 +47,7 @@ export async function handleListBoards(req: Request, workspaceId: string): Promi
       })
       .where({ 'b.workspace_id': workspaceId })
       .select('b.*', db.raw('(bs.board_id IS NOT NULL) as "isStarred"'))
-      .orderBy('b.created_at', 'asc');
+      .orderBy('b.created_at', 'asc') as BoardListRow[];
   } else if (hasRole(callerRole, 'ADMIN')) {
     // OWNER / ADMIN see all boards.
     boards = await db('boards as b')
@@ -54,7 +56,7 @@ export async function handleListBoards(req: Request, workspaceId: string): Promi
       })
       .where({ 'b.workspace_id': workspaceId })
       .select('b.*', db.raw('(bs.board_id IS NOT NULL) as "isStarred"'))
-      .orderBy('b.created_at', 'asc');
+      .orderBy('b.created_at', 'asc') as BoardListRow[];
   } else {
     // MEMBER / VIEWER: WORKSPACE or PUBLIC boards, plus PRIVATE boards with an explicit entry.
     boards = await db('boards as b')
@@ -69,14 +71,14 @@ export async function handleListBoards(req: Request, workspaceId: string): Promi
         this.whereIn('b.visibility', ['WORKSPACE', 'PUBLIC']).orWhereNotNull('bm.id');
       })
       .select('b.*', db.raw('(bs.board_id IS NOT NULL) as "isStarred"'))
-      .orderBy('b.created_at', 'asc');
+      .orderBy('b.created_at', 'asc') as BoardListRow[];
   }
 
   const boardsWithResolvedBackground = boards.map((board) => ({
     ...board,
     background: resolveBackgroundUrl({
-      boardId: board.id as string,
-      backgroundUrl: board.background as string | null | undefined,
+      boardId: board.id,
+      backgroundUrl: board.background,
     }),
   }));
 
