@@ -73,7 +73,6 @@ const BoardListPage = () => {
       // Clear the router state so the toast doesn't reappear if the user navigates back.
       window.history.replaceState({}, '');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -84,7 +83,7 @@ const BoardListPage = () => {
   }, [activeWorkspaceId, dispatch, workspaceId]);
 
   useEffect(() => {
-    if (workspaceId) dispatch(fetchBoardsThunk({ workspaceId }));
+    if (workspaceId) void dispatch(fetchBoardsThunk({ workspaceId }));
   }, [dispatch, workspaceId]);
 
   const handleCreate = (title: string) => {
@@ -101,7 +100,7 @@ const BoardListPage = () => {
 
   const handleDelete = (boardId: string) => {
     if (window.confirm('Are you sure you want to delete this board? This cannot be undone.')) {
-      dispatch(deleteBoardOptimisticThunk({ boardId }));
+      void dispatch(deleteBoardOptimisticThunk({ boardId }));
     }
   };
 
@@ -135,12 +134,24 @@ const BoardListPage = () => {
           <BoardCard
             key={board.id}
             board={board}
-            onClick={() => navigate(boardPath(board))}
-            onArchive={() => handleArchive(board.id)}
-            onDelete={() => handleDelete(board.id)}
-            onDuplicate={() => handleDuplicate(board.id)}
-            onStar={() => handleStar(board.id)}
-            onUnstar={() => handleUnstar(board.id)}
+            onClick={() => {
+              navigate(boardPath(board));
+            }}
+            onArchive={() => {
+              void handleArchive(board.id);
+            }}
+            onDelete={() => {
+              handleDelete(board.id);
+            }}
+            onDuplicate={() => {
+              void handleDuplicate(board.id);
+            }}
+            onStar={() => {
+              void handleStar(board.id);
+            }}
+            onUnstar={() => {
+              void handleUnstar(board.id);
+            }}
           />
         ))}
       </div>
@@ -151,7 +162,9 @@ const BoardListPage = () => {
     <div className="px-6 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-base">Boards</h1>
-        <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
+        <Button variant="primary" size="md" onClick={() => {
+          setShowCreateModal(true);
+        }}>
           Create Board
         </Button>
       </div>
@@ -162,7 +175,9 @@ const BoardListPage = () => {
           type="search"
           placeholder="Filter boards…"
           value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
+          onChange={(event) => {
+            setFilterText(event.target.value);
+          }}
           className="h-8 w-56 rounded border border-border bg-bg-overlay px-3 text-sm text-base placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
           aria-label="Filter boards by name"
         />
@@ -197,7 +212,9 @@ const BoardListPage = () => {
       {pageContent}
       {showCreateModal && (
         <CreateBoardModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => {
+            setShowCreateModal(false);
+          }}
           onCreate={handleCreate}
         />
       )}
