@@ -10,11 +10,37 @@ import { writeEvent } from '../../../mods/events/write';
 import { writeActivity } from '../../activity/mods/write';
 import { publisher } from '../../../mods/pubsub/publisher';
 
+type CommentRow = {
+  id: string;
+  card_id: string;
+  user_id: string;
+  content: string;
+  deleted: boolean;
+  updated_at: string | Date;
+};
+
+type CardRow = {
+  id: string;
+  list_id: string;
+  title: string;
+};
+
+type ListRow = {
+  id: string;
+  board_id: string;
+};
+
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  state: string;
+};
+
 export async function handleDeleteComment(req: Request, commentId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const comment = await db('comments').where({ id: commentId }).first();
+  const comment = await db<CommentRow>('comments').where({ id: commentId }).first();
   if (!comment) {
     return Response.json(
       { error: { code: 'comment-not-found', message: 'Comment not found' } },
@@ -29,11 +55,11 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
     );
   }
 
-  const actorId = (req as AuthenticatedRequest).currentUser!.id;
+  const actorId = (req as AuthenticatedRequest & { currentUser: { id: string } }).currentUser.id;
 
-  const card = await db('cards').where({ id: comment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const card = await db<CardRow>('cards').where({ id: comment.card_id }).first();
+  const list = card ? await db<ListRow>('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -62,13 +88,13 @@ export async function handleDeleteComment(req: Request, commentId: string): Prom
     );
   }
 
-  await db('comments').where({ id: commentId }).update({
+  await db<CommentRow>('comments').where({ id: commentId }).update({
     deleted: true,
     content: '[deleted]',
     updated_at: new Date().toISOString(),
   });
 
-  const deleted = await db('comments').where({ id: commentId }).first();
+  const deleted = await db<CommentRow>('comments').where({ id: commentId }).first();
 
   await Promise.all([
     writeEvent({
