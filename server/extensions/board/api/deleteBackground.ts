@@ -13,6 +13,11 @@ import { deleteObject } from '../../attachment/mods/s3/deleteObject';
 import { s3Config } from '../../attachment/common/config/s3';
 import { writeEvent } from '../../../mods/events/write';
 
+type BoardRow = { id: string; workspace_id: string; background: string | null };
+type WritableBoardRequest = BoardScopedRequest & {
+  board: NonNullable<BoardScopedRequest['board']>;
+};
+
 function extractS3KeyFromUrl(url: string): string | null {
   try {
     const parsed = new URL(url);
@@ -36,11 +41,11 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const boardScopedReq = req as BoardScopedRequest;
+  const boardScopedReq = req as WritableBoardRequest;
   const writableError = await requireBoardWritable(boardScopedReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardScopedReq.board!;
+  const board = boardScopedReq.board;
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
@@ -48,7 +53,7 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
   const roleError = requireRole(scopedReq, 'MEMBER');
   if (roleError) return roleError;
 
-  const existingBoard = await db('boards').where({ id: boardId }).first();
+  const existingBoard = await db<BoardRow>('boards').where({ id: boardId }).first<BoardRow | undefined>();
   if (!existingBoard) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
@@ -65,9 +70,9 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
     }
   }
 
-  const [updated] = await db('boards')
+  const updated = await db<BoardRow>('boards')
     .where({ id: boardId })
-    .update({ background: null }, ['*']);
+    .update({ background: null }, ['*']) as BoardRow[];
 
   await writeEvent({
     type: 'board.background_changed',
@@ -77,5 +82,5 @@ export async function handleDeleteBackground(req: Request, boardId: string): Pro
     payload: { background: null },
   });
 
-  return Response.json({ data: updated });
+  return Response.json({ data: updated[0] });
 }
