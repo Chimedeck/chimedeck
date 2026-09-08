@@ -58,7 +58,7 @@ import { printCard } from '../../utils/printCard';
 import { listAttachments } from '~/extensions/Attachments/api';
 
 let _mutationCounter = 0;
-const nextMutationId = () => `m${++_mutationCounter}`;
+const nextMutationId = () => `m${String(++_mutationCounter)}`;
 
 interface CardModalContainerProps {
   forcedCardId?: string;
@@ -106,7 +106,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       return;
     }
     dispatch(cardDetailSliceActions.openModal({ cardId }));
-    dispatch(fetchCardDetailThunk({ cardId }));
+    void dispatch(fetchCardDetailThunk({ cardId }));
     // Fetch comments separately
     getCardComments({ api, cardId })
       .then((comments) => dispatch(cardDetailSliceActions.setComments(comments)))
@@ -226,7 +226,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   const handleArchive = useCallback(async () => {
     if (!card) return;
     await archiveCardToggle({ api, cardId: card.id });
-    dispatch(fetchCardDetailThunk({ cardId: card.id }));
+    void dispatch(fetchCardDetailThunk({ cardId: card.id }));
     if (card.archived) {
       // Unarchiving: put the card back in the board view
       dispatch(boardSliceActions.updateCard({ card: { ...card, archived: false } }));
@@ -441,7 +441,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
         dispatch(cardDetailSliceActions.confirmChecklistItem({ mutationId, checklistId, item }));
         // [why] Checklist toggles generate an activity event server-side; re-fetch to keep the feed in sync
         // since the WebSocket may not be available in all environments.
-        if (card?.id) dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
+        if (card?.id) void dispatch(fetchCardActivitiesThunk({ cardId: card.id }));
       } catch {
         dispatch(cardDetailSliceActions.rollbackChecklist({ mutationId }));
         if (card?.id) {
@@ -789,8 +789,8 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
   );
 
   const handleMoneySave = useCallback(
-    async (amount: string | null, currency: string) => {
-      if (!card) return;
+    (amount: string | null, currency: string) => {
+      if (!card) return Promise.resolve();
       const mutationId = nextMutationId();
       // Convert string amount to number before sending — server enforces numeric type
       const numericAmount = amount === null ? null : Number.parseFloat(amount);
@@ -801,6 +801,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
           dispatch(boardSliceActions.updateCard({ card: updatedCard }));
         })
         .catch(() => dispatch(cardDetailSliceActions.rollbackCardUpdate({ mutationId })));
+      return Promise.resolve();
     },
     [api, card, dispatch],
   );
@@ -993,7 +994,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
     <>
       <CardModal
       open={!!cardId}
-      boardId={boardId ?? ''}
+      boardId={boardId}
       card={card}
       listTitle={meta.listTitle}
       boardTitle={meta.boardTitle}
@@ -1016,7 +1017,9 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       onCopyLink={handleCopyLink}
       onCopyCard={handleCopyCard}
       onMoveCard={handleMoveCard}
-      onPrint={handlePrint}
+      onPrint={() => {
+        void handlePrint();
+      }}
       onCreateChecklist={handleCreateChecklist}
       onRenameChecklist={handleRenameChecklist}
       onDeleteChecklist={handleDeleteChecklist}
@@ -1052,7 +1055,7 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
       onAttachmentCountChange={handleAttachmentCountChange}
       isViewerGuest={isViewerGuest}
       />
-      {copyModalOpen && card && activeWorkspaceId && (
+      {copyModalOpen && activeWorkspaceId && (
         <CopyCardModal
           cardId={card.id}
           cardTitle={card.title}
@@ -1062,21 +1065,25 @@ const CardModalContainer = ({ forcedCardId, onCloseCard }: CardModalContainerPro
           currentListId={card.list_id}
           workspaceId={activeWorkspaceId}
           api={api}
-          onClose={() => setCopyModalOpen(false)}
+          onClose={() => {
+            setCopyModalOpen(false);
+          }}
           onSuccess={(newCard) => {
             setCopyModalOpen(false);
             dispatch(boardSliceActions.addCard({ card: newCard }));
           }}
         />
       )}
-      {moveModalOpen && card && activeWorkspaceId && (
+      {moveModalOpen && activeWorkspaceId && (
         <MoveCardModal
           cardId={card.id}
           currentBoardId={boardId}
           currentListId={card.list_id}
           workspaceId={activeWorkspaceId}
           api={api}
-          onClose={() => setMoveModalOpen(false)}
+          onClose={() => {
+            setMoveModalOpen(false);
+          }}
           onSuccess={(movedCard) => {
             setMoveModalOpen(false);
             const isSameBoard = movedCard.list_id in boardLists;
