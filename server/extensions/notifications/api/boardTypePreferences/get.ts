@@ -7,15 +7,21 @@ import { type AuthenticatedRequest } from '../../../auth/middlewares/authenticat
 import { applyBoardVisibility, type BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
 import { NOTIFICATION_TYPES } from '../../mods/preferenceGuard';
 
+type ResolvedBoardPreferenceRequest = BoardVisibilityScopedRequest & {
+  board: { id: string };
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+
 export async function handleGetBoardTypePreferences(
   req: Request,
   boardId: string,
 ): Promise<Response> {
   const visibilityError = await applyBoardVisibility(req, boardId);
   if (visibilityError) return visibilityError;
-  const resolvedBoardId = (req as BoardVisibilityScopedRequest).board!.id;
+  const resolvedReq = req as ResolvedBoardPreferenceRequest;
+  const resolvedBoardId = resolvedReq.board.id;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = resolvedReq.currentUser.id;
 
   const [boardRows, userRows] = await Promise.all([
     db('board_notification_type_preferences')
