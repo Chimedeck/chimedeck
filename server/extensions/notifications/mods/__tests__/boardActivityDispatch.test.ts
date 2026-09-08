@@ -1,47 +1,62 @@
 import { describe, expect, test, mock, beforeEach } from 'bun:test';
+import type { WrittenEvent } from '../../../../mods/events/index';
+
+type PreferenceRow = { in_app_enabled: boolean; email_enabled: boolean };
+type ParticipantRow = { user_id: string };
+type NotificationRow = { id: string; user_id: string };
+type DbMock = ((table: string) => unknown) & { raw: () => string };
 
 // ---------------------------------------------------------------------------
 // All mocks must be set up before the module-under-test is imported.
 // ---------------------------------------------------------------------------
 
 const dispatchEmailMock = mock(() => Promise.resolve());
-mock.module('../emailDispatch', () => ({ dispatchNotificationEmail: dispatchEmailMock }));
+void mock.module('../emailDispatch', () => ({ dispatchNotificationEmail: dispatchEmailMock }));
 
-const resolveChannelsMock = mock(async () => ({ inApp: true, email: true }));
-const boardPreferenceGuardMock = mock(async () => true);
-mock.module('../boardPreferenceGuard', () => ({
+const resolveChannelsMock = mock(() => Promise.resolve({ inApp: true, email: true }));
+const boardPreferenceGuardMock = mock(() => Promise.resolve(true));
+void mock.module('../boardPreferenceGuard', () => ({
   boardPreferenceGuard: boardPreferenceGuardMock,
+  resolveBoardNotificationPreference: () => Promise.resolve({ notificationsEnabled: true, onlyRelatedToMe: false }),
   resolveNotificationChannels: resolveChannelsMock,
-  selectChannels: (boardRow: any, userRow: any) => {
+  selectChannels: (boardRow: PreferenceRow | null, userRow: PreferenceRow | null) => {
     if (boardRow) return { inApp: boardRow.in_app_enabled, email: boardRow.email_enabled };
     if (userRow) return { inApp: userRow.in_app_enabled, email: userRow.email_enabled };
     return { inApp: true, email: true };
   },
 }));
 
-const globalPreferenceGuardMock = mock(async () => true);
-mock.module('../globalPreferenceGuard', () => ({
+const globalPreferenceGuardMock = mock(() => Promise.resolve(true));
+void mock.module('../globalPreferenceGuard', () => ({
   globalPreferenceGuard: globalPreferenceGuardMock,
 }));
 
-mock.module('../../../../../config/env', () => ({
+void mock.module('../relatedCardRecipients', () => ({
+  getCardRelatedUserIds: () => Promise.resolve(new Set<string>()),
+  isRecipientRelatedCardNotification: () => true,
+}));
+
+void mock.module('../../../../../config/env', () => ({
   env: { NOTIFICATION_PREFERENCES_ENABLED: true },
 }));
 
-mock.module('../../../../realtime/userChannel', () => ({
+void mock.module('../../../../realtime/userChannel', () => ({
   publishToUser: mock(() => {}),
 }));
 
-mock.module('../../../../../common/avatar/resolveAvatarUrl', () => ({
-  resolveAvatarUrl: mock(async () => 'https://example.com/avatar.png'),
+void mock.module('../../../../../common/avatar/resolveAvatarUrl', () => ({
+  resolveAvatarUrl: mock(() => Promise.resolve('https://example.com/avatar.png')),
 }));
 
-const firstResult = (value: unknown) => ({ first: async () => value });
+const firstResult = (value: unknown) => ({ first: () => Promise.resolve(value) });
 const whereSelectFirst = (value: unknown) => ({ where: () => ({ select: () => firstResult(value) }) });
 
 // Build a db mock that handles each table accessed by boardActivityDispatch.
-function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests = [] as any[] } = {}) {
-  const db: any = (table: string) => {
+function buildDbMock({
+  boardMembers = [{ user_id: 'recipient-1' }],
+  boardGuests = [],
+}: { boardMembers?: ParticipantRow[]; boardGuests?: ParticipantRow[] } = {}) {
+  const db = ((table: string): unknown => {
     if (table === 'boards') {
       return whereSelectFirst({ id: 'board-1', title: 'Test Board', workspace_id: 'ws-1' });
     }
@@ -49,7 +64,7 @@ function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests 
       return {
         where: () => ({
           whereNot: () => ({
-            select: async () => boardMembers,
+            select: () => Promise.resolve(boardMembers),
           }),
         }),
       };
@@ -58,7 +73,7 @@ function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests 
       return {
         where: () => ({
           whereNot: () => ({
-            select: async () => boardGuests,
+            select: () => Promise.resolve(boardGuests),
           }),
         }),
       };
@@ -72,20 +87,20 @@ function buildDbMock({ boardMembers = [{ user_id: 'recipient-1' }], boardGuests 
     if (table === 'notifications') {
       return {
         insert: (_data: object, _cols: string[]) => ({
-          then: (fn: Function) => fn([{ id: 'notif-1', user_id: 'recipient-1' }]),
+          then: (fn: (rows: NotificationRow[]) => unknown) => fn([{ id: 'notif-1', user_id: 'recipient-1' }]),
           catch: () => {},
         }),
       };
     }
     return whereSelectFirst(null);
-  };
+  }) as DbMock;
 
   db.raw = () => 'COALESCE(name, email) as name';
   return db;
 }
 
-let currentDbMock = buildDbMock();
-mock.module('../../../../common/db', () => ({
+let currentDbMock: DbMock = buildDbMock();
+void mock.module('../../../../common/db', () => ({
   get db() {
     return currentDbMock;
   },
@@ -96,7 +111,7 @@ mock.module('../../../../common/db', () => ({
 // ---------------------------------------------------------------------------
 const { handleBoardActivityNotification } = await import('../boardActivityDispatch');
 
-function makeEvent(type: string) {
+function makeEvent(type: string): WrittenEvent {
   return {
     id: 'evt-1',
     type,
@@ -104,7 +119,7 @@ function makeEvent(type: string) {
     payload: {
       card: { id: 'card-1', title: 'My Card', list_id: 'list-1' },
     },
-  };
+  } as unknown as WrittenEvent;
 }
 
 beforeEach(() => {
@@ -112,13 +127,13 @@ beforeEach(() => {
   dispatchEmailMock.mockImplementation(() => Promise.resolve());
 
   resolveChannelsMock.mockReset();
-  resolveChannelsMock.mockImplementation(async () => ({ inApp: true, email: true }));
+  resolveChannelsMock.mockImplementation(() => Promise.resolve({ inApp: true, email: true }));
 
   globalPreferenceGuardMock.mockReset();
-  globalPreferenceGuardMock.mockImplementation(async () => true);
+  globalPreferenceGuardMock.mockImplementation(() => Promise.resolve(true));
 
   boardPreferenceGuardMock.mockReset();
-  boardPreferenceGuardMock.mockImplementation(async () => true);
+  boardPreferenceGuardMock.mockImplementation(() => Promise.resolve(true));
 
   currentDbMock = buildDbMock();
 });
@@ -129,7 +144,7 @@ beforeEach(() => {
 describe('boardActivityDispatch — resolveNotificationChannels integration', () => {
   test('resolveNotificationChannels is called per recipient with correct args', async () => {
     await handleBoardActivityNotification({
-      event: makeEvent('card.created') as any,
+      event: makeEvent('card.created'),
       boardId: 'board-1',
       actorId: 'actor-1',
     });
@@ -151,7 +166,7 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
     // We only care about how many times email dispatch is called.
     // resolveChannelsMock is also a good proxy.
     await handleBoardActivityNotification({
-      event: makeEvent('card.created') as any,
+      event: makeEvent('card.created'),
       boardId: 'board-1',
       actorId: 'actor-1',
     });
@@ -162,10 +177,10 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
   });
 
   test('T1: email=false from resolved channels is forwarded to dispatchNotificationEmail', async () => {
-    resolveChannelsMock.mockImplementation(async () => ({ inApp: false, email: false }));
+    resolveChannelsMock.mockImplementation(() => Promise.resolve({ inApp: false, email: false }));
 
     await handleBoardActivityNotification({
-      event: makeEvent('card.created') as any,
+      event: makeEvent('card.created'),
       boardId: 'board-1',
       actorId: 'actor-1',
     });
@@ -176,10 +191,10 @@ describe('boardActivityDispatch — resolveNotificationChannels integration', ()
   });
 
   test('T1: inApp=true and email=true both forwarded when both enabled', async () => {
-    resolveChannelsMock.mockImplementation(async () => ({ inApp: false, email: true }));
+    resolveChannelsMock.mockImplementation(() => Promise.resolve({ inApp: false, email: true }));
 
     await handleBoardActivityNotification({
-      event: makeEvent('card.created') as any,
+      event: makeEvent('card.created'),
       boardId: 'board-1',
       actorId: 'actor-1',
     });
