@@ -9,16 +9,25 @@ interface PatchBody {
   in_app_enabled?: unknown;
   email_enabled?: unknown;
 }
+type AuthenticatedUserRequest = AuthenticatedRequest & {
+  currentUser: NonNullable<AuthenticatedRequest['currentUser']>;
+};
+type NotificationPreferenceRow = {
+  type: string;
+  in_app_enabled: boolean;
+  email_enabled: boolean;
+  updated_at: string | null;
+};
 
 export async function handleUpdatePreferences(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = (req as AuthenticatedUserRequest).currentUser.id;
 
   let body: PatchBody;
   try {
-    body = await req.json();
+    body = await req.json() as PatchBody;
   } catch {
     return Response.json(
       { error: { name: 'invalid-request-body', data: { message: 'Invalid JSON body' } } },
@@ -77,18 +86,20 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
   }
 
   const now = new Date().toISOString();
-  const existing = await db('notification_preferences').where({ user_id: userId, type }).first();
+  const existing = (await db('notification_preferences')
+    .where({ user_id: userId, type })
+    .first()) as { user_id: string } | undefined;
 
-  let row: Record<string, unknown>;
+  let row: NotificationPreferenceRow;
 
   if (existing) {
     const updates: Record<string, unknown> = { updated_at: now };
     if (in_app_enabled !== undefined) updates.in_app_enabled = in_app_enabled;
     if (email_enabled !== undefined) updates.email_enabled = email_enabled;
 
-    const [updated] = await db('notification_preferences')
+    const [updated] = (await db('notification_preferences')
       .where({ user_id: userId, type })
-      .update(updates, ['type', 'in_app_enabled', 'email_enabled', 'updated_at']);
+      .update(updates, ['type', 'in_app_enabled', 'email_enabled', 'updated_at'])) as [NotificationPreferenceRow];
     row = updated;
   } else {
     const insert: Record<string, unknown> = {
@@ -99,10 +110,10 @@ export async function handleUpdatePreferences(req: Request): Promise<Response> {
       updated_at: now,
     };
 
-    const [inserted] = await db('notification_preferences').insert(
+    const [inserted] = (await db('notification_preferences').insert(
       insert,
       ['type', 'in_app_enabled', 'email_enabled', 'updated_at'],
-    );
+    )) as [NotificationPreferenceRow];
     row = inserted;
   }
 
