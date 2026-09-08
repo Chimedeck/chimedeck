@@ -9,6 +9,34 @@ import {
 } from '../../../middlewares/permissionManager';
 import { proxyS3Object } from '../common/proxyS3Object';
 
+interface ViewAttachmentRow {
+  id: string;
+  card_id: string;
+  type: 'URL' | 'FILE';
+  url: string | null;
+  external_url: string | null;
+  status: 'PENDING' | 'REJECTED' | 'READY';
+  s3_key: string | null;
+  alias: string | null;
+  name: string | null;
+  mime_type: string | null;
+}
+
+interface CardRow {
+  id: string;
+  list_id: string;
+}
+
+interface ListRow {
+  id: string;
+  board_id: string;
+}
+
+interface BoardRow {
+  id: string;
+  workspace_id: string;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -130,14 +158,14 @@ export async function handleViewAttachment(req: Request, attachmentId: string): 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const attachment = await db('attachments').where({ id: attachmentId }).first();
+  const attachment = await db<ViewAttachmentRow>('attachments').where({ id: attachmentId }).first();
   if (!attachment) {
     return Response.json({ name: 'attachment-not-found', data: { message: 'Attachment not found' } }, { status: 404 });
   }
 
-  const card = await db('cards').where({ id: attachment.card_id }).first();
-  const list = card ? await db('lists').where({ id: card.list_id }).first() : null;
-  const board = list ? await db('boards').where({ id: list.board_id }).first() : null;
+  const card = await db<CardRow>('cards').where({ id: attachment.card_id }).first();
+  const list = card ? await db<ListRow>('lists').where({ id: card.list_id }).first() : null;
+  const board = list ? await db<BoardRow>('boards').where({ id: list.board_id }).first() : null;
   if (!board) {
     return Response.json({ name: 'board-not-found', data: { message: 'Board not found' } }, { status: 404 });
   }
