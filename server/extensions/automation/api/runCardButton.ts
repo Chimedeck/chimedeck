@@ -10,6 +10,11 @@ import { executeAutomation } from '../engine/executor';
 import { writeRunLog } from '../engine/logger';
 import type { AutomationRow, AutomationActionRow, AutomationEvent, EvaluationContext } from '../common/types';
 
+type CardRow = { list_id: string };
+type ListRow = { board_id: string };
+type BoardRow = { workspace_id: string };
+type MembershipRow = Record<string, unknown>;
+
 export async function handleRunCardButton(
   req: Request,
   cardId: string,
@@ -21,36 +26,37 @@ export async function handleRunCardButton(
 
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) return Response.json({ error: { name: 'unauthorized' } }, { status: 401 });
 
   // Load the card and resolve boardId for membership check.
-  const card = await db('cards').where({ id: cardId }).first();
+  const card = (await db('cards').where({ id: cardId }).first()) as CardRow | undefined;
   if (!card) {
     return Response.json({ error: { name: 'card-not-found' } }, { status: 404 });
   }
 
   // Verify caller is a workspace member of the board.
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const list = (await db('lists').where({ id: card.list_id }).first()) as ListRow | undefined;
   if (!list) {
     return Response.json({ error: { name: 'list-not-found' } }, { status: 404 });
   }
 
-  const boardForCard = await db('boards').where({ id: list.board_id }).first();
+  const boardForCard = (await db('boards').where({ id: list.board_id }).first()) as BoardRow | undefined;
   if (!boardForCard) {
     return Response.json({ error: { name: 'board-not-found' } }, { status: 404 });
   }
 
-  const boardMembership = await db('memberships')
+  const boardMembership = (await db('memberships')
     .where({ user_id: currentUser.id, workspace_id: boardForCard.workspace_id })
-    .first();
+    .first()) as MembershipRow | undefined;
   if (!boardMembership) {
     return Response.json({ error: { name: 'not-a-board-member' } }, { status: 403 });
   }
 
   // Load the CARD_BUTTON automation — must belong to the same board.
-  const automation = await db('automations')
+  const automation = (await db('automations')
     .where({ id: automationId, board_id: list.board_id, automation_type: 'CARD_BUTTON', is_enabled: true })
-    .first<AutomationRow>();
+    .first()) as AutomationRow | undefined;
   if (!automation) {
     return Response.json({ error: { name: 'automation-not-found' } }, { status: 404 });
   }
@@ -62,14 +68,14 @@ export async function handleRunCardButton(
 
   const event: AutomationEvent = {
     type: 'CARD_BUTTON',
-    boardId: list.board_id as string,
+    boardId: list.board_id,
     entityId: cardId,
-    actorId: currentUser.id as string,
+    actorId: currentUser.id,
     payload: { cardId, automationId, triggeredManually: true },
   };
 
   const evalContext: EvaluationContext = {
-    actorId: currentUser.id as string,
+    actorId: currentUser.id,
     cardId,
   };
 
