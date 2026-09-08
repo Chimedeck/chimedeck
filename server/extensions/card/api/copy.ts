@@ -14,9 +14,48 @@ import { resolveCoverImageUrl } from '../../../common/cards/cover';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 
 type CardRow = {
-  cover_color?: string | null;
-  cover_size?: string | null;
-  [key: string]: unknown;
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  position: string;
+  list_id: string;
+  archived: boolean;
+  cover_attachment_id: string | null;
+  cover_color: string | null;
+  cover_size: string | null;
+};
+
+type ListRow = {
+  id: string;
+  board_id: string;
+};
+
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+};
+
+type ChecklistRow = {
+  id: string;
+  card_id: string;
+  title: string;
+  position: string;
+};
+
+type ChecklistItemRow = {
+  id: string;
+  card_id: string;
+  checklist_id: string;
+  title: string;
+  position: string;
+  assigned_member_id: string | null;
+  due_date: string | null;
+};
+
+type CardMemberRow = {
+  card_id: string;
+  user_id: string;
 };
 
 function computePosition(
@@ -24,13 +63,19 @@ function computePosition(
   positionIdx: number,
 ): string {
   if (targetCards.length === 0) return between(LOW_SENTINEL, HIGH_SENTINEL);
-  if (positionIdx <= 0) return between(LOW_SENTINEL, targetCards[0]!.position);
-  if (positionIdx >= targetCards.length) return between(targetCards.at(-1)!.position, HIGH_SENTINEL);
-  return between(targetCards[positionIdx - 1]!.position, targetCards[positionIdx]!.position);
+  const firstCard = targetCards[0];
+  const lastCard = targetCards.at(-1);
+  if (!firstCard || !lastCard) throw new Error('Expected target cards when computing position');
+  if (positionIdx <= 0) return between(LOW_SENTINEL, firstCard.position);
+  if (positionIdx >= targetCards.length) return between(lastCard.position, HIGH_SENTINEL);
+  const previousCard = targetCards[positionIdx - 1];
+  const nextCard = targetCards[positionIdx];
+  if (!previousCard || !nextCard) throw new Error('Invalid target position index');
+  return between(previousCard.position, nextCard.position);
 }
 
 async function copyChecklists(sourceCardId: string, newCardId: string): Promise<void> {
-  const checklists = await db('checklists')
+  const checklists = await db<ChecklistRow>('checklists')
     .where({ card_id: sourceCardId })
     .orderBy('position', 'asc');
   for (const checklist of checklists) {
@@ -41,7 +86,7 @@ async function copyChecklists(sourceCardId: string, newCardId: string): Promise<
       title: checklist.title,
       position: checklist.position,
     });
-    const items = await db('checklist_items')
+    const items = await db<ChecklistItemRow>('checklist_items')
       .where({ checklist_id: checklist.id })
       .orderBy('position', 'asc');
     if (items.length > 0) {
@@ -70,8 +115,9 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
   const writableError = await requireCardWritable(cardReq, cardId);
   if (writableError) return writableError;
 
-  const card = cardReq.card!;
-  const board = cardReq.board!;
+  const writableCardReq = cardReq as CardScopedRequest & { card: CardRow; board: BoardRow };
+  const card = writableCardReq.card;
+  const board = writableCardReq.board;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -103,7 +149,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
     );
   }
 
-  const targetList = await db('lists').where({ id: body.targetListId }).first();
+  const targetList = await db<ListRow>('lists').where({ id: body.targetListId }).first();
   if (!targetList) {
     return Response.json(
       { error: { name: 'target-list-not-found', data: { message: 'Target list not found' } } },
@@ -111,9 +157,9 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
     );
   }
 
-  const targetBoard = await db('boards').where({ id: targetList.board_id }).first();
+  const targetBoard = await db<BoardRow>('boards').where({ id: targetList.board_id }).first();
 
-  const targetCards = await db('cards')
+  const targetCards = await db<CardRow>('cards')
     .where({ list_id: body.targetListId, archived: false })
     .orderBy('position', 'asc');
 
@@ -129,7 +175,13 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
     typeof body.title === 'string' && body.title.trim() ? body.title.trim() : card.title;
 
   // Fetch full row to access cover fields not included in the middleware type
-  const fullCard = (await db('cards').where({ id: cardId }).first()) as CardRow;
+  const fullCard = await db<CardRow>('cards').where({ id: cardId }).first();
+  if (!fullCard) {
+    return Response.json(
+      { error: { name: 'card-not-found', data: { message: 'Card not found' } } },
+      { status: 404 },
+    );
+  }
 
   await db('cards').insert({
     id: newId,
@@ -146,7 +198,7 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
   });
 
   if (body.keepMembers) {
-    const cardMembers = await db('card_members').where({ card_id: cardId });
+    const cardMembers = await db<CardMemberRow>('card_members').where({ card_id: cardId });
     if (cardMembers.length > 0) {
       await db('card_members').insert(
         cardMembers.map((m: { user_id: string }) => ({ card_id: newId, user_id: m.user_id })),
@@ -158,10 +210,14 @@ export async function handleCopyCard(req: Request, cardId: string): Promise<Resp
     await copyChecklists(cardId, newId);
   }
 
-  const copy = await db('cards').where({ id: newId }).first();
-  const copyWithCover = await resolveCoverImageUrl(
-    copy as { id: string; cover_attachment_id?: string | null },
-  );
+  const copy = await db<CardRow>('cards').where({ id: newId }).first();
+  if (!copy) {
+    return Response.json(
+      { error: { name: 'card-not-found', data: { message: 'Copied card not found' } } },
+      { status: 404 },
+    );
+  }
+  const copyWithCover = await resolveCoverImageUrl(copy);
 
   await dispatchEvent({
     type: 'card.copied',
