@@ -1,7 +1,13 @@
 // Render smoke tests for HealthCheckCountdown.
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { HealthCheckCountdown } from '../HealthCheckCountdown';
+
+declare module 'bun:test' {
+  interface Matchers<T> {
+    toBeTruthy(): T;
+  }
+}
 
 describe('HealthCheckCountdown', () => {
   it('renders seconds remaining', () => {
