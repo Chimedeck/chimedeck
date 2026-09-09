@@ -14,6 +14,20 @@ import { between, HIGH_SENTINEL } from '../mods/fractional';
 import { sanitizeText } from '../../../common/sanitize';
 import { generateUniqueShortId } from '../../../common/ids/shortId';
 
+type ListRow = {
+  id: string;
+  short_id: string;
+  board_id: string;
+  title: string;
+  position: string;
+  archived: boolean;
+};
+
+type AuthenticatedBoardRequest = AuthenticatedRequest & BoardScopedRequest & {
+  board: NonNullable<BoardScopedRequest['board']>;
+  currentUser: { id: string };
+};
+
 export async function handleCreateList(req: Request, boardId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
@@ -22,7 +36,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   const writableError = await requireBoardWritable(boardReq, boardId);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
   const canonicalBoardId = board.id;
 
   const scopedReq = req as WorkspaceScopedRequest;
@@ -50,7 +64,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
   }
 
   // Resolve position: insert after the specified list (or at the end)
-  const activeLists = await db('lists')
+  const activeLists = await db<ListRow>('lists')
     .where({ board_id: canonicalBoardId, archived: false })
     .orderBy('position', 'asc');
 
@@ -67,7 +81,7 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
         { status: 404 },
       );
     }
-    const after = activeLists[afterIndex]!;
+    const after = activeLists[afterIndex] as ListRow;
     const next = activeLists[afterIndex + 1];
     position = between(after.position, next ? next.position : HIGH_SENTINEL);
   }
@@ -83,10 +97,11 @@ export async function handleCreateList(req: Request, boardId: string): Promise<R
     archived: false,
   });
 
-  const list = await db('lists').where({ id }).first();
+  const list = await db<ListRow>('lists').where({ id }).first();
 
   // Broadcast full list object so clients can update their local state
-  await writeEvent({ type: 'list_created', boardId: canonicalBoardId, entityId: id, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list } });
+  const authenticatedRequest = req as AuthenticatedBoardRequest;
+  await writeEvent({ type: 'list_created', boardId: canonicalBoardId, entityId: id, actorId: authenticatedRequest.currentUser.id, payload: { list } });
 
   return Response.json({ data: list }, { status: 201 });
 }
