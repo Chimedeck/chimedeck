@@ -12,11 +12,22 @@ import { sanitizeText } from '../../../common/sanitize';
 import { featureFlags } from '../../../config/featureFlags';
 import { syncStateTransitionsOnListRename } from '../../stateTransitions/hooks/listSync';
 
+type ListRow = {
+  id: string;
+  board_id: string;
+  title: string;
+};
+
+type AuthenticatedBoardRequest = AuthenticatedRequest & BoardScopedRequest & {
+  board: NonNullable<BoardScopedRequest['board']>;
+  currentUser: { id: string };
+};
+
 export async function handleUpdateList(req: Request, listId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db('lists').where({ id: listId }).first();
+  const list = await db<ListRow>('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -28,7 +39,7 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -54,16 +65,17 @@ export async function handleUpdateList(req: Request, listId: string): Promise<Re
     );
   }
 
-  const updated = await db('lists')
+  const updated = await db<ListRow>('lists')
     .where({ id: listId })
-    .update({ title: sanitizeText(body.title.trim()) }, ['*']);
+    .update({ title: sanitizeText(body.title.trim()) }, ['*']) as ListRow[];
 
   if (featureFlags.STATE_TRANSITIONS_ENABLED) {
     await syncStateTransitionsOnListRename(list.board_id);
   }
 
   // Use 'list_updated' to match client useBoardSync handler; send the full list object
-  await writeEvent({ type: 'list_updated', boardId: list.board_id, entityId: listId, actorId: (req as AuthenticatedRequest).currentUser?.id ?? 'system', payload: { list: updated[0] } });
+  const authenticatedRequest = req as AuthenticatedBoardRequest;
+  await writeEvent({ type: 'list_updated', boardId: list.board_id, entityId: listId, actorId: authenticatedRequest.currentUser.id, payload: { list: updated[0] } });
 
   return Response.json({ data: updated[0] });
 }
