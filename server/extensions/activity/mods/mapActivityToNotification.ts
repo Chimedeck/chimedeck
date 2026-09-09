@@ -44,7 +44,35 @@ const CHECKLIST_NOTIFICATION_TYPES = new Set<NotificationType>([
   'checklist_item_due_date_updated',
 ]);
 
+// Row projection derived from migration 0017 (notifications).
+interface NotificationRow {
+  id: string;
+  user_id: string;
+  type: string;
+  source_type: string;
+  source_id: string;
+  card_id: string | null;
+  board_id: string | null;
+  actor_id: string;
+  read: boolean;
+  created_at: string;
+}
+
 const SUPPORTED_ACTIONS = new Set<string>(Object.keys(ACTIVITY_TO_NOTIFICATION));
+
+// Read projections derived from migrations 0004 (boards) and 0002/0015 (users).
+interface BoardRow {
+  id: string;
+  title: string;
+  workspace_id: string;
+}
+
+interface ActorRow {
+  id: string;
+  nickname: string | null;
+  name: string;
+  avatar_url: string | null;
+}
 
 export interface MapActivityToNotificationInput {
   activity: WrittenActivity;
@@ -61,7 +89,7 @@ export async function mapActivityToNotification({
     const notificationType = ACTIVITY_TO_NOTIFICATION[activity.action as ActivityAction];
     const payload = normalisePayload(activity.payload);
 
-    const board = await db('boards')
+    const board = await db<BoardRow>('boards')
       .where({ id: boardId })
       .select('id', 'title', 'workspace_id')
       .first();
@@ -120,7 +148,7 @@ export async function mapActivityToNotification({
     // Resolve actor display info once for the WS payload.
     const actor = await db('users')
       .where({ id: activity.actor_id })
-      .select('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
+      .select<ActorRow[]>('id', 'nickname', db.raw("COALESCE(name, email) as name"), 'avatar_url')
       .first();
     const actorAvatarUrl = actor?.avatar_url
       ? buildAvatarProxyUrl({ userId: actor.id, avatarUrl: actor.avatar_url })
@@ -192,7 +220,7 @@ export async function mapActivityToNotification({
       }
 
       if (inAppEnabled) {
-        db('notifications')
+        db<NotificationRow>('notifications')
           .insert(
             {
               user_id: recipientId,
@@ -207,7 +235,7 @@ export async function mapActivityToNotification({
             },
             ['*'],
           )
-          .then(([inserted]) => {
+          .then(([inserted]: NotificationRow[]) => {
             if (inserted) {
               return publishToUser(recipientId, {
                 type: 'notification_created',
