@@ -4,13 +4,13 @@ import { db } from '../../../common/db';
 
 export type { BoardScopedRequest } from './requireBoardWritable';
 
-import type { BoardScopedRequest } from './requireBoardWritable';
+import type { BoardScopedRequest, ScopedBoardRow } from './requireBoardWritable';
 
 export async function requireBoardAccess(
   req: BoardScopedRequest,
   boardId: string,
 ): Promise<Response | null> {
-  const board = await db('boards').where({ id: boardId }).first();
+  const board = await db<ScopedBoardRow>('boards').where({ id: boardId }).first();
 
   if (!board) {
     return Response.json(
