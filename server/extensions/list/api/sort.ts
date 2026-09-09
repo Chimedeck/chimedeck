@@ -25,6 +25,11 @@ type CardRow = {
   archived: boolean;
 };
 
+type ListRow = {
+  id: string;
+  board_id: string;
+};
+
 function toTime(value: string | null | undefined, fallback: number): number {
   if (!value) return fallback;
   const parsed = Date.parse(value);
@@ -65,7 +70,7 @@ export async function handleSortListCards(req: Request, listId: string): Promise
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const list = await db('lists').where({ id: listId }).first();
+  const list = await db<ListRow>('lists').where({ id: listId }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -77,7 +82,7 @@ export async function handleSortListCards(req: Request, listId: string): Promise
   const writableError = await requireBoardWritable(boardReq, list.board_id);
   if (writableError) return writableError;
 
-  const board = boardReq.board!;
+  const board = boardReq.board as NonNullable<BoardScopedRequest['board']>;
 
   const scopedReq = req as WorkspaceScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
@@ -111,14 +116,15 @@ export async function handleSortListCards(req: Request, listId: string): Promise
     return Response.json({ data: cards.map((card) => ({ id: card.id, list_id: card.list_id, position: card.position })) });
   }
 
-  const sortedCards = [...cards].sort((left, right) => compareCards(body.sortBy as SortBy, left, right));
+  const sortBy = body.sortBy;
+  const sortedCards = [...cards].sort((left, right) => compareCards(sortBy, left, right));
   const positions = generatePositions(sortedCards.length);
   const now = new Date().toISOString();
 
   await db.transaction(async (trx) => {
     for (let i = 0; i < sortedCards.length; i += 1) {
       await trx('cards')
-        .where({ id: sortedCards[i]!.id })
+        .where({ id: sortedCards[i]?.id })
         .update({ position: positions[i], updated_at: now });
     }
   });
@@ -126,7 +132,7 @@ export async function handleSortListCards(req: Request, listId: string): Promise
   const payloadCards = sortedCards.map((card, index) => ({
     id: card.id,
     list_id: card.list_id,
-    position: positions[index]!,
+    position: positions[index],
   }));
 
   await writeEvent({
