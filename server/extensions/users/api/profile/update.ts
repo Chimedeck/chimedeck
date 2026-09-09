@@ -5,11 +5,29 @@ import { buildAvatarProxyUrl } from '../../../../common/avatar/resolveAvatarUrl'
 
 const NICKNAME_PATTERN = /^[a-zA-Z0-9_-]{1,50}$/;
 
+// Matches the `users` table columns read/written here (migrations 0002, 0014, 0015).
+type UserRow = {
+  id: string;
+  email: string;
+  name: string;
+  nickname: string | null;
+  avatar_url: string | null;
+  email_verified: boolean;
+  created_at: string;
+};
+
 export async function handleUpdateProfile(req: Request): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const { currentUser } = req as AuthenticatedRequest;
+  const authenticatedReq = req as AuthenticatedRequest;
+  const { currentUser } = authenticatedReq;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Missing authenticated user' } },
+      { status: 401 },
+    );
+  }
 
   let body: { nickname?: string; name?: string };
   try {
@@ -47,8 +65,8 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
     // Check uniqueness — exclude the current user
     const existing = await db('users')
       .where({ nickname: body.nickname })
-      .whereNot({ id: currentUser!.id })
-      .first();
+      .whereNot({ id: currentUser.id })
+      .first<Pick<UserRow, 'id'> | undefined>();
 
     if (existing) {
       return Response.json(
@@ -68,9 +86,9 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
   }
 
   const [user] = await db('users')
-    .where({ id: currentUser!.id })
+    .where({ id: currentUser.id })
     .update(updates)
-    .returning('*');
+    .returning<UserRow[]>('*');
 
   if (!user) {
     return Response.json(
@@ -88,7 +106,7 @@ export async function handleUpdateProfile(req: Request): Promise<Response> {
       name: user.name,
       nickname: user.nickname ?? null,
       avatar_url: avatarUrl,
-      email_verified: user.email_verified ?? false,
+      email_verified: user.email_verified,
       created_at: user.created_at,
     },
   });
