@@ -21,20 +21,31 @@ import {
 import type { BoardVisibility, GuestType } from '../extensions/board/types';
 import { resolveBoardId, resolveCardId, resolveListId } from '../common/ids/resolveEntityId';
 
+type BoardRow = {
+  id: string;
+  workspace_id: string;
+  title: string;
+  state: string;
+  visibility: BoardVisibility;
+  description: string | null;
+  background: string | null;
+  monetization_type: string | null;
+  created_at: string;
+};
+
+type ListRow = { id: string; board_id: string };
+type CardRow = { id: string; list_id: string };
+type ChecklistItemRow = { id: string; card_id: string };
+type ChecklistRow = { id: string; card_id: string };
+type GuestAccessRow = { user_id: string; board_id: string; guest_type: GuestType | null };
+type BoardMemberRow = { user_id: string; board_id: string };
+type AuthenticatedUserRequest = AuthenticatedRequest & { currentUser: { id: string } };
+type RoleScopedRequest = WorkspaceScopedRequest & { callerRole: Role };
+
 export interface BoardVisibilityScopedRequest extends WorkspaceScopedRequest {
   // Set when the authenticated caller is a GUEST; reflects their sub-type on this board.
   guestType?: GuestType;
-  board?: {
-    id: string;
-    workspace_id: string;
-    title: string;
-    state: string;
-    visibility: BoardVisibility;
-    description: string | null;
-    background: string | null;
-    monetization_type: string | null;
-    created_at: string;
-  };
+  board?: BoardRow;
 }
 
 // Enforces board visibility access control on any board-scoped route.
@@ -54,7 +65,7 @@ export async function applyBoardVisibility(
     );
   }
 
-  const board = await db('boards').where({ id: resolvedBoardId }).first();
+  const board = await db<BoardRow>('boards').where({ id: resolvedBoardId }).first();
 
   if (!board) {
     return Response.json(
@@ -71,20 +82,21 @@ export async function applyBoardVisibility(
   }
 
   // WORKSPACE and PRIVATE boards require an authenticated workspace member.
-  const authError = await authenticate(req as AuthenticatedRequest);
+  const authReq = req as AuthenticatedUserRequest;
+  const authError = await authenticate(authReq);
   if (authError) return authError;
 
-  const scopedReq = req as WorkspaceScopedRequest;
+  const scopedReq = req as RoleScopedRequest;
   const membershipError = await requireWorkspaceMembership(scopedReq, board.workspace_id);
   if (membershipError) return membershipError;
 
-  const callerRole = scopedReq.callerRole as Role;
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const callerRole = scopedReq.callerRole;
+  const userId = authReq.currentUser.id;
 
   // Guests only have access to boards they have been explicitly invited to.
   // Applies to PRIVATE and WORKSPACE boards.
   if (callerRole === 'GUEST') {
-    const guestAccess = await db('board_guest_access')
+    const guestAccess = await db<GuestAccessRow>('board_guest_access')
       .where({ user_id: userId, board_id: resolvedBoardId })
       .first();
     if (!guestAccess) {
@@ -94,7 +106,7 @@ export async function applyBoardVisibility(
       );
     }
     // Attach guestType so downstream handlers can enforce VIEWER vs MEMBER write gates.
-    (req as BoardVisibilityScopedRequest).guestType = (guestAccess.guest_type ?? 'VIEWER') as GuestType;
+    (req as BoardVisibilityScopedRequest).guestType = guestAccess.guest_type ?? 'VIEWER';
     return null;
   }
 
@@ -105,7 +117,7 @@ export async function applyBoardVisibility(
 
   // PRIVATE boards: workspace MEMBER and VIEWER require an explicit board_members entry.
   if (board.visibility === 'PRIVATE') {
-    const boardMember = await db('board_members')
+    const boardMember = await db<BoardMemberRow>('board_members')
       .where({ user_id: userId, board_id: resolvedBoardId })
       .first();
     if (!boardMember) {
@@ -127,7 +139,7 @@ export async function applyBoardVisibilityFromList(
   listId: string,
 ): Promise<Response | null> {
   const resolvedListId = await resolveListId(listId);
-  const list = resolvedListId ? await db('lists').where({ id: resolvedListId }).first() : null;
+  const list = resolvedListId ? await db<ListRow>('lists').where({ id: resolvedListId }).first() : null;
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'List not found' } },
@@ -151,14 +163,14 @@ export async function applyBoardVisibilityFromCard(
     );
   }
 
-  const card = await db('cards').where({ id: resolvedCardId }).first();
+  const card = await db<CardRow>('cards').where({ id: resolvedCardId }).first();
   if (!card) {
     return Response.json(
       { error: { code: 'card-not-found', message: 'Card not found' } },
       { status: 404 },
     );
   }
-  const list = await db('lists').where({ id: card.list_id }).first();
+  const list = await db<ListRow>('lists').where({ id: card.list_id }).first();
   if (!list) {
     return Response.json(
       { error: { code: 'list-not-found', message: 'Card context not found' } },
@@ -174,7 +186,7 @@ export async function applyBoardVisibilityFromChecklistItem(
   req: Request,
   itemId: string,
 ): Promise<Response | null> {
-  const item = await db('checklist_items').where({ id: itemId }).first();
+  const item = await db<ChecklistItemRow>('checklist_items').where({ id: itemId }).first();
   if (!item) {
     return Response.json(
       { error: { code: 'checklist-item-not-found', message: 'Checklist item not found' } },
@@ -190,7 +202,7 @@ export async function applyBoardVisibilityFromChecklist(
   req: Request,
   checklistId: string,
 ): Promise<Response | null> {
-  const checklist = await db('checklists').where({ id: checklistId }).first();
+  const checklist = await db<ChecklistRow>('checklists').where({ id: checklistId }).first();
   if (!checklist) {
     return Response.json(
       { error: { code: 'checklist-not-found', message: 'Checklist not found' } },
