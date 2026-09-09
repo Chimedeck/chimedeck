@@ -46,7 +46,7 @@ export async function resolveCoverImageUrls<T extends CardCoverFields>(cards: T[
       if (!attachmentId) return { ...card, cover_image_url: null, cover_aspect_ratio: null, cover_is_gif: false };
 
       const attachment = attachmentById.get(attachmentId);
-      if (attachment?.card_id !== card.id || attachment?.status !== 'READY') {
+      if (attachment?.card_id !== card.id || attachment.status !== 'READY') {
         return { ...card, cover_image_url: null, cover_aspect_ratio: null, cover_is_gif: false };
       }
 
