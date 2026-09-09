@@ -14,6 +14,11 @@ interface User {
   avatar_url: string | null;
 }
 
+interface BoardMentionScope {
+  workspace_id: string;
+  visibility: string;
+}
+
 export async function resolveNicknames({
   nicknames,
   boardId,
@@ -26,7 +31,7 @@ export async function resolveNicknames({
   const board = await db('boards')
     .where({ id: boardId })
     .select('workspace_id', 'visibility')
-    .first();
+    .first<BoardMentionScope | undefined>();
 
   if (!board) return [];
 
