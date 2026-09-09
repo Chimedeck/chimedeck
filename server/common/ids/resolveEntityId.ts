@@ -4,13 +4,13 @@ async function resolveEntityId(
   tableName: 'boards' | 'cards' | 'lists' | 'comments' | 'attachments',
   identifier: string,
 ): Promise<string | null> {
-  const row = await db(tableName)
+  const row = await db<{ id: string }>(tableName)
     .where('id', identifier)
     .orWhere('short_id', identifier)
     .select('id')
-    .first();
+    .first<{ id: string } | undefined>();
 
-  return (row?.id as string | undefined) ?? null;
+  return row?.id ?? null;
 }
 
 export async function resolveBoardId(identifier: string): Promise<string | null> {
