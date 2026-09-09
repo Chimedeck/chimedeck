@@ -5,6 +5,12 @@ import { db } from '../common/db';
 import { flags } from '../mods/flags';
 import type { AuthenticatedRequest } from '../extensions/auth/middlewares/authentication';
 
+// db/migrations/0002_auth.ts and 0014_email_verification.ts.
+interface VerificationUserRow {
+  id: string;
+  email_verified: boolean;
+}
+
 export async function requireVerified(req: AuthenticatedRequest): Promise<Response | null> {
   const verificationEnabled = await flags.isEnabled('EMAIL_VERIFICATION_ENABLED');
   if (!verificationEnabled) return null;
@@ -17,7 +23,7 @@ export async function requireVerified(req: AuthenticatedRequest): Promise<Respon
     );
   }
 
-  const user = await db('users').where({ id: userId }).select('email_verified').first();
+  const user = await db<VerificationUserRow>('users').where({ id: userId }).select('email_verified').first();
   if (!user?.email_verified) {
     return Response.json(
       { error: { code: 'email-not-verified', message: 'Please verify your email to continue.' } },
