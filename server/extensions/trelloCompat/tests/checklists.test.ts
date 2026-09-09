@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import type { db as database } from '../../../common/db';
 
 type Row = Record<string, unknown>;
 
@@ -27,18 +28,18 @@ class QueryBuilder {
 
   constructor(private readonly store: DataStore, private readonly tableName: keyof DataStore) {}
 
-  where(criteria: Row): QueryBuilder {
+  where(criteria: Row): this {
     this.filters.push((row) => Object.entries(criteria).every(([key, value]) => row[key] === value));
     return this;
   }
 
-  orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+  orderBy(field: string, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderByField = field;
     this.orderByDirection = direction;
     return this;
   }
 
-  select(...columns: string[]): QueryBuilder {
+  select(...columns: string[]): this {
     this.pickedColumns = columns.length > 0 ? columns : null;
     return this;
   }
@@ -48,25 +49,26 @@ class QueryBuilder {
     return rows[0];
   }
 
-  async insert(payload: Row | Row[]): Promise<void> {
+  insert(payload: Row | Row[]): Promise<void> {
     const rows = Array.isArray(payload) ? payload : [payload];
     for (const row of rows) {
-      (this.store[this.tableName] as Row[]).push({ ...row });
+      this.store[this.tableName].push({ ...row });
     }
+    return Promise.resolve();
   }
 
-  async update(patch: Row): Promise<number> {
+  update(patch: Row): Promise<number> {
     const rows = this.executeSync(false);
     rows.forEach((row) => Object.assign(row, patch));
-    return rows.length;
+    return Promise.resolve(rows.length);
   }
 
-  async delete(): Promise<number> {
-    const rows = this.store[this.tableName] as Row[];
+  delete(): Promise<number> {
+    const rows = this.store[this.tableName];
     const before = rows.length;
     const keep = rows.filter((row) => !this.filters.every((filter) => filter(row)));
     this.store[this.tableName] = keep;
-    return before - keep.length;
+    return Promise.resolve(before - keep.length);
   }
 
   then<TResult1 = Row[], TResult2 = never>(
@@ -77,7 +79,7 @@ class QueryBuilder {
   }
 
   private executeSync(clone = true): Row[] {
-    const source = this.store[this.tableName] as Row[];
+    const source = this.store[this.tableName];
     let rows = source.filter((row) => this.filters.every((filter) => filter(row)));
 
     if (this.orderByField) {
@@ -89,14 +91,15 @@ class QueryBuilder {
         if (left === right) return 0;
         if (left === undefined || left === null) return -1 * factor;
         if (right === undefined || right === null) return 1 * factor;
-        return String(left) > String(right) ? factor : -1 * factor;
+        return String(left as string | number | boolean | bigint | symbol) > String(right as string | number | boolean | bigint | symbol) ? factor : -1 * factor;
       });
     }
 
-    if (this.pickedColumns) {
+    const pickedColumns = this.pickedColumns;
+    if (pickedColumns) {
       rows = rows.map((row) => {
         const next: Row = {};
-        this.pickedColumns!.forEach((column) => {
+        pickedColumns.forEach((column) => {
           next[column] = row[column];
         });
         return next;
@@ -106,8 +109,8 @@ class QueryBuilder {
     return clone ? rows.map((row) => ({ ...row })) : rows;
   }
 
-  private async execute(): Promise<Row[]> {
-    return this.executeSync();
+  private execute(): Promise<Row[]> {
+    return Promise.resolve(this.executeSync());
   }
 }
 
@@ -179,7 +182,12 @@ function createStore(): DataStore {
 
 let dataStore = createStore();
 
-const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) => {
+function requireResponse(response: Response | null | undefined): Response {
+  if (!response) throw new Error('Expected trelloCompatRouter to return a response');
+  return response;
+}
+
+const authenticateMock = mock((req: Request & { currentUser?: unknown }) => {
   const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
 
@@ -191,24 +199,24 @@ const authenticateMock = mock(async (req: Request & { currentUser?: unknown }) =
   return Response.json({ error: { code: 'unauthorized', message: 'Invalid API token' } }, { status: 401 });
 });
 
-mock.module('../../auth/middlewares/authentication', () => ({
+void mock.module('../../auth/middlewares/authentication', () => ({
   authenticate: authenticateMock,
 }));
 
-mock.module('../../../common/db', () => ({
-  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
+void mock.module('../../../common/db', () => ({
+  db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof database,
 }));
 
-mock.module('../../../common/ids/resolveEntityId', () => ({
-  resolveCardId: async (identifier: string) => {
+void mock.module('../../../common/ids/resolveEntityId', () => ({
+  resolveCardId: (identifier: string) => {
     const found = dataStore.cards.find((row) => row.id === identifier || row.short_id === identifier);
-    return (found?.id as string | undefined) ?? null;
+    return Promise.resolve((found?.id as string | undefined) ?? null);
   },
-  resolveBoardId: async (identifier: string) => {
+  resolveBoardId: (identifier: string) => {
     const found = dataStore.boards.find((row) => row.id === identifier || row.short_id === identifier);
-    return (found?.id as string | undefined) ?? null;
+    return Promise.resolve((found?.id as string | undefined) ?? null);
   },
-  resolveListId: async () => null,
+  resolveListId: () => Promise.resolve(null),
 }));
 
 const { trelloCompatRouter } = await import('../api/index');
@@ -229,7 +237,7 @@ describe('trelloCompat checklists', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/checklists');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { idCard: string; idBoard: string; name: string; checkItems: unknown[] };
+    const body = await requireResponse(res).json() as { idCard: string; idBoard: string; name: string; checkItems: unknown[] };
     expect(body.idCard).toBe('card-1');
     expect(body.idBoard).toBe('board-1');
     expect(body.name).toBe('New Checklist');
@@ -244,7 +252,7 @@ describe('trelloCompat checklists', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/checklists/checklist-source');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { id: string; checkItems: Array<{ id: string }> };
+    const body = await requireResponse(res).json() as { id: string; checkItems: Array<{ id: string }> };
     expect(body.id).toBe('checklist-source');
     expect(body.checkItems).toHaveLength(2);
     expect(body.checkItems[0]?.id).toBe('item-source-1');
@@ -258,7 +266,7 @@ describe('trelloCompat checklists', () => {
     });
     const createRes = await trelloCompatRouter(createReq, '/trello/1/checklists/checklist-source/checkItems');
     expect(createRes?.status).toBe(200);
-    const created = await createRes!.json() as { id: string; state: string };
+    const created = await requireResponse(createRes).json() as { id: string; state: string };
     expect(created.state).toBe('incomplete');
 
     const deleteReq = new Request(`http://localhost/trello/1/checklists/checklist-source/checkItems/${created.id}`, {
@@ -267,7 +275,7 @@ describe('trelloCompat checklists', () => {
     });
     const deleteRes = await trelloCompatRouter(deleteReq, `/trello/1/checklists/checklist-source/checkItems/${created.id}`);
     expect(deleteRes?.status).toBe(200);
-    expect(await deleteRes!.json()).toEqual({});
+    expect(await requireResponse(deleteRes).json()).toEqual({});
     expect(dataStore.checklist_items.some((row) => row.id === created.id)).toBe(false);
   });
 
@@ -279,7 +287,7 @@ describe('trelloCompat checklists', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/checklists/checklist-source');
     expect(res?.status).toBe(200);
-    expect(await res!.json()).toEqual({});
+    expect(await requireResponse(res).json()).toEqual({});
     expect(dataStore.checklists.find((row) => row.id === 'checklist-source')).toBeUndefined();
   });
 
@@ -291,7 +299,7 @@ describe('trelloCompat checklists', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/checklists/checklist-source/board');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { id: string; name: string };
+    const body = await requireResponse(res).json() as { id: string; name: string };
     expect(body.id).toBe('board-1');
     expect(body.name).toBe('Board One');
   });
@@ -305,7 +313,7 @@ describe('trelloCompat checklists', () => {
 
     const res = await trelloCompatRouter(req, '/trello/1/checklists');
     expect(res?.status).toBe(200);
-    const body = await res!.json() as { id: string; checkItems: Array<{ name: string }> };
+    const body = await requireResponse(res).json() as { id: string; checkItems: Array<{ name: string }> };
     expect(body.checkItems).toHaveLength(2);
     expect(body.checkItems.map((item) => item.name)).toEqual(['Source Item 1', 'Source Item 2']);
   });
