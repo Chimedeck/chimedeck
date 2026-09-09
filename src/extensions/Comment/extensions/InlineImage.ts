@@ -1,10 +1,45 @@
 // Minimal inline-image Tiptap extension for use in the comment editor.
 // Intentionally self-contained — does not depend on @tiptap/extension-image
 // whose built dist is not included in the package at this version.
-import { Node, mergeAttributes } from '@tiptap/core';
+import {
+  Node,
+  mergeAttributes,
+  type JSONContent,
+} from '@tiptap/core';
 
 export interface InlineImageOptions {
   HTMLAttributes: Record<string, unknown>;
+}
+
+interface MarkdownHelpers {
+  createNode: (
+    name: string,
+    attrs: { src: string; alt: string | null; title: string | null },
+  ) => JSONContent;
+}
+
+function getProperty(value: unknown, property: string): unknown {
+  if (
+    value === null ||
+    (typeof value !== 'object' && typeof value !== 'function')
+  ) {
+    return undefined;
+  }
+
+  return Reflect.get(value, property);
+}
+
+function getStringProperty(value: unknown, property: string): string | undefined {
+  const propertyValue = getProperty(value, property);
+  return typeof propertyValue === 'string' ? propertyValue : undefined;
+}
+
+function getNestedStringProperty(
+  value: unknown,
+  parent: string,
+  property: string,
+): string | undefined {
+  return getStringProperty(getProperty(value, parent), property);
 }
 
 declare module '@tiptap/core' {
@@ -55,18 +90,18 @@ export const InlineImage = Node.create<InlineImageOptions>({
     };
   },
 
-  parseMarkdown(token: any, helpers: any) {
-    const src = typeof token?.href === 'string' ? token.href : '';
-    const alt = typeof token?.text === 'string' ? token.text : null;
-    const title = typeof token?.title === 'string' ? token.title : null;
-    if (!src) return null;
-    return helpers.createNode(this.name, { src, alt, title });
+  parseMarkdown(token: unknown, helpers: MarkdownHelpers) {
+    const src = getStringProperty(token, 'href') ?? '';
+    const alt = getStringProperty(token, 'text') ?? null;
+    const title = getStringProperty(token, 'title') ?? null;
+    if (!src) return null as never;
+    return helpers.createNode(this.name as string, { src, alt, title });
   },
 
-  renderMarkdown(node: any) {
-    const src = typeof node?.attrs?.src === 'string' ? node.attrs.src : '';
-    const alt = typeof node?.attrs?.alt === 'string' ? node.attrs.alt : '';
-    const title = typeof node?.attrs?.title === 'string' ? node.attrs.title : '';
+  renderMarkdown(node: unknown) {
+    const src = getNestedStringProperty(node, 'attrs', 'src') ?? '';
+    const alt = getNestedStringProperty(node, 'attrs', 'alt') ?? '';
+    const title = getNestedStringProperty(node, 'attrs', 'title') ?? '';
     if (!src) return '';
     // Keep title optional to match standard markdown image syntax.
     return title
