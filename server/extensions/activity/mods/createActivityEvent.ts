@@ -28,7 +28,7 @@ async function fireCardMemberWebhook({
   if (!env.WEBHOOKS_ENABLED) return;
   const webhooks = await getActiveWebhooksForEvent({ knex: db, eventType });
   for (const wh of webhooks) {
-    dispatchWebhook({
+    void dispatchWebhook({
       endpoint: wh.endpoint_url,
       signingSecret: wh.signing_secret,
       eventType,
