@@ -24,9 +24,19 @@ export interface WrittenEvent {
   created_at: Date;
 }
 
+interface EventInsertRow {
+  id: string;
+  type: string;
+  board_id: string | null;
+  entity_id: string;
+  actor_id: string;
+  payload: string;
+  created_at: string;
+}
+
 export async function writeEvent(input: WriteEventInput): Promise<WrittenEvent> {
   const id = randomUUID();
-  const [event] = await db('events').insert({
+  const [insertedRow]: EventInsertRow[] = await db<EventInsertRow>('events').insert({
     id,
     type: input.type,
     board_id: input.boardId ?? null,
@@ -35,6 +45,15 @@ export async function writeEvent(input: WriteEventInput): Promise<WrittenEvent> 
     payload: JSON.stringify(input.payload),
     created_at: new Date().toISOString(),
   }, ['*']);
+
+  if (!insertedRow) {
+    throw new Error('Failed to write event row');
+  }
+
+  // `returning('*')` hydrates jsonb/timestamptz columns back to a parsed
+  // object and a Date (unlike the JSON-string/ISO-string insert payload),
+  // matching WrittenEvent's shape.
+  const event = insertedRow as unknown as WrittenEvent;
 
   if (input.boardId) {
     checkAndWriteSnapshot({ boardId: input.boardId, sequence: event.sequence }).catch(() => {});
@@ -54,5 +73,5 @@ export async function writeEvent(input: WriteEventInput): Promise<WrittenEvent> 
     publisher.publish(input.boardId, message).catch(() => {});
   }
 
-  return event as WrittenEvent;
+  return event;
 }
