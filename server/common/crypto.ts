@@ -51,5 +51,5 @@ export function decryptSecret({ ciphertext, hexKey }: { ciphertext: string; hexK
   const encrypted = buf.subarray(IV_BYTE_LEN, buf.length - TAG_BYTE_LEN);
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
-  return decipher.update(encrypted) + decipher.final('utf8');
+  return decipher.update(encrypted).toString('utf8') + decipher.final('utf8');
 }
