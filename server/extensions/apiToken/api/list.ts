@@ -3,13 +3,31 @@
 import { db } from '../../../common/db';
 import { authenticate, type AuthenticatedRequest } from '../../auth/middlewares/authentication';
 
+type ApiTokenListRow = {
+  id: string;
+  user_id: string;
+  name: string;
+  token_prefix: string;
+  expires_at: string | null;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+};
+
 export async function handleListTokens(req: Request): Promise<Response> {
-  const authError = await authenticate(req as AuthenticatedRequest);
+  const authenticatedReq = req as AuthenticatedRequest;
+  const authError = await authenticate(authenticatedReq);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const userId = authenticatedReq.currentUser?.id;
+  if (!userId) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Missing authenticated user' } },
+      { status: 401 },
+    );
+  }
 
-  const tokens = await db('api_tokens')
+  const tokens = await db<ApiTokenListRow>('api_tokens')
     .where({ user_id: userId })
     .whereNull('revoked_at')
     .orderBy('created_at', 'desc')
