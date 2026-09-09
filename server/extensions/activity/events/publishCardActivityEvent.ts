@@ -12,6 +12,13 @@ import { publisher } from '../../../mods/pubsub/publisher';
 import { buildAvatarProxyUrlsInCollection } from '../../../common/avatar/resolveAvatarUrl';
 import type { WrittenActivity } from '../mods/write';
 
+type ActivityActorRow = {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
+};
+
 export interface PublishCardActivityEventInput {
   activity: WrittenActivity;
   boardId: string;
@@ -22,7 +29,7 @@ export async function publishCardActivityEvent({
   boardId,
 }: PublishCardActivityEventInput): Promise<void> {
   // Resolve actor display info so clients can render the row without a follow-up request.
-  const rawActors = await db('users')
+  const rawActors = await db<ActivityActorRow>('users')
     .where({ id: activity.actor_id })
     .select('id', 'name', 'email', 'avatar_url');
   const actors = buildAvatarProxyUrlsInCollection(rawActors);
