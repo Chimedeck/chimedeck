@@ -35,6 +35,31 @@ type BoardRow = {
   created_at?: string | Date | null;
 };
 
+type BoardMemberRow = {
+  id: string;
+  role: string;
+  user_id: string;
+};
+
+type GuestAccessRow = {
+  id: string;
+};
+
+type UserRow = {
+  id: string;
+  email?: string;
+  name?: string;
+  avatar_url?: string | null;
+};
+
+type ListRow = {
+  id: string;
+  board_id: string;
+  title: string;
+  archived: boolean;
+  color?: string | null;
+};
+
 type MembershipRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'GUEST';
 const ROLE_RANK: Record<MembershipRole, number> = {
   OWNER: 4,
@@ -106,17 +131,17 @@ async function getWorkspaceRole(userId: string, workspaceId: string): Promise<Me
 }
 
 async function isBoardMember(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first();
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as BoardMemberRow | undefined;
   return !!row;
 }
 
 async function hasBoardAdminRole(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_members').where({ user_id: userId, board_id: boardId }).first();
+  const row = (await db('board_members').where({ user_id: userId, board_id: boardId }).first()) as BoardMemberRow | undefined;
   return row?.role === 'ADMIN';
 }
 
 async function hasGuestAccess(userId: string, boardId: string): Promise<boolean> {
-  const row = await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first();
+  const row = (await db('board_guest_access').where({ user_id: userId, board_id: boardId }).first()) as GuestAccessRow | undefined;
   return !!row;
 }
 
@@ -181,11 +206,11 @@ async function listBoardMemberships(boardId: string): Promise<TrelloBoardMembers
 }
 
 async function resolveBoardCreatorId(boardId: string): Promise<string> {
-  const admin = await db('board_members')
+  const admin = (await db('board_members')
     .where({ board_id: boardId })
     .orderBy('created_at', 'asc')
-    .first();
-  return (admin?.user_id as string | undefined) ?? '';
+    .first()) as BoardMemberRow | undefined;
+  return admin?.user_id ?? '';
 }
 
 function serializeCard(card: {
@@ -367,7 +392,7 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
       }
     }
 
-    const board = await db('boards').where({ id: boardId }).first();
+    const board = (await db('boards').where({ id: boardId }).first()) as BoardRow | undefined;
     const memberships = await listBoardMemberships(boardId);
     return Response.json(
       serializeBoard({
@@ -418,7 +443,7 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
       await db('boards').where({ id: board.id }).update(updates);
     }
 
-    const updated = await db('boards').where({ id: board.id }).first();
+    const updated = (await db('boards').where({ id: board.id }).first()) as BoardRow | undefined;
     const memberships = await listBoardMemberships(board.id);
     const idMemberCreator = await resolveBoardCreatorId(board.id);
     return Response.json(serializeBoard({ ...(updated as BoardRow), memberships, idMemberCreator }));
@@ -473,8 +498,8 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
       archived: false,
     });
 
-    const created = await db('lists').where({ id: listId }).first();
-    return Response.json(serializeList({ ...(created as { id: string; board_id: string; title: string; archived: boolean; color?: string | null }), _rank: existing.length }), { status: 200 });
+    const created = (await db('lists').where({ id: listId }).first()) as ListRow | undefined;
+    return Response.json(serializeList({ ...(created as ListRow), _rank: existing.length }), { status: 200 });
   }
 
   const cardsPathMatch = subPath.match(/^cards(?:\/(open|closed|all))?$/);
@@ -498,14 +523,14 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
 
     const result = [];
     for (const [memberId, memberType] of membersById.entries()) {
-      const dbUser = await db('users').where({ id: memberId }).first();
+      const dbUser = (await db('users').where({ id: memberId }).first()) as UserRow | undefined;
       if (!dbUser) continue;
       result.push(
         serializeMember({
-          id: dbUser.id as string,
-          email: (dbUser.email as string) ?? '',
-          name: (dbUser.name as string) ?? (dbUser.email as string),
-          avatar_url: (dbUser.avatar_url as string | null | undefined) ?? null,
+          id: dbUser.id,
+          email: dbUser.email ?? '',
+          name: (dbUser.name ?? dbUser.email) as string,
+          avatar_url: dbUser.avatar_url ?? null,
           memberType,
         }),
       );
@@ -523,16 +548,16 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
     const typeValue = getInput(url, body, 'type');
     const memberType = typeof typeValue === 'string' ? typeValue : 'normal';
 
-    const targetUser = await db('users').where({ id: idMember }).first();
+    const targetUser = (await db('users').where({ id: idMember }).first()) as UserRow | undefined;
     if (!targetUser) return TRELLO_NOT_FOUND();
 
     const workspaceRole = await getWorkspaceRole(idMember, board.workspace_id);
     if (!workspaceRole) return TRELLO_PERMISSION_DENIED();
 
     const boardRole = memberType === 'admin' ? 'ADMIN' : 'MEMBER';
-    const existingBoardMembership = await db('board_members')
+    const existingBoardMembership = (await db('board_members')
       .where({ board_id: board.id, user_id: idMember })
-      .first();
+      .first()) as BoardMemberRow | undefined;
 
     if (existingBoardMembership) {
       await db('board_members')
@@ -547,12 +572,12 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
       });
     }
 
-    const saved = await db('board_members')
+    const saved = (await db('board_members')
       .where({ board_id: board.id, user_id: idMember })
-      .first();
+      .first()) as BoardMemberRow | undefined;
 
     return Response.json({
-      id: (saved?.id as string) ?? randomUUID(),
+      id: saved?.id ?? randomUUID(),
       idMember: idMember,
       memberType: boardRole === 'ADMIN' ? 'admin' : 'normal',
       unconfirmed: false,
@@ -564,8 +589,8 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
     if (!(await canWriteBoard(user.id, board))) return TRELLO_PERMISSION_DENIED();
 
     const idMember = memberMatch[1] as string;
-    const existing = await db('board_members').where({ board_id: board.id, user_id: idMember }).first();
-    const guest = await db('board_guest_access').where({ board_id: board.id, user_id: idMember }).first();
+    const existing = (await db('board_members').where({ board_id: board.id, user_id: idMember }).first()) as BoardMemberRow | undefined;
+    const guest = (await db('board_guest_access').where({ board_id: board.id, user_id: idMember }).first()) as GuestAccessRow | undefined;
     if (!existing && !guest) return TRELLO_NOT_FOUND();
 
     await db('board_members').where({ board_id: board.id, user_id: idMember }).delete();
