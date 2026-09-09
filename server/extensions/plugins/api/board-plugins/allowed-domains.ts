@@ -4,6 +4,23 @@
 import { db } from '../../../../common/db';
 import { boardAdminGuard, type BoardAdminRequest } from '../../middlewares/board-admin-guard';
 
+// Row shapes derived from db/migrations/0021_plugins.ts and
+// db/migrations/0023_plugin_whitelisted_domains.ts.
+interface BoardPluginRow {
+  id: string;
+  board_id: string;
+  plugin_id: string;
+  enabled_by: string | null;
+  enabled_at: Date;
+  disabled_at: Date | null;
+  config: Record<string, unknown>;
+}
+
+interface PluginRow {
+  id: string;
+  whitelisted_domains: string[] | null;
+}
+
 export async function handleSetBoardPluginAllowedDomains(
   req: Request,
   boardId: string,
@@ -26,7 +43,7 @@ export async function handleSetBoardPluginAllowedDomains(
   const boardPlugin = await db('board_plugins')
     .where({ board_id: boardId, plugin_id: pluginId })
     .whereNull('disabled_at')
-    .first();
+    .first<BoardPluginRow | undefined>();
 
   if (!boardPlugin) {
     return Response.json(
@@ -36,7 +53,7 @@ export async function handleSetBoardPluginAllowedDomains(
   }
 
   // Fetch the plugin's whitelisted domains.
-  const plugin = await db('plugins').where({ id: pluginId }).first();
+  const plugin = await db('plugins').where({ id: pluginId }).first<PluginRow | undefined>();
   if (!plugin) {
     return Response.json(
       { error: { code: 'plugin-not-found', message: 'Plugin not found' } },
@@ -60,11 +77,12 @@ export async function handleSetBoardPluginAllowedDomains(
 
     // Every allowed domain must be declared in the plugin's whitelistedDomains.
     for (const domain of allowedDomains) {
-      if (!whitelistedDomains.includes(domain as string)) {
+      const domainValue = domain as string;
+      if (!whitelistedDomains.includes(domainValue)) {
         return Response.json(
           {
             name: 'domain-not-whitelisted-by-plugin',
-            data: { message: `'${domain}' is not in the plugin's whitelistedDomains` },
+            data: { message: `'${domainValue}' is not in the plugin's whitelistedDomains` },
           },
           { status: 422 },
         );
@@ -73,8 +91,8 @@ export async function handleSetBoardPluginAllowedDomains(
   }
 
   // Merge allowedDomains into existing config (replace, not deep-merge).
-  const existingConfig = boardPlugin.config ?? {};
-  const newConfig = { ...existingConfig, allowedDomains };
+  // config is NOT NULL (defaults to '{}') per db/migrations/0021_plugins.ts.
+  const newConfig = { ...boardPlugin.config, allowedDomains };
 
   await db('board_plugins')
     .where({ id: boardPlugin.id })
