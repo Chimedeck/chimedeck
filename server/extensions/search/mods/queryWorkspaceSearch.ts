@@ -11,6 +11,7 @@
 // | OWNER / ADMIN | ✅     | ✅        | ✅ (always)               |
 // | MEMBER/VIEWER | ✅     | ✅        | ✅ if in board_members    |
 // | GUEST         | ✅     | ❌        | ✅ if in board_guest_access|
+import type { Knex } from 'knex';
 import { db } from '../../../common/db';
 import { buildQuery } from './buildQuery';
 import type { Role } from '../../../middlewares/permissionManager';
@@ -54,11 +55,39 @@ export interface WorkspaceSearchOutput {
   message?: string;
 }
 
+// Row shapes produced by the raw `.select()` projections below (see
+// db/migrations/0004_board.ts, 0027_board_extensions.ts, 0109_board_card_short_ids.ts
+// for boards; 0006_card.ts, 0109_board_card_short_ids.ts for cards). Narrowing these
+// removes the `any` propagation from Knex's untyped `.select(db.raw(...))` result.
+interface BoardSearchRow {
+  id: string;
+  short_id: string;
+  title: string;
+  workspace_id: string;
+  state: string;
+  background: string | null;
+  type: 'board';
+  rank: number;
+}
+
+interface CardSearchRow {
+  id: string;
+  short_id: string;
+  title: string;
+  list_id: string;
+  board_id: string;
+  board_short_id: string;
+  workspace_id: string;
+  archived: boolean;
+  type: 'card';
+  rank: number;
+}
+
 // Builds a Knex `.where` callback that restricts board rows to only those
 // accessible by the caller. Called for both the board query and the card
 // query (via a join to the boards table).
 function applyBoardAccessFilter(
-  qb: ReturnType<typeof db>,
+  qb: Knex.QueryBuilder,
   userId: string,
   callerRole: Role,
 ): void {
@@ -134,13 +163,13 @@ export async function queryWorkspaceSearch({
     userId,
     callerRole,
     type: type ?? null,
-    includeArchived: includeArchived ?? false,
+    includeArchived,
   });
 
   // ── Board search ──────────────────────────────────────────────────────────
   if (!type || type === 'board') {
     const boardQ = db('boards')
-      .select(
+      .select<BoardSearchRow[]>(
         db.raw(
           `boards.id, boards.short_id, boards.title, boards.workspace_id, boards.state,
            boards.background, 'board' as type,
@@ -161,7 +190,7 @@ export async function queryWorkspaceSearch({
     results.push(...boards.map((b) => ({
       ...b,
       type: 'board' as const,
-      rank: Number(b.rank),
+      rank: b.rank,
       // [why] Never expose raw S3 URLs — proxy through the authenticated background endpoint.
       background: resolveBackgroundUrl({ boardId: b.id, backgroundUrl: b.background }),
     })));
@@ -172,7 +201,7 @@ export async function queryWorkspaceSearch({
     const cardQ = db('cards')
       .join('lists', 'cards.list_id', 'lists.id')
       .join('boards', 'lists.board_id', 'boards.id')
-      .select(
+      .select<CardSearchRow[]>(
         db.raw(
           `cards.id, cards.short_id, cards.title, cards.list_id, boards.id as board_id,
            boards.short_id as board_short_id,
@@ -191,7 +220,7 @@ export async function queryWorkspaceSearch({
     applyBoardAccessFilter(cardQ, userId, callerRole);
 
     const cards = await cardQ.orderBy('rank', 'desc').limit(limit);
-    results.push(...cards.map((c) => ({ ...c, type: 'card' as const, rank: Number(c.rank) })));
+    results.push(...cards.map((c) => ({ ...c, type: 'card' as const, rank: c.rank })));
   }
 
   results.sort((a, b) => b.rank - a.rank);
