@@ -7,11 +7,14 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../middlewares/permissionManager';
 
+type LabelRow = { id: string; board_id: string };
+type BoardRow = { id: string; workspace_id: string };
+
 export async function handleDeleteLabel(req: Request, labelId: string): Promise<Response> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const label = await db('labels').where({ id: labelId }).first();
+  const label = await db<LabelRow>('labels').where({ id: labelId }).first();
   if (!label) {
     return Response.json(
       { error: { code: 'label-not-found', message: 'Label not found' } },
@@ -20,7 +23,7 @@ export async function handleDeleteLabel(req: Request, labelId: string): Promise<
   }
 
   // [why] Labels are now board-scoped; derive workspace_id via the board for permission check.
-  const board = await db('boards').where({ id: label.board_id }).first();
+  const board = await db<BoardRow>('boards').where({ id: label.board_id }).first();
   if (!board) {
     return Response.json(
       { error: { code: 'board-not-found', message: 'Board not found' } },
