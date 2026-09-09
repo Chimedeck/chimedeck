@@ -1,4 +1,6 @@
 // Shared types for the automation system.
+import type { Knex } from 'knex';
+import type { ZodType } from 'zod';
 
 export type AutomationType = 'RULE' | 'CARD_BUTTON' | 'BOARD_BUTTON' | 'SCHEDULED' | 'DUE_DATE';
 export type RunStatus = 'SUCCESS' | 'PARTIAL' | 'FAILED';
@@ -64,7 +66,7 @@ export interface TriggerHandler {
   type: string;
   label: string;
   // Zod schema used to validate trigger config at save time.
-  configSchema: import('zod').ZodTypeAny;
+  configSchema: ZodType;
   /** Returns true when this trigger fires for the given event + config. */
   matches(event: AutomationEvent, config: Record<string, unknown>): boolean;
 }
@@ -74,7 +76,7 @@ export interface ActionHandler {
   type: string;
   label?: string;
   category?: string;
-  configSchema: import('zod').ZodTypeAny;
+  configSchema: ZodType;
   /** Execute the action. Throws on unrecoverable failure. */
   execute(context: ActionContext): Promise<void>;
 }
@@ -84,7 +86,7 @@ export interface ActionContext {
   action: AutomationActionRow;
   event: AutomationEvent;
   evalContext: EvaluationContext;
-  trx: import('knex').Knex.Transaction;
+  trx: Knex.Transaction;
   /** Register a side-effect to run after the DB transaction commits (e.g. WS broadcasts). */
   postCommit: (fn: () => void) => void;
 }
