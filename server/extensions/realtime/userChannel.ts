@@ -20,10 +20,12 @@ const subscribedUsers = new Set<string>();
 /** Register a connected WebSocket under its authenticated userId. */
 export function registerUserSocket(ws: ServerWebSocket<WsData>): void {
   const { userId } = ws.data;
-  if (!userSockets.has(userId)) {
-    userSockets.set(userId, new Set());
+  let sockets = userSockets.get(userId);
+  if (!sockets) {
+    sockets = new Set();
+    userSockets.set(userId, sockets);
   }
-  userSockets.get(userId)!.add(ws);
+  sockets.add(ws);
 }
 
 /** Deregister a WebSocket from its userId entry (on close). */

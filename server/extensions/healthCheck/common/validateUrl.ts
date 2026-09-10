@@ -17,7 +17,7 @@ const PRIVATE_IPV4_RANGES = [
   // 10.0.0.0/8
   (parts: number[]) => parts[0] === 10,
   // 172.16.0.0/12
-  (parts: number[]) => parts[0] === 172 && parts[1]! >= 16 && parts[1]! <= 31,
+  (parts: number[]) => parts[0] === 172 && (parts[1] ?? -1) >= 16 && (parts[1] ?? -1) <= 31,
   // 192.168.0.0/16
   (parts: number[]) => parts[0] === 192 && parts[1] === 168,
   // 127.0.0.0/8 — loopback

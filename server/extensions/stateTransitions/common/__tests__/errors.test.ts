@@ -36,7 +36,9 @@ describe('stateTransitions errors', () => {
       allowedNextStates: allowed,
     });
 
-    allowed[0]!.name = 'MUTATED';
+    const first = allowed[0];
+    if (!first) throw new Error('expected allowed[0] to exist');
+    first.name = 'MUTATED';
 
     expect(error.name).toBe('StateTransitionForbiddenError');
     expect(error.allowedNextStates).toEqual([{ id: 'list-2', name: 'Doing' }]);

@@ -13,9 +13,18 @@ export async function mcpHttpHandler(req: Request): Promise<Response | null> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
 
-  const userId = (req as AuthenticatedRequest).currentUser!.id;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { name: 'unauthorized', data: { message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  const userId = currentUser.id;
   // Extract the raw token so tools can make API calls as this user.
-  const token = req.headers.get('Authorization')!.slice(7);
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) throw new TypeError('Authorization header missing');
+  const token = authHeader.slice(7);
   const method = req.method.toUpperCase();
 
   // --- Initialize (POST, no session yet) ---
