@@ -26,7 +26,7 @@ export async function cleanupOrphanAttachments(): Promise<void> {
       }
     }
     await db('attachments').where({ id: attachment.id }).delete();
-    console.info(`[orphan-cleanup] deleted attachment ${attachment.id}`);
+    console.info(`[orphan-cleanup] deleted attachment ${String(attachment.id)}`);
   }
 }
 

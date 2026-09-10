@@ -636,7 +636,7 @@ function formatMoney(amount: string, currency: string | null): string {
       minimumFractionDigits: numericAmount % 1 === 0 ? 0 : 2,
     }).format(numericAmount);
   } catch {
-    return `${currencyCode} ${numericAmount}`;
+    return `${currencyCode} ${String(numericAmount)}`;
   }
 }
 

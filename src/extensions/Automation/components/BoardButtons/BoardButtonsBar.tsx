@@ -68,8 +68,8 @@ const BoardButtonsBar: FC<Props> = ({ boardId, hasBackground = false }) => {
       {overflowCount > 0 && (
         <div
           className="flex items-center justify-center rounded px-1.5 py-1 text-xs text-muted"
-          title={`${overflowCount} more board button${overflowCount !== 1 ? 's' : ''}`}
-          aria-label={`${overflowCount} more board buttons`}
+          title={`${String(overflowCount)} more board button${overflowCount !== 1 ? 's' : ''}`}
+          aria-label={`${String(overflowCount)} more board buttons`}
         >
           +{overflowCount}
         </div>

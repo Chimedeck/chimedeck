@@ -321,7 +321,7 @@ const HeadingDropdown = ({ editor }: HeadingDropdownProps) => {
   const activeLabel =
     activeLevel === null
       ? 'Normal text'
-      : `Heading ${activeLevel}`;
+      : `Heading ${String(activeLevel)}`;
 
   const apply = (level: HeadingLevel | null) => {
     if (!editor) return;

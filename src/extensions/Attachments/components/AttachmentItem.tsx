@@ -62,10 +62,10 @@ function formatAttachedMeta(createdAt: string): string {
   let relative = 'just now';
   if (diffSeconds >= 3600) {
     const hours = Math.floor(diffSeconds / 3600);
-    relative = `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    relative = `${String(hours)} hour${hours === 1 ? '' : 's'} ago`;
   } else if (diffSeconds >= 60) {
     const minutes = Math.floor(diffSeconds / 60);
-    relative = `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    relative = `${String(minutes)} minute${minutes === 1 ? '' : 's'} ago`;
   }
 
   return `Added ${relative} at ${timeLabel}`;

@@ -307,7 +307,7 @@ export default function InviteExternalUserModal() {
                             <div
                               key={i}
                               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                                i < score ? STRENGTH_COLORS[score - 1] : 'bg-bg-overlay'
+                                i < score ? (STRENGTH_COLORS[score - 1] ?? 'bg-bg-overlay') : 'bg-bg-overlay'
                               }`}
                             />
                           ))}

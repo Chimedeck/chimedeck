@@ -69,7 +69,7 @@ function serializeResult(value: unknown): unknown {
 
 let msgCounter = 0;
 function nextId(): string {
-  return `jh-${Date.now()}-${++msgCounter}`;
+  return `jh-${String(Date.now())}-${String(++msgCounter)}`;
 }
 
 function sendToHost(type: string, payload?: unknown): Promise<unknown> {

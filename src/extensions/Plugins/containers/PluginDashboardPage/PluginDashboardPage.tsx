@@ -66,7 +66,7 @@ const PluginDashboardPage = () => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((message: string, variant: ToastItem['variant'] = 'info') => {
-    const id = `toast-${Date.now()}`;
+    const id = `toast-${String(Date.now())}`;
     setToasts((prev) => [...prev, { id, message, variant }]);
   }, []);
 

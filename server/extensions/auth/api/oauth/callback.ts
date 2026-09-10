@@ -91,13 +91,13 @@ export async function handleOAuthCallback(
   const responseHeaders = new Headers();
   responseHeaders.append(
     'Set-Cookie',
-    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${jwtConfig.refreshTokenTtlDays * 86400}`,
+    `refresh_token=${refreshToken}; HttpOnly; Path=/api/v1/auth/refresh; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.refreshTokenTtlDays * 86400)}`,
   );
   // [why] access_token cookie lets <img> tags and other browser resource
   // requests authenticate without an Authorization header.
   responseHeaders.append(
     'Set-Cookie',
-    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${jwtConfig.accessTokenTtlSeconds}`,
+    `access_token=${accessToken}; HttpOnly; Path=/; SameSite=Strict; Secure; Max-Age=${String(jwtConfig.accessTokenTtlSeconds)}`,
   );
   // Redirect to frontend with access token in fragment (never in query string).
   responseHeaders.set('Location', `${env.APP_URL}/#access_token=${accessToken}`);

@@ -98,7 +98,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
         {
           name: 'too-many-whitelisted-domains',
           data: {
-            message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries`,
+            message: `whitelistedDomains may contain at most ${String(MAX_WHITELISTED_DOMAINS)} entries`,
           },
         },
         { status: 422 }
@@ -109,7 +109,7 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
         return Response.json(
           {
             name: 'invalid-whitelisted-domain',
-            data: { message: `'${domain}' is not a valid HTTPS origin` },
+            data: { message: `'${String(domain)}' is not a valid HTTPS origin` },
           },
           { status: 422 }
         );

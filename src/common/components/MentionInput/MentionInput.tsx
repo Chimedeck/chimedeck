@@ -48,7 +48,7 @@ const MentionInput = ({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = `${String(el.scrollHeight)}px`;
   }, [value]);
 
   return (

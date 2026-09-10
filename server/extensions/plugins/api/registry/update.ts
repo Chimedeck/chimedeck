@@ -54,14 +54,14 @@ export async function handleUpdatePlugin(req: Request, pluginId: string): Promis
     }
     if (rawDomains.length > MAX_WHITELISTED_DOMAINS) {
       return Response.json(
-        { error: { code: 'too-many-whitelisted-domains', message: `whitelistedDomains may contain at most ${MAX_WHITELISTED_DOMAINS} entries` } },
+        { error: { code: 'too-many-whitelisted-domains', message: `whitelistedDomains may contain at most ${String(MAX_WHITELISTED_DOMAINS)} entries` } },
         { status: 422 },
       );
     }
     for (const domain of rawDomains) {
       if (typeof domain !== 'string' || !isValidHttpsOrigin(domain)) {
         return Response.json(
-          { error: { code: 'invalid-whitelisted-domain', message: `'${domain}' is not a valid HTTPS origin` } },
+          { error: { code: 'invalid-whitelisted-domain', message: `'${String(domain)}' is not a valid HTTPS origin` } },
           { status: 422 },
         );
       }

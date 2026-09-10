@@ -84,7 +84,7 @@ const CardPluginButtons = ({ cardId, listId, cardTitle, listTitle, boardTitle, c
       for (const bp of boardPlugins) {
         bridge.sendToPlugin(bp.plugin.id, {
           jhSdk: true,
-          id: `btn-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          id: `btn-${String(Date.now())}-${Math.random().toString(36).slice(2)}`,
           type: 'BUTTON_CLICKED',
           payload: {
             callbackId: button.callback.__callbackId,

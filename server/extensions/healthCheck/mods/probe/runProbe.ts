@@ -125,7 +125,7 @@ export async function runProbe({ url, expectedStatus }: { url: string; expectedS
     const responseTimeMs = Date.now() - startTime;
     const isTimeout = (err as Error).name === 'AbortError';
     const errorMessage = isTimeout
-      ? `Timeout after ${responseTimeMs}ms`
+      ? `Timeout after ${String(responseTimeMs)}ms`
       : (err as Error).message;
 
     return {

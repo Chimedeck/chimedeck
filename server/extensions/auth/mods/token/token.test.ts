@@ -73,7 +73,7 @@ describe('token issue and verify', () => {
 
     const token = await issueAccessToken({ sub: 'user-123', email: 'test@example.com' });
     const [header, payload] = token.split('.');
-    const tampered = `${header}.${payload}.invalidsignature`;
+    const tampered = `${header ?? ''}.${payload ?? ''}.invalidsignature`;
 
     const result = await verifyAccessToken({ token: tampered });
     expect(result).toBeNull();

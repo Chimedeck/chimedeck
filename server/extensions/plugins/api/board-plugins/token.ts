@@ -74,7 +74,7 @@ export async function handleGetPluginToken(
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(authedReq.currentUser!.id)
     .setIssuedAt()
-    .setExpirationTime(`${TOKEN_TTL_SECONDS}s`)
+    .setExpirationTime(`${String(TOKEN_TTL_SECONDS)}s`)
     .sign(secret);
 
   return Response.json({
