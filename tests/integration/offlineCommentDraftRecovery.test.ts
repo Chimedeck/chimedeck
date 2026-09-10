@@ -40,7 +40,7 @@ test.describe('Offline Comment Draft Recovery', () => {
       });
     });
     expect(Array.isArray(draft)).toBeTruthy();
-    const found = draft.find((d: any) => d.draftType === 'comment' && d.contentMarkdown === 'My offline comment text');
+    const found = draft.find((d: { draftType?: string; contentMarkdown?: string }) => d.draftType === 'comment' && d.contentMarkdown === 'My offline comment text');
     expect(found).toBeTruthy();
     expect(found.intent).toBe('editing');
     expect(found.key).toMatch(/.+::.+::C1::comment/);

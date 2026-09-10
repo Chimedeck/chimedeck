@@ -52,7 +52,7 @@ test.describe('Board member API flows', () => {
     });
     const body = await res.json();
     expect(Array.isArray(body.data)).toBe(true);
-    expect(body.data.some((m: any) => m.userId === 'user-2')).toBe(true);
+    expect(body.data.some((m: { userId?: string }) => m.userId === 'user-2')).toBe(true);
   });
 
   test('POST /boards/:id/members adds/updates member idempotently', async ({ request }) => {
@@ -111,6 +111,6 @@ test.describe('Board member API flows', () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     const body = await res.json();
-    expect(body.data.some((b: any) => b.id === boardId)).toBe(true);
+    expect(body.data.some((b: { id?: string }) => b.id === boardId)).toBe(true);
   });
 });
