@@ -105,28 +105,28 @@ function resetStore(): DataStore {
   };
 }
 
-mock.module('../../../config/featureFlags', () => ({
+await mock.module('../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },
 }));
 
-mock.module('../../../common/db', () => ({
+await mock.module('../../../common/db', () => ({
   db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
 }));
 
-mock.module('../../auth/middlewares/authentication', () => ({
+await mock.module('../../auth/middlewares/authentication', () => ({
   authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-1', email: 'user@example.com' };
     return null;
   },
 }));
 
-mock.module('../../../middlewares/permissionManager', () => ({
+await mock.module('../../../middlewares/permissionManager', () => ({
   requireWorkspaceMembership: async () => null,
 }));
 
-mock.module('../../../common/uuid', () => ({
+await mock.module('../../../common/uuid', () => ({
   generateId: () => 'state-transition-1',
 }));
 

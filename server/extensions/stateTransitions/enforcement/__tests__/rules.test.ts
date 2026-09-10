@@ -111,7 +111,7 @@ function resetStore(): DataStore {
   };
 }
 
-mock.module('../../../../common/db', () => ({
+await mock.module('../../../../common/db', () => ({
   db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
