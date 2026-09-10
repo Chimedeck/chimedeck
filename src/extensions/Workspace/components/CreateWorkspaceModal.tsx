@@ -65,7 +65,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
                 id="workspace-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); }}
                 placeholder={translations['CreateWorkspaceModal.namePlaceholder']}
                 required
                 autoFocus

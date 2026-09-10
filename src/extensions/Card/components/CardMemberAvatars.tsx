@@ -85,7 +85,7 @@ function CardMemberAvatarsComponent({
                 },
               }
             : {})}
-          onClose={() => setActiveMember(null)}
+          onClose={() => { setActiveMember(null); }}
           anchorRef={anchorRef as React.RefObject<HTMLElement>}
         />
       )}

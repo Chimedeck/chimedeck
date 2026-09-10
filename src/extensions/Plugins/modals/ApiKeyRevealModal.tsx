@@ -17,7 +17,7 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
     try {
       await navigator.clipboard.writeText(apiKey);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => { setCopied(false); }, 2000);
     } catch {
       // fallback: select the text
     }

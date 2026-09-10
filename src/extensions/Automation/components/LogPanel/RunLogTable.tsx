@@ -92,7 +92,7 @@ const RunLogTable: FC<Props> = ({
           <button
             className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
+            onClick={() => { onPageChange(page - 1); }}
             aria-label={translations['automation.runLogTable.prevAriaLabel']}
           >
             {translations['automation.runLogTable.prev']}
@@ -103,7 +103,7 @@ const RunLogTable: FC<Props> = ({
           <button
             className="px-2 py-1 text-xs text-muted hover:text-subtle disabled:opacity-40"
             disabled={page >= totalPage}
-            onClick={() => onPageChange(page + 1)}
+            onClick={() => { onPageChange(page + 1); }}
             aria-label={translations['automation.runLogTable.nextAriaLabel']}
           >
             {translations['automation.runLogTable.next']}
