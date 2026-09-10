@@ -63,8 +63,24 @@ export async function handleSearch(req: Request, workspaceId: string): Promise<R
   const includeArchived = url.searchParams.get('includeArchived') === 'true';
   const limit = Math.min(parseInt(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT), 10), 100);
 
-  const userId = scopedReq.currentUser!.id;
-  const callerRole = scopedReq.callerRole!;
+  // [why] authenticate() guarantees req.currentUser (returns authError 401 otherwise).
+  const currentUser = scopedReq.currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
+  // [why] requireWorkspaceMembership() populates req.callerRole on success (returned above otherwise).
+  const callerRole = scopedReq.callerRole;
+  if (!callerRole) {
+    return Response.json(
+      { error: { code: 'insufficient-role', message: 'Missing workspace role' } },
+      { status: 403 },
+    );
+  }
+
+  const userId = currentUser.id;
 
   searchLog.request({ workspaceId, userId, callerRole, type, limit });
 

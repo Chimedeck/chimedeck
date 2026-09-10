@@ -19,6 +19,12 @@ export async function boardAdminGuard(
 ): Promise<Response | null> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+  if (!req.currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
 
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
@@ -29,7 +35,7 @@ export async function boardAdminGuard(
   }
 
   const membership = await db('memberships')
-    .where({ user_id: req.currentUser!.id, workspace_id: board.workspace_id })
+    .where({ user_id: req.currentUser.id, workspace_id: board.workspace_id })
     .first();
 
   if (!membership || !ADMIN_ROLES.has(membership.role as Role)) {
@@ -51,6 +57,12 @@ export async function boardMemberGuard(
 ): Promise<Response | null> {
   const authError = await authenticate(req as AuthenticatedRequest);
   if (authError) return authError;
+  if (!req.currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Not authenticated' } },
+      { status: 401 },
+    );
+  }
 
   const board = await db('boards').where({ id: boardId }).first();
   if (!board) {
@@ -61,7 +73,7 @@ export async function boardMemberGuard(
   }
 
   const membership = await db('memberships')
-    .where({ user_id: req.currentUser!.id, workspace_id: board.workspace_id })
+    .where({ user_id: req.currentUser.id, workspace_id: board.workspace_id })
     .first();
 
   if (!membership || !MEMBER_ROLES.has(membership.role as Role)) {
