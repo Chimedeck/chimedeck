@@ -122,7 +122,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
         {/* Edit */}
         <button
           type="button"
-          onClick={() => setShowBuilder(true)}
+          onClick={() => { setShowBuilder(true); }}
           className="flex-shrink-0 rounded p-1 text-muted hover:text-subtle opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label={translations['automation.buttonsTab.row.editAriaLabel']}
         >
@@ -142,7 +142,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
             </button>
             <button
               type="button"
-              onClick={() => setConfirmDelete(false)}
+              onClick={() => { setConfirmDelete(false); }}
               className="text-xs rounded px-2 py-0.5 text-muted hover:text-subtle"
             >
               {translations['automation.buttonsTab.row.cancel']}
@@ -151,7 +151,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
         ) : (
           <button
             type="button"
-            onClick={() => setConfirmDelete(true)}
+            onClick={() => { setConfirmDelete(true); }}
             className="flex-shrink-0 rounded p-1 text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label={translations['automation.buttonsTab.row.deleteAriaLabel']}
           >
@@ -169,7 +169,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
             setShowBuilder(false);
             onEdited();
           }}
-          onClose={() => setShowBuilder(false)}
+          onClose={() => { setShowBuilder(false); }}
         />
       )}
       {showBuilder && automation.automationType === 'BOARD_BUTTON' && (
@@ -180,7 +180,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
             setShowBuilder(false);
             onEdited();
           }}
-          onClose={() => setShowBuilder(false)}
+          onClose={() => { setShowBuilder(false); }}
         />
       )}
     </>
@@ -204,7 +204,7 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
           </h3>
           <button
             type="button"
-            onClick={() => setShowCardBuilder(true)}
+            onClick={() => { setShowCardBuilder(true); }}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-bg-surface hover:text-blue-300 transition-colors"
             aria-label={translations['automation.buttonsTab.cardButtons.addAriaLabel']}
           >
@@ -238,7 +238,7 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
           </h3>
           <button
             type="button"
-            onClick={() => setShowBoardBuilder(true)}
+            onClick={() => { setShowBoardBuilder(true); }}
             className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-400 hover:bg-bg-surface hover:text-blue-300 transition-colors"
             aria-label={translations['automation.buttonsTab.boardButtons.addAriaLabel']}
           >
@@ -272,7 +272,7 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
             setShowCardBuilder(false);
             onChanged();
           }}
-          onClose={() => setShowCardBuilder(false)}
+          onClose={() => { setShowCardBuilder(false); }}
         />
       )}
       {showBoardBuilder && (
@@ -282,7 +282,7 @@ const ButtonsTab: FC<Props> = ({ boardId, automations, onChanged }) => {
             setShowBoardBuilder(false);
             onChanged();
           }}
-          onClose={() => setShowBoardBuilder(false)}
+          onClose={() => { setShowBoardBuilder(false); }}
         />
       )}
     </div>
