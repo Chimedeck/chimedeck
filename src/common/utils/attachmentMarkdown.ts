@@ -23,7 +23,7 @@ function replaceMarkdownTargets(
     });
     if (!nextHref || nextHref === href) return full;
     const titlePart = typeof title === 'string' && title.length > 0 ? ` "${title}"` : '';
-    return `${bang}[${label}](${nextHref}${titlePart})`;
+    return `${String(bang)}[${String(label)}](${nextHref}${titlePart})`;
   });
 }
 
@@ -101,7 +101,7 @@ export function stripCommentAttachmentPlaceholders(markdown: string): string {
     const attachmentName = readAttachmentPlaceholderName(href);
     if (!attachmentName) return full;
     const fallbackLabel = label || attachmentName;
-    return bang === '!' ? fallbackLabel : `[${fallbackLabel}]`;
+    return bang === '!' ? fallbackLabel : `[${String(fallbackLabel)}]`;
   });
 }
 

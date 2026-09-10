@@ -28,11 +28,11 @@ const CommentReactions = ({ reactions, onAdd, onRemove, className }: Props) => {
   /** Build the tooltip label showing who reacted. */
   const buildTooltip = (reaction: ReactionSummary): string => {
     const reactors = reaction.reactors ?? [];
-    if (reactors.length === 0) return `${reaction.count} reaction${reaction.count === 1 ? '' : 's'}`;
+    if (reactors.length === 0) return `${String(reaction.count)} reaction${reaction.count === 1 ? '' : 's'}`;
     const names = reactors.map((r) => r.name ?? 'Someone');
     if (names.length <= 3) return names.join(', ');
     const shown = names.slice(0, 3).join(', ');
-    return `${shown} and ${names.length - 3} more`;
+    return `${shown} and ${String(names.length - 3)} more`;
   };
 
   return (

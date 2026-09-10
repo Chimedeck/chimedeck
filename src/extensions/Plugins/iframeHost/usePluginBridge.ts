@@ -519,7 +519,7 @@ export function usePluginBridge({
 
       const invokeEligible = (eligible: BoardPlugin[]): Promise<unknown[]> => {
         return new Promise<unknown[]>((resolvePromise) => {
-          const requestId = `cap-${Date.now()}-${Math.random()}`;
+          const requestId = `cap-${String(Date.now())}-${String(Math.random())}`;
           pendingCapabilityRef.current.set(requestId, {
             resolve: resolvePromise,
             results: [],

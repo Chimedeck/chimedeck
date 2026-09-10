@@ -562,7 +562,7 @@ function hydrateEditorLinkMarkClasses(editor: Editor): void {
     const range = getMarkRange(editor.state.doc.resolve(resolvePos), linkType);
     if (!range) return;
 
-    const rangeKey = `${range.from}:${range.to}`;
+    const rangeKey = `${String(range.from)}:${String(range.to)}`;
     if (seenRanges.has(rangeKey)) return;
     seenRanges.add(rangeKey);
 
@@ -919,7 +919,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
         event.preventDefault();
         const pos = view.state.selection.from;
 
-        const loadingToken = `link-loading-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const loadingToken = `link-loading-${String(Date.now())}-${Math.random().toString(36).slice(2, 8)}`;
         const loadingClass = buildLinkClassName('url', [LINK_CLASS_LOADING, loadingToken]);
 
         editorRef.current

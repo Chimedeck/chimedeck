@@ -44,11 +44,11 @@ function buildTooltip({
   if (status === 'red') {
     if (errorMessage?.toLowerCase().includes('timeout')) return 'Request timed out';
     if (errorMessage) return `Network error: ${errorMessage}`;
-    if (httpStatus) return `${httpStatus} Error`;
+    if (httpStatus) return `${String(httpStatus)} Error`;
     return 'Probe failed';
   }
-  const time = responseTimeMs != null ? `${responseTimeMs} ms` : null;
-  const code = httpStatus ? `${httpStatus} OK` : null;
+  const time = responseTimeMs != null ? `${String(responseTimeMs)} ms` : null;
+  const code = httpStatus ? `${String(httpStatus)} OK` : null;
   const slow = status === 'amber' && responseTimeMs != null ? ' (slow)' : '';
   const parts = [code, time ? `${time}${slow}` : null].filter(Boolean);
   return parts.length ? parts.join(' · ') : status === 'amber' ? 'Slow response' : 'OK';

@@ -296,7 +296,7 @@ interface Props {
 function getInitials(name: string | null | undefined, email: string | null | undefined): string {
   const source = name || email || '?';
   const parts = source.split(/[\s@.]/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
+  if (parts.length >= 2) return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.toUpperCase();
   return source.slice(0, 2).toUpperCase();
 }
 
@@ -324,8 +324,8 @@ function relativeTime(iso: string): string {
   const diff = (Date.now() - date.getTime()) / 1000;
   const time = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   if (diff < 60) return translations['comment.relativeTime.justNow'];
-  if (diff < 3600) return `${Math.floor(diff / 60)} ${translations['comment.relativeTime.minAgo']} · ${time}`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
+  if (diff < 3600) return `${String(Math.floor(diff / 60))} ${translations['comment.relativeTime.minAgo']} · ${time}`;
+  if (diff < 86400) return `${String(Math.floor(diff / 3600))} ${translations['comment.relativeTime.hrAgo']} · ${time}`;
   const day = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return `${day}, ${time}`;
 }
@@ -478,7 +478,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
     <div ref={rootRef} className="flex gap-3">
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : color} overflow-hidden`} // [theme-exception] text-white on colored avatar
+        className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white ${avatarUrl ? '' : (color ?? '')} overflow-hidden`} // [theme-exception] text-white on colored avatar
         title={displayName}
       >
         {avatarUrl
