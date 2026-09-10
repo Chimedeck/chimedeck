@@ -45,7 +45,7 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 px-2 pt-2 pb-2">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-2 px-2 pt-2 pb-2">
       <textarea
         ref={textareaRef}
         value={title}

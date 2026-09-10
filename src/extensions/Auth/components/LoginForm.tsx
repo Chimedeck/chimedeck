@@ -51,7 +51,7 @@ export default function LoginForm({ onSubmit, isLoading, apiError }: LoginFormPr
   const mappedApiError = apiError ? (API_ERROR_MAP[apiError] ?? translations.errors.loginFailed) : null;
 
   return (
-    <form onSubmit={handleSubmit} noValidate aria-label="Sign in form">
+    <form onSubmit={(e) => { void handleSubmit(e); }} noValidate aria-label="Sign in form">
       <div className="flex flex-col gap-4">
         {/* Email */}
         <div className="flex flex-col gap-1">

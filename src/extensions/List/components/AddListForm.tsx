@@ -56,7 +56,7 @@ const AddListForm = ({ onSubmit }: Props) => {
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(e) => { void handleSubmit(e); }}
       className="w-72 shrink-0 bg-bg-surface border border-border rounded-xl p-3 flex flex-col gap-2"
     >
       <input

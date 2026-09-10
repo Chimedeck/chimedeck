@@ -68,7 +68,7 @@ const BoardActivityPanel = ({ boardId }: Props) => {
         actorNames={actorNames}
         hasMore={hasMore}
         loading={loading}
-        onLoadMore={() => loadPage(cursor)}
+        onLoadMore={() => { void loadPage(cursor); }}
         boardId={boardId}
       />
     </div>

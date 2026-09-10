@@ -204,7 +204,7 @@ export function AddServiceModal({ boardId, isOpen, onClose }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
           {mode === 'preset' ? (
             <div className="mb-4">
               <label

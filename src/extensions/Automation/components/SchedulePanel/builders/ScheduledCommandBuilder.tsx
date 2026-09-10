@@ -432,7 +432,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
             <button
               type="button"
               disabled={!canSave || saving}
-              onClick={handleSave}
+              onClick={() => { void handleSave(); }}
               className="rounded-md px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors" // [theme-exception] text-white on primary button
             >
               {saving ? translations['automation.scheduledBuilder.saving'] : existing ? translations['automation.scheduledBuilder.saveChanges'] : translations['automation.scheduledBuilder.create']}

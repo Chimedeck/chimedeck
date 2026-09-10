@@ -87,7 +87,7 @@ const AddMemberInput = ({ candidates, onAdd, onFocusInput }: Props) => {
                     type="button"
                     role="option"
                     aria-selected={false}
-                    onClick={() => handleSelect(m)}
+                    onClick={() => { void handleSelect(m); }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-subtle hover:bg-bg-overlay"
                   >
                     <span className="font-medium">{m.name ?? m.email}</span>

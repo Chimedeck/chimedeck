@@ -26,15 +26,17 @@ function buildSuggestion(boardId: string): Partial<SuggestionOptions<MentionSugg
     items: ({ query }): Promise<MentionSuggestion[]> =>
       new Promise((resolve) => {
         if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(async () => {
-          try {
-            const result = (await apiClient.get(
-              `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
-            )) as { data: MentionSuggestion[] };
-            resolve(result.data);
-          } catch {
-            resolve([]);
-          }
+        debounceTimer = setTimeout(() => {
+          void (async () => {
+            try {
+              const result = (await apiClient.get(
+                `/boards/${boardId}/members/suggestions?q=${encodeURIComponent(query)}`,
+              )) as { data: MentionSuggestion[] };
+              resolve(result.data);
+            } catch {
+              resolve([]);
+            }
+          })();
         }, DEBOUNCE_MS);
       }),
 

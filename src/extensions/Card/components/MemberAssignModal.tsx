@@ -55,7 +55,7 @@ export const MemberAssignModal = ({
                   type="button"
                   variant={assigned ? 'danger' : 'primary'}
                   size="sm"
-                  onClick={() => assigned ? onRemove(member.id) : onAssign(member.id)}
+                  onClick={() => { if (assigned) { void onRemove(member.id); } else { void onAssign(member.id); } }}
                 >
                   {assigned ? 'Remove' : 'Assign'}
                 </Button>

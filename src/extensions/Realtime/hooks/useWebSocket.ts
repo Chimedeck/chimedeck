@@ -136,7 +136,7 @@ export function useWebSocket({
         pingPropagationDelay(event);
         onEvent(event);
       },
-      onOpen: handleOpen,
+      onOpen: () => { void handleOpen(); },
       onClose: handleClose,
       onPollingActive: () => { setPollingActive(true); },
       onPollingInactive: () => { setPollingActive(false); },

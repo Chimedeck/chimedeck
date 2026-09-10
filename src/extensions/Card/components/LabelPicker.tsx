@@ -55,7 +55,7 @@ export const LabelPicker = ({ allLabels, selectedIds, onAttach, onDetach, disabl
                 role="option"
                 aria-selected={selected}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-bg-overlay"
-                onClick={() => toggle(label)}
+                onClick={() => { void toggle(label); }}
               >
                 <span
                   className="h-3 w-3 rounded-full flex-shrink-0"

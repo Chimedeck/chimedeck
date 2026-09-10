@@ -39,7 +39,7 @@ export default function TokenCreatedModal({ rawToken, onDone }: Props) {
           <Button
             variant="primary"
             size="md"
-            onClick={handleCopy}
+            onClick={() => { void handleCopy(); }}
             className="min-w-[80px]"
           >
             {copied

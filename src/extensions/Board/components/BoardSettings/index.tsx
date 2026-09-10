@@ -107,7 +107,7 @@ const BoardSettings = ({ onClose, currentUserId, isGuest = false }: Props) => {
           {isAdmin && (
             <VisibilitySelector
               value={visibility}
-              onChange={handleVisibilityChange}
+              onChange={(v) => { void handleVisibilityChange(v); }}
               disabled={saving}
             />
           )}

@@ -151,7 +151,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             <div key={r.id} className="relative">
               <SearchResultItem
                 result={r}
-                onSelect={handleSelect}
+                onSelect={(res) => { void handleSelect(res); }}
               />
               {/* Subtle spinner while access check is in flight */}
               {checkingId === r.id && (
@@ -170,7 +170,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             Cards
           </p>
           {cards.map((r) => (
-            <SearchResultItem key={r.id} result={r} onSelect={handleSelect} />
+            <SearchResultItem key={r.id} result={r} onSelect={(res) => { void handleSelect(res); }} />
           ))}
         </section>
       )}

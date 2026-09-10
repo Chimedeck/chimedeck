@@ -223,7 +223,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
             variant="primary"
             type="button"
             disabled={!isValid || saving}
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
           >
             {saving ? translations['automation.boardButtonBuilder.saving'] : existing ? translations['automation.boardButtonBuilder.saveChanges'] : translations['automation.boardButtonBuilder.create']}
           </Button>

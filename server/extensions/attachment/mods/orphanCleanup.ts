@@ -30,4 +30,4 @@ export async function cleanupOrphanAttachments(): Promise<void> {
 
 // Schedule cleanup to run every 15 minutes when this module is imported.
 // The interval reference is kept in module scope so it can be cleared in tests.
-export const orphanCleanupInterval = setInterval(cleanupOrphanAttachments, 15 * 60 * 1000);
+export const orphanCleanupInterval = setInterval(() => { void cleanupOrphanAttachments(); }, 15 * 60 * 1000);

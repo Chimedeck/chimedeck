@@ -50,7 +50,7 @@ const ApiKeyRevealModal = ({ apiKey, onClose }: Props) => {
               {apiKey}
             </code>
             <button
-              onClick={handleCopy}
+              onClick={() => { void handleCopy(); }}
               className="flex-shrink-0 bg-bg-overlay hover:bg-bg-sunken text-subtle text-sm rounded px-3 py-2"
               aria-label={translations['plugins.apiKeyModal.copyAriaLabel']}
             >

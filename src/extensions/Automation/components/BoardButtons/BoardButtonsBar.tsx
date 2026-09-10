@@ -61,7 +61,7 @@ const BoardButtonsBar: FC<Props> = ({ boardId, hasBackground = false }) => {
           key={btn.id}
           automation={btn}
           runState={runStates[btn.id] ?? 'idle'}
-          onRun={() => handleRun(btn)}
+          onRun={() => { void handleRun(btn); }}
           hasBackground={hasBackground}
         />
       ))}

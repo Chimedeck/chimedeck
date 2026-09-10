@@ -153,7 +153,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
             variant="primary"
             type="button"
             disabled={!isValid || saving}
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
           >
             {saving ? translations['automation.cardButtonBuilder.saving'] : existing ? translations['automation.cardButtonBuilder.saveChanges'] : translations['automation.cardButtonBuilder.create']}
           </Button>

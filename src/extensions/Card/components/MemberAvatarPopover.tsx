@@ -159,7 +159,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       ) : (
         <button
           className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-red-900/40 text-danger flex items-center gap-2"
-          onClick={handleRemove}
+          onClick={() => { void handleRemove(); }}
           disabled={removing}
         >
           {removing ? (

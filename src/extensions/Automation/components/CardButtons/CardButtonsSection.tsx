@@ -108,7 +108,7 @@ const CardButtonsSection: FC<Props> = ({ boardId, cardId, disabled = false }) =>
             <CardButtonItem
               automation={btn}
               runState={runStates[btn.id] ?? 'idle'}
-              onRun={() => handleRun(btn)}
+              onRun={() => { void handleRun(btn); }}
               disabled={disabled}
             />
           </li>

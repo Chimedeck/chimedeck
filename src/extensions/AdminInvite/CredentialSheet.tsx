@@ -84,7 +84,7 @@ export default function CredentialSheet({
       <div className="flex gap-3">
         <button
           type="button"
-          onClick={handleCopy}
+          onClick={() => { void handleCopy(); }}
           className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-base hover:bg-bg-overlay transition-colors"
           aria-label={translations['AdminInvite.copyAriaLabel']}
         >

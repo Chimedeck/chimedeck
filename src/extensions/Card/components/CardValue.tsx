@@ -84,7 +84,7 @@ const CardValue = ({ amount, currency, onSave, disabled }: Props) => {
           type="button"
           variant="primary"
           className="w-full text-xs"
-          onClick={handleSave}
+          onClick={() => { void handleSave(); }}
           disabled={saving}
         >
           {saving ? 'Saving…' : 'Save'}
