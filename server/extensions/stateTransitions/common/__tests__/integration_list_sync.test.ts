@@ -152,38 +152,38 @@ function resetStore(): DataStore {
   };
 }
 
-mock.module('../../../../common/db', () => ({
+await mock.module('../../../../common/db', () => ({
   db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../../common/db').db,
 }));
 
-mock.module('../../../auth/middlewares/authentication', () => ({
+await mock.module('../../../auth/middlewares/authentication', () => ({
   authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-1', email: 'user@example.com' };
     return null;
   },
 }));
 
-mock.module('../../../../middlewares/permissionManager', () => ({
+await mock.module('../../../../middlewares/permissionManager', () => ({
   requireWorkspaceMembership: async () => null,
   requireRole: () => null,
 }));
 
-mock.module('../../../board/middlewares/requireBoardWritable', () => ({
+await mock.module('../../../board/middlewares/requireBoardWritable', () => ({
   requireBoardWritable: async (req: Request & { board?: { id: string; workspace_id: string } }, boardId: string) => {
     req.board = { id: boardId, workspace_id: 'ws-1' };
     return null;
   },
 }));
 
-mock.module('../../../../mods/events/write', () => ({
+await mock.module('../../../../mods/events/write', () => ({
   writeEvent: async () => null,
 }));
 
-mock.module('../../../../common/sanitize', () => ({
+await mock.module('../../../../common/sanitize', () => ({
   sanitizeText: (value: string) => value,
 }));
 
-mock.module('../../../../config/featureFlags', () => ({
+await mock.module('../../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },

@@ -107,24 +107,24 @@ function resetStore(): DataStore {
   };
 }
 
-mock.module('../../../config/featureFlags', () => ({
+await mock.module('../../../config/featureFlags', () => ({
   featureFlags: {
     STATE_TRANSITIONS_ENABLED: true,
   },
 }));
 
-mock.module('../../../common/db', () => ({
+await mock.module('../../../common/db', () => ({
   db: ((tableName: keyof DataStore) => new QueryBuilder(dataStore, tableName)) as unknown as typeof import('../../../common/db').db,
 }));
 
-mock.module('../../auth/middlewares/authentication', () => ({
+await mock.module('../../auth/middlewares/authentication', () => ({
   authenticate: async (req: Request & { currentUser?: { id: string; email: string } }) => {
     req.currentUser = { id: 'user-admin', email: 'admin@example.com' };
     return null;
   },
 }));
 
-mock.module('../../board/middlewares/requireBoardWritable', () => ({
+await mock.module('../../board/middlewares/requireBoardWritable', () => ({
   requireBoardWritable: async (
     req: Request & { board?: { id: string; workspace_id: string } },
     boardId: string,
@@ -138,18 +138,18 @@ mock.module('../../board/middlewares/requireBoardWritable', () => ({
   },
 }));
 
-mock.module('../../../middlewares/permissionManager', () => ({
+await mock.module('../../../middlewares/permissionManager', () => ({
   requireWorkspaceMembership: async () => null,
   requireRole: () => null,
 }));
 
-mock.module('../../../mods/pubsub/publisher', () => ({
+await mock.module('../../../mods/pubsub/publisher', () => ({
   publisher: {
     publish: publishMock,
   },
 }));
 
-mock.module('../../../common/uuid', () => ({
+await mock.module('../../../common/uuid', () => ({
   generateId: () => 'state-transition-1',
 }));
 
