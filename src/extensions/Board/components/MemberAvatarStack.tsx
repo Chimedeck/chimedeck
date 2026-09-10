@@ -22,7 +22,7 @@ const MemberAvatarStack = ({ members, onOpenMembers, max = 5 }: Props) => {
       type="button"
       onClick={onOpenMembers}
       className="flex items-center rounded px-1 py-0.5 transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      aria-label={`Board members (${members.length}). Click to manage.`}
+      aria-label={`Board members (${String(members.length)}). Click to manage.`}
       title="Manage board members"
     >
       {members.length > 0 ? (

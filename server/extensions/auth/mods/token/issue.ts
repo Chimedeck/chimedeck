@@ -15,6 +15,6 @@ export async function issueAccessToken({ sub, email }: AccessTokenPayload): Prom
     .setProtectedHeader({ alg: 'RS256' })
     .setSubject(sub)
     .setIssuedAt()
-    .setExpirationTime(`${jwtConfig.accessTokenTtlSeconds}s`)
+    .setExpirationTime(`${String(jwtConfig.accessTokenTtlSeconds)}s`)
     .sign(privateKey);
 }

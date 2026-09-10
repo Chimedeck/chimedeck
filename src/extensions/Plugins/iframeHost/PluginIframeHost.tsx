@@ -12,7 +12,7 @@ interface Props {
 
 const PluginIframeHost = ({ boardPlugin, boardId }: Props) => {
   const { plugin } = boardPlugin;
-  const cacheBustRef = useRef<string>(`${Date.now()}`);
+  const cacheBustRef = useRef<string>(String(Date.now()));
 
   // Build the iframe src with required context params
   let src: string;

@@ -3,5 +3,5 @@ export function logRequest(req: Request, status: number, durationMs: number): vo
   const method = req.method;
   const url = new URL(req.url).pathname;
   const ts = new Date().toISOString();
-  console.info(`[${ts}] ${method} ${url} → ${status} (${durationMs}ms)`);
+  console.info(`[${ts}] ${method} ${url} → ${String(status)} (${String(durationMs)}ms)`);
 }

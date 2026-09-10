@@ -46,13 +46,13 @@ describe('messageQueue', () => {
     expect(messageQueue.size()).toBe(0);
   });
 
-  it(`calls overflow handler and clears queue when enqueue exceeds ${MAX_QUEUE_SIZE}`, () => {
+  it(`calls overflow handler and clears queue when enqueue exceeds ${String(MAX_QUEUE_SIZE)}`, () => {
     let overflowBoardId: string | null = null;
     messageQueue.setOverflowHandler((bid) => { overflowBoardId = bid; });
 
     // Fill to max
     for (let i = 0; i < MAX_QUEUE_SIZE; i++) {
-      messageQueue.enqueue(makeMutation(`m${i}`));
+      messageQueue.enqueue(makeMutation(`m${String(i)}`));
     }
     expect(messageQueue.size()).toBe(MAX_QUEUE_SIZE);
 

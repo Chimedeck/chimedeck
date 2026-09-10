@@ -69,7 +69,7 @@ export function buildRateLimiterKey(
 ): string {
   const identifier = userId ?? ip;
   const epoch = windowEpoch();
-  return `rl:${identifier}:${routeClass}:${epoch}`;
+  return `rl:${identifier}:${routeClass}:${String(epoch)}`;
 }
 
 export async function applyRateLimit(
