@@ -71,7 +71,7 @@ export default function SignupForm({ onSubmit, isLoading, apiError }: SignupForm
     : null;
 
   return (
-    <form onSubmit={handleSubmit} noValidate aria-label="Sign up form">
+    <form onSubmit={(e) => { void handleSubmit(e); }} noValidate aria-label="Sign up form">
       <div className="flex flex-col gap-4">
         {/* Name */}
         <div className="flex flex-col gap-1">

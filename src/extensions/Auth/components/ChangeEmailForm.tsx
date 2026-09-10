@@ -75,7 +75,7 @@ export default function ChangeEmailForm({ currentEmail, onSuccess, onPending }: 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
       <h2 className="text-lg font-semibold text-base">{translations.changeEmail.title}</h2>
 
       <Input

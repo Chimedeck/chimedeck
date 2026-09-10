@@ -140,7 +140,7 @@ const BoardHeader = ({
           value={title}
           autoFocus
           onChange={(e) => { setTitle(e.target.value); }}
-          onBlur={handleTitleSave}
+          onBlur={() => { void handleTitleSave(); }}
           onKeyDown={handleKeyDown}
           className={`bg-bg-overlay font-semibold text-lg rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary min-w-0 max-w-xs${hasBackground ? ' text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]' : ' text-base'}`}
           aria-label="Edit board title"

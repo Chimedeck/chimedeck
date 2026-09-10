@@ -557,7 +557,7 @@ export default function Sidebar({ onClose }: SidebarProps = {}) {
                   <Button
                     variant="ghost"
                     role="menuitem"
-                    onClick={handleLogout}
+                    onClick={() => { void handleLogout(); }}
                     className="w-full rounded-none px-3 py-1.5 text-left text-sm font-normal justify-start"
                   >
                     {translations['Sidebar.logout']}

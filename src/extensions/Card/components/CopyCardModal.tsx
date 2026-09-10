@@ -173,7 +173,7 @@ const CopyCardModal = ({
               </Dialog.Close>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-4">
+            <form onSubmit={(e) => { void handleSubmit(e); }} className="p-4 space-y-4">
           {/* Name */}
           <div>
             <label htmlFor="copy-card-title" className="block text-xs font-medium text-muted mb-1">

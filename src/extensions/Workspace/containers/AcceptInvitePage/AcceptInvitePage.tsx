@@ -72,7 +72,7 @@ const AcceptInvitePage = () => {
             <Button
               variant="primary"
               size="md"
-              onClick={handleAccept}
+              onClick={() => { void handleAccept(); }}
             >
               Accept Invitation
             </Button>

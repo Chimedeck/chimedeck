@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label htmlFor="forgot-email" className="text-sm font-medium text-subtle">

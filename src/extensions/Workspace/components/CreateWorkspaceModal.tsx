@@ -56,7 +56,7 @@ export default function CreateWorkspaceModal({ open, onOpenChange }: CreateWorks
             {translations['CreateWorkspaceModal.description']}
           </p>
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
             <div className="mb-4">
               <label htmlFor="workspace-name" className="mb-1.5 block text-sm font-medium text-subtle">
                 {translations['CreateWorkspaceModal.nameLabel']}

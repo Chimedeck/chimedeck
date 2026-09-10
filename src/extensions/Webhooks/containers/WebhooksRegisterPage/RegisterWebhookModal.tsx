@@ -145,7 +145,7 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { void handleSubmit(e); }}>
           <div className="space-y-5 px-6 py-5">
             <Input
               label={translations['RegisterWebhookModal.labelField']}

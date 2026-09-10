@@ -72,7 +72,7 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={handleCopy}
+                onClick={() => { void handleCopy(); }}
                 data-testid="copy-button"
               >
                 {copied

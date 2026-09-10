@@ -54,7 +54,7 @@ export default function ProfileForm({ user }: ProfileFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-5">
       {/* Display name */}
       <div className="flex flex-col gap-1">
         <label htmlFor="display-name" className="text-sm font-medium text-subtle">

@@ -196,7 +196,7 @@ export default function InviteExternalUserModal() {
                 {translations['AdminInvite.modalDescription']}
               </p>
 
-              <form onSubmit={handleSubmit} noValidate>
+              <form onSubmit={(e) => { void handleSubmit(e); }} noValidate>
                 {/* Email */}
                 <div className="mb-4">
                   <label

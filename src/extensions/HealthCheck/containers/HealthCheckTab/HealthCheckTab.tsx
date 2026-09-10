@@ -74,7 +74,7 @@ export function HealthCheckTab({ boardId }: Props) {
   }, [dispatch, boardId]);
 
   const { secondsUntilRefresh, triggerRefresh } = useHealthCheckAutoRefresh({
-    onRefresh: handleRefresh,
+    onRefresh: () => { void handleRefresh(); },
   });
 
   const handleManualRefresh = useCallback(() => {

@@ -74,7 +74,7 @@ export function usePollingFallback({
 
     // Fire an immediate poll then set up the recurring interval
     void poll();
-    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
+    intervalRef.current = setInterval(() => { void poll(); }, POLL_INTERVAL_MS);
 
     return () => {
       if (intervalRef.current !== null) {

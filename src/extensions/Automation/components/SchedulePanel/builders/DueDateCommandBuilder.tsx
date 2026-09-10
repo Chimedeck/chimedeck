@@ -353,7 +353,7 @@ const DueDateCommandBuilder: FC<Props> = ({
               variant="primary"
               type="button"
               disabled={!canSave || saving}
-              onClick={handleSave}
+              onClick={() => { void handleSave(); }}
             >
               {saving ? translations['automation.dueDateBuilder.saving'] : existing ? translations['automation.dueDateBuilder.saveChanges'] : translations['automation.dueDateBuilder.create']}
             </Button>

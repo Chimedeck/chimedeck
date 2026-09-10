@@ -1577,7 +1577,7 @@ const BoardCanvas = ({
       collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
+      onDragEnd={(event) => { void handleDragEnd(event); }}
     >
       <ProgressiveHydrationDispatcher
         listOrder={listOrder}

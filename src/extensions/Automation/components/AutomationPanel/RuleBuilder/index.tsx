@@ -193,7 +193,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
         onRuleNameChange={setRuleName}
         canSave={canSave}
         saving={saving}
-        onSave={handleSave}
+        onSave={() => { void handleSave(); }}
         onCancel={onCancel}
       />
     </div>

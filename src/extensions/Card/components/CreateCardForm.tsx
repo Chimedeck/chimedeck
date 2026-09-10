@@ -37,7 +37,7 @@ const CreateCardForm = ({ listId, onSubmit, onCancel }: Props) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="flex flex-col gap-2">
       <textarea
         className="w-full rounded border border-border bg-bg-overlay p-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary resize-none"
         placeholder="Enter a title for this card…"

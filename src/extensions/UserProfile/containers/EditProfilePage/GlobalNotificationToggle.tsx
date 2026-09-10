@@ -92,7 +92,7 @@ const GlobalNotificationToggle = () => {
         </div>
         <ToggleSwitch
           enabled={enabled}
-          onChange={handleToggle}
+          onChange={(next) => { void handleToggle(next); }}
           disabled={loading}
           ariaLabel={translations['UserProfile.notificationsAriaLabel']}
         />

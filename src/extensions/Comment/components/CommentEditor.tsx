@@ -1562,7 +1562,7 @@ const CommentEditor = ({
         <Button
           variant="primary"
           size="sm"
-          onClick={handleSubmit}
+          onClick={() => { void handleSubmit(); }}
           disabled={submitting}
         >
           {submitting ? translations['comment.editor.submitting'] : submitLabel}

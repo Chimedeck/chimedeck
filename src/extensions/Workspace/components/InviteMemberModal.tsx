@@ -85,7 +85,7 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
             <div>
               <label
                 htmlFor="invite-email"
