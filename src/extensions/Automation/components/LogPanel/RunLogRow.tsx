@@ -51,10 +51,17 @@ const TYPE_ICON: Record<string, { icon: typeof BoltIcon; label: string }> = {
 const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const statusMeta = STATUS_ICON[run.status] ?? STATUS_ICON['FAILED']!;
+  const statusMeta = STATUS_ICON[run.status] ?? {
+    icon: XCircleIcon,
+    cls: 'text-danger',
+    label: translations['automation.runLogRow.status.failed'],
+  };
   const StatusIcon = statusMeta.icon;
 
-  const typeMeta = TYPE_ICON[run.automationType ?? ''] ?? TYPE_ICON['RULE']!;
+  const typeMeta = TYPE_ICON[run.automationType ?? ''] ?? {
+    icon: BoltIcon,
+    label: translations['automation.runLogRow.type.rule'],
+  };
   const TypeIcon = typeMeta.icon;
 
   return (
@@ -87,7 +94,7 @@ const RunLogRow: FC<Props> = ({ run, onOpenCard }) => {
           {run.cardId && run.cardName ? (
             <button
               className="truncate text-xs text-blue-400 hover:underline text-left max-w-[120px]"
-              onClick={() => onOpenCard?.(run.cardId!)}
+              onClick={() => onOpenCard?.(run.cardId ?? '')}
               title={run.cardName}
             >
               {run.cardName}

@@ -34,9 +34,12 @@ function daysBetween(a: Date, b: Date): number {
  */
 function assignRows(cards: Card[], originDate: Date): Map<string, number> {
   const intervals = cards.map((card) => {
-    const startStr = card.start_date ?? card.due_date!;
+    // [why] assignRows is only called with scheduledCards, which always have a
+    // due_date; the guard is a type-system safety net matching the previous `!`.
+    if (!card.due_date) throw new Error('scheduled card missing due_date');
+    const startStr = card.start_date ?? card.due_date;
     const startDay = daysBetween(originDate, parseLocalDate(startStr));
-    const dueDay   = daysBetween(originDate, parseLocalDate(card.due_date!));
+    const dueDay   = daysBetween(originDate, parseLocalDate(card.due_date));
     return { id: card.id, startDay, dueDay };
   });
 

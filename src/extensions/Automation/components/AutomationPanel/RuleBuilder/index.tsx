@@ -86,6 +86,9 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
 
   const handleSave = async () => {
     if (!canSave || saving) return;
+    // [why] canSave guarantees a trigger type is selected; guard to appease the type system.
+    const triggerType = activeTriggerTypeStr;
+    if (!triggerType) return;
     setSaving(true);
     setError(null);
 
@@ -103,7 +106,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
           patch: {
             name: ruleName.trim(),
             trigger: {
-              triggerType: activeTriggerTypeStr!,
+              triggerType: triggerType,
               config: triggerConfig,
             },
             actions: actionsPayload,
@@ -116,7 +119,7 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
             name: ruleName.trim(),
             automationType: 'RULE',
             trigger: {
-              triggerType: activeTriggerTypeStr!,
+              triggerType: triggerType,
               config: triggerConfig,
             },
             actions: actionsPayload,

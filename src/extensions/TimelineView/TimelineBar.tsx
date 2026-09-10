@@ -44,8 +44,12 @@ const TimelineBar = ({
   onResizeRightStart,
 }: TimelineBarProps) => {
   // Prefer live drag overrides so the bar tracks the mouse during drag.
-  const startDateStr = (dragOverride?.start_date ?? card.start_date)!;
-  const dueDateStr = (dragOverride?.due_date ?? card.due_date)!;
+  // [why] scheduledCards always has start_date/due_date set; the guard is a
+  // type-system safety net matching the previous non-null assertion.
+  const startDateStr = (dragOverride?.start_date ?? card.start_date);
+  if (!startDateStr) throw new Error('Timeline bar card missing start_date');
+  const dueDateStr = (dragOverride?.due_date ?? card.due_date);
+  if (!dueDateStr) throw new Error('Timeline bar card missing due_date');
 
   const startDate = parseLocalDate(startDateStr);
   const dueDate = parseLocalDate(dueDateStr);
