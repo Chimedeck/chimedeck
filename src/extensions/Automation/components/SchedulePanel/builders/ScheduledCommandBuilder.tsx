@@ -68,7 +68,7 @@ const ScheduledCommandBuilder: FC<Props> = ({
       id: a.id,
       actionType: a.actionType,
       label: a.actionType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      config: a.config as Record<string, unknown>,
+      config: a.config,
     })) ??
       initialConfig
         ? []

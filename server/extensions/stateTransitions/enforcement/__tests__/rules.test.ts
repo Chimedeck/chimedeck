@@ -43,7 +43,7 @@ class QueryBuilder {
   }
 
   private async execute(): Promise<Row[]> {
-    let rows = (this.store[this.tableName] as Row[]).filter((row) =>
+    let rows = this.store[this.tableName].filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
 

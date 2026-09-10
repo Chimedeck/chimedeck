@@ -93,7 +93,7 @@ const PluginCard = (props: Props) => {
         {/* Settings gear — only for active plugins with show-settings capability */}
         {hasSettings && props.mode === 'disable' && props.onSettings && (
           <button
-            onClick={() => (props as DisableCardProps).onSettings?.((props as DisableCardProps).boardPlugin)}
+            onClick={() => props.onSettings?.(props.boardPlugin)}
             title={translations['plugins.card.settingsTitle']}
             className="text-muted hover:text-subtle p-1 rounded transition-colors"
             aria-label={translations['plugins.card.settingsAriaLabel']}
