@@ -119,7 +119,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
         {/* Enable/disable toggle */}
         <button
-          onClick={handleToggle}
+          onClick={() => void handleToggle()}
           disabled={toggling}
           className="rounded p-1 text-muted hover:text-subtle hover:bg-bg-overlay transition-colors disabled:opacity-50"
           aria-label={automation.isEnabled ? translations['automation.scheduleItem.disableAriaLabel'] : translations['automation.scheduleItem.enableAriaLabel']}
@@ -144,7 +144,7 @@ const ScheduleItem: FC<Props> = ({ boardId, automation, onEdit, onDeleted, onTog
 
         {/* Delete */}
         <button
-          onClick={handleDelete}
+          onClick={() => void handleDelete()}
           disabled={deleting}
           className={`rounded p-1 transition-colors disabled:opacity-50 ${
             confirmDelete

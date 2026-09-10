@@ -12,13 +12,13 @@ export default function App() {
   // Attempt token refresh on boot so authenticated users stay logged in after a page reload.
   // On failure, authDuck sets status to 'unauthenticated' — PrivateRoute handles the redirect.
   useEffect(() => {
-    dispatch(refreshTokenThunk());
+    void dispatch(refreshTokenThunk());
   }, [dispatch]);
 
   // Hydrate the in-memory mutation queue from IndexedDB on boot so pending
   // optimistic mutations survive a page reload and are replayed on next WS connect.
   useEffect(() => {
-    loadPersistedMutations().then((mutations) => {
+    void loadPersistedMutations().then((mutations) => {
       if (mutations.length > 0) {
         messageQueue.hydrate(mutations);
       }

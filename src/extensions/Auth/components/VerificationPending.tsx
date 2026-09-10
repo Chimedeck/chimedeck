@@ -21,7 +21,7 @@ export default function VerificationPending({ email, onDismiss }: VerificationPe
   if (dismissed) return null;
 
   const handleResend = () => {
-    dispatch(resendVerificationThunk());
+    void dispatch(resendVerificationThunk());
   };
 
   const handleDismiss = () => {

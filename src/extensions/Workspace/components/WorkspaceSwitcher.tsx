@@ -21,7 +21,7 @@ const WorkspaceSwitcher = ({ onSwitch }: WorkspaceSwitcherProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const workspaceId = e.target.value;
     if (workspaceId) {
-      dispatch(fetchWorkspace({ workspaceId }));
+      void dispatch(fetchWorkspace({ workspaceId }));
       onSwitch?.(workspaceId);
     }
   };
