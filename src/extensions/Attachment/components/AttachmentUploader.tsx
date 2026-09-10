@@ -16,7 +16,8 @@ export function AttachmentUploader({ cardId, onUploadComplete }: Props): React.R
 
   const handleFiles = (files: FileList | null): void => {
     if (!files || files.length === 0) return;
-    const file = files[0]!;
+    const file = files[0];
+    if (!file) return;
     upload({ file });
   };
 

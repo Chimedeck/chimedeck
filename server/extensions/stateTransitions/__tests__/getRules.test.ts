@@ -76,9 +76,10 @@ class QueryBuilder {
     }
 
     if (this.selectedColumns) {
+      const cols = this.selectedColumns;
       rows = rows.map((row) => {
         const next: Row = {};
-        for (const key of this.selectedColumns!) next[key] = row[key];
+        for (const key of cols) next[key] = row[key];
         return next;
       });
     }

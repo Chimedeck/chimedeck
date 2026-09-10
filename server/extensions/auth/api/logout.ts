@@ -5,7 +5,7 @@ import { pubsub } from '../../../mods/pubsub/index';
 function parseCookie(header: string | null, name: string): string | null {
   if (!header) return null;
   const match = new RegExp(String.raw`(?:^|;\s*)${name}=([^;]+)`).exec(header);
-  return match ? decodeURIComponent(match[1]!) : null;
+  return match ? decodeURIComponent(match[1] ?? '') : null;
 }
 
 export async function handleLogout(req: Request): Promise<Response> {
