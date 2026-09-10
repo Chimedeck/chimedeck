@@ -13,15 +13,13 @@ export async function registerAndLogin(
   const email = `e2e-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `Test ${suffix}` },
   });
-
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return body.data.access_token;
+  // Register returns an accessToken directly (201); avoid a separate login call
+  // which is rate-limited (10/IP/min) and would 429 under the full suite.
+  const body = await regRes.json() as { data: { accessToken: string } };
+  return body.data.accessToken;
 }
 
 export async function createWorkspace(

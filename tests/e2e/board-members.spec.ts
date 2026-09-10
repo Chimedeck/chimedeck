@@ -8,14 +8,11 @@ const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 async function registerAndLogin(request: APIRequestContext, suffix: string) {
   const email = `bm-test-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `BM ${suffix}` },
   });
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json();
-  return { token: body.data.access_token, email };
+  const body = await regRes.json();
+  return { token: body.data.accessToken, email };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string) {

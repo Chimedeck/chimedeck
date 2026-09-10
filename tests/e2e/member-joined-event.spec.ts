@@ -19,15 +19,11 @@ async function registerAndLogin(request: APIRequestContext, suffix: string): Pro
   const email = `mj-test-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `MJ ${suffix}` },
   });
-
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return { token: body.data.access_token, email };
+  const body = await regRes.json() as { data: { accessToken: string } };
+  return { token: body.data.accessToken, email };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {

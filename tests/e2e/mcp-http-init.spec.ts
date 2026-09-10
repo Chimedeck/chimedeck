@@ -6,11 +6,11 @@ const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 
 // Helper: login and get JWT
 async function loginAndGetJwt(request: APIRequestContext, email: string, password: string) {
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
+  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
     data: { email, password },
   });
   const body = await loginRes.json();
-  return body.data.access_token;
+  return body.data.accessToken;
 }
 
 test.describe('MCP HTTP Init', () => {
