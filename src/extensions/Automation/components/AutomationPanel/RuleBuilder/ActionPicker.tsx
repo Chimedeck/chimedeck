@@ -19,9 +19,9 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
 
   useEffect(() => {
     getActionTypes()
-      .then((res) => setActionTypes(res.data))
-      .catch(() => setError(translations['automation.actionPicker.error.loadFailed']))
-      .finally(() => setLoading(false));
+      .then((res) => { setActionTypes(res.data); })
+      .catch(() => { setError(translations['automation.actionPicker.error.loadFailed']); })
+      .finally(() => { setLoading(false); });
   }, []);
 
   const filtered = query
@@ -49,7 +49,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
           className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
           placeholder={translations['automation.actionPicker.searchPlaceholder']}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); }}
           autoFocus
         />
       </div>
@@ -75,7 +75,7 @@ const ActionPicker = ({ onSelect, onCancel }: Props) => {
                   role="option"
                   aria-selected={false}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors hover:bg-bg-overlay"
-                  onClick={() => onSelect(t)}
+                  onClick={() => { onSelect(t); }}
                 >
                   <PlayIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
                   {t.label}

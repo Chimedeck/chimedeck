@@ -37,7 +37,7 @@ const PluginModal = ({ modal, onClose }: Props) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => { window.removeEventListener('keydown', handler); };
   }, [modal.open, onClose]);
 
   if (!modal.open) return null;
@@ -57,8 +57,8 @@ const PluginModal = ({ modal, onClose }: Props) => {
       // clicks inside this overlay as "outside" clicks on the card dialog, which would
       // close the card detail view and break the two-modal separation.
       style={{ zIndex: 9999, pointerEvents: 'auto' }}
-      onPointerDown={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => { e.stopPropagation(); }}
+      onMouseDown={(e) => { e.stopPropagation(); }}
       role="dialog"
       aria-modal="true"
       aria-label={modal.title || translations['plugins.modal.defaultTitle']}
