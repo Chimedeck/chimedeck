@@ -153,7 +153,7 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
             <Input
               label={translations['RegisterWebhookModal.labelField']}
               value={label}
-              onChange={(e) => setLabel(e.target.value)}
+              onChange={(e) => { setLabel(e.target.value); }}
               maxLength={100}
               required
               placeholder="e.g. My production server"
@@ -200,11 +200,13 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                         <button
                           type="button"
                           className="text-xs text-primary hover:underline"
-                          onClick={() =>
-                            allSelected
-                              ? clearAllInGroup(available)
-                              : selectAllInGroup(available)
-                          }
+                          onClick={() => {
+                            if (allSelected) {
+                              clearAllInGroup(available);
+                            } else {
+                              selectAllInGroup(available);
+                            }
+                          }}
                           data-testid={`group-toggle-${group.label.replace(/\s+/g, '-').toLowerCase()}`}
                         >
                           {allSelected
@@ -221,7 +223,7 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
                             <input
                               type="checkbox"
                               checked={selectedEvents.has(event)}
-                              onChange={() => toggleEvent(event)}
+                              onChange={() => { toggleEvent(event); }}
                               className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
                               data-testid={`event-checkbox-${event}`}
                             />

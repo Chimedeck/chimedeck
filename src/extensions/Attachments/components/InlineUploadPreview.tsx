@@ -24,14 +24,14 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
     if (!isImage) return;
     const url = URL.createObjectURL(entry.file);
     setObjectUrl(url);
-    return () => URL.revokeObjectURL(url);
+    return () => { URL.revokeObjectURL(url); };
   }, [entry.file, isImage]);
 
   // Auto-dismiss completed entries after 2 s so they don't clutter the editor
   useEffect(() => {
     if (entry.phase !== 'done') return;
-    const id = window.setTimeout(() => onCancel(entry.clientId), 2000);
-    return () => window.clearTimeout(id);
+    const id = window.setTimeout(() => { onCancel(entry.clientId); }, 2000);
+    return () => { window.clearTimeout(id); };
   }, [entry.phase, entry.clientId, onCancel]);
 
   const Icon = getMimeIcon(entry.file.type);
@@ -100,7 +100,7 @@ export function InlineUploadPreview({ entry, onCancel }: Props) {
         aria-label={translations['attachments.inline.cancel.ariaLabel'].replace('{fileName}', entry.file.name)}
         title={entry.phase === 'pending' ? translations['attachments.inline.cancel.remove'] : entry.phase === 'error' || entry.phase === 'done' ? translations['attachments.inline.cancel.dismiss'] : translations['attachments.inline.cancel.cancelUpload']}
         className="flex-shrink-0 text-muted hover:text-danger transition-colors"
-        onClick={() => onCancel(entry.clientId)}
+        onClick={() => { onCancel(entry.clientId); }}
       >
         <XMarkIcon className="h-4 w-4" />
       </button>
