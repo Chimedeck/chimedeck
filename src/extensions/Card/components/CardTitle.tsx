@@ -33,7 +33,7 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
         ref={inputRef}
         className="text-xl font-bold text-base bg-bg-overlay focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1 w-full"
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => { setDraft(e.target.value); }}
         onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') { e.preventDefault(); commit(); }
@@ -51,7 +51,7 @@ const CardTitle = ({ title, onSave, disabled }: Props) => {
       className={`text-xl font-bold text-base rounded px-2 py-1 w-full cursor-text hover:bg-bg-overlay/50 transition-colors${
         disabled ? ' cursor-default pointer-events-none' : ''
       }`}
-      onClick={() => !disabled && setEditing(true)}
+      onClick={() => { if (!disabled) setEditing(true); }}
       onKeyDown={(e) => { if (e.key === 'Enter') setEditing(true); }}
       role={disabled ? undefined : 'button'}
       tabIndex={disabled ? undefined : 0}
