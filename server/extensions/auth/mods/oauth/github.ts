@@ -88,7 +88,7 @@ export async function exchangeGitHubCode({
   }
 
   const profile: GitHubProfile = {
-    id: `github:${user.id}`,
+    id: `github:${String(user.id)}`,
     email,
     name: user.name ?? user.login ?? email,
   };

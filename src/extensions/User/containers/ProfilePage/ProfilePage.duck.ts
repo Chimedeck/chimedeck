@@ -132,7 +132,7 @@ const profileSlice = createSlice({
           // the old image and never refetches it. Append a timestamp to bust the cache
           // whenever a new avatar is uploaded.
           const url = action.payload.avatar_url;
-          state.user.avatar_url = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+          state.user.avatar_url = `${url}${url.includes('?') ? '&' : '?'}v=${String(Date.now())}`;
         }
       })
       .addCase(uploadAvatarThunk.rejected, (state) => {

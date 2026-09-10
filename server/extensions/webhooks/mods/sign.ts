@@ -14,7 +14,7 @@ export function signPayload({
   timestamp: number;
   body: string;
 }): string {
-  const signedPayload = `${timestamp}.${body}`;
+  const signedPayload = `${String(timestamp)}.${body}`;
   return createHmac('sha256', secret).update(signedPayload).digest('hex');
 }
 
@@ -31,5 +31,5 @@ export function buildSignatureHeader({
 }): string {
   const timestamp = Math.floor(Date.now() / 1000);
   const sig = signPayload({ secret, timestamp, body });
-  return `t=${timestamp},v0=${sig}`;
+  return `t=${String(timestamp)},v0=${sig}`;
 }
