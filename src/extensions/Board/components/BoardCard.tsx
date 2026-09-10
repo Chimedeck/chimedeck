@@ -92,7 +92,7 @@ const BoardCard = ({ board, onClick, onArchive, onDelete, onDuplicate, onStar, o
           </div>
         </div>
 
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2" onClick={(e) => { e.stopPropagation(); }}>
           <button
             className="text-xs text-blue-600 hover:underline"
             onClick={onDuplicate}
