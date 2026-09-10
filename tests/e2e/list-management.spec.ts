@@ -27,12 +27,12 @@ test.describe('List Management', () => {
 
   // ── API: Create ──────────────────────────────────────────────────────────────
 
-  test('Test 1 — Create list returns 201 with id and name', async ({ request }) => {
+  test('Test 1 — Create list returns 201 with id and title', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { name: `New List ${run}`, position: 0 },
+      data: { title: `New List ${run}` },
     });
 
     if (res.status() === 404 || res.status() === 501) {
@@ -41,21 +41,21 @@ test.describe('List Management', () => {
     }
 
     expect(res.status()).toBe(201);
-    const body = await res.json() as { data: { id: string; name: string } };
+    const body = await res.json() as { data: { id: string; title: string } };
     expect(body.data.id).toBeTruthy();
-    expect(body.data.name).toBe(`New List ${run}`);
+    expect(body.data.title).toBe(`New List ${run}`);
   });
 
   // ── API: Rename ──────────────────────────────────────────────────────────────
 
-  test('Test 2 — Rename list returns 200 with updated name', async ({ request }) => {
+  test('Test 2 — Rename list returns 200 with updated title', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     const listId = await createList(request, token, boardId);
 
     const res = await request.patch(`${BASE_URL}/api/v1/lists/${listId}`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { name: `Renamed List ${run}` },
+      data: { title: `Renamed List ${run}` },
     });
 
     if (res.status() === 404 || res.status() === 501) {
@@ -64,9 +64,9 @@ test.describe('List Management', () => {
     }
 
     expect(res.status()).toBe(200);
-    const body = await res.json() as { data: { id: string; name: string } };
+    const body = await res.json() as { data: { id: string; title: string } };
     expect(body.data.id).toBe(listId);
-    expect(body.data.name).toBe(`Renamed List ${run}`);
+    expect(body.data.title).toBe(`Renamed List ${run}`);
   });
 
   // ── API: Reorder ─────────────────────────────────────────────────────────────
@@ -106,9 +106,8 @@ test.describe('List Management', () => {
 
     const listId = await createList(request, token, boardId);
 
-    const archiveRes = await request.patch(`${BASE_URL}/api/v1/lists/${listId}`, {
+    const archiveRes = await request.patch(`${BASE_URL}/api/v1/lists/${listId}/archive`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { archived: true },
     });
 
     if (archiveRes.status() === 404 || archiveRes.status() === 501) {
