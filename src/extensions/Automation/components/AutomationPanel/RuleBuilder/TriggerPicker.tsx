@@ -20,9 +20,9 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
 
   useEffect(() => {
     getTriggerTypes()
-      .then((res) => setTriggerTypes(res.data))
-      .catch(() => setError(translations['automation.triggerPicker.error.loadFailed']))
-      .finally(() => setLoading(false));
+      .then((res) => { setTriggerTypes(res.data); })
+      .catch(() => { setError(translations['automation.triggerPicker.error.loadFailed']); })
+      .finally(() => { setLoading(false); });
   }, []);
 
   const filtered = query
@@ -40,7 +40,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
       <button
         type="button"
         className="flex w-full items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2 text-sm text-foreground hover:border-border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => { setOpen((o) => !o); }}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -66,7 +66,7 @@ const TriggerPicker = ({ selectedType, onSelect }: Props) => {
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted focus:outline-none"
               placeholder={translations['automation.triggerPicker.searchPlaceholder']}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); }}
               autoFocus
             />
           </div>

@@ -344,7 +344,7 @@ const ListHeader = ({
                       className={`relative h-5 rounded ${selected ? 'ring-2 ring-offset-1 ring-indigo-500 ring-offset-bg-surface' : ''}`}
                       style={{ backgroundColor: color }}
                       aria-label={`Set list color ${color}`}
-                      onClick={() => onChangeListColor(color)}
+                      onClick={() => { onChangeListColor(color); }}
                     >
                       {selected ? <span className="absolute inset-0 grid place-items-center text-[10px] font-bold text-white">✓</span> : null}
                     </button>
@@ -354,7 +354,7 @@ const ListHeader = ({
               <Button
                 variant="ghost"
                 className="mt-2 w-full justify-start px-2 py-1 text-xs rounded"
-                onClick={() => onChangeListColor(null)}
+                onClick={() => { onChangeListColor(null); }}
               >
                 Remove color
               </Button>
@@ -407,7 +407,7 @@ const ListHeader = ({
                   <Button
                     variant="ghost"
                     className="h-7 w-7 rounded p-0 text-subtle"
-                    onClick={() => setSortMenuOpen(false)}
+                    onClick={() => { setSortMenuOpen(false); }}
                     aria-label="Close sort menu"
                   >
                     ×
@@ -439,7 +439,7 @@ const ListHeader = ({
                   <Button
                     variant="ghost"
                     className="h-7 w-7 rounded p-0 text-subtle"
-                    onClick={() => setMoveCardsMenuOpen(false)}
+                    onClick={() => { setMoveCardsMenuOpen(false); }}
                     aria-label="Close move cards menu"
                   >
                     ×
@@ -475,7 +475,7 @@ const ListHeader = ({
                   <Button
                     variant="ghost"
                     className="h-7 w-7 rounded p-0 text-subtle"
-                    onClick={() => setMoveListMenuOpen(false)}
+                    onClick={() => { setMoveListMenuOpen(false); }}
                     aria-label="Close move list menu"
                   >
                     ×
