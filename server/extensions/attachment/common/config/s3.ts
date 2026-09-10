@@ -1,7 +1,7 @@
 // S3-compatible storage client configuration.
 // All values sourced from env via the central config module.
 import { env } from '../../../../config/env';
-import { S3Client, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { S3Client, CreateBucketCommand, HeadBucketCommand, type BucketLocationConstraint } from '@aws-sdk/client-s3';
 
 export const s3Config = {
   bucket: env.S3_BUCKET,
@@ -78,7 +78,7 @@ export async function ensureBucketExists(): Promise<void> {
           Bucket: s3Config.bucket,
           // CreateBucketConfiguration is required for regions other than us-east-1
           ...(s3Config.region !== 'us-east-1' && {
-            CreateBucketConfiguration: { LocationConstraint: s3Config.region as any },
+            CreateBucketConfiguration: { LocationConstraint: s3Config.region as BucketLocationConstraint },
           }),
         })
       );

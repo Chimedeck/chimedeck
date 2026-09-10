@@ -1,6 +1,7 @@
 import { describe, expect, test, mock, beforeEach } from 'bun:test';
+import type { WriteActivityInput } from '../write';
 
-const writeActivityMock = mock(async (input: any) => ({
+const writeActivityMock = mock(async (input: WriteActivityInput) => ({
   id: 'activity-1',
   action: input.action,
   actor_id: input.actorId,
