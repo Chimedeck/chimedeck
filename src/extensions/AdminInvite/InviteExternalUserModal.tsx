@@ -181,7 +181,7 @@ export default function InviteExternalUserModal() {
               loginUrl={loginUrl}
               emailSent={emailSentFromStore}
               emailVerifiedAt={emailVerifiedAt}
-              onDone={() => handleOpenChange(false)}
+              onDone={() => { handleOpenChange(false); }}
             />
           ) : (
             // ── Invite form ─────────────────────────────────────────────────
@@ -209,7 +209,7 @@ export default function InviteExternalUserModal() {
                     id="invite-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); }}
                     placeholder={translations['AdminInvite.emailPlaceholder']}
                     required
                     autoFocus
@@ -235,7 +235,7 @@ export default function InviteExternalUserModal() {
                     id="invite-display-name"
                     type="text"
                     value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    onChange={(e) => { setDisplayName(e.target.value); }}
                     placeholder={translations['AdminInvite.displayNamePlaceholder']}
                     required
                     className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
@@ -262,7 +262,7 @@ export default function InviteExternalUserModal() {
                         name="password-mode"
                         value="auto"
                         checked={passwordMode === 'auto'}
-                        onChange={() => setPasswordMode('auto')}
+                        onChange={() => { setPasswordMode('auto'); }}
                         className="accent-indigo-500"
                       />
                       {translations['AdminInvite.passwordModeAuto']}
@@ -273,7 +273,7 @@ export default function InviteExternalUserModal() {
                         name="password-mode"
                         value="manual"
                         checked={passwordMode === 'manual'}
-                        onChange={() => setPasswordMode('manual')}
+                        onChange={() => { setPasswordMode('manual'); }}
                         className="accent-indigo-500"
                       />
                       {translations['AdminInvite.passwordModeManual']}
@@ -294,7 +294,7 @@ export default function InviteExternalUserModal() {
                       id="invite-password"
                       type="password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); }}
                       placeholder="••••••••"
                       className="w-full rounded-lg border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
                       aria-describedby="invite-password-strength"
@@ -330,7 +330,7 @@ export default function InviteExternalUserModal() {
                       <input
                         type="checkbox"
                         checked={sendEmail}
-                        onChange={(e) => setSendEmail(e.target.checked)}
+                        onChange={(e) => { setSendEmail(e.target.checked); }}
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                       />
                       {translations['AdminInvite.sendEmailToggle']}
@@ -345,7 +345,7 @@ export default function InviteExternalUserModal() {
                       <input
                         type="checkbox"
                         checked={autoVerifyEmail}
-                        onChange={(e) => setAutoVerifyEmail(e.target.checked)}
+                        onChange={(e) => { setAutoVerifyEmail(e.target.checked); }}
                         className="h-4 w-4 rounded border-slate-600 accent-indigo-500"
                         data-testid="auto-verify-email-checkbox"
                       />
