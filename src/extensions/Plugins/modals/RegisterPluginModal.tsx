@@ -109,7 +109,6 @@ const RegisterPluginModal = ({ open, isSubmitting, serverError, onClose, onSubmi
       categories: finalCategories,
       isPublic,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, slug, description, connectorUrl, manifestUrl, iconUrl, author, authorEmail, supportEmail, categories, categoryInput, isPublic, onSubmit]);
 
   if (!open) return null;

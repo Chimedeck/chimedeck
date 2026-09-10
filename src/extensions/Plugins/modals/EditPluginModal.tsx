@@ -135,7 +135,6 @@ const EditPluginModal = ({ open, plugin, isSubmitting, serverError, onClose, onS
       isPublic,
       whitelistedDomains: finalDomains,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plugin, name, description, connectorUrl, manifestUrl, iconUrl, author, authorEmail, supportEmail, categories, categoryInput, isPublic, whitelistedDomains, domainInput, onSubmit]);
 
   if (!open || !plugin) return null;

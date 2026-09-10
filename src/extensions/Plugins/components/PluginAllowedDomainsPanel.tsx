@@ -25,7 +25,6 @@ const PluginAllowedDomainsPanel = ({ boardPlugin, boardId }: Props) => {
   // null → all whitelistedDomains are permitted; array → only those in the array
   const initialSelected = useMemo<string[]>(
     () => (savedAllowedDomains === null ? [...whitelistedDomains] : savedAllowedDomains),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [boardPlugin.id],
   );
 

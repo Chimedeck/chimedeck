@@ -183,7 +183,6 @@ export function VideoLightbox({
       >
         <XMarkIcon className="h-8 w-8" />
       </button>
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
         src={src}
         controls

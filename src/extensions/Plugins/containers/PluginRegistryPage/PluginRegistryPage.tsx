@@ -82,7 +82,7 @@ const PluginRegistryPage = () => {
       if (selectedCategory) params.category = selectedCategory;
       dispatch(fetchPluginsThunk(params));
     }
-  }, [isAdmin, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps — fetch once on mount
+  }, [isAdmin, dispatch]);
 
   // Re-fetch when filters change
   const dispatchFetch = useCallback(

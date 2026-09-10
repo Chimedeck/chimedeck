@@ -87,7 +87,6 @@ const PluginDocsPage = () => {
                 'connector.html loads the jhInstance SDK and calls jhInstance.initialize(capabilities, config).',
                 'The SDK brokers all communication between the plugin iframe and the board UI via postMessage.',
               ].map((step, i) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
