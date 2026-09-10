@@ -29,7 +29,7 @@ export async function customFieldsRouter(req: Request, pathname: string): Promis
         { status: 404 },
       );
     }
-    const fieldId = boardFieldsMatch[3] as string | undefined;
+    const fieldId = boardFieldsMatch[3];
 
     if (!fieldId) {
       if (req.method === 'GET') return handleListCustomFields(req, boardId);
