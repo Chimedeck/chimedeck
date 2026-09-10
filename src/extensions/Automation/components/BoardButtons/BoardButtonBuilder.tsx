@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { XMarkIcon, BoltIcon } from '@heroicons/react/24/outline';
 import type { FC } from 'react';
 import Button from '../../../../common/components/Button';
-import IconPicker, { BUTTON_ICONS, type ButtonIconName } from '../shared/IconPicker';
+import IconPicker, { type ButtonIconName } from '../shared/IconPicker';
 import ActionList from '../AutomationPanel/RuleBuilder/ActionList';
 import type { ActionItemData } from '../AutomationPanel/RuleBuilder/ActionItem';
 import { createAutomation, updateAutomation } from '../../api';

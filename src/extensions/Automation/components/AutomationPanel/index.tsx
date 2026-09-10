@@ -28,13 +28,6 @@ const TABS: { id: AutomationTab; label: string }[] = [
   { id: 'log', label: translations['automation.panel.tab.log'] },
 ];
 
-const ComingSoon = ({ tab }: { tab: string }) => (
-  <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
-    <p className="text-subtle font-medium capitalize">{tab}</p>
-    <p className="text-sm text-muted">Coming soon</p>
-  </div>
-);
-
 const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: Props) => {
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(false);

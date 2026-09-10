@@ -4,7 +4,6 @@ import { useAppSelector } from '~/hooks/useAppSelector';
 import { useAppDispatch } from '~/hooks/useAppDispatch';
 import {
   fetchBoardPluginsThunk,
-  fetchAvailablePluginsThunk,
   fetchDiscoverablePluginsThunk,
   enablePluginThunk,
   disablePluginThunk,

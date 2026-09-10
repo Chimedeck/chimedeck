@@ -1,6 +1,6 @@
 // Playwright MCP HTTP Init test for Sprint 106
 // Covers: unauthenticated POST, valid POST, DELETE, session hijack, proxying
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 

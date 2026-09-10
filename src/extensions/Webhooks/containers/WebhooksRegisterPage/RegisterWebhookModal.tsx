@@ -54,9 +54,6 @@ export default function RegisterWebhookModal({ workspaceId, onClose, onCreated }
   const { data: serverEventTypes } = useListEventTypesQuery();
   const [createWebhook, { isLoading }] = useCreateWebhookMutation();
 
-  // [why] Only show UI-canonical groups; filter out any server aliases not in our group list.
-  const allGroupedEvents = EVENT_GROUPS.flatMap((g) => g.events);
-
   function toggleEvent(event: string) {
     setSelectedEvents((prev) => {
       const next = new Set(prev);

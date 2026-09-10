@@ -1,6 +1,5 @@
 // RunLogTable — paginated table of automation run logs.
 // Columns: Status | Automation (name + type chip) | Card | Triggered by | When | Details
-import { useState } from 'react';
 import type { FC } from 'react';
 import type { AutomationRunLog, PaginatedRunLogs } from '../../types';
 import RunLogRow from './RunLogRow';

@@ -55,7 +55,7 @@ export function HealthCheckTab({ boardId }: Props) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Per-row probe state (on-demand single probe).
-  const { isProbing, probe } = useHealthCheckProbe({ boardId });
+  const { isProbing } = useHealthCheckProbe({ boardId });
 
   // Fetch the list on mount (and when boardId changes).
   useEffect(() => {

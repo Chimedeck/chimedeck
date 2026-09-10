@@ -1,6 +1,6 @@
 // Unit tests for WebhookCreatedModal — secret reveal, copy/reset behaviour.
 // Pure logic tests; clipboard API interaction is tested via mock.
-import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, mock } from 'bun:test';
 
 // Simulates the copy-to-clipboard state machine used by WebhookCreatedModal.
 function createCopyState() {

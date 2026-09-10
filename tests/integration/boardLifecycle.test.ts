@@ -1,7 +1,7 @@
 // Integration tests for board lifecycle — Sprint 05.
 // Tests use the requireBoardWritable middleware and duplicateBoard mod directly (unit-level),
 // plus a lightweight integration harness calling handler functions with mock DB state.
-import { describe, expect, test, beforeEach, mock } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 
 // ---------- Unit: requireBoardWritable ----------
 
