@@ -61,13 +61,6 @@ describe('generateApiToken', () => {
   });
 
   it('hash is deterministic for a given raw token', async () => {
-    const { raw } = await generateApiToken();
-    // Recompute hash independently using Web Crypto
-    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
-    const expected = Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-
     // Generate a new token and verify its hash matches our independent computation
     const token2 = await generateApiToken();
     const hashBuffer2 = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token2.raw));

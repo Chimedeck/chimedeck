@@ -8,11 +8,6 @@ import { describe, it, expect } from 'bun:test';
 import { handleStarBoard, handleUnstarBoard } from '../../../server/extensions/board/api/star';
 import { handleFollowBoard, handleUnfollowBoard } from '../../../server/extensions/board/api/follow';
 import { handleGetMeStarredBoards } from '../../../server/extensions/board/api/me-starred-boards';
-import { issueAccessToken } from '../../../server/extensions/auth/mods/token/issue';
-
-async function makeToken(userId = 'user-1', email = 'user@test.com'): Promise<string> {
-  return issueAccessToken({ sub: userId, email });
-}
 
 function makeRequest(method: string, authHeader?: string): Request {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

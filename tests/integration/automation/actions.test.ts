@@ -3,7 +3,7 @@
 // Tests list action handlers: sortByDueDate, sortByName, archiveAllCards, moveAllCards.
 // Card action handler tests verify registry completeness.
 
-import { describe, it, expect, beforeAll } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 
 // Import actions index to register all handlers before testing.
 import '../../../server/extensions/automation/engine/actions/index';

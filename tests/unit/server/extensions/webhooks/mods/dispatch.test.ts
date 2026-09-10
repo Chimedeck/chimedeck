@@ -17,13 +17,13 @@ function makeKnex({
   const knex = (table: string) => {
     if (table === 'webhook_deliveries') {
       return {
-        insert: (_row: unknown) => ({
-          returning: (_col: string) =>
+        insert: () => ({
+          returning: () =>
             insertShouldReject
               ? Promise.reject(new Error('DB insert failed'))
               : Promise.resolve([{ id: deliveryId }]),
         }),
-        where: (_cond: unknown) => ({
+        where: () => ({
           update: (data: Record<string, unknown>) => {
             updates.push(data);
             return updateShouldReject

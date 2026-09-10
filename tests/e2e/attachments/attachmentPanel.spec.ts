@@ -24,14 +24,13 @@ test.describe('Attachment Panel', () => {
 
   test('Drag-and-drop file upload', async ({ page }) => {
     // Simulate drag-and-drop
-    const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
     await page.setInputFiles('input[type="file"]', 'tests/e2e/attachments/fixtures/sample.pdf');
     // The overlay and upload assertions would go here
     await expect(page.locator('[data-testid="attachment-list"] >> text=sample.pdf')).toBeVisible();
     await expect(page.locator('text=Ready')).toBeVisible({ timeout: 10000 });
   });
 
-  test('Paste screenshot (clipboard)', async ({ page }) => {
+  test('Paste screenshot (clipboard)', async () => {
     // This requires Playwright's clipboard API and a test image
     // Skipping actual clipboard paste for now
     expect(true).toBe(true);

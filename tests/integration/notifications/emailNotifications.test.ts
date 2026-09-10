@@ -4,7 +4,7 @@
 // Strategy: unit-level tests that exercise the dispatchNotificationEmail helper
 // and boardActivityDispatch logic. SES is mocked via module spy so no real AWS
 // calls are made. DB-dependent scenarios are covered by mocking the db module.
-import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { dispatchNotificationEmail } from '../../../server/extensions/notifications/mods/emailDispatch';
 import { handleBoardActivityNotification } from '../../../server/extensions/notifications/mods/boardActivityDispatch';
 

@@ -36,7 +36,7 @@ export async function up(knex: Knex): Promise<void> {
   }
 }
 
-export async function down(knex: Knex): Promise<void> {
+export async function down(): Promise<void> {
   // Down is intentionally a no-op: restoring stale board_members rows would
   // re-introduce the original bug and the original data is gone.
 }
