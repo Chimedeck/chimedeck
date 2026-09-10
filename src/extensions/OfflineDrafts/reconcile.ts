@@ -73,32 +73,36 @@ export function reconcileDrafts(
   }
 
   // Both sides have a draft — compare timestamps.
-  const localMs = new Date(local!.updatedAt).getTime();
-  const serverMs = new Date(server!.client_updated_at).getTime();
+  if (!local || !server) {
+    // Unreachable: all null cases returned above. Guard for the type system.
+    throw new Error('reconcileDrafts: expected both drafts to be present');
+  }
+  const localMs = new Date(local.updatedAt).getTime();
+  const serverMs = new Date(server.client_updated_at).getTime();
 
   // [why] Treat equal timestamps as a server win to avoid a pointless re-upload
   // and because the server's version has already been durably persisted.
   if (localMs > serverMs) {
     return {
-      contentMarkdown: local!.contentMarkdown,
-      intent: local!.intent,
-      updatedAt: local!.updatedAt,
+      contentMarkdown: local.contentMarkdown,
+      intent: local.intent,
+      updatedAt: local.updatedAt,
       source: 'local',
       // [why] Server lost — if server had a pending intent, surface it so callers can
       // warn the user that a cross-device pending action may need attention.
-      loserPendingIntent: isPendingIntent(server!.intent) ? server!.intent : null,
+      loserPendingIntent: isPendingIntent(server.intent) ? server.intent : null,
     };
   }
 
   return {
-    contentMarkdown: server!.content_markdown,
-    intent: server!.intent,
-    updatedAt: server!.client_updated_at,
+    contentMarkdown: server.content_markdown,
+    intent: server.intent,
+    updatedAt: server.client_updated_at,
     source: 'server',
     // [why] Local lost — if local had a pending action (save_pending / submit_pending),
     // the user's offline work was overwritten by a newer server draft. Surface this
     // so callers can show a conflict warning ("Retry Save" / "Retry Post").
-    loserPendingIntent: isPendingIntent(local!.intent) ? local!.intent : null,
+    loserPendingIntent: isPendingIntent(local.intent) ? local.intent : null,
   };
 }
 

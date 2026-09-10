@@ -17,12 +17,12 @@ export default defineConfig({
     react(),
     // Upload source maps to Sentry during deploy builds only.
     // When sentryUploadEnabled is false the plugin is omitted entirely — no network calls.
-    ...(sentryUploadEnabled
+    ...(sentryUploadEnabled && sentryAuthToken && sentryOrg && sentryProject
       ? [
           sentryVitePlugin({
-            org: sentryOrg!,
-            project: sentryProject!,
-            authToken: sentryAuthToken!,
+            org: sentryOrg,
+            project: sentryProject,
+            authToken: sentryAuthToken,
             // Tie uploaded source maps to the same release tag used by the SDK at runtime.
             // Only set when a release identifier is available to avoid a blank tag.
             ...(sentryRelease ? { release: { name: sentryRelease } } : {}),
