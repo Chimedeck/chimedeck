@@ -59,7 +59,7 @@ export function HealthCheckTab({ boardId }: Props) {
 
   // Fetch the list on mount (and when boardId changes).
   useEffect(() => {
-    dispatch(fetchHealthChecksThunk({ boardId }));
+    void dispatch(fetchHealthChecksThunk({ boardId }));
   }, [dispatch, boardId]);
 
   // Probe-all on refresh (manual or auto).
@@ -83,7 +83,7 @@ export function HealthCheckTab({ boardId }: Props) {
 
   const handleRemove = useCallback(
     (healthCheckId: string) => {
-      dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
+      void dispatch(removeHealthCheckThunk({ boardId, healthCheckId }));
     },
     [dispatch, boardId],
   );

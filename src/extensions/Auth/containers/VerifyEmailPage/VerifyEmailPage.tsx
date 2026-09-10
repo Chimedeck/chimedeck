@@ -24,7 +24,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (token) {
-      dispatch(verifyEmailThunk({ token }));
+      void dispatch(verifyEmailThunk({ token }));
     }
   }, []);
 
@@ -37,7 +37,7 @@ export default function VerifyEmailPage() {
   }, [status, navigate]);
 
   const handleResend = () => {
-    dispatch(resendVerificationThunk());
+    void dispatch(resendVerificationThunk());
   };
 
   return (

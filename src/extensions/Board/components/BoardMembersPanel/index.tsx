@@ -55,7 +55,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       && !isMembersLoading
       && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
     ) {
-      dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
+      void dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
   }, [dispatch, boardWorkspaceId, isMembersLoading, workspaceMembers.length, membersWorkspaceId]);
 
@@ -65,7 +65,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
       && !isMembersLoading
       && (workspaceMembers.length === 0 || membersWorkspaceId !== boardWorkspaceId)
     ) {
-      dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
+      void dispatch(fetchWorkspaceMembersThunk({ workspaceId: boardWorkspaceId }));
     }
   };
 

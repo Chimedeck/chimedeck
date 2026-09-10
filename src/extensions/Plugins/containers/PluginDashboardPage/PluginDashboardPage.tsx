@@ -104,7 +104,7 @@ const PluginDashboardPage = () => {
 
   // Fetch categories once on mount
   useEffect(() => {
-    dispatch(fetchCategoriesThunk());
+    void dispatch(fetchCategoriesThunk());
   }, [dispatch]);
 
   // If the API returns a 403-style error for a non-member, redirect back to board.
@@ -158,7 +158,7 @@ const PluginDashboardPage = () => {
   }, []);
 
   const handleRegisterSubmit = useCallback((body: RegisterPluginBody) => {
-    dispatch(registerPluginThunk(body));
+    void dispatch(registerPluginThunk(body));
   }, [dispatch]);
 
   const handleRegisterClose = useCallback(() => {
@@ -172,7 +172,7 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchDiscoverablePluginsThunk(params));
+      void dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery, selectedCategory]);
 
@@ -187,7 +187,7 @@ const PluginDashboardPage = () => {
   }, [dispatch]);
 
   const handleEditSubmit = useCallback((pluginId: string, body: UpdatePluginBody) => {
-    dispatch(updatePluginThunk({ pluginId, body }));
+    void dispatch(updatePluginThunk({ pluginId, body }));
   }, [dispatch]);
 
   const handleSearchChange = useCallback((q: string) => {
@@ -196,7 +196,7 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (q) params.q = q;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchDiscoverablePluginsThunk(params));
+      void dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, selectedCategory]);
 
@@ -206,13 +206,13 @@ const PluginDashboardPage = () => {
       const params: { boardId: string; q?: string; category?: string | null } = { boardId };
       if (searchQuery) params.q = searchQuery;
       if (category) params.category = category;
-      dispatch(fetchDiscoverablePluginsThunk(params));
+      void dispatch(fetchDiscoverablePluginsThunk(params));
     }
   }, [dispatch, boardId, searchQuery]);
 
   const handleClearSearch = useCallback(() => {
     dispatch(clearSearch());
-    if (boardId) dispatch(fetchDiscoverablePluginsThunk({ boardId }));
+    if (boardId) void dispatch(fetchDiscoverablePluginsThunk({ boardId }));
   }, [dispatch, boardId]);
 
   return (
