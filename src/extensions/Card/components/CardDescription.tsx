@@ -203,7 +203,9 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             <button
               type="button"
               className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              onClick={() => setExpanded((e) => !e)}
+              onClick={() => {
+                setExpanded((e) => !e);
+              }}
             >
               {expanded ? 'Show less ↑' : 'Show more ↓'}
             </button>

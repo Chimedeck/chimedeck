@@ -49,7 +49,9 @@ const AddCardForm = ({ listId, onSubmit, onCancel }: Props) => {
       <textarea
         ref={textareaRef}
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => {
+          setTitle(e.target.value);
+        }}
         onKeyDown={handleKeyDown}
         placeholder="Card title…"
         rows={2}

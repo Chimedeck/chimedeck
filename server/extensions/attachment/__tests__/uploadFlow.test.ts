@@ -14,7 +14,7 @@ describe('upload flow (unit/logic)', () => {
     // Import with current env
     const { enqueueScan } = await import('../mods/virusScan/enqueue');
     // Should resolve without error (no-op path)
-    await expect(enqueueScan({ attachmentId: 'test-id' })).resolves.toBeUndefined();
+    expect(enqueueScan({ attachmentId: 'test-id' })).resolves.toBeUndefined();
 
     process.env['VIRUS_SCAN_ENABLED'] = originalFlag ?? '';
   });

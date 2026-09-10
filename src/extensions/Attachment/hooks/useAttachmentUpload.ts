@@ -61,7 +61,9 @@ export function useAttachmentUpload({ cardId, onComplete, authToken = '', apiBas
             }
           });
 
-          xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+          });
           xhr.send(file);
         }),
       )
