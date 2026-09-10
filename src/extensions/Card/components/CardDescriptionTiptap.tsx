@@ -1442,14 +1442,14 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               <button
                 type="button"
                 className={`px-2 py-1 text-xs ${editMode === 'rich' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
-                onClick={() => handleModeChange('rich')}
+                onClick={() => { handleModeChange('rich'); }}
               >
                 Rich text
               </button>
               <button
                 type="button"
                 className={`px-2 py-1 text-xs ${editMode === 'markdown' ? 'bg-indigo-600 text-inverse' : 'bg-bg-surface text-muted'}`}
-                onClick={() => handleModeChange('markdown')}
+                onClick={() => { handleModeChange('markdown'); }}
               >
                 Markdown
               </button>
@@ -1463,7 +1463,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 <OneLineToolbar
                   editor={editor}
                   overflowOpen={overflowOpen}
-                  onToggleOverflow={() => setOverflowOpen((o) => !o)}
+                  onToggleOverflow={() => { setOverflowOpen((o) => !o); }}
                   linkPopoverOpen={linkPopoverOpen}
                   onToggleLinkPopover={() => {
                     closeLinkConfigUi();
@@ -1475,7 +1475,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                 {linkPopoverOpen && (
                   <LinkInsertPopover
                     editor={editor}
-                    onClose={() => setLinkPopoverOpen(false)}
+                    onClose={() => { setLinkPopoverOpen(false); }}
                   />
                 )}
                 {assetPickerOpen && cardId && (
@@ -1483,7 +1483,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                     attachments={cardAttachments}
                     onUploadNew={() => fileInputRef.current?.click()}
                     onInsert={handleInsertExisting}
-                    onClose={() => setAssetPickerOpen(false)}
+                    onClose={() => { setAssetPickerOpen(false); }}
                   />
                 )}
               </div>
@@ -1798,12 +1798,12 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
                   <button
                     type="button"
                     className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
-                    onClick={() => retrySync(buildDescriptionSaveMarkdown(
+                    onClick={() => { retrySync(buildDescriptionSaveMarkdown(
                       editMode,
                       editor,
                       draft,
                       cardAttachmentsRef.current,
-                    ))}
+                    )); }}
                     data-testid="draft-retry-sync"
                   >
                     {/* [why] "Retry Save" clarifies the user's pending action vs a background sync retry */}
@@ -1914,7 +1914,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
             <button
               type="button"
               className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              onClick={() => setExpanded((e) => !e)}
+              onClick={() => { setExpanded((e) => !e); }}
             >
               {expanded ? 'Show less ↑' : 'Show more ↓'}
             </button>
