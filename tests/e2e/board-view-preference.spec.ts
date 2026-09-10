@@ -73,11 +73,16 @@ test.describe('Board View Preference API', () => {
   });
 
   test('Access denied without authentication', async ({ request }) => {
+    // Create a real board so the router resolves it; auth runs after board
+    // resolution, so an unauthenticated request to a real board returns 401.
+    const token = await registerAndLogin(request, 'deny');
+    const wsId = await createWorkspace(request, token);
+    const boardId = await createBoard(request, token, wsId);
     // Try GET
-    const res = await request.get(`${BASE_URL}/api/v1/boards/board123/view-preference`);
+    const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/view-preference`);
     expect(res.status()).toBe(401);
     // Try PUT
-    const res2 = await request.put(`${BASE_URL}/api/v1/boards/board123/view-preference`, {
+    const res2 = await request.put(`${BASE_URL}/api/v1/boards/${boardId}/view-preference`, {
       data: { viewType: 'KANBAN' },
     });
     expect(res2.status()).toBe(401);
@@ -93,7 +98,7 @@ test.describe('Board View Preference API', () => {
     });
     expect(res.status()).toBe(400);
     const body = await res.json();
-    expect(body.name).toBe('invalid-view-type');
+    expect(body.error.code).toBe('invalid-view-type');
   });
 
   test('Multiple boards have independent preferences', async ({ request }) => {
