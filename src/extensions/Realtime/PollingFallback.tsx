@@ -38,7 +38,7 @@ export function usePollingFallback({
     try {
       // apiClient response interceptor auto-unwraps to response.data
       const result = (await apiClient.get(
-        `/boards/${boardId}/events?since=${lastSeqRef.current}`
+        `/boards/${boardId}/events?since=${String(lastSeqRef.current)}`
       )) as { data: RealtimeEvent[]; metadata: { hasMore: boolean; latestSequence: string } };
 
       const events = result.data;

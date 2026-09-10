@@ -28,7 +28,7 @@ export async function handleLogout(req: Request): Promise<Response> {
     // Notify any open WebSocket connections for this user to close (code 4001).
     if (tokenRow?.user_id) {
       await pubsub.publish(
-        `session:${tokenRow.user_id}`,
+        `session:${String(tokenRow.user_id)}`,
         JSON.stringify({ type: 'session_revoked' }),
       );
     }

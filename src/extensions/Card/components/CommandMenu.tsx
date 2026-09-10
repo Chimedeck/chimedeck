@@ -134,7 +134,7 @@ const CommandMenu = ({ editor, onClose, onOpenEmojiPicker, extraCommands = [] }:
 
   // Scroll active item into view when navigating with keyboard.
   useEffect(() => {
-    const item = listRef.current?.querySelector<HTMLButtonElement>(`[data-index="${activeIndex}"]`);
+    const item = listRef.current?.querySelector<HTMLButtonElement>(`[data-index="${String(activeIndex)}"]`);
     item?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex]);
 

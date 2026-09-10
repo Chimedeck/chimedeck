@@ -263,12 +263,12 @@ function renderStringList(args: RenderArgs): JSX.Element {
       </span>
       <div className="flex flex-col gap-1.5">
         {items.map((item, idx) => (
-          <div key={`${key}-item-${idx}`} className="flex items-center gap-1.5">
+          <div key={`${key}-item-${String(idx)}`} className="flex items-center gap-1.5">
             <input
               type="text"
               className={INPUT_CLASS}
               value={item}
-              placeholder={`Item ${idx + 1}`}
+              placeholder={`Item ${String(idx + 1)}`}
               onChange={(e) => {
                 const next = [...items];
                 next[idx] = e.target.value;

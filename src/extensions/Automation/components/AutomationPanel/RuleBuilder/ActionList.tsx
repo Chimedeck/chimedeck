@@ -89,7 +89,7 @@ const ActionList = ({ actions, onChange, boardId }: Props) => {
   };
 
   const handlePickAction = (type: ActionType) => {
-    const localId = `action-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const localId = `action-${String(Date.now())}-${Math.random().toString(36).slice(2, 7)}`;
     const newAction: ActionItemData = {
       id: localId,
       actionType: type.type,

@@ -63,7 +63,7 @@ const VirtualCardList = ({ cards, renderCard, estimatedCardHeight = 80 }: Props)
             style={{
               position: 'absolute',
               top: 0,
-              transform: `translateY(${row.start}px)`,
+              transform: `translateY(${String(row.start)}px)`,
               width: '100%',
               paddingBottom: '8px',
             }}
