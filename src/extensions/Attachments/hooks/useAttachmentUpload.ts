@@ -66,7 +66,9 @@ function singleFileUpload(
         reject(new Error(`S3 PUT failed: ${String(xhr.status)}`));
       }
     };
-    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.onerror = () => {
+      reject(new Error('Network error during upload'));
+    };
     xhr.send(file);
   });
 }

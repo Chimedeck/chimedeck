@@ -662,7 +662,9 @@ const BoardCanvas = ({
       setCollapsedListIds(parseCollapsedListIds(event.newValue));
     };
     globalThis.window.addEventListener('storage', handleStorage);
-    return () => globalThis.window.removeEventListener('storage', handleStorage);
+    return () => {
+      globalThis.window.removeEventListener('storage', handleStorage);
+    };
   }, [collapsedListsStorageKey]);
 
   const handleToggleListCollapsed = useCallback((listId: string) => {
