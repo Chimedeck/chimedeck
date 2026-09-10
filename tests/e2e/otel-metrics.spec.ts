@@ -51,18 +51,22 @@ test.describe('POST /api/v1/metrics/propagation', () => {
     expect(res.status()).toBe(204);
   });
 
-  test('returns 400 when delayMs is missing', async ({ request }) => {
+  test('returns 400 when delayMs is missing (OTEL enabled)', async ({ request }) => {
+    // The endpoint only validates the body (and returns 400) when OTEL_ENABLED=true.
+    // When OTEL is off it returns 204 regardless (documented contract).
+    const expected = process.env.OTEL_ENABLED === 'true' ? 400 : 204;
     const res = await request.post(`${BASE_URL}/api/v1/metrics/propagation`, {
       data: {},
     });
-    expect(res.status()).toBe(400);
+    expect(res.status()).toBe(expected);
   });
 
-  test('returns 400 when delayMs is negative', async ({ request }) => {
+  test('returns 400 when delayMs is negative (OTEL enabled)', async ({ request }) => {
+    const expected = process.env.OTEL_ENABLED === 'true' ? 400 : 204;
     const res = await request.post(`${BASE_URL}/api/v1/metrics/propagation`, {
       data: { delayMs: -1 },
     });
-    expect(res.status()).toBe(400);
+    expect(res.status()).toBe(expected);
   });
 
   test('returns 400 when body is invalid JSON text', async ({ request }) => {
