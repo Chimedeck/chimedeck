@@ -26,7 +26,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     <button
       ref={buttonRef}
       className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-bg-surface focus:bg-bg-surface focus:outline-none"
-      onClick={() => onSelect(result)}
+      onClick={() => { onSelect(result); }}
       onKeyDown={onKeyDown}
     >
       {isBoard && result.background ? (

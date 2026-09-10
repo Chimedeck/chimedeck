@@ -43,7 +43,7 @@ const BoardViewTab = ({ viewType, isActive, onClick, hasBackground = false, segm
       role="tab"
       aria-selected={isActive}
       aria-label={LABELS[viewType]}
-      onClick={() => onClick(viewType)}
+      onClick={() => { onClick(viewType); }}
       data-testid={`board-view-tab-${viewType}`}
       className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition-colors ${stateClass}`}
     >
