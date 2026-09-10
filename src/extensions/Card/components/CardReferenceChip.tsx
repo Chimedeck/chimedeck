@@ -54,7 +54,6 @@ const CardReferenceChip = ({ node, selected, updateAttributes }: ReactNodeViewPr
       .catch(() => {
         setLoading(false);
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [href]);
 
   const displayTitle = preview?.title ?? (loading ? '…' : href);

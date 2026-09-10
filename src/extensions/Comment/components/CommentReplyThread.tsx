@@ -83,7 +83,6 @@ const CommentReplyThread = ({
     if (expanded && !hasFetchedRef.current) {
       void loadReplies();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, loadReplies]);
 
   // Also fetch when the reply editor is shown and there are existing replies to display
@@ -91,7 +90,6 @@ const CommentReplyThread = ({
     if (showReplyEditor && localReplyCount > 0 && !hasFetchedRef.current) {
       void loadReplies();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showReplyEditor, localReplyCount, loadReplies]);
 
   const handleSubmitReply = async (content: string) => {

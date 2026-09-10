@@ -26,7 +26,6 @@ export default function VerifyEmailPage() {
     if (token) {
       dispatch(verifyEmailThunk({ token }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

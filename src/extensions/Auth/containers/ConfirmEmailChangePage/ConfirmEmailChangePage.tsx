@@ -23,7 +23,6 @@ export default function ConfirmEmailChangePage() {
     if (token) {
       dispatch(confirmEmailChangeThunk({ token }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

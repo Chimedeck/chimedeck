@@ -224,7 +224,7 @@ export function useBoardCardFieldValues(
       .then((map) => { if (!cancelled) setValuesMap(map); })
       .catch(() => { /* silently degrade — card badges just won't show */ });
     return () => { cancelled = true; };
-  }, [boardId, cardIdsKey, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [boardId, cardIdsKey, tick]);
 
   return valuesMap;
 }

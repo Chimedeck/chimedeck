@@ -79,7 +79,6 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
   }, []);
 
   // ── Drag-to-reschedule (shared between month and week grids) ──────────────
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- addToast identity is stable in callers
   const { handleCardDrop } = useCalendarDrag({ cards, ...(addToast ? { addToast } : {}) });
 
   const hasUnscheduled = cards.length > scheduledCards.length;

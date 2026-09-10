@@ -162,7 +162,6 @@ export function useAttachmentUpload({
 
       return newEntries.map((e) => e.clientId);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [cardId, deferred],
   );
 
@@ -179,7 +178,6 @@ export function useAttachmentUpload({
         void uploadFile(entry);
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function notifyFlushComplete() {

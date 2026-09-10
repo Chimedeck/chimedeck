@@ -75,7 +75,6 @@ const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSe
     setLoading(false);
     setPanelOpen(false);
   // Only reset on boardId change; initialQuery is intentionally excluded here
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId]);
 
   // Notify parent whenever the committed search query changes (for URL sync)
