@@ -92,7 +92,6 @@ const McpDocsPage = () => {
                 '<strong>stdio</strong> — a local Bun subprocess that communicates over stdin/stdout. Best for Claude Desktop and Cursor.',
                 `<strong>Remote HTTP</strong> — a persistent HTTP endpoint (<code class="${inlineCodeClass}">/api/mcp</code>) served on the same port as ChimeDeck. Best for remote agents, CI, and web-based AI assistants.`,
               ].map((step, i) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
@@ -123,7 +122,6 @@ const McpDocsPage = () => {
                 'Go to <strong>User Settings → API Tokens</strong>.',
                 'Click <strong>Generate new token</strong> and copy the value.',
               ].map((step, i) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}
@@ -238,7 +236,6 @@ const McpDocsPage = () => {
                 `<strong>Interact</strong> — subsequent <code class="${inlineCodeClass}">POST</code> requests (tool calls / notifications) or <code class="${inlineCodeClass}">GET</code> requests (SSE stream) must include the <code class="${inlineCodeClass}">mcp-session-id</code> header.`,
                 `<strong>Terminate</strong> — <code class="${inlineCodeClass}">DELETE /api/mcp</code> with the session ID tears down the session immediately.`,
               ].map((step, i) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <li key={i} className="flex gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-700 text-xs font-bold text-inverse">
                     {i + 1}

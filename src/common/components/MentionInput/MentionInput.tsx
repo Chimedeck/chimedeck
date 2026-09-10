@@ -69,7 +69,6 @@ const MentionInput = ({
         aria-autocomplete="list"
         aria-expanded={showSuggestions}
         style={{ overflow: 'hidden' }}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
       />
       {showSuggestions && (

@@ -52,7 +52,6 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
   }, [dayWidth]);
 
   // Auto-scroll to today when component first mounts or zoom changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { scrollToToday(); }, [zoom]);
 
   const todayIso = useMemo(() => today.toISOString().slice(0, 10), [today]);

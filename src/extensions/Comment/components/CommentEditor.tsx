@@ -866,7 +866,6 @@ const CommentEditor = ({
       if (insertMarkdownRef.current) insertMarkdownRef.current = null;
     };
   // [why] insertMarkdownRef identity is stable (ref object), so this runs once on mount/unmount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insertMarkdownRef]);
 
   useEffect(() => {
@@ -903,7 +902,6 @@ const CommentEditor = ({
     if (!restoredDraft) return;
     pendingHydratedContentRef.current = restoredDraft;
   // [why] Only restore when the draft first becomes available — not on every render
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoredDraft]);
 
   const handleSubmit = useCallback(async () => {

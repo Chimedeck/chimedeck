@@ -149,7 +149,6 @@ export function useWebSocket({
       socket.disconnect({ boardId });
     };
     // We intentionally only reconnect when boardId/token change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId, token]);
 
   return { connected: connectionState === 'connected', connectionState, pollingActive };

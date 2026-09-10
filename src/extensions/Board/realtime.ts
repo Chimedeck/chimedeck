@@ -49,6 +49,5 @@ export function useWorkspaceSync({ workspaceId, token }: UseWorkspaceSyncOptions
       socket.disconnect();
     };
     // Reconnect when workspace or token changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, token]);
 }
