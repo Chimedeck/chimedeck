@@ -27,7 +27,13 @@ export async function handleCreatePlugin(req: Request): Promise<Response> {
   const guardError = await platformAdminGuard(req as AuthenticatedRequest);
   if (guardError) return guardError;
 
-  const currentUser = (req as AuthenticatedRequest).currentUser!;
+  const currentUser = (req as AuthenticatedRequest).currentUser;
+  if (!currentUser) {
+    return Response.json(
+      { error: { code: 'unauthorized', message: 'Unauthorized' } },
+      { status: 401 },
+    );
+  }
 
   let body: {
     name?: unknown;

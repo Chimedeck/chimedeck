@@ -29,7 +29,9 @@ export async function resolvePluginToken(
     // jose's decodeJwt is a lightweight decode — we'll fully verify below.
     const parts = token.split('.');
     if (parts.length !== 3) throw new Error('malformed');
-    rawClaims = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf-8'));
+    const payloadPart = parts[1];
+    if (!payloadPart) throw new Error('malformed');
+    rawClaims = JSON.parse(Buffer.from(payloadPart, 'base64url').toString('utf-8'));
   } catch {
     return Response.json(
       { error: { code: 'unauthorized', message: 'Malformed plugin token' } },

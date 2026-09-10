@@ -504,7 +504,7 @@ export function AttachmentItem({ attachment, uploadProgress, onDelete, onRename,
       </div>
 
       {/* Progress bar — only while uploading */}
-      {isUploading && <UploadProgressBar progress={uploadProgress!} />}
+      {isUploading && <UploadProgressBar progress={uploadProgress} />}
 
       {/* Video player overlay — use proxy view_url */}
       {videoOpen && isVideo && attachment.view_url && (

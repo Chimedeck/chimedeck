@@ -125,7 +125,10 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const hasResults = visibleResults.length > 0;
   const tooShort = query.length > 0 && query.length < 2;
-  const scopeMeta = SCOPES.find((s) => s.value === scope)!;
+  const scopeMeta = SCOPES.find((s) => s.value === scope);
+  if (!scopeMeta) {
+    throw new Error(`Unknown command palette scope: ${scope}`);
+  }
 
   // Reset active index whenever results change
   useEffect(() => {

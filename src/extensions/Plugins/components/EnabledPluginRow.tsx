@@ -52,7 +52,7 @@ const EnabledPluginRow = ({ boardPlugin, onSettings, onDisable, loading = false 
       <div className="flex items-center gap-2 flex-shrink-0">
         {hasSettings && (
           <button
-            onClick={() => { onSettings!(boardPlugin); }}
+            onClick={() => { onSettings(boardPlugin); }}
             title={translations['plugins.card.settingsTitle']}
             aria-label={translations['plugins.card.settingsAriaLabel']}
             className="text-muted hover:text-subtle p-1.5 rounded transition-colors"
