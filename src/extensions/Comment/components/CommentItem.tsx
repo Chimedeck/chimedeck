@@ -442,7 +442,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
 
     return () => {
       cancelled = true;
-      objectUrls.forEach((value) => URL.revokeObjectURL(value));
+      objectUrls.forEach((value) => { URL.revokeObjectURL(value); });
     };
   }, [comment.content, attachments, editing]);
 
@@ -506,7 +506,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             availableAttachments={attachments}
             initialValue={comment.content}
             onSubmit={handleEdit}
-            onCancel={() => setEditing(false)}
+            onCancel={() => { setEditing(false); }}
             submitLabel={translations['comment.editor.update']}
           />
         ) : (
@@ -571,7 +571,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
               <Button
                 variant="link"
                 className="p-0 text-xs text-muted hover:text-subtle"
-                onClick={() => setEditing(true)}
+                onClick={() => { setEditing(true); }}
               >
                 {translations['comment.action.edit']}
               </Button>
@@ -594,7 +594,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
                 <Button
                   variant="link"
                   className="p-0 text-xs text-muted hover:text-subtle"
-                  onClick={() => setShowReplyEditor((prev) => !prev)}
+                  onClick={() => { setShowReplyEditor((prev) => !prev); }}
                 >
                   {translations['comment.action.reply']}
                 </Button>
@@ -614,7 +614,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
             expanded={replyExpanded}
             showReplyEditor={showReplyEditor}
             onExpandToggle={setReplyExpanded}
-            onHideReplyEditor={() => setShowReplyEditor(false)}
+            onHideReplyEditor={() => { setShowReplyEditor(false); }}
             onAddReply={handleAddReply}
             onEditReply={onEditReply ?? (() => Promise.resolve())}
             onDeleteReply={onDeleteReply ?? (() => Promise.resolve())}
@@ -627,7 +627,7 @@ const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmi
         <ImageLightbox
           src={previewImage.src}
           name={previewImage.alt}
-          onClose={() => setPreviewImage(null)}
+          onClose={() => { setPreviewImage(null); }}
         />
       )}
     </div>
