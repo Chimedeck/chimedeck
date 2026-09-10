@@ -31,7 +31,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
       id: a.id,
       actionType: a.actionType,
       label: a.actionType,
-      config: a.config as Record<string, unknown>,
+      config: a.config,
     })) ?? [],
   );
   const [saving, setSaving] = useState(false);

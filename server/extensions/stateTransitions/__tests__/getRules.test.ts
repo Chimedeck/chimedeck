@@ -39,7 +39,7 @@ class QueryBuilder {
   insert(payload: Row | Row[]): { returning: () => Promise<Row[]> } {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => ({ ...row }));
-    for (const row of inserted) (this.store[this.tableName] as Row[]).push(row);
+    for (const row of inserted) (this.store[this.tableName]).push(row);
     return {
       returning: async () => inserted.map((row) => ({ ...row })),
     };
@@ -60,7 +60,7 @@ class QueryBuilder {
   }
 
   private executeSync(clone = true): Row[] {
-    let rows = (this.store[this.tableName] as Row[]).filter((row) =>
+    let rows = this.store[this.tableName].filter((row) =>
       this.filters.every((predicate) => predicate(row)),
     );
 

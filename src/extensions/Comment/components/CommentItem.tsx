@@ -146,7 +146,7 @@ function hydratePreviewLinkModes(root: HTMLElement): void {
 }
 
 function mergeConsecutiveDuplicateHrefLinks(root: ParentNode): void {
-  const anchors = Array.from(root.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  const anchors = Array.from(root.querySelectorAll('a[href]'));
   anchors.forEach((anchor) => {
     if (!anchor.isConnected) return;
 
@@ -192,7 +192,7 @@ function normalizeRenderedLinkHtml(html: string): string {
   if (!html || !/<a\b/i.test(html)) return html;
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-  const anchors = Array.from(doc.body.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  const anchors = Array.from(doc.body.querySelectorAll('a[href]'));
   anchors.forEach((anchor) => {
     const href = anchor.getAttribute('href');
     if (!href) return;
