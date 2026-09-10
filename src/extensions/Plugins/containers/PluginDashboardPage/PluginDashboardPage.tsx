@@ -268,7 +268,7 @@ const PluginDashboardPage = () => {
                   <EnabledPluginRow
                     key={bp.id}
                     boardPlugin={bp}
-                    onDisable={disablePlugin}
+                    onDisable={(bp) => void disablePlugin(bp)}
                     onSettings={handleSettings}
                   />
                 ))}
@@ -312,7 +312,7 @@ const PluginDashboardPage = () => {
                   <DiscoverPluginRow
                     key={plugin.id}
                     plugin={plugin}
-                    onEnable={enablePlugin}
+                    onEnable={(plugin) => void enablePlugin(plugin)}
                   />
                 ))}
               </div>

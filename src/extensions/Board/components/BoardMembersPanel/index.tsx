@@ -232,7 +232,7 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
                   <button
                     type="button"
                     disabled={isJoining}
-                    onClick={handleJoin}
+                    onClick={() => void handleJoin()}
                     className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-inverse hover:bg-primary-hover disabled:opacity-50"
                   >
                     {isJoining ? 'Joining…' : 'Join this board'}
@@ -262,8 +262,8 @@ const BoardMembersPanel = ({ onClose, isGuest = false }: Props) => {
                           member={member}
                           isLastAdmin={isThisLastAdmin}
                           canEdit={isAdmin}
-                          onRoleChange={handleRoleChange}
-                          onRemove={handleRemove}
+                          onRoleChange={(userId, role) => void handleRoleChange(userId, role)}
+                          onRemove={(userId) => void handleRemove(userId)}
                         />
                       );
                     })}

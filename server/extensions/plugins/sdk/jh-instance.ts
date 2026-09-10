@@ -220,7 +220,8 @@ type CapabilityHandler = (t: FrameContext, options?: unknown) => unknown | Promi
 
 const capabilityHandlers = new Map<string, CapabilityHandler>();
 
-window.addEventListener('message', async (event: MessageEvent) => {
+window.addEventListener('message', (event: MessageEvent) => {
+  void (async () => {
   const data = event.data as PostMessageRequest & { capability?: string; options?: unknown };
   if (!data || !data.jhSdk || data.type !== 'CAPABILITY_INVOKE') return;
 
@@ -244,11 +245,13 @@ window.addEventListener('message', async (event: MessageEvent) => {
       '*',
     );
   }
+  })();
 });
 
 // Handle BUTTON_CLICKED — host dispatches this when a button registered by a plugin is clicked.
 // Look up the callback by its opaque ID and invoke it with a fresh FrameContext.
-window.addEventListener('message', async (event: MessageEvent) => {
+window.addEventListener('message', (event: MessageEvent) => {
+  void (async () => {
   const data = event.data as PostMessageRequest & { payload?: { callbackId?: string; args?: Record<string, unknown> } };
   if (!data || !data.jhSdk || data.type !== 'BUTTON_CLICKED') return;
 
@@ -265,6 +268,7 @@ window.addEventListener('message', async (event: MessageEvent) => {
     // Swallow errors so a broken plugin callback can't crash the SDK
     console.error('[jhInstance] BUTTON_CLICKED callback error:', err);
   }
+  })();
 });
 
 // ────────────────────────────────────────────────────────────────────

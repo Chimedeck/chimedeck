@@ -75,7 +75,7 @@ const CardLabels = ({
           <LabelChip
             key={label.id}
             label={label}
-            onRemove={disabled ? undefined : () => onDetach(label.id)}
+            onRemove={disabled ? undefined : () => void onDetach(label.id)}
           />
         ))}
       </div>
@@ -137,7 +137,7 @@ const CardLabels = ({
                     variant="primary"
                     type="button"
                     className="w-full py-1.5 rounded-lg text-sm"
-                    onClick={handleCreate}
+                    onClick={() => void handleCreate()}
                     disabled={creating}
                   >
                     {creating ? 'Creating…' : `Create "${newLabelName.trim()}"`}
@@ -153,7 +153,7 @@ const CardLabels = ({
                         key={label.id}
                         type="button"
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
-                        onClick={() => handleToggle(label)}
+                        onClick={() => void handleToggle(label)}
                       >
                         <span
                           className="h-3 w-3 rounded-full flex-shrink-0"
@@ -174,7 +174,7 @@ const CardLabels = ({
                         key={label.id}
                         type="button"
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-base hover:bg-bg-overlay transition-colors"
-                        onClick={() => handleToggle(label)}
+                        onClick={() => void handleToggle(label)}
                       >
                         <span
                           className="h-3 w-3 rounded-full flex-shrink-0"

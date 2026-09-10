@@ -32,7 +32,8 @@ async function connect(): Promise<void> {
 
     console.info('[automation-listener] connected, listening on automation_tick');
 
-    client.on('notification', async (msg) => {
+    client.on('notification', (msg) => {
+      void (async () => {
       if (msg.channel !== 'automation_tick') return;
       try {
         const { type, automationId, boardId, cardId } = JSON.parse(msg.payload ?? '{}');
@@ -41,12 +42,15 @@ async function connect(): Promise<void> {
       } catch (err) {
         console.error('[automation-listener] notification parse/execute error', err);
       }
+      })();
     });
 
-    client.on('error', async (err) => {
+    client.on('error', (err) => {
+      void (async () => {
       console.error('[automation-listener] client error, scheduling reconnect', err);
       await client.end().catch(() => {});
       scheduleReconnect();
+      })();
     });
   } catch (err) {
     console.error('[automation-listener] connect failed, scheduling reconnect', err);
