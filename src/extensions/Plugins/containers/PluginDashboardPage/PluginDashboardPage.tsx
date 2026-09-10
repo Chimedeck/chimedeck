@@ -222,7 +222,7 @@ const PluginDashboardPage = () => {
       <div className="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <button
-            onClick={() => boardId && navigate(boardPath({ id: boardId }))}
+            onClick={() => { if (boardId) { navigate(boardPath({ id: boardId })); } }}
             className="text-subtle hover:text-base text-sm mb-1 flex items-center gap-1"
           >
             {translations['plugins.dashboard.backToBoard']}
@@ -231,7 +231,7 @@ const PluginDashboardPage = () => {
         </div>
         {isAdmin ? (
           <button
-            onClick={() => setRegisterOpen(true)}
+            onClick={() => { setRegisterOpen(true); }}
             className="text-sm bg-blue-600 hover:bg-blue-500 text-white rounded px-3 py-2" // [theme-exception] text-white on bg-blue-600 button
           >
             {translations['plugins.dashboard.registerPlugin']}

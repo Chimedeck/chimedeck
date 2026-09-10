@@ -98,7 +98,7 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); }}
                 placeholder="member@example.com"
                 className="w-full rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -117,7 +117,7 @@ const InviteMemberModal = ({ workspaceId, callerRole, onClose }: InviteMemberMod
               <select
                 id="invite-role"
                 value={role}
-                onChange={(e) => setRole(e.target.value as Role)}
+                onChange={(e) => { setRole(e.target.value as Role); }}
                 className="w-full rounded border border-border bg-bg-overlay px-3 py-2 text-sm text-base focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {assignableRoles.map((r) => (

@@ -70,7 +70,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); };
   }, [onClose]);
 
   // Close on click outside
@@ -86,7 +86,7 @@ export const MemberAvatarPopover = ({ member, isSelf, onRemove, onClose, anchorR
       }
     };
     document.addEventListener('mousedown', onMousedown);
-    return () => document.removeEventListener('mousedown', onMousedown);
+    return () => { document.removeEventListener('mousedown', onMousedown); };
   }, [onClose, anchorRef]);
 
   const handleRemove = async () => {

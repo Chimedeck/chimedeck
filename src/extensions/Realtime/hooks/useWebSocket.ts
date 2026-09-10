@@ -138,8 +138,8 @@ export function useWebSocket({
       },
       onOpen: handleOpen,
       onClose: handleClose,
-      onPollingActive: () => setPollingActive(true),
-      onPollingInactive: () => setPollingActive(false),
+      onPollingActive: () => { setPollingActive(true); },
+      onPollingInactive: () => { setPollingActive(false); },
     });
 
     socket.connect({ boardId, token });
