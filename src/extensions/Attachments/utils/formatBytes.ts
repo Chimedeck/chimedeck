@@ -16,5 +16,8 @@ export function formatBytes(bytes: number): string {
 
   // Show up to 1 decimal place, trimming trailing zeros
   const formatted = unitIndex === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, '');
-  return `${formatted} ${UNITS[unitIndex]}`;
+  // unitIndex is always < UNITS.length (the while loop only increments while
+  // unitIndex < UNITS.length - 1), so the index is always valid; the fallback
+  // is unreachable but satisfies noUncheckedIndexedAccess.
+  return `${formatted} ${UNITS[unitIndex] ?? 'B'}`;
 }
