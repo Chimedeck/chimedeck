@@ -11,6 +11,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ async function goToBoard(page: Page, baseUrl: string, boardId: string, creds: Cr
   await page.click('button[type="submit"]');
   // After login the app redirects to /workspaces — wait for that before navigating to the board
   await page.waitForURL(`${baseUrl}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${baseUrl}/boards/${boardId}`);
+  await page.goto(`${baseUrl}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 }
 
@@ -116,7 +117,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await expect(page.getByTestId('board-view-switcher')).toBeVisible({ timeout: 15000 });
 
     await page.getByTestId('board-view-tab-CALENDAR').click();
@@ -145,7 +146,7 @@ test.describe('Calendar View', () => {
     // Create a card without due_date (should not appear)
     await createCard(request, creds.token, listId, 'NoDueCard');
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -159,7 +160,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-no-due-date-note')).toBeVisible();
     await expect(page.getByTestId('calendar-no-due-date-note')).toContainText(
@@ -172,7 +173,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -213,7 +214,7 @@ test.describe('Calendar View', () => {
       await patchCard(request, creds.token, cardId, { due_date: due });
     }
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -233,7 +234,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -251,7 +252,7 @@ test.describe('Calendar View', () => {
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await page.getByTestId('calendar-mode-week').click();
     await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
@@ -282,7 +283,7 @@ test.describe('Calendar View', () => {
     const cardId = await createCard(request, creds.token, listId, 'WeekCard');
     await patchCard(request, creds.token, cardId, { due_date: due });
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await page.getByTestId('calendar-mode-week').click();
     await expect(page.getByTestId('calendar-week-grid')).toBeVisible();
@@ -307,7 +308,7 @@ test.describe('Calendar View', () => {
     const cardId = await createCard(request, creds.token, listId, 'DragCard');
     await patchCard(request, creds.token, cardId, { due_date: sourceDue });
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
@@ -345,7 +346,7 @@ test.describe('Calendar View', () => {
     const cardId = await createCard(request, creds.token, listId, 'RevertCard');
     await patchCard(request, creds.token, cardId, { due_date: sourceDue });
 
-    await goToBoard(page, BASE_URL, board.id, creds);
+    await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-CALENDAR').click();
     await expect(page.getByTestId('calendar-month-grid')).toBeVisible();
 
