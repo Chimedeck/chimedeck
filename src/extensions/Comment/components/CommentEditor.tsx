@@ -987,7 +987,7 @@ const CommentEditor = ({
         // the insert-attachment picker without waiting for comment submit.
         void flushUploads()
           .then(() => loadCardAttachments())
-          .catch(() => setError(translations['comment.editor.error.uploadFailed']));
+          .catch(() => { setError(translations['comment.editor.error.uploadFailed']); });
       }
       e.target.value = '';
     },
@@ -1239,7 +1239,7 @@ const CommentEditor = ({
           <OneLineToolbar
             editor={editor}
             overflowOpen={overflowOpen}
-            onToggleOverflow={() => setOverflowOpen((o) => !o)}
+            onToggleOverflow={() => { setOverflowOpen((o) => !o); }}
             linkPopoverOpen={linkPopoverOpen}
             onToggleLinkPopover={() => {
               setAssetPickerOpen(false);
@@ -1251,7 +1251,7 @@ const CommentEditor = ({
           {linkPopoverOpen && (
             <LinkInsertPopover
               editor={editor}
-              onClose={() => setLinkPopoverOpen(false)}
+              onClose={() => { setLinkPopoverOpen(false); }}
             />
           )}
           {assetPickerOpen && cardId && (
@@ -1259,7 +1259,7 @@ const CommentEditor = ({
               attachments={cardAttachments}
               onUploadNew={() => fileInputRef.current?.click()}
               onInsert={handleInsertExisting}
-              onClose={() => setAssetPickerOpen(false)}
+              onClose={() => { setAssetPickerOpen(false); }}
             />
           )}
         </div>
@@ -1533,7 +1533,7 @@ const CommentEditor = ({
               <button
                 type="button"
                 className="text-indigo-400 hover:text-indigo-300 underline transition-colors"
-                onClick={() => retrySync(currentMarkdown)}
+                onClick={() => { retrySync(currentMarkdown); }}
                 data-testid="comment-draft-retry-sync"
               >
                 {/* [why] "Retry Post" clarifies the user's pending action vs a background sync retry */}
