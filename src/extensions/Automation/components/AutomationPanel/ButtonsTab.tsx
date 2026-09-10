@@ -107,7 +107,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
         <button
           type="button"
           disabled={toggling}
-          onClick={handleToggle}
+          onClick={() => void handleToggle()}
           className="flex-shrink-0 rounded p-1 text-muted hover:text-subtle disabled:opacity-50 transition-colors"
           aria-label={automation.isEnabled ? translations['automation.buttonsTab.row.disableAriaLabel'] : translations['automation.buttonsTab.row.enableAriaLabel']}
           title={automation.isEnabled ? translations['automation.buttonsTab.row.enableTitle'] : translations['automation.buttonsTab.row.disableTitle']}
@@ -135,7 +135,7 @@ const ButtonRow: FC<ButtonRowProps> = ({ boardId, automation, onEdited, onDelete
             <button
               type="button"
               disabled={deleting}
-              onClick={handleDelete}
+              onClick={() => void handleDelete()}
               className="text-xs rounded px-2 py-0.5 bg-danger text-white hover:opacity-90 disabled:opacity-50 transition-colors" // [theme-exception] text-white on danger button
             >
               {deleting ? translations['automation.buttonsTab.row.deleting'] : translations['automation.buttonsTab.row.delete']}

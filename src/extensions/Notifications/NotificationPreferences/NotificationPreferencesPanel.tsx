@@ -126,14 +126,14 @@ const NotificationPreferencesPanel = () => {
                   <td className="py-3 text-center">
                     <ToggleSwitch
                       enabled={inAppChecked}
-                      onChange={(next) => handleToggle(type, 'in_app_enabled', next)}
+                      onChange={(next) => void handleToggle(type, 'in_app_enabled', next)}
                       ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — ${translations['NotificationPreferences.columnInApp']}`}
                     />
                   </td>
                   <td className="py-3 text-center">
                     <ToggleSwitch
                       enabled={emailChecked && emailEnabled}
-                      onChange={(next) => handleToggle(type, 'email_enabled', next)}
+                      onChange={(next) => void handleToggle(type, 'email_enabled', next)}
                       disabled={!emailEnabled}
                       ariaLabel={`${NOTIFICATION_TYPE_LABELS[type]} — ${translations['NotificationPreferences.columnEmail']}`}
                       disabledTooltip={translations['NotificationPreferences.emailDisabledTooltip']}

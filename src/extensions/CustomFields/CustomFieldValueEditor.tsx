@@ -118,7 +118,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
-            onClick={handleClear}
+            onClick={() => void handleClear()}
             aria-label={`Clear ${field.name}`}
           >
             ✕
@@ -156,7 +156,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
-            onClick={handleClear}
+            onClick={() => void handleClear()}
             aria-label={`Clear ${field.name}`}
           >
             ✕
@@ -188,7 +188,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors"
-            onClick={handleClear}
+            onClick={() => void handleClear()}
           >
             {translations['CustomFieldValue.clearDate']}
           </button>
@@ -257,7 +257,7 @@ const CustomFieldValueEditor = ({
           <button
             type="button"
             className="text-xs text-muted hover:text-danger transition-colors flex-shrink-0"
-            onClick={handleClear}
+            onClick={() => void handleClear()}
             aria-label={`Clear ${field.name}`}
           >
             ✕

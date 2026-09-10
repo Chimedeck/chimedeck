@@ -124,7 +124,7 @@ export default function ApiTokenPage() {
 
       {showGenerate && (
         <GenerateTokenModal
-          onSubmit={handleGenerate}
+          onSubmit={(body) => void handleGenerate(body)}
           onCancel={() => setShowGenerate(false)}
           isLoading={isCreating}
         />
@@ -140,7 +140,7 @@ export default function ApiTokenPage() {
       {revokeTarget && (
         <RevokeTokenDialog
           tokenName={revokeTarget.name}
-          onConfirm={handleRevoke}
+          onConfirm={() => void handleRevoke()}
           onCancel={() => setRevokeTarget(null)}
           isLoading={isRevoking}
         />

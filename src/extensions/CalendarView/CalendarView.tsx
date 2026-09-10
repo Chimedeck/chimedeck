@@ -125,7 +125,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
           onPrev={handleMonthPrev}
           onNext={handleMonthNext}
           onCardClick={onCardClick}
-          onCardDrop={handleCardDrop}
+          onCardDrop={(cardId, newDate) => void handleCardDrop(cardId, newDate)}
         />
       )}
 
@@ -137,7 +137,7 @@ const CalendarView = ({ cards, lists: _lists, onCardClick, addToast }: Props) =>
           onPrev={handleWeekPrev}
           onNext={handleWeekNext}
           onCardClick={onCardClick}
-          onCardDrop={handleCardDrop}
+          onCardDrop={(cardId, newDate) => void handleCardDrop(cardId, newDate)}
         />
       )}
     </div>

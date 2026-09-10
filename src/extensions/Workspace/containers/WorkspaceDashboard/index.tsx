@@ -96,11 +96,11 @@ const WorkspaceDashboard = () => {
             <BoardCard
               board={board}
               onClick={() => navigate(boardPath(board))}
-              onArchive={() => handleArchive(board.id)}
-              onDelete={() => handleDelete(board.id)}
-              onDuplicate={() => handleDuplicate(board.id)}
-              onStar={() => handleStar(board.id)}
-              onUnstar={() => handleUnstar(board.id)}
+              onArchive={() => void handleArchive(board.id)}
+              onDelete={() => void handleDelete(board.id)}
+              onDuplicate={() => void handleDuplicate(board.id)}
+              onStar={() => void handleStar(board.id)}
+              onUnstar={() => void handleUnstar(board.id)}
             />
           </div>
         ))}

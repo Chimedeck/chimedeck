@@ -209,9 +209,9 @@ const BoardCustomFieldsPanel = () => {
                   value={renameValue}
                   autoFocus
                   onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={() => commitRename(field)}
+                  onBlur={() => void commitRename(field)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitRename(field);
+                    if (e.key === 'Enter') void commitRename(field);
                     if (e.key === 'Escape') setRenamingId(null);
                   }}
                   className="flex-1 bg-bg-overlay border border-border rounded px-2 py-0.5 text-sm text-base focus:outline-none focus:ring-1 focus:ring-primary"
@@ -236,7 +236,7 @@ const BoardCustomFieldsPanel = () => {
               {/* Delete */}
               <button
                 type="button"
-                onClick={() => handleDelete(field)}
+                onClick={() => void handleDelete(field)}
                 disabled={busy}
                 className="text-muted hover:text-danger transition-colors text-xs"
                 aria-label={`Delete field ${field.name}`}
@@ -250,7 +250,7 @@ const BoardCustomFieldsPanel = () => {
               <input
                 type="checkbox"
                 checked={field.show_on_card}
-                onChange={() => handleToggleShowOnCard(field)}
+                onChange={() => void handleToggleShowOnCard(field)}
                 disabled={busy}
                 className="accent-blue-500"
                 aria-label={translations['CustomFields.showOnCardLabel']}
@@ -282,7 +282,7 @@ const BoardCustomFieldsPanel = () => {
                     <div className="flex gap-2 pt-1">
                       <button
                         type="button"
-                        onClick={() => commitOptions(field)}
+                        onClick={() => void commitOptions(field)}
                         disabled={busy}
                         className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors" // [theme-exception] text-white on bg-blue-600 button
                       >
@@ -362,7 +362,7 @@ const BoardCustomFieldsPanel = () => {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={handleCreate}
+              onClick={() => void handleCreate()}
               disabled={creating || !newField.name.trim()}
               className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs rounded py-1 transition-colors" // [theme-exception] text-white on bg-blue-600 button
             >

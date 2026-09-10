@@ -65,7 +65,7 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
     <section style={{ marginTop: 16 }}>
       <h4 style={{ fontSize: 14, marginBottom: 8 }}>{translations['attachment.section.title']}</h4>
       {attachments.map((a) => (
-        <AttachmentItem key={a.id} attachment={a} onDelete={handleDelete} onDownload={handleDownload} />
+        <AttachmentItem key={a.id} attachment={a} onDelete={(id) => void handleDelete(id)} onDownload={(id) => void handleDownload(id)} />
       ))}
       <AttachmentUploader cardId={cardId} onUploadComplete={handleUploadComplete} />
       <button

@@ -139,7 +139,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                   <p className="text-sm text-danger">{error}</p>
                   <button
                     className="mt-2 text-xs text-blue-400 hover:underline"
-                    onClick={loadAutomations}
+                    onClick={() => void loadAutomations()}
                   >
                     {translations['automation.panel.retry']}
                   </button>
@@ -152,7 +152,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                   initialAutomation={editingRule}
                   onSaved={() => {
                     setEditingRule(null);
-                    loadAutomations();
+                    void loadAutomations();
                   }}
                   onCancel={() => setEditingRule(null)}
                 />
@@ -163,7 +163,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                   boardId={boardId}
                   onSaved={() => {
                     setEditingRule(null);
-                    loadAutomations();
+                    void loadAutomations();
                   }}
                   onCancel={() => setEditingRule(null)}
                 />
@@ -177,7 +177,7 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
                   automations={automations}
                   onCreateRule={() => setEditingRule(undefined)}
                   onEditRule={(a) => setEditingRule(a)}
-                  onChanged={loadAutomations}
+                  onChanged={() => void loadAutomations()}
                 />
               )}
             </>
@@ -186,14 +186,14 @@ const AutomationPanel = ({ boardId, isOpen, activeTab, onClose, onTabChange }: P
             <ButtonsTab
               boardId={boardId}
               automations={automations}
-              onChanged={loadAutomations}
+              onChanged={() => void loadAutomations()}
             />
           )}
           {activeTab === 'schedule' && (
             <SchedulePanel
               boardId={boardId}
               automations={automations}
-              onChanged={loadAutomations}
+              onChanged={() => void loadAutomations()}
             />
           )}
           {activeTab === 'log' && <LogPanel boardId={boardId} automations={automations} />}

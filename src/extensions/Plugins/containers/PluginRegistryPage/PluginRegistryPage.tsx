@@ -261,8 +261,8 @@ const PluginRegistryPage = () => {
           deactivatingId={deactivatingId}
           reactivatingId={reactivatingId}
           onEdit={setEditingPlugin}
-          onDeactivate={handleDeactivate}
-          onReactivate={handleReactivate}
+          onDeactivate={(id) => void handleDeactivate(id)}
+          onReactivate={(id) => void handleReactivate(id)}
         />
       )}
 
@@ -276,7 +276,7 @@ const PluginRegistryPage = () => {
           setEditingPlugin(null);
           setEditServerError(null);
         }}
-        onSubmit={handleEditSubmit}
+        onSubmit={(pluginId, body) => void handleEditSubmit(pluginId, body)}
       />
 
       {/* Register plugin modal — step 1: fill in the form */}
@@ -285,7 +285,7 @@ const PluginRegistryPage = () => {
         isSubmitting={isSubmittingRegister}
         serverError={registerServerError}
         onClose={() => setRegisterOpen(false)}
-        onSubmit={handleRegisterSubmit}
+        onSubmit={(body) => void handleRegisterSubmit(body)}
       />
 
       {/* API key reveal modal — step 2: shown once after successful registration */}

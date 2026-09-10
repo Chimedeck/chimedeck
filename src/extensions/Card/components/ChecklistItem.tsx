@@ -381,7 +381,7 @@ export const ChecklistItem = ({
       <input
         type="checkbox"
         checked={item.checked}
-        onChange={(e) => onToggle(item.id, e.target.checked)}
+        onChange={(e) => void onToggle(item.id, e.target.checked)}
         disabled={disabled}
         className="mt-0.5 h-4 w-4 rounded border-border-strong text-blue-500 bg-bg-surface"
         aria-label={`Toggle: ${item.title}`}
@@ -397,7 +397,7 @@ export const ChecklistItem = ({
             e.target.style.height = 'auto';
             e.target.style.height = `${e.target.scrollHeight}px`;
           }}
-          onBlur={submitRename}
+          onBlur={() => void submitRename()}
           onPaste={handleEditPaste}
           // [why] Stop pointer propagation so dnd-kit's row-level listener doesn't
           // capture the pointer-down and turn text selection into an item drag.

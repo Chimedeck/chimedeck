@@ -85,7 +85,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
             Invite guest by email
           </p>
-          <form onSubmit={handleInvite} className="flex gap-2">
+          <form onSubmit={(e) => void handleInvite(e)} className="flex gap-2">
             <input
               type="email"
               value={email}
@@ -208,7 +208,7 @@ const GuestsTab = ({ boardId, isAdmin }: Props) => {
                     {isAdmin && (
                       <button
                         type="button"
-                        onClick={() => handleRevoke(guest)}
+                        onClick={() => void handleRevoke(guest)}
                         className="rounded px-2 py-1 text-xs text-muted hover:bg-bg-overlay hover:text-danger transition-colors"
                         aria-label={`Remove guest ${guest.name ?? guest.email}`}
                       >
