@@ -63,7 +63,7 @@ function singleFileUpload(
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve();
       } else {
-        reject(new Error(`S3 PUT failed: ${xhr.status}`));
+        reject(new Error(`S3 PUT failed: ${String(xhr.status)}`));
       }
     };
     xhr.onerror = () => reject(new Error('Network error during upload'));
@@ -78,7 +78,7 @@ async function uploadPart(url: string, slice: Blob): Promise<string> {
     body: slice,
     headers: { 'Content-Type': 'application/octet-stream' },
   });
-  if (!res.ok) throw new Error(`Part upload failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Part upload failed: ${String(res.status)}`);
   return res.headers.get('ETag') ?? '';
 }
 
@@ -134,7 +134,7 @@ export function useAttachmentUpload({
       const validFiles = files.filter((file) => {
         if (file.size > config.maxAttachmentSizeBytes) {
           const maxSizeMb = Math.round(config.maxAttachmentSizeBytes / (1024 * 1024));
-          onErrorRef.current?.('', `File "${file.name}" is too large. It must be under ${maxSizeMb}MB.`);
+          onErrorRef.current?.('', `File "${file.name}" is too large. It must be under ${String(maxSizeMb)}MB.`);
           return false;
         }
         return true;

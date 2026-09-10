@@ -14,7 +14,7 @@ function parseDate(s: string): Date | undefined {
 }
 
 function formatDateInput(d: Date): string {
-  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  return `${String(d.getMonth() + 1)}/${String(d.getDate())}/${String(d.getFullYear())}`;
 }
 
 function parseTime12(s: string): [number, number] | undefined {
@@ -31,7 +31,7 @@ function parseTime12(s: string): [number, number] | undefined {
 
 export function formatTime12(h: number, min: number): string {
   const ampm = h >= 12 ? 'PM' : 'AM';
-  return `${h % 12 || 12}:${min.toString().padStart(2, '0')} ${ampm}`;
+  return `${String(h % 12 || 12)}:${min.toString().padStart(2, '0')} ${ampm}`;
 }
 
 function isSameDay(a: Date, b: Date) {

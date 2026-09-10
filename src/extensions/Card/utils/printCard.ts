@@ -73,7 +73,7 @@ function renderChecklists(checklists: Checklist[]): string {
         <div class="checklist">
           <div class="checklist-header">
             <strong>${escHtml(cl.title)}</strong>
-            <span class="checklist-progress">${done}/${total} &mdash; ${pct}%</span>
+            <span class="checklist-progress">${String(done)}/${String(total)} &mdash; ${String(pct)}%</span>
           </div>
           <ul>${items}</ul>
         </div>`;

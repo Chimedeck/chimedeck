@@ -24,7 +24,7 @@ function formatResponseTime(
     if (errorMessage) return 'Error';
     return 'Error';
   }
-  if (responseTimeMs != null) return `${responseTimeMs} ms`;
+  if (responseTimeMs != null) return `${String(responseTimeMs)} ms`;
   return '—';
 }
 
@@ -33,11 +33,11 @@ function relativeTime(isoString: string): string {
   const diffMs = Date.now() - new Date(isoString).getTime();
   const diffSec = Math.floor(diffMs / 1000);
   if (diffSec < 10) return 'just now';
-  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffSec < 60) return `${String(diffSec)}s ago`;
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffMin < 60) return `${String(diffMin)} min ago`;
   const diffHr = Math.floor(diffMin / 60);
-  return `${diffHr}h ago`;
+  return `${String(diffHr)}h ago`;
 }
 
 export function HealthCheckRow({ entry, isProbing, onRemove }: Props) {
