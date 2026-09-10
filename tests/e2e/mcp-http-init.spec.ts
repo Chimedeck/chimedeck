@@ -1,11 +1,11 @@
 // Playwright MCP HTTP Init test for Sprint 106
 // Covers: unauthenticated POST, valid POST, DELETE, session hijack, proxying
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 
 // Helper: login and get JWT
-async function loginAndGetJwt(request: any, email: string, password: string) {
+async function loginAndGetJwt(request: APIRequestContext, email: string, password: string) {
   const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
     data: { email, password },
   });
