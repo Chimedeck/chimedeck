@@ -14,14 +14,11 @@ const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<string> {
   const email = `bv-test-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `BV ${suffix}` },
   });
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return body.data.access_token;
+  const body = await regRes.json() as { data: { accessToken: string } };
+  return body.data.accessToken;
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -34,9 +31,9 @@ async function createWorkspace(request: APIRequestContext, token: string): Promi
 }
 
 async function createBoard(request: APIRequestContext, token: string, workspaceId: string): Promise<string> {
-  const res = await request.post(`${BASE_URL}/api/v1/boards`, {
+  const res = await request.post(`${BASE_URL}/api/v1/workspaces/${workspaceId}/boards`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: { name: `Board-${Date.now()}`, workspaceId },
+    data: { title: `Board-${Date.now()}` },
   });
   const body = await res.json() as { data: { id: string } };
   return body.data.id;

@@ -27,15 +27,16 @@ async function registerAndLogin(
     data: { email, password, name: `OTel ${suffix}` },
   });
   expect(reg.status()).toBe(201);
-  const { data: regData } = await reg.json() as { data: { token: string; workspaceId?: string } };
+  const { data: regData } = await reg.json() as { data: { accessToken: string } };
+  const token = regData.accessToken;
 
-  // Login to get a fresh token
-  const login = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
+  // Create a workspace to get a workspaceId (auth response does not include one)
+  const ws = await request.post(`${BASE_URL}/api/v1/workspaces`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { name: `OTel-WS-${Date.now()}` },
   });
-  expect(login.status()).toBe(200);
-  const { data: loginData } = await login.json() as { data: { token: string; workspaceId: string } };
-  return { token: loginData.token, workspaceId: loginData.workspaceId ?? regData.workspaceId ?? '' };
+  const { data: wsData } = await ws.json() as { data: { id: string } };
+  return { token, workspaceId: wsData.id };
 }
 
 // ---------------------------------------------------------------------------
@@ -86,33 +87,33 @@ test.describe('Card move triggers conflict counter (smoke)', () => {
     const { token, workspaceId } = await registerAndLogin(request, 'cm');
 
     // Create a board
-    const boardRes = await request.post(`${BASE_URL}/api/v1/boards`, {
+    const boardRes = await request.post(`${BASE_URL}/api/v1/workspaces/${workspaceId}/boards`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { title: 'OTel Board', workspaceId },
+      data: { title: 'OTel Board' },
     });
     expect(boardRes.status()).toBe(201);
     const { data: board } = await boardRes.json() as { data: { id: string } };
 
     // Create a list
-    const listRes = await request.post(`${BASE_URL}/api/v1/lists`, {
+    const listRes = await request.post(`${BASE_URL}/api/v1/boards/${board.id}/lists`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { title: 'List A', boardId: board.id },
+      data: { title: 'List A' },
     });
     expect(listRes.status()).toBe(201);
     const { data: list } = await listRes.json() as { data: { id: string } };
 
     // Create a second list
-    const list2Res = await request.post(`${BASE_URL}/api/v1/lists`, {
+    const list2Res = await request.post(`${BASE_URL}/api/v1/boards/${board.id}/lists`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { title: 'List B', boardId: board.id },
+      data: { title: 'List B' },
     });
     expect(list2Res.status()).toBe(201);
     const { data: list2 } = await list2Res.json() as { data: { id: string } };
 
     // Create a card in List A
-    const cardRes = await request.post(`${BASE_URL}/api/v1/cards`, {
+    const cardRes = await request.post(`${BASE_URL}/api/v1/lists/${list.id}/cards`, {
       headers: { Authorization: `Bearer ${token}` },
-      data: { title: 'Card 1', listId: list.id, boardId: board.id },
+      data: { title: 'Card 1' },
     });
     expect(cardRes.status()).toBe(201);
     const { data: card } = await cardRes.json() as { data: { id: string } };
