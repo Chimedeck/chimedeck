@@ -26,8 +26,9 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
     try {
       await onAdd(name.trim(), url.trim());
       onClose();
-    } catch (err: any) {
-      setError(err?.message ?? translations['attachment.urlModal.error.failed']);
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setError(e.message ?? translations['attachment.urlModal.error.failed']);
     } finally {
       setSubmitting(false);
     }

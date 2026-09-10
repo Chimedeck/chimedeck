@@ -95,7 +95,7 @@ const BoardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =
             name: name.trim(),
             automationType: 'BOARD_BUTTON',
             icon,
-            trigger: null as any, // BOARD_BUTTON has no trigger
+            trigger: null, // BOARD_BUTTON has no trigger
             actions: actionPayload,
           },
         });

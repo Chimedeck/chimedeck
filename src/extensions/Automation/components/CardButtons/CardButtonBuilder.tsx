@@ -68,7 +68,7 @@ const CardButtonBuilder: FC<Props> = ({ boardId, existing, onSave, onClose }) =>
             name: name.trim(),
             automationType: 'CARD_BUTTON',
             icon,
-            trigger: null as any, // CARD_BUTTON has no trigger
+            trigger: null, // CARD_BUTTON has no trigger
             actions: actionPayload,
           },
         });
