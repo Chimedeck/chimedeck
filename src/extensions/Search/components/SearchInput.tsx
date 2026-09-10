@@ -1,6 +1,6 @@
 // src/extensions/Search/components/SearchInput.tsx
 // Debounced search input — fires onChange 300 ms after the user stops typing.
-import React, { useRef } from 'react';
+import React from 'react';
 
 interface SearchInputProps {
   value: string;

@@ -357,7 +357,7 @@ function renderContent(text: string, attachments: Attachment[]): string {
   return addLinkTargetBlank(normalizeRenderedLinkHtml(withMentions));
 }
 
-const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onReply, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
+const CommentItem = ({ comment, boardId, attachments = [], currentUserId, isAdmin = false, isNotificationTarget = false, autoExpandReplies = false, onEdit, onDelete, onAddReaction, onRemoveReaction, onAddReply, onEditReply, onDeleteReply, cardId }: Props) => {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [replyExpanded, setReplyExpanded] = useState(autoExpandReplies);

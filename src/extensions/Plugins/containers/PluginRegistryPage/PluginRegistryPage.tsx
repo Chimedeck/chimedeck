@@ -34,7 +34,6 @@ import ApiKeyRevealModal from '../../modals/ApiKeyRevealModal';
 import { updatePlugin } from '../../api';
 import type { Plugin, UpdatePluginBody, RegisterPluginBody } from '../../api';
 import translations from '../../translations/en.json';
-import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 
 const PluginRegistryPage = () => {
   const dispatch = useAppDispatch();

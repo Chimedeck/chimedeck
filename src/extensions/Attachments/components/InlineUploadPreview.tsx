@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { UploadEntry } from '../types';
 import { getMimeIcon } from '../utils/mimeIcon';
-import { formatBytes } from '../utils/formatBytes';
 import { UploadProgressBar } from './UploadProgressBar';
 import translations from '../translations/en.json';
 

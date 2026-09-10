@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import Button from '../../../common/components/Button';
 import type { Label } from '../api';
-import { LabelChip } from './LabelChip';
 
 interface Props {
   allLabels: Label[];

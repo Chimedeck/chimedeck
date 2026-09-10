@@ -6,15 +6,6 @@ import { socket } from '../client/socket';
 
 // ---------- Helpers ----------
 
-function makeStore(state: unknown = {}) {
-  const dispatched: unknown[] = [];
-  return {
-    getState: () => state,
-    dispatch: (a: unknown) => dispatched.push(a),
-    dispatched,
-  };
-}
-
 function makeNext() {
   const calls: unknown[] = [];
   const fn = (a: unknown) => { calls.push(a); return a; };

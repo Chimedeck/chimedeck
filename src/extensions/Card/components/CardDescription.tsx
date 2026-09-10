@@ -2,7 +2,7 @@
 // View mode: renders markdown; click anywhere to enter edit mode.
 // Edit mode: plain textarea (with @mention support). Save with Ctrl/Cmd+Enter or
 // the Save button. Cancel with Escape or the Cancel button.
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import MentionInput from '~/common/components/MentionInput/MentionInput';
 import Button from '../../../common/components/Button';

@@ -45,7 +45,7 @@ const HighlightedTitle = ({ title, query }: { title: string; query: string }) =>
   );
 };
 
-const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSelectResult, hasBackground = false }: Props) => {
+const BoardSearchBar = ({ boardId, token, initialQuery = '', onQueryChange, onSelectResult }: Props) => {
   const [inputValue, setInputValue] = useState(initialQuery);
   const [results, setResults] = useState<BoardSearchResult[]>([]);
   const [loading, setLoading] = useState(false);

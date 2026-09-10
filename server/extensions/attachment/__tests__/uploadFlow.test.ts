@@ -1,6 +1,6 @@
 // Integration tests for the full upload flow, external URL creation, and delete.
 // These tests mock S3 and DB to verify the API handler logic end-to-end.
-import { describe, expect, test, mock, beforeEach } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 
 // We test SSRF validator inline since it has no external dependencies
 import { isForbiddenUrl } from '../api/addUrl';

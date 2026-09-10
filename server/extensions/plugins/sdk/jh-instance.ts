@@ -239,7 +239,7 @@ window.addEventListener('message', (event: MessageEvent) => {
       { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result } },
       '*',
     );
-  } catch (err) {
+  } catch {
     window.parent.postMessage(
       { jhSdk: true, id: nextId(), type: 'RESOLVE_CAPABILITY_RESPONSE', payload: { requestId: id, result: null } },
       '*',

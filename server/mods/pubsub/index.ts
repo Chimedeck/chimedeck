@@ -1,6 +1,5 @@
 // server/mods/pubsub/index.ts
 // Resolves the active PubSubProvider adapter from feature flags.
-import { flags } from '../flags';
 import { InMemoryPubSubAdapter } from './adapters/inMemory';
 import { RedisPubSubAdapter } from './adapters/redis';
 import { env } from '../../config/env';

@@ -7,7 +7,6 @@ import { describe, it, expect, afterAll } from 'bun:test';
 import {
   cleanupOrphanAttachments,
   startOrphanCleanupWorker,
-  orphanCleanupInterval,
   CLEANUP_INTERVAL_MS,
 } from '../../../server/extensions/attachment/workers/orphanCleanup';
 
