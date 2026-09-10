@@ -43,7 +43,7 @@ const WorkspaceDashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    if (workspaceId) dispatch(fetchBoardsThunk({ workspaceId }));
+    if (workspaceId) void dispatch(fetchBoardsThunk({ workspaceId }));
   }, [dispatch, workspaceId]);
 
   const handleCreate = (title: string) => {
@@ -60,7 +60,7 @@ const WorkspaceDashboard = () => {
   const handleArchive = (boardId: string) => dispatch(archiveBoardThunk({ boardId }));
   const handleDelete = (boardId: string) => {
     if (window.confirm('Are you sure you want to delete this board? This cannot be undone.')) {
-      dispatch(deleteBoardThunk({ boardId }));
+      void dispatch(deleteBoardThunk({ boardId }));
     }
   };
   const handleDuplicate = (boardId: string) => dispatch(duplicateBoardThunk({ boardId }));

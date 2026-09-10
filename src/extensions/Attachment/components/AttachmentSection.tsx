@@ -31,7 +31,7 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
     // TODO: add a dedicated list endpoint in a future sprint.
   };
 
-  useEffect(() => { refresh(); }, [cardId]);
+  useEffect(() => { void refresh(); }, [cardId]);
 
   const handleDelete = async (id: string): Promise<void> => {
     await fetch(`${apiBase}/api/v1/attachments/${id}`, { method: 'DELETE', headers: authHeaders });
@@ -58,7 +58,7 @@ export function AttachmentSection({ cardId, authToken, apiBase = '' }: Props): R
   };
 
   const handleUploadComplete = (): void => {
-    refresh();
+    void refresh();
   };
 
   return (

@@ -33,9 +33,9 @@ export default function AppShell() {
 
   // Load workspace list, user profile, and client feature flags once when the shell mounts
   useEffect(() => {
-    dispatch(fetchWorkspacesThunk());
-    dispatch(fetchProfileThunk());
-    dispatch(fetchFeatureFlagsThunk());
+    void dispatch(fetchWorkspacesThunk());
+    void dispatch(fetchProfileThunk());
+    void dispatch(fetchFeatureFlagsThunk());
   }, [dispatch]);
 
   // Close mobile drawer on route change (e.g. nav link clicked or browser back)

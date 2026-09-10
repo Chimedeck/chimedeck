@@ -41,7 +41,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
       setLocalError(translations['ProfilePage.invalidFile']);
       return;
     }
-    dispatch(uploadAvatarThunk({ file }));
+    void dispatch(uploadAvatarThunk({ file }));
   }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -58,7 +58,7 @@ export default function AvatarUploader({ avatarUrl, name }: AvatarUploaderProps)
   }
 
   function handleRemove() {
-    dispatch(removeAvatarThunk());
+    void dispatch(removeAvatarThunk());
   }
 
   return (

@@ -105,7 +105,7 @@ const CustomFieldValueEditor = ({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
             if (draft !== resolvedDisplayValue(field, value)) {
-              save({ value_text: draft || null });
+              void save({ value_text: draft || null });
             }
           }}
           onKeyDown={(e) => {
@@ -143,9 +143,9 @@ const CustomFieldValueEditor = ({
             const num = parseFloat(draft);
             const current = value?.value_number ? parseFloat(value.value_number) : null;
             if (draft === '' && current !== null) {
-              handleClear();
+              void handleClear();
             } else if (!isNaN(num) && num !== current) {
-              save({ value_number: num });
+              void save({ value_number: num });
             }
           }}
           onKeyDown={(e) => {
@@ -178,9 +178,9 @@ const CustomFieldValueEditor = ({
           onChange={(e) => {
             setDraft(e.target.value);
             if (e.target.value) {
-              save({ value_date: new Date(e.target.value).toISOString() });
+              void save({ value_date: new Date(e.target.value).toISOString() });
             } else {
-              handleClear();
+              void handleClear();
             }
           }}
         />
@@ -208,7 +208,7 @@ const CustomFieldValueEditor = ({
           disabled={disabled || saving}
           aria-label={field.name}
           onChange={(e) => {
-            save({ value_checkbox: e.target.checked });
+            void save({ value_checkbox: e.target.checked });
           }}
         />
       </label>
@@ -239,9 +239,9 @@ const CustomFieldValueEditor = ({
             onChange={(e) => {
               const val = e.target.value;
               if (val === '') {
-                handleClear();
+                void handleClear();
               } else {
-                save({ value_option_id: val });
+                void save({ value_option_id: val });
               }
             }}
           >

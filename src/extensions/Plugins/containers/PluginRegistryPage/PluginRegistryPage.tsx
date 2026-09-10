@@ -80,7 +80,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     }
   }, [isAdmin, dispatch]);
 
@@ -98,7 +98,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: s ?? statusFilter };
       if (q) params.q = q;
       if (category) params.category = category;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     },
     [dispatch, statusFilter]
   );
@@ -118,7 +118,7 @@ const PluginRegistryPage = () => {
     const params: Parameters<typeof fetchPluginsThunk>[0] = { status: s };
     if (searchQuery) params.q = searchQuery;
     if (selectedCategory) params.category = selectedCategory;
-    dispatch(fetchPluginsThunk(params));
+    void dispatch(fetchPluginsThunk(params));
   };
 
   const handleRegisterSubmit = async (body: RegisterPluginBody) => {
@@ -148,7 +148,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     }
     setRevealApiKey(null);
   };
@@ -169,7 +169,7 @@ const PluginRegistryPage = () => {
       const params: Parameters<typeof fetchPluginsThunk>[0] = { status: statusFilter };
       if (searchQuery) params.q = searchQuery;
       if (selectedCategory) params.category = selectedCategory;
-      dispatch(fetchPluginsThunk(params));
+      void dispatch(fetchPluginsThunk(params));
     }
     setReactivatingId(null);
   };

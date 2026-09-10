@@ -164,7 +164,7 @@ const CardModalBottomBar = ({
               <button
                 type="button"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-base hover:bg-bg-overlay rounded-lg transition-colors"
-                onClick={() => { actions.setOpen(false); onArchive(); }}
+                onClick={() => { actions.setOpen(false); void onArchive(); }}
               >
                 {archived
                   ? <><ArchiveBoxXMarkIcon className="w-4 h-4 shrink-0" /> Unarchive card</>
@@ -203,7 +203,7 @@ const CardModalBottomBar = ({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-40"
                 onClick={() => {
                   actions.setOpen(false);
-                  if (confirm('Delete this card? This cannot be undone.')) onDelete();
+                  if (confirm('Delete this card? This cannot be undone.')) void onDelete();
                 }}
                 disabled={disabled}
               >

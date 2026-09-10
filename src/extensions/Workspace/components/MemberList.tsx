@@ -37,7 +37,7 @@ const MemberList = ({
   const ownerCount = members.filter((m) => m.role === 'OWNER').length;
 
   const handleRoleChange = (userId: string, newRole: Role) => {
-    dispatch(updateMemberRoleThunk({ workspaceId, userId, role: newRole }));
+    void dispatch(updateMemberRoleThunk({ workspaceId, userId, role: newRole }));
   };
 
   const handleRemoveConfirm = (userId: string) => {
@@ -46,7 +46,7 @@ const MemberList = ({
 
   const handleRemove = () => {
     if (confirmRemoveUserId) {
-      dispatch(removeMemberThunk({ workspaceId, userId: confirmRemoveUserId }));
+      void dispatch(removeMemberThunk({ workspaceId, userId: confirmRemoveUserId }));
       setConfirmRemoveUserId(null);
     }
   };

@@ -152,23 +152,23 @@ class FrameContext {
   // ── UI actions ────────────────────────────────────────────────────
 
   popup(options: { title: string; url: string; args?: Record<string, unknown>; mouseEvent?: MouseEvent }): void {
-    sendToHost('UI_POPUP', options);
+    void sendToHost('UI_POPUP', options);
   }
 
   modal(options: { title?: string; url: string; fullscreen?: boolean; accentColor?: string }): void {
-    sendToHost('UI_MODAL', options);
+    void sendToHost('UI_MODAL', options);
   }
 
   updateModal(options: Partial<{ title: string; fullscreen: boolean; accentColor: string }>): void {
-    sendToHost('UI_UPDATE_MODAL', options);
+    void sendToHost('UI_UPDATE_MODAL', options);
   }
 
   closePopup(): void {
-    sendToHost('UI_CLOSE_POPUP', {});
+    void sendToHost('UI_CLOSE_POPUP', {});
   }
 
   closeModal(): void {
-    sendToHost('UI_CLOSE_MODAL', {});
+    void sendToHost('UI_CLOSE_MODAL', {});
   }
 
   sizeTo(element: HTMLElement | string): void {
@@ -176,7 +176,7 @@ class FrameContext {
     const height = typeof element === 'string'
       ? document.querySelector(element)?.scrollHeight ?? document.body.scrollHeight
       : element.scrollHeight;
-    sendToHost('UI_SIZE_TO', { height, selector });
+    void sendToHost('UI_SIZE_TO', { height, selector });
   }
 
   render(fn: () => void): void {
