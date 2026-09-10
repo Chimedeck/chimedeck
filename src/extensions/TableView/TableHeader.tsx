@@ -25,7 +25,7 @@ const TableHeader = ({ columns, sortState, onSort }: Props) => {
             scope="col"
             className={`px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-subtle select-none whitespace-nowrap${col.sortable ? ' cursor-pointer hover:text-base' : ''}`}
             style={col.width ? { width: col.width } : undefined}
-            onClick={col.sortable ? () => onSort(col.key) : undefined}
+            onClick={col.sortable ? () => { onSort(col.key); } : undefined}
             aria-sort={
               sortState.column === col.key
                 ? sortState.direction === 'asc'

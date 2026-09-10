@@ -48,7 +48,7 @@ const PluginDocsPage = () => {
         {/* Header */}
         <div className="border-b border-border bg-bg-base px-8 py-5">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => { navigate(-1); }}
             className="mb-2 flex items-center gap-1 text-sm text-muted hover:text-subtle"
           >
             ← Back
