@@ -46,7 +46,7 @@ const AddListForm = ({ onSubmit }: Props) => {
     return (
       <button
         className="w-72 shrink-0 bg-bg-surface/40 border border-dashed border-border rounded-xl p-3 text-subtle hover:text-base hover:border-border-strong text-sm text-left transition-colors"
-        onClick={() => setOpen(true)}
+        onClick={() => { setOpen(true); }}
         aria-label="Add a list"
       >
         + Add a list
@@ -63,7 +63,7 @@ const AddListForm = ({ onSubmit }: Props) => {
         ref={inputRef}
         type="text"
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        onChange={(e) => { setTitle(e.target.value); }}
         onKeyDown={handleKeyDown}
         placeholder="List title…"
         disabled={submitting}

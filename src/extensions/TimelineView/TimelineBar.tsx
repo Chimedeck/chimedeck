@@ -88,8 +88,8 @@ const TimelineBar = ({
 
       {/* Bar body — drag to move both dates */}
       <div
-        onMouseDown={(e) => onMoveStart(card.id, e)}
-        onClick={() => onCardClick(card.id)}
+        onMouseDown={(e) => { onMoveStart(card.id, e); }}
+        onClick={() => { onCardClick(card.id); }}
         className="flex flex-1 cursor-grab items-center overflow-hidden px-1"
         role="button"
         tabIndex={0}

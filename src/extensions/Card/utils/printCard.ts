@@ -414,9 +414,9 @@ export function printCard({
     a.href = url;
     a.download = `${safeName}.html`;
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    setTimeout(() => { URL.revokeObjectURL(url); }, 10_000);
   } else {
     window.open(url, '_blank', 'width=900,height=700');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    setTimeout(() => { URL.revokeObjectURL(url); }, 60_000);
   }
 }
