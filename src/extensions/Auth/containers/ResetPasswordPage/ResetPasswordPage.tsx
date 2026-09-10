@@ -25,10 +25,10 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     if (status === 'success') {
       const timer = setTimeout(
-        () => navigate('/login', { replace: true, state: { toast: translations.resetPassword.success } }),
+        () => { navigate('/login', { replace: true, state: { toast: translations.resetPassword.success } }); },
         1500,
       );
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); };
     }
   }, [status, navigate]);
 
@@ -109,7 +109,7 @@ export default function ResetPasswordPage() {
                   type="password"
                   autoComplete="new-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'reset-password-error' : undefined}
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
                   type="password"
                   autoComplete="new-password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => { setConfirmPassword(e.target.value); }}
                   className="bg-bg-overlay border border-border rounded-lg px-3 py-2 text-base placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                   aria-invalid={!!errors.confirmPassword}
                   aria-describedby={errors.confirmPassword ? 'reset-confirm-error' : undefined}
