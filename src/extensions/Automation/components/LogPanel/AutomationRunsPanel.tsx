@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import type { AutomationRunLog, PaginatedRunLogs } from '../../types';
+import type { PaginatedRunLogs } from '../../types';
 import { getAutomationRuns } from '../../api';
 import Button from '../../../../common/components/Button';
 import RunLogTable from './RunLogTable';

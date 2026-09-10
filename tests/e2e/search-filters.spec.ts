@@ -114,7 +114,7 @@ test.describe('Search Filters', () => {
     expect(res.status()).toBe(401);
   });
 
-  test('Test 5 — UI search box filters visible cards by keyword', async ({ request, page }) => {
+  test('Test 5 — UI search box filters visible cards by keyword', async ({ page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     await page.goto(UI_URL);
@@ -148,7 +148,7 @@ test.describe('Search Filters', () => {
     }
   });
 
-  test('Test 6 — UI type filter toggle shows only matching result type', async ({ request, page }) => {
+  test('Test 6 — UI type filter toggle shows only matching result type', async ({ page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     await page.goto(UI_URL);

@@ -8,7 +8,6 @@ import { describe, expect, it } from 'bun:test';
 import { isEndpointAllowed } from '../../../server/extensions/webhooks/api/ssrfGuard';
 import {
   WEBHOOK_EVENT_TYPES,
-  type WebhookEventType,
 } from '../../../server/extensions/webhooks/common/eventTypes';
 
 // ---------------------------------------------------------------------------

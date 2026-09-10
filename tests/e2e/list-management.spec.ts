@@ -146,7 +146,7 @@ test.describe('List Management', () => {
 
   // ── UI: Create list via board UI ──────────────────────────────────────────────
 
-  test('Test 6 — UI: Add list button creates a new list on the board', async ({ request, page }) => {
+  test('Test 6 — UI: Add list button creates a new list on the board', async ({ page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
     await page.goto(UI_URL);

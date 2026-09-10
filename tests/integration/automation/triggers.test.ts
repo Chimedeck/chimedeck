@@ -2,7 +2,7 @@
 // Integration tests for the 13 card trigger handlers (Sprint 62).
 // Tests positive (should fire) and negative (should not fire) cases for each.
 
-import { describe, it, expect, beforeAll } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 
 // Import triggers index to register all handlers before testing.
 import '../../../server/extensions/automation/engine/triggers/index';

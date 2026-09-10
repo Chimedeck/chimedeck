@@ -10,7 +10,6 @@ import type {
   CardButtonRunResult,
   BoardButtonRunResult,
   PaginatedRunLogs,
-  AutomationQuota,
 } from './types';
 
 type Api = typeof apiClient;

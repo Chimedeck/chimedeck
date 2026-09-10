@@ -4,7 +4,7 @@
 // Strategy: handler and module-level tests that exercise logic directly.
 // Thumbnail generation with real S3 requires LocalStack — those tests verify the
 // function's guard conditions without needing a real bucket.
-import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect } from 'bun:test';
 import { generateThumbnail } from '../../../server/extensions/attachment/workers/thumbnail';
 import { handleListAttachments } from '../../../server/extensions/attachment/api/list';
 import { issueAccessToken } from '../../../server/extensions/auth/mods/token/issue';
