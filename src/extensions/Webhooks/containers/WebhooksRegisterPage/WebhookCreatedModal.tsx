@@ -19,7 +19,7 @@ export default function WebhookCreatedModal({ signingSecret, onClose }: Props) {
       await navigator.clipboard.writeText(signingSecret);
       setCopied(true);
       // [why] Reset label after 2s so the user knows the button is ready for another copy.
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => { setCopied(false); }, 2000);
     } catch {
       // Silently fail — clipboard may be unavailable in some environments
     }

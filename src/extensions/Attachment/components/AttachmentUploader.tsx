@@ -23,7 +23,7 @@ export function AttachmentUploader({ cardId, onUploadComplete }: Props): React.R
   return (
     <div
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
+      onDragLeave={() => { setDragging(false); }}
       onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
       onClick={() => inputRef.current?.click()}
       style={{
@@ -40,7 +40,7 @@ export function AttachmentUploader({ cardId, onUploadComplete }: Props): React.R
         ref={inputRef}
         type="file"
         style={{ display: 'none' }}
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={(e) => { handleFiles(e.target.files); }}
       />
       {progress !== null ? (
         <div>

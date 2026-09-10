@@ -161,7 +161,7 @@ const TimelineRow = ({
                 key={card.id}
                 variant="ghost"
                 className="rounded bg-bg-overlay px-2 py-0.5 text-xs text-subtle hover:bg-bg-sunken"
-                onClick={() => onCardClick(card.id)}
+                onClick={() => { onCardClick(card.id); }}
                 data-testid={`timeline-unscheduled-chip-${card.id}`}
               >
                 {card.title}

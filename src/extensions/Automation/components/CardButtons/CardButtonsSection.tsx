@@ -82,7 +82,7 @@ const CardButtonsSection: FC<Props> = ({ boardId, cardId, disabled = false }) =>
           <BoltIcon className="h-4 w-4 text-muted" aria-hidden="true" />
           <h3 className="text-sm font-medium text-subtle">{translations['automation.panel.title']}</h3>
         </div>
-        <AddCardButtonButton onClick={() => setShowBuilder(true)} disabled={disabled} />
+        <AddCardButtonButton onClick={() => { setShowBuilder(true); }} disabled={disabled} />
 
         {showBuilder && (
           <CardButtonBuilder
@@ -116,7 +116,7 @@ const CardButtonsSection: FC<Props> = ({ boardId, cardId, disabled = false }) =>
       </ul>
 
       <div className="mt-1.5">
-        <AddCardButtonButton onClick={() => setShowBuilder(true)} disabled={disabled} />
+        <AddCardButtonButton onClick={() => { setShowBuilder(true); }} disabled={disabled} />
       </div>
 
       {(showBuilder || editingButton) && (

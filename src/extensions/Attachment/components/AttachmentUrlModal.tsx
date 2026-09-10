@@ -45,7 +45,7 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); }}
             style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
           />
         </label>
@@ -54,7 +54,7 @@ export function AttachmentUrlModal({ onAdd, onClose }: Props): React.ReactElemen
           <input
             type="url"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => { setUrl(e.target.value); }}
             style={{ display: 'block', width: '100%', marginTop: 4, padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 4 }}
           />
         </label>

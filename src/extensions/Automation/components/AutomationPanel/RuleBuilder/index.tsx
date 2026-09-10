@@ -39,11 +39,11 @@ const RuleBuilder = ({ boardId, initialAutomation, onSaved, onCancel }: Props) =
 
   useEffect(() => {
     getTriggerTypes()
-      .then((res) => setAllTriggerTypes(res.data))
+      .then((res) => { setAllTriggerTypes(res.data); })
       .catch(() => {});
 
     getActionTypes()
-      .then((res) => setAllActionTypes(res.data))
+      .then((res) => { setAllActionTypes(res.data); })
       .catch(() => {});
   }, []);
   const [actions, setActions] = useState<ActionItemData[]>(

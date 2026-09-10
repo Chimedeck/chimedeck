@@ -69,7 +69,7 @@ export function HealthCheckStatusDot({ status, httpStatus, responseTimeMs, error
       setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 });
     }
   };
-  const hideTooltip = () => setTooltipPos(null);
+  const hideTooltip = () => { setTooltipPos(null); };
 
   return (
     <span

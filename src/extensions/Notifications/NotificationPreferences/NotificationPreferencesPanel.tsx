@@ -45,7 +45,7 @@ const ToggleSwitch = ({
         aria-checked={enabled}
         aria-label={ariaLabel}
         disabled={disabled}
-        onClick={() => !disabled && onChange(!enabled)}
+        onClick={() => { if (!disabled) { onChange(!enabled); } }}
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${track}`}
       >
         <span
