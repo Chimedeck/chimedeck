@@ -37,8 +37,8 @@ const MentionSuggestions = ({
             name={s.name}
             avatarUrl={s.avatar_url}
             highlighted={i === highlightedIndex}
-            onSelect={() => onSelect(s)}
-            onMouseEnter={() => onHighlight(i)}
+            onSelect={() => { onSelect(s); }}
+            onMouseEnter={() => { onHighlight(i); }}
           />
         </li>
       ))}

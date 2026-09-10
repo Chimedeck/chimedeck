@@ -526,8 +526,8 @@ const CardChecklist = ({
                 boardMembers={boardMembers}
                 onRenameChecklist={onRenameChecklist}
                 onDeleteChecklist={onDeleteChecklist}
-                onMoveUp={() => handleMoveUp(index)}
-                onMoveDown={() => handleMoveDown(index)}
+                onMoveUp={() => { handleMoveUp(index); }}
+                onMoveDown={() => { handleMoveDown(index); }}
                 onItemAdd={onItemAdd}
                 onItemToggle={onItemToggle}
                 onItemRename={onItemRename}
