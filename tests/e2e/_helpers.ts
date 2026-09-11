@@ -78,11 +78,13 @@ export interface Credentials {
   email: string;
   password: string;
   token: string;
+  refreshToken: string;
 }
 
-// Register a user and return credentials (email/password/token). The app
-// authenticates the browser via HttpOnly cookies set by the login/register
-// response, so UI specs must log in through the form (not localStorage).
+// Register a user and return credentials (email/password/token/refreshToken).
+// The app authenticates the browser via HttpOnly cookies set by the register
+// response, so UI specs can inject the refresh_token cookie to restore auth
+// on boot (avoids the rate-limited UI form login).
 export async function registerAndGetCredentials(
   request: APIRequestContext,
   suffix: string,
@@ -93,7 +95,35 @@ export async function registerAndGetCredentials(
     data: { email, password, name: `Test ${suffix}` },
   });
   const body = await regRes.json() as { data: { accessToken: string } };
-  return { email, password, token: body.data.accessToken };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return {
+    email,
+    password,
+    token: body.data.accessToken,
+    refreshToken: refreshMatch ? refreshMatch[1] : '',
+  };
+}
+
+// Inject the refresh_token cookie into the browser context so the app's boot
+// refreshTokenThunk restores auth. Avoids the rate-limited UI form login
+// (10/IP/min) which 429s under the full suite.
+export async function loginViaCookie(
+  page: import('@playwright/test').Page,
+  uiUrl: string,
+  creds: Credentials,
+): Promise<void> {
+  if (creds.refreshToken) {
+    await page.context().addCookies([
+      {
+        name: 'refresh_token',
+        value: creds.refreshToken,
+        url: `${uiUrl}/api/v1/auth/refresh`,
+        httpOnly: true,
+        sameSite: 'Strict',
+      },
+    ]);
+  }
 }
 
 // Log in through the UI login form so the browser receives the HttpOnly

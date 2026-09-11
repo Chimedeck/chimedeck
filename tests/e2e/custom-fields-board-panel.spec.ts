@@ -4,7 +4,7 @@
 // Based on: tests/e2e/custom-fields-board-panel.md (now deleted)
 
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, loginViaUi, type Credentials } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
@@ -17,7 +17,7 @@ async function setupBoardAndNavigate(
   const boardId = await createBoard(request, creds.token, wsId);
 
   // The app authenticates via HttpOnly cookies, so log in through the UI form.
-  await loginViaUi(page, UI_URL, creds);
+  await loginViaCookie(page, UI_URL, creds);
   await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 

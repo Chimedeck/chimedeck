@@ -5,7 +5,7 @@
 // Based on: specs/tests/attachment-upload.md
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaUi, type Credentials } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
@@ -211,7 +211,7 @@ test.describe('Attachment Upload', () => {
     const listId = await createList(request, token, boardId);
     const uiCardId = await createCard(request, token, listId, 'UI Attachment Card');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -268,7 +268,7 @@ test.describe('Attachment Upload', () => {
       data: { url: 'https://example.com/report.pdf', name: 'report.pdf' },
     });
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 

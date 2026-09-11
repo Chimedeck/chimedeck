@@ -14,7 +14,7 @@ import {
   createBoard,
   createList,
   createCard,
-  loginViaUi,
+  loginViaCookie,
   type Credentials,
 } from './_helpers';
 
@@ -37,7 +37,7 @@ test.describe('Table View', () => {
     });
 
     // The app authenticates via HttpOnly cookies, so log in through the UI form.
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -64,7 +64,7 @@ test.describe('Table View', () => {
     const listId = await createList(request, creds.token, boardId, 'Backlog');
     const cardId = await createCard(request, creds.token, listId, 'My test card');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -86,7 +86,7 @@ test.describe('Table View', () => {
     await createCard(request, creds.token, listId, 'Zebra card');
     await createCard(request, creds.token, listId, 'Alpha card');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
     await page.getByTestId('board-view-tab-TABLE').click();
@@ -114,7 +114,7 @@ test.describe('Table View', () => {
     const listId = await createList(request, creds.token, boardId, 'Sprint');
     const cardId = await createCard(request, creds.token, listId, 'Open me please');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
     await page.getByTestId('board-view-tab-TABLE').click();

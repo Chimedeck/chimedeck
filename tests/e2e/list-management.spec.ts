@@ -4,7 +4,7 @@
 // Soft-skips when the server is not reachable.
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaUi, type Credentials } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
@@ -150,7 +150,7 @@ test.describe('List Management', () => {
   test('Test 6 — UI: Add list button creates a new list on the board', async ({ page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -198,7 +198,7 @@ test.describe('List Management', () => {
     const seedListId = await createList(request, token, boardId);
     void seedListId; // used implicitly via page.goto below
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -241,7 +241,7 @@ test.describe('List Management', () => {
     await createList(request, token, boardId);
     await createList(request, token, boardId);
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 

@@ -4,7 +4,7 @@
 // Based on: tests/e2e/custom-fields-ui.md (now deleted)
 
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaUi, type Credentials } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
@@ -22,7 +22,7 @@ async function setupBoardWithCard(request: APIRequestContext, page: import('@pla
   const cardId = await createCard(request, creds.token, listId, 'CF UI Test Card');
 
   // The app authenticates via HttpOnly cookies, so log in through the UI form.
-  await loginViaUi(page, UI_URL, creds);
+  await loginViaCookie(page, UI_URL, creds);
   await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 
