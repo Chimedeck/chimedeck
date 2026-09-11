@@ -86,8 +86,28 @@ test.describe('Attachment Upload', () => {
     const { data: { url: presignedUrl } } = await partUrlRes.json() as { data: { url: string } };
     expect(presignedUrl).toBeTruthy();
 
-    // Step 3: Skip actual S3 PUT in unit environment; use a stub ETag
-    const eTag = '"mock-etag-12345"';
+    // Step 3: Upload the part to the presigned URL.
+    // With FLAG_USE_LOCAL_STORAGE=true this is LocalStack, so a real PUT works
+    // and yields a genuine ETag that CompleteMultipartUpload will accept. Only
+    // fall back to a stub ETag when the storage endpoint is unreachable.
+    let eTag: string;
+    try {
+      // S3 requires every part except the last to be >= 5 MiB.
+      const partBody = Buffer.alloc(5 * 1024 * 1024, 0x61);
+      const putRes = await request.put(presignedUrl, {
+        headers: { 'Content-Type': 'image/png' },
+        data: partBody,
+      });
+      if (putRes.status() < 200 || putRes.status() >= 300) {
+        test.skip(true, `Object storage not reachable for part upload (${putRes.status()}) — skipping`);
+        return;
+      }
+      eTag = putRes.headers()['etag'] ?? '"mock-etag-12345"';
+    } catch {
+      test.skip(true, 'Object storage not reachable for part upload — skipping');
+      return;
+    }
+    expect(eTag).toBeTruthy();
 
     // Step 4: Complete multipart upload
     const completeRes = await request.post(
@@ -123,13 +143,19 @@ test.describe('Attachment Upload', () => {
 
     expect(confirmRes.status()).toBe(200);
     const { data: attachment } = await confirmRes.json() as {
-      data: { id: string; name: string; mimeType: string; status: string; url: string };
+      data: { id: string; name: string; mime_type: string; status: string; s3_key: string };
     };
     expect(attachment.id).toBe(attachmentId);
     expect(attachment.name).toBe('photo.png');
-    expect(attachment.mimeType).toBe('image/png');
+    // The confirm endpoint returns the raw attachment row, whose MIME column is
+    // `mime_type` (serializeAttachment renames it to content_type for other
+    // endpoints, but this handler does not use it).
+    expect(attachment.mime_type).toBe('image/png');
     expect(attachment.status).toBe('READY');
-    expect(attachment.url).toBeTruthy();
+    // FILE attachments have no external `url`; the client builds a view URL from
+    // the attachment id (`/api/v1/attachments/:id/view`). Assert the S3 object
+    // is recorded so the view endpoint has something to serve.
+    expect(attachment.s3_key).toBeTruthy();
   });
 
   test('Test 3 — Add attachment via URL returns 201 with URL type', async ({ request }) => {

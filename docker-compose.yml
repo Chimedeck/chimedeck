@@ -39,7 +39,10 @@ services:
       retries: 10
 
   localstack:
-    image: localstack/localstack:latest
+    # Pin to a community (non-pro) tag: `latest` now requires a licence token
+    # and exits 55 without one. 3.8.1 is the last freely usable line and is
+    # sufficient for S3. See docs/local-development.md.
+    image: localstack/localstack:3.8.1
     ports:
       - "4566:4566"
     environment:
