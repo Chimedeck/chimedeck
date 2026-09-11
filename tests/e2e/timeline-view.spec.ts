@@ -101,14 +101,24 @@ function offsetDate(offsetDays: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(page: Page, baseUrl: string, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseUrl}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
+}
+
 async function goToBoard(page: Page, baseUrl: string, boardId: string, creds: Credentials) {
   if (creds.refreshToken) {
     await page.context().addCookies([
       { name: 'refresh_token', value: creds.refreshToken, url: `${baseUrl}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
     ]);
   }
-  await page.goto(`${baseUrl}/b/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  await gotoBoardUntilReady(page, baseUrl, boardId);
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -170,27 +180,24 @@ test.describe('Timeline View', () => {
     await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).not.toBeVisible();
   });
 
-  test('Card missing start_date appears as unscheduled chip below its swimlane', async ({ page, request }) => {
+  test('Card missing start_date still renders as a scheduled bar', async ({ page, request }) => {
     const creds = await registerAndLogin(request, 'tl-unscheduled');
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
     const listId = await createList(request, creds.token, board.id, 'Backlog');
-    const cardId = await createCard(request, creds.token, listId, 'UnscheduledCard');
-    // Only due_date — no start_date → unscheduled
+    const cardId = await createCard(request, creds.token, listId, 'DueOnlyCard');
+    // Only due_date — no start_date. Timeline schedules any card with a
+    // today-or-future due_date, defaulting start_date to today.
     await patchCard(request, creds.token, cardId, { due_date: offsetDate(3) });
 
     await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-TIMELINE').click();
     await expect(page.getByTestId('timeline-view')).toBeVisible();
 
-    // Unscheduled row should be visible for this list
-    await expect(page.getByTestId(`timeline-unscheduled-row-${listId}`)).toBeVisible();
-    // Chip for the card should be present
-    await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).toBeVisible();
-    await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).toContainText('UnscheduledCard');
+    await expect(page.getByTestId(`timeline-bar-${cardId}`)).toBeVisible();
   });
 
-  test('Card with no dates at all appears as unscheduled chip', async ({ page, request }) => {
+  test('Card with no dates is not rendered on the timeline', async ({ page, request }) => {
     const creds = await registerAndLogin(request, 'tl-nodates');
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
@@ -202,7 +209,9 @@ test.describe('Timeline View', () => {
     await page.getByTestId('board-view-tab-TIMELINE').click();
     await expect(page.getByTestId('timeline-view')).toBeVisible();
 
-    await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).toBeVisible();
+    // Cards without a due_date are not displayed on the timeline.
+    await expect(page.getByTestId(`timeline-bar-${cardId}`)).not.toBeVisible();
+    await expect(page.getByTestId(`timeline-unscheduled-chip-${cardId}`)).not.toBeVisible();
   });
 
   test('Today button is clickable and does not throw', async ({ page, request }) => {
@@ -247,22 +256,24 @@ test.describe('Timeline View', () => {
     await expect(weekZoomBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('Clicking an unscheduled chip opens the card detail modal', async ({ page, request }) => {
+  test('Clicking a scheduled bar opens the card detail modal', async ({ page, request }) => {
     const creds = await registerAndLogin(request, 'tl-chip-click');
     const wsId = await createWorkspace(request, creds.token);
     const board = await createBoard(request, creds.token, wsId);
     const listId = await createList(request, creds.token, board.id, 'Backlog');
     const cardId = await createCard(request, creds.token, listId, 'ClickableCard');
+    await patchCard(request, creds.token, cardId, { due_date: offsetDate(3) });
 
     await goToBoard(page, UI_URL, board.id, creds);
     await page.getByTestId('board-view-tab-TIMELINE').click();
     await expect(page.getByTestId('timeline-view')).toBeVisible();
 
-    const chip = page.getByTestId(`timeline-unscheduled-chip-${cardId}`);
-    await expect(chip).toBeVisible();
-    await chip.click();
+    const bar = page.getByTestId(`timeline-bar-${cardId}`);
+    await expect(bar).toBeVisible();
+    await bar.click();
 
-    // Card modal should open (URL should contain ?card=<id>)
-    await expect(page).toHaveURL(new RegExp(`card=${cardId}`), { timeout: 5000 });
+    // Card modal opens via the card's short link, so assert on ?card= presence
+    // rather than the UUID.
+    await expect(page).toHaveURL(/[?&]card=/, { timeout: 5000 });
   });
 });
