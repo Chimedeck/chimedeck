@@ -87,8 +87,10 @@ test.describe('BoardNotificationTypePreferences', () => {
     const prefHeading = panel.locator('span:has-text("Board notification preferences")');
     await expect(prefHeading).toBeVisible();
 
-    // 3b. Toggle switches (button[role="switch"])
-    const switches = panel.locator('button[role="switch"]');
+    // 3b. Toggle switches. Scope to the per-type matrix so we do not pick up the
+    // master "Toggle notifications for this board" switch, which disables the
+    // whole section (and the Reset button) when turned off.
+    const switches = panel.locator('table button[role="switch"]');
     const switchCount = await switches.count();
     console.log(`Found ${switchCount} toggle switches`);
     expect(switchCount).toBeGreaterThan(0);
@@ -124,7 +126,7 @@ test.describe('BoardNotificationTypePreferences', () => {
     await openBoardSettings(page);
     await page.screenshot({ path: 'test-screenshots-tmp/step-5-settings-reopened.png' });
 
-    const switchesAfterReopen = page.locator('[role="dialog"][aria-label="Board Settings"] button[role="switch"]');
+    const switchesAfterReopen = page.locator('[role="dialog"][aria-label="Board Settings"] table button[role="switch"]');
     const firstSwitchAfterReopen = switchesAfterReopen.first();
     // Wait for the preferences to load
     await page.waitForTimeout(500);
@@ -137,7 +139,7 @@ test.describe('BoardNotificationTypePreferences', () => {
     // ── Step 6: Check indigo ring on board-override switch ────────────────
     const switchClass = await firstSwitchAfterReopen.getAttribute('class');
     console.log(`Switch class: ${switchClass}`);
-    const hasIndigoRing = switchClass?.includes('ring-indigo') ?? false;
+    const hasIndigoRing = switchClass?.includes('ring-indigo-400') ?? false;
     console.log(`Has indigo ring (board override indicator): ${hasIndigoRing}`);
     expect(hasIndigoRing).toBe(true);
 
@@ -156,11 +158,11 @@ test.describe('BoardNotificationTypePreferences', () => {
     await page.waitForTimeout(1000); // wait for reset API call
 
     // After reset, indigo ring should be gone (no board override)
-    const switchesAfterReset = page.locator('[role="dialog"][aria-label="Board Settings"] button[role="switch"]');
+    const switchesAfterReset = page.locator('[role="dialog"][aria-label="Board Settings"] table button[role="switch"]');
     const firstSwitchAfterReset = switchesAfterReset.first();
     const classAfterReset = await firstSwitchAfterReset.getAttribute('class');
     console.log(`Switch class after reset: ${classAfterReset}`);
-    const hasIndigoRingAfterReset = classAfterReset?.includes('ring-indigo') ?? false;
+    const hasIndigoRingAfterReset = classAfterReset?.includes('ring-indigo-400') ?? false;
     console.log(`Has indigo ring after reset: ${hasIndigoRingAfterReset}`);
     expect(hasIndigoRingAfterReset).toBe(false);
 

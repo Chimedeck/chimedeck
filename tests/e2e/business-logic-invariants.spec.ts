@@ -21,10 +21,10 @@ test.describe('Business Logic Invariants', () => {
       listId = await createList(request, token, boardId);
       cardId = await createCard(request, token, listId, 'Test Card');
 
-      // Archive the board
-      const archiveRes = await request.patch(`${BASE_URL}/api/v1/boards/${boardId}`, {
+      // Archive the board — the archive endpoint is PATCH /boards/:id/archive
+      // and toggles ACTIVE <-> ARCHIVED.
+      const archiveRes = await request.patch(`${BASE_URL}/api/v1/boards/${boardId}/archive`, {
         headers: { Authorization: `Bearer ${token}` },
-        data: { archived: true },
       });
       expect(archiveRes.status()).toBeLessThan(300);
     });
