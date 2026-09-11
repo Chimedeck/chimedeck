@@ -42,7 +42,7 @@ async function goToBoard(page: Page, boardId: string, creds: Credentials) {
   await page.fill('input[type="password"]', creds.password);
   await page.click('button[type="submit"]');
   await page.waitForURL(`${UI_URL}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${UI_URL}/boards/${boardId}`);
+  await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 }
 

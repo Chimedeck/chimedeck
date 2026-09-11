@@ -11,6 +11,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ async function goToTimelineView(page: Page, baseUrl: string, boardId: string, cr
   await page.fill('input[type="password"]', creds.password);
   await page.click('button[type="submit"]');
   await page.waitForURL(`${baseUrl}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${baseUrl}/boards/${boardId}`);
+  await page.goto(`${baseUrl}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
   await page.getByTestId('board-view-tab-TIMELINE').click();
   await expect(page.getByTestId('timeline-view')).toBeVisible({ timeout: 10000 });
@@ -104,7 +105,7 @@ test.describe('Timeline Bar Rendering', () => {
       due_date: offsetDate(4),
     });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Bar should be rendered inside the correct swimlane
     const barArea = page.getByTestId(`timeline-bar-area-${listId}`);
@@ -128,7 +129,7 @@ test.describe('Timeline Bar Rendering', () => {
       due_date: offsetDate(6),
     });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     await expect(page.getByTestId(`timeline-bar-resize-left-${cardId}`)).toBeVisible();
     await expect(page.getByTestId(`timeline-bar-resize-right-${cardId}`)).toBeVisible();
@@ -145,7 +146,7 @@ test.describe('Timeline Bar Rendering', () => {
       due_date: offsetDate(7),
     });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     const bar = page.getByTestId(`timeline-bar-${cardId}`);
     await expect(bar).toContainText('My Task Title');
@@ -162,7 +163,7 @@ test.describe('Timeline Bar Rendering', () => {
     await patchCard(request, creds.token, cardId1, { start_date: offsetDate(-2), due_date: offsetDate(3) });
     await patchCard(request, creds.token, cardId2, { start_date: offsetDate(1), due_date: offsetDate(5) });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Both bars should be visible in their respective swimlanes
     await expect(page.getByTestId(`timeline-bar-${cardId1}`)).toBeVisible();
@@ -177,7 +178,7 @@ test.describe('Timeline Bar Rendering', () => {
     const cardId = await createCard(request, creds.token, listId, 'NoDatesCard');
     // Intentionally no dates
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Should NOT have a bar
     await expect(page.getByTestId(`timeline-bar-${cardId}`)).not.toBeVisible();

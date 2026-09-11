@@ -22,7 +22,7 @@ async function setupBoardAndNavigate(
     ({ t }: { t: string }) => localStorage.setItem('auth_token', t),
     { t: token },
   );
-  await page.goto(`${UI_URL}/boards/${boardId}`);
+  await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 
   return { token, boardId };

@@ -9,6 +9,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -89,19 +90,19 @@ test.describe('Table View', () => {
     });
 
     // Log in via the UI
-    await page.goto(`${BASE_URL}/login`);
+    await page.goto(`${UI_URL}/login`);
     await page.fill('input[type="email"]', `tv-test-headers-${Date.now() - 100}@example.com`);
 
     // Re-login properly using API token in localStorage
     await page.evaluate(
       ([url, tok]) => {
         localStorage.setItem('access_token', tok as string);
-        window.location.href = `${url}/boards/${(tok as string).slice(-8)}`;
+        window.location.href = `${url}/b/${(tok as string).slice(-8)}`;
       },
       [BASE_URL, token],
     );
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
+    await page.goto(`${UI_URL}/b/${board.id}`);
     await page.waitForLoadState('networkidle');
 
     // BoardViewSwitcher should be visible
@@ -127,7 +128,7 @@ test.describe('Table View', () => {
     const listId = await createList(request, token, board.id, 'Backlog');
     const cardId = await createCard(request, token, listId, 'My test card');
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
+    await page.goto(`${UI_URL}/b/${board.id}`);
     await page.waitForLoadState('networkidle');
 
     // Switch to TABLE view via the switcher
@@ -148,7 +149,7 @@ test.describe('Table View', () => {
     await createCard(request, token, listId, 'Zebra card');
     await createCard(request, token, listId, 'Alpha card');
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
+    await page.goto(`${UI_URL}/b/${board.id}`);
     await page.waitForLoadState('networkidle');
     await page.getByTestId('board-view-tab-TABLE').click();
     await expect(page.getByTestId('table-view')).toBeVisible();
@@ -175,7 +176,7 @@ test.describe('Table View', () => {
     const listId = await createList(request, token, board.id, 'Sprint');
     const cardId = await createCard(request, token, listId, 'Open me please');
 
-    await page.goto(`${BASE_URL}/boards/${board.id}`);
+    await page.goto(`${UI_URL}/b/${board.id}`);
     await page.waitForLoadState('networkidle');
     await page.getByTestId('board-view-tab-TABLE').click();
     await expect(page.getByTestId('table-view')).toBeVisible();

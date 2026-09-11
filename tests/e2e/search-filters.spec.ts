@@ -119,7 +119,7 @@ test.describe('Search Filters', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Locate the search input — try common selectors
@@ -153,7 +153,7 @@ test.describe('Search Filters', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Locate a type-filter control — button or select

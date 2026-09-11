@@ -253,7 +253,7 @@ test.describe('Payment — Card Price', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // A price badge or money indicator should be visible on the card
@@ -292,7 +292,7 @@ test.describe('Payment — Card Price', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Price badge should not be visible when monetisation is off
