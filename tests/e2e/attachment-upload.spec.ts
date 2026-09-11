@@ -211,7 +211,7 @@ test.describe('Attachment Upload', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Open card modal
@@ -269,7 +269,7 @@ test.describe('Attachment Upload', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     const cardEl = page.locator(`[data-card-id="${uiCardId}"], [data-testid="card-${uiCardId}"]`).first();

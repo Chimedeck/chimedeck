@@ -123,7 +123,7 @@ test.describe('Delete Confirmation Flag', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Open board settings / action menu
@@ -160,7 +160,7 @@ test.describe('Delete Confirmation Flag', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     const settingsBtn = page.locator(
@@ -194,7 +194,7 @@ test.describe('Delete Confirmation Flag', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Open list action menu
@@ -227,7 +227,7 @@ test.describe('Delete Confirmation Flag', () => {
 
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     const listMenu = page.locator('[data-testid="list-menu"], [aria-label*="list menu"], button[title*="list"]').first();

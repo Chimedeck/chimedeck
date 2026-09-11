@@ -10,6 +10,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 const DB_NAME = 'kanban-offline-queue';
 const STORE = 'mutations';
 
@@ -122,7 +123,7 @@ async function readMutationsFromIDB(page: Page): Promise<unknown[]> {
 
 /** Log in via the UI login form so auth cookies/tokens are set. */
 async function loginViaUi(page: Page, email: string, password: string): Promise<void> {
-  await page.goto(`${BASE_URL}/login`);
+  await page.goto(`${UI_URL}/login`);
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
   await page.getByRole('button', { name: /log in|sign in/i }).click();
@@ -145,7 +146,7 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
 
     // Navigate to app first so the origin is established, then seed IDB
     await loginViaUi(page, email, password);
-    await page.goto(`${BASE_URL}/boards/${boardId}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'domcontentloaded' });
 
     const mutationId = `test-hydrate-${Date.now()}`;
     const mutation = {
@@ -186,7 +187,7 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     const boardId = await createBoard(request, token, workspaceId);
 
     await loginViaUi(page, email, password);
-    await page.goto(`${BASE_URL}/boards/${boardId}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'domcontentloaded' });
 
     const listTitle = `Replayed-List-${Date.now()}`;
     const mutationId = `test-replay-${Date.now()}`;
@@ -211,7 +212,7 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     );
 
     // Navigate to the board page so the WS connects and replay is triggered
-    await page.goto(`${BASE_URL}/boards/${boardId}`, { waitUntil: 'networkidle' });
+    await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'networkidle' });
 
     // Verify the replay HTTP call was made
     const replayed = await replayRequest;

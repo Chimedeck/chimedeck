@@ -30,7 +30,7 @@ test.describe('Card Description — Inline Click-to-Edit', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(UI_URL);
     await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
-    await page.goto(`${UI_URL}/boards/${boardId}`);
+    await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
     // Open the card modal
@@ -162,7 +162,7 @@ test.describe('Card Description — Inline Click-to-Edit', () => {
     const lId = await createList(request, token, bId);
     await createCard(request, token, lId, 'No Description Card');
 
-    await page.goto(`${UI_URL}/boards/${bId}`);
+    await page.goto(`${UI_URL}/b/${bId}`);
     await page.waitForLoadState('networkidle');
     await page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first().click();
     await page.waitForSelector('[data-testid="card-modal"], [role="dialog"]', { timeout: 8000 });

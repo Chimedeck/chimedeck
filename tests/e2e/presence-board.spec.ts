@@ -154,7 +154,7 @@ test.describe('Board Presence', () => {
       // User A navigates to the board
       await pageA.goto(UI_URL);
       await pageA.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: tokenA });
-      await pageA.goto(`${UI_URL}/boards/${boardId}`);
+      await pageA.goto(`${UI_URL}/b/${boardId}`);
       await pageA.waitForLoadState('networkidle');
 
       // Verify User A can see the board (soft-skip if board page not found)
@@ -167,7 +167,7 @@ test.describe('Board Presence', () => {
       // User B navigates to the same board in a separate context
       await pageB.goto(UI_URL);
       await pageB.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: tokenB });
-      await pageB.goto(`${UI_URL}/boards/${boardId}`);
+      await pageB.goto(`${UI_URL}/b/${boardId}`);
       await pageB.waitForLoadState('networkidle');
 
       // Give WebSocket / polling-based presence a moment to propagate

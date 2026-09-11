@@ -9,6 +9,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
+const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -90,7 +91,7 @@ async function goToTimelineView(page: Page, baseUrl: string, boardId: string, cr
   await page.fill('input[type="password"]', creds.password);
   await page.click('button[type="submit"]');
   await page.waitForURL(`${baseUrl}/workspaces**`, { timeout: 15000 });
-  await page.goto(`${baseUrl}/boards/${boardId}`);
+  await page.goto(`${baseUrl}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
   await page.getByTestId('board-view-tab-TIMELINE').click();
   await expect(page.getByTestId('timeline-view')).toBeVisible({ timeout: 10000 });
@@ -127,7 +128,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(3);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Intercept the PATCH request so we can verify it is made.
     const patchPromise = page.waitForRequest(
@@ -155,7 +156,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(5);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     const patchPromise = page.waitForRequest(
       (req) => req.method() === 'PATCH' && req.url().includes(`/cards/${cardId}`),
@@ -182,7 +183,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(6);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     const patchPromise = page.waitForRequest(
       (req) => req.method() === 'PATCH' && req.url().includes(`/cards/${cardId}`),
@@ -224,7 +225,7 @@ test.describe('Timeline Drag / Resize', () => {
     const dueDate = offsetDate(4);
     await patchCard(request, creds.token, cardId, { start_date: startDate, due_date: dueDate });
 
-    await goToTimelineView(page, BASE_URL, board.id, creds);
+    await goToTimelineView(page, UI_URL, board.id, creds);
 
     // Intercept the PATCH and force a 500 error.
     await page.route(`**/api/v1/cards/${cardId}`, (route) => {
