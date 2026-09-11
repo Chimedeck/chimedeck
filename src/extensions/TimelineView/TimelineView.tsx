@@ -8,6 +8,7 @@ import TimelineHeader from './TimelineHeader';
 import TimelineRow from './TimelineRow';
 import TimelineZoomControl from './TimelineZoomControl';
 import translations from './translations/en.json';
+import { localDateKey, toLocalDateKey } from '../../common/utils/dates';
 import type { TimelineViewProps, ZoomLevel, Swimlane } from './types';
 import Button from '../../common/components/Button';
 
@@ -54,7 +55,8 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
   // Auto-scroll to today when component first mounts or zoom changes.
   useEffect(() => { scrollToToday(); }, [zoom]);
 
-  const todayIso = useMemo(() => today.toISOString().slice(0, 10), [today]);
+  // Local calendar date of 'today' (toISOString would give the UTC date).
+  const todayIso = useMemo(() => toLocalDateKey(today), [today]);
 
   // Group cards into swimlanes (one per list).
   // Cards are only shown when their due_date is today or in the future.
@@ -67,7 +69,7 @@ const TimelineView = ({ cards, lists, onCardClick, addToast: _addToast }: Timeli
         listTitle: list.title,
         // Only cards with a due_date that is today or in the future are scheduled.
         scheduledCards: listCards
-          .filter((c) => !!c.due_date && c.due_date >= todayIso)
+          .filter((c) => !!c.due_date && localDateKey(c.due_date) >= todayIso)
           .map((c) => (c.start_date ? c : { ...c, start_date: todayIso })),
         // No unscheduled cards — cards with no due_date are not displayed.
         unscheduledCards: [],

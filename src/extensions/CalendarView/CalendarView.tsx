@@ -8,6 +8,7 @@ import CalendarMonthGrid from './CalendarMonthGrid';
 import CalendarWeekGrid from './CalendarWeekGrid';
 import { useCalendarDrag } from './useCalendarDrag';
 import translations from './translations/en.json';
+import { localDateKey } from '../../common/utils/dates';
 import type { CalendarMode, CalendarViewProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -20,8 +21,9 @@ function buildCardsByDay(cards: Card[]): Map<string, Card[]> {
   const map = new Map<string, Card[]>();
   for (const card of cards) {
     if (!card.due_date) continue;
-    // Truncate to date portion only (handles ISO timestamps)
-    const key = card.due_date.slice(0, 10);
+    // Key by the viewer's local calendar date so the calendar agrees with the
+    // card tile / meta strip, which also render due dates in local time.
+    const key = localDateKey(card.due_date);
     const existing = map.get(key) ?? [];
     map.set(key, [...existing, card]);
   }

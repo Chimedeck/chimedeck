@@ -107,8 +107,18 @@ async function goToBoard(page: Page, baseUrl: string, boardId: string, creds: Cr
       { name: 'refresh_token', value: creds.refreshToken, url: `${baseUrl}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
     ]);
   }
-  await page.goto(`${baseUrl}/b/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  await gotoBoardUntilReady(page, baseUrl, boardId);
+}
+
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(page: Page, baseUrl: string, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseUrl}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
 }
 
 test.describe('Calendar View', () => {
