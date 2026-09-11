@@ -207,19 +207,18 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
       enqueuedAt: Date.now(),
     };
 
-    // Seed mutation and reload
+    // Seed mutation, then reload. The listener must be attached BEFORE the
+    // reload because boot hydrates the queue and replay fires as soon as the WS
+    // connects — registering afterwards races and can miss the request.
     await seedMutationInIDB(page, mutation);
-    await page.reload({ waitUntil: 'domcontentloaded' });
 
-    // Intercept the list-creation API call that the queue replay will send
     const replayRequest = page.waitForRequest(
       (req) =>
         req.url().includes(`/api/v1/boards/${boardId}/lists`) && req.method() === 'POST',
       { timeout: 15_000 },
     );
 
-    // Navigate to the board page so the WS connects and replay is triggered
-    await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     // Verify the replay HTTP call was made
     const replayed = await replayRequest;
