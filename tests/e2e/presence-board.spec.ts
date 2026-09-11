@@ -9,6 +9,7 @@ import { test, expect, chromium } from '@playwright/test';
 import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
+const WS_URL = (process.env.TEST_BASE_URL ?? 'http://localhost:3000').replace(/^http/, 'ws');
 
 test.describe('Board Presence', () => {
   let credsA: Credentials;
@@ -26,15 +27,27 @@ test.describe('Board Presence', () => {
     }
 
     // User A creates the board
-    credsA = await registerAndGetCredentials(request, `presA-${run}`);
+    // Suffixes are lowercase: the workspace member-add endpoint lowercases the
+    // email before lookup while register preserves case, so a mixed-case address
+    // would not be matchable. (Tracked separately as a product inconsistency.)
+    credsA = await registerAndGetCredentials(request, `presa-${run}`);
     tokenA = credsA.token;
     const workspaceId = await createWorkspace(request, tokenA);
     boardId = await createBoard(request, tokenA, workspaceId);
     await createList(request, tokenA, boardId);
 
-    // User B — a second independent user
-    credsB = await registerAndGetCredentials(request, `presB-${run}`);
+    // User B — a second independent user, added to the workspace so they can
+    // subscribe to the board over the realtime WebSocket (subscribe enforces
+    // workspace membership).
+    credsB = await registerAndGetCredentials(request, `presb-${run}`);
     tokenB = credsB.token;
+    const addRes = await request.post(`${BASE_URL}/api/v1/workspaces/${workspaceId}/members`, {
+      headers: { Authorization: `Bearer ${tokenA}` },
+      data: { email: credsB.email, role: 'MEMBER' },
+    });
+    if (!addRes.ok()) {
+      throw new Error(`Failed to add user B to workspace: ${addRes.status()} ${await addRes.text()}`);
+    }
   });
 
   test('Test 1 — GET /boards/:id/presence returns active viewer list', async ({ request }) => {
@@ -92,35 +105,58 @@ test.describe('Board Presence', () => {
   test('Test 4 — Second user joining the board is reflected in the presence list', async ({ request }) => {
     if (!tokenA || !tokenB) test.skip(true, 'Server not running — skipping');
 
-    // User A registers presence
-    await request.post(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
-    });
+    // Presence is populated by the realtime WebSocket layer: a client subscribes
+    // to a board over /api/v1/ws and the server records presence:<boardId>:<userId>.
+    // There is no REST join/leave endpoint (POST/DELETE return 404), so drive the
+    // two subscribers over WS and then read the presence list over REST.
+    const sockets: WebSocket[] = [];
+    const subscribe = (token: string): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
+        sockets.push(ws);
+        const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
+        ws.addEventListener('open', () => {
+          ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
+        });
+        ws.addEventListener('message', (event) => {
+          try {
+            const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
+            if (msg.type === 'error') {
+              clearTimeout(timer);
+              reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
+            }
+            // Any non-error message after subscribe means the subscription was accepted.
+            if (msg.type !== 'error') {
+              clearTimeout(timer);
+              resolve();
+            }
+          } catch {
+            // ignore non-JSON frames
+          }
+        });
+        ws.addEventListener('error', () => {
+          clearTimeout(timer);
+          reject(new Error('WS connection error'));
+        });
+      });
 
-    // User B registers presence
-    const joinRes = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
-      headers: { Authorization: `Bearer ${tokenB}` },
-    });
+    try {
+      await subscribe(tokenA);
+      await subscribe(tokenB);
 
-    if (joinRes.status() === 404 || joinRes.status() === 501) {
-      test.skip(true, 'Presence endpoint not yet implemented — skipping');
-      return;
+      // Presence keys are set on subscribe; allow the cache write to settle.
+      await new Promise((r) => setTimeout(r, 300));
+
+      const listRes = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
+        headers: { Authorization: `Bearer ${tokenA}` },
+      });
+      expect(listRes.status()).toBe(200);
+      const body = await listRes.json() as { data: Array<{ id: string }> };
+      // The presence list should contain both subscribers.
+      expect(body.data.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      for (const ws of sockets) ws.close();
     }
-
-    // Fetch current viewers as User A
-    const listRes = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
-    });
-
-    if (listRes.status() === 404 || listRes.status() === 501) {
-      test.skip(true, 'Presence list endpoint not yet implemented — skipping');
-      return;
-    }
-
-    expect(listRes.status()).toBe(200);
-    const body = await listRes.json() as { data: Array<{ userId: string }> };
-    // The presence list should have at least 2 entries (A and B)
-    expect(body.data.length).toBeGreaterThanOrEqual(2);
   });
 
   test('Test 5 — Unauthenticated presence request returns 401', async ({ request }) => {

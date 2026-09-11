@@ -43,7 +43,8 @@ test.describe('MCP HTTP Init', () => {
     expect(hfToken.startsWith('hf_')).toBeTruthy();
     // POST /api/mcp
     const mcpRes = await request.post(`${BASE_URL}/api/mcp`, {
-      headers: { Authorization: `Bearer ${hfToken}` },
+      // MCP streamable-HTTP requires the client to accept both JSON and SSE.
+      headers: { Authorization: `Bearer ${hfToken}`, Accept: 'application/json, text/event-stream' },
       data: {
         jsonrpc: '2.0', id: 1, method: 'initialize', params: {
           protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '1.0' }
