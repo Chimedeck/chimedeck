@@ -11,40 +11,56 @@ const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 async function setupBoardAndNavigate(
   request: APIRequestContext,
   page: import('@playwright/test').Page,
-): Promise<{ creds: Credentials; boardId: string }> {
+): Promise<{ creds: Credentials; token: string; boardId: string }> {
   const creds = await registerAndGetCredentials(request, 'cf-panel');
   const wsId = await createWorkspace(request, creds.token);
   const boardId = await createBoard(request, creds.token, wsId);
 
   // The app authenticates via HttpOnly cookies, so log in through the UI form.
   await loginViaCookie(page, UI_URL, creds);
-  await page.goto(`${UI_URL}/b/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  // App boot performs an async token refresh; navigating immediately can race
+  // and land on /workspaces. Retry until the board header actually renders.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByRole('button', { name: 'Board settings' }).first().isVisible().catch(() => false)) break;
+    await page.waitForTimeout(500);
+  }
 
-  return { creds, boardId };
+  return { creds, token: creds.token, boardId };
+}
+
+
+// The board header renders a "Board settings" menu trigger (lowercase) which
+// opens a dropdown; the settings panel itself only mounts after the menu item
+// is clicked. Drive both steps so the panel is actually open.
+async function openBoardSettings(page: import('@playwright/test').Page): Promise<void> {
+  const trigger = page.getByRole('button', { name: 'Board settings' }).first();
+  await trigger.waitFor({ state: 'visible', timeout: 15000 });
+  await trigger.click();
+  await page.getByRole('button', { name: 'Board settings', exact: true }).last().click();
+  await expect(page.locator('[aria-label="Board Settings"]')).toBeVisible({ timeout: 8000 });
 }
 
 test.describe('Custom Fields Board Settings Panel', () => {
   test('Open Board Settings and verify Custom Fields section is visible', async ({ request, page }) => {
     await setupBoardAndNavigate(request, page);
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await expect(page.locator('[aria-label="Board Settings"], [data-testid="board-settings-panel"]')).toBeVisible({ timeout: 5000 });
+    await openBoardSettings(page);
 
-    await expect(page.getByText('Custom Fields')).toBeVisible();
-    await expect(page.getByRole('button', { name: /add custom field/i })).toBeVisible();
+    await expect(page.getByText('Custom Fields', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create custom field' })).toBeVisible();
   });
 
   test('Create a TEXT custom field', async ({ request, page }) => {
     await setupBoardAndNavigate(request, page);
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await page.waitForSelector('[aria-label="Board Settings"], [data-testid="board-settings-panel"]');
+    await openBoardSettings(page);
 
-    await page.getByRole('button', { name: /add custom field/i }).click();
-    await page.waitForSelector('[aria-label="New custom field form"], [data-testid="new-custom-field-form"]');
+    await page.getByRole('button', { name: 'Create custom field' }).click();
+    await page.locator('[aria-label="New custom field form"]').waitFor({ state: 'visible' });
 
-    await page.getByLabel(/new field name|field name/i).fill('Priority');
+    await page.getByLabel('Field name').fill('Priority');
     await page.getByRole('button', { name: /create field/i }).click();
 
     await expect(page.getByText('Priority')).toBeVisible({ timeout: 5000 });
@@ -54,20 +70,19 @@ test.describe('Custom Fields Board Settings Panel', () => {
   test('Create a DROPDOWN custom field with options', async ({ request, page }) => {
     await setupBoardAndNavigate(request, page);
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await page.waitForSelector('[aria-label="Board Settings"], [data-testid="board-settings-panel"]');
+    await openBoardSettings(page);
 
-    await page.getByRole('button', { name: /add custom field/i }).click();
-    await page.getByLabel(/new field name|field name/i).fill('Status');
-    await page.getByLabel(/field type/i).selectOption('DROPDOWN');
+    await page.getByRole('button', { name: 'Create custom field' }).click();
+    await page.getByLabel('Field name').fill('Status');
+    await page.getByLabel('Field type').selectOption('DROPDOWN');
 
-    await expect(page.locator('[aria-label="Dropdown options editor"], [data-testid="dropdown-options-editor"]')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('[aria-label="Dropdown options editor"]')).toBeVisible({ timeout: 3000 });
 
-    await page.getByRole('button', { name: /add option/i }).click();
-    await page.locator('input[placeholder*="option"], input[aria-label*="option"]').last().fill('To Do');
+    await page.getByRole('button', { name: '+ Add option' }).click();
+    await page.getByRole('textbox', { name: 'Label for dropdown option' }).last().fill('To Do');
 
-    await page.getByRole('button', { name: /add option/i }).click();
-    await page.locator('input[placeholder*="option"], input[aria-label*="option"]').last().fill('In Progress');
+    await page.getByRole('button', { name: '+ Add option' }).click();
+    await page.getByRole('textbox', { name: 'Label for dropdown option' }).last().fill('In Progress');
 
     await page.getByRole('button', { name: /create field/i }).click();
 
@@ -76,8 +91,6 @@ test.describe('Custom Fields Board Settings Panel', () => {
   });
 
   test('Rename a custom field', async ({ request, page }) => {
-    await setupBoardAndNavigate(request, page);
-
     // Create field first via API for reliability
     const { token, boardId } = await setupBoardAndNavigate(request, page);
     await fetch(`${BASE_URL}/api/v1/boards/${boardId}/custom-fields`, {
@@ -85,14 +98,11 @@ test.describe('Custom Fields Board Settings Panel', () => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'ToRename', field_type: 'TEXT' }),
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await page.waitForSelector('[aria-label="Board Settings"], [data-testid="board-settings-panel"]');
+    await openBoardSettings(page);
 
-    await page.getByRole('button', { name: /rename.*ToRename|ToRename/i }).click();
-    const renameInput = page.getByLabel(/rename field/i);
+    await page.getByRole('button', { name: 'Rename field ToRename' }).click();
+    const renameInput = page.getByLabel('Rename field', { exact: true });
     await renameInput.clear();
     await renameInput.fill('Renamed');
     await renameInput.press('Enter');
@@ -107,17 +117,14 @@ test.describe('Custom Fields Board Settings Panel', () => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'Urgency', field_type: 'TEXT' }),
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await page.waitForSelector('[aria-label="Board Settings"], [data-testid="board-settings-panel"]');
+    await openBoardSettings(page);
 
-    const checkbox = page.getByLabel(/show on card/i).first();
-    await checkbox.check();
-    await expect(checkbox).toBeChecked();
-    await checkbox.uncheck();
-    await expect(checkbox).not.toBeChecked();
+    const checkbox = page.getByRole('checkbox', { name: 'Show on card tile' }).first();
+    await checkbox.click();
+    await expect(checkbox).toBeChecked({ timeout: 5000 });
+    await checkbox.click();
+    await expect(checkbox).not.toBeChecked({ timeout: 5000 });
   });
 
   test('Delete a custom field', async ({ request, page }) => {
@@ -127,14 +134,11 @@ test.describe('Custom Fields Board Settings Panel', () => {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'DeleteMe', field_type: 'TEXT' }),
     });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await page.waitForSelector('[aria-label="Board Settings"], [data-testid="board-settings-panel"]');
+    await openBoardSettings(page);
 
-    await page.getByRole('button', { name: /delete.*DeleteMe|DeleteMe/i }).click();
-    page.on('dialog', d => d.accept());
+    page.on('dialog', (d) => { void d.accept(); });
+    await page.getByRole('button', { name: 'Delete field DeleteMe' }).click();
 
     await expect(page.getByText('DeleteMe')).not.toBeVisible({ timeout: 5000 });
   });
@@ -142,8 +146,7 @@ test.describe('Custom Fields Board Settings Panel', () => {
   test('Close the Board Settings panel', async ({ request, page }) => {
     await setupBoardAndNavigate(request, page);
 
-    await page.click('[aria-label="Board Settings"], [data-testid="board-settings-btn"], button:has-text("Settings")');
-    await page.waitForSelector('[aria-label="Board Settings"], [data-testid="board-settings-panel"]');
+    await openBoardSettings(page);
 
     const closeBtn = page.getByRole('button', { name: /close/i });
     if (await closeBtn.isVisible()) {
