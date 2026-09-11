@@ -44,8 +44,8 @@ async function createFieldViaApi(
 }
 
 async function openCardModal(page: import('@playwright/test').Page) {
-  await page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first().click();
-  await page.waitForSelector('[data-testid="card-modal"], [role="dialog"], [aria-label*="card"]', { timeout: 5000 });
+  await page.locator('[aria-label^="Card:"]').first().click();
+  await page.waitForSelector('[data-testid="card-modal"], [role="dialog"][aria-label^="Card:"]', { timeout: 5000 });
 }
 
 test.describe('Custom Fields UI — Card Modal Value Editing', () => {
@@ -194,7 +194,7 @@ test.describe('Custom Fields UI — Card Modal Value Editing', () => {
     await page.keyboard.press('Escape');
 
     // The card tile should NOT show the value as a badge
-    const tile = page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first();
+    const tile = page.locator('[aria-label^="Card:"]').first();
     await expect(tile.getByText('private text')).not.toBeVisible({ timeout: 3000 });
   });
 });

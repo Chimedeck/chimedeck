@@ -35,8 +35,8 @@ test.describe('Card Description — Inline Click-to-Edit', () => {
     await page.waitForLoadState('networkidle');
 
     // Open the card modal
-    await page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first().click();
-    await page.waitForSelector('[data-testid="card-modal"], [role="dialog"]', { timeout: 8000 });
+    await page.locator('[aria-label^="Card:"]').first().click();
+    await page.waitForSelector('[data-testid="card-modal"], [role="dialog"][aria-label^="Card:"]', { timeout: 8000 });
   });
 
   test('Test 1 — Enter edit mode by clicking description area', async ({ page }) => {
@@ -86,8 +86,8 @@ test.describe('Card Description — Inline Click-to-Edit', () => {
 
     // Close and reopen to verify persistence
     await page.keyboard.press('Escape');
-    await page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first().click();
-    await page.waitForSelector('[data-testid="card-modal"], [role="dialog"]', { timeout: 8000 });
+    await page.locator('[aria-label^="Card:"]').first().click();
+    await page.waitForSelector('[data-testid="card-modal"], [role="dialog"][aria-label^="Card:"]', { timeout: 8000 });
     const descContainerReopened = page.locator('[data-testid="card-description"], [data-testid="description-view"]').first();
     await expect(descContainerReopened.locator('strong, b')).toBeVisible({ timeout: 5000 });
   });
@@ -165,8 +165,8 @@ test.describe('Card Description — Inline Click-to-Edit', () => {
 
     await page.goto(`${UI_URL}/b/${bId}`);
     await page.waitForLoadState('networkidle');
-    await page.locator('[data-testid="card-tile"], .card-tile, [class*="card"]').first().click();
-    await page.waitForSelector('[data-testid="card-modal"], [role="dialog"]', { timeout: 8000 });
+    await page.locator('[aria-label^="Card:"]').first().click();
+    await page.waitForSelector('[data-testid="card-modal"], [role="dialog"][aria-label^="Card:"]', { timeout: 8000 });
 
     const placeholder = page.getByText(/add a more detailed description/i);
     await expect(placeholder).toBeVisible({ timeout: 5000 });
