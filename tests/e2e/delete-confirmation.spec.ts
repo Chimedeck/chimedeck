@@ -9,6 +9,42 @@ import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, crea
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
+
+// The board header exposes a "Board settings" menu trigger (lowercase); the
+// delete menu item lives in the dropdown it opens. Delete confirmation dialogs
+// (BoardDeleteDialog / ListDeleteDialog) render as plain divs with a heading, so
+// locate them by heading + button names rather than role="dialog".
+async function openBoardMenu(page: import('@playwright/test').Page): Promise<void> {
+  const trigger = page.getByRole('button', { name: 'Board settings' }).first();
+  await trigger.waitFor({ state: 'visible', timeout: 15000 });
+  await trigger.click();
+}
+
+// Both dialogs render a fixed full-screen overlay root; scope to that so the
+// heading and the action buttons live inside the same container.
+function boardDeleteDialog(page: import('@playwright/test').Page) {
+  return page.locator('div.fixed.inset-0').filter({ has: page.getByRole('heading', { name: 'Delete board?' }) });
+}
+
+function listDeleteDialog(page: import('@playwright/test').Page) {
+  return page.locator('div.fixed.inset-0').filter({ has: page.getByRole('heading', { name: 'Delete list?' }) });
+}
+
+
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board header actually renders.
+async function gotoBoard(
+  page: import('@playwright/test').Page,
+  boardId: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByRole('button', { name: 'Board settings' }).first().isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
+}
+
 test.describe('Delete Confirmation Flag', () => {
   let creds: Credentials;
   let token: string;
@@ -120,130 +156,113 @@ test.describe('Delete Confirmation Flag', () => {
   });
 
   test('Test 7 — UI shows confirmation dialog for board with lists', async ({ request, page }) => {
-    const boardId = await createBoard(request, token, workspaceId);
-    await createList(request, token, boardId);
+    const uiCreds = await registerAndGetCredentials(request, 'del-ui-7');
+    const uiWs = await createWorkspace(request, uiCreds.token);
+    const boardId = await createBoard(request, uiCreds.token, uiWs);
+    await createList(request, uiCreds.token, boardId);
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, boardId);
 
-    // Open board settings / action menu
-    const settingsBtn = page.locator(
-      '[data-testid="board-settings"], [aria-label*="settings"], button:has-text("settings"), button[title*="settings"]',
-    ).first();
-    if (await settingsBtn.count() === 0) {
-      test.skip(true, 'Could not find board settings button — skipping UI test');
-      return;
-    }
-    await settingsBtn.click();
+    await openBoardMenu(page);
 
-    // Click "Delete board"
-    const deleteBtn = page.getByRole('menuitem', { name: /delete board/i }).or(
-      page.getByRole('button', { name: /delete board/i }),
-    );
-    await deleteBtn.click();
+    await page.getByRole('button', { name: 'Delete board' }).click();
 
     // Confirmation dialog should appear
-    const dialog = page.locator('[role="dialog"], [data-testid="confirm-dialog"]').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
-    await expect(dialog.getByRole('button', { name: /delete/i })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: /cancel/i })).toBeVisible();
+    const dialog = boardDeleteDialog(page);
+    await expect(dialog.getByRole('heading', { name: 'Delete board?' })).toBeVisible({ timeout: 8000 });
+    await expect(dialog.getByRole('button', { name: 'Delete board' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
 
-    // Cancel — board should still exist
-    await dialog.getByRole('button', { name: /cancel/i }).click();
+    // Cancel — board should still be open
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 3000 });
-    await expect(page.locator(`[data-board-id="${boardId}"], [href*="${boardId}"]`).first()).toBeVisible({ timeout: 5000 });
+    await expect(page).toHaveURL(new RegExp(boardId));
   });
 
   test('Test 8 — UI confirms and deletes board, redirects to workspace list', async ({ request, page }) => {
-    const boardId = await createBoard(request, token, workspaceId);
-    await createList(request, token, boardId);
+    const uiCreds = await registerAndGetCredentials(request, 'del-ui-8');
+    const uiWs = await createWorkspace(request, uiCreds.token);
+    const boardId = await createBoard(request, uiCreds.token, uiWs);
+    await createList(request, uiCreds.token, boardId);
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, boardId);
 
-    const settingsBtn = page.locator(
-      '[data-testid="board-settings"], [aria-label*="settings"], button:has-text("settings"), button[title*="settings"]',
-    ).first();
-    if (await settingsBtn.count() === 0) {
-      test.skip(true, 'Could not find board settings button — skipping UI test');
-      return;
-    }
-    await settingsBtn.click();
+    await openBoardMenu(page);
 
-    const deleteBtn = page.getByRole('menuitem', { name: /delete board/i }).or(
-      page.getByRole('button', { name: /delete board/i }),
-    );
-    await deleteBtn.click();
+    await page.getByRole('button', { name: 'Delete board' }).click();
 
-    const dialog = page.locator('[role="dialog"], [data-testid="confirm-dialog"]').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
+    const dialog = boardDeleteDialog(page);
+    await expect(dialog.getByRole('heading', { name: 'Delete board?' })).toBeVisible({ timeout: 8000 });
 
     // Confirm delete
-    await dialog.getByRole('button', { name: /delete/i }).last().click();
+    await dialog.getByRole('button', { name: 'Delete board' }).click();
 
     // Should be redirected away from the board
     await page.waitForURL(/\/workspaces|\/boards(?!\/)/, { timeout: 8000 });
   });
 
   test('Test 9 — UI shows confirmation dialog for list with cards', async ({ request, page }) => {
-    const boardId = await createBoard(request, token, workspaceId);
-    const listId = await createList(request, token, boardId);
-    await createCard(request, token, listId, 'Card A');
+    const uiCreds = await registerAndGetCredentials(request, 'del-ui-9');
+    const uiWs = await createWorkspace(request, uiCreds.token);
+    const boardId = await createBoard(request, uiCreds.token, uiWs);
+    const listId = await createList(request, uiCreds.token, boardId);
+    await createCard(request, uiCreds.token, listId, 'Card A');
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, boardId);
 
-    // Open list action menu
-    const listMenu = page.locator('[data-testid="list-menu"], [aria-label*="list menu"], button[title*="list"]').first();
-    if (await listMenu.count() === 0) {
-      test.skip(true, 'Could not find list action menu — skipping UI list delete test');
-      return;
-    }
-    await listMenu.click();
+    // The list header button's accessible name also contains "List options",
+    // so match the aria-label attribute directly to hit the ··· trigger.
+    const listTrigger = page.locator('button[aria-label="List options"]').first();
+    await listTrigger.click();
+    // Wait for the menu to render, then pick Delete from inside the list item.
+    const listItem = page.locator('[role="listitem"]').filter({ has: listTrigger });
+    const deleteItem = listItem.getByRole('button', { name: 'Delete', exact: true });
+    await deleteItem.waitFor({ state: 'attached', timeout: 8000 });
+    // The list popover is taller than the column and not itself scrollable, so
+    // Delete sits outside the viewport and cannot be scrolled into view.
+    // Dispatch the click directly on the confirmed, enabled menu item.
+    await deleteItem.dispatchEvent('click');
 
-    const deleteListBtn = page.getByRole('menuitem', { name: /delete list/i }).or(
-      page.getByRole('button', { name: /delete list/i }),
-    );
-    await deleteListBtn.click();
-
-    const dialog = page.locator('[role="dialog"], [data-testid="confirm-dialog"]').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
-    await expect(dialog.getByRole('button', { name: /delete/i })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: /cancel/i })).toBeVisible();
+    const dialog = listDeleteDialog(page);
+    await expect(dialog.getByRole('heading', { name: 'Delete list?' })).toBeVisible({ timeout: 8000 });
+    await expect(dialog.getByRole('button', { name: 'Delete list' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible();
 
     // Cancel — list should still be on board
-    await dialog.getByRole('button', { name: /cancel/i }).click();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 3000 });
   });
 
   test('Test 10 — UI confirms and deletes list', async ({ request, page }) => {
-    const boardId = await createBoard(request, token, workspaceId);
-    const listId = await createList(request, token, boardId);
-    await createCard(request, token, listId, 'Card A');
+    const uiCreds = await registerAndGetCredentials(request, 'del-ui-10');
+    const uiWs = await createWorkspace(request, uiCreds.token);
+    const boardId = await createBoard(request, uiCreds.token, uiWs);
+    const listId = await createList(request, uiCreds.token, boardId);
+    await createCard(request, uiCreds.token, listId, 'Card A');
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, boardId);
 
-    const listMenu = page.locator('[data-testid="list-menu"], [aria-label*="list menu"], button[title*="list"]').first();
-    if (await listMenu.count() === 0) {
-      test.skip(true, 'Could not find list action menu — skipping UI list delete confirmation test');
-      return;
-    }
-    await listMenu.click();
+    // The list header button's accessible name also contains "List options",
+    // so match the aria-label attribute directly to hit the ··· trigger.
+    const listTrigger = page.locator('button[aria-label="List options"]').first();
+    await listTrigger.click();
+    // Wait for the menu to render, then pick Delete from inside the list item.
+    const listItem = page.locator('[role="listitem"]').filter({ has: listTrigger });
+    const deleteItem = listItem.getByRole('button', { name: 'Delete', exact: true });
+    await deleteItem.waitFor({ state: 'attached', timeout: 8000 });
+    // The list popover is taller than the column and not itself scrollable, so
+    // Delete sits outside the viewport and cannot be scrolled into view.
+    // Dispatch the click directly on the confirmed, enabled menu item.
+    await deleteItem.dispatchEvent('click');
 
-    const deleteListBtn = page.getByRole('menuitem', { name: /delete list/i }).or(
-      page.getByRole('button', { name: /delete list/i }),
-    );
-    await deleteListBtn.click();
+    const dialog = listDeleteDialog(page);
+    await expect(dialog.getByRole('heading', { name: 'Delete list?' })).toBeVisible({ timeout: 8000 });
 
-    const dialog = page.locator('[role="dialog"], [data-testid="confirm-dialog"]').first();
-    await expect(dialog).toBeVisible({ timeout: 5000 });
-
-    await dialog.getByRole('button', { name: /delete/i }).last().click();
+    await dialog.getByRole('button', { name: 'Delete list' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
     // List and its cards should no longer appear on the board
