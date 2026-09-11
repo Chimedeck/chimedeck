@@ -21,8 +21,6 @@ const DEFAULT_COLOR = '#3b82f6';
 /** Minimum bar width in pixels (ensures handles are always reachable). */
 const MIN_BAR_WIDTH = HANDLE_WIDTH * 2 + 8;
 
-
-
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
