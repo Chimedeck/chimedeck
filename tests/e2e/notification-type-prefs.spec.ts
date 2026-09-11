@@ -3,7 +3,7 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 const API_URL = process.env.TEST_BASE_URL ?? 'http://localhost:3000';
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
-interface Credentials { email: string; password: string; token: string }
+interface Credentials { email: string; password: string; token: string; refreshToken: string }
 
 async function registerAndLogin(request: APIRequestContext, suffix: string): Promise<Credentials> {
   const email = `ntp-test-${suffix}-${Date.now()}@journeyh.io`;
@@ -14,7 +14,9 @@ async function registerAndLogin(request: APIRequestContext, suffix: string): Pro
   // Register returns an accessToken directly (201); avoid a separate login call
   // which is rate-limited (10/IP/min) and would 429 under the full suite.
   const body = await regRes.json() as { data: { accessToken: string } };
-  return { email, password, token: body.data.accessToken };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { email, password, token: body.data.accessToken, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -36,11 +38,11 @@ async function createBoard(request: APIRequestContext, token: string, wsId: stri
 }
 
 async function goToBoard(page: Page, boardId: string, creds: Credentials) {
-  await page.goto(`${UI_URL}/login`);
-  await page.fill('input[type="email"]', creds.email);
-  await page.fill('input[type="password"]', creds.password);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(`${UI_URL}/workspaces**`, { timeout: 15000 });
+  if (creds.refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: creds.refreshToken, url: `${UI_URL}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
   await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 }
