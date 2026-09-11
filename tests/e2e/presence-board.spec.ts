@@ -6,7 +6,7 @@
 // Soft-skips when the server is not reachable.
 
 import { test, expect, chromium } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaUi, type Credentials } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
@@ -156,7 +156,7 @@ test.describe('Board Presence', () => {
 
     try {
       // User A navigates to the board
-      await loginViaUi(pageA, UI_URL, credsA);
+      await loginViaCookie(pageA, UI_URL, credsA);
       await pageA.goto(`${UI_URL}/b/${boardId}`);
       await pageA.waitForLoadState('networkidle');
 
@@ -168,7 +168,7 @@ test.describe('Board Presence', () => {
       }
 
       // User B navigates to the same board in a separate context
-      await loginViaUi(pageB, UI_URL, credsB);
+      await loginViaCookie(pageB, UI_URL, credsB);
       await pageB.goto(`${UI_URL}/b/${boardId}`);
       await pageB.waitForLoadState('networkidle');
 

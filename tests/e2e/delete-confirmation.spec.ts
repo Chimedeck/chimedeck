@@ -5,7 +5,7 @@
 // Based on: tests/e2e/delete-confirmation.md (now deleted)
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaUi, type Credentials } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaCookie, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
@@ -123,7 +123,7 @@ test.describe('Delete Confirmation Flag', () => {
     const boardId = await createBoard(request, token, workspaceId);
     await createList(request, token, boardId);
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -159,7 +159,7 @@ test.describe('Delete Confirmation Flag', () => {
     const boardId = await createBoard(request, token, workspaceId);
     await createList(request, token, boardId);
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -192,7 +192,7 @@ test.describe('Delete Confirmation Flag', () => {
     const listId = await createList(request, token, boardId);
     await createCard(request, token, listId, 'Card A');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -224,7 +224,7 @@ test.describe('Delete Confirmation Flag', () => {
     const listId = await createList(request, token, boardId);
     await createCard(request, token, listId, 'Card A');
 
-    await loginViaUi(page, UI_URL, creds);
+    await loginViaCookie(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
