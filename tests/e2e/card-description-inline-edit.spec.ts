@@ -4,17 +4,19 @@
 // Based on: tests/e2e/card-description-inline-edit.md (now deleted)
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaUi, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 test.describe('Card Description — Inline Click-to-Edit', () => {
+  let creds: Credentials;
   let token: string;
   let boardId: string;
   let cardId: string;
 
   test.beforeAll(async ({ request }) => {
-    token = await registerAndLogin(request, 'desc-edit');
+    creds = await registerAndGetCredentials(request, 'desc-edit');
+    token = creds.token;
     const wsId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, wsId);
     const listId = await createList(request, token, boardId);
@@ -28,8 +30,7 @@ test.describe('Card Description — Inline Click-to-Edit', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+    await loginViaUi(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 

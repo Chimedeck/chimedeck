@@ -4,29 +4,29 @@
 // Based on: tests/e2e/custom-fields-ui.md (now deleted)
 
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaUi, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 interface SetupResult {
-  token: string;
+  creds: Credentials;
   boardId: string;
   cardId: string;
 }
 
 async function setupBoardWithCard(request: APIRequestContext, page: import('@playwright/test').Page): Promise<SetupResult> {
-  const token = await registerAndLogin(request, 'cf-ui');
-  const wsId = await createWorkspace(request, token);
-  const boardId = await createBoard(request, token, wsId);
-  const listId = await createList(request, token, boardId);
-  const cardId = await createCard(request, token, listId, 'CF UI Test Card');
+  const creds = await registerAndGetCredentials(request, 'cf-ui');
+  const wsId = await createWorkspace(request, creds.token);
+  const boardId = await createBoard(request, creds.token, wsId);
+  const listId = await createList(request, creds.token, boardId);
+  const cardId = await createCard(request, creds.token, listId, 'CF UI Test Card');
 
-  await page.goto(`${UI_URL}`);
-  await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+  // The app authenticates via HttpOnly cookies, so log in through the UI form.
+  await loginViaUi(page, UI_URL, creds);
   await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 
-  return { token, boardId, cardId };
+  return { creds, boardId, cardId };
 }
 
 async function createFieldViaApi(

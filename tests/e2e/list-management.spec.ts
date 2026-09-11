@@ -4,11 +4,12 @@
 // Soft-skips when the server is not reachable.
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaUi, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 test.describe('List Management', () => {
+  let creds: Credentials;
   let token: string;
   let boardId: string;
   const run = Date.now();
@@ -20,7 +21,8 @@ test.describe('List Management', () => {
       return;
     }
 
-    token = await registerAndLogin(request, `list-${run}`);
+    creds = await registerAndGetCredentials(request, `list-${run}`);
+    token = creds.token;
     const workspaceId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, workspaceId);
   });
@@ -148,8 +150,7 @@ test.describe('List Management', () => {
   test('Test 6 — UI: Add list button creates a new list on the board', async ({ page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+    await loginViaUi(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -197,8 +198,7 @@ test.describe('List Management', () => {
     const seedListId = await createList(request, token, boardId);
     void seedListId; // used implicitly via page.goto below
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+    await loginViaUi(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -241,8 +241,7 @@ test.describe('List Management', () => {
     await createList(request, token, boardId);
     await createList(request, token, boardId);
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+    await loginViaUi(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 

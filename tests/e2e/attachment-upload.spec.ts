@@ -5,11 +5,12 @@
 // Based on: specs/tests/attachment-upload.md
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard, loginViaUi, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 test.describe('Attachment Upload', () => {
+  let creds: Credentials;
   let token: string;
   let cardId: string;
 
@@ -20,7 +21,8 @@ test.describe('Attachment Upload', () => {
       return;
     }
 
-    token = await registerAndLogin(request, 'attach');
+    creds = await registerAndGetCredentials(request, 'attach');
+    token = creds.token;
     const workspaceId = await createWorkspace(request, token);
     const boardId = await createBoard(request, token, workspaceId);
     const listId = await createList(request, token, boardId);
@@ -209,8 +211,7 @@ test.describe('Attachment Upload', () => {
     const listId = await createList(request, token, boardId);
     const uiCardId = await createCard(request, token, listId, 'UI Attachment Card');
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+    await loginViaUi(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 
@@ -267,8 +268,7 @@ test.describe('Attachment Upload', () => {
       data: { url: 'https://example.com/report.pdf', name: 'report.pdf' },
     });
 
-    await page.goto(UI_URL);
-    await page.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: token });
+    await loginViaUi(page, UI_URL, creds);
     await page.goto(`${UI_URL}/b/${boardId}`);
     await page.waitForLoadState('networkidle');
 

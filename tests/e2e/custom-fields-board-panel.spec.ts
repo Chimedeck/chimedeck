@@ -4,28 +4,24 @@
 // Based on: tests/e2e/custom-fields-board-panel.md (now deleted)
 
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, loginViaUi, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 async function setupBoardAndNavigate(
   request: APIRequestContext,
   page: import('@playwright/test').Page,
-): Promise<{ token: string; boardId: string }> {
-  const token = await registerAndLogin(request, 'cf-panel');
-  const wsId = await createWorkspace(request, token);
-  const boardId = await createBoard(request, token, wsId);
+): Promise<{ creds: Credentials; boardId: string }> {
+  const creds = await registerAndGetCredentials(request, 'cf-panel');
+  const wsId = await createWorkspace(request, creds.token);
+  const boardId = await createBoard(request, creds.token, wsId);
 
-  // Navigate to the board using the API token via cookie/localStorage auth
-  await page.goto(`${UI_URL}`);
-  await page.evaluate(
-    ({ t }: { t: string }) => localStorage.setItem('auth_token', t),
-    { t: token },
-  );
+  // The app authenticates via HttpOnly cookies, so log in through the UI form.
+  await loginViaUi(page, UI_URL, creds);
   await page.goto(`${UI_URL}/b/${boardId}`);
   await page.waitForLoadState('networkidle');
 
-  return { token, boardId };
+  return { creds, boardId };
 }
 
 test.describe('Custom Fields Board Settings Panel', () => {

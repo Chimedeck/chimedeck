@@ -73,3 +73,39 @@ export async function createCard(
   const body = await res.json() as { data: { id: string } };
   return body.data.id;
 }
+
+export interface Credentials {
+  email: string;
+  password: string;
+  token: string;
+}
+
+// Register a user and return credentials (email/password/token). The app
+// authenticates the browser via HttpOnly cookies set by the login/register
+// response, so UI specs must log in through the form (not localStorage).
+export async function registerAndGetCredentials(
+  request: APIRequestContext,
+  suffix: string,
+): Promise<Credentials> {
+  const email = `e2e-${suffix}-${Date.now()}@example.com`;
+  const password = 'TestPassword1!';
+  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
+    data: { email, password, name: `Test ${suffix}` },
+  });
+  const body = await regRes.json() as { data: { accessToken: string } };
+  return { email, password, token: body.data.accessToken };
+}
+
+// Log in through the UI login form so the browser receives the HttpOnly
+// auth cookies. The app does not persist auth to localStorage.
+export async function loginViaUi(
+  page: import('@playwright/test').Page,
+  uiUrl: string,
+  creds: Credentials,
+): Promise<void> {
+  await page.goto(`${uiUrl}/login`);
+  await page.fill('input[type="email"]', creds.email);
+  await page.fill('input[type="password"]', creds.password);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(`${uiUrl}/workspaces**`, { timeout: 15000 });
+}
