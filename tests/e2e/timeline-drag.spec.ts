@@ -80,10 +80,31 @@ async function getCard(request: APIRequestContext, token: string, cardId: string
   return body.data;
 }
 
+
+/** Local calendar date ("YYYY-MM-DD") of an ISO timestamp. */
+function localDateKey(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${String(y)}-${m}-${day}`;
+}
+
 function offsetDate(offsetDays: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// App boot performs an async token refresh; navigating immediately can race and
+// land on /workspaces. Retry until the board view switcher renders.
+async function gotoBoardUntilReady(page: Page, baseUrl: string, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseUrl}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.getByTestId('board-view-switcher').isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
 }
 
 async function goToTimelineView(page: Page, baseUrl: string, boardId: string, creds: Credentials) {
@@ -92,8 +113,7 @@ async function goToTimelineView(page: Page, baseUrl: string, boardId: string, cr
       { name: 'refresh_token', value: creds.refreshToken, url: `${baseUrl}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
     ]);
   }
-  await page.goto(`${baseUrl}/b/${boardId}`);
-  await page.waitForLoadState('networkidle');
+  await gotoBoardUntilReady(page, baseUrl, boardId);
   await page.getByTestId('board-view-tab-TIMELINE').click();
   await expect(page.getByTestId('timeline-view')).toBeVisible({ timeout: 10000 });
 }
@@ -110,8 +130,8 @@ async function dragHandle(page: Page, handleTestId: string, deltaX: number) {
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   // Move in small steps to trigger all mousemove events.
-  const steps = Math.abs(deltaX) / 4;
-  await page.mouse.move(startX + deltaX, startY, { steps: Math.max(steps, 4) });
+  const steps = Math.max(Math.ceil(Math.abs(deltaX) / 4), 4);
+  await page.mouse.move(startX + deltaX, startY, { steps });
   await page.mouse.up();
 }
 
@@ -242,9 +262,11 @@ test.describe('Timeline Drag / Resize', () => {
     // Error toast should appear.
     await expect(page.getByText(/failed to update card dates/i)).toBeVisible({ timeout: 8000 });
 
-    // After revert, the server-side dates should remain unchanged.
+    // After revert, the server-side dates should remain unchanged. Compare on
+    // the local calendar date: the server stores these as instants, so slicing
+    // the raw UTC string would shift the day for non-UTC servers.
     const serverCard = await getCard(request, creds.token, cardId);
-    expect(serverCard.start_date?.slice(0, 10)).toBe(startDate);
-    expect(serverCard.due_date?.slice(0, 10)).toBe(dueDate);
+    expect(serverCard.start_date ? localDateKey(serverCard.start_date) : null).toBe(startDate);
+    expect(serverCard.due_date ? localDateKey(serverCard.due_date) : null).toBe(dueDate);
   });
 });

@@ -28,8 +28,14 @@ async function setupBoardWithCard(request: APIRequestContext): Promise<SetupResu
 
 async function openBoard(page: import('@playwright/test').Page, setup: SetupResult): Promise<void> {
   await loginViaCookie(page, UI_URL, setup.creds);
-  await page.goto(`${UI_URL}/b/${setup.boardId}`);
-  await page.waitForLoadState('networkidle');
+  // App boot performs an async token refresh; navigating immediately can race
+  // and land on /workspaces. Retry until the card tile renders.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${setup.boardId}`);
+    await page.waitForLoadState('networkidle');
+    if (await page.locator('[aria-label^="Card:"]').first().isVisible().catch(() => false)) return;
+    await page.waitForTimeout(500);
+  }
 }
 
 async function createFieldViaApi(

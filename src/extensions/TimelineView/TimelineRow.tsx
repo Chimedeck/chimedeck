@@ -7,6 +7,7 @@ import TimelineBar, { ROW_SLOT_HEIGHT } from './TimelineBar';
 import Button from '../../common/components/Button';
 import { useTimelineDrag } from './useTimelineDrag';
 import translations from './translations/en.json';
+import { parseLocalDate } from '../../common/utils/dates';
 import type { TimelineRowProps } from './types';
 import type { Card } from '../Card/api';
 
@@ -16,12 +17,6 @@ const BAR_TOP = 8;
 const BAR_BOTTOM_PAD = 6;
 
 // ── Row-packing helpers ────────────────────────────────────────────────────
-
-function parseLocalDate(s: string): Date {
-  const datePart = s.slice(0, 10);
-  const [y, m, d] = datePart.split('-');
-  return new Date(Number(y), Number(m) - 1, Number(d));
-}
 
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
