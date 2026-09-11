@@ -6,11 +6,13 @@
 // Soft-skips when the server is not reachable.
 
 import { test, expect, chromium } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList } from './_helpers';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaUi, type Credentials } from './_helpers';
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
 test.describe('Board Presence', () => {
+  let credsA: Credentials;
+  let credsB: Credentials;
   let tokenA: string;
   let tokenB: string;
   let boardId: string;
@@ -24,13 +26,15 @@ test.describe('Board Presence', () => {
     }
 
     // User A creates the board
-    tokenA = await registerAndLogin(request, `presA-${run}`);
+    credsA = await registerAndGetCredentials(request, `presA-${run}`);
+    tokenA = credsA.token;
     const workspaceId = await createWorkspace(request, tokenA);
     boardId = await createBoard(request, tokenA, workspaceId);
     await createList(request, tokenA, boardId);
 
     // User B — a second independent user
-    tokenB = await registerAndLogin(request, `presB-${run}`);
+    credsB = await registerAndGetCredentials(request, `presB-${run}`);
+    tokenB = credsB.token;
   });
 
   test('Test 1 — GET /boards/:id/presence returns active viewer list', async ({ request }) => {
@@ -152,8 +156,7 @@ test.describe('Board Presence', () => {
 
     try {
       // User A navigates to the board
-      await pageA.goto(UI_URL);
-      await pageA.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: tokenA });
+      await loginViaUi(pageA, UI_URL, credsA);
       await pageA.goto(`${UI_URL}/b/${boardId}`);
       await pageA.waitForLoadState('networkidle');
 
@@ -165,8 +168,7 @@ test.describe('Board Presence', () => {
       }
 
       // User B navigates to the same board in a separate context
-      await pageB.goto(UI_URL);
-      await pageB.evaluate(({ t }: { t: string }) => localStorage.setItem('auth_token', t), { t: tokenB });
+      await loginViaUi(pageB, UI_URL, credsB);
       await pageB.goto(`${UI_URL}/b/${boardId}`);
       await pageB.waitForLoadState('networkidle');
 
