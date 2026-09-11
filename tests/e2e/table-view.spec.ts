@@ -99,7 +99,7 @@ test.describe('Table View', () => {
         localStorage.setItem('access_token', tok as string);
         window.location.href = `${url}/b/${(tok as string).slice(-8)}`;
       },
-      [BASE_URL, token],
+      [UI_URL, token],
     );
 
     await page.goto(`${UI_URL}/b/${board.id}`);
