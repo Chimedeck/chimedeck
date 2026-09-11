@@ -51,7 +51,11 @@ const DATABASE_URL =
 
 const S3_BUCKET    = Bun.env['S3_BUCKET'] ?? 'chimedeck';
 const S3_REGION    = Bun.env['S3_REGION'] ?? 'us-east-1';
-const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || undefined;
+// Honour FLAG_USE_LOCAL_STORAGE the same way server/config/env.ts does, so a
+// dev with the flag on does not accidentally write seed attachments to real
+// AWS. An explicit S3_ENDPOINT still wins.
+const USE_LOCAL_STORAGE = Bun.env['FLAG_USE_LOCAL_STORAGE'] === 'true';
+const S3_ENDPOINT  = Bun.env['S3_ENDPOINT'] || (USE_LOCAL_STORAGE ? 'http://localhost:4566' : undefined);
 const S3_BASE_URL  = S3_ENDPOINT
   ? `${S3_ENDPOINT}/${S3_BUCKET}`
   : `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com`;
