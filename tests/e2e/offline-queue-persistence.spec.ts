@@ -168,12 +168,18 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     expect(beforeReload).toHaveLength(1);
     expect((beforeReload[0] as { id: string }).id).toBe(mutationId);
 
+    // Block the replay request so it cannot succeed. On boot the app hydrates the
+    // queue from IndexedDB and then replays on WS connect; a successful replay
+    // removes the mutation. To observe the hydration-only state we make the
+    // replay fail (network error stops replay, leaving the mutation queued).
+    await page.route(`**/api/v1/boards/${boardId}/lists`, (route) => route.abort());
+
     // Hard reload — App.tsx calls loadPersistedMutations() on boot which should
     // hydrate the in-memory queue with this mutation
     await page.reload({ waitUntil: 'networkidle' });
 
-    // After reload, the mutation must still be in IndexedDB (it is only removed
-    // when replay succeeds — not merely on hydration)
+    // After reload the mutation must still be in IndexedDB: it is only removed
+    // when replay succeeds, and we forced the replay to fail.
     const afterReload = await readMutationsFromIDB(page);
     expect(afterReload).toHaveLength(1);
     expect((afterReload[0] as { id: string }).id).toBe(mutationId);
