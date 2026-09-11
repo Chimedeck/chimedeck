@@ -21,7 +21,7 @@ const STORE = 'mutations';
 async function registerAndLogin(
   request: APIRequestContext,
   suffix: string,
-): Promise<{ token: string; email: string; password: string }> {
+): Promise<{ token: string; email: string; password: string; refreshToken: string }> {
   const email = `oq-test-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
@@ -29,7 +29,9 @@ async function registerAndLogin(
     data: { email, password, name: `OQ ${suffix}` },
   });
   const body = await regRes.json() as { data: { accessToken: string } };
-  return { token: body.data.accessToken, email, password };
+  const setCookie = regRes.headers()['set-cookie'] ?? '';
+  const refreshMatch = setCookie.match(/refresh_token=([^;]+)/);
+  return { token: body.data.accessToken, email, password, refreshToken: refreshMatch ? refreshMatch[1] : '' };
 }
 
 async function createWorkspace(request: APIRequestContext, token: string): Promise<string> {
@@ -121,14 +123,13 @@ async function readMutationsFromIDB(page: Page): Promise<unknown[]> {
   );
 }
 
-/** Log in via the UI login form so auth cookies/tokens are set. */
-async function loginViaUi(page: Page, email: string, password: string): Promise<void> {
-  await page.goto(`${UI_URL}/login`);
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole('button', { name: /log in|sign in/i }).click();
-  // Wait until redirected away from /login (i.e. auth succeeded)
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 });
+/** Inject the refresh_token cookie so the app's boot refresh restores auth. */
+async function loginViaCookie(page: Page, refreshToken: string): Promise<void> {
+  if (refreshToken) {
+    await page.context().addCookies([
+      { name: 'refresh_token', value: refreshToken, url: `${UI_URL}/api/v1/auth/refresh`, httpOnly: true, sameSite: 'Strict' },
+    ]);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -140,12 +141,12 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     page,
     request,
   }) => {
-    const { token, email, password } = await registerAndLogin(request, 'hydrate');
+    const { token, refreshToken } = await registerAndLogin(request, 'hydrate');
     const workspaceId = await createWorkspace(request, token);
     const boardId = await createBoard(request, token, workspaceId);
 
     // Navigate to app first so the origin is established, then seed IDB
-    await loginViaUi(page, email, password);
+    await loginViaCookie(page, refreshToken);
     await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'domcontentloaded' });
 
     const mutationId = `test-hydrate-${Date.now()}`;
@@ -182,11 +183,11 @@ test.describe('offline mutation queue — IndexedDB persistence', () => {
     page,
     request,
   }) => {
-    const { token, email, password } = await registerAndLogin(request, 'replay');
+    const { token, refreshToken } = await registerAndLogin(request, 'replay');
     const workspaceId = await createWorkspace(request, token);
     const boardId = await createBoard(request, token, workspaceId);
 
-    await loginViaUi(page, email, password);
+    await loginViaCookie(page, refreshToken);
     await page.goto(`${UI_URL}/b/${boardId}`, { waitUntil: 'domcontentloaded' });
 
     const listTitle = `Replayed-List-${Date.now()}`;
