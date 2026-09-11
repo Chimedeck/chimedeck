@@ -33,6 +33,12 @@ const clientOptions = {
     accessKeyId: s3AccessKeyId,
     secretAccessKey: s3SecretAccessKey,
   },
+  // Newer @aws-sdk versions add a default CRC32 checksum to uploads, which
+  // S3-compatible stores (LocalStack 3.x, older MinIO) reject with
+  // "Checksum Type mismatch". Only compute checksums when the operation
+  // requires them, so presigned PUTs and multipart parts work against them.
+  requestChecksumCalculation: 'WHEN_REQUIRED' as const,
+  responseChecksumValidation: 'WHEN_REQUIRED' as const,
 };
 
 // Public-facing S3 client — used ONLY to generate presigned URLs handed to the

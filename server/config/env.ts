@@ -10,29 +10,80 @@ function decodeKey(raw: string): string {
   return Buffer.from(raw, 'base64').toString('utf-8');
 }
 
+/**
+ * Resolve the S3 / object-storage settings.
+ *
+ * When FLAG_USE_LOCAL_STORAGE=true we point S3 at the LocalStack service that
+ * docker-compose.yml provides (port 4566) and supply LocalStack's throwaway
+ * credentials, so local dev and e2e runs work with no AWS account. This is the
+ * behaviour .env.example has always documented.
+ *
+ * Any explicit env value wins over the LocalStack default, so a self-hosted
+ * object store (e.g. MinIO) or real credentials can still be used with the flag
+ * on. `S3_INTERNAL_ENDPOINT` falls back to `S3_ENDPOINT` (handled in the S3
+ * config module).
+ */
+function resolveS3Env(): {
+  S3_ENDPOINT: string;
+  S3_INTERNAL_ENDPOINT: string;
+  S3_BUCKET: string;
+  S3_REGION: string;
+  S3_AWS_ACCESS_KEY_ID: string;
+  S3_AWS_SECRET_ACCESS_KEY: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
+} {
+  const useLocalStorage = Bun.env['FLAG_USE_LOCAL_STORAGE'] === 'true';
+
+  // LocalStack's documented default credentials — not secrets.
+  const LOCALSTACK_ENDPOINT = Bun.env['LOCALSTACK_ENDPOINT'] ?? 'http://localhost:4566';
+  const LOCALSTACK_ACCESS_KEY_ID = 'test';
+  const LOCALSTACK_SECRET_ACCESS_KEY = 'test';
+
+  // Treat an empty string as unset: .env commonly ships `S3_ENDPOINT=` and `""`
+  // does not fall through a nullish coalesce.
+  const orUnset = (value: string | undefined, fallback: string): string =>
+    value === undefined || value.trim() === '' ? fallback : value;
+
+  return {
+    S3_ENDPOINT: orUnset(Bun.env['S3_ENDPOINT'], useLocalStorage ? LOCALSTACK_ENDPOINT : ''),
+    // Optional endpoint for server-side S3 operations (ensureBucketExists, Head/Delete/Get/Put,
+    // proxy, thumbnails, multipart create/complete/abort). Set this to the direct/internal
+    // address (e.g. http://object-store:9000) so server traffic does not hairpin through
+    // the public proxy in front of S3_ENDPOINT. Falls back to S3_ENDPOINT when unset.
+    S3_INTERNAL_ENDPOINT: orUnset(Bun.env['S3_INTERNAL_ENDPOINT'], ''),
+    S3_BUCKET: orUnset(Bun.env['S3_BUCKET'], 'kanban'),
+    S3_REGION: orUnset(Bun.env['S3_REGION'], 'us-east-1'),
+    // S3-specific credentials — use these to point S3/LocalStack at a different IAM identity
+    // than the global AWS credentials (e.g. real SES + LocalStack S3 in the same environment).
+    // When unset, fall back to the global AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
+    S3_AWS_ACCESS_KEY_ID: orUnset(
+      Bun.env['S3_AWS_ACCESS_KEY_ID'],
+      useLocalStorage ? LOCALSTACK_ACCESS_KEY_ID : '',
+    ),
+    S3_AWS_SECRET_ACCESS_KEY: orUnset(
+      Bun.env['S3_AWS_SECRET_ACCESS_KEY'],
+      useLocalStorage ? LOCALSTACK_SECRET_ACCESS_KEY : '',
+    ),
+    // Global AWS credentials — used by SES and as fallback for S3.
+    AWS_ACCESS_KEY_ID: orUnset(Bun.env['AWS_ACCESS_KEY_ID'], ''),
+    AWS_SECRET_ACCESS_KEY: orUnset(Bun.env['AWS_SECRET_ACCESS_KEY'], ''),
+  };
+}
+
 export const env = {
   DATABASE_URL: Bun.env['DATABASE_URL'] ?? '',
   JWT_PRIVATE_KEY: decodeKey(Bun.env['JWT_PRIVATE_KEY'] ?? ''),
   JWT_PUBLIC_KEY: decodeKey(Bun.env['JWT_PUBLIC_KEY'] ?? ''),
 
   // S3 / file storage
-  // When FLAG_USE_LOCAL_STORAGE=true, the storage module overrides endpoint/credentials with LocalStack defaults.
-  S3_ENDPOINT: Bun.env['S3_ENDPOINT'] ?? '',
-  // Optional endpoint for server-side S3 operations (ensureBucketExists, Head/Delete/Get/Put,
-  // proxy, thumbnails, multipart create/complete/abort). Set this to the direct/internal
-  // address (e.g. http://object-store:9000) so server traffic does not hairpin through
-  // the public proxy in front of S3_ENDPOINT. Falls back to S3_ENDPOINT when unset.
-  S3_INTERNAL_ENDPOINT: Bun.env['S3_INTERNAL_ENDPOINT'] ?? '',
-  S3_BUCKET: Bun.env['S3_BUCKET'] ?? 'kanban',
-  S3_REGION: Bun.env['S3_REGION'] ?? 'us-east-1',
-  // S3-specific credentials — use these to point S3/LocalStack at a different IAM identity
-  // than the global AWS credentials (e.g. real SES + LocalStack S3 in the same environment).
-  // When unset, fall back to the global AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
-  S3_AWS_ACCESS_KEY_ID: Bun.env['S3_AWS_ACCESS_KEY_ID'] ?? '',
-  S3_AWS_SECRET_ACCESS_KEY: Bun.env['S3_AWS_SECRET_ACCESS_KEY'] ?? '',
-  // Global AWS credentials — used by SES and as fallback for S3.
-  AWS_ACCESS_KEY_ID: Bun.env['AWS_ACCESS_KEY_ID'] ?? '',
-  AWS_SECRET_ACCESS_KEY: Bun.env['AWS_SECRET_ACCESS_KEY'] ?? '',
+  //
+  // FLAG_USE_LOCAL_STORAGE=true points S3 at the LocalStack service defined in
+  // docker-compose.yml (port 4566) and fills in throwaway credentials, so local
+  // dev and e2e runs work without real AWS. Explicit S3_ENDPOINT / S3_AWS_* env
+  // values always win, so a self-hosted object store or real credentials can
+  // still be supplied alongside the flag.
+  ...resolveS3Env(),
 
   APP_PORT: parseInt(Bun.env['APP_PORT'] ?? '3000', 10),
   APP_URL: Bun.env['VITE_APP_URL'] ?? 'http://localhost:3000',
