@@ -5,7 +5,7 @@
 // Based on: tests/e2e/business-logic-invariants-1.md (now deleted)
 
 import { test, expect } from '@playwright/test';
-import { BASE_URL, registerAndLogin, createWorkspace, createBoard, createList, createCard } from './_helpers';
+import { BASE_URL, registerAndLogin, registerAndGetCredentials, createWorkspace, createBoard, createList, createCard } from './_helpers';
 
 test.describe('Business Logic Invariants', () => {
   test.describe('Part 1 — Archived Board Read-Only Guard', () => {
@@ -81,21 +81,23 @@ test.describe('Business Logic Invariants', () => {
       token = await registerAndLogin(request, 'ws-owner');
       workspaceId = await createWorkspace(request, token);
 
-      // Fetch current user id
-      const meRes = await request.get(`${BASE_URL}/api/v1/me`, {
+      // Fetch the current user id. Fail loudly rather than leaving userId
+      // unset, which previously made every test in this block soft-skip and
+      // masked the fact that the route was wrong.
+      const meRes = await request.get(`${BASE_URL}/api/v1/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (meRes.status() === 200) {
-        const meBody = await meRes.json();
-        userId = meBody.data?.id ?? meBody.id;
+      if (meRes.status() !== 200) {
+        throw new Error(`GET /api/v1/users/me returned ${meRes.status()}`);
+      }
+      const meBody = await meRes.json();
+      userId = meBody.data?.id ?? meBody.id;
+      if (!userId) {
+        throw new Error('GET /api/v1/users/me returned no id');
       }
     });
 
     test('DELETE last owner returns 422 workspace-must-have-one-owner', async ({ request }) => {
-      if (!userId) {
-        test.skip(true, 'Could not fetch current user ID via /api/v1/me');
-        return;
-      }
       const res = await request.delete(
         `${BASE_URL}/api/v1/workspaces/${workspaceId}/members/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -107,10 +109,6 @@ test.describe('Business Logic Invariants', () => {
     });
 
     test('PATCH role change for last owner returns 422', async ({ request }) => {
-      if (!userId) {
-        test.skip(true, 'Could not fetch current user ID via /api/v1/me');
-        return;
-      }
       const res = await request.patch(
         `${BASE_URL}/api/v1/workspaces/${workspaceId}/members/${userId}`,
         {
@@ -125,34 +123,20 @@ test.describe('Business Logic Invariants', () => {
     });
 
     test('Role change succeeds when a second OWNER is promoted first', async ({ request }) => {
-      if (!userId) {
-        test.skip(true, 'Could not fetch current user ID via /api/v1/me');
-        return;
-      }
 
-      // Register second user and invite as OWNER
-      const secondToken = await registerAndLogin(request, 'ws-owner2');
-      const meRes = await request.get(`${BASE_URL}/api/v1/me`, {
-        headers: { Authorization: `Bearer ${secondToken}` },
-      });
-      const secondUserId = meRes.status() === 200
-        ? (await meRes.json()).data?.id ?? (await meRes.json()).id
-        : null;
+      // Register a second user. POST /workspaces/:id/members adds an existing
+      // user by email (not id), so we need the credentials, not just a token.
+      const secondCreds = await registerAndGetCredentials(request, 'ws-owner2');
 
-      if (!secondUserId) {
-        test.skip(true, 'Could not fetch second user ID');
-        return;
-      }
-
-      // Add second user as OWNER
+      // Promote the second user to OWNER.
       const inviteRes = await request.post(`${BASE_URL}/api/v1/workspaces/${workspaceId}/members`, {
         headers: { Authorization: `Bearer ${token}` },
-        data: { userId: secondUserId, role: 'OWNER' },
+        data: { email: secondCreds.email, role: 'OWNER' },
       });
-      // Accept 200, 201, or 204 for success
       expect(inviteRes.status()).toBeLessThan(300);
 
-      // Now demoting the first OWNER should succeed (second OWNER still present)
+      // With a second OWNER present, demoting the first must succeed rather than
+      // tripping the >=1 owner invariant.
       const patchRes = await request.patch(
         `${BASE_URL}/api/v1/workspaces/${workspaceId}/members/${userId}`,
         {
@@ -160,9 +144,16 @@ test.describe('Business Logic Invariants', () => {
           data: { role: 'ADMIN' },
         },
       );
-      // Either succeeds (200/204) or already blocked if second member invite didn't fully work
-      // TODO: adjust based on actual invitation flow once fully implemented
-      expect([200, 204, 422]).toContain(patchRes.status());
+      expect([200, 204]).toContain(patchRes.status());
+
+      // The second user is now an owner; the invariant held.
+      const membersRes = await request.get(`${BASE_URL}/api/v1/workspaces/${workspaceId}/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(membersRes.status()).toBe(200);
+      const membersBody = await membersRes.json();
+      const owners = (membersBody.data ?? []).filter((m: { role: string }) => m.role === 'OWNER');
+      expect(owners.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
