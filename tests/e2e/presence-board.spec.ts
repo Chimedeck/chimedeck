@@ -168,22 +168,35 @@ test.describe('Board Presence', () => {
       return body.data.map((u) => u.id);
     };
 
+    // Resolve both user ids so the assertion can name WHO left rather than only
+    // that the list shrank.
+    const idOf = async (token: string): Promise<string> => {
+      const res = await request.get(`${BASE_URL}/api/v1/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json() as { data: { id: string } };
+      return body.data.id;
+    };
+    const idA = await idOf(tokenA);
+    const idB = await idOf(tokenB);
+
     const socketA = await openSocket(tokenA);
     const socketB = await openSocket(tokenB);
 
     try {
-      // Both subscribers are recorded.
+      // Both subscribers are recorded, by id.
       await expect
         .poll(readPresenceIds, { timeout: 8000 })
-        .toEqual(expect.arrayContaining([expect.any(String)]));
-      const both = await readPresenceIds();
-      expect(both.length).toBeGreaterThanOrEqual(2);
+        .toEqual(expect.arrayContaining([idA, idB]));
 
-      // B leaves; the presence list must shrink to exclude B.
+      // B leaves. B must disappear while A remains — asserting identity, not
+      // just a smaller count, so a collapse of both connections cannot pass.
       socketB.close();
       await expect
-        .poll(async () => (await readPresenceIds()).length, { timeout: 10000 })
-        .toBeLessThan(both.length);
+        .poll(async () => (await readPresenceIds()).includes(idB), { timeout: 10000 })
+        .toBe(false);
+      expect(await readPresenceIds()).toContain(idA);
     } finally {
       socketA.close();
       socketB.close();
