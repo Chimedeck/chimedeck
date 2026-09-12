@@ -51,10 +51,11 @@ export async function createList(
   request: APIRequestContext,
   token: string,
   boardId: string,
+  title?: string,
 ): Promise<string> {
   const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: { title: `List-${Date.now()}` },
+    data: { title: title ?? `List-${Date.now()}` },
   });
   const body = await res.json() as { data: { id: string } };
   return body.data.id;
