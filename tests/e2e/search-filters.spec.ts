@@ -11,6 +11,7 @@ const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 test.describe('Search Filters', () => {
   let creds: Credentials;
   let token: string;
+  let workspaceId: string;
   let boardId: string;
   let otherBoardId: string;
   const run = Date.now();
@@ -24,7 +25,7 @@ test.describe('Search Filters', () => {
 
     creds = await registerAndGetCredentials(request, `search-${run}`);
     token = creds.token;
-    const workspaceId = await createWorkspace(request, token);
+    workspaceId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, workspaceId);
     otherBoardId = await createBoard(request, token, workspaceId);
 
@@ -40,17 +41,14 @@ test.describe('Search Filters', () => {
   test('Test 1 — Search returns cards matching the query term', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    const res = await request.get(`${BASE_URL}/api/v1/search?q=Alpha+Card+${run}`, {
+    // Real route is workspace-scoped: GET /api/v1/workspaces/:id/search.
+    // There is no global /api/v1/search.
+    const res = await request.get(`${BASE_URL}/api/v1/workspaces/${workspaceId}/search?q=Alpha+Card+${run}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Search endpoint not yet implemented — skipping');
-      return;
-    }
-
     expect(res.status()).toBe(200);
-    const body = await res.json() as { data: Array<{ title: string }> };
+    const body = await res.json() as { data: Array<{ title: string; type: string }> };
     expect(Array.isArray(body.data)).toBe(true);
     const titles = body.data.map((c) => c.title);
     expect(titles.some((t) => t.includes(`Alpha Card ${run}`))).toBe(true);
@@ -59,38 +57,28 @@ test.describe('Search Filters', () => {
   test('Test 2 — Search with type=card filter returns only card results', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    const res = await request.get(`${BASE_URL}/api/v1/search?q=${run}&type=card`, {
+    const res = await request.get(`${BASE_URL}/api/v1/workspaces/${workspaceId}/search?q=${run}&type=card`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Type-filter on search endpoint not yet implemented — skipping');
-      return;
-    }
 
     expect(res.status()).toBe(200);
     const body = await res.json() as { data: Array<{ type?: string; title: string }> };
     expect(Array.isArray(body.data)).toBe(true);
-    // Every returned item must be a card (type field absent or equal to 'card')
+    expect(body.data.length).toBeGreaterThan(0);
+    // Every returned item must be a card.
     for (const item of body.data) {
-      if (item.type !== undefined) {
-        expect(item.type).toBe('card');
-      }
+      expect(item.type).toBe('card');
     }
   });
 
   test('Test 3 — Search scoped to a specific board excludes other-board cards', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
+    // Board-scoped search has its own route: GET /api/v1/boards/:id/search.
     const res = await request.get(
-      `${BASE_URL}/api/v1/search?q=${run}&boardId=${boardId}`,
+      `${BASE_URL}/api/v1/boards/${boardId}/search?q=${run}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Board-scoped search not yet implemented — skipping');
-      return;
-    }
 
     expect(res.status()).toBe(200);
     const body = await res.json() as { data: Array<{ title: string }> };
@@ -106,74 +94,72 @@ test.describe('Search Filters', () => {
   test('Test 4 — Unauthenticated search returns 401', async ({ request }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    const res = await request.get(`${BASE_URL}/api/v1/search?q=anything`);
-
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Search endpoint not yet implemented — skipping');
-      return;
-    }
+    const res = await request.get(`${BASE_URL}/api/v1/workspaces/${workspaceId}/search?q=anything`);
 
     expect(res.status()).toBe(401);
   });
 
-  test('Test 5 — UI search box filters visible cards by keyword', async ({ page }) => {
+  // The board page has no inline search input. Search is a modal palette opened
+  // from the header "Search" button (also Cmd/Ctrl+K), with an input whose
+  // placeholder is "Search boards and cards…" and All/Boards/Cards filter tabs.
+  async function openSearchPalette(page: import('@playwright/test').Page): Promise<void> {
+    await page.getByRole('button', { name: /search/i }).first().click();
+    await page.getByPlaceholder('Search boards and cards…').waitFor({ timeout: 8000 });
+  }
+
+  test('Test 5 — UI search palette finds a card by keyword', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
+    // Fresh user/board so the palette only sees these cards.
+    const uiCreds = await registerAndGetCredentials(request, `search-ui5-${run}`);
+    const uiToken = uiCreds.token;
+    const uiWorkspaceId = await createWorkspace(request, uiToken);
+    const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
+    const uiListId = await createList(request, uiToken, uiBoardId);
+    await createCard(request, uiToken, uiListId, `Alpha Card ${run}`);
+    await createCard(request, uiToken, uiListId, `Beta Task ${run}`);
+
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await page.goto(`${UI_URL}/b/${uiBoardId}`);
     await page.waitForLoadState('networkidle');
+    await openSearchPalette(page);
 
-    // Locate the search input — try common selectors
-    const searchInput = page.locator(
-      '[data-testid="search-input"], input[placeholder*="Search"], input[type="search"]',
-    ).first();
+    const paletteInput = page.getByPlaceholder('Search boards and cards…');
+    await paletteInput.fill(`Alpha Card ${run}`);
 
-    if (await searchInput.count() === 0) {
-      test.skip(true, 'Search input not found in UI — skipping UI search test');
-      return;
-    }
-
-    await searchInput.fill(`Alpha Card ${run}`);
-    await page.waitForTimeout(400);
-
-    // The matching card should remain visible
-    const matchCard = page.locator(`[data-testid*="card"], .card-title`).filter({ hasText: `Alpha Card ${run}` }).first();
-    if (await matchCard.count() > 0) {
-      await expect(matchCard).toBeVisible({ timeout: 5000 });
-    }
-
-    // The non-matching card should be hidden or absent
-    const noMatchCard = page.locator(`[data-testid*="card"], .card-title`).filter({ hasText: `Beta Task ${run}` }).first();
-    if (await noMatchCard.count() > 0) {
-      await expect(noMatchCard).toBeHidden({ timeout: 5000 });
-    }
+    // Scope to the palette: the board grid behind the modal still shows every
+    // card, so a page-wide text check would match non-results too.
+    const palette = page.locator('[role="dialog"]').last();
+    await expect(palette.getByText(`Alpha Card ${run}`).first()).toBeVisible({ timeout: 8000 });
+    // The non-matching card must not be offered as a result.
+    await expect(palette.getByText(`Beta Task ${run}`)).toHaveCount(0);
   });
 
-  test('Test 6 — UI type filter toggle shows only matching result type', async ({ page }) => {
+  test('Test 6 — UI type filter narrows results to cards', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
+    const uiCreds = await registerAndGetCredentials(request, `search-ui6-${run}`);
+    const uiToken = uiCreds.token;
+    const uiWorkspaceId = await createWorkspace(request, uiToken);
+    const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
+    const uiListId = await createList(request, uiToken, uiBoardId);
+    await createCard(request, uiToken, uiListId, `Alpha Card ${run}`);
+
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await page.goto(`${UI_URL}/b/${uiBoardId}`);
     await page.waitForLoadState('networkidle');
+    await openSearchPalette(page);
 
-    // Locate a type-filter control — button or select
-    const typeFilter = page.locator(
-      '[data-testid="filter-type"], [aria-label*="filter"], select[name*="type"]',
-    ).first();
+    const paletteInput = page.getByPlaceholder('Search boards and cards…');
+    await paletteInput.fill(run.toString());
 
-    if (await typeFilter.count() === 0) {
-      test.skip(true, 'Type filter control not found in UI — skipping');
-      return;
-    }
+    // The palette exposes All / Boards / Cards tabs (role=tab, not button).
+    const cardsTab = page.getByRole('tab', { name: 'Cards', exact: true }).first();
+    await expect(cardsTab).toBeVisible({ timeout: 8000 });
+    await cardsTab.click();
 
-    await typeFilter.click();
-    // Select "card" option if it appears in a dropdown
-    const cardOption = page.locator('option[value="card"], [data-value="card"], li:has-text("Card")').first();
-    if (await cardOption.count() > 0) {
-      await cardOption.click();
-    }
-
-    await page.waitForTimeout(300);
-    await expect(typeFilter).toBeVisible();
+    // With the Cards filter chosen the seeded card is still listed.
+    const palette = page.locator('[role="dialog"]').last();
+    await expect(palette.getByText(`Alpha Card ${run}`).first()).toBeVisible({ timeout: 8000 });
   });
 });
