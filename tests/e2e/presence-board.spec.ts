@@ -9,6 +9,38 @@ import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, crea
 
 const WS_URL = (process.env.TEST_BASE_URL ?? 'http://localhost:3000').replace(/^http/, 'ws');
 
+// Open a realtime WebSocket, subscribe to the board, and resolve once the server
+// accepts the subscription. Used by the join and leave tests.
+function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
+    const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
+    ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
+    });
+    ws.addEventListener('message', (event) => {
+      try {
+        const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
+        if (msg.type === 'error') {
+          clearTimeout(timer);
+          reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
+        }
+        // Any non-error message after subscribe means the subscription was accepted.
+        if (msg.type !== 'error') {
+          clearTimeout(timer);
+          resolve(ws);
+        }
+      } catch {
+        // ignore non-JSON frames
+      }
+    });
+    ws.addEventListener('error', () => {
+      clearTimeout(timer);
+      reject(new Error('WS connection error'));
+    });
+  });
+}
+
 test.describe('Board Presence', () => {
   let credsA: Credentials;
   let credsB: Credentials;
@@ -66,62 +98,43 @@ test.describe('Board Presence', () => {
   // to /boards/:id/presence return 404 by design.
   //
   // Two tests here previously asserted those endpoints (and skipped themselves
-  // when they 404'd, so they never ran). The real join/leave behaviour is covered
-  // by Test 2 below, which drives two WebSocket subscribers and reads the list
-  // back over REST. Asserting the absence of a REST endpoint would test nothing.
+  // when they 404'd, so they never ran). The real behaviour is covered over the
+  // WebSocket path instead: Test 2 covers join (two subscribers appear by id),
+  // Test 3 covers leave (one disconnects and disappears while the other stays).
+  // Asserting the absence of a REST endpoint would test nothing.
 
   test('Test 2 — Second user joining the board is reflected in the presence list', async ({ request }) => {
     if (!tokenA || !tokenB) test.skip(true, 'Server not running — skipping');
 
-    // Presence is populated by the realtime WebSocket layer: a client subscribes
-    // to a board over /api/v1/ws and the server records presence:<boardId>:<userId>.
-    const sockets: WebSocket[] = [];
-    const subscribe = (token: string): Promise<void> =>
-      new Promise((resolve, reject) => {
-        const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
-        sockets.push(ws);
-        const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
-        ws.addEventListener('open', () => {
-          ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
-        });
-        ws.addEventListener('message', (event) => {
-          try {
-            const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
-            if (msg.type === 'error') {
-              clearTimeout(timer);
-              reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
-            }
-            // Any non-error message after subscribe means the subscription was accepted.
-            if (msg.type !== 'error') {
-              clearTimeout(timer);
-              resolve();
-            }
-          } catch {
-            // ignore non-JSON frames
-          }
-        });
-        ws.addEventListener('error', () => {
-          clearTimeout(timer);
-          reject(new Error('WS connection error'));
-        });
+    const idOf = async (token: string): Promise<string> => {
+      const res = await request.get(`${BASE_URL}/api/v1/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-    try {
-      await subscribe(tokenA);
-      await subscribe(tokenB);
-
-      // Presence keys are set on subscribe; allow the cache write to settle.
-      await new Promise((r) => setTimeout(r, 300));
-
-      const listRes = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
+      expect(res.status()).toBe(200);
+      return ((await res.json()) as { data: { id: string } }).data.id;
+    };
+    const readPresenceIds = async (): Promise<string[]> => {
+      const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
         headers: { Authorization: `Bearer ${tokenA}` },
       });
-      expect(listRes.status()).toBe(200);
-      const body = await listRes.json() as { data: Array<{ id: string }> };
-      // The presence list should contain both subscribers.
-      expect(body.data.length).toBeGreaterThanOrEqual(2);
+      expect(res.status()).toBe(200);
+      return ((await res.json()) as { data: Array<{ id: string }> }).data.map((u) => u.id);
+    };
+
+    const idA = await idOf(tokenA);
+    const idB = await idOf(tokenB);
+
+    const socketA = await subscribeToBoard(tokenA, boardId);
+    const socketB = await subscribeToBoard(tokenB, boardId);
+
+    try {
+      // Both specific subscribers must be listed by id — not merely "two users".
+      await expect
+        .poll(readPresenceIds, { timeout: 8000 })
+        .toEqual(expect.arrayContaining([idA, idB]));
     } finally {
-      for (const ws of sockets) ws.close();
+      socketA.close();
+      socketB.close();
     }
   });
 
@@ -131,34 +144,6 @@ test.describe('Board Presence', () => {
     // Subscribe both, confirm both present, then close B's socket and confirm B
     // disappears. This covers the unsubscribe -> cache.del(presence:<boardId>:<userId>)
     // path that the removed REST leave test never reached.
-    const openSocket = (token: string): Promise<WebSocket> =>
-      new Promise((resolve, reject) => {
-        const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
-        const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
-        ws.addEventListener('open', () => {
-          ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
-        });
-        ws.addEventListener('message', (event) => {
-          try {
-            const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
-            if (msg.type === 'error') {
-              clearTimeout(timer);
-              reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
-            }
-            if (msg.type !== 'error') {
-              clearTimeout(timer);
-              resolve(ws);
-            }
-          } catch {
-            // ignore non-JSON frames
-          }
-        });
-        ws.addEventListener('error', () => {
-          clearTimeout(timer);
-          reject(new Error('WS connection error'));
-        });
-      });
-
     const readPresenceIds = async (): Promise<string[]> => {
       const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
         headers: { Authorization: `Bearer ${tokenA}` },
@@ -181,8 +166,8 @@ test.describe('Board Presence', () => {
     const idA = await idOf(tokenA);
     const idB = await idOf(tokenB);
 
-    const socketA = await openSocket(tokenA);
-    const socketB = await openSocket(tokenB);
+    const socketA = await subscribeToBoard(tokenA, boardId);
+    const socketB = await subscribeToBoard(tokenB, boardId);
 
     try {
       // Both subscribers are recorded, by id.
