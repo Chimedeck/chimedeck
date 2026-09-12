@@ -9,6 +9,39 @@ import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, crea
 
 const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 
+// Card tiles render as role=button with an accessible name of "Card: <title>".
+// The app boot performs an async token refresh, so navigating straight after
+// login can race it and land on /workspaces; retry until the board renders.
+function getCardTile(page: import('@playwright/test').Page) {
+  return page.locator('[aria-label^="Card:"]').first();
+}
+
+async function gotoBoard(page: import('@playwright/test').Page, boardId: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${UI_URL}/b/${boardId}`);
+    await page.waitForLoadState('networkidle');
+    // Wait for the board to actually render rather than trusting a URL check:
+    // the boot token refresh can bounce through /workspaces first.
+    try {
+      await page.waitForSelector('[aria-label^="Card:"]', { timeout: 8000 });
+      return;
+    } catch {
+      await page.waitForTimeout(500);
+    }
+  }
+  throw new Error(`Board ${boardId} did not render after 3 attempts (url: ${page.url()})`);
+}
+
+const modalSelector = '[data-testid="card-modal"], [role="dialog"][aria-label^="Card:"]';
+
+// Clicking a card tile opens the modal asynchronously; wait for it before
+// asserting on its contents, otherwise later assertions race the render.
+async function openCardModal(page: import('@playwright/test').Page): Promise<import('@playwright/test').Locator> {
+  await getCardTile(page).click();
+  await page.waitForSelector(modalSelector, { timeout: 10000 });
+  return page.locator(modalSelector).first();
+}
+
 test.describe('Attachment Upload', () => {
   let creds: Credentials;
   let token: string;
@@ -232,85 +265,70 @@ test.describe('Attachment Upload', () => {
   test('Test 7 — UI displays attachment thumbnail after upload', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    const workspaceId = await createWorkspace(request, token);
-    const boardId = await createBoard(request, token, workspaceId);
-    const listId = await createList(request, token, boardId);
-    const uiCardId = await createCard(request, token, listId, 'UI Attachment Card');
+    // Fresh credentials per UI test: the app boot rotates the refresh token, so
+    // the suite-level cookie from beforeAll is stale by the time later tests run
+    // and the page lands on /login. The board must belong to this same user or
+    // the UI cannot see it.
+    const uiCreds = await registerAndGetCredentials(request, 'attach-ui7');
+    const uiToken = uiCreds.token;
+    const workspaceId = await createWorkspace(request, uiToken);
+    const boardId = await createBoard(request, uiToken, workspaceId);
+    const listId = await createList(request, uiToken, boardId);
+    const uiCardId = await createCard(request, uiToken, listId, 'UI Attachment Card');
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    // Attach a URL attachment so the card has something to display.
+    await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments/url`, {
+      headers: { Authorization: `Bearer ${uiToken}` },
+      data: { url: 'https://example.com/thumb.png', name: 'thumb.png' },
+    });
 
-    // Open card modal
-    const cardEl = page.locator(`[data-card-id="${uiCardId}"], [data-testid="card-${uiCardId}"]`).first();
-    if (await cardEl.count() === 0) {
-      test.skip(true, 'Card element not found — skipping UI attachment test');
-      return;
-    }
-    await cardEl.click();
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, boardId);
 
-    // Locate the attachment section
-    const attachSection = page.locator(
-      '[data-testid="attachments"], [aria-label*="attachment"], section:has-text("Attachments")',
-    ).first();
-    if (await attachSection.count() === 0) {
-      test.skip(true, 'Attachment section not visible — skipping UI thumbnail test');
-      return;
-    }
-    await expect(attachSection).toBeVisible({ timeout: 5000 });
+    // Cards render as role=button with an accessible name of "Card: <title>".
+    const cardEl = getCardTile(page);
+    await expect(cardEl).toBeVisible({ timeout: 10000 });
 
-    // If there is an add-attachment button, confirm it is present
-    const addBtn = page.locator(
-      '[data-testid="add-attachment"], button:has-text("Add attachment"), button:has-text("Attach")',
-    ).first();
-    if (await addBtn.count() > 0) {
-      await expect(addBtn).toBeVisible();
-    }
+    // The card modal renders an "Attachments" section with an "Attach file"
+    // button; there is no data-testid or aria-label on it.
+    const modal = await openCardModal(page);
+    await expect(modal.getByText('Attachments', { exact: true })).toBeVisible({ timeout: 5000 });
+    // Two controls share the name "Attach file" (a labelled button and an
+    // icon button); target the one with the stable testid.
+    await expect(modal.getByTestId('attach-file-button')).toBeVisible();
+
+    // The URL attachment created above is listed under Links as an anchor. The
+    // name also appears in the activity feed, so match the link role.
+    await expect(modal.getByRole('link', { name: 'thumb.png' })).toBeVisible({ timeout: 5000 });
   });
 
   test('Test 8 — UI shows download link for URL attachment', async ({ request, page }) => {
     if (!token) test.skip(true, 'Server not running — skipping');
 
-    // Create a URL attachment via API
-    const addRes = await request.post(`${BASE_URL}/api/v1/cards/${cardId}/attachments/url`, {
-      headers: { Authorization: `Bearer ${token}` },
-      data: { url: 'https://example.com/report.pdf', name: 'report.pdf' },
-    });
-
-    if (addRes.status() === 404 || addRes.status() === 501) {
-      test.skip(true, 'URL attachment endpoint not yet implemented — skipping');
-      return;
-    }
-
-    // Navigate to the board and open the card
-    const workspaceId = await createWorkspace(request, token);
-    const boardId = await createBoard(request, token, workspaceId);
-    const listId = await createList(request, token, boardId);
-    const uiCardId = await createCard(request, token, listId, 'Download Link Card');
+    // Navigate to the board and open the card. The board must belong to the
+    // same fresh user that logs in, or the UI cannot see it.
+    const uiCreds = await registerAndGetCredentials(request, 'attach-ui8');
+    const uiToken = uiCreds.token;
+    const workspaceId = await createWorkspace(request, uiToken);
+    const boardId = await createBoard(request, uiToken, workspaceId);
+    const listId = await createList(request, uiToken, boardId);
+    const uiCardId = await createCard(request, uiToken, listId, 'Download Link Card');
 
     // Also attach the URL to this card
     await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments/url`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${uiToken}` },
       data: { url: 'https://example.com/report.pdf', name: 'report.pdf' },
     });
 
-    await loginViaCookie(page, UI_URL, creds);
-    await page.goto(`${UI_URL}/b/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await loginViaCookie(page, UI_URL, uiCreds);
+    await gotoBoard(page, boardId);
 
-    const cardEl = page.locator(`[data-card-id="${uiCardId}"], [data-testid="card-${uiCardId}"]`).first();
-    if (await cardEl.count() === 0) {
-      test.skip(true, 'Card element not found — skipping download link test');
-      return;
-    }
-    await cardEl.click();
+    const cardEl = getCardTile(page);
+    await expect(cardEl).toBeVisible({ timeout: 10000 });
 
-    // A link to the PDF should appear in the attachment area
-    const downloadLink = page.locator('a[href*="report.pdf"], a[download]').first();
-    if (await downloadLink.count() === 0) {
-      test.skip(true, 'Download link not rendered — skipping assertion');
-      return;
-    }
-    await expect(downloadLink).toBeVisible({ timeout: 5000 });
+    // The URL attachment appears under Links as an anchor; the name also shows
+    // in the activity feed, so match the link role.
+    const modal = await openCardModal(page);
+    await expect(modal.getByRole('link', { name: 'report.pdf' })).toBeVisible({ timeout: 8000 });
   });
 });
