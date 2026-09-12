@@ -13,10 +13,26 @@ const WS_URL = (process.env.TEST_BASE_URL ?? 'http://localhost:3000').replace(/^
 // accepts the subscription. Used by the join and leave tests.
 function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
+    } catch (err) {
+      // A malformed URL throws synchronously; fail the promise instead of
+      // letting the exception escape the executor.
+      reject(err instanceof Error ? err : new Error('WS construction failed'));
+      return;
+    }
+
+    // settled guards against double-settling: an error frame followed by an
+    // error event must not reject twice.
+    let settled = false;
+
     // Every failure path closes the socket: otherwise a rejected subscribe
-    // leaks an open connection holding a presence key.
+    // leaks an open connection holding a presence key. Declared before the
+    // timer so it is initialised by the time any async event can call it.
     const fail = (err: Error): void => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       try {
         ws.close();
@@ -25,6 +41,9 @@ function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
       }
       reject(err);
     };
+
+    // fail() closes over `timer`, but every caller is an async WebSocket event or
+    // the timer itself, so `timer` is always assigned before fail can run.
     const timer = setTimeout(() => fail(new Error('WS subscribe timed out')), 8000);
     ws.addEventListener('open', () => {
       ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
@@ -36,7 +55,8 @@ function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
           fail(new Error(`WS error: ${msg.name ?? 'unknown'}`));
         }
         // Any non-error message after subscribe means the subscription was accepted.
-        if (msg.type !== 'error') {
+        if (msg.type !== 'error' && !settled) {
+          settled = true;
           clearTimeout(timer);
           resolve(ws);
         }
