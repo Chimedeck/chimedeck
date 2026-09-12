@@ -281,28 +281,33 @@ test.describe('Attachment Upload', () => {
     const apiHeaders = { Authorization: `Bearer ${uiToken}`, 'Content-Type': 'application/json' };
     const started = await (await request.post(
       `${BASE_URL}/api/v1/cards/${uiCardId}/attachments/multipart/start`,
-      { headers: apiHeaders, data: { filename: 'thumb.png', mimeType: 'image/png', sizeBytes: 1024 * 1024 } },
+      { headers: apiHeaders, data: { filename: 'thumb.png', mimeType: 'image/png', sizeBytes: 5 * 1024 * 1024 } },
     )).json() as { data: { attachmentId: string; uploadId: string; key: string } };
     const { attachmentId, uploadId, key } = started.data;
 
-    const partUrlRes = await (await request.post(
+    const partUrlRes = await request.post(
       `${BASE_URL}/api/v1/cards/${uiCardId}/attachments/multipart/part-url`,
       { headers: apiHeaders, data: { attachmentId, uploadId, key, partNumber: 1 } },
-    )).json() as { data: { url: string } };
+    );
+    expect(partUrlRes.status()).toBe(200);
+    const partUrl = await partUrlRes.json() as { data: { url: string } };
 
     // Parts other than the last must be >= 5 MiB.
-    const putRes = await request.put(partUrlRes.data.url, {
+    const putRes = await request.put(partUrl.data.url, {
       headers: { 'Content-Type': 'image/png' },
       data: Buffer.alloc(5 * 1024 * 1024, 0x61),
     });
+    expect(putRes.status()).toBe(200);
     const eTag = putRes.headers()['etag'];
 
-    await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments/multipart/complete`, {
+    const completeRes = await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments/multipart/complete`, {
       headers: apiHeaders, data: { attachmentId, uploadId, key, parts: [{ PartNumber: 1, ETag: eTag }] },
     });
-    await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments`, {
+    expect(completeRes.status()).toBe(200);
+    const confirmRes = await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments`, {
       headers: apiHeaders, data: { attachmentId },
     });
+    expect(confirmRes.status()).toBe(200);
 
     await loginViaCookie(page, UI_URL, uiCreds);
     await gotoBoard(page, boardId);
@@ -317,33 +322,12 @@ test.describe('Attachment Upload', () => {
     // icon button); target the one with the stable testid.
     await expect(modal.getByTestId('attach-file-button')).toBeVisible();
 
-    // The uploaded image renders as a real thumbnail served by the view proxy.
+    // The uploaded image renders inline in the attachment list. NOTE: this is
+    // the content preview (src is the attachment view proxy), not a generated
+    // thumbnail — thumbnail_key is not populated for this fixture, so the app
+    // falls back to view_url. The element is rendered thumbnail-sized.
     await expect(modal.locator('img[src*="/attachments/"][src*="/view"]').first())
       .toBeVisible({ timeout: 8000 });
-  });
-
-  test('Test 7b — UI lists a URL attachment as a link', async ({ request, page }) => {
-    if (!token) test.skip(true, 'Server not running — skipping');
-
-    const uiCreds = await registerAndGetCredentials(request, 'attach-ui7b');
-    const uiToken = uiCreds.token;
-    const workspaceId = await createWorkspace(request, uiToken);
-    const boardId = await createBoard(request, uiToken, workspaceId);
-    const listId = await createList(request, uiToken, boardId);
-    const uiCardId = await createCard(request, uiToken, listId, 'URL Attachment Card');
-
-    await request.post(`${BASE_URL}/api/v1/cards/${uiCardId}/attachments/url`, {
-      headers: { Authorization: `Bearer ${uiToken}` },
-      data: { url: 'https://example.com/report.pdf', name: 'report-link.pdf' },
-    });
-
-    await loginViaCookie(page, UI_URL, uiCreds);
-    await gotoBoard(page, boardId);
-    const modal = await openCardModal(page);
-
-    // The URL attachment is listed under Links as an anchor. Its name also
-    // appears in the activity feed, so match the link role.
-    await expect(modal.getByRole('link', { name: 'report-link.pdf' })).toBeVisible({ timeout: 8000 });
   });
 
   test('Test 8 — UI shows download link for URL attachment', async ({ request, page }) => {
