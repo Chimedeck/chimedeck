@@ -244,8 +244,22 @@ test.describe('List Management', () => {
     const uiToken = uiCreds.token;
     const uiWorkspaceId = await createWorkspace(request, uiToken);
     const uiBoardId = await createBoard(request, uiToken, uiWorkspaceId);
-    await createList(request, uiToken, uiBoardId, `Drag A ${run}`);
-    await createList(request, uiToken, uiBoardId, `Drag B ${run}`);
+    const nameA = `Drag A ${run}`;
+    const nameB = `Drag B ${run}`;
+    await createList(request, uiToken, uiBoardId, nameA);
+    await createList(request, uiToken, uiBoardId, nameB);
+
+    // Order as the API sees it — the drag must change THIS, not just the DOM.
+    const apiOrder = async (): Promise<string[]> => {
+      const res = await request.get(`${BASE_URL}/api/v1/boards/${uiBoardId}/lists`, {
+        headers: { Authorization: `Bearer ${uiToken}` },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json() as { data: Array<{ title: string }> };
+      return body.data.map((l) => l.title);
+    };
+    const apiOrderBefore = await apiOrder();
+    expect(apiOrderBefore.slice(0, 2)).toEqual([nameA, nameB]);
 
     await loginViaCookie(page, UI_URL, uiCreds);
     await gotoBoard(page, uiBoardId);
@@ -282,5 +296,11 @@ test.describe('List Management', () => {
     const orderAfter = (await renameButtons.allInnerTexts()).filter((x) => x.trim());
     expect(orderAfter.length).toBe(orderBefore.length);
     expect(orderAfter[0]).not.toBe(orderBefore[0]);
+
+    // And the change reached the server. Without this the test would pass even
+    // if the drag only mutated local state and never called the reorder endpoint.
+    await expect
+      .poll(apiOrder, { timeout: 8000 })
+      .toEqual([nameB, nameA]);
   });
 });
