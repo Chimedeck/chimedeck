@@ -4,7 +4,7 @@
 // Based on: specs/tests/presence-board.md
 // Soft-skips when the server is not reachable.
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, type Credentials } from './_helpers';
 
 const WS_URL = (process.env.TEST_BASE_URL ?? 'http://localhost:3000').replace(/^http/, 'ws');
@@ -14,7 +14,18 @@ const WS_URL = (process.env.TEST_BASE_URL ?? 'http://localhost:3000').replace(/^
 function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
-    const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
+    // Every failure path closes the socket: otherwise a rejected subscribe
+    // leaks an open connection holding a presence key.
+    const fail = (err: Error): void => {
+      clearTimeout(timer);
+      try {
+        ws.close();
+      } catch {
+        // already closing
+      }
+      reject(err);
+    };
+    const timer = setTimeout(() => fail(new Error('WS subscribe timed out')), 8000);
     ws.addEventListener('open', () => {
       ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
     });
@@ -22,8 +33,7 @@ function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
       try {
         const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
         if (msg.type === 'error') {
-          clearTimeout(timer);
-          reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
+          fail(new Error(`WS error: ${msg.name ?? 'unknown'}`));
         }
         // Any non-error message after subscribe means the subscription was accepted.
         if (msg.type !== 'error') {
@@ -35,10 +45,31 @@ function subscribeToBoard(token: string, boardId: string): Promise<WebSocket> {
       }
     });
     ws.addEventListener('error', () => {
-      clearTimeout(timer);
-      reject(new Error('WS connection error'));
+      fail(new Error('WS connection error'));
     });
   });
+}
+
+// Close a socket and wait until its presence key is gone. Without this, a
+// test's async unsubscribe can land while the NEXT test on the same board is
+// subscribing, dropping that test's count and causing a flaky false failure.
+async function closeAndDrain(
+  request: APIRequestContext,
+  ws: WebSocket,
+  boardId: string,
+  viewerToken: string,
+  userId: string,
+): Promise<void> {
+  ws.close();
+  await expect
+    .poll(async () => {
+      const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
+        headers: { Authorization: `Bearer ${viewerToken}` },
+      });
+      const body = await res.json() as { data: Array<{ id: string }> };
+      return body.data.map((u) => u.id).includes(userId);
+    }, { timeout: 8000 })
+    .toBe(false);
 }
 
 test.describe('Board Presence', () => {
@@ -133,8 +164,9 @@ test.describe('Board Presence', () => {
         .poll(readPresenceIds, { timeout: 8000 })
         .toEqual(expect.arrayContaining([idA, idB]));
     } finally {
-      socketA.close();
-      socketB.close();
+      // Drain both so this test's unsubscribe cannot race the next test.
+      await closeAndDrain(request, socketA, boardId, tokenA, idA).catch(() => {});
+      await closeAndDrain(request, socketB, boardId, tokenA, idB).catch(() => {});
     }
   });
 
@@ -183,7 +215,9 @@ test.describe('Board Presence', () => {
         .toBe(false);
       expect(await readPresenceIds()).toContain(idA);
     } finally {
-      socketA.close();
+      // Drain A (B already left and been asserted gone) so the next test that
+      // uses this board starts from a clean presence list.
+      await closeAndDrain(request, socketA, boardId, tokenA, idA).catch(() => {});
       socketB.close();
     }
   });
