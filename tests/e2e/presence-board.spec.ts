@@ -125,7 +125,72 @@ test.describe('Board Presence', () => {
     }
   });
 
-  test('Test 3 — Unauthenticated presence request returns 401', async ({ request }) => {
+  test('Test 3 — Leaving a board removes the user from the presence list', async ({ request }) => {
+    if (!tokenA || !tokenB) test.skip(true, 'Server not running — skipping');
+
+    // Subscribe both, confirm both present, then close B's socket and confirm B
+    // disappears. This covers the unsubscribe -> cache.del(presence:<boardId>:<userId>)
+    // path that the removed REST leave test never reached.
+    const openSocket = (token: string): Promise<WebSocket> =>
+      new Promise((resolve, reject) => {
+        const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
+        const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
+        ws.addEventListener('open', () => {
+          ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
+        });
+        ws.addEventListener('message', (event) => {
+          try {
+            const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
+            if (msg.type === 'error') {
+              clearTimeout(timer);
+              reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
+            }
+            if (msg.type !== 'error') {
+              clearTimeout(timer);
+              resolve(ws);
+            }
+          } catch {
+            // ignore non-JSON frames
+          }
+        });
+        ws.addEventListener('error', () => {
+          clearTimeout(timer);
+          reject(new Error('WS connection error'));
+        });
+      });
+
+    const readPresenceIds = async (): Promise<string[]> => {
+      const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
+        headers: { Authorization: `Bearer ${tokenA}` },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json() as { data: Array<{ id: string }> };
+      return body.data.map((u) => u.id);
+    };
+
+    const socketA = await openSocket(tokenA);
+    const socketB = await openSocket(tokenB);
+
+    try {
+      // Both subscribers are recorded.
+      await expect
+        .poll(readPresenceIds, { timeout: 8000 })
+        .toEqual(expect.arrayContaining([expect.any(String)]));
+      const both = await readPresenceIds();
+      expect(both.length).toBeGreaterThanOrEqual(2);
+
+      // B leaves; the presence list must shrink to exclude B.
+      socketB.close();
+      await expect
+        .poll(async () => (await readPresenceIds()).length, { timeout: 10000 })
+        .toBeLessThan(both.length);
+    } finally {
+      socketA.close();
+      socketB.close();
+    }
+  });
+
+  test('Test 4 — Unauthenticated presence request returns 401', async ({ request }) => {
     if (!tokenA) test.skip(true, 'Server not running — skipping');
 
     const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`);
