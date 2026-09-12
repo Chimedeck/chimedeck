@@ -1,14 +1,12 @@
 // tests/e2e/presence-board.spec.ts
 // Playwright E2E test for real-time board presence.
-// Scenario: a second user joins the same board and their avatar appears in the
-// board header of the first user's session.
+// Scenario: a second user joins the same board and the presence list is updated.
 // Based on: specs/tests/presence-board.md
 // Soft-skips when the server is not reachable.
 
-import { test, expect, chromium } from '@playwright/test';
-import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, loginViaCookie, type Credentials } from './_helpers';
+import { test, expect } from '@playwright/test';
+import { BASE_URL, registerAndGetCredentials, createWorkspace, createBoard, createList, type Credentials } from './_helpers';
 
-const UI_URL = process.env.TEST_UI_URL ?? 'http://localhost:5173';
 const WS_URL = (process.env.TEST_BASE_URL ?? 'http://localhost:3000').replace(/^http/, 'ws');
 
 test.describe('Board Presence', () => {
@@ -26,7 +24,7 @@ test.describe('Board Presence', () => {
       return;
     }
 
-    // User A creates the board
+    // User A creates the board.
     // Suffixes are lowercase: the workspace member-add endpoint lowercases the
     // email before lookup while register preserves case, so a mixed-case address
     // would not be matchable. (Tracked separately as a product inconsistency.)
@@ -57,58 +55,26 @@ test.describe('Board Presence', () => {
       headers: { Authorization: `Bearer ${tokenA}` },
     });
 
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Presence endpoint not yet implemented — skipping');
-      return;
-    }
-
     expect(res.status()).toBe(200);
-    const body = await res.json() as { data: Array<{ userId: string }> };
+    const body = await res.json() as { data: Array<{ id: string }> };
     expect(Array.isArray(body.data)).toBe(true);
   });
 
-  test('Test 2 — POST /boards/:id/presence registers the current user as a viewer', async ({ request }) => {
-    if (!tokenA) test.skip(true, 'Server not running — skipping');
+  // NOTE: There is no REST join/leave endpoint. Presence is owned by the realtime
+  // WebSocket layer — a client subscribes to a board and the server sets
+  // presence:<boardId>:<userId>; on disconnect the key expires. POST and DELETE
+  // to /boards/:id/presence return 404 by design.
+  //
+  // Two tests here previously asserted those endpoints (and skipped themselves
+  // when they 404'd, so they never ran). The real join/leave behaviour is covered
+  // by Test 2 below, which drives two WebSocket subscribers and reads the list
+  // back over REST. Asserting the absence of a REST endpoint would test nothing.
 
-    const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
-    });
-
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Presence join endpoint not yet implemented — skipping');
-      return;
-    }
-
-    expect([200, 201, 204]).toContain(res.status());
-  });
-
-  test('Test 3 — DELETE /boards/:id/presence deregisters the current user', async ({ request }) => {
-    if (!tokenA) test.skip(true, 'Server not running — skipping');
-
-    // Register first
-    await request.post(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
-    });
-
-    const res = await request.delete(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
-    });
-
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Presence leave endpoint not yet implemented — skipping');
-      return;
-    }
-
-    expect([200, 204]).toContain(res.status());
-  });
-
-  test('Test 4 — Second user joining the board is reflected in the presence list', async ({ request }) => {
+  test('Test 2 — Second user joining the board is reflected in the presence list', async ({ request }) => {
     if (!tokenA || !tokenB) test.skip(true, 'Server not running — skipping');
 
     // Presence is populated by the realtime WebSocket layer: a client subscribes
     // to a board over /api/v1/ws and the server records presence:<boardId>:<userId>.
-    // There is no REST join/leave endpoint (POST/DELETE return 404), so drive the
-    // two subscribers over WS and then read the presence list over REST.
     const sockets: WebSocket[] = [];
     const subscribe = (token: string): Promise<void> =>
       new Promise((resolve, reject) => {
@@ -159,74 +125,97 @@ test.describe('Board Presence', () => {
     }
   });
 
-  test('Test 5 — Unauthenticated presence request returns 401', async ({ request }) => {
+  test('Test 3 — Leaving a board removes the user from the presence list', async ({ request }) => {
+    if (!tokenA || !tokenB) test.skip(true, 'Server not running — skipping');
+
+    // Subscribe both, confirm both present, then close B's socket and confirm B
+    // disappears. This covers the unsubscribe -> cache.del(presence:<boardId>:<userId>)
+    // path that the removed REST leave test never reached.
+    const openSocket = (token: string): Promise<WebSocket> =>
+      new Promise((resolve, reject) => {
+        const ws = new WebSocket(`${WS_URL}/api/v1/ws?token=${encodeURIComponent(token)}`);
+        const timer = setTimeout(() => reject(new Error('WS subscribe timed out')), 8000);
+        ws.addEventListener('open', () => {
+          ws.send(JSON.stringify({ type: 'subscribe', board_id: boardId }));
+        });
+        ws.addEventListener('message', (event) => {
+          try {
+            const msg = JSON.parse(String(event.data)) as { type?: string; name?: string };
+            if (msg.type === 'error') {
+              clearTimeout(timer);
+              reject(new Error(`WS error: ${msg.name ?? 'unknown'}`));
+            }
+            if (msg.type !== 'error') {
+              clearTimeout(timer);
+              resolve(ws);
+            }
+          } catch {
+            // ignore non-JSON frames
+          }
+        });
+        ws.addEventListener('error', () => {
+          clearTimeout(timer);
+          reject(new Error('WS connection error'));
+        });
+      });
+
+    const readPresenceIds = async (): Promise<string[]> => {
+      const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`, {
+        headers: { Authorization: `Bearer ${tokenA}` },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json() as { data: Array<{ id: string }> };
+      return body.data.map((u) => u.id);
+    };
+
+    // Resolve both user ids so the assertion can name WHO left rather than only
+    // that the list shrank.
+    const idOf = async (token: string): Promise<string> => {
+      const res = await request.get(`${BASE_URL}/api/v1/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json() as { data: { id: string } };
+      return body.data.id;
+    };
+    const idA = await idOf(tokenA);
+    const idB = await idOf(tokenB);
+
+    const socketA = await openSocket(tokenA);
+    const socketB = await openSocket(tokenB);
+
+    try {
+      // Both subscribers are recorded, by id.
+      await expect
+        .poll(readPresenceIds, { timeout: 8000 })
+        .toEqual(expect.arrayContaining([idA, idB]));
+
+      // B leaves. B must disappear while A remains — asserting identity, not
+      // just a smaller count, so a collapse of both connections cannot pass.
+      socketB.close();
+      await expect
+        .poll(async () => (await readPresenceIds()).includes(idB), { timeout: 10000 })
+        .toBe(false);
+      expect(await readPresenceIds()).toContain(idA);
+    } finally {
+      socketA.close();
+      socketB.close();
+    }
+  });
+
+  test('Test 4 — Unauthenticated presence request returns 401', async ({ request }) => {
     if (!tokenA) test.skip(true, 'Server not running — skipping');
 
     const res = await request.get(`${BASE_URL}/api/v1/boards/${boardId}/presence`);
 
-    if (res.status() === 404 || res.status() === 501) {
-      test.skip(true, 'Presence endpoint not yet implemented — skipping');
-      return;
-    }
-
     expect(res.status()).toBe(401);
   });
 
-  // ── UI: Two-context presence test ──────────────────────────────────────────────
-  // Opens two separate browser contexts to simulate two distinct users.
-  // User A opens the board first; User B joins second.
-  // User A's header should then show User B's avatar or presence indicator.
-
-  test('Test 6 — UI: Second user avatar appears in board header of first user', async () => {
-    if (!tokenA || !tokenB) test.skip(true, 'Server not running — skipping');
-
-    // Launch a second browser instance to isolate User B's context
-    const browser2 = await chromium.launch();
-    const contextB = await browser2.newContext();
-    const pageB = await contextB.newPage();
-
-    // Use a fresh page for User A within the test (no `page` fixture in parameterless test)
-    const browser1 = await chromium.launch();
-    const contextA = await browser1.newContext();
-    const pageA = await contextA.newPage();
-
-    try {
-      // User A navigates to the board
-      await loginViaCookie(pageA, UI_URL, credsA);
-      await pageA.goto(`${UI_URL}/b/${boardId}`);
-      await pageA.waitForLoadState('networkidle');
-
-      // Verify User A can see the board (soft-skip if board page not found)
-      const boardTitle = pageA.locator('[data-testid="board-title"], h1, h2').first();
-      if (await boardTitle.count() === 0) {
-        test.skip(true, 'Board UI not found — skipping two-context presence test');
-        return;
-      }
-
-      // User B navigates to the same board in a separate context
-      await loginViaCookie(pageB, UI_URL, credsB);
-      await pageB.goto(`${UI_URL}/b/${boardId}`);
-      await pageB.waitForLoadState('networkidle');
-
-      // Give WebSocket / polling-based presence a moment to propagate
-      await pageA.waitForTimeout(1500);
-
-      // Check if a presence/avatar indicator appears on User A's board header
-      const presenceIndicator = pageA.locator(
-        '[data-testid="presence-avatars"], [data-testid*="presence"], [aria-label*="viewers"], [class*="presence"]',
-      ).first();
-
-      if (await presenceIndicator.count() === 0) {
-        test.skip(true, 'Presence indicator not rendered in UI — skipping avatar assertion');
-        return;
-      }
-
-      await expect(presenceIndicator).toBeVisible({ timeout: 6000 });
-    } finally {
-      await contextA.close();
-      await browser1.close();
-      await contextB.close();
-      await browser2.close();
-    }
-  });
+  // NOTE: A UI test previously asserted that a second user's avatar appears in
+  // the first user's board header. The component for that exists
+  // (src/extensions/Realtime/components/PresenceAvatars.tsx) but is never
+  // imported anywhere — the board header renders the static MemberAvatarStack
+  // instead. The feature is undelivered, so the test could never pass and
+  // soft-skipped on every run. The gap is recorded in the E2E recovery backlog
+  // as a product item rather than kept here as a permanently-skipping test.
 });
