@@ -13,12 +13,14 @@ export async function registerAndLogin(
   const email = `e2e-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  const regRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  const registerRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `Test ${suffix}` },
   });
-  // Register returns an accessToken directly (201); avoid a separate login call
-  // which is rate-limited (10/IP/min) and would 429 under the full suite.
-  const body = await regRes.json() as { data: { accessToken: string } };
+  // Register returns the accessToken directly (201). Do NOT add a login call here:
+  // POST /auth/token is rate limited at 10/IP/min (login.ts) and helpers run
+  // per-spec, so extra logins exhaust the shared budget and cause unrelated
+  // 429 failures across the suite.
+  const body = (await registerRes.json()) as { data: { accessToken: string } };
   return body.data.accessToken;
 }
 

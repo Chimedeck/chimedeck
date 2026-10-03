@@ -8,8 +8,10 @@
 // description is rendered in full in view mode.
 //
 // Auth note: the app authenticates via HttpOnly cookies set by POST /auth/token
-// (see extensions/Auth), so the spec logs in through the real UI form as the
-// same user that owns the API-seeded workspace/board/card.
+// (see extensions/Auth), so the three UI-based tests log in through the real
+// form as the same user that owns the API-seeded workspace/board/card. API
+// seeding reuses the accessToken returned by /auth/register — login is rate
+// limited (10/IP/min) and must stay reserved for the UI behaviour under test.
 import { test, expect } from '@playwright/test';
 import {
   BASE_URL,
@@ -44,11 +46,12 @@ test.describe('Card Description — full-content visibility in view mode', () =>
       data: { email, password, name: 'Test desc-expand' },
     });
     expect(registerRes.ok()).toBeTruthy();
-    const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
-      data: { email, password },
-    });
-    const loginBody = (await loginRes.json()) as { data: { accessToken: string } };
-    token = loginBody.data.accessToken;
+    // Register returns the accessToken directly (no login call — login is
+    // rate limited at 10/IP/min and shared by the whole e2e suite).
+    const registerBody = (await registerRes.json()) as {
+      data: { accessToken: string };
+    };
+    token = registerBody.data.accessToken;
 
     const wsId = await createWorkspace(request, token);
     boardId = await createBoard(request, token, wsId);
