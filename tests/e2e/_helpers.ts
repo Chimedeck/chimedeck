@@ -13,14 +13,14 @@ export async function registerAndLogin(
   const email = `e2e-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  // Register returns the accessToken directly. Do NOT add a login call here:
+  // POST /auth/token is rate limited at 10/IP/min (login.ts) and the helper
+  // runs per-spec, so extra logins exhaust the shared budget and cause
+  // unrelated 429 failures across the suite.
+  const registerRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `Test ${suffix}` },
   });
-
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { accessToken: string } };
+  const body = (await registerRes.json()) as { data: { accessToken: string } };
   return body.data.accessToken;
 }
 
