@@ -69,12 +69,9 @@ interface Props {
   disabled?: boolean;
 }
 
-const SHOW_MORE_THRESHOLD = 400;
-
 const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(description);
-  const [expanded, setExpanded] = useState(false);
 
   // Sync external description changes when not editing
   useEffect(() => {
@@ -132,7 +129,6 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
     addLinkTargetBlank(marked.parse(draft || '') as string)
   );
   const isEmpty = !draft.trim();
-  const isLong = draft.length > SHOW_MORE_THRESHOLD;
 
   return (
     <section aria-label={translations['card.description.sectionAria']}>
@@ -167,7 +163,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
         </div>
       ) : (
         <div>
-          <div className="relative">
+          <div>
             {/* Click-to-edit region — cursor signals editability */}
             <div
               role="button"
@@ -181,9 +177,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
                 isEmpty
                   ? 'text-muted text-sm italic bg-bg-overlay'
                   : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
-                isLong && !expanded ? 'overflow-hidden' : '',
               ].join(' ')}
-              style={isLong && !expanded ? { maxHeight: '12rem' } : undefined}
               onClick={handleDescriptionClick}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -196,22 +190,7 @@ const CardDescription = ({ boardId, description, onSave, disabled }: Props) => {
             >
               {isEmpty ? 'Add a more detailed description…' : undefined}
             </div>
-            {/* Gradient overlay when truncated */}
-            {isLong && !expanded && (
-              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent rounded-b-lg pointer-events-none" />
-            )}
           </div>
-          {isLong && (
-            <button
-              type="button"
-              className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              onClick={() => {
-                setExpanded((e) => !e);
-              }}
-            >
-              {expanded ? 'Show less ↑' : 'Show more ↓'}
-            </button>
-          )}
         </div>
       )}
     </section>

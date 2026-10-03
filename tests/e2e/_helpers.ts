@@ -13,15 +13,15 @@ export async function registerAndLogin(
   const email = `e2e-${suffix}-${Date.now()}@example.com`;
   const password = 'TestPassword1!';
 
-  await request.post(`${BASE_URL}/api/v1/auth/register`, {
+  // Register returns the accessToken directly. Do NOT add a login call here:
+  // POST /auth/token is rate limited at 10/IP/min (login.ts) and the helper
+  // runs per-spec, so extra logins exhaust the shared budget and cause
+  // unrelated 429 failures across the suite.
+  const registerRes = await request.post(`${BASE_URL}/api/v1/auth/register`, {
     data: { email, password, name: `Test ${suffix}` },
   });
-
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
-    data: { email, password },
-  });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return body.data.access_token;
+  const body = (await registerRes.json()) as { data: { accessToken: string } };
+  return body.data.accessToken;
 }
 
 export async function createWorkspace(
@@ -56,7 +56,7 @@ export async function createList(
 ): Promise<string> {
   const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: { name: `List-${Date.now()}`, position: 0 },
+    data: { title: `List-${Date.now()}`, position: 0 },
   });
   const body = await res.json() as { data: { id: string } };
   return body.data.id;

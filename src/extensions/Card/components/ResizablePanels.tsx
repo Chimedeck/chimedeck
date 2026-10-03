@@ -131,7 +131,7 @@ export default function ResizablePanels({ left, right, className = '' }: Resizab
 
   if (isMobile) {
     return (
-      <div className={`flex flex-col ${className}`}>
+      <div className={`flex flex-col ${className} overflow-y-auto scrollbar-contrast`}>
         <div className="w-full">{left}</div>
         <div className="w-full">{right}</div>
       </div>
