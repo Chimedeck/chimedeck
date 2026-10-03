@@ -2045,7 +2045,7 @@ const CardDescriptionTiptap = ({ boardId, cardId, description, onSave, disabled 
               disabled ? 'cursor-default' : 'cursor-text',
               isEmpty
                 ? 'text-muted text-sm italic bg-bg-overlay'
-                : 'prose dark:prose-invert prose-sm max-w-none text-base',
+                : 'prose dark:prose-invert prose-sm max-w-none text-base break-words [&_a]:break-all',
             ].join(' ')}
             {...(!isEmpty && { dangerouslySetInnerHTML: { __html: previewHtml } })}
           >
