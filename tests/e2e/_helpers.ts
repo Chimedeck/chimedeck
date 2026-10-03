@@ -17,11 +17,11 @@ export async function registerAndLogin(
     data: { email, password, name: `Test ${suffix}` },
   });
 
-  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/login`, {
+  const loginRes = await request.post(`${BASE_URL}/api/v1/auth/token`, {
     data: { email, password },
   });
-  const body = await loginRes.json() as { data: { access_token: string } };
-  return body.data.access_token;
+  const body = await loginRes.json() as { data: { accessToken: string } };
+  return body.data.accessToken;
 }
 
 export async function createWorkspace(
@@ -56,7 +56,7 @@ export async function createList(
 ): Promise<string> {
   const res = await request.post(`${BASE_URL}/api/v1/boards/${boardId}/lists`, {
     headers: { Authorization: `Bearer ${token}` },
-    data: { name: `List-${Date.now()}`, position: 0 },
+    data: { title: `List-${Date.now()}`, position: 0 },
   });
   const body = await res.json() as { data: { id: string } };
   return body.data.id;
