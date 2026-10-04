@@ -17,5 +17,7 @@ to `stable` is what ships.
 1. Branch from `main` → PR with `--base main`.
 2. Copilot review + independent review + `verify` CI all green on the PR head.
 3. Merge to `main`.
-4. Human inspects the change (deployed from `main`, or the PR diff itself).
+4. Human inspects the change on the PR diff or by running it locally from `main`
+   (e.g. `bun run dev` + the app UI against the local stack — the same path used for QA before
+   merging). `main` is never deployed, so inspection is diff/local-run only.
 5. Promote to `stable` (promotion PR/merge) — this is the shipping step.
