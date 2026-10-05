@@ -1,6 +1,8 @@
 // POST /api/v1/boards/:id/members — add a workspace member to the board with an explicit role.
 // Requires board ADMIN role (or workspace OWNER/ADMIN).
 // Body: { userId: string, role?: 'ADMIN' | 'MEMBER' }
+// Adding someone who is already a board member is a conflict, not a role change:
+// use PATCH /boards/:id/members/:userId, which enforces the last-ADMIN invariant.
 import { randomUUID } from 'crypto';
 import { db } from '../../../../common/db';
 import type { BoardVisibilityScopedRequest } from '../../../../middlewares/boardVisibility';
@@ -12,6 +14,13 @@ import { dispatchEvent } from '../../../../mods/events/dispatch';
 
 type BoardMemberRole = 'ADMIN' | 'MEMBER';
 const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
+
+// Roles are stored uppercase; accept any case from clients and default to MEMBER
+// when the caller omits the field entirely.
+function normalizeRole(role: string | undefined): BoardMemberRole {
+  if (role === undefined) return 'MEMBER';
+  return (typeof role === 'string' ? role.toUpperCase() : role) as BoardMemberRole;
+}
 type BoardMemberRequest = BoardVisibilityScopedRequest & {
   board: NonNullable<BoardVisibilityScopedRequest['board']>;
   currentUser?: { id: string };
@@ -68,9 +77,13 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     );
   }
 
-  const role: BoardMemberRole = VALID_ROLES.has(body.role as BoardMemberRole)
-    ? (body.role as BoardMemberRole)
-    : 'MEMBER';
+  const role: BoardMemberRole = normalizeRole(body.role);
+  if (body.role !== undefined && !VALID_ROLES.has(role)) {
+    return Response.json(
+      { name: 'invalid-role', data: { message: 'role must be ADMIN or MEMBER' } },
+      { status: 400 },
+    );
+  }
 
   // Target user must be a workspace member (not a guest) to be added to a board.
   const workspaceMembership = await db<MembershipRow>('memberships')
@@ -85,22 +98,30 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     );
   }
 
-  // Idempotency — update role if already a member.
+  // Adding an existing member is a conflict — changing a role goes through
+  // PATCH /boards/:id/members/:userId, which protects the last board ADMIN.
   const existing = await db<BoardMemberRow>('board_members')
     .where({ board_id: boardId, user_id: userId })
     .first<BoardMemberRow | undefined>();
   if (existing) {
-    await db('board_members')
-      .where({ board_id: boardId, user_id: userId })
-      .update({ role, updated_at: new Date().toISOString() });
-  } else {
-    await db('board_members').insert({
-      id: randomUUID(),
-      board_id: boardId,
-      user_id: userId,
-      role,
-    });
+    return Response.json(
+      {
+        name: 'board-member-exists',
+        data: {
+          message:
+            'User is already a member of this board. Use PATCH /api/v1/boards/:boardId/members/:userId to change their role.',
+        },
+      },
+      { status: 409 },
+    );
   }
+
+  await db('board_members').insert({
+    id: randomUUID(),
+    board_id: boardId,
+    user_id: userId,
+    role,
+  });
 
   const member = await db<MemberResponseRow>('board_members as bm')
     .join('users as u', 'bm.user_id', 'u.id')
@@ -123,5 +144,5 @@ export async function handleAddBoardMember(req: Request, boardId: string): Promi
     payload: { userId, role },
   }).catch(() => {});
 
-  return Response.json({ data: member }, { status: existing ? 200 : 201 });
+  return Response.json({ data: member }, { status: 201 });
 }

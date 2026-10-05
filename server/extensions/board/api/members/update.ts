@@ -9,11 +9,11 @@ import {
   type WorkspaceScopedRequest,
 } from '../../../../middlewares/permissionManager';
 import { writeEvent } from '../../../../mods/events/index';
+import { wouldRemoveLastBoardAdmin, LAST_BOARD_ADMIN_DEMOTE_MESSAGE } from './lastAdmin';
 
 type BoardMemberRole = 'ADMIN' | 'MEMBER';
 const VALID_ROLES = new Set<BoardMemberRole>(['ADMIN', 'MEMBER']);
 type BoardMemberRow = { board_id: string; user_id: string; role: string };
-type CountRow = { count: string | number };
 type MemberResponseRow = {
   id: string;
   email: string;
@@ -64,19 +64,11 @@ export async function handleUpdateBoardMember(
   }
 
   // [deny-first] Prevent demoting the last ADMIN — board must always have at least one.
-  if (existing.role === 'ADMIN' && newRole !== 'ADMIN') {
-    const adminCount = await db('board_members')
-      .where({ board_id: boardId, role: 'ADMIN' })
-      .count('id as count')
-      .first<CountRow | undefined>();
-
-    const count = Number(adminCount?.count ?? 0);
-    if (count <= 1) {
-      return Response.json(
-        { name: 'last-board-admin', data: { message: 'Cannot demote the last board admin. Promote another member first.' } },
-        { status: 409 },
-      );
-    }
+  if (await wouldRemoveLastBoardAdmin(boardId, userId, newRole)) {
+    return Response.json(
+      { name: 'last-board-admin', data: { message: LAST_BOARD_ADMIN_DEMOTE_MESSAGE } },
+      { status: 409 },
+    );
   }
 
   await db('board_members')

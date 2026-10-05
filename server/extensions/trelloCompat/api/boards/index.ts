@@ -11,6 +11,11 @@ import {
 } from '../../common/errors';
 import { serializeBoard } from '../../serializers/board';
 import { serializeCard as serializeTrelloCard } from '../../serializers/card';
+import {
+  wouldRemoveLastBoardAdmin,
+  LAST_BOARD_ADMIN_DEMOTE_MESSAGE,
+  LAST_BOARD_ADMIN_REMOVE_MESSAGE,
+} from '../../../board/api/members/lastAdmin';
 import { serializeLabel } from '../../serializers/label';
 import { serializeList } from '../../serializers/list';
 import { serializeMember } from '../../serializers/member';
@@ -559,6 +564,11 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
       .where({ board_id: board.id, user_id: idMember })
       .first()) as BoardMemberRow | undefined;
 
+    // [deny-first] A board must always keep at least one ADMIN.
+    if (await wouldRemoveLastBoardAdmin(board.id, idMember, boardRole)) {
+      return trelloError(LAST_BOARD_ADMIN_DEMOTE_MESSAGE, 409);
+    }
+
     if (existingBoardMembership) {
       await db('board_members')
         .where({ board_id: board.id, user_id: idMember })
@@ -592,6 +602,11 @@ export async function boardsRouter(req: AuthenticatedRequest, path: string): Pro
     const existing = (await db('board_members').where({ board_id: board.id, user_id: idMember }).first()) as BoardMemberRow | undefined;
     const guest = (await db('board_guest_access').where({ board_id: board.id, user_id: idMember }).first()) as GuestAccessRow | undefined;
     if (!existing && !guest) return TRELLO_NOT_FOUND();
+
+    // [deny-first] A board must always keep at least one ADMIN.
+    if (await wouldRemoveLastBoardAdmin(board.id, idMember, null)) {
+      return trelloError(LAST_BOARD_ADMIN_REMOVE_MESSAGE, 409);
+    }
 
     await db('board_members').where({ board_id: board.id, user_id: idMember }).delete();
     await db('board_guest_access').where({ board_id: board.id, user_id: idMember }).delete();
